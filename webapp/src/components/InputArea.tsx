@@ -464,8 +464,8 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
                 ) : (
                     <TextArea
                         ref={textAreaRef}
-                        data-testid="message-input"
-                        id="message-input"
+                        data-testid="chat-input"
+                        id="chat-input"
                         value={message}
                         onChange={handleMessageChange}
                         onKeyPress={handleKeyPress}
