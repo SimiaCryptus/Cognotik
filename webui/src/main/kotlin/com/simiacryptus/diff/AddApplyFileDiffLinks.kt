@@ -325,16 +325,20 @@ private fun SocketManagerBase.renderDiffBlock(
     return revertTask.placeholder
   }
 
-  if (echoDiff.isNotBlank() && newCode.isValid && shouldAutoApply(filepath ?: root.resolve(filename))) {
-    try {
-      filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
-      val originalCode = AtomicReference(prevCode)
-      handle(mapOf(relativize to newCode.newCode))
-      val revertButton = createRevertButton(filepath, originalCode.get(), handle)
-      return "```diff\n$diffVal\n```\n" + """<div class="cmd-button">Diff Automatically Applied to ${filepath}</div>""" + revertButton
-    } catch (e: Throwable) {
-      log.error("Error auto-applying diff", e)
-      return "```diff\n$diffVal\n```\n" + """<div class="cmd-button">Error Auto-Applying Diff to ${filepath}: ${e.message}</div>"""
+  if (echoDiff.isNotBlank()) {
+    if (newCode.isValid) {
+      if (shouldAutoApply(filepath ?: root.resolve(filename))) {
+        try {
+          filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
+          val originalCode = AtomicReference(prevCode)
+          handle(mapOf(relativize to newCode.newCode))
+          val revertButton = createRevertButton(filepath, originalCode.get(), handle)
+          return "```diff\n$diffVal\n```\n" + """<div class="cmd-button">Diff Automatically Applied to ${filepath}</div>""" + revertButton
+        } catch (e: Throwable) {
+          log.error("Error auto-applying diff", e)
+          return "```diff\n$diffVal\n```\n" + """<div class="cmd-button">Error Auto-Applying Diff to ${filepath}: ${e.message}</div>"""
+        }
+      }
     }
   }
 
@@ -400,7 +404,6 @@ private fun SocketManagerBase.renderDiffBlock(
 
 
   if (echoDiff.isNotBlank()) {
-
     // Add "Fix Patch" button if the patch is not valid
     if (!newCode.isValid) {
       val fixPatchLink = hrefLink("Fix Patch", classname = "href-link cmd-button") {
@@ -483,12 +486,11 @@ Please provide a fix for the diff above in the form of a diff patch.
           log.error("Error in fix patch", e)
         }
       }
-      //apply1 += fixPatchLink
       fixTask.complete(fixPatchLink)
     }
 
     // Create "Apply Diff (Bottom to Top)" button
-    val apply2 = hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
+    val applyReversed = hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
       try {
         originalCode = load(filepath)
         val originalLines = originalCode.reverseLines()
@@ -509,14 +511,14 @@ Please provide a fix for the diff above in the form of a diff patch.
       try {
         filepath.toFile().writeText(originalCode, Charsets.UTF_8)
         handle(mapOf(relativize to originalCode))
-        hrefLink.set("""<div class="cmd-button">Reverted</div>""" + apply1 + apply2)
+        hrefLink.set("""<div class="cmd-button">Reverted</div>""" + apply1 + applyReversed)
         applydiffTask.complete()
       } catch (e: Throwable) {
         hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
         applydiffTask.error(null, e)
       }
     }
-    hrefLink = applydiffTask.complete(apply1 + "\n" + apply2)!!
+    hrefLink = applydiffTask.complete(apply1 + "\n" + applyReversed)!!
   }
 
   val lang = filename.split('.').lastOrNull() ?: ""
@@ -631,7 +633,7 @@ ${prevCode}
   val newValue = if (newCode.isValid) {
     mainTabs + "\n" + applydiffTask.placeholder
   } else {
-    mainTabs + """<div class="warning">Warning: The patch is not valid. Please fix the patch before applying.</div>""" + applydiffTask.placeholder
+    mainTabs + """<div class="warning">Warning: The patch is not valid: ${newCode.error ?: "???"}</div>""" + applydiffTask.placeholder
   }
   return newValue
 }
@@ -655,7 +657,15 @@ private val patch = { code: String, diff: String ->
       (isParenthesisBalanced && !isParenthesisBalancedNew) ||
       (isQuoteBalanced && !isQuoteBalancedNew) ||
       (isSingleQuoteBalanced && !isSingleQuoteBalancedNew))
-  PatchResult(newCode, !isError)
+  PatchResult(newCode, !isError, if(!isError) null else {
+    val error = StringBuilder()
+    if (!isCurlyBalanced) error.append("Curly braces are not balanced\n")
+    if (!isSquareBalanced) error.append("Square braces are not balanced\n")
+    if (!isParenthesisBalanced) error.append("Parenthesis are not balanced\n")
+    if (!isQuoteBalanced) error.append("Quotes are not balanced\n")
+    if (!isSingleQuoteBalanced) error.append("Single quotes are not balanced\n")
+    error.toString()
+  })
 }
 
 

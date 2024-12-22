@@ -34,7 +34,15 @@ fun SocketManagerBase.addApplyDiffLinks(
         (isParenthesisBalanced && !isParenthesisBalancedNew) ||
         (isQuoteBalanced && !isQuoteBalancedNew) ||
         (isSingleQuoteBalanced && !isSingleQuoteBalancedNew))
-    PatchResult(newCode, !isError)
+    PatchResult(newCode, !isError, if(!isError) null else {
+      val error = StringBuilder()
+      if (!isCurlyBalanced) error.append("Curly braces are not balanced\n")
+      if (!isSquareBalanced) error.append("Square braces are not balanced\n")
+      if (!isParenthesisBalanced) error.append("Parenthesis are not balanced\n")
+      if (!isQuoteBalanced) error.append("Quotes are not balanced\n")
+      if (!isSingleQuoteBalanced) error.append("Single quotes are not balanced\n")
+      error.toString()
+    })
   }
 
   val diffPattern = """(?s)(?<![^\n])```diff\n(.*?)\n```""".toRegex()

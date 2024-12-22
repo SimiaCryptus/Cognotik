@@ -171,7 +171,5 @@ class FileValidationUtils {
       }
       return false
     }
-
   }
-
 }
