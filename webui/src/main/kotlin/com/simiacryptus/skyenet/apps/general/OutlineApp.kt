@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.JsonDescriber
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
@@ -30,6 +31,7 @@ open class OutlineApp(
   applicationName: String = "Outline Expansion Concept Map v1.1",
   val domainName: String,
   val settings: Settings? = null,
+  val api2: OpenAIClient,
 ) : ApplicationServer(
   applicationName = applicationName,
   path = "/idea_mapper",
@@ -80,6 +82,7 @@ open class OutlineApp(
     val settings = this.settings ?: getSettings(session, user)!!
     OutlineAgent(
       api = api,
+      api2 = api2,
       dataStorage = dataStorage,
       session = session,
       user = user,
@@ -99,6 +102,7 @@ open class OutlineApp(
 
 class OutlineAgent(
   val api: API,
+  val api2: OpenAIClient,
   dataStorage: StorageInterface,
   session: Session,
   user: User?,
@@ -167,7 +171,7 @@ class OutlineAgent(
     val finalOutline = finalOutline(outlineManager, sessionDir)
 
     if (showProjector) {
-      showProjector(api, outlineManager, finalOutline)
+      showProjector(api2, outlineManager, finalOutline)
     }
 
     if (writeFinalEssay) {
@@ -193,7 +197,7 @@ class OutlineAgent(
   }
 
   private fun showProjector(
-    api: ChatClient,
+    api: OpenAIClient,
     outlineManager: OutlineManager,
     finalOutline: List<OutlineManager.Node>
   ) {

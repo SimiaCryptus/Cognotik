@@ -25,7 +25,7 @@ class SearchAndAnalyzeTask(
   class SearchAndAnalyzeTaskConfigData(
     @Description("The search query to use for Google search")
     val search_query: String = "",
-    @Description("The number of search results to analyze (max 5)")
+    @Description("The number of search results to analyze (max 20)")
     val num_results: Int = 3,
     @Description("The analysis goal or focus for the content")
     val analysis_goal: String = "",
@@ -42,7 +42,7 @@ class SearchAndAnalyzeTask(
   override fun promptSegment() = """
     SearchAndAnalyze - Search Google, fetch top results, and analyze content
     ** Specify the search query
-    ** Specify number of results to analyze (max 5)
+    ** Specify number of results to analyze (max 20)
     ** Specify the analysis goal or focus
   """.trimIndent()
 
