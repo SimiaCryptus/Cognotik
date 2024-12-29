@@ -51,123 +51,123 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
       mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
 
     val TaskPlanning = TaskType(
-      name = "TaskPlanning",
-      taskDataClass = PlanningTaskConfigData::class.java,
-      taskSettingsClass = TaskSettingsBase::class.java,
-      description = "Break down and coordinate complex development tasks with dependency management",
-      tooltipHtml = """
-                Orchestrates complex development tasks by breaking them down into manageable subtasks.
-                <ul>
-                  <li>Analyzes project requirements and constraints to create optimal task sequences</li>
-                  <li>Establishes clear task dependencies and relationships between components</li>
-                  <li>Optimizes task ordering for maximum parallel execution efficiency</li>
-                  <li>Provides interactive visual dependency graphs for progress tracking</li>
-                  <li>Supports both fully automated and interactive planning modes</li>
-                  <li>Estimates task complexity and resource requirements</li>
-                  <li>Identifies critical paths and potential bottlenecks</li>
-                </ul>
-              """
+      "TaskPlanning",
+      PlanningTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Break down and coordinate complex development tasks with dependency management",
+      """
+                      Orchestrates complex development tasks by breaking them down into manageable subtasks.
+                      <ul>
+                        <li>Analyzes project requirements and constraints to create optimal task sequences</li>
+                        <li>Establishes clear task dependencies and relationships between components</li>
+                        <li>Optimizes task ordering for maximum parallel execution efficiency</li>
+                        <li>Provides interactive visual dependency graphs for progress tracking</li>
+                        <li>Supports both fully automated and interactive planning modes</li>
+                        <li>Estimates task complexity and resource requirements</li>
+                        <li>Identifies critical paths and potential bottlenecks</li>
+                      </ul>
+                    """
     )
     val Inquiry = TaskType(
-      name = "Inquiry",
-      taskDataClass = InquiryTaskConfigData::class.java,
-      taskSettingsClass = TaskSettingsBase::class.java,
-      description = "Analyze code and provide detailed explanations of implementation patterns",
-      tooltipHtml = """
-                Provides detailed answers and insights about code implementation by analyzing specified files.
-                <ul>
-                  <li>Answers detailed questions about code functionality and implementation</li>
-                  <li>Analyzes code patterns, relationships and architectural decisions</li>
-                  <li>Supports interactive discussions and follow-up questions in blocking mode</li>
-                  <li>Generates comprehensive markdown reports with code examples</li>
-                  <li>Handles multiple files and complex cross-reference queries</li>
-                  <li>Provides context-aware technical recommendations</li>
-                  <li>Explains trade-offs and rationale behind implementation choices</li>
-                </ul>
-              """
+      "Inquiry",
+      InquiryTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Analyze code and provide detailed explanations of implementation patterns",
+      """
+                      Provides detailed answers and insights about code implementation by analyzing specified files.
+                      <ul>
+                        <li>Answers detailed questions about code functionality and implementation</li>
+                        <li>Analyzes code patterns, relationships and architectural decisions</li>
+                        <li>Supports interactive discussions and follow-up questions in blocking mode</li>
+                        <li>Generates comprehensive markdown reports with code examples</li>
+                        <li>Handles multiple files and complex cross-reference queries</li>
+                        <li>Provides context-aware technical recommendations</li>
+                        <li>Explains trade-offs and rationale behind implementation choices</li>
+                      </ul>
+                    """
     )
     val Search = TaskType(
-      name = "Search",
-      taskDataClass = FileSearchTask.SearchTaskConfigData::class.java,
-      taskSettingsClass = TaskSettingsBase::class.java,
-      description = "Search project files using patterns with contextual results",
-      tooltipHtml = """
-                Performs pattern-based searches across project files with context.
-                <ul>
-                  <li>Supports both substring and regex search patterns</li>
-                  <li>Shows configurable context lines around matches</li>
-                  <li>Groups results by file with line numbers</li>
-                  <li>Filters for text-based files automatically</li>
-                  <li>Provides organized, readable output format</li>
-                </ul>
-              """
+      "Search",
+      FileSearchTask.SearchTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Search project files using patterns with contextual results",
+      """
+                      Performs pattern-based searches across project files with context.
+                      <ul>
+                        <li>Supports both substring and regex search patterns</li>
+                        <li>Shows configurable context lines around matches</li>
+                        <li>Groups results by file with line numbers</li>
+                        <li>Filters for text-based files automatically</li>
+                        <li>Provides organized, readable output format</li>
+                      </ul>
+                    """
     )
     val EmbeddingSearch = TaskType(
-      name = "EmbeddingSearch",
-      taskDataClass = EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
-      taskSettingsClass = TaskSettingsBase::class.java,
-      description = "Perform semantic search using AI embeddings",
-      tooltipHtml = """
-                Performs semantic search using AI embeddings across indexed content.
-                <ul>
-                  <li>Uses OpenAI embeddings for semantic matching</li>
-                  <li>Supports positive and negative search queries</li>
-                  <li>Configurable similarity metrics and thresholds</li>
-                  <li>Regular expression filtering capabilities</li>
-                  <li>Returns ranked results with context</li>
-                </ul>
-              """
+      "EmbeddingSearch",
+      EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Perform semantic search using AI embeddings",
+      """
+                      Performs semantic search using AI embeddings across indexed content.
+                      <ul>
+                        <li>Uses OpenAI embeddings for semantic matching</li>
+                        <li>Supports positive and negative search queries</li>
+                        <li>Configurable similarity metrics and thresholds</li>
+                        <li>Regular expression filtering capabilities</li>
+                        <li>Returns ranked results with context</li>
+                      </ul>
+                    """
     )
     val FileModification = TaskType(
-      name = "FileModification",
-      taskDataClass = FileModificationTaskConfigData::class.java,
-      taskSettingsClass = TaskSettingsBase::class.java,
-      description = "Create new files or modify existing code with AI-powered assistance",
-      tooltipHtml = """
-                Creates or modifies source files with AI assistance while maintaining code quality.
-                <ul>
-                  <li>Shows proposed changes in diff format for easy review</li>
-                  <li>Supports both automated application and manual approval modes</li>
-                  <li>Maintains project coding standards and style consistency</li>
-                  <li>Handles complex multi-file operations and refactoring</li>
-                  <li>Provides clear documentation of all changes with rationale</li>
-                  <li>Implements proper error handling and edge cases</li>
-                  <li>Updates imports and dependencies automatically</li>
-                  <li>Preserves existing code formatting and structure</li>
-                </ul>
-              """
+      "FileModification",
+      FileModificationTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Create new files or modify existing code with AI-powered assistance",
+      """
+                      Creates or modifies source files with AI assistance while maintaining code quality.
+                      <ul>
+                        <li>Shows proposed changes in diff format for easy review</li>
+                        <li>Supports both automated application and manual approval modes</li>
+                        <li>Maintains project coding standards and style consistency</li>
+                        <li>Handles complex multi-file operations and refactoring</li>
+                        <li>Provides clear documentation of all changes with rationale</li>
+                        <li>Implements proper error handling and edge cases</li>
+                        <li>Updates imports and dependencies automatically</li>
+                        <li>Preserves existing code formatting and structure</li>
+                      </ul>
+                    """
     )
     val Documentation = TaskType(
-      name = "Documentation",
-      taskDataClass = DocumentationTaskConfigData::class.java,
-      taskSettingsClass = TaskSettingsBase::class.java,
-      description = "Generate comprehensive documentation for code, APIs, and architecture",
-      tooltipHtml = """
-                Generates comprehensive documentation for code files and APIs.
-                <ul>
-                  <li>Handles both inline comments and markdown files</li>
-                  <li>Generates detailed API documentation</li>
-                  <li>Documents design decisions and rationale</li>
-                  <li>Supports interactive approval workflow</li>
-                  <li>Maintains documentation consistency</li>
-                </ul>
-              """
+      "Documentation",
+      DocumentationTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Generate comprehensive documentation for code, APIs, and architecture",
+      """
+                      Generates comprehensive documentation for code files and APIs.
+                      <ul>
+                        <li>Handles both inline comments and markdown files</li>
+                        <li>Generates detailed API documentation</li>
+                        <li>Documents design decisions and rationale</li>
+                        <li>Supports interactive approval workflow</li>
+                        <li>Maintains documentation consistency</li>
+                      </ul>
+                    """
     )
     val CodeReview = TaskType(
-      name = "CodeReview",
-      taskDataClass = CodeReviewTaskConfigData::class.java,
-      taskSettingsClass = TaskSettingsBase::class.java,
-      description = "Perform thorough code review with quality and best practice analysis",
-      tooltipHtml = """
-                Performs automated code reviews focusing on quality and best practices.
-                <ul>
-                  <li>Analyzes code quality and potential issues</li>
-                  <li>Identifies bugs and performance problems</li>
-                  <li>Reviews security vulnerabilities</li>
-                  <li>Suggests specific improvements</li>
-                  <li>Provides actionable recommendations</li>
-                </ul>
-              """
+      "CodeReview",
+      CodeReviewTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Perform thorough code review with quality and best practice analysis",
+      """
+                      Performs automated code reviews focusing on quality and best practices.
+                      <ul>
+                        <li>Analyzes code quality and potential issues</li>
+                        <li>Identifies bugs and performance problems</li>
+                        <li>Reviews security vulnerabilities</li>
+                        <li>Suggests specific improvements</li>
+                        <li>Provides actionable recommendations</li>
+                      </ul>
+                    """
     )
     val TestGeneration = TaskType(
       "TestGeneration",
@@ -268,9 +268,23 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     val CommandAutoFix = TaskType(
       "CommandAutoFix",
       CommandAutoFixTaskConfigData::class.java,
-      CommandAutoFixTask.CommandAutoFixTaskSettings::class.java
+      CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
+      "Run a command and automatically fix any issues that arise",
+      """
+          Executes a command and automatically fixes any issues that arise.
+          <ul>
+            <li>Specify commands and working directories</li>
+            <li>Supports multiple commands and directories</li>
+            <li>Interactive approval mode</li>
+            <li>Output diff formatting</li>
+          </ul>
+        """
     )
-    val ForeachTask = TaskType("ForeachTask", ForeachTaskConfigData::class.java, TaskSettingsBase::class.java,
+
+    val ForeachTask = TaskType(
+      "ForeachTask",
+      ForeachTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
       "Execute subtasks for each item in a list",
       """
           Executes a set of subtasks for each item in a given list.
