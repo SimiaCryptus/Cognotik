@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.*
-import com.simiacryptus.skyenet.apps.plan.tools.online.WebFetchAndTransformTask.Companion.scrubHtml
+import com.simiacryptus.skyenet.apps.plan.tools.online.HtmlSimplifier
 import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.Selenium2S3
@@ -24,7 +24,7 @@ class SeleniumSessionTask(
     private val activeSessions = ConcurrentHashMap<String, Selenium>()
     private const val TIMEOUT_MS = 30000L // 30 second timeout
     private const val MAX_SESSIONS = 10 // Maximum number of concurrent sessions
-
+  }
     init {
       try {
         // Setup WebDriverManager for Chrome
@@ -36,19 +36,6 @@ class SeleniumSessionTask(
       } catch (e: Exception) {
         log.error("Failed to initialize WebDriverManager or Selenium factory", e)
         throw IllegalStateException("Failed to initialize Selenium configuration", e)
-      }
-    }
-
-
-    fun closeSession(sessionId: String) {
-      activeSessions.remove(sessionId)?.let { session ->
-        try {
-          session.quit()
-        } catch (e: Exception) {
-          log.error("Error closing session $sessionId", e)
-          session.forceQuit() // Add force quit as fallback
-          throw e // Propagate exception after cleanup
-        }
       }
     }
 
@@ -72,30 +59,6 @@ class SeleniumSessionTask(
       }
     }
 
-    fun closeAllSessions() {
-      activeSessions.forEach { (id, session) ->
-        try {
-          session.quit()
-        } catch (e: Exception) {
-          log.error("Error closing session $id", e)
-          try {
-            session.forceQuit()
-          } catch (e2: Exception) {
-            log.error("Failed to force quit session $id", e2)
-          }
-        }
-      }
-      activeSessions.clear()
-    }
-
-    fun getActiveSessionCount(): Int = activeSessions.size
-    private fun createErrorMessage(e: Exception, command: String): String = buildString {
-      append("Error: ${e.message}\n")
-      append(e.stackTrace.take(3).joinToString("\n"))
-      append("\nFailed command: $command")
-    }
-  }
-
   class SeleniumSessionTaskConfigData(
     @Description("The URL to navigate to (optional if reusing existing session)")
     val url: String = "",
@@ -110,13 +73,14 @@ class SeleniumSessionTask(
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
+    @Description("Include CSS data in page source: styles, classes, etc.")
+    val includeCssData: Boolean? = null,
   ) : TaskConfigBase(
     task_type = TaskType.SeleniumSession.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
     state = state
   )
-
   override fun promptSegment() = """
       SeleniumSession - Create and manage a stateful Selenium browser session
         * Specify the URL to navigate to
@@ -216,8 +180,9 @@ class SeleniumSessionTask(
           log.debug("Command completed in ${duration}ms")
           result
         } catch (e: Exception) {
+          task.error(agent.ui, e)
           log.error("Error executing command: $command", e)
-          createErrorMessage(e, command)
+          e.message ?: "Error executing command"
         }
       }
 
@@ -274,7 +239,11 @@ class SeleniumSessionTask(
     try {
       appendLine("\nFinal Page Source:")
       appendLine("```html")
-      appendLine(scrubHtml(selenium.getPageSource()).take(10000)) // Limit page source size
+      appendLine(HtmlSimplifier.scrubHtml(
+        str = selenium.getPageSource(),
+        includeCssData = taskConfig?.includeCssData ?: false,
+        baseUrl = selenium.getCurrentUrl()
+      ).take(10000)) // Limit page source size
       appendLine("```")
     } catch (e: Exception) {
       appendLine("\nError getting page source: ${e.message}")

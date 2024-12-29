@@ -72,7 +72,7 @@ class SearchAndAnalyzeTask(
 
         try {
           // Fetch and transform content for each result
-          val content = WebFetchAndTransformTask.scrubHtml(fetchContent(url))
+          val content = HtmlSimplifier.scrubHtml(fetchContent(url))
           val analysis = transformContent(content, taskConfig?.analysis_goal ?: "", api, planSettings)
           appendLine(analysis)
           appendLine()
