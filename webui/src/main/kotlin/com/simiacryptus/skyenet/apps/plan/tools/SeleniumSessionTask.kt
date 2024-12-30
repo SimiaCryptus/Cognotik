@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.webui.session.SessionTask
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.remote.RemoteWebDriver
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -25,19 +26,6 @@ class SeleniumSessionTask(
     private const val TIMEOUT_MS = 30000L // 30 second timeout
     private const val MAX_SESSIONS = 10 // Maximum number of concurrent sessions
   }
-    init {
-      try {
-        // Setup WebDriverManager for Chrome
-        WebDriverManager.chromedriver().setup()
-        // You can add support for other browsers as needed
-        // WebDriverManager.firefoxdriver().setup()
-        // WebDriverManager.edgedriver().setup()
-        log.info("WebDriverManager initialized successfully")
-      } catch (e: Exception) {
-        log.error("Failed to initialize WebDriverManager or Selenium factory", e)
-        throw IllegalStateException("Failed to initialize Selenium configuration", e)
-      }
-    }
 
     private fun cleanupInactiveSessions() {
       activeSessions.entries.removeIf { (id, session) ->
@@ -75,6 +63,12 @@ class SeleniumSessionTask(
     state: TaskState? = null,
     @Description("Include CSS data in page source: styles, classes, etc.")
     val includeCssData: Boolean? = null,
+    @Description("Whether to simplify the HTML structure by combining nested elements")
+    val simplifyStructure: Boolean = true,
+    @Description("Whether to keep object IDs in the HTML output")
+    val keepObjectIds: Boolean = false,
+    @Description("Whether to preserve whitespace in text nodes")
+    val preserveWhitespace: Boolean = false,
   ) : TaskConfigBase(
     task_type = TaskType.SeleniumSession.name,
     task_description = task_description,
@@ -131,17 +125,11 @@ class SeleniumSessionTask(
   ) {
     val seleniumFactory: (pool: java.util.concurrent.ThreadPoolExecutor, cookies: Array<out jakarta.servlet.http.Cookie>?) -> Selenium =
       { pool, cookies ->
-        val chromeOptions = ChromeOptions().apply {
-          addArguments("--headless")
-          addArguments("--disable-gpu")
-          addArguments("--no-sandbox")
-          addArguments("--disable-dev-shm-usage")
-        }
         try {
           Selenium2S3(
             pool = pool,
             cookies = cookies,
-            driver = ChromeDriver(chromeOptions)
+            driver = driver()
           )
         } catch (e: Exception) {
           throw IllegalStateException("Failed to initialize Selenium", e)
@@ -161,15 +149,12 @@ class SeleniumSessionTask(
           taskConfig.sessionId?.let { id -> activeSessions[id] = newSession }
         }
       log.info("Starting Selenium session ${taskConfig.sessionId ?: "temporary"} for URL: ${taskConfig.url} with timeout ${taskConfig.timeout}ms")
-
       selenium.setScriptTimeout(taskConfig.timeout)
-
       // Navigate to initial URL
       // Navigate if URL is provided, regardless of whether it's a new or existing session
       if (taskConfig.url.isNotBlank()) {
         selenium.navigate(taskConfig.url)
       }
-
       // Execute each command in sequence
       val results = taskConfig.commands.map { command ->
         try {
@@ -185,9 +170,7 @@ class SeleniumSessionTask(
           e.message ?: "Error executing command"
         }
       }
-
       val result = formatResults(taskConfig, selenium, results)
-
       task.add(MarkdownUtil.renderMarkdown(result))
       resultFn(result)
     } finally {
@@ -210,11 +193,22 @@ class SeleniumSessionTask(
     }
   }
 
+  val chromeDriver: WebDriverManager by lazy { WebDriverManager.chromedriver().apply { setup() } }
+  fun driver(): RemoteWebDriver {
+    requireNotNull(chromeDriver)
+    return ChromeDriver(ChromeOptions().apply {
+      addArguments("--headless")
+      addArguments("--disable-gpu")
+      addArguments("--no-sandbox")
+      addArguments("--disable-dev-shm-usage")
+    })
+  }
+
   private fun formatResults(
     planTask: SeleniumSessionTaskConfigData,
     selenium: Selenium,
     results: List<String>
-  ): String = buildString(capacity = 16384) { // Pre-allocate buffer for better performance
+  ): String = buildString(capacity = 163840) { // Pre-allocate buffer for better performance
     appendLine("## Selenium Session Results")
     if (planTask.url.isNotBlank()) {
       appendLine("Initial URL: ${planTask.url}")
@@ -241,9 +235,12 @@ class SeleniumSessionTask(
       appendLine("```html")
       appendLine(HtmlSimplifier.scrubHtml(
         str = selenium.getPageSource(),
+        baseUrl = selenium.getCurrentUrl(),
         includeCssData = taskConfig?.includeCssData ?: false,
-        baseUrl = selenium.getCurrentUrl()
-      ).take(10000)) // Limit page source size
+        simplifyStructure = taskConfig?.simplifyStructure ?: true,
+        keepObjectIds = taskConfig?.keepObjectIds ?: false,
+        preserveWhitespace = taskConfig?.preserveWhitespace ?: false
+      )) // Limit page source size
       appendLine("```")
     } catch (e: Exception) {
       appendLine("\nError getting page source: ${e.message}")

@@ -29,6 +29,16 @@ class SearchAndAnalyzeTask(
     val num_results: Int = 3,
     @Description("The analysis goal or focus for the content")
     val analysis_goal: String = "",
+    @Description("Base URL for resolving relative links in HTML content")
+    val base_url: String? = null,
+    @Description("Include CSS data in the scrubbed HTML")
+    val include_css_data: Boolean = false,
+    @Description("Simplify HTML structure by combining nested elements")
+    val simplify_structure: Boolean = true,
+    @Description("Keep object IDs in the HTML")
+    val keep_object_ids: Boolean = false,
+    @Description("Preserve whitespace in text content")
+    val preserve_whitespace: Boolean = false,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
@@ -44,6 +54,12 @@ class SearchAndAnalyzeTask(
     ** Specify the search query
     ** Specify number of results to analyze (max 20)
     ** Specify the analysis goal or focus
+    ** Optionally configure HTML processing:
+       - base_url: Base URL for resolving relative links
+       - include_css_data: Include CSS data in output
+       - simplify_structure: Combine nested elements
+       - keep_object_ids: Preserve object IDs
+       - preserve_whitespace: Keep original whitespace
   """.trimIndent()
 
   override fun run(
@@ -64,6 +80,17 @@ class SearchAndAnalyzeTask(
     val analysisResults = buildString {
       appendLine("# Analysis of Search Results")
       appendLine()
+      // Display search query and URLs
+      appendLine("**Search Query:** ${taskConfig?.search_query}")
+      appendLine()
+      appendLine("**URLs Analyzed:**")
+      items?.forEach { item ->
+        appendLine("- [${item["title"]}](${item["link"]})")
+      }
+      appendLine()
+      appendLine("---")
+      appendLine()
+
 
       items?.forEachIndexed { index, item ->
         val url = item["link"] as String
@@ -72,7 +99,14 @@ class SearchAndAnalyzeTask(
 
         try {
           // Fetch and transform content for each result
-          val content = HtmlSimplifier.scrubHtml(fetchContent(url))
+          val content = HtmlSimplifier.scrubHtml(
+            str = fetchContent(url),
+            baseUrl = taskConfig?.base_url,
+            includeCssData = taskConfig?.include_css_data ?: false,
+            simplifyStructure = taskConfig?.simplify_structure ?: true,
+            keepObjectIds = taskConfig?.keep_object_ids ?: false,
+            preserveWhitespace = taskConfig?.preserve_whitespace ?: false
+          )
           val analysis = transformContent(content, taskConfig?.analysis_goal ?: "", api, planSettings)
           appendLine(analysis)
           appendLine()
@@ -108,15 +142,7 @@ class SearchAndAnalyzeTask(
   }
 
   private fun transformContent(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): String {
-    val prompt = """
-      Analyze the following web content according to this goal: $analysisGoal
-      
-      Content:
-      $content
-      
-      Analysis:
-    """.trimIndent()
-
+    val prompt = "Analyze the following web content according to this goal: $analysisGoal\n\nContent:\n$content\n\nAnalysis:"
     return SimpleActor(
       prompt = prompt,
       model = planSettings.defaultModel,

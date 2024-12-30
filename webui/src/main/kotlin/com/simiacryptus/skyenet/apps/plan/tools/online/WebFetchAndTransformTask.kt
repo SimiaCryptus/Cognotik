@@ -22,6 +22,16 @@ open class WebFetchAndTransformTask(
     val url: String,
     @Description("The desired format or focus for the transformation")
     val transformationGoal: String,
+    @Description("Base URL for resolving relative links")
+    val baseUrl: String? = null,
+    @Description("Whether to include CSS data in the scrubbed HTML")
+    val includeCssData: Boolean = false,
+    @Description("Whether to simplify nested HTML structure")
+    val simplifyStructure: Boolean = true,
+    @Description("Whether to keep object IDs in the HTML")
+    val keepObjectIds: Boolean = false,
+    @Description("Whether to preserve whitespace in text nodes")
+    val preserveWhitespace: Boolean = false,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
@@ -36,6 +46,12 @@ open class WebFetchAndTransformTask(
         WebFetchAndTransform - Fetch a web page, strip HTML, and transform content
         ** Specify the URL to fetch
         ** Specify the desired format or focus for the transformation
+        ** Optionally specify:
+           - Base URL for resolving relative links
+           - Whether to include CSS data
+           - Whether to simplify HTML structure
+           - Whether to keep object IDs
+           - Whether to preserve whitespace
     """.trimIndent()
 
   override fun run(
@@ -59,7 +75,14 @@ open class WebFetchAndTransformTask(
       httpClient.execute(httpGet).use { response ->
         val entity = response.entity
         val content = EntityUtils.toString(entity)
-        return HtmlSimplifier.scrubHtml(content)
+        return HtmlSimplifier.scrubHtml(
+          str = content,
+          baseUrl = taskConfig?.baseUrl,
+          includeCssData = taskConfig?.includeCssData ?: false,
+          simplifyStructure = taskConfig?.simplifyStructure ?: true,
+          keepObjectIds = taskConfig?.keepObjectIds ?: false,
+          preserveWhitespace = taskConfig?.preserveWhitespace ?: false
+        )
       }
     }
   }
@@ -87,4 +110,3 @@ open class WebFetchAndTransformTask(
     private val log = LoggerFactory.getLogger(WebFetchAndTransformTask::class.java)
   }
 }
-
