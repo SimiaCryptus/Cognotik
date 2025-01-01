@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.webui.actors
+package com.simiacryptus.skyenet.core.actors
 
 import com.google.common.base.Strings
 import com.simiacryptus.jopenai.API
@@ -8,7 +8,8 @@ import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.skyenet.core.actors.BaseActor
+import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
+import org.slf4j.LoggerFactory
 
 /**
  * An actor that handles large outputs by using recursive replacement.
@@ -26,7 +27,14 @@ class LargeOutputActor(
     """.trimIndent(),
   name: String? = null,
   model: TextModel = OpenAIModels.GPT4o,
-  temperature: Double = 0.3, private val maxIterations: Int = 3, private val namedEllipsisPattern: Regex = Regex("""\.\.\.(?<sectionName>[\w\s-_]+?)\.\.\.""")
+  temperature: Double = 0.3,
+  private val maxIterations: Int = 3,
+  private val namedEllipsisPattern: Regex = Regex("""\.\.\.(?<sectionName>[\w\s-_]+?)\.\.\."""),
+  val refinementSteps: List<Pair<String, String>> = listOf(
+    "RedundancyReviewer" to "Review the text to identify and remove instances of redundant text or unnecessary framing language. Provide changes as a diff.",
+    "NarrativeEnhancer" to "Review and enhance the text's narrative quality and flow. Provide changes as a diff.",
+    "StyleConsistencyReviewer" to "Review and improve consistency in style, tone and terminology. Provide changes as a diff."
+  )
 ) : BaseActor<List<String>, String>(
   prompt = prompt, name = name, model = model, temperature = temperature
 ) {
@@ -104,6 +112,26 @@ class LargeOutputActor(
       }
       iterations++
     }
+    // Apply refinement steps after content expansion
+    val diffApplier = SimpleDiffApplier()
+    refinementSteps.forEach { (name, prompt) ->
+      val refinementResponse = response(
+        ApiModel.ChatMessage(
+          role = ApiModel.Role.system,
+          content = (prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
+        ),
+        ApiModel.ChatMessage(
+          role = ApiModel.Role.user,
+          content = accumulatedResponse.toContentList()
+        ),
+        api = api
+      )
+      try {
+        accumulatedResponse = diffApplier.apply(accumulatedResponse, refinementResponse.choices.first().message?.content ?: "")
+      } catch (e: Exception) {
+        log.warn("Error applying $name refinement", e)
+      }
+    }
     return accumulatedResponse
   }
 
@@ -114,8 +142,12 @@ class LargeOutputActor(
       model = model,
       temperature = this.temperature,
       maxIterations = this.maxIterations,
-      namedEllipsisPattern = this.namedEllipsisPattern
+      namedEllipsisPattern = this.namedEllipsisPattern,
+      refinementSteps = this.refinementSteps
     )
+  }
+  companion object {
+    private val log = LoggerFactory.getLogger(LargeOutputActor::class.java)
   }
 }
 

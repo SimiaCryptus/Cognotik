@@ -1,8 +1,8 @@
 @file:Suppress("LoggingSimilarMessage")
 
-package com.simiacryptus.diff
+package com.simiacryptus.skyenet.core.util
 
-import com.simiacryptus.diff.IterativePatchUtil.LineType.*
+import com.simiacryptus.skyenet.core.util.IterativePatchUtil.LineType.*
 import org.apache.commons.text.similarity.LevenshteinDistance
 import org.slf4j.LoggerFactory
 import kotlin.math.floor

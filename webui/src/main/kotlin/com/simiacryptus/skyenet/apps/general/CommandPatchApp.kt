@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.general
 
-import com.simiacryptus.diff.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.core.platform.Session

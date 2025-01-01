@@ -1,4 +1,4 @@
-package com.simiacryptus.diff
+package com.simiacryptus.skyenet.core.util
 
 import java.io.File
 import java.nio.file.Path

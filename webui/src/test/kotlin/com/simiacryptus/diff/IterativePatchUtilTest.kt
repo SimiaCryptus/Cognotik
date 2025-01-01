@@ -1,5 +1,6 @@
 package com.simiacryptus.diff
 
+import com.simiacryptus.skyenet.core.util.IterativePatchUtil
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

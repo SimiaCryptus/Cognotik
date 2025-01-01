@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.diff.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description

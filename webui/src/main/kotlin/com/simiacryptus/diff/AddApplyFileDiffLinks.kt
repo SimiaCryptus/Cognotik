@@ -1,23 +1,20 @@
 package com.simiacryptus.diff
 
-import com.simiacryptus.diff.FileValidationUtils.Companion.isGitignore
+import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.isGitignore
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
-import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.IterativePatchUtil
 import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SocketManagerBase
-import com.simiacryptus.util.JsonUtil
-import kotlinx.coroutines.withTimeout
 import java.io.File
-import java.io.IOException
 import java.nio.file.Path
-import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.readText
 
