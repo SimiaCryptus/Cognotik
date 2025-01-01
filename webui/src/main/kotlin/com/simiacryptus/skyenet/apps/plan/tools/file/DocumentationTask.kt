@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.diff.addApplyFileDiffLinks
+import com.simiacryptus.diff.AddApplyFileDiffLinks.Companion.instrumentFileDiffs
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
@@ -93,7 +93,8 @@ class DocumentationTask(
       )
       resultFn(docResult)
       if (agent.planSettings.autoFix) {
-        val diffLinks = agent.ui.socketManager!!.addApplyFileDiffLinks(
+        val diffLinks = instrumentFileDiffs(
+          agent.ui.socketManager!!,
           root = agent.root,
           response = docResult,
           handle = { newCodeMap ->
@@ -111,7 +112,8 @@ class DocumentationTask(
         MarkdownUtil.renderMarkdown(diffLinks + "\n\n## Auto-applied documentation changes", ui = agent.ui)
       } else {
         MarkdownUtil.renderMarkdown(
-          agent.ui.socketManager!!.addApplyFileDiffLinks(
+          instrumentFileDiffs(
+            agent.ui.socketManager!!,
             root = agent.root,
             response = docResult,
             handle = { newCodeMap ->

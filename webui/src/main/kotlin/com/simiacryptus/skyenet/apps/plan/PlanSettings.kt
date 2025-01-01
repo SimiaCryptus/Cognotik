@@ -117,13 +117,13 @@ ${taskType.name}:
   }
 
   open fun describer() = object : AbbrevWhitelistYamlDescriber(
-    "com.simiacryptus", "com.simiacryptus"
+    "com.simiacryptus", "aicoder.actions"
   ) {
     override val includeMethods: Boolean get() = false
 
     override fun getEnumValues(clazz: Class<*>): List<String> {
       return if (clazz == TaskType::class.java) {
-        taskSettings.filter { it.value.enabled }.map { it.key.toString() }
+        taskSettings.filter { it.value.enabled }.map { it.key }
       } else {
         super.getEnumValues(clazz)
       }

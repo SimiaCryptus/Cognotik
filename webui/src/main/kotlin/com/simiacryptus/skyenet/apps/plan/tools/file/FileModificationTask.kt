@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.diff.addApplyFileDiffLinks
+import com.simiacryptus.diff.AddApplyFileDiffLinks.Companion.instrumentFileDiffs
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
@@ -134,7 +134,8 @@ class FileModificationTask(
         task.complete()
         onComplete()
         renderMarkdown(codeResult, ui = agent.ui) {
-          agent.ui.socketManager!!.addApplyFileDiffLinks(
+          instrumentFileDiffs(
+            agent.ui.socketManager!!,
             root = agent.root,
             response = it,
             handle = { newCodeMap ->
@@ -151,7 +152,8 @@ class FileModificationTask(
         }
       } else {
         renderMarkdown(codeResult, ui = agent.ui) {
-          agent.ui.socketManager!!.addApplyFileDiffLinks(
+          instrumentFileDiffs(
+            agent.ui.socketManager!!,
             root = agent.root,
             response = it,
             handle = { newCodeMap ->

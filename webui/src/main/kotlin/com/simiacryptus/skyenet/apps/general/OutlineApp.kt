@@ -10,7 +10,7 @@ import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.OutlineManager.NodeList
 import com.simiacryptus.skyenet.core.actors.ActorSystem
-import com.simiacryptus.skyenet.core.actors.LargeOutputActor
+import com.simiacryptus.skyenet.webui.actors.LargeOutputActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface

@@ -24,7 +24,7 @@ open class ParsedActor<T : Any>(
   val parsingModel: TextModel = OpenAIModels.GPT4oMini,
   val deserializerRetries: Int = 2,
   open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-    "com.simiacryptus", "com.simiacryptus"
+    "com.simiacryptus", "aicoder.actions"
   ) {
     override val includeMethods: Boolean get() = false
   },
@@ -63,20 +63,16 @@ open class ParsedActor<T : Any>(
 
   fun getParser(api: API, promptSuffix: String? = null) = Function<String, T> { input ->
     describer.coverMethods = false
-    val describe = resultClass?.let { describer.describe(it) } ?: ""
+    val describe = if (null == resultClass) "" else {
+      describer.describe(resultClass!!)
+    }
     val exceptions = mutableListOf<Exception>()
-    val prompt = """
-              Parse the user's message into a json object described by:
-              
-              ```yaml
-              """.trimIndent() + describe.replace("\n", "\n  ") + """
-              ```
-              
-              This is an example output:
-              ```json
-              """ + JsonUtil.toJson(exampleInstance!!) + """
-              ```
-              """.trimIndent() + (promptSuffix?.let { "\n$it" } ?: "")
+    val prompt = "Parse the user's message into a json object described by:\n\n```yaml\n${
+      describe.replace(
+        "\n",
+        "\n  "
+      )
+    }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
     for (i in 0 until deserializerRetries) {
       try {
         val content = (api as ChatClient).chat(

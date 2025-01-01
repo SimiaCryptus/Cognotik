@@ -1,14 +1,14 @@
-package com.simiacryptus.skyenet.core.actors
+package com.simiacryptus.skyenet.webui.actors
 
-import com.google.common.base.Strings.commonPrefix
+import com.google.common.base.Strings
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.skyenet.core.actors.BaseActor
 
 /**
  * An actor that handles large outputs by using recursive replacement.
@@ -33,11 +33,11 @@ class LargeOutputActor(
 
   override fun chatMessages(questions: List<String>): Array<ApiModel.ChatMessage> {
     val systemMessage = ApiModel.ChatMessage(
-      role = Role.system, content = prompt.toContentList()
+      role = ApiModel.Role.system, content = prompt.toContentList()
     )
     val userMessages = questions.map {
       ApiModel.ChatMessage(
-        role = Role.user, content = it.toContentList()
+        role = ApiModel.Role.user, content = it.toContentList()
       )
     }
     return arrayOf(systemMessage) + userMessages
@@ -65,24 +65,21 @@ class LargeOutputActor(
               2. To support large content generation, use markers to indicate where content needs expansion.
               3. Expansion markers should use a line formatted like '...sectionName...' to indicate where detailed content should be inserted.
               4. Use descriptive and unique section names that reflect the content expected in that section.
-              """.trimIndent().toChatMessage(Role.system)
+              """.trimIndent().toChatMessage(ApiModel.Role.system)
             ) + messages.toList().drop(1) + listOf(
               ApiModel.ChatMessage(
-                role = Role.user, content = ("""
-                  Previous context:
-                  
-                  ```
-                  """.trimIndent() + accumulatedResponse.substring(0, matchResult.range.first).lines().takeLast(contextLines).joinToString { "  $it" }.takeLast(contextChars) + """
-                  ```
-                  
-                  Continue the section '""".trimIndent() + nextSection + """'
-                  Make sure the response flows naturally with the existing content.
-                  It should end so that it matches the next section, provided below:
-                  
-                  ```
-                  """.trimIndent() + accumulatedResponse.substring(matchResult.range.last).lines().take(contextLines).joinToString { "  $it" }.take(contextChars) + """
-                  ```
-                  """.trimIndent()).toContentList()
+                role = ApiModel.Role.user,
+                content = (buildString {
+                  appendLine("Previous context:\n\n```")
+                  appendLine(accumulatedResponse.substring(0, matchResult.range.first)
+                      .lines().takeLast(contextLines).joinToString { "  $it" }.takeLast(contextChars))
+                  append("```\n\nContinue the section '")
+                  append(nextSection)
+                  appendLine("'\nMake sure the response flows naturally with the existing content.\nIt should end so that it matches the next section, provided below:\n\n```")
+                  appendLine(accumulatedResponse.substring(matchResult.range.last)
+                    .lines().take(contextLines).joinToString { "  $it" }.take(contextChars))
+                  appendLine("```")
+                }).toContentList()
               )
             )).toTypedArray(), api = api
           )
@@ -98,7 +95,7 @@ class LargeOutputActor(
         }
         val prefix = acc.substring(0, match.range.first)
         val suffix = acc.substring(match.range.last)
-        val commonPrefix = commonPrefix(prefix, replacement)
+        val commonPrefix = Strings.commonPrefix(prefix, replacement)
         if (commonPrefix.isNotBlank() && commonPrefix.contains('\n')) replacement = replacement.substring(commonPrefix.length)
         val largestCommonSubstring = largestCommonSubstring(replacement, suffix)
         if (largestCommonSubstring.isNotBlank()) replacement = replacement.substring(0, replacement.indexOf(largestCommonSubstring))
@@ -121,6 +118,7 @@ class LargeOutputActor(
     )
   }
 }
+
 
 fun largestCommonSubstring(a: String, b: String): String {
   val lengths = Array(a.length + 1) { IntArray(b.length + 1) }

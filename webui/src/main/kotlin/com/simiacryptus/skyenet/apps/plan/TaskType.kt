@@ -49,6 +49,24 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
 
     private val taskConstructors =
       mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
+    val EssayWriter = TaskType(
+      "EssayWriter",
+      EssayWriterTask.EssayWriterTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Generate polished essays with iterative refinement",
+      """
+      Creates high-quality essays with multi-step refinement process.
+      <ul>
+        <li>Generates structured initial content</li>
+        <li>Removes redundancies and unnecessary framing</li>
+        <li>Enhances narrative flow and engagement</li>
+        <li>Supports reference material integration</li>
+        <li>Configurable tone and audience targeting</li>
+        <li>Flexible word count targets</li>
+        <li>Interactive review and approval workflow</li>
+      </ul>
+    """
+    )
 
     val TaskPlanning = TaskType(
       "TaskPlanning",
@@ -427,6 +445,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     )
 
     init {
+      registerConstructor(EssayWriter) { settings, task -> EssayWriterTask(settings, task) }
       registerConstructor(CommandAutoFix) { settings, task -> CommandAutoFixTask(settings, task) }
       registerConstructor(Inquiry) { settings, task -> InquiryTask(settings, task) }
       registerConstructor(Search) { settings, task -> FileSearchTask(settings, task) }

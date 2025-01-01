@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.diff.FileValidationUtils
-import com.simiacryptus.diff.addApplyFileDiffLinks
+import com.simiacryptus.diff.AddApplyFileDiffLinks.Companion.instrumentFileDiffs
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModel
@@ -358,7 +358,8 @@ abstract class PatchApp(
         }\n${if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else ""}"
       ), api = api
     )
-    var markdown = ui.socketManager?.addApplyFileDiffLinks(
+    var markdown = instrumentFileDiffs(
+      ui.socketManager!!,
       root = root.toPath(),
       response = response,
       ui = ui,
