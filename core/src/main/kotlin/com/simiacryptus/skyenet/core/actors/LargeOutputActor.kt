@@ -12,6 +12,15 @@ import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import org.slf4j.LoggerFactory
 
 /**
+ * Data class representing a refinement step with a name and prompt
+ */
+data class RefinementStep(
+  val name: String,
+  val prompt: String,
+  val perSection: Boolean = false
+)
+
+/**
  * An actor that handles large outputs by using recursive replacement.
  * It instructs the initial LLM call to use ellipsis expressions to manage result size,
  * then recursively expands the result by searching for the pattern and making additional LLM calls.
@@ -29,11 +38,23 @@ class LargeOutputActor(
   model: TextModel = OpenAIModels.GPT4o,
   temperature: Double = 0.3,
   private val maxIterations: Int = 3,
-  private val namedEllipsisPattern: Regex = Regex("""\.\.\.(?<sectionName>[\w\s-_]+?)\.\.\."""),
-  val refinementSteps: List<Pair<String, String>> = listOf(
-    "RedundancyReviewer" to "Review the text to identify and remove instances of redundant text or unnecessary framing language. Provide changes as a diff.",
-    "NarrativeEnhancer" to "Review and enhance the text's narrative quality and flow. Provide changes as a diff.",
-    "StyleConsistencyReviewer" to "Review and improve consistency in style, tone and terminology. Provide changes as a diff."
+  private val namedEllipsisPattern: Regex = Regex("""\.\.\.(?<sectionName>[\w\s\-_]+?)\.\.\."""),
+  private val refinementSteps: List<RefinementStep> = listOf(
+    RefinementStep(
+      "RedundancyReviewer",
+      "Review the text to identify and remove instances of redundant text or unnecessary framing language. Provide changes as a diff.",
+      perSection = false
+    ),
+    RefinementStep(
+      "NarrativeEnhancer",
+      "Review and enhance the text's narrative quality and flow. Provide changes as a diff.",
+      perSection = true
+    ),
+    RefinementStep(
+      "StyleConsistencyReviewer",
+      "Review and improve consistency in style, tone and terminology. Provide changes as a diff.",
+      perSection = false
+    )
   )
 ) : BaseActor<List<String>, String>(
   prompt = prompt, name = name, model = model, temperature = temperature
@@ -54,6 +75,8 @@ class LargeOutputActor(
   override fun respond(input: List<String>, api: API, vararg messages: ApiModel.ChatMessage): String {
     var accumulatedResponse = ""
     var iterations = 0
+    if (input.isEmpty()) return ""
+    
     while (iterations < maxIterations) {
       if (accumulatedResponse.isEmpty()) {
         accumulatedResponse = response(*messages, api = api).choices.first().message?.content?.trim() ?: throw RuntimeException("No response from LLM")
@@ -97,7 +120,6 @@ class LargeOutputActor(
         val original = response.choices.first().message?.content?.trim() ?: ""
         var replacement = original
         if (replacement.isEmpty()) return acc
-        //val replaced = acc.substring(match.range)
         if (replacement.startsWith("```")) {
           replacement = replacement.lines().drop(1).reversed().dropWhile { !it.startsWith("```") }.drop(1).reversed().joinToString("\n")
         }
@@ -114,22 +136,48 @@ class LargeOutputActor(
     }
     // Apply refinement steps after content expansion
     val diffApplier = SimpleDiffApplier()
-    refinementSteps.forEach { (name, prompt) ->
-      val refinementResponse = response(
-        ApiModel.ChatMessage(
-          role = ApiModel.Role.system,
-          content = (prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
-        ),
-        ApiModel.ChatMessage(
-          role = ApiModel.Role.user,
-          content = accumulatedResponse.toContentList()
-        ),
-        api = api
-      )
+    refinementSteps.forEach { step ->
       try {
-        accumulatedResponse = diffApplier.apply(accumulatedResponse, refinementResponse.choices.first().message?.content ?: "")
+        if (step.perSection) {
+          // Split content into H1 sections
+          val sections = splitIntoH1Sections(accumulatedResponse)
+          var modifiedContent = ""
+          sections.forEach { (header, content) ->
+            val sectionResponse = response(
+              ApiModel.ChatMessage(
+                role = ApiModel.Role.system,
+                content = (step.prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
+              ),
+              ApiModel.ChatMessage(
+                role = ApiModel.Role.user,
+                content = content.toContentList()
+              ),
+              api = api
+            )
+            val modifiedSection = diffApplier.apply(content, sectionResponse.choices.first().message?.content ?: "")
+            modifiedContent += if (header.isNotEmpty()) "$header\n$modifiedSection\n\n" else modifiedSection
+          }
+          accumulatedResponse = modifiedContent.trim()
+        } else {
+          // Apply refinement to entire content
+          val refinementResponse = response(
+            ApiModel.ChatMessage(
+              role = ApiModel.Role.system,
+              content = (step.prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
+            ),
+            ApiModel.ChatMessage(
+              role = ApiModel.Role.user,
+              content = accumulatedResponse.toContentList()
+            ),
+            api = api
+          )
+          accumulatedResponse = diffApplier.apply(
+            accumulatedResponse,
+            refinementResponse.choices.first().message?.content ?: ""
+          )
+        }
       } catch (e: Exception) {
-        log.warn("Error applying $name refinement", e)
+        log.warn("Error applying ${step.name} refinement", e)
       }
     }
     return accumulatedResponse
@@ -148,16 +196,48 @@ class LargeOutputActor(
   }
   companion object {
     private val log = LoggerFactory.getLogger(LargeOutputActor::class.java)
+
+    /**
+     * Splits content into sections based on H1 headers (# Header)
+     * Returns a list of pairs containing the header and its content
+     */
+    private fun splitIntoH1Sections(content: String): List<Pair<String, String>> {
+      val h1Pattern = Regex("^#\\s+.*$", RegexOption.MULTILINE)
+      val matches = h1Pattern.findAll(content)
+      val positions = matches.map { it.range.first }.toList()
+
+      // Handle case where content has no headers
+      if (positions.isEmpty()) {
+        return listOf(Pair("", content.trim()))
+      }
+
+      return positions.mapIndexed { index, start ->
+        val headerEnd = content.indexOf('\n', start).takeIf { it != -1 } ?: content.length
+        val header = content.substring(start, headerEnd)
+        val contentStart = headerEnd + 1
+        val contentEnd = if (index < positions.size - 1) positions[index + 1] else content.length
+        Pair(header, content.substring(contentStart, contentEnd).trim())
+      }
+    }
   }
 }
 
 
 fun largestCommonSubstring(a: String, b: String): String {
+  if (a.isEmpty() || b.isEmpty()) return ""
+  // Early optimization for common case
+  if (a == b) return a
+  
+
   val lengths = Array(a.length + 1) { IntArray(b.length + 1) }
   var z = 0
   var ret = ""
-  for (i in 0 until a.length) {
-    for (j in 0 until b.length) {
+  // Use sliding window optimization for very long strings
+  val maxWindow = 10000
+  val aLen = minOf(a.length, maxWindow)
+  val bLen = minOf(b.length, maxWindow)
+  for (i in 0 until aLen) {
+    for (j in 0 until bLen) {
       if (a[i] == b[j]) {
         lengths[i + 1][j + 1] = lengths[i][j] + 1
         val len = lengths[i + 1][j + 1]
