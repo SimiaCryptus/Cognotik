@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory
 data class RefinementStep(
   val name: String,
   val prompt: String,
-  val perSection: Boolean = false
+  val perSection: Boolean = false,
+  val iterations: Int = 1
 )
 
 /**
@@ -43,18 +44,21 @@ class LargeOutputActor(
     RefinementStep(
       "RedundancyReviewer",
       "Review the text to identify and remove instances of redundant text or unnecessary framing language. Provide changes as a diff.",
-      perSection = false
+      perSection = false,
+      iterations = 2
     ),
     RefinementStep(
       "NarrativeEnhancer",
       "Review and enhance the text's narrative quality and flow. Provide changes as a diff.",
-      perSection = true
+      perSection = true,
+      iterations = 1
     ),
     RefinementStep(
       "StyleConsistencyReviewer",
       "Review and improve consistency in style, tone and terminology. Provide changes as a diff.",
-      perSection = false
-    )
+      perSection = false,
+      iterations = 1
+    ),
   )
 ) : BaseActor<List<String>, String>(
   prompt = prompt, name = name, model = model, temperature = temperature
@@ -141,43 +145,45 @@ class LargeOutputActor(
     val diffApplier = SimpleDiffApplier()
     refinementSteps.forEach { step ->
       try {
-        if (step.perSection) {
-          // Split content into H1 sections
-          val sections = splitIntoH1Sections(accumulatedResponse)
-          var modifiedContent = ""
-          sections.forEach { (header, content) ->
-            val sectionResponse = response(
+        repeat(step.iterations) { iteration ->
+          if (step.perSection) {
+            // Split content into H1 sections
+            val sections = splitIntoH1Sections(accumulatedResponse)
+            var modifiedContent = ""
+            sections.forEach { (header, content) ->
+              val sectionResponse = response(
+                ApiModel.ChatMessage(
+                  role = ApiModel.Role.system,
+                  content = (step.prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
+                ),
+                ApiModel.ChatMessage(
+                  role = ApiModel.Role.user,
+                  content = content.toContentList()
+                ),
+                api = api
+              )
+              val modifiedSection = diffApplier.apply(content, sectionResponse.choices.first().message?.content ?: "")
+              modifiedContent += if (header.isNotEmpty()) "$header\n$modifiedSection\n\n" else modifiedSection
+            }
+            accumulatedResponse = modifiedContent.trim()
+          } else {
+            // Apply refinement to entire content
+            val refinementResponse = response(
               ApiModel.ChatMessage(
                 role = ApiModel.Role.system,
                 content = (step.prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
               ),
               ApiModel.ChatMessage(
                 role = ApiModel.Role.user,
-                content = content.toContentList()
+                content = accumulatedResponse.toContentList()
               ),
               api = api
             )
-            val modifiedSection = diffApplier.apply(content, sectionResponse.choices.first().message?.content ?: "")
-            modifiedContent += if (header.isNotEmpty()) "$header\n$modifiedSection\n\n" else modifiedSection
+            accumulatedResponse = diffApplier.apply(
+              accumulatedResponse,
+              refinementResponse.choices.first().message?.content ?: ""
+            )
           }
-          accumulatedResponse = modifiedContent.trim()
-        } else {
-          // Apply refinement to entire content
-          val refinementResponse = response(
-            ApiModel.ChatMessage(
-              role = ApiModel.Role.system,
-              content = (step.prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
-            ),
-            ApiModel.ChatMessage(
-              role = ApiModel.Role.user,
-              content = accumulatedResponse.toContentList()
-            ),
-            api = api
-          )
-          accumulatedResponse = diffApplier.apply(
-            accumulatedResponse,
-            refinementResponse.choices.first().message?.content ?: ""
-          )
         }
       } catch (e: Exception) {
         log.warn("Error applying ${step.name} refinement", e)
