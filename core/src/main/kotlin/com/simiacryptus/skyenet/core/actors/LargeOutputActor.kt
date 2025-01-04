@@ -76,15 +76,18 @@ class LargeOutputActor(
     var accumulatedResponse = ""
     var iterations = 0
     if (input.isEmpty()) return ""
+    val expandedSections = mutableSetOf<String>()
     
     while (iterations < maxIterations) {
       if (accumulatedResponse.isEmpty()) {
-        accumulatedResponse = response(*messages, api = api).choices.first().message?.content?.trim() ?: throw RuntimeException("No response from LLM")
+        accumulatedResponse = response(input = messages, api = api).choices.first().message?.content?.trim() ?: throw RuntimeException("No response from LLM")
       }
       val matches = namedEllipsisPattern.findAll(accumulatedResponse).toMutableList()
       if (matches.isEmpty()) break
       val pairs = matches.mapNotNull { matchResult ->
         val nextSection = matchResult.groups["sectionName"]?.value ?: return@mapNotNull null
+        if (expandedSections.contains(nextSection)) return@mapNotNull null
+        expandedSections.add(nextSection)
         val contextLines = 100
         val contextChars = 10000
         Pair(
@@ -225,14 +228,10 @@ class LargeOutputActor(
 
 fun largestCommonSubstring(a: String, b: String): String {
   if (a.isEmpty() || b.isEmpty()) return ""
-  // Early optimization for common case
   if (a == b) return a
-  
-
   val lengths = Array(a.length + 1) { IntArray(b.length + 1) }
   var z = 0
   var ret = ""
-  // Use sliding window optimization for very long strings
   val maxWindow = 10000
   val aLen = minOf(a.length, maxWindow)
   val bLen = minOf(b.length, maxWindow)

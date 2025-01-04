@@ -13,8 +13,13 @@ abstract class BaseActor<I, R>(
   val model: TextModel,
   val temperature: Double = 0.3,
 ) {
-  abstract fun respond(input: I, api: API, vararg messages: ApiModel.ChatMessage): R
-  open fun response(vararg input: ApiModel.ChatMessage, model: OpenAIModel = this.model, api: API) =
+  abstract fun respond(
+    input: I,
+    api: API,
+    vararg messages: ApiModel.ChatMessage = this.chatMessages(input),
+  ): R
+
+  protected open fun response(vararg input: ApiModel.ChatMessage, model: OpenAIModel = this.model, api: API) =
     (api as ChatClient).chat(
       ApiModel.ChatRequest(
         messages = ArrayList(input.toList()),

@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.webui.test
 
-import com.simiacryptus.diff.AddApplyFileDiffLinks.Companion.instrumentFileDiffs
+import com.simiacryptus.diff.AddApplyFileDiffLinks
+
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.skyenet.core.platform.Session
@@ -43,7 +44,7 @@ open class FilePatchTestApp(
       +Goodbye, World!
       ```
       """.trimIndent()
-    val newPatch = instrumentFileDiffs(
+    val newPatch = AddApplyFileDiffLinks.instrumentFileDiffs(
       socketManager,
       root = sourceFile.toPath().parent,
       response = patch,

@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.general
 
-import com.simiacryptus.diff.AddApplyFileDiffLinks.Companion.instrumentFileDiffs
+import com.simiacryptus.diff.AddApplyFileDiffLinks
+
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -372,7 +373,7 @@ class WebDevAgent(
       },
       outputFn = { code ->
         renderMarkdown(
-          instrumentFileDiffs(
+          AddApplyFileDiffLinks.instrumentFileDiffs(
             ui.socketManager!!,
             root = root.toPath(),
             response = code,

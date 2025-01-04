@@ -72,7 +72,7 @@ open class ChatSocketManager(
     }
   }
 
-  open fun respond(
+  protected open fun respond(
     api: ChatClient,
     messagesCopy: List<ApiModel.ChatMessage>
   ): String {
