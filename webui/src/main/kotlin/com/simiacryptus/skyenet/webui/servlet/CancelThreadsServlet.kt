@@ -6,15 +6,12 @@ import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
 import com.simiacryptus.skyenet.core.platform.ClientManager.RecordingThreadFactory
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
-class CancelThreadsServlet(
-  private val server: ApplicationServer,
-) : HttpServlet() {
+class CancelThreadsServlet : HttpServlet() {
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
     resp.contentType = "text/html"
     resp.status = HttpServletResponse.SC_OK

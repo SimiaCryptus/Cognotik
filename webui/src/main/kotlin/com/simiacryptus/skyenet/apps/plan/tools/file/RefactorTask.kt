@@ -1,6 +1,5 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
 import com.simiacryptus.skyenet.apps.plan.TaskType
 import com.simiacryptus.skyenet.apps.plan.tools.file.RefactorTask.RefactorTaskConfigData
@@ -11,8 +10,6 @@ class RefactorTask(
   planTask: RefactorTaskConfigData?
 ) : AbstractAnalysisTask<RefactorTaskConfigData>(planSettings, planTask) {
   class RefactorTaskConfigData(
-    @Description("Specific areas of focus for the refactoring (e.g., modularity, design patterns, naming conventions)")
-    val refactoringFocus: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     input_files: List<String>? = null,

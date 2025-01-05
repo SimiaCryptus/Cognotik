@@ -22,14 +22,6 @@ open class LogDataParsingModel(
     )
   }
 
-  private fun mergeRemainingText(text1: String?, text2: String?): String? {
-    return when {
-      text1.isNullOrBlank() -> text2
-      text2.isNullOrBlank() -> text1
-      else -> "$text1\n$text2"
-    }?.takeIf { it.isNotBlank() }
-  }
-
   open val exampleInstance = LogData()
 
   override fun getFastParser(api: API): (String) -> LogData {

@@ -457,16 +457,6 @@ Correct the code and try again.
       }
     }
 
-    fun String.upperSnakeCase(locale: Locale = Locale.getDefault()): String =
-      fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("_") {
-        it.replaceFirstChar { c ->
-          when {
-            c.isLowerCase() -> c.titlecase(locale)
-            else -> c.toString()
-          }
-        }
-      }.uppercase(locale)
-
     fun String.imports(): List<String> {
       return this.split("\n").filter { it.trim().startsWith("import ") }.distinct().sorted()
     }

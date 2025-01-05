@@ -49,16 +49,24 @@ abstract class ShellToolAgent<T : Interpreter>(
   temperature: Double = 0.1,
   details: String? = null,
   model: ChatModel,
-  actorMap: Map<ActorTypes, CodingActor> = mapOf(
-    ActorTypes.CodingActor to CodingActor(
-      interpreter, symbols = symbols, temperature = temperature, details = details, model = model
-    )
-  ),
   mainTask: SessionTask = ui.newTask(),
 ) : CodingAgent<T>(
-  api, dataStorage, session, user, ui, interpreter, symbols, temperature, details, model, mainTask, actorMap
+  api = api,
+  dataStorage = dataStorage,
+  session = session,
+  user = user,
+  ui = ui,
+  interpreter = interpreter,
+  symbols = symbols,
+  temperature = temperature,
+  details = details,
+  model = model,
+  mainTask = mainTask
 ) {
-
+  override val actor: CodingActor
+    get() = CodingActor(
+      interpreter, symbols = symbols, temperature = temperature, details = details, model = model
+    )
 
   override fun displayFeedback(task: SessionTask, request: CodingActor.CodeRequest, response: CodeResult) {
     val formText = StringBuilder()
@@ -420,20 +428,6 @@ abstract class ShellToolAgent<T : Interpreter>(
         )
       }'>Test Page</a> for  ${openAPI.paths?.entries?.first()?.key ?: "unknown"} Saved"
     )
-  }
-
-  abstract fun getInterpreterString(): String
-
-  private fun answer(
-    actor: CodingActor,
-    request: CodingActor.CodeRequest,
-    task: SessionTask = ui.newTask(),
-    feedback: Boolean = true,
-  ): CodeResult {
-    val response = actor.answer(request, api = api)
-    if (feedback) displayCodeAndFeedback(task, request, response)
-    else displayCode(task, response)
-    return response
   }
 
   companion object {

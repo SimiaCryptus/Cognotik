@@ -55,9 +55,9 @@ abstract class ApplicationServer(
   protected open val fileIndex by lazy { ServletHolder("fileIndex", SessionFileServlet(dataStorage)) }
   protected open val sessionSettingsServlet by lazy { ServletHolder("settings", SessionSettingsServlet(this)) }
   protected open val sessionShareServlet by lazy { ServletHolder("share", SessionShareServlet(this)) }
-  protected open val sessionThreadsServlet by lazy { ServletHolder("threads", SessionThreadsServlet(this)) }
+  protected open val sessionThreadsServlet by lazy { ServletHolder("threads", SessionThreadsServlet()) }
   protected open val deleteSessionServlet by lazy { ServletHolder("delete", DeleteSessionServlet(this)) }
-  protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet(this)) }
+  protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
   override fun newSession(user: User?, session: Session): SocketManager {
     dataStorage.setJson(
@@ -168,21 +168,6 @@ abstract class ApplicationServer(
   }
 
   companion object {
-
-    fun getMimeType(filename: String): String =
-      when {
-        filename.endsWith(".html") -> "text/html"
-        filename.endsWith(".json") -> "application/json"
-        filename.endsWith(".js") -> "application/javascript"
-        filename.endsWith(".png") -> "image/png"
-        filename.endsWith(".jpg") -> "image/jpeg"
-        filename.endsWith(".jpeg") -> "image/jpeg"
-        filename.endsWith(".gif") -> "image/gif"
-        filename.endsWith(".svg") -> "image/svg+xml"
-        filename.endsWith(".css") -> "text/css"
-        filename.endsWith(".mp3") -> "audio/mpeg"
-        else -> "text/plain"
-      }
 
     fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
       cookies?.find { it.name == name }?.value

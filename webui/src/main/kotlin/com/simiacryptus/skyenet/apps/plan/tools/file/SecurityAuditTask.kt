@@ -1,6 +1,5 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
 import com.simiacryptus.skyenet.apps.plan.TaskType
 import com.simiacryptus.skyenet.apps.plan.tools.file.SecurityAuditTask.SecurityAuditTaskConfigData
@@ -13,8 +12,6 @@ class SecurityAuditTask(
 
 
   class SecurityAuditTaskConfigData(
-    @Description("Specific areas of focus for the security audit")
-    val focusAreas: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     input_files: List<String>? = null,

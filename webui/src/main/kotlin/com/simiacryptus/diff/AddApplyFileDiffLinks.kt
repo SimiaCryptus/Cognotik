@@ -260,19 +260,11 @@ open class AddApplyFileDiffLinks {
     }
   }
 
-  private data class PatchAndCodeList(
-    val changes: List<PatchOrCode>,
-  )
-
   private data class PatchOrCode(
     val id: String? = null,
     val type: String? = null,
     val filename: String? = null,
     val data: String? = null,
-  )
-
-  private data class CorrectedPatchAndCodeList(
-    val changes: List<CorrectedPatchOrCode>? = null,
   )
 
   private data class CorrectedPatchOrCode(

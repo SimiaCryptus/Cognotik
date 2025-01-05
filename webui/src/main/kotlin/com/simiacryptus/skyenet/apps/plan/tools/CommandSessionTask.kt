@@ -22,20 +22,6 @@ class CommandSessionTask(
     private const val TIMEOUT_MS = 30000L // 30 second timeout
     private const val MAX_SESSIONS = 10 // Maximum number of concurrent sessions
 
-    fun closeSession(sessionId: String) {
-      activeSessions.remove(sessionId)?.let { process ->
-        try {
-          process.destroy()
-          if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            process.destroyForcibly()
-          }
-        } catch (e: Exception) {
-          log.error("Error closing session $sessionId", e)
-          throw e
-        }
-      }
-    }
-
     private fun cleanupInactiveSessions() {
       activeSessions.entries.removeIf { (id, process) ->
         try {
@@ -51,21 +37,6 @@ class CommandSessionTask(
       }
     }
 
-    fun closeAllSessions() {
-      activeSessions.forEach { (id, process) ->
-        try {
-          process.destroy()
-          if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            process.destroyForcibly()
-          }
-        } catch (e: Exception) {
-          log.error("Error closing session $id", e)
-        }
-      }
-      activeSessions.clear()
-    }
-
-    fun getActiveSessionCount(): Int = activeSessions.size
   }
 
   class CommandSessionTaskConfigData(

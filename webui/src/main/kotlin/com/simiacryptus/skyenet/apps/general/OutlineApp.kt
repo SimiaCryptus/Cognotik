@@ -9,9 +9,9 @@ import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.OutlineManager.NodeList
-import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.LargeOutputActor
 import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
@@ -103,10 +103,10 @@ open class OutlineApp(
 class OutlineAgent(
   val api: API,
   val api2: OpenAIClient,
-  dataStorage: StorageInterface,
-  session: Session,
-  user: User?,
-  temperature: Double,
+  val dataStorage: StorageInterface,
+  val session: Session,
+  val user: User?,
+  val temperature: Double,
   val models: List<ChatModel>,
   val firstLevelModel: ChatModel,
   val parsingModel: ChatModel,
@@ -115,12 +115,9 @@ class OutlineAgent(
   val showProjector: Boolean,
   val userMessage: String,
   val ui: ApplicationInterface
-) : ActorSystem<OutlineActors.ActorType>(
-  OutlineActors.actorMap(temperature, firstLevelModel, parsingModel).map { it.key.name to it.value }.toMap(),
-  dataStorage,
-  user,
-  session
 ) {
+  val actors = OutlineActors.actorMap(temperature, firstLevelModel, parsingModel).map { it.key.name to it.value }.toMap()
+
   private val tabbedDisplay = TabbedDisplay(ui.newTask())
 
   init {
@@ -128,11 +125,11 @@ class OutlineAgent(
   }
 
   @Suppress("UNCHECKED_CAST")
-  private val initial get() = getActor(OutlineActors.ActorType.INITIAL) as ParsedActor<NodeList>
-  private val summary get() = getActor(OutlineActors.ActorType.FINAL) as LargeOutputActor
+  private val initial get() = actors.get(OutlineActors.ActorType.INITIAL.name)!! as ParsedActor<NodeList>
+  private val summary get() = actors.get(OutlineActors.ActorType.FINAL.name)!! as LargeOutputActor
 
   @Suppress("UNCHECKED_CAST")
-  private val expand get() = getActor(OutlineActors.ActorType.EXPAND) as ParsedActor<NodeList>
+  private val expand get() = actors.get(OutlineActors.ActorType.EXPAND.name)!! as ParsedActor<NodeList>
   private val activeThreadCounter = AtomicInteger(0)
   private val tokenizer = GPT4Tokenizer(false)
 
@@ -275,7 +272,7 @@ class OutlineAgent(
         }
       }
       tabbedDisplay[item] = task.placeholder
-      pool.submit {
+      ApplicationServices.clientManager.getPool(session, user).submit {
         try {
           val newNode = processNode(node, item, manager, task, models.first(), api) ?: return@submit
           synchronized(manager.expansionMap) {

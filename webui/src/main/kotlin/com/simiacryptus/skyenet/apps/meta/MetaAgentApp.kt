@@ -20,10 +20,8 @@ import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.pascalCase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.sortCode
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.stripImports
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
-import com.simiacryptus.skyenet.core.actors.PoolSystem
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.interpreter.Interpreter
 import com.simiacryptus.skyenet.kotlin.KotlinInterpreter
@@ -93,7 +91,6 @@ open class MetaAgentApp(
       val agent = MetaAgentAgent(
         user = user,
         session = session,
-        dataStorage = dataStorage,
         api = api,
         ui = ui,
         model = settings?.model ?: OpenAIModels.GPT4oMini,
@@ -134,16 +131,13 @@ open class MetaAgentApp(
 }
 
 open class MetaAgentAgent(
-  user: User?,
-  session: Session,
-  dataStorage: StorageInterface,
+  val user: User?,
+  val session: Session,
   val ui: ApplicationInterface,
   val api: API,
   model: ChatModel = OpenAIModels.GPT4oMini,
   var autoEvaluate: Boolean = true,
   temperature: Double = 0.3,
-) : PoolSystem(
-  dataStorage, user, session
 ) {
 
   private val highLevelDesigner by lazy { HighLevelDesigner(model, temperature) }
@@ -430,7 +424,7 @@ open class MetaAgentAgent(
     userMessage: String,
     design: ParsedResponse<AgentDesign>,
   ) = design.obj.actors?.map { actorDesign ->
-    pool.submit<Pair<String, String>> {
+    ApplicationServices.clientManager.getPool(session, user).submit<Pair<String, String>> {
       val task = ui.newTask()
       try {
         implementActor(task, actorDesign, userMessage, design)

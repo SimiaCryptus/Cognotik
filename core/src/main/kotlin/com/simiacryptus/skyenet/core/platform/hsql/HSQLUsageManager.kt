@@ -1,6 +1,5 @@
 package com.simiacryptus.skyenet.core.platform.hsql
 
-import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModel
@@ -12,7 +11,6 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.Timestamp
-import java.util.concurrent.atomic.AtomicLong
 
 class HSQLUsageManager(private val dbFile: File) : UsageInterface {
 
@@ -43,17 +41,6 @@ class HSQLUsageManager(private val dbFile: File) : UsageInterface {
     )
   }
 
-
-  private fun updateSchema() {
-    log.info("Updating database schema if needed")
-    // Add schema update logic here if needed
-  }
-
-  private fun deleteSchema() {
-    log.info("Deleting database schema if exists")
-    connection.createStatement().executeUpdate("DROP TABLE IF EXISTS usage")
-    log.debug("Schema deleted")
-  }
 
   override fun incrementUsage(session: Session, apiKey: String?, model: OpenAIModel, tokens: ApiModel.Usage) {
     try {
@@ -101,27 +88,6 @@ class HSQLUsageManager(private val dbFile: File) : UsageInterface {
   override fun clear() {
     log.debug("Executing SQL statement to clear all usage data")
     connection.createStatement().executeUpdate("DELETE FROM usage")
-  }
-
-  private fun getUsageValues(usageKey: UsageInterface.UsageKey): UsageInterface.UsageValues {
-    log.debug("Getting usage values for session: ${usageKey.session.sessionId}, apiKey: ${usageKey.apiKey}, model: ${usageKey.model.modelName}")
-    val statement = connection.prepareStatement(
-      """
-         SELECT COALESCE(SUM(prompt_tokens), 0), COALESCE(SUM(completion_tokens), 0), COALESCE(SUM(cost), 0)
-         FROM usage
-         WHERE session_id = ? AND api_key = ? AND model = ?
-         """
-    )
-    statement.setString(1, usageKey.session.sessionId)
-    statement.setString(2, usageKey.apiKey ?: "")
-    statement.setString(3, usageKey.model.toString())
-    val resultSet = statement.executeQuery()
-    resultSet.next()
-    return UsageInterface.UsageValues(
-      AtomicLong(resultSet.getLong(1)),
-      AtomicLong(resultSet.getLong(2)),
-      AtomicDouble(resultSet.getDouble(3))
-    )
   }
 
   private fun saveUsageValues(usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues) {

@@ -89,13 +89,13 @@ open class WebFetchAndTransformTask(
 
   private fun transformContent(content: String, transformationGoal: String, api: API, planSettings: PlanSettings): String {
     val prompt = """
-            Transform the following web content according to this goal: $transformationGoal
-            
-            Content:
-            $content
-            
-            Transformed content:
-        """.trimIndent()
+        Transform the following web content according to this goal: $transformationGoal
+        
+        Content:
+        $content
+        
+        Transformed content:
+      """.trimIndent()
     return SimpleActor(
       prompt = prompt,
       model = planSettings.defaultModel,

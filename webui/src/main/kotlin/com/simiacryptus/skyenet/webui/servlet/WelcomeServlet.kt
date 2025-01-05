@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.http.MimeTypes
-import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.nio.file.NoSuchFileException
 
@@ -97,13 +96,6 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
       }
     }
   }
-
-  @Language("Markdown")
-  protected open val welcomeMarkdown = """""".trimIndent()
-
-  @Language("Markdown")
-  protected open val postAppMarkdown = """""".trimIndent()
-
 
   companion object {
     val log = LoggerFactory.getLogger(WelcomeServlet::class.java)

@@ -6,7 +6,6 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.Retryable
-import com.simiacryptus.skyenet.core.actors.ActorSystem
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.core.actors.CodingActor.CodeResult
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
@@ -26,28 +25,28 @@ import kotlin.reflect.KClass
 
 open class CodingAgent<T : Interpreter>(
   val api: API,
-  dataStorage: StorageInterface,
-  session: Session,
-  user: User?,
+  val dataStorage: StorageInterface,
+  val session: Session,
+  val user: User?,
   val ui: ApplicationInterface,
-  interpreter: KClass<T>,
+  val interpreter: KClass<T>,
   val symbols: Map<String, Any>,
-  temperature: Double = 0.1,
+  val temperature: Double = 0.1,
   val details: String? = null,
   val model: TextModel,
   private val mainTask: SessionTask,
-  val actorMap: Map<ActorTypes, CodingActor> = mapOf(
+) {
+  val actors = mapOf(
     ActorTypes.CodingActor to CodingActor(
       interpreter, symbols = symbols, temperature = temperature, details = details, model = model
     )
-  ),
-) : ActorSystem<CodingAgent.ActorTypes>(actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session) {
+  ).map { it.key.name to it.value }.toMap()
   enum class ActorTypes {
     CodingActor
   }
 
   open val actor by lazy {
-    getActor(ActorTypes.CodingActor) as CodingActor
+    actors.get(ActorTypes.CodingActor.name)!! as CodingActor
   }
 
   open val canPlay by lazy {

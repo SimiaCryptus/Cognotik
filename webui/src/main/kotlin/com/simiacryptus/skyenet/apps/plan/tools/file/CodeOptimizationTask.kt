@@ -1,6 +1,5 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
 import com.simiacryptus.skyenet.apps.plan.TaskType
 import com.simiacryptus.skyenet.apps.plan.tools.file.CodeOptimizationTask.CodeOptimizationTaskConfigData
@@ -12,8 +11,6 @@ class CodeOptimizationTask(
 ) : AbstractAnalysisTask<CodeOptimizationTaskConfigData>(planSettings, planTask) {
 
   class CodeOptimizationTaskConfigData(
-    @Description("Specific areas of focus for the optimization")
-    val optimizationFocus: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     input_files: List<String>? = null,

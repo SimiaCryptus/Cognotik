@@ -17,6 +17,7 @@ import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.actors.*
+import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
@@ -84,14 +85,17 @@ open class WebDevApp(
 class WebDevAgent(
   val api: API,
   val api2: OpenAIClient,
-  dataStorage: StorageInterface,
-  session: Session,
-  user: User?,
+  val dataStorage: StorageInterface,
+  val session: Session,
+  val user: User?,
   val ui: ApplicationInterface,
   val model: ChatModel,
   val parsingModel: ChatModel,
   val tools: List<String> = emptyList(),
-  @Language("Markdown") val actorMap: Map<ActorTypes, BaseActor<*, *>> = mapOf(
+  val root: File,
+) {
+  @Language("Markdown")
+  val actors = mapOf(
     ActorTypes.ArchitectureDiscussionActor to ParsedActor(
 //      parserClass = PageResourceListParser::class.java,
       resultClass = ProjectSpec::class.java,
@@ -182,9 +186,8 @@ class WebDevAgent(
     ).apply {
       setImageAPI(api2)
     },
-  ),
-  val root: File,
-) : ActorSystem<WebDevAgent.ActorTypes>(actorMap.map { it.key.name to it.value }.toMap(), dataStorage, user, session) {
+  ).map { it.key.name to it.value }.toMap()
+
   enum class ActorTypes {
     HtmlCodingActor,
     JavascriptCodingActor,
@@ -195,13 +198,13 @@ class WebDevAgent(
     ImageActor,
   }
 
-  private val architectureDiscussionActor by lazy { getActor(ActorTypes.ArchitectureDiscussionActor) as ParsedActor<ProjectSpec> }
-  private val htmlActor by lazy { getActor(ActorTypes.HtmlCodingActor) as SimpleActor }
-  private val imageActor by lazy { getActor(ActorTypes.ImageActor) as ImageActor }
-  private val javascriptActor by lazy { getActor(ActorTypes.JavascriptCodingActor) as SimpleActor }
-  private val cssActor by lazy { getActor(ActorTypes.CssCodingActor) as SimpleActor }
-  private val codeReviewer by lazy { getActor(ActorTypes.CodeReviewer) as SimpleActor }
-  private val etcActor by lazy { getActor(ActorTypes.EtcCodingActor) as SimpleActor }
+  private val architectureDiscussionActor by lazy { actors.get(ActorTypes.ArchitectureDiscussionActor.name)!! as ParsedActor<ProjectSpec> }
+  private val htmlActor by lazy { actors.get(ActorTypes.HtmlCodingActor.name)!! as SimpleActor }
+  private val imageActor by lazy { actors.get(ActorTypes.ImageActor.name)!! as ImageActor }
+  private val javascriptActor by lazy { actors.get(ActorTypes.JavascriptCodingActor.name)!! as SimpleActor }
+  private val cssActor by lazy { actors.get(ActorTypes.CssCodingActor.name)!! as SimpleActor }
+  private val codeReviewer by lazy { actors.get(ActorTypes.CodeReviewer.name)!! as SimpleActor }
+  private val etcActor by lazy { actors.get(ActorTypes.EtcCodingActor.name)!! as SimpleActor }
 
   private val codeFiles = mutableSetOf<Path>()
 
@@ -259,7 +262,7 @@ class WebDevAgent(
         val task = ui.newTask(false).apply { fileTabs[path.toString()] = placeholder }
         task.header("Drafting $path")
         codeFiles.add(File(path).toPath())
-        pool.submit {
+        ApplicationServices.clientManager.getPool(session, user).submit {
           when (path!!.split(".").last().lowercase()) {
 
             "js" -> draftResourceCode(

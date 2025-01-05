@@ -10,7 +10,10 @@ import org.apache.hc.client5.http.impl.cookie.BasicClientCookie
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.http.Method
 import org.jsoup.Jsoup
-import org.openqa.selenium.*
+import org.openqa.selenium.By
+import org.openqa.selenium.JavascriptExecutor
+import org.openqa.selenium.WebDriver
+import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
@@ -21,7 +24,6 @@ import java.net.URI
 import java.net.URL
 import java.time.Duration
 import java.time.temporal.ChronoUnit
-import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 import java.util.concurrent.ThreadPoolExecutor
@@ -469,29 +471,6 @@ open class Selenium2S3(
     }
 
     private val chromeDriverService by lazy { ChromeDriverService.createDefaultService() }
-    fun setCookies(
-      driver: WebDriver,
-      cookies: Array<out jakarta.servlet.http.Cookie>?,
-      domain: String? = null
-    ) {
-      cookies?.forEach { cookie ->
-        try {
-          driver.manage().addCookie(
-            Cookie(
-              /* name = */ cookie.name,
-              /* value = */ cookie.value,
-              /* domain = */ cookie.domain ?: domain,
-              /* path = */ cookie.path,
-              /* expiry = */ if (cookie.maxAge <= 0) null else Date(cookie.maxAge * 1000L),
-              /* isSecure = */ cookie.secure,
-              /* isHttpOnly = */ cookie.isHttpOnly
-            )
-          )
-        } catch (e: Exception) {
-          log.warn("Error setting cookie: $cookie", e)
-        }
-      }
-    }
   }
 
 }

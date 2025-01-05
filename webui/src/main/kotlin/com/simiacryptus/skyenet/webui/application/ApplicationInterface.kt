@@ -8,8 +8,6 @@ import java.util.function.Consumer
 
 open class ApplicationInterface(val socketManager: SocketManagerBase?) {
 
-  open fun isInteractive() = true
-
   @Description("Returns html for a link that will trigger the given handler when clicked.")
   open fun hrefLink(
     @Description("The text to display in the link")
