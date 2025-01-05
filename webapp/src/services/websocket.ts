@@ -39,8 +39,14 @@ export class WebSocketService {
 
     // Add reconnect method
     public reconnect(): void {
-        if (this.isReconnecting) return;
+        if (this.isReconnecting) {
+            console.warn('[WebSocket] Already attempting to reconnect');
+            return;
+        }
+        this.forcedClose = false;
         this.disconnect();
+        this.reconnectAttempts = 0;
+        this.isReconnecting = false;
         this.connect(this.sessionId);
     }
 
@@ -49,6 +55,8 @@ export class WebSocketService {
             this.forcedClose = true;
             console.log('[WebSocket] Initiating disconnect');
             this.isReconnecting = false;
+            this.reconnectAttempts = 0;
+            this.clearTimers();
             this.ws.close();
             this.ws = null;
             console.log('[WebSocket] Disconnected successfully');
@@ -242,6 +250,7 @@ export class WebSocketService {
     private reconnectAndSend(message: string): void {
         if (this.isReconnecting) {
             console.warn('[WebSocket] Already attempting to reconnect');
+            this.queueMessage(message); // Queue message to be sent after reconnection
             return;
         }
         console.log('[WebSocket] Attempting to reconnect before sending message');
@@ -253,6 +262,7 @@ export class WebSocketService {
             }
         };
         this.addConnectionHandler(onConnect);
+        this.forcedClose = false;
         this.connect(this.sessionId);
     }
 
@@ -463,7 +473,11 @@ export class WebSocketService {
     }
 
     private attemptReconnect(): void {
-        if (this.isReconnecting) return;
+        if (this.forcedClose) {
+            console.log('[WebSocket] Not reconnecting - connection was forcefully closed');
+            return;
+        }
+
         const backoffDelay = Math.min(
             this.BASE_RECONNECT_DELAY * Math.pow(2, this.reconnectAttempts),
             this.MAX_RECONNECT_DELAY
@@ -478,9 +492,11 @@ export class WebSocketService {
             );
             this.isReconnecting = false;
             this.reconnectAttempts = 0;
+            this.forcedClose = true;
             return;
         }
         this.isReconnecting = true;
+        this.emit('reconnecting', this.reconnectAttempts + 1);
         console.log(`[WebSocket] Attempting reconnect #${this.reconnectAttempts + 1} in ${backoffDelay}ms`);
         // Show reconnection status to user
         this.connectionHandlers.forEach(handler =>
@@ -489,6 +505,10 @@ export class WebSocketService {
 
 
         this.timers.reconnect = setTimeout(() => {
+            if (this.ws) {
+                this.ws.close();
+                this.ws = null;
+            }
             this.reconnectAttempts++;
             this.connect(this.sessionId);
         }, backoffDelay);

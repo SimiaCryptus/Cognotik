@@ -42,13 +42,21 @@ export const useWebSocket = (sessionId: string) => {
                 }
             }, CONNECTION_TIMEOUT);
         }, 100);
+        // Reset connection status when sessionId changes
+        connectionStatus.current = {attempts: 0, lastAttempt: 0};
+        connectionAttemptRef.current = 0;
+        const handleReconnecting = (attempts: number) => {
+            setIsReconnecting(true);
+            connectionStatus.current = ({
+                attempts: attempts,
+                lastAttempt: Date.now()
+            });
+        };
         console.log('[WebSocket] Initializing hook with sessionId:', sessionId);
         if (!sessionId) {
             console.warn('[WebSocket] No sessionId provided, skipping connection');
             return;
         }
-        // Reset connection attempts on new session
-        connectionAttemptRef.current = 0;
 
         const handleMessage = (message: Message) => {
             console.log('[WebSocket] Received message:', message);
@@ -84,6 +92,7 @@ export const useWebSocket = (sessionId: string) => {
         WebSocketService.addMessageHandler(handleMessage);
         WebSocketService.addConnectionHandler(handleConnectionChange);
         WebSocketService.addErrorHandler(handleError);
+        WebSocketService.on('reconnecting', handleReconnecting);
         console.log('[WebSocket] Initiating connection...');
         WebSocketService.connect(sessionId);
 
@@ -93,6 +102,7 @@ export const useWebSocket = (sessionId: string) => {
             WebSocketService.removeMessageHandler(handleMessage);
             WebSocketService.removeConnectionHandler(handleConnectionChange);
             WebSocketService.removeErrorHandler(handleError);
+            WebSocketService.off('reconnecting', handleReconnecting);
             WebSocketService.disconnect();
             console.log('[WebSocket] Cleanup complete');
         };
