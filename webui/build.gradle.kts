@@ -112,8 +112,8 @@ dependencies {
   implementation(group = "commons-codec", name = "commons-codec", version = "1.16.0")
 
   implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
-  runtimeOnly(group = "ch.qos.logback", name = "logback-classic", version = "1.5.8")
-  runtimeOnly(group = "ch.qos.logback", name = "logback-core", version = "1.5.8")
+  runtimeOnly(group = "ch.qos.logback", name = "logback-classic", version = "1.5.13")
+  runtimeOnly(group = "ch.qos.logback", name = "logback-core", version = "1.5.13")
 
   testImplementation(kotlin("script-runtime"))
   testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")

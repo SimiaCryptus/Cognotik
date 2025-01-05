@@ -27,7 +27,7 @@ kotlin {
 }
 
 val junit_version = "5.10.1"
-val logback_version = "1.5.8"
+val logback_version = "1.5.13"
 val jackson_version = "2.17.2"
 val hsqldb_version = "2.7.2"
 

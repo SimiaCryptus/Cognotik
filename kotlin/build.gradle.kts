@@ -48,8 +48,8 @@ dependencies {
   testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
 
   implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
-  testImplementation(group = "ch.qos.logback", name = "logback-classic", version = "1.5.8")
-  testImplementation(group = "ch.qos.logback", name = "logback-core", version = "1.5.8")
+  testImplementation(group = "ch.qos.logback", name = "logback-classic", version = "1.5.13")
+  testImplementation(group = "ch.qos.logback", name = "logback-core", version = "1.5.13")
   testImplementation("org.ow2.asm:asm:9.6")
 
 
