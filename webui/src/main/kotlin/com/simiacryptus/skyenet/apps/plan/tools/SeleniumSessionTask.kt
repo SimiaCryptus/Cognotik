@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.*
-import com.simiacryptus.skyenet.apps.plan.tools.online.HtmlSimplifier
+import com.simiacryptus.skyenet.util.HtmlSimplifier
 import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.Selenium2S3
@@ -233,7 +233,8 @@ class SeleniumSessionTask(
     try {
       appendLine("\nFinal Page Source:")
       appendLine("```html")
-      appendLine(HtmlSimplifier.scrubHtml(
+      appendLine(
+        HtmlSimplifier.scrubHtml(
         str = selenium.getPageSource(),
         baseUrl = selenium.getCurrentUrl(),
         includeCssData = taskConfig?.includeCssData ?: false,

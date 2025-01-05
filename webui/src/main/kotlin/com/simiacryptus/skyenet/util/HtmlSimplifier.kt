@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.plan.tools.online
+package com.simiacryptus.skyenet.util
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document

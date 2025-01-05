@@ -8,6 +8,7 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.util.HtmlSimplifier
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
@@ -39,6 +40,14 @@ class SearchAndAnalyzeTask(
     val keep_object_ids: Boolean = false,
     @Description("Preserve whitespace in text content")
     val preserve_whitespace: Boolean = false,
+    @Description("Keep script elements in the HTML")
+    val keep_script_elements: Boolean = false,
+    @Description("Keep interactive elements like forms and buttons")
+    val keep_interactive_elements: Boolean = false,
+    @Description("Keep media elements like audio and video")
+    val keep_media_elements: Boolean = false,
+    @Description("Keep event handler attributes")
+    val keep_event_handlers: Boolean = false,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
@@ -55,11 +64,10 @@ class SearchAndAnalyzeTask(
     ** Specify number of results to analyze (max 20)
     ** Specify the analysis goal or focus
     ** Optionally configure HTML processing:
-       - base_url: Base URL for resolving relative links
-       - include_css_data: Include CSS data in output
-       - simplify_structure: Combine nested elements
-       - keep_object_ids: Preserve object IDs
-       - preserve_whitespace: Keep original whitespace
+       - keep_script_elements: Keep script elements
+       - keep_interactive_elements: Keep forms and buttons
+       - keep_media_elements: Keep audio and video elements
+       - keep_event_handlers: Keep event handler attributes
   """.trimIndent()
 
   override fun run(
@@ -105,7 +113,11 @@ class SearchAndAnalyzeTask(
             includeCssData = taskConfig?.include_css_data ?: false,
             simplifyStructure = taskConfig?.simplify_structure ?: true,
             keepObjectIds = taskConfig?.keep_object_ids ?: false,
-            preserveWhitespace = taskConfig?.preserve_whitespace ?: false
+             preserveWhitespace = taskConfig?.preserve_whitespace ?: false,
+            keepScriptElements = taskConfig?.keep_script_elements ?: false,
+            keepInteractiveElements = taskConfig?.keep_interactive_elements ?: false,
+            keepMediaElements = taskConfig?.keep_media_elements ?: false,
+            keepEventHandlers = taskConfig?.keep_event_handlers ?: false
           )
           val analysis = transformContent(content, taskConfig?.analysis_goal ?: "", api, planSettings)
           appendLine(analysis)
