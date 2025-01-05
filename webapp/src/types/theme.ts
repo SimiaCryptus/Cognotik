@@ -17,6 +17,9 @@ export interface ThemeColors {
     info: string;
     disabled: string;
     primaryDark?: string;
+    secondaryDark?: string;
+    errorDark?: string;
+    successDark?: string;
     hover?: string;
 }
 

@@ -5,11 +5,9 @@ node_modules
 .pnp
 .pnp.js
 
- # Testing
- /coverage
-
- # Production
- /build
+# Testing
+coverage/
+build/
 
 # misc
 .DS_Store
@@ -22,24 +20,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 # Remove any Gradle-related entries if they exist
- # dependencies
- /node_modules
- /.pnp
- .pnp.js
- # testing
- /coverage
- # production
- /build
- # misc
- .DS_Store
- .env.local
- .env.development.local
- .env.test.local
- .env.production.local
- npm-debug.log*
- yarn-debug.log*
- yarn-error.log*
- # IDE
- .idea/
- .vscode/
- *.iml
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+# IDE
+.idea/
+.vscode/
+*.iml

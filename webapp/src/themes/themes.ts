@@ -262,6 +262,9 @@ export const mainTheme: BaseTheme = {
         success: '#34C759',
         warning: '#FF9500',
         info: '#5856D6',
+        secondaryDark: '#4240aa',
+        errorDark: '#cc2f26',
+        successDark: '#2a9f47',
         disabled: '#E5E5EA', // Make sure this is defined in all themes
         primaryDark: '#0056b3', // Add darker shade of primary
         hover: '#2C5282', // Add hover color
@@ -287,6 +290,9 @@ export const nightTheme: ExtendedTheme = {
         warning: '#FF9F0A',
         info: '#5E5CE6',
         primaryDark: '#0066cc',
+        secondaryDark: '#4b49b8',
+        errorDark: '#cc372e',
+        successDark: '#28ac3c',
         disabled: '#2C2C2E', // Ensure consistent property definition
     },
     ...baseTheme,
@@ -310,6 +316,9 @@ export const forestTheme: ExtendedTheme = {
         warning: '#F77F00',
         info: '#4895EF',
         primaryDark: '#1b4332',
+        secondaryDark: '#337456',
+        errorDark: '#ab2020',
+        successDark: '#42926d',
         disabled: '#2D3B35', // Ensure consistent property definition
     },
     ...baseTheme,

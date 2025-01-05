@@ -31,16 +31,6 @@ declare module 'styled-components' {
             fast: string;
             slow: string;
         };
-        shadows: {
-            small: string;
-            medium: string;
-            large: string;
-        };
-        transitions: {
-            default: string;
-            fast: string;
-            slow: string;
-        };
         typography: {
             fontFamily: string;
             monoFontFamily?: string;
@@ -78,6 +68,9 @@ declare module 'styled-components' {
             info: string;
             hover?: string;
             primaryDark?: string;
+            secondaryDark?: string;
+            errorDark?: string;
+            successDark?: string;
             disabled: string;  // Keep as required to match ExtendedTheme
         };
         name: string;

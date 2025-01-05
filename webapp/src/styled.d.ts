@@ -98,6 +98,9 @@ declare module 'styled-components' {
             warning: string;
             info: string;
             primaryDark?: string;
+            secondaryDark?: string;
+            errorDark?: string;
+            successDark?: string;
             hover?: string;
             disabled: string;
         };

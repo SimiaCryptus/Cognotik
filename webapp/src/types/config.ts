@@ -5,8 +5,8 @@ export interface WebSocketConfig {
     url: string;
     port: string;
     protocol: 'ws:' | 'wss:';
-    retryAttempts: number;
-    timeout: number;
+    retryAttempts?: number;
+    timeout?: number;
 }
 
 export interface ConsoleConfig {
