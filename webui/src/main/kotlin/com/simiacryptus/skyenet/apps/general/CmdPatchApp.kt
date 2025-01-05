@@ -18,6 +18,8 @@ class CmdPatchApp(
   val files: Array<out File>?,
   model: ChatModel
 ) : PatchApp(root.toFile(), settings, api, model) {
+  private var stopRequested = false
+
   companion object {
     private val log = LoggerFactory.getLogger(CmdPatchApp::class.java)
 
@@ -91,7 +93,7 @@ class CmdPatchApp(
     return str
   }
 
-  override fun output(task: SessionTask): OutputResult = run {
+  override fun output(task: SessionTask, settings: Settings): OutputResult = run {
     val command = listOf(settings.executable.absolutePath) + settings.arguments.split(" ").filter(String::isNotBlank)
     val processBuilder = ProcessBuilder(command).directory(settings.workingDirectory)
     // Pass the current environment to the subprocess
@@ -135,7 +137,26 @@ class CmdPatchApp(
     val exitCode = process.exitValue()
     var output = outputString(buffer)
     taskOutput?.clear()
+    // Handle auto-retry logic
+    if (!stopRequested && settings.autoFix && settings.maxRetries > 0) {
+      when (settings.exitCodeOption) {
+        "0" -> exitCode == 0
+        "nonzero" -> exitCode != 0
+        "any" -> true
+        else -> false
+      }.let { shouldRetry ->
+        if (shouldRetry) {
+          task.add("Result: $exitCode; Output: ${output.length} bytes; Auto-retrying... (${settings.maxRetries} attempts remaining)")
+          return output(task, settings.copy(maxRetries = settings.maxRetries - 1))
+        } else {
+          task.complete("Result: $exitCode; Output: ${output.length} bytes; Not retrying")
+        }
+      }
+    }
     OutputResult(exitCode, output)
+  }
+  fun stop() {
+    stopRequested = true
   }
 
   private fun outputString(buffer: StringBuilder): String {

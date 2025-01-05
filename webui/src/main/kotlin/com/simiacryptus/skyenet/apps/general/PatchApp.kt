@@ -49,7 +49,7 @@ abstract class PatchApp(
 
   abstract fun codeFiles(): Set<Path>
   abstract fun codeSummary(paths: List<Path>): String
-  abstract fun output(task: SessionTask): OutputResult
+  abstract fun output(task: SessionTask, settings: Settings): OutputResult
   abstract fun searchFiles(searchStrings: List<String>): Set<Path>
   override val singleInput = true
   override val stickyInput = false
@@ -123,14 +123,15 @@ abstract class PatchApp(
     var workingDirectory: File? = null,
     var exitCodeOption: String = "nonzero",
     var additionalInstructions: String = "",
-    val autoFix: Boolean
+    val autoFix: Boolean = false,
+    val maxRetries: Int = 3,
   )
 
   fun run(
     ui: ApplicationInterface,
     task: SessionTask,
   ): OutputResult {
-    val output = output(task)
+    val output = output(task, settings)
     if (output.exitCode == 0 && settings.exitCodeOption == "nonzero") {
       task.complete(
         "<div>\n<div><b>Command executed successfully</b></div>\n${MarkdownUtil.renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")}\n</div>"

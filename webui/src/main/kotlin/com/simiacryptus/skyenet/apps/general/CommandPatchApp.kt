@@ -29,7 +29,7 @@ class CommandPatchApp(
       }\n$tripleTilde"
     }
 
-  override fun output(task: SessionTask) = OutputResult(
+  override fun output(task: SessionTask, settings: Settings) = OutputResult(
     exitCode = 1,
     output = command
   )
