@@ -15,6 +15,9 @@ import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Semaphore
+import java.io.File
+import java.lang.ProcessBuilder
+import java.util.concurrent.TimeUnit
 
 class FileModificationTask(
   planSettings: PlanSettings,
@@ -25,6 +28,8 @@ class FileModificationTask(
     output_files: List<String>? = null,
     @Description("Specific modifications to be made to the files")
     val modifications: Any? = null,
+    @Description("Whether to include git diff with HEAD")
+    val includeGitDiff: Boolean = false,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null
@@ -36,6 +41,44 @@ class FileModificationTask(
     output_files = output_files,
     state = state
   )
+  private fun getGitDiff(filePath: String): String? {
+    return try {
+      val process = ProcessBuilder("git", "diff", "HEAD", "--", File(filePath).name)
+        .directory(File(filePath).parentFile)
+        .start()
+      if (process.waitFor(10, TimeUnit.SECONDS)) {
+        process.inputStream.bufferedReader().readText()
+      } else {
+        process.destroy()
+        log.warn("Git diff command timed out for file: $filePath")
+        null
+      }
+    } catch (e: Exception) {
+      log.warn("Failed to get git diff for file: $filePath", e)
+      null
+    }
+  }
+  private fun getInputFileWithDiff(): String {
+    if (!taskConfig?.includeGitDiff!!) return getInputFileCode()
+    val fileContent = getInputFileCode()
+    val gitDiffs = (taskConfig?.input_files ?: listOf())
+      .mapNotNull { file -> 
+        getGitDiff(file)?.let { diff -> 
+          "Git diff for $file:\n$diff"
+        }
+      }
+      .joinToString("\n\n")
+    return if (gitDiffs.isNotBlank()) {
+      """
+      Current file content:
+      $fileContent
+      Git changes:
+      $gitDiffs
+      """.trimIndent()
+    } else {
+      fileContent
+    }
+  }
 
   val fileModificationActor by lazy {
     SimpleActor(
@@ -126,7 +169,7 @@ class FileModificationTask(
     val process = { sb: StringBuilder ->
       val codeResult = fileModificationActor.answer(
         (messages + listOf(
-          getInputFileCode(),
+          getInputFileWithDiff(),
           this.taskConfig?.task_description ?: "",
         )).filter { it.isNotBlank() }, api
       )

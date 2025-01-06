@@ -33,16 +33,22 @@ kotlin {
 val kotlin_version = "2.0.20"
 val jetty_version = "11.0.24"
 val jackson_version = "2.17.2"
+val graal_version = "24.1.1"
 
 dependencies {
-
+  compileOnly("org.jetbrains.kotlin:kotlin-compiler:$kotlin_version")
+  compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin_version")
+  compileOnly("org.jetbrains.kotlin:kotlin-scripting-compiler:$kotlin_version")
+  compileOnly("org.eclipse.jdt:org.eclipse.jdt.core:3.36.0")
+  compileOnly("org.graalvm.js:js:$graal_version")
+  compileOnly("org.graalvm.js:js-language:$graal_version")
+  
   implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13") {
     exclude(group = "org.slf4j")
   }
 
   implementation(project(":core"))
   implementation(project(":kotlin"))
-
   implementation("org.apache.pdfbox:pdfbox:3.0.3")
 
   implementation("org.seleniumhq.selenium:selenium-java:4.27.0") {
