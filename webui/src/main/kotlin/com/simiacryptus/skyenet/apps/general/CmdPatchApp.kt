@@ -137,24 +137,9 @@ class CmdPatchApp(
     val exitCode = process.exitValue()
     var output = outputString(buffer)
     taskOutput?.clear()
-    // Handle auto-retry logic
-    if (!stopRequested && settings.autoFix && settings.maxRetries > 0) {
-      when (settings.exitCodeOption) {
-        "0" -> exitCode == 0
-        "nonzero" -> exitCode != 0
-        "any" -> true
-        else -> false
-      }.let { shouldRetry ->
-        if (shouldRetry) {
-          task.add("Result: $exitCode; Output: ${output.length} bytes; Auto-retrying... (${settings.maxRetries} attempts remaining)")
-          return output(task, settings.copy(maxRetries = settings.maxRetries - 1))
-        } else {
-          task.complete("Result: $exitCode; Output: ${output.length} bytes; Not retrying")
-        }
-      }
-    }
     OutputResult(exitCode, output)
   }
+
   fun stop() {
     stopRequested = true
   }
@@ -166,13 +151,11 @@ class CmdPatchApp(
     return output
   }
 
-  override fun searchFiles(searchStrings: List<String>): Set<Path> {
-    return searchStrings.flatMap { searchString ->
-      FileValidationUtils.filteredWalk(settings.workingDirectory!!) { !FileValidationUtils.isGitignore(it.toPath()) }
-        .filter { FileValidationUtils.isLLMIncludableFile(it) }
-        .filter { it.readText().contains(searchString, ignoreCase = true) }
-        .map { it.toPath() }
-        .toList()
-    }.toSet()
-  }
+  override fun searchFiles(searchStrings: List<String>) = searchStrings.flatMap { searchString ->
+    FileValidationUtils.filteredWalk(settings.workingDirectory!!) { !FileValidationUtils.isGitignore(it.toPath()) }
+      .filter { FileValidationUtils.isLLMIncludableFile(it) }
+      .filter { it.readText().contains(searchString, ignoreCase = true) }
+      .map { it.toPath() }
+      .toList()
+  }.toSet()
 }

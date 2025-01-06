@@ -217,15 +217,9 @@ class PlanCoordinator(
           task1.add(
             renderMarkdown(
               """
-              ## Task `""".trimIndent() + taskId + """`
-              """.trimIndent() + (subTask.task_description ?: "") + """
-              
-              """.trimIndent() + TRIPLE_TILDE + """json
-              """.trimIndent() + JsonUtil.toJson(data = subTask) + """
-              """.trimIndent() + TRIPLE_TILDE + """
-              
-              ### Dependencies:
-              """.trimIndent() + dependencies.joinToString("\n") { "- $it" }, ui = ui
+              ## Task `""".trimIndent() + taskId + "`" + (subTask.task_description ?: "") + "\n" +
+                  TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
+                  "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }, ui = ui
             )
           )
           val api = api.getChildClient().apply {

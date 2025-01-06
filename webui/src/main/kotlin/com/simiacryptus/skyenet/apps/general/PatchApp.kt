@@ -68,7 +68,7 @@ abstract class PatchApp(
       process = { content ->
         if (retries < 0) {
           retries = when {
-            settings.autoFix -> 3
+            settings.autoFix -> settings.maxRetries
             else -> 0
           }
         }

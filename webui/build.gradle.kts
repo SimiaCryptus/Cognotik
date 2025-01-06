@@ -42,7 +42,7 @@ dependencies {
   compileOnly("org.eclipse.jdt:org.eclipse.jdt.core:3.36.0")
   compileOnly("org.graalvm.js:js:$graal_version")
   compileOnly("org.graalvm.js:js-language:$graal_version")
-  
+
   implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13") {
     exclude(group = "org.slf4j")
   }
