@@ -288,9 +288,9 @@ open class AddApplyFileDiffLinks {
         filepath.parent?.toFile()?.mkdirs()
         filepath.toFile().writeText(codeValue, Charsets.UTF_8)
         handle(mapOf(File(filename).toPath() to codeValue))
-        return "```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Automatically Saved ${filepath}</div>"
+        return "\n```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Automatically Saved ${filepath}</div>"
       } catch (e: Throwable) {
-        return "```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Error Auto-Saving ${filename}: ${e.message}</div>"
+        return "\n```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Error Auto-Saving ${filename}: ${e.message}</div>"
       }
     } else {
       val commandTask = ui.newTask(false)
@@ -307,7 +307,7 @@ open class AddApplyFileDiffLinks {
           commandTask.error(null, e)
         }
       })!!
-      return "```${codeLang}\n${codeValue}\n```\n\n${commandTask.placeholder}\n"
+      return "\n```${codeLang}\n${codeValue}\n```\n\n${commandTask.placeholder}\n"
     }
   }
 
@@ -384,7 +384,7 @@ open class AddApplyFileDiffLinks {
     val echoDiff = try {
       IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
     } catch (e: Throwable) {
-      renderMarkdown("```\n${e.stackTraceToString()}\n```\n", ui = ui)
+      renderMarkdown("\n```\n${e.stackTraceToString()}\n```\n", ui = ui)
     }
 
     // Function to create a revert button
@@ -418,17 +418,17 @@ open class AddApplyFileDiffLinks {
             val originalCode = AtomicReference(prevCode)
             handle(mapOf(relativize to newCode.newCode))
             val revertButton = createRevertButton(filepath, originalCode.get(), handle)
-            return "```diff\n$diffVal\n```\n" + """<div class="cmd-button">Diff Automatically Applied to ${filepath}</div>""" + revertButton
+            return "\n```diff\n$diffVal\n```\n" + """<div class="cmd-button">Diff Automatically Applied to ${filepath}</div>""" + revertButton
           } catch (e: Throwable) {
             log.error("Error auto-applying diff", e)
-            return "```diff\n$diffVal\n```\n" + """<div class="cmd-button">Error Auto-Applying Diff to ${filepath}: ${e.message}</div>"""
+            return "\n```diff\n$diffVal\n```\n" + """<div class="cmd-button">Error Auto-Applying Diff to ${filepath}: ${e.message}</div>"""
           }
         }
       }
     }
 
     val diffTask = ui.newTask(root = false)
-    diffTask.complete(renderMarkdown("```diff\n$diffVal\n```\n", ui = ui))
+    diffTask.complete(renderMarkdown("\n```diff\n$diffVal\n```\n", ui = ui))
 
     val prevCodeTask = ui.newTask(root = false)
     val prevCodeTaskSB = prevCodeTask.add("")
@@ -493,7 +493,7 @@ open class AddApplyFileDiffLinks {
             val echoDiff = try {
               IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
             } catch (e: Throwable) {
-              renderMarkdown("```\n${e.stackTraceToString()}\n```\n", ui = ui)
+              renderMarkdown("\n```\n${e.stackTraceToString()}\n```\n", ui = ui)
             }
             var answer = patchFixer.answer(
               listOf(
@@ -570,24 +570,24 @@ open class AddApplyFileDiffLinks {
       IterativePatchUtil.generatePatch(prevCode, newCode2)
     } catch (e: Throwable) {
       renderMarkdown(
-        "```\n${e.stackTraceToString()}\n```", ui = ui
+        "\n```\n${e.stackTraceToString()}\n```", ui = ui
       )
     }
     newCode2TaskSB?.set(
       renderMarkdown(
-        "# $filename\n\n```${filename.split('.').lastOrNull() ?: ""}\n${newCode2}\n```", ui = ui, tabs = false
+        "# $filename\n\n```${filename.split('.').lastOrNull() ?: ""}\n${newCode2}\n```\n", ui = ui, tabs = false
       )
     )
     newCode2Task.complete("")
     prevCode2TaskSB?.set(
       renderMarkdown(
-        "# $filename\n\n```${filename.split('.').lastOrNull() ?: ""}\n${prevCode}\n```", ui = ui, tabs = false
+        "# $filename\n\n```${filename.split('.').lastOrNull() ?: ""}\n${prevCode}\n```\n", ui = ui, tabs = false
       )
     )
     prevCode2Task.complete("")
     patch2TaskSB?.set(
       renderMarkdown(
-        "# $filename\n\n```diff\n  ${echoDiff2}\n```", ui = ui, tabs = false
+        "# $filename\n\n```diff\n  ${echoDiff2}\n```\n", ui = ui, tabs = false
       )
     )
     patch2Task.complete("")
