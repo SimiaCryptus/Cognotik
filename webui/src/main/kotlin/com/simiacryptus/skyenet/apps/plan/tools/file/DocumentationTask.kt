@@ -107,6 +107,7 @@ class DocumentationTask(
           api = api,
           shouldAutoApply = { agent.planSettings.autoFix },
           model = planSettings.getTaskSettings(TaskType.Documentation).model ?: planSettings.defaultModel,
+          defaultFile = taskConfig?.output_files?.firstOrNull(),
         )
         task.complete()
         onComplete()

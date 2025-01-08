@@ -210,35 +210,33 @@ open class AddApplyFileDiffLinks {
         )
       }
       val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex() // capture filename
-      val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)(\n.*?\n)```""".toRegex() // capture filename
+      val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex() // capture filename
+      val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex() // capture filename
       val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
-      val findAll = codeblockPattern.findAll(response).toList()
-      val codeblocks = findAll.filter { block ->
+      val findAll = codeblockPattern.findAll(response).toList().groupBy { block -> headers.lastOrNull { it.first.last <= block.range.first }?.second ?: defaultFile }
+      val findAllGreedy = codeblockGreedyPattern.findAll(response).toList().groupBy { block -> headers.lastOrNull { it.first.last <= block.range.first }?.second ?: defaultFile }
+      val resolvedMatches = mutableMapOf<String?,List<MatchResult>>()
+      if (findAllGreedy.values.flatten().any { it.groupValues[1] == "markdown" }) {
+        resolvedMatches.putAll(findAllGreedy)
+      } else {
+        resolvedMatches.putAll(findAll)
+      }
+      val codeblocks = resolvedMatches.filter { (header, block) ->
         try {
-          val header = headers.lastOrNull { it.first.last <= block.range.first }?.second ?: defaultFile
-          if (header == null) {
-            return@filter false
-          }
-          val filename = resolve(root, header)
-          !root.resolve(filename).toFile().exists()
+          !root.resolve(resolve(root, header ?: return@filter false)).toFile().exists()
         } catch (e: Throwable) {
           log.info("Error processing code block", e)
           false
         }
-      }.map { it.range to it }.toList()
-      val patchBlocks = findAll.filter { block ->
+      }.flatMap { it.value }.map { it.range to it }.toList()
+      val patchBlocks = resolvedMatches.filter { (header, block) ->
         try {
-          val header = headers.lastOrNull { it.first.last <= block.range.first }?.second ?: defaultFile
-          if (header == null) {
-            return@filter false
-          }
-          val filename = resolve(root, header)
-          root.resolve(filename).toFile().exists()
+          root.resolve(resolve(root, header ?: return@filter false)).toFile().exists()
         } catch (e: Throwable) {
           log.info("Error processing code block", e)
           false
         }
-      }.map { it.range to it }.toList()
+      }.flatMap { it.value }.map { it.range to it }.toList()
 
       // Process diff blocks and add patch links
       val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, diffBlock ->
