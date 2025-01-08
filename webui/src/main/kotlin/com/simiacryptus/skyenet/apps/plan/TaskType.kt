@@ -452,7 +452,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
       registerConstructor(CommandSession) { settings, task -> CommandSessionTask(settings, task) }
     }
 
-    private fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(
+    fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(
       taskType: TaskType<T, U>,
       constructor: (PlanSettings, T?) -> AbstractTask<T>
     ) {

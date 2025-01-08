@@ -8,6 +8,7 @@ import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
@@ -386,42 +387,31 @@ open class AutoPlanChatApp(
           )
         ).toMutableList()
       ),
-      prompt = """
-                        Given the following input, choose up to ${maxTasksPerIteration} tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input.
-                        Available task types:
-                        
-                        ${
-        TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n") { taskType ->
-          "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment()}"
-        }
-      }
-                        
-                        Choose the most suitable task types and provide details of how they should be executed.
-                                """.trimIndent(),
+      prompt = buildString {
+        append("Given the following input, choose up to ")
+        append(maxTasksPerIteration)
+        append("tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
+        append("Available task types:\n")
+        append(TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
+            "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent().indent("  ")}"
+          })
+        append("\nChoose the most suitable task types and provide details of how they should be executed.")
+      },
       model = coordinator.planSettings.defaultModel,
       parsingModel = coordinator.planSettings.parsingModel,
       temperature = coordinator.planSettings.temperature,
       describer = describer1,
-      parserPrompt = """
-                        Task Subtype Schema:
-                        
-                        ${
-        TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
-          """
-                        ${taskType.name}:
-                          ${describer1.describe(taskType.taskDataClass).replace("\n", "\n  ")}
-                        """.trim()
-        }
-      }
-                                        """.trimIndent()
+      parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
+        "${taskType.name}:\n  ${describer1.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")}".trim()
+      })
     ).answer(
       listOf(userMessage) + contextData() +
           listOf(
             """
-                                                            Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}
-                                                            Please choose the next single task to execute based on the current status.
-                                                            If there are no tasks to execute, return {}.
-                                                        """.trimIndent()
+                Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}
+                Please choose the next single task to execute based on the current status.
+                If there are no tasks to execute, return {}.
+            """.trimIndent()
           )
           + formatEvalRecords(session = session), api
     ).obj.tasks?.map { task ->
