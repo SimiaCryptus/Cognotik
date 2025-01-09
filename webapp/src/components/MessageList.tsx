@@ -3,124 +3,16 @@ import {useSelector} from 'react-redux';
 import {useTheme} from '../hooks/useTheme';
 import {RootState} from '../store';
 import {isArchive} from '../services/appConfig';
-import styled from 'styled-components';
 
 import {debounce, resetTabState, updateTabs} from '../utils/tabHandling';
 import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
-import {Message, MessageType} from "../types/messages";
+import {Message} from "../types/messages";
+import './MessageList.css';
 
 const VERBOSE_LOGGING = false && process.env.NODE_ENV === 'development';
 const CONTAINER_ID = 'message-list-' + Math.random().toString(36).substr(2, 9);
 
-const MessageListContainer = styled.div`
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    /* Add test id */
-
-    &[data-testid] {
-        outline: none;
-    }
-
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    scroll-behavior: smooth;
-    background-color: ${({theme}) => theme.colors.background};
-    /* Optimize composite layers */
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    perspective: inherit;
-
-    &::-webkit-scrollbar {
-        width: 10px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: ${({theme}) => theme.colors.surface};
-        border-radius: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: ${({theme}) => theme.colors.primary};
-        border-radius: 4px;
-        border: 2px solid ${({theme}) => theme.colors.surface};
-
-        &:hover {
-            background: ${({theme}) => theme.colors.primaryDark};
-        }
-    }
-`;
-
-const MessageContent = styled.div`
-    /* Theme variables for consistent styling */
-    color: var(--theme-text);
-    background: var(--theme-bg);
-
-    pre[class*="language-"],
-    code[class*="language-"] {
-        background: var(--theme-surface);
-        color: var(--theme-text);
-        font-family: var(--theme-code-font);
-    }
-
-    .href-link, .play-button, .regen-button, .cancel-button, .text-submit-button {
-        cursor: pointer;
-        user-select: none;
-        display: inline-block;
-        margin: 2px;
-        border-radius: 4px;
-        background-color: var(--theme-surface);
-        color: var(--theme-text);
-        transition: all var(--transition-duration) var(--transition-timing),
-        transform 0.2s ease-in-out;
-
-        &:hover {
-            opacity: 0.8;
-            background-color: var(--theme-primary);
-            color: var(--theme-bg);
-            transform: translateY(-1px);
-        }
-    }
-
-    .referenced-message {
-        cursor: pointer;
-        padding: 4px;
-        margin: 4px 0;
-        border-left: 3px solid ${({theme}) => theme.colors.border};
-        transition: all 0.3s ease;
-
-        &.expanded {
-            background-color: ${({theme}) => theme.colors.surface};
-        }
-    }
-
-    pre[class*="language-"] {
-        background: ${({theme}) => theme.colors.surface};
-        margin: 1em 0;
-        padding: 1em;
-        border-radius: ${({theme}) => theme.sizing.borderRadius.md};
-        transition: all var(--transition-duration) var(--transition-timing);
-        box-shadow: ${({theme}) => theme.shadows.medium};
-    }
-
-    code[class*="language-"] {
-        color: ${({theme}) => theme.colors.text.primary};
-        text-shadow: none;
-        transition: all 0.3s ease;
-        font-family: ${({theme}) => theme.typography.console.fontFamily};
-    }
-
-    :not(pre) > code {
-        background: ${({theme}) => theme.colors.surface};
-        color: ${({theme}) => theme.colors.text.primary};
-        padding: 0.2em 0.4em;
-        border-radius: ${({theme}) => theme.sizing.borderRadius.sm};
-        font-size: 0.9em;
-        transition: all 0.3s ease;
-    }
-`;
 /**
  * Extracts message ID and action from clicked elements
  * Supports both data attributes and class-based detection
@@ -143,50 +35,6 @@ const extractMessageAction = (target: HTMLElement): { messageId: string | undefi
     return {messageId, action};
 };
 
-const MessageItem = styled.div<{ type: MessageType }>`
-    padding: 1rem;
-    border-radius: 12px;
-    align-self: ${({type}) => type === 'user' ? 'flex-end' : 'flex-start'};
-    max-width: 80%;
-    box-shadow: ${({theme}) => theme.shadows.medium};
-    /* Use hardware-accelerated properties */
-    transform: translate3d(0, 0, 0);
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
-    position: relative;
-    overflow: visible;
-    backface-visibility: hidden;
-    perspective: inherit;
-
-    background-color: ${({type}) => {
-        switch (type) {
-            case 'user':
-                return ({theme}) => theme.colors.primary;
-            case 'system':
-                return ({theme}) => theme.colors.secondary;
-            case 'error':
-                return ({theme}) => `linear-gradient(135deg, ${theme.colors.error}, ${theme.colors.warning})`;
-            case 'loading':
-                return ({theme}) => theme.colors.surface;
-            case 'assistant':
-                return ({theme}) => theme.colors.surface;
-            case 'reference':
-                return ({theme}) => theme.colors.surface;
-            default:
-                return ({theme}) => theme.colors.surface;
-        }
-    }};
-    color: ${({type, theme}) =>
-            type === 'user' || type === 'system' || type === 'error'
-                    ? '#fff'
-                    : theme.colors.text.primary};
-
-    &:hover {
-        transform: translate3d(0, -3px, 0);
-        box-shadow: ${({theme}) => theme.shadows.large};
-    }
-
-`;
-
 const handleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const {messageId, action} = extractMessageAction(target);
@@ -204,9 +52,10 @@ export const handleMessageAction = (messageId: string, action: string) => {
     }
 
     if (action === 'text-submit') {
-        const input = document.querySelector(`.reply-input[data-message-id="${messageId}"]`) as HTMLTextAreaElement;
+        const input = document.querySelector(`.reply-input[data-id="${messageId}"]`) as HTMLTextAreaElement;
         if (input) {
             const text = input.value;
+            if (!text.trim()) return; // Don't send empty messages
             const escapedText = encodeURIComponent(text);
             const message = `!${messageId},userTxt,${escapedText}`;
             WebSocketService.send(message);
@@ -218,6 +67,8 @@ export const handleMessageAction = (messageId: string, action: string) => {
                 });
             }
             input.value = '';
+            // Optional: Add visual feedback
+            input.style.height = 'auto';
         }
         return;
     }
@@ -284,7 +135,14 @@ export const expandMessageReferences = (content: string, messages: Message[]): s
 
 const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     // Add archive mode class to container in archive mode
-    const containerClassName = `message-list-container${isArchive ? ' archive-mode' : ''}`;
+    const currentTheme = useSelector((state: RootState) => state.ui.theme);
+    const containerClassName = `message-list-container${isArchive ? ' archive-mode' : ''} theme-${currentTheme}`;
+    // Apply theme class to container
+    React.useEffect(() => {
+        if (messageListRef.current) {
+            messageListRef.current.setAttribute('data-theme', currentTheme);
+        }
+    }, [currentTheme]);
     // Memoize processMessages function
     const processMessages = React.useCallback((msgs: Message[]) => {
         return msgs
@@ -386,10 +244,11 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     }, [finalMessages]);
 
     return (
-        <MessageListContainer
+        <div
             data-testid="message-list"
             id="message-list-container"
-            ref={messageListRef} className={containerClassName}
+            ref={messageListRef}
+            className={containerClassName}
         >
             {finalMessages.map((message) => {
                 console.debug('MessageList - Rendering message', {
@@ -397,24 +256,46 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                     type: message.type,
                     timestamp: message.timestamp,
                     contentLength: message.content?.length || 0
-                });
-                return <MessageItem
+                })
+                return <div
                     key={message.id}
-                    type={message.type}
+                    className={`message-item ${message.type}`}
                     data-testid={`message-${message.id}`}
                     id={`message-${message.id}`}
                 >
-                    {<MessageContent
-                        className="message-body"
+                    {<div
+                        className="message-content message-body"
                         onClick={!isArchive ? handleClick : undefined}
                         data-testid={`message-content-${message.id}`}
                         dangerouslySetInnerHTML={{
                             __html: message.content
                         }}
                     />}
-                </MessageItem>;
+                    {message.type === 'assistant' && (
+                        <div className="reply-form">
+                            <textarea
+                                className="reply-input"
+                                data-id={message.id}
+                                placeholder="Type your reply..."
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleMessageAction(message.id, 'text-submit');
+                                    }
+                                }}
+                            />
+                            <button
+                                className="text-submit-button"
+                                data-id={message.id}
+                                data-message-action="text-submit"
+                            >
+                                Send
+                            </button>
+                        </div>
+                    )}
+                </div>
             })}
-        </MessageListContainer>
+        </div>
     );
 };
 

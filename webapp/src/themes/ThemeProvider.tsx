@@ -53,6 +53,19 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
         requestAnimationFrame(() => {
             styleEl.textContent = `
         :root {
+            --theme-background: ${themes[currentTheme].colors.background};
+            --theme-text: ${themes[currentTheme].colors.text.primary};
+            --theme-surface: ${themes[currentTheme].colors.surface};
+            --theme-primary: ${themes[currentTheme].colors.primary};
+            --theme-secondary: ${themes[currentTheme].colors.secondary};
+            --theme-error: ${themes[currentTheme].colors.error};
+            --theme-warning: ${themes[currentTheme].colors.warning};
+            --theme-border: ${themes[currentTheme].colors.border};
+            --theme-shadow-medium: ${themes[currentTheme].shadows.medium};
+            --theme-shadow-large: ${themes[currentTheme].shadows.large};
+            --theme-text-on-primary: #ffffff;
+            --theme-text-on-secondary: #ffffff;
+            --theme-text-on-error: #ffffff;
         }
         /* Theme-specific message content styles */
         .message-content {
