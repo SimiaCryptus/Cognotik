@@ -145,20 +145,6 @@ export function setActiveTab(button: Element, container: Element) {
     const previousTab = getActiveTab(container.id);
     const forTab = button.getAttribute('data-for-tab');
     if (!forTab) return;
-    console.debug('[TabSystem] Tab Change Initiated', {
-        operation: 'setActiveTab',
-        tab: forTab,
-        previousTab: previousTab,
-        button: button,
-        containerId: container.id,
-        timestamp: new Date().toISOString(),
-        stack: new Error().stack,
-        buttonClasses: button.classList.toString(),
-        containerChildren: container.children.length,
-        navigationTiming: performance.getEntriesByType('navigation')[0],
-        documentReadyState: document.readyState
-    });
-
     setActiveTabState(container.id, forTab);
     saveTabState(container.id, forTab);
 
@@ -169,14 +155,6 @@ export function setActiveTab(button: Element, container: Element) {
         } else {
             btn.classList.remove('active');
         }
-        console.debug('[TabSystem] Button State Change', {
-            operation: 'updateButtonState',
-            buttonId: btn.id,
-            forTab: btn.getAttribute('data-for-tab'),
-            previousState: prevState,
-            newState: btn.classList.contains('active'),
-            timestamp: new Date().toISOString()
-        });
     });
 
     container.querySelectorAll(':scope > .tab-content').forEach(content => {
@@ -184,21 +162,6 @@ export function setActiveTab(button: Element, container: Element) {
         if (content.getAttribute('data-tab') === forTab) {
             content.classList.add('active');
             (content as HTMLElement).style.display = 'block';
-            console.debug('[TabSystem] Tab Content State Change', {
-                operation: 'activateContent',
-                tab: forTab,
-                containerId: container.id,
-                contentId: content.id,
-                timestamp: new Date().toISOString(),
-                previousDisplay: prevDisplay,
-                newDisplay: 'block',
-                contentChildren: content.children.length,
-                contentSize: {
-                    width: (content as HTMLElement).offsetWidth,
-                    height: (content as HTMLElement).offsetHeight
-                },
-                visibilityState: document.visibilityState
-            });
             updateNestedTabs(content as HTMLElement);
         } else {
             content.classList.remove('active');
@@ -226,40 +189,12 @@ export function setActiveTab(button: Element, container: Element) {
             }
         }
     });
-    console.debug('[TabSystem] Tab Change Completed', {
-        operation: 'setActiveTab',
-        containerId: container.id,
-        activeTab: forTab,
-        previousTab: previousTab,
-        timestamp: new Date().toISOString(),
-        performance: {
-            timing: performance.now(),
-            navigation: performance.getEntriesByType('navigation')[0],
-            resourceTiming: performance.getEntriesByType('resource'),
-        },
-        documentState: {
-            readyState: document.readyState,
-            visibilityState: document.visibilityState,
-            activeElement: document.activeElement?.tagName
-        },
-        browserInfo: {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language
-        }
-    });
 }
 
 function restoreTabState(container: Element) {
     try {
         diagnostics.restoreCount++;
         const containerId = container.id;
-        console.debug(`[TabSystem] Restoring Tab State`, {
-            operation: 'restoreTabState',
-            containerId: containerId,
-            timestamp: new Date().toISOString(),
-            diagnostics: { ...diagnostics }
-        });
 
         const savedTab = getActiveTab(containerId) ||
             tabStates.get(containerId)?.activeTab;
@@ -267,33 +202,13 @@ function restoreTabState(container: Element) {
             const tabsContainer = container.querySelector(':scope > .tabs');
             const button = tabsContainer?.querySelector(`:scope > .tab-button[data-for-tab="${savedTab}"]`) as HTMLElement;
             if (button) {
-                console.debug(`[TabSystem] Found Saved Tab`, {
-                    operation: 'restoreTabState',
-                    containerId: containerId,
-                    savedTab: savedTab,
-                    buttonFound: true,
-                    stack: new Error().stack
-                });
                 setActiveTab(button, container);
                 diagnostics.restoreSuccess++;
             } else {
                 diagnostics.restoreFail++;
-                console.warn(`[TabSystem] Tab Restore Failed - No Matching Button`, {
-                    operation: 'restoreTabState',
-                    containerId,
-                    savedTab,
-                    failCount: diagnostics.restoreFail,
-                    stack: new Error().stack
-                });
             }
         } else {
             diagnostics.restoreFail++;
-            console.debug(`[TabSystem] No Saved Tab Found - Using First Button`, {
-                operation: 'restoreTabState',
-                containerId: containerId,
-                fallback: 'firstButton',
-                diagnostics: { ...diagnostics }
-            });
             const firstButton = container.querySelector('.tab-button') as HTMLElement;
             if (firstButton) {
                 setActiveTab(firstButton, container);
@@ -321,7 +236,6 @@ export function resetTabState() {
 
 export const updateTabs = debounce(() => {
     if (isMutating) {
-        console.debug(`Skipping update during mutation`);
         return;
     }
     try {
@@ -329,11 +243,6 @@ export const updateTabs = debounce(() => {
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));
         isMutating = true;
-        console.debug(`Starting tab update`, {
-            containersCount: document.querySelectorAll('.tabs-container').length,
-            existingStates: currentStates.size,
-            tabsContainers: tabsContainers.map(c => c.id)
-        });
         tabsContainers.forEach(container => {
             if (processed.has(container.id)) {
                 return;
@@ -385,11 +294,6 @@ export const updateTabs = debounce(() => {
                     }
                 }
 
-                console.debug(`Updating tabs`, {
-                    containerId: container.id,
-                    activeTab: activeTab
-                });
-
                 let activeCount = 0;
                 let inactiveCount = 0;
                 // Handle both direct and anchor-wrapped tabs
@@ -411,13 +315,6 @@ export const updateTabs = debounce(() => {
                         (content as HTMLElement).style.display = 'none';
                     }
                 });
-                if (VERBOSE_LOGGING) console.debug(`${`Synchronized ${activeCount + inactiveCount} buttons`}`, {
-                    activeTab,
-                    activeCount,
-                    inactiveCount,
-                    containerId: container.id,
-                    container,
-                })
             }
         });
         isMutating = false;
