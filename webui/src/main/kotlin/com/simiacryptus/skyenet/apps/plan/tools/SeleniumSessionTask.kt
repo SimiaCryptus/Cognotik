@@ -4,16 +4,20 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.*
-import com.simiacryptus.skyenet.util.HtmlSimplifier
 import com.simiacryptus.skyenet.core.util.Selenium
+import com.simiacryptus.skyenet.util.HtmlSimplifier
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.Selenium2S3
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.devtools.HasDevTools
+import org.openqa.selenium.devtools.v131.log.Log
+import org.openqa.selenium.devtools.v131.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.slf4j.LoggerFactory
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class SeleniumSessionTask(
@@ -196,12 +200,28 @@ class SeleniumSessionTask(
   val chromeDriver: WebDriverManager by lazy { WebDriverManager.chromedriver().apply { setup() } }
   fun driver(): RemoteWebDriver {
     requireNotNull(chromeDriver)
-    return ChromeDriver(ChromeOptions().apply {
+    val driver = ChromeDriver(ChromeOptions().apply {
       addArguments("--headless")
       addArguments("--disable-gpu")
       addArguments("--no-sandbox")
       addArguments("--disable-dev-shm-usage")
     })
+
+    if (driver is HasDevTools) {
+      val devTools = driver.devTools
+      devTools.createSession()
+
+      devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()))
+      devTools.addListener(Network.requestWillBeSent()) { request ->
+        println("Request URL: " + request.request.url)
+      }
+
+      devTools.send(Log.enable())
+      devTools.addListener(Log.entryAdded()) { logEntry ->
+        println("Console: " + logEntry.text)
+      }
+    }
+    return driver
   }
 
   private fun formatResults(
