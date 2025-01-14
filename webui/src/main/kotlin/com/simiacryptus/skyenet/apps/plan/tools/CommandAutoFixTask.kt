@@ -50,15 +50,14 @@ class CommandAutoFixTask(
 
   override fun promptSegment(): String {
     val settings = planSettings.getTaskSettings(TaskType.CommandAutoFix) as CommandAutoFixTaskSettings
-    return """
-CommandAutoFix - Run a command and automatically fix any issues that arise
-** Specify the commands to be executed along with their working directories
-** Each command's working directory should be specified relative to the root directory
-** Provide the commands and their arguments in the 'commands' field
-** Each command should be a list of strings
-** Available commands:
-${settings.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}" }}
-        """.trim()
+    return ("""
+      CommandAutoFix - Run a command and automatically fix any issues that arise
+      * Specify the commands to be executed along with their working directories
+      * Each command's working directory should be specified relative to the root directory
+      * Provide the commands and their arguments in the 'commands' field
+      * Each command should be a list of strings
+      * Available commands:
+      """.trimIndent() + settings.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}" }).trim()
   }
 
   override fun run(
