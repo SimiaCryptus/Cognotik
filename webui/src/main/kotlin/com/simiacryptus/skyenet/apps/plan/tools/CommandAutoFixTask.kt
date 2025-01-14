@@ -95,11 +95,15 @@ ${settings.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}"
         val outputResult = CmdPatchApp(
           root = agent.root,
           settings = PatchApp.Settings(
-            executable = executable,
-            arguments = commandWithDir.command.drop(1).joinToString(" "),
-            workingDirectory = workingDirectory,
+            commands = listOf(
+              PatchApp.CommandSettings(
+                executable = executable,
+                arguments = commandWithDir.command.drop(1).joinToString(" "),
+                workingDirectory = workingDirectory,
+                additionalInstructions = ""
+              )
+            ),
             exitCodeOption = "nonzero",
-            additionalInstructions = "",
             autoFix = agent.planSettings.autoFix
           ),
           api = api,

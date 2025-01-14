@@ -9,6 +9,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.File
+import java.util.function.Consumer
 
 abstract class SessionTask(
   val messageID: String,
@@ -191,6 +192,13 @@ abstract class SessionTask(
   abstract fun createFile(relativePath: String): Pair<String, File?>
 
   fun update() = send()
+
+  abstract fun hrefLink(
+    linkText: String,
+    classname: String = "href-link",
+    id: String? = null,
+    handler: Consumer<Unit>
+  ): String
 }
 
 val Throwable.stackTraceTxt: String

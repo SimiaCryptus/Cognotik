@@ -27,7 +27,7 @@ class Discussable<T : Any>(
 ${
       tabs.withIndex().joinToString("\n")
       { (index: Int, t: Pair<String, StringBuilder>) ->
-        """<button class="tab-button" data-for-tab="$index">${t.first}</button>"""
+        renderButton(index, t.first)
       }
     }
 ${

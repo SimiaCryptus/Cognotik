@@ -67,10 +67,14 @@ abstract class AbstractAnalysisTask<T : AbstractFileTask.FileTaskConfigBase>(
         root = agent.root.toFile(),
         session = agent.session,
         settings = PatchApp.Settings(
-          executable = File("dummy"),
-          workingDirectory = agent.root.toFile(),
+          commands = listOf(
+            PatchApp.CommandSettings(
+              executable = File("dummy"),
+              workingDirectory = agent.root.toFile(),
+              additionalInstructions = ""
+            )
+          ),
           exitCodeOption = "nonzero",
-          additionalInstructions = "",
           autoFix = agent.planSettings.autoFix
         ),
         api = api as ChatClient,

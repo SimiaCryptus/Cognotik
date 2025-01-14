@@ -1,9 +1,9 @@
 package com.simiacryptus.skyenet.apps.general
 
 
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
@@ -39,8 +39,6 @@ class CmdPatchApp(
       }
       return returnVal
     }
-
-
   }
 
   private fun getFiles(
@@ -83,61 +81,67 @@ class CmdPatchApp(
     val codeFiles = codeFiles()
     val str = codeFiles
       .asSequence()
-      .filter { settings.workingDirectory?.toPath()?.resolve(it)?.toFile()?.exists() == true }
+      .filter { root.toPath().resolve(it).toFile().exists() }
       .distinct().sorted()
       .joinToString("\n") { path ->
         "* ${path} - ${
-          settings.workingDirectory?.toPath()?.resolve(path)?.toFile()?.length() ?: "?"
+          root.toPath().resolve(path).toFile().length() ?: "?"
         } bytes".trim()
       }
     return str
   }
 
   override fun output(task: SessionTask, settings: Settings): OutputResult = run {
-    val command = listOf(settings.executable.absolutePath) + settings.arguments.split(" ").filter(String::isNotBlank)
-    val processBuilder = ProcessBuilder(command).directory(settings.workingDirectory)
-    // Pass the current environment to the subprocess
-    processBuilder.environment().putAll(System.getenv())
-    val buffer = StringBuilder()
-    val taskOutput = task.add("")
-    val process = processBuilder.start()
-    Thread {
-      var lastUpdate = 0L
-      process.errorStream.bufferedReader().use { reader ->
+    var exitCode = 0
+    lateinit var buffer: StringBuilder
+    for ((index, cmdSettings) in settings.commands.withIndex()) {
+      buffer = StringBuilder()
+      val processBuilder = ProcessBuilder(
+        listOf(cmdSettings.executable.absolutePath) +
+            cmdSettings.arguments.split(" ").filter(String::isNotBlank)
+      ).directory(cmdSettings.workingDirectory)
+      processBuilder.environment().putAll(System.getenv())
+      task.header(processBuilder.command().joinToString(" "))
+      val taskOutput = task.add("Executing command ${index + 1}/${settings.commands.size}")
+      val process = processBuilder.start()
+      Thread {
+        var lastUpdate = 0L
+        process.errorStream.bufferedReader().use { reader ->
+          var line: String?
+          while (reader.readLine().also { line = it } != null) {
+            buffer.append(line).append("\n")
+            if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
+              taskOutput?.set("<pre>\n${truncate(buffer.toString())}\n</pre>")
+              task.update()
+              lastUpdate = System.currentTimeMillis()
+            }
+          }
+          task.update()
+        }
+      }.start()
+      process.inputStream.bufferedReader().use { reader ->
         var line: String?
+        var lastUpdate = 0L
         while (reader.readLine().also { line = it } != null) {
           buffer.append(line).append("\n")
           if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
-            taskOutput?.set("<pre>\n${truncate(buffer.toString()).htmlEscape}\n</pre>")
-            task.append("", true)
+            taskOutput?.set("<pre>\n${truncate(buffer.toString())}\n</pre>")
+            task.update()
             lastUpdate = System.currentTimeMillis()
           }
         }
-        task.append("", true)
+        task.update()
       }
-    }.start()
-    process.inputStream.bufferedReader().use { reader ->
-      var line: String?
-      var lastUpdate = 0L
-      while (reader.readLine().also { line = it } != null) {
-        buffer.append(line).append("\n")
-        if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
-          taskOutput?.set("<pre>\n${outputString(buffer).htmlEscape}\n</pre>")
-          task.append("", true)
-          lastUpdate = System.currentTimeMillis()
-        }
+      if (!process.waitFor(5, TimeUnit.MINUTES)) {
+        process.destroy()
+        throw RuntimeException("Process timed out")
       }
-      task.append("", true)
+      exitCode = process.exitValue()
+      if (exitCode != 0) break
     }
-    task.append("", false)
-    if (!process.waitFor(5, TimeUnit.MINUTES)) {
-      process.destroy()
-      throw RuntimeException("Process timed out")
-    }
-    val exitCode = process.exitValue()
-    var output = outputString(buffer)
-    taskOutput?.clear()
-    OutputResult(exitCode, output)
+    task.complete()
+    val output = outputString(buffer)
+    return OutputResult(exitCode, output)
   }
 
   fun stop() {

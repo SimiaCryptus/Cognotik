@@ -72,6 +72,22 @@ abstract class SocketManagerBase(
     messageID = operationID, buffer = buffer, spinner = spinner
   ) {
 
+    override fun hrefLink(
+      linkText: String,
+      classname: String,
+      id: String?,
+      handler: Consumer<Unit>
+    ): String {
+      log.debug("Creating href link with text: {}", linkText)
+      val operationID = randomID()
+      linkTriggers[operationID] = handler
+      return """<a class="$classname" data-id="$operationID"${
+        when {
+          id != null -> """ id="$id""""
+          else -> ""
+        }
+      }>$linkText</a>"""
+    }
     override fun send(html: String) = this@SocketManagerBase.send(html)
     override fun saveFile(relativePath: String, data: ByteArray): String {
       log.debug("Saving file at path: {}", relativePath)

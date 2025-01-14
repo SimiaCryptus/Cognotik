@@ -32,9 +32,8 @@ open class Retryable(
 
   override fun renderTabButtons(): String = """
 <div class="tabs">${
-    tabs.withIndex().joinToString("\n") { (index, _) ->
-      val tabId = "$index"
-      """<button class="tab-button" data-for-tab="$tabId">${index + 1}</button>"""
+    tabs.withIndex().joinToString("\n") { (index, pair) ->
+      renderButton(index, pair.first)
     }
   }${ui.hrefLink("♻") { retry() }}
 </div>

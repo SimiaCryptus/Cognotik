@@ -11,6 +11,7 @@ import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
@@ -118,19 +119,36 @@ abstract class PatchApp(
   )
 
   data class Settings(
+    var commands: List<CommandSettings> = listOf(),
+    val autoFix: Boolean = false,
+    val maxRetries: Int = 3,
+    var exitCodeOption: String = "nonzero",
+  ) {
+    // For backwards compatibility and convenience
+    var workingDirectory: File?
+      get() = commands.firstOrNull()?.workingDirectory
+      set(value) {
+        commands.forEach { it.workingDirectory = value }
+      }
+    var additionalInstructions: String
+      get() = commands.firstOrNull()?.additionalInstructions ?: ""
+      set(value) {
+        commands.forEach { it.additionalInstructions = value }
+      }
+  }
+
+  data class CommandSettings(
     var executable: File,
     var arguments: String = "",
     var workingDirectory: File? = null,
-    var exitCodeOption: String = "nonzero",
     var additionalInstructions: String = "",
-    val autoFix: Boolean = false,
-    val maxRetries: Int = 3,
   )
 
   fun run(
     ui: ApplicationInterface,
     task: SessionTask,
   ): OutputResult {
+    // Execute each command in sequence
     val output = output(task, settings)
     if (output.exitCode == 0 && settings.exitCodeOption == "nonzero") {
       task.complete(
@@ -310,41 +328,7 @@ abstract class PatchApp(
         
         You will be answering questions about the following code:
         
-        """.trimIndent() + summary + """
-        
-        
-        Response should use one or more code patches in diff format within """.trimIndent() + tripleTilde + """diff code blocks.
-        Each diff should be preceded by a header that identifies the file being modified.
-        The diff format should use + for line additions, - for line deletions.
-        The diff should include 2 lines of context before and after every change.
-        
-        Example:
-        
-        Here are the patches:
-        
-        ### src/utils/exampleUtils.js
-        """.trimIndent() + tripleTilde + """diff
-         // Utility functions for example feature
-         const b = 2;
-         function exampleFunction() {
-        -   return b + 1;
-        +   return b + 2;
-         }
-        """.trimIndent() + tripleTilde + """
-        
-        ### tests/exampleUtils.test.js
-        """.trimIndent() + tripleTilde + """diff
-         // Unit tests for exampleUtils
-         const assert = require('assert');
-         const { exampleFunction } = require('../src/utils/exampleUtils');
-         
-         describe('exampleFunction', () => {
-        -   it('should return 3', () => {
-        +   it('should return 4', () => {
-             assert.equal(exampleFunction(), 3);
-           });
-         });
-        """.trimIndent() + tripleTilde + """
+        """.trimIndent() + summary + "\n" + SimpleDiffApplier.patchEditorPrompt + """
         
         If needed, new files can be created by using code blocks labeled with the filename in the same manner.
         """.trimIndent(),
