@@ -55,13 +55,19 @@ abstract class PatchApp(
   override val singleInput = true
   override val stickyInput = false
   override fun newSession(user: User?, session: Session): SocketManager {
-    var retries: Int = when {
-      settings.autoFix -> 3
-      else -> 0
-    }
+    var retries: Int = -1
     val socketManager = super.newSession(user, session)
     val ui = (socketManager as ApplicationSocketManager).applicationInterface
     val task = ui.newTask()
+    var retryOnOffButton: StringBuilder? = null
+    val disableButton = task.hrefLink("Disable Auto-Retry") {
+      retries = 0
+      retryOnOffButton?.clear()
+      task.update()
+    }
+    if(settings.autoFix && settings.maxRetries > 0) {
+      retryOnOffButton = task.add(disableButton)
+    }
     lateinit var retry: Retryable
     retry = Retryable(
       ui = ui,
