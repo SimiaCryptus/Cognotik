@@ -72,7 +72,7 @@ abstract class ApplicationDirectory(
   open fun setupPlatform() {
   }
 
-  protected open fun _main(args: Array<String>) {
+  protected open fun _main(vararg args: String) {
     try {
       log.info("Starting application with args: ${args.joinToString(", ")}")
       init(args.contains("--server"))
