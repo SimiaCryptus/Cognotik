@@ -26,7 +26,6 @@ export const themeStorage = {
         try {
             const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
             if (isValidTheme(savedTheme)) {
-                console.log(`${LOG_PREFIX} Retrieved theme:`, savedTheme);
                 return savedTheme;
             }
             console.warn(`${LOG_PREFIX} Invalid saved theme, using default`);
@@ -46,7 +45,6 @@ export const themeStorage = {
         }
         try {
             localStorage.setItem(STORAGE_KEYS.THEME, theme);
-            console.log(`${LOG_PREFIX} Theme saved:`, theme);
             return true;
         } catch (error) {
             console.error(`${LOG_PREFIX} Failed to save theme:`, error);
@@ -59,7 +57,6 @@ export const themeStorage = {
     clearTheme(): void {
         try {
             localStorage.removeItem(STORAGE_KEYS.THEME);
-            console.log(`${LOG_PREFIX} Theme setting cleared`);
         } catch (error) {
             console.error(`${LOG_PREFIX} Failed to clear theme:`, error);
         }
@@ -92,7 +89,7 @@ export const fetchAppConfig: (sessionId: string) => Promise<AppConfig> = async (
 
         // Return cached config if available
         if (cachedConfig) {
-            console.info(`${LOG_PREFIX} Using cached config`);
+            console.debug(`${LOG_PREFIX} Using cached config`);
             return cachedConfig;
         }
         // Return existing promise if already loading
@@ -102,10 +99,7 @@ export const fetchAppConfig: (sessionId: string) => Promise<AppConfig> = async (
         }
         loadConfigPromise = (async () => {
 
-            console.info(`${LOG_PREFIX} Fetching app config:`, {
-                sessionId,
-                baseUrl: BASE_API_URL
-            });
+            console.debug(`${LOG_PREFIX} Fetching app config`);
 
             const url = new URL('./appInfo', BASE_API_URL);
             url.searchParams.append('session', sessionId);
@@ -173,7 +167,7 @@ export const fetchAppConfig: (sessionId: string) => Promise<AppConfig> = async (
                 throw new Error('Invalid response format');
             }
 
-            console.info(`${LOG_PREFIX} Received valid config:`, data);
+            console.debug(`${LOG_PREFIX} Config loaded successfully`);
             // Cache the config
             cachedConfig = data;
             // Store in localStorage with timestamp

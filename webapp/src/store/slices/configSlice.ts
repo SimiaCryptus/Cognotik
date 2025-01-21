@@ -61,11 +61,13 @@ const initialState: AppConfig = {
         enabled: true,
         maxEntries: 1000,
         persistLogs: false,
+        minLogLevel: 'info',
         console: {
             enabled: true,
             showTimestamp: true,
             showLevel: true,
             showSource: true,
+            logLevel: 'info',  // Adding the missing required logLevel property
             styles: {
                 debug: {color: '#6c757d'},
                 info: {color: '#17a2b8'},

@@ -7,10 +7,9 @@ const safeStorage = {
             localStorage.setItem(key, value);
             return true;
         } catch (error: unknown) {
-            console.warn('[UI Slice] Failed to save to localStorage:', {
-                key,
+            console.warn('[UI Slice] localStorage save failed:', {
                 error,
-                storageUsed: this.getUsedSpace()
+                key
             });
             // Try to clear old items if storage is full
             if (error instanceof Error && error.name === 'QuotaExceededError') {
@@ -65,12 +64,13 @@ const initialState: UiState = {
     lastUpdate: Date.now()
 };
 
-const logStateChange = (action: string, payload: any = null, prevState: any = null, newState: any = null) => {
-    console.log(`[UI Slice] ${action}`, {
-        ...(payload && {payload}),
-        ...(prevState && {prevState}),
-        ...(newState && {newState})
-    });
+// Only log meaningful state changes
+const logStateChange = (action: string, payload: any = null, prevState: any = null) => {
+    if (prevState !== null && JSON.stringify(payload) !== JSON.stringify(prevState)) {
+        console.log(`[UI Slice] ${action}:`, {
+            change: {from: prevState, to: payload}
+        });
+    }
 };
 
 export const uiSlice = createSlice({
@@ -78,38 +78,27 @@ export const uiSlice = createSlice({
     initialState,
     reducers: {
         setActiveTab: (state, action: PayloadAction<string>) => {
-            logStateChange('Setting active tab', action.payload, {activeTab: state.activeTab});
+            logStateChange('Active tab', action.payload, state.activeTab);
             state.activeTab = action.payload;
         },
         setTheme: (state, action: PayloadAction<ThemeName>) => {
-            logStateChange('Setting theme', action.payload, {theme: state.theme});
+            logStateChange('Theme', action.payload, state.theme);
             state.theme = action.payload;
             safeStorage.setItem('theme', action.payload);
         },
         setDarkMode: (state, action: PayloadAction<boolean>) => {
             const newTheme = action.payload ? 'night' : 'main';
-            logStateChange('Setting dark mode', {
-                darkMode: action.payload,
-                newTheme
-            }, {currentTheme: state.theme});
+            logStateChange('Dark mode theme', newTheme, state.theme);
             state.theme = newTheme;
             safeStorage.setItem('theme', newTheme);
         },
         showModal: (state, action: PayloadAction<string>) => {
-            logStateChange('Showing modal', {
-                modalType: action.payload
-            }, {
-                modalOpen: state.modalOpen,
-                modalType: state.modalType
-            });
+            logStateChange('Modal', action.payload, state.modalType);
             state.modalOpen = true;
             state.modalType = action.payload;
         },
         hideModal: (state) => {
-            logStateChange('Hiding modal', null, {
-                modalOpen: state.modalOpen,
-                modalType: state.modalType
-            });
+            logStateChange('Modal', null, state.modalType);
             state.modalOpen = false;
             state.modalType = null;
             state.modalContent = '';
@@ -119,11 +108,7 @@ export const uiSlice = createSlice({
         },
         toggleVerbose: (state) => {
             const newVerboseState = !state.verboseMode;
-            logStateChange('Toggling verbose mode', {
-                newState: newVerboseState
-            }, {
-                previousState: state.verboseMode
-            });
+            logStateChange('Verbose mode', newVerboseState, state.verboseMode);
             safeStorage.setItem('verboseMode', newVerboseState.toString());
             // Add class to body to allow global CSS targeting
             if (typeof document !== 'undefined') {
@@ -135,6 +120,5 @@ export const uiSlice = createSlice({
 });
 
 export const {setTheme, showModal, hideModal, toggleVerbose, setActiveTab, setModalContent} = uiSlice.actions;
-logStateChange('Initialized slice', null, null, initialState);
 
 export default uiSlice.reducer;

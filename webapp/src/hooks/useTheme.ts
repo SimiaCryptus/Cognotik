@@ -6,11 +6,7 @@ import {RootState} from '../store';
 import {themeStorage} from '../services/appConfig';
 
 export const useTheme = (initialTheme?: ThemeName): [ThemeName, (theme: ThemeName) => void] => {
-    console.group('🎨 useTheme Hook');
-    console.log('📥 Initialization:', {
-        initialTheme,
-        timestamp: new Date().toISOString()
-    });
+    console.debug('🎨 useTheme: Initializing with:', initialTheme);
 
     const dispatch = useDispatch();
     const currentTheme = useSelector((state: RootState) => state.ui.theme);
@@ -18,58 +14,30 @@ export const useTheme = (initialTheme?: ThemeName): [ThemeName, (theme: ThemeNam
     React.useEffect(() => {
         const savedTheme = themeStorage.getTheme();
         if (savedTheme && savedTheme !== currentTheme) {
-            console.log('🔄 Loading saved theme:', savedTheme);
+            console.debug('🔄 useTheme: Loading saved theme:', savedTheme);
             dispatch(setTheme(savedTheme));
         }
     }, []);
-    console.log('🔍 Theme from Redux:', {
-        currentTheme,
-        stateSnapshot: new Date().toISOString()
-    });
 
     const updateTheme = useCallback(
         (newTheme: ThemeName) => {
-            console.group('🔄 Theme Update Operation');
-            console.log('⚡ Dispatching theme change:', {
-                from: currentTheme,
-                to: newTheme,
-                timestamp: new Date().toISOString()
-            });
+            console.debug('⚡ useTheme: Changing theme:', {from: currentTheme, to: newTheme});
             dispatch(setTheme(newTheme));
             themeStorage.setTheme(newTheme);
-            console.log('💾 LocalStorage updated');
-            console.groupEnd();
         },
         [dispatch]
     );
 
     // Use initialTheme if provided and no theme is set in state
     React.useEffect(() => {
-        console.group('⚡ Theme Effect');
-        console.log('🔄 Effect triggered:', {
-            initialTheme,
-            currentTheme,
-            timestamp: new Date().toISOString()
-        });
 
         const savedTheme = themeStorage.getTheme();
         if (initialTheme && !currentTheme && initialTheme !== savedTheme) {
-            console.log('✨ Setting initial theme:', {
-                theme: initialTheme,
-                reason: 'No current theme set'
-            });
+            console.debug('✨ useTheme: Setting initial theme:', initialTheme);
             updateTheme(initialTheme);
-        } else {
-            console.log('ℹ️ No theme update needed');
         }
-        console.groupEnd();
     }, [initialTheme, currentTheme, updateTheme]);
-    console.log('📤 Hook return value:', {
-        currentTheme,
-        hasUpdateFunction: !!updateTheme,
-        timestamp: new Date().toISOString()
-    });
-    console.groupEnd();
+    return [currentTheme, updateTheme];
 
 
     return [currentTheme, updateTheme];

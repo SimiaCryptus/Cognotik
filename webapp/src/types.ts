@@ -2,7 +2,18 @@
 export type ThemeName = 'main' | 'night' | 'forest' | 'pony' | 'alien' | 'sunset' | 'ocean' | 'cyberpunk';
 
 // Define log levels
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
+// Define log priority
+export type LogPriority = 'critical' | 'normal' | 'low';
+
+// Define log message structure
+export interface LogMessage {
+    level: LogLevel;
+    priority: LogPriority;
+    message: string;
+    timestamp: number;
+    context?: Record<string, unknown>;
+}
 
 // Define console styles
 export interface ConsoleStyle {

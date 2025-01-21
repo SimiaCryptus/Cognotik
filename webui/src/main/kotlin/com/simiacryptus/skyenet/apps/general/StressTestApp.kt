@@ -48,7 +48,7 @@ class StressTestApp(
       override fun renderTabButtons(): String {
         return buildString {
           append("<div class='tabs'>\n")
-          (1..3).forEach { i ->
+          (1..2).forEach { i ->
             append("<label class='tab-button' data-for-tab='$i'>Tab $i</label>\n")
           }
           append("</div>")
@@ -56,7 +56,7 @@ class StressTestApp(
       }
     }
 
-    (1..3).forEach { i ->
+    (1..2).forEach { i ->
       val subTask = ui.newTask(false)
       tabDisplay["Tab $i"] = subTask.placeholder
       createNestedTabs(subTask, ui, depth - 1)

@@ -40,7 +40,7 @@ export class WebSocketService {
     // Add reconnect method
     public reconnect(): void {
         if (this.isReconnecting) {
-            console.warn('[WebSocket] Already attempting to reconnect');
+            // Skip duplicate reconnect attempts silently
             return;
         }
         this.forcedClose = false;
@@ -53,13 +53,11 @@ export class WebSocketService {
     public disconnect(): void {
         if (this.ws) {
             this.forcedClose = true;
-            console.log('[WebSocket] Initiating disconnect');
             this.isReconnecting = false;
             this.reconnectAttempts = 0;
             this.clearTimers();
             this.ws.close();
             this.ws = null;
-            console.log('[WebSocket] Disconnected successfully');
         }
     }
     public ws: WebSocket | null = null;
@@ -110,18 +108,15 @@ export class WebSocketService {
     private readonly AGGREGATE_INTERVAL = 100; // 100ms aggregation interval
 
     public getSessionId(): string {
-        console.debug('[WebSocket] Getting session ID:', this.sessionId);
         return this.sessionId;
     }
 
     public addErrorHandler(handler: (error: Error) => void): void {
         this.errorHandlers.push(handler);
-        console.log('[WebSocket] Error handler added');
     }
 
     public removeErrorHandler(handler: (error: Error) => void): void {
         this.errorHandlers = this.errorHandlers.filter(h => h !== handler);
-        console.log('[WebSocket] Error handler removed');
     }
 
     send(message: string): void {
@@ -135,12 +130,10 @@ export class WebSocketService {
 
     public addConnectionHandler(handler: (connected: boolean) => void): void {
         this.connectionHandlers.push(handler);
-        console.log('[WebSocket] Connection handler added');
     }
 
     public removeConnectionHandler(handler: (connected: boolean) => void): void {
         this.connectionHandlers = this.connectionHandlers.filter(h => h !== handler);
-        console.log('[WebSocket] Connection handler removed');
     }
 
     public isConnected(): boolean {
@@ -200,13 +193,10 @@ export class WebSocketService {
 
     removeMessageHandler(handler: (data: any) => void): void {
         this.messageHandlers = this.messageHandlers.filter((h) => h !== handler);
-        const handlersAfterRemoval = this.messageHandlers.length;
-        console.log(`[WebSocket] Message handler removed. Handlers count: ${handlersAfterRemoval}`);
     }
 
     addMessageHandler(handler: (data: any) => void): void {
         this.messageHandlers.push(handler);
-        console.log(`[WebSocket] New message handler added. Handlers count: ${this.messageHandlers.length}`);
     }
 
     private startHeartbeat(): void {
@@ -276,7 +266,6 @@ export class WebSocketService {
         if (this.timers.heartbeat) {
             clearInterval(this.timers.heartbeat);
             this.timers.heartbeat = null;
-            console.log('[WebSocket] Stopped heartbeat monitoring');
         }
     }
 
@@ -284,7 +273,6 @@ export class WebSocketService {
         const state = store.getState();
         // Load from localStorage as fallback if store is not yet initialized
         if (!state.config?.websocket) {
-            console.debug('[WebSocket] Config not found in store, checking localStorage');
             try {
                 const savedConfig = localStorage.getItem('websocketConfig');
                 if (savedConfig) {
@@ -298,7 +286,6 @@ export class WebSocketService {
                 console.error('[WebSocket] Error reading config from localStorage:', error);
             }
         }
-        console.debug('[WebSocket] Using default config');
         const defaultPort = window.location.protocol === 'https:' ? '443' : '8083';
         return {
             url: window.location.hostname,
@@ -319,16 +306,21 @@ export class WebSocketService {
         if (!wsPath.endsWith('/')) {
             wsPath += '/';
         }
-        console.debug(`[WebSocket] Calculated WebSocket path: ${wsPath}`);
         return wsPath;
     }
 
-    private setupEventHandlers(): void {
+    private setupEventHandlers(): () => void {
         if (!this.ws) {
             console.warn('[WebSocket] Cannot setup event handlers - no WebSocket instance');
-            return;
+            return () => {
+                // Cleanup not needed since WebSocket was never initialized
+                console.debug('[WebSocket] No cleanup needed - WebSocket was never initialized');
+            };
         }
+        let isDestroyed = false;
+
         this.ws.onopen = () => {
+            if (isDestroyed) return;
             console.log('[WebSocket] Connection established');
             this.connectionState = 'connected';
             this.reconnectAttempts = 0;
@@ -337,7 +329,6 @@ export class WebSocketService {
             this.startHeartbeat();
             this.connectionHandlers.forEach(handler => handler(true));
         };
-        this.debugLog('Setting up event handlers');
         // Debounce message processing
         const debouncedProcessMessages = debounce((messages: Message[]) => {
             const batch = [...messages];
@@ -354,7 +345,6 @@ export class WebSocketService {
             if (this.connectionTimeout) {
                 clearTimeout(this.connectionTimeout);
             }
-            console.debug('[WebSocket] Sending initial connect message');
         };
         this.ws.onmessage = (event) => {
             // Handle heartbeat responses
@@ -369,7 +359,6 @@ export class WebSocketService {
             }
             // Handle message event normally - remove incorrect close handling logic
             this.forcedClose = false;
-            this.debugLog('Message received');
             const currentTime = Date.now();
             const timeSinceConnection = currentTime - this.connectionStartTime;
             const data = event.data;
@@ -398,11 +387,6 @@ export class WebSocketService {
                 console.warn('[WebSocket] Received malformed message:', event.data);
                 return;
             }
-            this.debugLog('Parsed message parts:', {
-                id,
-                version,
-                contentLength: content.length
-            });
 
             const isHtml = typeof content === 'string' && (/<[a-z][\s\S]*>/i.test(content));
             if (isHtml) {
@@ -421,9 +405,6 @@ export class WebSocketService {
                 sanitized: false
             };
 
-            if (message.isHtml) {
-                console.log('[WebSocket] Processing HTML message');
-            }
 
             if (shouldBuffer) {
                 this.messageBuffer.push(message);
@@ -445,6 +426,7 @@ export class WebSocketService {
         };
 
         this.ws.onclose = () => {
+            if (isDestroyed) return;
             console.log('[WebSocket] Connection closed, stopping heartbeat');
             if (this.bufferTimeout) {
                 clearTimeout(this.bufferTimeout);
@@ -463,12 +445,18 @@ export class WebSocketService {
         };
 
         this.ws.onerror = (error) => {
+            if (isDestroyed) return;
             this.connectionState = 'error';
             console.error('[WebSocket] Error occurred:', error);
             this.errorHandlers.forEach(handler => handler(new Error('WebSocket connection error')));
             if (!this.isReconnecting) {
                 this.attemptReconnect();
             }
+        };
+        // Add cleanup method
+        return () => {
+            isDestroyed = true;
+            this.clearTimers();
         };
     }
 

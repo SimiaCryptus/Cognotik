@@ -3,8 +3,14 @@ import {createGlobalStyle} from 'styled-components';
 
 // Enhanced logging function with timestamp
 const logStyleChange = (component: string, property: string, value: any) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] GlobalStyles: ${component} - ${property}:`, value);
+    // Only log in development environment
+    if (process.env.NODE_ENV === 'development') {
+        const timestamp = new Date().toISOString();
+        // Only log significant style changes
+        if (property === 'theme' || property === 'transition' || property.startsWith('critical-')) {
+            console.log(`[${timestamp}] GlobalStyles: ${component} - ${property}:`, value);
+        }
+    }
 
 };
 
@@ -29,9 +35,6 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         }
     }
 
-    /* Single font import with subset and display swap */
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap&subset=latin&display=swap');
-    /* Theme CSS variables */
     :root {
         /* Theme variables are now set dynamically in ThemeProvider */
         /* Font weights */
@@ -603,7 +606,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         &.theme-transition-complete:after {
             opacity: 1;
             ${() => {
-                logStyleChange('body', 'transition', 'completed');
+                logStyleChange('body', 'critical-theme-transition', 'completed');
                 return '';
             }}
         }

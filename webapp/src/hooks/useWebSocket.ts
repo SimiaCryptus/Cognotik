@@ -22,12 +22,16 @@ export const useWebSocket = (sessionId: string) => {
 
     useEffect(() => {
         let connectionTimeout: NodeJS.Timeout;
+        let isCleanedUp = false;
+
         // Implement exponential backoff for reconnection
         const getReconnectDelay = () => {
             return Math.min(RECONNECT_BASE_DELAY * Math.pow(2, connectionStatus.current.attempts), RECONNECT_MAX_DELAY);
         };
         // Debounce connection attempts
         const attemptConnection = debounce(() => {
+            if (isCleanedUp) return;
+
             clearTimeout(connectionTimeout);
             const now = Date.now();
             if (now - connectionStatus.current.lastAttempt < RECONNECT_DELAY) {
@@ -37,7 +41,7 @@ export const useWebSocket = (sessionId: string) => {
             connectionStatus.current.attempts++;
             WebSocketService.connect(sessionId);
             connectionTimeout = setTimeout(() => {
-                if (!isConnected) {
+                if (!isConnected && !isCleanedUp) {
                     handleError(new Error('Connection timeout'));
                 }
             }, CONNECTION_TIMEOUT);
@@ -52,14 +56,13 @@ export const useWebSocket = (sessionId: string) => {
                 lastAttempt: Date.now()
             });
         };
-        console.log('[WebSocket] Initializing hook with sessionId:', sessionId);
+
         if (!sessionId) {
             console.warn('[WebSocket] No sessionId provided, skipping connection');
             return;
         }
 
         const handleMessage = (message: Message) => {
-            console.log('[WebSocket] Received message:', message);
             // Ensure message has required fields
             if (!message.id || !message.version) {
                 console.warn('[WebSocket] Received message missing required fields:', message);
@@ -69,34 +72,32 @@ export const useWebSocket = (sessionId: string) => {
         };
 
         const handleConnectionChange = (connected: boolean) => {
-            console.log('[WebSocket] Connection status changed:', connected ? 'Connected' : 'Disconnected');
             setIsConnected(connected);
             if (connected) {
                 setError(null);
                 setIsReconnecting(false);
                 connectionAttemptRef.current = 0;
-                console.log('[WebSocket] Connection established successfully');
             }
         };
         const handleError = (err: Error) => {
             console.error('[WebSocket] Connection error:', err);
+            if (isCleanedUp) return;
+
             setError(err);
             if (connectionStatus.current.attempts < MAX_RECONNECT_ATTEMPTS) {
                 setTimeout(attemptConnection, getReconnectDelay());
             }
             setIsReconnecting(true);
-            console.log('[WebSocket] Attempting to reconnect...');
         };
-        console.log('[WebSocket] Setting up event handlers');
 
         WebSocketService.addMessageHandler(handleMessage);
         WebSocketService.addConnectionHandler(handleConnectionChange);
         WebSocketService.addErrorHandler(handleError);
         WebSocketService.on('reconnecting', handleReconnecting);
-        console.log('[WebSocket] Initiating connection...');
         WebSocketService.connect(sessionId);
 
         return () => {
+            isCleanedUp = true;
             clearTimeout(connectionTimeout);
             console.log('[WebSocket] Cleaning up WebSocket connection and handlers');
             WebSocketService.removeMessageHandler(handleMessage);
@@ -104,7 +105,6 @@ export const useWebSocket = (sessionId: string) => {
             WebSocketService.removeErrorHandler(handleError);
             WebSocketService.off('reconnecting', handleReconnecting);
             WebSocketService.disconnect();
-            console.log('[WebSocket] Cleanup complete');
         };
     }, [sessionId]);
 
@@ -113,7 +113,6 @@ export const useWebSocket = (sessionId: string) => {
         isReconnecting,
         readyState: WebSocketService.ws?.readyState,
         send: (message: string) => {
-            console.log('[WebSocket] Attempting to send message:', message);
             return WebSocketService.send(message);
         },
         isConnected

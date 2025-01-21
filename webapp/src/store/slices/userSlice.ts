@@ -8,10 +8,6 @@ const initialState: UserInfo = {
 };
 
 const logStateChange = (actionName: string, prevState: UserInfo, newState: UserInfo) => {
-    console.group(`%c🔄 User State Change: ${actionName}`, 'color: #2196F3; font-weight: bold;');
-    console.log('%c📤 Previous State:', 'color: #f44336', prevState);
-    console.log('%c📥 New State:', 'color: #4CAF50', newState);
-    // Log specific changes
     const changes = Object.keys(newState).reduce((acc: Record<string, { old: any, new: any }>, key) => {
         if (JSON.stringify(prevState[key as keyof UserInfo]) !== JSON.stringify(newState[key as keyof UserInfo])) {
             acc[key] = {
@@ -21,12 +17,7 @@ const logStateChange = (actionName: string, prevState: UserInfo, newState: UserI
         }
         return acc;
     }, {});
-    if (Object.keys(changes).length > 0) {
-        console.log('%c📝 Changed Properties:', 'color: #FF9800', changes);
-    }
-    // Add timestamp
-    console.log('%c⏰ Timestamp:', 'color: #9C27B0', new Date().toISOString());
-    console.groupEnd();
+    console.log(`User State [${actionName}] ${new Date().toISOString()}:`, changes);
 };
 
 

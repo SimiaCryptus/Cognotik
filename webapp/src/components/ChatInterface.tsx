@@ -49,11 +49,7 @@ const ChatContainer = styled.div`
     const [sessionId] = useState(() => propSessionId || window.location.hash.slice(1) || 'new');
     const dispatch = useDispatch();
     const ws = useWebSocket(sessionId);
-    console.log(`${LOG_PREFIX} Rendering with props:`, {
-        propSessionId,
-        isConnected,
-        hashedSessionId: window.location.hash
-    });
+     debugLog('Initializing chat interface', {sessionId, isConnected});
 
 
     useEffect(() => {
@@ -64,10 +60,9 @@ const ChatContainer = styled.div`
         const loadAppConfig = async () => {
             if (!sessionId) return;
             try {
-                console.info('Fetching app config');
                 const config = await fetchAppConfig(sessionId);
                 if (mounted && config) {
-                    console.info('App config loaded successfully');
+                    debugLog('App config loaded successfully');
                 } else {
                     console.warn('Could not load app config, using defaults');
                 }
@@ -86,8 +81,6 @@ const ChatContainer = styled.div`
         if (isArchive) return;
 
         debugLog('Setting up message handler', {
-            sessionId,
-            isConnected,
             wsReadyState: ws.readyState
         });
         // Add cleanup flag to prevent state updates after unmount
@@ -96,10 +89,6 @@ const ChatContainer = styled.div`
         const handleMessage = (data: WebSocketMessage) => {
             if (!isComponentMounted) return;
 
-            if (DEBUG) {
-                console.group(`${LOG_PREFIX} Processing message`);
-                debugLog('Message data:', data);
-            }
 
             // Handle HTML messages differently
             if (data.isHtml) {
@@ -118,13 +107,11 @@ const ChatContainer = styled.div`
                     setMessages(prev => [...prev, newMessage]);
                 }
                 dispatch(addMessage(newMessage));
-                console.groupEnd();
                 return;
             }
             // Handle regular messages
             if (!data.data || typeof data.data !== 'string') {
                 console.warn(`${LOG_PREFIX} Invalid message format received:`, data);
-                console.groupEnd();
                 return;
             }
             // Ignore connect messages
@@ -146,7 +133,6 @@ const ChatContainer = styled.div`
                 rawHtml: null,
                 sanitized: false
             };
-            console.log(`${LOG_PREFIX} Dispatching message:`, messageObject);
             console.groupEnd();
 
             dispatch(addMessage(messageObject));
@@ -155,10 +141,7 @@ const ChatContainer = styled.div`
         websocket.addMessageHandler(handleMessage);
         return () => {
             isComponentMounted = false;
-            console.log(`${LOG_PREFIX} Cleaning up message handler`, {
-                sessionId,
-                isConnected
-            });
+            debugLog('Cleaning up message handler');
             websocket.removeMessageHandler(handleMessage);
         };
     }, [DEBUG, dispatch, isConnected, sessionId, websocket, ws.readyState]);
@@ -183,6 +166,5 @@ const ChatContainer = styled.div`
         </ChatContainer>
     );
 };
-console.debug(`${LOG_PREFIX} Component defined`);
 
 export default ChatInterface;

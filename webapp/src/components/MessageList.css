@@ -6,9 +6,11 @@
     flex-direction: column;
     gap: 1rem;
     scroll-behavior: smooth;
-    transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
-    perspective: inherit;
+    /* Add containment for better performance */
+    contain: content;
+    /* Group performance properties */
+    will-change: transform;
+    transform: translateZ(0);
     background-color: var(--theme-background, #ffffff);
     color: var(--theme-text, #000000);
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -96,12 +98,10 @@
     border-radius: 12px;
     max-width: 80%;
     box-shadow: var(--theme-shadow-medium, 0 2px 4px rgba(0,0,0,0.1));
-    transform: translate3d(0, 0, 0);
+    transform: translateZ(0);
     transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
     position: relative;
     overflow: visible;
-    backface-visibility: hidden;
-    perspective: inherit;
     border: 1px solid var(--theme-border, #e0e0e0);
 }
 
@@ -136,7 +136,9 @@
     color: var(--theme-text, #000000);
     transition: background-color 0.3s ease, color 0.3s ease;
 }
-/* Reply form styling */
+
+/* Group related components with comments */
+/* Form Components */
 .reply-form {
     display: flex;
     gap: 8px;

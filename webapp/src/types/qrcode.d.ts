@@ -1,8 +1,17 @@
 declare module "qrcode-generator" {
     export interface QRCode {
+        /** Adds data to be encoded in the QR code */
         addData(data: string): void;
 
+        /** Generates the QR code with the provided data */
+
         make(): void;
+
+        /** Creates an HTML img tag containing the QR code
+         * @param cellSize - Optional size of each QR code cell in pixels
+         * @param margin - Optional margin around the QR code in pixels
+         * @returns HTML img tag string
+         */
 
         createImgTag(cellSize?: number, margin?: number): string;
 
@@ -19,13 +28,23 @@ declare module "qrcode-generator" {
 
     export interface QRCodeGenerator {
         QRCode: QRCode;
-        TypeNumber: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 40;
+        TypeNumber: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40;
         ErrorCorrectionLevel: {
-            L: string;
-            M: string;
-            Q: string;
-            H: string;
+            /** Low error correction - 7% */
+            L: 'L';
+            /** Medium error correction - 15% */
+            M: 'M';
+            /** Quartile error correction - 25% */
+            Q: 'Q';
+            /** High error correction - 30% */
+            H: 'H';
         };
+
+        /** Creates a new QR Code instance
+         * @param typeNumber - QR Code version (1-40)
+         * @param errorCorrectionLevel - Error correction level ('L', 'M', 'Q', 'H')
+         * @returns QR Code instance
+         */
 
         (typeNumber?: number, errorCorrectionLevel?: string): QRCode;
     }

@@ -1,15 +1,12 @@
 // Logging utility for menu components
 const logMenuComponent = (componentName: string) => {
-    console.log(`[Menu System] Component Loaded: ${componentName} at ${new Date().toISOString()}`);
+    console.log(`[Menu] Loaded ${componentName}`);
     if (process.env.NODE_ENV === 'development') {
-        console.debug(`[Menu Debug] ${componentName} initialization details:`, {
-            timestamp: Date.now(),
-            environment: process.env.NODE_ENV
-        });
+        console.debug(`[Menu] ${componentName} initialized in ${process.env.NODE_ENV} mode`);
     }
 };
 
-// Log when menu components are imported
+// Log component initialization
 logMenuComponent('ThemeMenu');
 logMenuComponent('WebSocketMenu');
 

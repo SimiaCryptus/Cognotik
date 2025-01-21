@@ -1,4 +1,10 @@
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel =
+    | 'debug'    // Detailed debugging info
+    | 'info'     // General operational info
+    | 'warn'     // Warning messages for potentially problematic situations
+    | 'error'    // Error messages for serious problems
+    | 'critical' // Critical errors that need immediate attention
+    | 'none';    // No logging
 
 
 // Explicitly export MessageType
@@ -9,7 +15,8 @@ export type MessageType =
     | 'error'
     | 'loading'
     | 'reference'
-    | 'response';
+    | 'response'
+    | 'log';      // Specific type for log messages
 
 export interface Message {
     id: string;
@@ -19,6 +26,8 @@ export interface Message {
     timestamp: number;
     parentId?: string;
     logLevel?: LogLevel;
+    logCategory?: string;    // Optional category for grouping logs
+    logPriority?: number;    // Optional priority level 1-5
     isHtml: boolean;
     rawHtml: string | null;
     sanitized: boolean;

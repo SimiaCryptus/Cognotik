@@ -14,6 +14,7 @@ export interface ConsoleConfig {
     showTimestamp: boolean;
     showLevel: boolean;
     showSource: boolean;
+    logLevel: 'debug' | 'info' | 'warn' | 'error';
     styles: {
         debug: ConsoleStyle;
         info: ConsoleStyle;
@@ -25,6 +26,7 @@ export interface ConsoleConfig {
 export interface LoggingConfig {
     enabled: boolean;
     maxEntries: number;
+    minLogLevel: 'debug' | 'info' | 'warn' | 'error';
     persistLogs: boolean;
     console: ConsoleConfig;
 }

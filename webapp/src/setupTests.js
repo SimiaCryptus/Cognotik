@@ -8,16 +8,20 @@ const originalConsole = {
     log: console.log,
     error: console.error,
     warn: console.warn,
-    info: console.info,
+    debug: console.debug,
 };
 // Custom formatter for test console output
 const formatTestOutput = (type, ...args) => {
-    return `[TEST ${type.toUpperCase()}] ${args.join(' ')}`;
+    const timestamp = new Date().toISOString();
+    return `[TEST ${type.toUpperCase()}][${timestamp}] ${args.join(' ')}`;
 };
 // Override console methods for tests
 beforeAll(() => {
     console.log = (...args) => {
-        originalConsole.log(formatTestOutput('log', ...args));
+        // Only log if not empty or undefined
+        if (args.length > 0 && args[0] !== undefined) {
+            originalConsole.log(formatTestOutput('log', ...args));
+        }
     };
     console.error = (...args) => {
         originalConsole.error(formatTestOutput('error', ...args));
@@ -25,8 +29,11 @@ beforeAll(() => {
     console.warn = (...args) => {
         originalConsole.warn(formatTestOutput('warn', ...args));
     };
-    console.info = (...args) => {
-        originalConsole.info(formatTestOutput('info', ...args));
+    console.debug = (...args) => {
+        // Only show debug logs if explicitly enabled
+        if (process.env.DEBUG_MODE === 'true') {
+            originalConsole.debug(formatTestOutput('debug', ...args));
+        }
     };
 });
 // Restore original console methods after tests
@@ -34,5 +41,5 @@ afterAll(() => {
     console.log = originalConsole.log;
     console.error = originalConsole.error;
     console.warn = originalConsole.warn;
-    console.info = originalConsole.info;
+    console.debug = originalConsole.debug;
 });

@@ -5,7 +5,7 @@ body {
     color: #333;
     line-height: 1.6;
     transition: background-color 0.3s cubic-bezier(0.2, 0, 0.2, 1);
-    overflow: clip;
+    overflow: hidden;
     /* Optimize for fixed backgrounds */
     background-attachment: fixed;
     transform: translate3d(0, 0, 0);
@@ -20,7 +20,7 @@ body {
     overflow: auto;
     resize: vertical;
     border: 1px solid #ddd;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 5px rgb(0 0 0 / 10%);
     font-size: 16px;
     transition: border-color 0.3s ease;
     min-height: 40px;
@@ -29,7 +29,7 @@ body {
 .chat-input:focus {
     outline: none;
     border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    box-shadow: 0 0 5px rgb(0 123 255 / 50%);
 }
 
 
@@ -67,6 +67,7 @@ body {
 }
 
 .cmd-button {
+    will-change: transform;
     display: inline-block;
     padding: 8px 15px;
     font-size: 14px;

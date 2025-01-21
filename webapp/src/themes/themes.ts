@@ -139,16 +139,14 @@ interface ExtendedTheme extends BaseTheme {
         timestamp: {
             format: string;
             color: string;
+            show: boolean;
         };
     };
 }
 
 const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
     _init() {
-        logger.log('base initialized', 'default', {
-            spacing: this.sizing.spacing,
-            typography: this.typography.fontSize
-        });
+        logger.log('base initialized', 'default');
     },
     shadows: {
         small: '0 1px 3px rgba(0, 0, 0, 0.12)',
@@ -201,7 +199,8 @@ const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
         },
         timestamp: {
             format: 'HH:mm:ss',
-            color: '#8E8E93'
+            color: '#8E8E93',
+            show: true
         }
     },
     sizing: {
@@ -271,7 +270,6 @@ export const mainTheme: BaseTheme = {
     },
     ...baseTheme,
 };
-logTheme('initialized', 'main');
 
 export const nightTheme: ExtendedTheme = {
     name: 'night',
@@ -297,7 +295,6 @@ export const nightTheme: ExtendedTheme = {
     },
     ...baseTheme,
 };
-logTheme('initialized', 'night');
 
 export const forestTheme: ExtendedTheme = {
     name: 'forest',
@@ -323,7 +320,6 @@ export const forestTheme: ExtendedTheme = {
     },
     ...baseTheme,
 };
-logTheme('initialized', 'forest');
 
 export const ponyTheme: ExtendedTheme = {
     name: 'pony',
@@ -346,7 +342,6 @@ export const ponyTheme: ExtendedTheme = {
     },
     ...baseTheme,
 };
-logTheme('initialized', 'pony');
 
 export const alienTheme: ExtendedTheme = {
     name: 'alien',
@@ -369,7 +364,6 @@ export const alienTheme: ExtendedTheme = {
     },
     ...baseTheme,
 };
-logTheme('initialized', 'alien');
 
 export const themes = {
     main: mainTheme,
@@ -444,16 +438,14 @@ export const themes = {
     },
 };
 // Enhanced logging for available themes
-logger.log('available', 'all', {
-    count: Object.keys(themes).length,
-    themes: Object.keys(themes)
+Object.keys(themes).forEach(theme => {
+    logTheme('initialized', theme);
 });
 
 // Export a helper function to log theme changes
 export const logThemeChange = (from: ThemeName, to: ThemeName) => {
     logger.log('changed', `${from} → ${to}`, {
         from,
-        to,
-        timestamp: new Date().toISOString()
+        to
     });
 };

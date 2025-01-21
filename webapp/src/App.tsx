@@ -71,7 +71,6 @@ const AppContent: React.FC = () => {
     if (!isArchive) {
         console.group(`${LOG_PREFIX} Initializing v${APP_VERSION}`);
     }
-    console.log('Starting component render');
     const appConfig = useSelector((state: RootState) => state.config);
     const dispatch = useDispatch();
     // Only load archived messages once on mount
@@ -98,32 +97,27 @@ const AppContent: React.FC = () => {
 
         if (appConfig.applicationName) {
             document.title = appConfig.applicationName;
-            console.log(`${LOG_PREFIX} Updated page title to:`, appConfig.applicationName);
         }
     }, [appConfig.applicationName]);
-    console.log('WebSocket state:', {
+    console.debug('WebSocket state:', {
         sessionId,
         isConnected
     });
 
     React.useEffect(() => {
-        console.log(`${LOG_PREFIX} Setting up handlers`);
         const cleanup = setupUIHandlers();
         return () => {
-            console.log(`${LOG_PREFIX} Cleaning up UI handlers`);
             cleanup();
         };
     }, []);
 
     React.useEffect(() => {
-        console.log(`${LOG_PREFIX} Component mounted, initializing libraries`);
         const qr = QRCode(0, 'L');
         qr.addData('https://example.com');
         qr.make();
-        console.log(`${LOG_PREFIX} QR Code generator initialized`);
 
         return () => {
-            console.log(`${LOG_PREFIX} Component unmounting, cleaning up...`);
+            console.debug(`${LOG_PREFIX} Cleanup complete`);
         };
     }, []);
 

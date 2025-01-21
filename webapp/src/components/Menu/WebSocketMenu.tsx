@@ -72,12 +72,12 @@ const StatusContainer = styled.div`
     align-items: center;
     gap: 0.5rem;
 `;
-const StatusIndicator = styled.div<{ status: 'connected' | 'disconnected' | 'connecting' | 'error' }>`
+ const StatusIndicator = styled.div<{ $status: 'connected' | 'disconnected' | 'connecting' | 'error' }>`
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background-color: ${({status, theme}) => {
-    switch (status) {
+    background-color: ${({$status, theme}) => {
+    switch ($status) {
         case 'connected':
             return theme.colors.success;
         case 'disconnected':
@@ -131,7 +131,6 @@ export const WebSocketMenu: React.FC = () => {
     const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting' | 'error'>('disconnected');
     const [lastError, setLastError] = useState<string | null>(null);
     const [reconnectAttempts, setReconnectAttempts] = useState(0);
-    console.log(`${logPrefix} Initial websocket config:`, wsConfig);
 
 
     const [config, setConfig] = useState({
@@ -168,7 +167,7 @@ export const WebSocketMenu: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log(`${logPrefix} Submitting WebSocket configuration:`, config);
+        console.log(`${logPrefix} Updating WebSocket connection to ${config.protocol}//${config.url}:${config.port}`);
         dispatch(updateWebSocketConfig(config));
         WebSocketService.disconnect();
         WebSocketService.connect({
@@ -178,7 +177,6 @@ export const WebSocketMenu: React.FC = () => {
             retryAttempts: 3,
             timeout: 5000
         });
-        console.log(`${logPrefix} Configuration updated successfully`);
     };
     const handleReconnect = () => {
         setConnectionStatus('connecting');
@@ -190,7 +188,6 @@ export const WebSocketMenu: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
-        console.log(`${logPrefix} Field "${name}" changed to:`, value);
         if (name === 'port' && !/^\d*$/.test(value)) {
             console.warn(`${logPrefix} Invalid port value entered:`, value);
             return;
@@ -203,7 +200,7 @@ export const WebSocketMenu: React.FC = () => {
         <MenuContainer>
             <h3>WebSocket Configuration</h3>
             <StatusContainer>
-                <StatusIndicator status={connectionStatus}/>
+ <StatusIndicator $status={connectionStatus}/>
                 <StatusText>
                     {connectionStatus === 'connected' && 'Connected'}
                     {connectionStatus === 'disconnected' && 'Disconnected'}

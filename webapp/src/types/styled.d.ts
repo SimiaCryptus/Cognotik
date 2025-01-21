@@ -87,7 +87,6 @@ declare module 'styled-components' {
                 debug: string;
                 success: string;
                 trace: string;
-                verbose: string;
                 system: string;
             };
             fontSize: {
@@ -95,6 +94,10 @@ declare module 'styled-components' {
                 large: string;
                 small: string;
                 system: string;
+            };
+            levels: {
+                default: string;
+                critical: string;
             };
             padding: {
                 message: string;
@@ -117,6 +120,10 @@ declare module 'styled-components' {
             timestamp: {
                 format: string;
                 color: string;
+                showForCritical: boolean;
+            };
+            display: {
+                maxLines: number;
             };
         };
     }

@@ -10,7 +10,7 @@ import Prism from 'prismjs';
 import {Message} from "../types/messages";
 import './MessageList.css';
 
-const VERBOSE_LOGGING = false && process.env.NODE_ENV === 'development';
+const DEBUG_LOGGING = process.env.NODE_ENV === 'development';
 const CONTAINER_ID = 'message-list-' + Math.random().toString(36).substr(2, 9);
 
 /**
@@ -39,7 +39,9 @@ const handleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const {messageId, action} = extractMessageAction(target);
     if (messageId && action) {
-        console.debug('Message action clicked', {messageId, action});
+        if (DEBUG_LOGGING) {
+            console.debug('[MessageList] Action clicked:', {messageId, action});
+        }
         e.preventDefault();
         e.stopPropagation();
         handleMessageAction(messageId, action);
@@ -47,8 +49,8 @@ const handleClick = (e: React.MouseEvent) => {
 };
 
 export const handleMessageAction = (messageId: string, action: string) => {
-    if (VERBOSE_LOGGING) {
-        console.debug(`${'Processing message action'}`, {messageId, action, containerId: CONTAINER_ID});
+    if (DEBUG_LOGGING) {
+        console.debug('[MessageList] Processing action:', {messageId, action});
     }
 
     if (action === 'text-submit') {
@@ -59,13 +61,6 @@ export const handleMessageAction = (messageId: string, action: string) => {
             const escapedText = encodeURIComponent(text);
             const message = `!${messageId},userTxt,${escapedText}`;
             WebSocketService.send(message);
-            if (VERBOSE_LOGGING) {
-                console.debug(`${'Text submitted'}`, {
-                    containerId: CONTAINER_ID,
-                    messageId,
-                    previewText: text.substring(0, 50) + (text.length > 50 ? '...' : '')
-                });
-            }
             input.value = '';
             // Optional: Add visual feedback
             input.style.height = 'auto';
@@ -77,26 +72,21 @@ export const handleMessageAction = (messageId: string, action: string) => {
      * Prevents infinite loops using processedRefs Set
      */
     if (action === 'link') {
-        console.debug('Processing link click', {messageId});
         WebSocketService.send(`!${messageId},link`);
         return;
     }
     if (action === 'run') {
-        console.debug('Processing run action', {messageId});
         WebSocketService.send(`!${messageId},run`);
         return;
     }
     if (action === 'regen') {
-        console.debug('Processing regenerate action', {messageId});
         WebSocketService.send(`!${messageId},regen`);
         return;
     }
     if (action === 'stop') {
-        console.debug('Processing stop action', {messageId});
         WebSocketService.send(`!${messageId},stop`);
         return;
     }
-    console.debug('Processing generic action', {messageId, action});
     WebSocketService.send(`!${messageId},${action}`);
 };
 
@@ -119,7 +109,9 @@ export const expandMessageReferences = (content: string, messages: Message[]): s
                 if (referencedMessage) {
                     node.innerHTML = expandMessageReferences(referencedMessage.content, messages);
                 } else {
-                    console.debug('Referenced message not found', {id: messageID});
+                    if (DEBUG_LOGGING) {
+                        console.warn('[MessageList] Referenced message not found:', messageID);
+                    }
                 }
             }
         }
@@ -251,12 +243,6 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             className={containerClassName}
         >
             {finalMessages.map((message) => {
-                console.debug('MessageList - Rendering message', {
-                    id: message.id,
-                    type: message.type,
-                    timestamp: message.timestamp,
-                    contentLength: message.content?.length || 0
-                })
                 return <div
                     key={message.id}
                     className={`message-item ${message.type}`}

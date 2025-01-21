@@ -59,16 +59,12 @@ export const Modal: React.FC = () => {
     const {modalOpen, modalType, modalContent} = useSelector((state: RootState) => state.ui);
 
     useEffect(() => {
-        console.log(`${LOG_PREFIX} Modal state changed:`, {
-            modalOpen,
-            modalType,
-            hasContent: !!modalContent,
-            contentLength: modalContent?.length || 0
-        });
+        if (modalOpen) {
+            console.log(`${LOG_PREFIX} Opening modal of type: ${modalType}`);
+        }
     }, [modalOpen, modalType, modalContent]);
 
     if (!modalOpen) {
-        console.log(`${LOG_PREFIX} Not rendering - modal is closed`);
         return null;
     }
 

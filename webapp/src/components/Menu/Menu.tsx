@@ -311,7 +311,7 @@ export const Menu: React.FC = () => {
     const dispatch = useDispatch();
     const verboseMode = useSelector((state: RootState) => state.ui.verboseMode);
     const handleVerboseToggle = () => {
-        console.log('[Menu] Toggling verbose mode:', !verboseMode);
+        console.debug('[Menu] Toggling verbose mode:', !verboseMode);
         dispatch(toggleVerbose());
     };
 
@@ -319,10 +319,7 @@ export const Menu: React.FC = () => {
         console.log('[Menu] Opening modal:', modalType);
         openModal(modalType);
         // Verify the action was dispatched
-        console.log('[Menu] Modal action dispatched:', {
-            type: 'showModal',
-            modalType
-        });
+        console.debug('[Menu] Modal action dispatched:', modalType);
     };
 
     const handleLogout = () => {
@@ -356,7 +353,7 @@ export const Menu: React.FC = () => {
                 </Dropdown>
 
                 <Dropdown>
-                    <DropButton onClick={() => console.log('[Menu] Session menu clicked')}>
+                    <DropButton onClick={() => console.debug('[Menu] Session menu clicked')}>
                         <FontAwesomeIcon icon={faCog}/> Session
                     </DropButton>
                     <DropdownContent>
@@ -376,7 +373,7 @@ export const Menu: React.FC = () => {
                 <ThemeMenu/>
 
                 <Dropdown>
-                    <DropButton onClick={() => console.log('[Menu] About menu clicked')}>About</DropButton>
+                    <DropButton onClick={() => console.debug('[Menu] About menu clicked')}>About</DropButton>
                     <DropdownContent>
                         <DropdownItem onClick={() => handleMenuClick('/privacy.html')}>Privacy Policy</DropdownItem>
                         <DropdownItem onClick={() => handleMenuClick('/tos.html')}>Terms of Service</DropdownItem>
@@ -396,7 +393,7 @@ export const Menu: React.FC = () => {
             </ToolbarLeft>
 
             <Dropdown>
-                <DropButton onClick={() => console.log('[Menu] Login menu clicked')}>
+                <DropButton onClick={() => console.debug('[Menu] Login menu clicked')}>
                     <FontAwesomeIcon icon={faSignInAlt}/> Login
                 </DropButton>
                 <DropdownContent>

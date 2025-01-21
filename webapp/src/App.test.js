@@ -1,32 +1,28 @@
 import {render, screen} from '@testing-library/react';
 import App from './App';
 
-console.log('🚀 Starting App component test suite...');
+console.log('🚀 App Component Test Suite');
 beforeAll(() => {
-    console.log('📋 Initializing App component test environment');
+    console.log('📋 Test environment initialized');
 });
 
 
 beforeEach(() => {
-    console.log('▶️ Starting new test...');
+    // Remove redundant per-test start logging
 });
 
 afterEach(() => {
-    console.log('⏹️ Test finished');
+    // Remove redundant per-test end logging
 });
 
 test('renders learn react link', () => {
-    console.group('🧪 Test: renders learn react link');
-    console.log('⚙️ Rendering App component...');
+    console.group('🧪 Test: Learn React Link');
     render(<App/>);
-    console.log('🔍 Searching for "learn react" text...');
     const linkElement = screen.getByText(/learn react/i);
-    console.log('✅ Verifying element is in document...');
     expect(linkElement).toBeInTheDocument();
-    console.log('✨ Test completed successfully');
     console.groupEnd();
 });
+
 afterAll(() => {
-    console.log('🏁 All App component tests completed');
-    console.log('📊 Test suite finished');
+    console.log('✅ Test suite completed');
 });

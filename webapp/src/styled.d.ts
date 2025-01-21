@@ -81,6 +81,7 @@ declare module 'styled-components' {
             timestamp: {
                 format: string;
                 color: string;
+                show: boolean;
             };
         };
         colors: {

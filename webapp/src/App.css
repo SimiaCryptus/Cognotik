@@ -5,28 +5,20 @@
     transition: all 0.3s ease;
 }
 
-/* List styles for dark mode */
+
+/* Dark mode improvements */
+/* Improve dark mode media query placement */
 @media (prefers-color-scheme: dark) {
+    :root {
+    }
+
+    /* List styles */
     ol li::before {
         color: var(--primary-color);
     }
 
     ol ol li::before {
         color: var(--hover-color);
-    }
-}
-
-
-/* Dark mode improvements */
-/* Improve dark mode media query placement */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background-color: var(--color-dark);
-        --text-color: var(--color-light);
-        --primary-color: var(--color-primary);
-        --hover-background: var(--color-primary-alpha);
-        --success-color: var(--color-success);
-        --hover-color: var(--color-primary-dark);
     }
 
     .App {
@@ -93,13 +85,7 @@
     transition: all .5s cubic-bezier(0.1, 0, 0.5, 1);
 }
 
-/* Focus state - now separate from active state */
 
-.tab-button:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.2);
-}
 
 /* Improve button states */
 .cmd-button {
@@ -167,13 +153,6 @@
     }
 }
 
-.App-header {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
 
 
 .tab-content {
@@ -252,10 +231,12 @@
     font-size: 0.9rem;
 }
 
-/* Improve accessibility */
-.tab-button:focus {
+/* Focus states */
+.tab-button:focus,
+.tab-button:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .cmd-button:active {

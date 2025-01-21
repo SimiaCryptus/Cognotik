@@ -27,7 +27,7 @@ const loadPrismTheme = async (themeName: ThemeName) => {
     const prismTheme = prismThemes[themeName] || 'prism';
     try {
         await import(`prismjs/themes/${prismTheme}.css`);
-        console.log(`${LOG_PREFIX} Loaded Prism theme: ${prismTheme}`);
+        console.debug(`${LOG_PREFIX} Loaded Prism theme: ${prismTheme}`);
     } catch (error) {
         console.warn(`${LOG_PREFIX} Failed to load Prism theme: ${prismTheme}`, error);
     }
@@ -86,12 +86,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
             content.classList.add('theme-transition');
         });
         if (isInitialMount.current) {
-            console.info(`${LOG_PREFIX} Initial theme:`, currentTheme);
             isInitialMount.current = false;
         } else {
             logThemeChange(previousTheme.current, currentTheme);
-            previousTheme.current = currentTheme;
-            console.info(`${LOG_PREFIX} Theme changed to:`, currentTheme);
         }
 
         document.body.className = `theme-${currentTheme}`;
@@ -140,8 +137,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
     const theme = themes[currentTheme] || themes.main;
     if (!themes[currentTheme]) {
         console.warn(
-            `${LOG_PREFIX} Theme "${currentTheme}" not found. Falling back to main theme.`,
-            '\nAvailable themes:', Object.keys(themes)
+            `${LOG_PREFIX} Theme "${currentTheme}" not found. Falling back to main theme.`
         );
     }
 
@@ -151,7 +147,5 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
         </StyledThemeProvider>);
 };
 
-// Log available themes on module load
-console.info(`${LOG_PREFIX} Initialized with themes:`, Object.keys(themes));
 
 export default ThemeProvider;

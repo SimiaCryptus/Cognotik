@@ -1,3 +1,4 @@
+
 /**
  * Controls verbosity of debug logging. When enabled, provides detailed operation tracking.
  * Disable in production to reduce console noise.
@@ -141,13 +142,48 @@ function updateNestedTabs(element: HTMLElement) {
     clearTimeout(timeoutId);
 }
 
+// Cache for storing removed tab content
+const tabContentCache = new Map<string, HTMLElement>();
+
+// Helper to generate cache key
+function getCacheKey(containerId: string, tabId: string): string {
+    return `${containerId}:${tabId}`;
+}
+
+// Helper to cache tab content
+function cacheTabContent(container: Element, tabContent: Element) {
+    const containerId = container.id;
+    const tabId = tabContent.getAttribute('data-tab');
+    if (tabId) {
+        const cacheKey = getCacheKey(containerId, tabId);
+        tabContentCache.set(cacheKey, tabContent.cloneNode(true) as HTMLElement);
+    }
+}
+
+// Helper to restore cached content
+function restoreCachedContent(container: Element, tabId: string): HTMLElement | null {
+    const cacheKey = getCacheKey(container.id, tabId);
+    const cachedContent = tabContentCache.get(cacheKey);
+    if (cachedContent) {
+        return cachedContent.cloneNode(true) as HTMLElement;
+    }
+    return null;
+}
+
 export function setActiveTab(button: Element, container: Element) {
     const previousTab = getActiveTab(container.id);
     const forTab = button.getAttribute('data-for-tab');
     if (!forTab) return;
     setActiveTabState(container.id, forTab);
     saveTabState(container.id, forTab);
-
+    // Check if we need to restore cached content
+    const existingContent = container.querySelector(`:scope > .tab-content[data-tab="${forTab}"]`);
+    if (!existingContent) {
+        const cachedContent = restoreCachedContent(container, forTab);
+        if (cachedContent) {
+            container.appendChild(cachedContent);
+        }
+    }
     container.querySelectorAll(':scope > .tabs > .tab-button').forEach(btn => {
         const prevState = btn.classList.contains('active');
         if (btn.getAttribute('data-for-tab') === forTab) {
@@ -158,31 +194,33 @@ export function setActiveTab(button: Element, container: Element) {
     });
 
     container.querySelectorAll(':scope > .tab-content').forEach(content => {
-        const prevDisplay = (content as HTMLElement).style.display;
+        const contentElement = content as HTMLElement;
+        const contentTabId = content.getAttribute('data-tab');
         if (content.getAttribute('data-tab') === forTab) {
             content.classList.add('active');
-            (content as HTMLElement).style.display = 'block';
-            updateNestedTabs(content as HTMLElement);
+            contentElement.style.display = 'block';
+            // Ensure smooth transition
+            requestAnimationFrame(() => {
+                contentElement.classList.add('visible');
+                contentElement.style.opacity = '1';
+            });
         } else {
             content.classList.remove('active');
-            (content as HTMLElement).style.display = 'none';
-            console.debug('[TabSystem] Tab Content Deactivated', {
-                operation: 'deactivateContent',
-                tab: content.getAttribute('data-tab'),
-                containerId: container.id,
-                contentId: content.id,
-                previousDisplay: prevDisplay,
-                newDisplay: 'none',
-                timestamp: new Date().toISOString()
-            });
+            content.classList.remove('visible');
+            // Cache and remove inactive content if it's not marked to keep mounted
+            if (!content.hasAttribute('data-keep-mounted')) {
+                cacheTabContent(container, content);
+                content.remove();
+            }
+            if (VERBOSE_LOGGING) {
+                console.debug('[TabSystem] Tab Content Deactivated', {
+                    tab: contentTabId,
+                    containerId: container.id
+                });
+            }
             if ((content as any)._contentObserver) {
-                console.debug('[TabSystem] Disconnecting Content Observer', {
-                    operation: 'disconnectObserver',
-                    tab: content.getAttribute('data-tab'),
-                    containerId: container.id,
-                    contentId: content.id,
-                    timestamp: new Date().toISOString(),
-                    observerStatus: 'disconnecting'
+                console.debug('[TabSystem] Disconnecting Observer', {
+                    containerId: container.id
                 });
                 (content as any)._contentObserver.disconnect();
                 delete (content as any)._contentObserver;
@@ -215,12 +253,11 @@ function restoreTabState(container: Element) {
             }
         }
     } catch (error) {
-        console.error(`[TabSystem] Critical Restore Failure`, {
-            operation: 'restoreTabState',
+        console.error('[TabSystem] Failed to restore tab state', {
+            containerId: container.id,
             error: error,
             stack: error instanceof Error ? error.stack : new Error().stack,
-            diagnostics: { ...diagnostics },
-            timestamp: new Date().toISOString()
+            diagnostics: {restoreSuccess: diagnostics.restoreSuccess, restoreFail: diagnostics.restoreFail}
         });
         diagnostics.restoreFail++;
     }
@@ -230,6 +267,7 @@ export function resetTabState() {
     tabStates.clear();
     tabStateHistory.clear();
     tabStateVersions.clear();
+    tabContentCache.clear();
     currentStateVersion = 0;
     isMutating = false;
 }
@@ -243,6 +281,8 @@ export const updateTabs = debounce(() => {
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));
         isMutating = true;
+        const visibleTabs = new Set<string>();
+
         tabsContainers.forEach(container => {
             if (processed.has(container.id)) {
                 return;
@@ -254,6 +294,8 @@ export const updateTabs = debounce(() => {
                 currentStates.get(container.id)?.activeTab ||
                 container.querySelector(':scope > .tabs > .tab-button.active')?.getAttribute('data-for-tab');
             if (activeTab) {
+                // Mark active tab as visible
+                visibleTabs.add(activeTab);
                 const state: TabState = {
                     containerId: container.id,
                     activeTab: activeTab
@@ -268,9 +310,7 @@ export const updateTabs = debounce(() => {
                         setActiveTab(firstButton, container);
                     }
                 } else {
-                    console.warn(`No active tab found for container`, {
-                        containerId: container.id
-                    });
+                    console.warn(`No active tab found for container ${container.id}`);
                 }
             }
         });
@@ -287,10 +327,7 @@ export const updateTabs = debounce(() => {
                     if (activeButton) {
                         activeTab = activeButton.getAttribute('data-for-tab') || '';
                     } else {
-                        console.warn(`No tab buttons found`, {
-                            containerId: container.id,
-                            action: 'skipping update'
-                        });
+                        console.warn(`No tab buttons found in container ${container.id}, skipping update`);
                     }
                 }
 
@@ -317,6 +354,16 @@ export const updateTabs = debounce(() => {
                 });
             }
         });
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            const tabId = tab.getAttribute('data-tab');
+            if (tabId && !visibleTabs.has(tabId) && !tab.hasAttribute('data-keep-mounted') && !tab.hasAttribute('data-cached')) {
+                const container = tab.closest('.tabs-container');
+                if (container) {
+                    cacheTabContent(container, tab);
+                    tab.remove();
+                }
+            }
+        });
         isMutating = false;
         processed.clear();
     } catch (error) {
@@ -335,9 +382,7 @@ function setupTabContainer(container: Element) {
     try {
         if (!container.id) {
             container.id = `tab-container-${Math.random().toString(36).substr(2, 9)}`;
-            console.warn(`Generated missing container ID`, {
-                containerId: container.id
-            });
+            console.warn(`Generated missing container ID: ${container.id}`);
         }
         if (VERBOSE_LOGGING) console.debug(`Initializing container`, {
             existingActiveTab: getActiveTab(container.id),

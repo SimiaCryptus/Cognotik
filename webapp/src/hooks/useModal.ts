@@ -19,7 +19,6 @@ export const useModal = () => {
     };
 
     const getModalUrl = (endpoint: string) => {
-        console.log('[Modal] Constructing modal URL for endpoint:', endpoint);
         const protocol = window.location.protocol;
         const host = window.location.hostname;
         const port = window.location.port;
@@ -36,22 +35,17 @@ export const useModal = () => {
             const separator = endpoint.includes('?') ? '&' : '?';
             url = url + separator + 'sessionId=' + WebSocketService.getSessionId();
         }
-        console.log('[Modal] Constructed URL:', url);
         return url;
     };
 
     const openModal = (endpoint: string, event?: React.MouseEvent) => {
-        console.log('[Modal] Opening modal for endpoint:', endpoint);
         if (event) {
-            console.log('[Modal] Preventing default event behavior');
             event.preventDefault();
             event.stopPropagation();
         }
-        console.log('[Modal] Setting initial loading state');
 
         dispatch(showModalAction(endpoint));
         dispatch(setModalContent('<div class="loading">Loading...</div>'));
-        console.log('[Modal] Fetching content from:', getModalUrl(endpoint));
 
         fetch(getModalUrl(endpoint), {
             mode: 'cors',
@@ -61,20 +55,12 @@ export const useModal = () => {
             }
         })
             .then(response => {
-                console.log('[Modal] Received response:', {
-                    status: response.status,
-                    statusText: response.statusText
-                });
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.text();
             })
             .then(content => {
-                console.log('[Modal] Content received, length:', content.length);
-                if (!content.trim()) {
-                    throw new Error('Received empty content');
-                }
                 requestAnimationFrame(() => {
                     dispatch(setModalContent(content));
                     highlightCode();
@@ -86,7 +72,6 @@ export const useModal = () => {
                 // Keep modal open to show error
             });
     };
-    console.log('[Modal] Hook initialized');
 
     return {openModal, getModalUrl};
 };

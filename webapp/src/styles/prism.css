@@ -147,39 +147,46 @@ code {
 
 /* Console logging styles */
 .console-log {
-    background-color: #2d2d2d;
+    background-color: #1e1e1e;
     color: #ffffff;
-    padding: 10px;
+    padding: 8px 12px;
     border-radius: 4px;
     margin: 8px 0;
     font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+    line-height: 1.4;
 }
 
 .console-log-info {
-    color: #4CAF50;
+    color: #3CB371;
 }
 
 .console-log-warn {
-    color: #FFC107;
+    color: #FFD700;
 }
 
 .console-log-error {
     color: #F44336;
+    font-weight: bold;
 }
 
 .console-log-debug {
-    color: #2196F3;
+    color: #87CEEB;
+    opacity: 0.8;
 }
 
 .console-log-timestamp {
     color: #9E9E9E;
     font-size: 0.9em;
-    margin-right: 8px;
+    margin-right: 10px;
+    opacity: 0.7;
 }
 
 .console-log-object {
-    background-color: #383838;
-    padding: 8px;
+    background-color: #2a2a2a;
+    padding: 6px 8px;
     border-radius: 2px;
     margin-top: 4px;
+    max-height: 300px;
+    overflow-y: auto;
 }

@@ -103,6 +103,7 @@ export interface ThemeLogging {
     timestamp: {
         format: string;
         color: string;
+        show: boolean;
     };
 }
 

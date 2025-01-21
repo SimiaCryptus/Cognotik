@@ -16,7 +16,7 @@ const initialState: MessageState = {
 };
 
 const sanitizeHtmlContent = (content: string): string => {
-    console.debug(` Sanitizing HTML content`);
+    // console.debug(` Sanitizing HTML content`);
     return DOMPurify.sanitize(content, {
         ALLOWED_TAGS: ['div', 'span', 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'tr', 'td', 'th', 'thead', 'tbody',
             'button', 'input', 'label', 'select', 'option', 'textarea', 'code', 'pre', 'div', 'section', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'figure', 'figcaption',],
@@ -30,7 +30,12 @@ const debouncedUpdate = debounce(() => {
     restoreTabStates(getAllTabStates());
     updateTabs();
     Prism.highlightAll();
-    mermaid.run();
+    try {
+        mermaid.init(undefined, document.querySelectorAll('.mermaid:not(.mermaid-processed)'));
+        document.querySelectorAll('.mermaid').forEach(el => el.classList.add('mermaid-processed'));
+    } catch (error) {
+        console.warn('Mermaid diagram rendering error:', error);
+    }
 }, 100);
 
 const messageSlice = createSlice({
@@ -58,7 +63,7 @@ const messageSlice = createSlice({
                         debouncedUpdate();
                         action.payload.content = sanitizeHtmlContent(action.payload.rawHtml);
                         action.payload.sanitized = true;
-                        console.debug(` HTML content sanitized for message ${action.payload.id}`);
+                        // console.debug(` HTML content sanitized for message ${action.payload.id}`);
                     }
                     state.messages[existingIndex] = action.payload;
                     // Force version update for reference messages
@@ -80,7 +85,7 @@ const messageSlice = createSlice({
             if (action.payload.isHtml && action.payload.rawHtml && !action.payload.sanitized) {
                 action.payload.content = sanitizeHtmlContent(action.payload.rawHtml);
                 action.payload.sanitized = true;
-                console.debug(` HTML content sanitized for message ${action.payload.id}`);
+                // console.debug(` HTML content sanitized for message ${action.payload.id}`);
                 debouncedUpdate();
             }
             state.messages.push(action.payload);
