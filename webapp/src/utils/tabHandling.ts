@@ -1,13 +1,5 @@
+const VERBOSE_LOGGING = process.env.NODE_ENV === 'development';
 
-/**
- * Controls verbosity of debug logging. When enabled, provides detailed operation tracking.
- * Disable in production to reduce console noise.
- */
-const VERBOSE_LOGGING = false && process.env.NODE_ENV === 'development';
-
-/**
- * Error tracking by category for monitoring and debugging
- */
 const errors = {
     setupErrors: 0,
     restoreErrors: 0,
@@ -15,32 +7,22 @@ const errors = {
     updateErrors: 0
 };
 
-/**
- * Core interfaces for tab state management
- */
 export interface TabState {
     containerId: string;
     activeTab: string;
 }
 
-/**
- * Operational metrics for monitoring tab system health
- */
 const diagnostics = {
     saveCount: 0,
     restoreCount: 0,
     restoreSuccess: 0,
     restoreFail: 0
 };
-/**
- * Global state management for tab system
- */
 const tabStateVersions = new Map<string, number>();
 let currentStateVersion = 0;
 
-// Add debounce utility to prevent multiple rapid updates
 export function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     return function executedFunction(this: any, ...args: Parameters<T>) {
         const later = () => {
             clearTimeout(timeout);
@@ -55,9 +37,6 @@ const tabStates = new Map<string, TabState>();
 let isMutating = false;
 const tabStateHistory = new Map<string, string[]>();
 
-/**
- * Retrieves the currently active tab for a container
- */
 function getActiveTab(containerId: string): string | undefined {
     return tabStates.get(containerId)?.activeTab;
 }
@@ -112,121 +91,118 @@ export const restoreTabStates = (states: Map<string, TabState>): void => {
     });
 }
 
-function updateNestedTabs(element: HTMLElement) {
-    const MAX_RECURSION_DEPTH = 10;
-    const OPERATION_TIMEOUT = 5000;
-    const depth = 0;
-
-    function processNestedTabs(element: HTMLElement, currentDepth: number) {
-        if (currentDepth >= MAX_RECURSION_DEPTH) {
-            console.warn('Max recursion depth reached in updateNestedTabs');
-            return;
-        }
-
-        const nestedContainers = element.querySelectorAll('.tabs-container');
-        nestedContainers.forEach(container => {
-            if (container instanceof HTMLElement) {
-                try {
-                    setupTabContainer(container);
-                    restoreTabState(container);
-                    processNestedTabs(container, currentDepth + 1);
-                } catch (e) {
-                    console.warn('Failed to process nested tab container:', e);
-                }
-            }
-        });
-    }
-
-    const timeoutId = setTimeout(() => console.warn('updateNestedTabs operation timed out'), OPERATION_TIMEOUT);
-    processNestedTabs(element, depth);
-    clearTimeout(timeoutId);
-}
-
-// Cache for storing removed tab content
 const tabContentCache = new Map<string, HTMLElement>();
 
-// Helper to generate cache key
 function getCacheKey(containerId: string, tabId: string): string {
     return `${containerId}:${tabId}`;
 }
 
-// Helper to cache tab content
 function cacheTabContent(container: Element, tabContent: Element) {
     const containerId = container.id;
     const tabId = tabContent.getAttribute('data-tab');
     if (tabId) {
+        const clonedContent = tabContent.cloneNode(true) as HTMLElement;
+        clonedContent.setAttribute('data-cached', 'true');
+        // Remove the initialization flag from nested tab containers
+        clonedContent.querySelectorAll('.tabs-container').forEach(nested => {
+            nested.removeAttribute('data-tab-system-initialized');
+        });
         const cacheKey = getCacheKey(containerId, tabId);
-        tabContentCache.set(cacheKey, tabContent.cloneNode(true) as HTMLElement);
+        tabContentCache.set(cacheKey, clonedContent);
     }
 }
 
-// Helper to restore cached content
 function restoreCachedContent(container: Element, tabId: string): HTMLElement | null {
     const cacheKey = getCacheKey(container.id, tabId);
     const cachedContent = tabContentCache.get(cacheKey);
     if (cachedContent) {
-        return cachedContent.cloneNode(true) as HTMLElement;
+        const restoredContent = cachedContent.cloneNode(true) as HTMLElement;
+        restoredContent.setAttribute('data-cached', 'true');
+        return restoredContent;
     }
     return null;
 }
 
 export function setActiveTab(button: Element, container: Element) {
-    const previousTab = getActiveTab(container.id);
     const forTab = button.getAttribute('data-for-tab');
     if (!forTab) return;
     setActiveTabState(container.id, forTab);
     saveTabState(container.id, forTab);
     // Check if we need to restore cached content
-    const existingContent = container.querySelector(`:scope > .tab-content[data-tab="${forTab}"]`);
+    // Find content directly under this container, not nested ones
+    const existingContent = Array.from(container.children)
+        .find(el => el.matches(`.tab-content[data-tab="${forTab}"]`));
     if (!existingContent) {
         const cachedContent = restoreCachedContent(container, forTab);
         if (cachedContent) {
             container.appendChild(cachedContent);
         }
     }
-    container.querySelectorAll(':scope > .tabs > .tab-button').forEach(btn => {
-        const prevState = btn.classList.contains('active');
+    // Find the specific tabs group containing this button
+    const tabsGroup = button.closest('.tabs');
+    if (!tabsGroup) return;
+        // Initialize any nested tabs within the current container
+        tabsGroup.querySelectorAll('.tabs-container').forEach(nestedContainer => {
+            setupTabContainer(nestedContainer);
+        });
+    // Update only buttons in this specific tabs group
+    tabsGroup.querySelectorAll('.tab-button').forEach(btn => {
+        if (!btn.matches('.tab-button')) return;
         if (btn.getAttribute('data-for-tab') === forTab) {
             btn.classList.add('active');
         } else {
             btn.classList.remove('active');
         }
     });
-
-    container.querySelectorAll(':scope > .tab-content').forEach(content => {
-        const contentElement = content as HTMLElement;
-        const contentTabId = content.getAttribute('data-tab');
-        if (content.getAttribute('data-tab') === forTab) {
-            content.classList.add('active');
-            contentElement.style.display = 'block';
-            // Ensure smooth transition
-            requestAnimationFrame(() => {
-                contentElement.classList.add('visible');
-                contentElement.style.opacity = '1';
+        // Initialize nested tabs within the active tab content
+        const activeContent = container.querySelector(`.tab-content[data-tab="${forTab}"]`);
+        if (activeContent) {
+            activeContent.querySelectorAll('.tabs-container').forEach(nestedContainer => {
+                setupTabContainer(nestedContainer);
             });
-        } else {
-            content.classList.remove('active');
-            content.classList.remove('visible');
-            // Cache and remove inactive content if it's not marked to keep mounted
-            if (!content.hasAttribute('data-keep-mounted')) {
-                cacheTabContent(container, content);
-                content.remove();
-            }
-            if (VERBOSE_LOGGING) {
-                console.debug('[TabSystem] Tab Content Deactivated', {
-                    tab: contentTabId,
-                    containerId: container.id
-                });
-            }
-            if ((content as any)._contentObserver) {
-                console.debug('[TabSystem] Disconnecting Observer', {
-                    containerId: container.id
-                });
-                (content as any)._contentObserver.disconnect();
-                delete (content as any)._contentObserver;
-            }
         }
-    });
+
+    // Find the closest tab content container to this tabs group
+    const contentContainer = tabsGroup.closest('.tabs-container');
+    Array.from(contentContainer?.children || [])
+        .forEach(content => {
+            if (!content.matches('.tab-content')) return;
+
+
+            const contentElement = content as HTMLElement;
+            const contentTabId = content.getAttribute('data-tab');
+            if (content.getAttribute('data-tab') === forTab) {
+                content.classList.add('active');
+                contentElement.style.display = 'block';
+                // Ensure smooth transition
+                requestAnimationFrame(() => {
+                    contentElement.classList.add('visible');
+                    contentElement.style.opacity = '1';
+                });
+            } else {
+                content.classList.remove('active');
+                content.classList.remove('visible');
+                // Cache and remove inactive content if it's not marked to keep mounted
+                if (!content.hasAttribute('data-keep-mounted')) {
+                    content.setAttribute('data-cached', 'true');
+                    cacheTabContent(container, content);
+                    content.remove();
+                }
+                if (VERBOSE_LOGGING) {
+                    console.debug('[TabSystem] Tab Content Deactivated', {
+                        tab: contentTabId,
+                        containerId: container.id
+                    });
+                }
+                if ((content as any)._contentObserver) {
+                    console.debug('[TabSystem] Disconnecting Observer', {
+                        containerId: container.id
+                    });
+                    (content as any)._contentObserver.disconnect();
+                    delete (content as any)._contentObserver;
+                }
+            }
+        });
 }
 
 function restoreTabState(container: Element) {
@@ -234,11 +210,10 @@ function restoreTabState(container: Element) {
         diagnostics.restoreCount++;
         const containerId = container.id;
 
-        const savedTab = getActiveTab(containerId) ||
-            tabStates.get(containerId)?.activeTab;
+        const savedTab = getActiveTab(containerId);
         if (savedTab) {
             const tabsContainer = container.querySelector(':scope > .tabs');
-            const button = tabsContainer?.querySelector(`:scope > .tab-button[data-for-tab="${savedTab}"]`) as HTMLElement;
+            const button = tabsContainer?.querySelector(`.tab-button[data-for-tab="${savedTab}"]`) as HTMLElement;
             if (button) {
                 setActiveTab(button, container);
                 diagnostics.restoreSuccess++;
@@ -292,10 +267,10 @@ export const updateTabs = debounce(() => {
             setupTabContainer(container);
             const activeTab = getActiveTab(container.id) ||
                 currentStates.get(container.id)?.activeTab ||
-                container.querySelector(':scope > .tabs > .tab-button.active')?.getAttribute('data-for-tab');
+                container.querySelector('.tabs .tab-button.active')?.getAttribute('data-for-tab');
             if (activeTab) {
-                // Mark active tab as visible
-                visibleTabs.add(activeTab);
+                // Mark active tab as visible by its cache key
+                visibleTabs.add(getCacheKey(container.id, activeTab));
                 const state: TabState = {
                     containerId: container.id,
                     activeTab: activeTab
@@ -314,57 +289,22 @@ export const updateTabs = debounce(() => {
                 }
             }
         });
-        document.querySelectorAll('.tabs-container').forEach((container: Element) => {
-            if (container instanceof HTMLElement) {
-                if (processed.has(container.id)) {
-                    return;
-                }
-                processed.add(container.id);
-
-                let activeTab: string | undefined = getActiveTab(container.id);
-                if (!activeTab) {
-                    const activeButton = container.querySelector(':scope > .tabs > .tab-button.active');
-                    if (activeButton) {
-                        activeTab = activeButton.getAttribute('data-for-tab') || '';
-                    } else {
-                        console.warn(`No tab buttons found in container ${container.id}, skipping update`);
-                    }
-                }
-
-                let activeCount = 0;
-                let inactiveCount = 0;
-                // Handle both direct and anchor-wrapped tabs
-                container.querySelectorAll(':scope > .tabs > .tab-button').forEach(button => {
-                    if (button.getAttribute('data-for-tab') === activeTab) {
-                        button.classList.add('active');
-                        activeCount++;
-                    } else {
-                        button.classList.remove('active');
-                        inactiveCount++;
-                    }
-                });
-                container.querySelectorAll(':scope > .tab-content').forEach(content => {
-                    if (content.getAttribute('data-tab') === activeTab) {
-                        content.classList.add('active');
-                        (content as HTMLElement).style.display = 'block';
-                    } else {
-                        content.classList.remove('active');
-                        (content as HTMLElement).style.display = 'none';
-                    }
-                });
-            }
-        });
         document.querySelectorAll('.tab-content').forEach(tab => {
             const tabId = tab.getAttribute('data-tab');
-            if (tabId && !visibleTabs.has(tabId) && !tab.hasAttribute('data-keep-mounted') && !tab.hasAttribute('data-cached')) {
                 const container = tab.closest('.tabs-container');
-                if (container) {
-                    cacheTabContent(container, tab);
+            const containerId = container?.id;
+            const cacheKey = containerId && tabId ? getCacheKey(containerId, tabId) : null;
+            if (tabId && cacheKey && !visibleTabs.has(cacheKey) && !tab.hasAttribute('data-keep-mounted') && !tab.hasAttribute('data-cached')) {
+                const containerEl = tab.closest('.tabs-container');
+            if (containerEl) {
+                setupTabContainer(containerEl);
+            }
+                if (containerEl) {
+                    cacheTabContent(containerEl, tab);
                     tab.remove();
                 }
             }
         });
-        isMutating = false;
         processed.clear();
     } catch (error) {
         errors.updateErrors++;
@@ -381,8 +321,12 @@ export const updateTabs = debounce(() => {
 function setupTabContainer(container: Element) {
     try {
         if (!container.id) {
-            container.id = `tab-container-${Math.random().toString(36).substr(2, 9)}`;
+            container.id = `tab-container-${Math.random().toString(36).substring(2, 11)}`;
             console.warn(`Generated missing container ID: ${container.id}`);
+        }
+        const HTMLElementContainer = container as HTMLElement;
+        if (HTMLElementContainer.dataset.tabSystemInitialized) {
+            return;
         }
         if (VERBOSE_LOGGING) console.debug(`Initializing container`, {
             existingActiveTab: getActiveTab(container.id),
@@ -390,12 +334,16 @@ function setupTabContainer(container: Element) {
         })
         container.addEventListener('click', (event: Event) => {
             const button = (event.target as HTMLElement).closest('.tab-button');
-            if (button && (container.contains(button))) {
+            if (button && container.contains(button)) {
+                // Get the specific tabs-container for this button's tab group
+                const buttonContainer = button.closest('.tabs-container');
+                if (!buttonContainer) return;
                 setActiveTab(button, container);
                 event.stopPropagation();
                 event.preventDefault(); // Prevent anchor tag navigation
             }
         });
+        HTMLElementContainer.dataset.tabSystemInitialized = 'true';
     } catch (error) {
         errors.setupErrors++;
         console.error(`Failed to setup tab container`, {
