@@ -3,7 +3,6 @@ import {showModal} from "./functions.js";
 document.addEventListener('DOMContentLoaded', function () {
     fetchUserInfo();
     fetchAppList();
-    fetchMarkdownContent();
 
     document.querySelector(".close").onclick = function () {
         document.getElementById("modal").style.display = "none";
@@ -56,24 +55,12 @@ function fetchAppList() {
                 sessionsCell.appendChild(sessionsLink);
                 row.appendChild(sessionsCell);
 
-                if (app.canWritePublic) {
-                    const publicCell = document.createElement('td');
-                    const publicLink = document.createElement('a');
-                    publicLink.className = 'new-session-link';
-                    publicLink.href = `${app.path}/#${generateGlobalSessionId()}`;
-                    publicLink.textContent = 'New Public Session';
-                    publicCell.appendChild(publicLink);
-                    row.appendChild(publicCell);
-                } else {
-                    row.appendChild(document.createElement('td'));
-                }
-
                 if (app.canWrite) {
                     const privateCell = document.createElement('td');
                     const privateLink = document.createElement('a');
                     privateLink.className = 'new-session-link';
                     privateLink.href = `${app.path}/#${generateUserSessionId()}`;
-                    privateLink.textContent = 'New Private Session';
+                    privateLink.textContent = 'New Session';
                     privateCell.appendChild(privateLink);
                     row.appendChild(privateCell);
                 } else {
@@ -86,12 +73,6 @@ function fetchAppList() {
         .catch(error => console.error('Error fetching app list:', error));
 }
 
-function generateGlobalSessionId() {
-    const date = new Date();
-    const yyyyMMdd = date.toISOString().slice(0, 10).replace(/-/g, "");
-    return `G-${yyyyMMdd}-${generateRandomId()}`;
-}
-
 function generateUserSessionId() {
     const date = new Date();
     const yyyyMMdd = date.toISOString().slice(0, 10).replace(/-/g, "");
@@ -100,11 +81,6 @@ function generateUserSessionId() {
 
 function generateRandomId() {
     return Math.random().toString(36).substr(2, 4);
-}
-
-function fetchMarkdownContent() {
-    // Implement fetching and rendering of welcomeMarkdown and postAppMarkdown
-    // This could be done via additional API endpoints if necessary
 }
 
 function showImageModal(src) {
