@@ -142,12 +142,13 @@ class FileValidationUtils {
             val gitignore = it.readText()
             if (gitignore.split("\n").any { line ->
                 try {
-                  if (line.trim().isEmpty()) return@any false
-                  if (line.startsWith("#")) return@any false
-                  val pattern =
-                    line.trim().trimStart('/').trimEnd('/')
-                      .replace(".", "\\.").replace("*", ".*")
-                  return@any path.fileName.toString().trimEnd('/').matches(Regex(pattern))
+                 val trimmedLine = line.trim()
+                 if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) return@any false
+                 // Convert gitignore pattern to regex
+                 val regexPattern = "^" + Regex.escape(trimmedLine)
+                   .replace("\\*", ".*")
+                   .replace("\\?", ".") + "$"
+                 return@any path.fileName.toString().matches(Regex(regexPattern))
                 } catch (e: Throwable) {
                   return@any false
                 }
@@ -156,14 +157,17 @@ class FileValidationUtils {
         }
         currentDir = currentDir.parentFile ?: return false
       }
+      // After .git is found, check the final directory's .gitignore
       currentDir.resolve(".gitignore").let {
         if (it.exists()) {
           val gitignore = it.readText()
           if (gitignore.split("\n").any { line ->
-              val pattern = line.trim().trimEnd('/').replace(".", "\\.").replace("*", ".*")
-              line.trim().isNotEmpty()
-                  && !line.startsWith("#")
-                  && path.fileName.toString().trimEnd('/').matches(Regex(pattern))
+              val trimmedLine = line.trim()
+              if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) return@any false
+              val regexPattern = "^" + Regex.escape(trimmedLine)
+                .replace("\\*", ".*")
+                .replace("\\?", ".") + "$"
+              path.fileName.toString().matches(Regex(regexPattern))
             }) {
             return true
           }
