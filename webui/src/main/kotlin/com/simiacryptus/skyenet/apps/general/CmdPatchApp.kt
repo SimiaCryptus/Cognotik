@@ -96,13 +96,20 @@ class CmdPatchApp(
     lateinit var buffer: StringBuilder
     for ((index, cmdSettings) in settings.commands.withIndex()) {
       buffer = StringBuilder()
+      val details = StringBuilder()
       val processBuilder = ProcessBuilder(
-        listOf(cmdSettings.executable.absolutePath) +
-            cmdSettings.arguments.split(" ").filter(String::isNotBlank)
-      ).directory(cmdSettings.workingDirectory)
-      processBuilder.environment().putAll(System.getenv())
+        (listOf(cmdSettings.executable.absolutePath) + cmdSettings.arguments.split(" ").filter(String::isNotBlank)).apply {
+          details.appendLine(withIndex().joinToString("\n") { "${it.index}: ${it.value}" })
+        }
+      ).directory(cmdSettings.workingDirectory.apply {
+        details.appendLine("Working Directory: ${this}")
+      })
+      processBuilder.environment().putAll(System.getenv().apply {
+        details.appendLine(entries.joinToString("\n") { "${it.key}=${it.value}" })
+      })
       task.header(processBuilder.command().joinToString(" "))
       val taskOutput = task.add("Executing command ${index + 1}/${settings.commands.size}")
+      log.info("Executing command ${index + 1}/${settings.commands.size}:\n  ${details.toString().replace("\n", "\n  ")}")
       val process = processBuilder.start()
       Thread {
         var lastUpdate = 0L

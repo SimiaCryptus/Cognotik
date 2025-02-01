@@ -351,7 +351,7 @@ open class AutoPlanChatApp(
       agent = coordinator.copy(
         planSettings = coordinator.planSettings.copy(
           taskSettings = coordinator.planSettings.taskSettings.toList().toTypedArray().toMap().toMutableMap().apply {
-            this["TaskPlanning"] = TaskSettingsBase(task_type = TaskType.TaskPlanning.name, enabled = false, model = null)
+            this[TaskType.TaskPlanning.name] = TaskSettingsBase(task_type = TaskType.TaskPlanning.name, enabled = false, model = null)
           }
         )
       ),

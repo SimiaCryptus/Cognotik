@@ -74,11 +74,15 @@ class CommandAutoFixTask(
     val hasError = AtomicBoolean(false)
     val onComplete = { semaphore.release() }
     var retryable: Retryable? = null
+    val taskSettings = agent.planSettings.getTaskSettings(TaskType.CommandAutoFix) as CommandAutoFixTaskSettings
     retryable = Retryable(agent.ui, task = task) {
       val task = agent.ui.newTask(false).apply { it.append(placeholder) }
       this.taskConfig?.commands?.forEachIndexed { index, commandWithDir ->
         val alias = commandWithDir.command.firstOrNull()
-        val commandAutoFixCommands = taskConfig.commands.map { it.command.firstOrNull() }
+        val commandAutoFixCommands = taskConfig.commands.map {
+          val cmd = it.command.firstOrNull()
+          taskSettings.commandAutoFixCommands?.firstOrNull { it.endsWith(cmd ?: "") } ?: cmd
+        }
         val cmds = commandAutoFixCommands
           .map { File(it) }?.associateBy { it.name }
           ?.filterKeys { it.startsWith(alias ?: "") }
@@ -107,7 +111,7 @@ class CommandAutoFixTask(
           ),
           api = api,
           files = agent.files,
-          model = agent.planSettings.getTaskSettings(TaskType.valueOf(taskConfig.task_type!!)).model
+          model = taskSettings.model
             ?: agent.planSettings.defaultModel,
         ).run(
           ui = agent.ui,
