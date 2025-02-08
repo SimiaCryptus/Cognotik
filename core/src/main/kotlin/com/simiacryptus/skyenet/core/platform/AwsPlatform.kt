@@ -117,7 +117,6 @@ open class AwsPlatform(
   companion object {
     val log = LoggerFactory.getLogger(AwsPlatform::class.java)
     fun get() = try {
-      log.info("Initializing AwsPlatform")
       AwsPlatform()
     } catch (e: Throwable) {
       log.warn("Error initializing AWS platform", e)

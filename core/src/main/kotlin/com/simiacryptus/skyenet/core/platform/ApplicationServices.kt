@@ -26,7 +26,7 @@ object ApplicationServices {
       field = value
     }
   var userSettingsManager: UserSettingsInterface = UserSettingsManager()
-    set(value) {
+    private set(value) {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
     }
@@ -36,12 +36,12 @@ object ApplicationServices {
       field = value
     }
   var dataStorageFactory: (File) -> StorageInterface = { DataStorage(it) }
-    set(value) {
+    private set(value) {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
     }
   var metadataStorageFactory: (File) -> MetadataStorageInterface = { HSQLMetadataStorage(it) }
-    set(value) {
+    private set(value) {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
     }
@@ -56,7 +56,7 @@ object ApplicationServices {
       field = value
     }
   var usageManager: UsageInterface = HSQLUsageManager(File(dataStorageRoot, "usage"))
-    set(value) {
+    private set(value) {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
     }

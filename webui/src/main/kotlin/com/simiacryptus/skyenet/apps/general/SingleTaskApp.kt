@@ -100,73 +100,52 @@ open class SingleTaskApp(
       root = settings.workingDir?.let { File(it).toPath() } ?: dataStorage.getDataDir(user, session).toPath(),
       planSettings = settings
     )
-    val taskType = TaskType.getAvailableTaskTypes(settings).first()
-    val describer = planSettings.describer()
-    val taskConfig = ParsedActor(
-      name = "SingleTaskChooser",
-      resultClass = taskType.taskDataClass,
-      prompt = """
-  Given the following input, choose ONE task to execute. Do not create a full plan, just select the most appropriate task types for the given input.
-  Available task types:
-  
-  ${
-        TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n") { taskType ->
-          "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment()}"
-        }
-      }
-  
-  Choose the most suitable task types and provide details of how they should be executed.
-                                  """.trimIndent(),
-      model = coordinator.planSettings.defaultModel,
-      parsingModel = coordinator.planSettings.parsingModel,
-      temperature = coordinator.planSettings.temperature,
-      describer = describer,
-      parserPrompt = """
-  Task Subtype Schema:
-  
-  ${
-        TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
-          """
-  ${taskType.name}:
-    ${describer.describe(taskType.taskDataClass).replace("\n", "\n  ")}
-  """.trim()
-        }
-      }
-                                          """.trimIndent()
-    ).answer(
-      listOf(userMessage) + contextData() +
-          listOf(
-            """
-                  Please choose the next single task to execute based on the current status.
-                  If there are no tasks to execute, return {}.
-                """.trimIndent()
-          ), api
-    ).obj
-    task.add(
-      renderMarkdown(
-        """
-  Executing ${taskType.name}:
-  ```json
-  ${JsonUtil.toJson(taskConfig)}
-  ```
-          """.trimIndent()
+    try {
+      val taskType = TaskType.getAvailableTaskTypes(settings).first()
+      val describer = planSettings.describer()
+      val prompt =
+        "Given the following input, choose ONE task to execute. Do not create a full plan, just select the most appropriate task types for the given input.\nAvailable task types:\n" +
+                TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n") {
+                  "* ${TaskType.getImpl(coordinator.planSettings, it).promptSegment()}"
+                } + "\nChoose the most suitable task types and provide details of how they should be executed."
+      val actor = ParsedActor(
+        name = "SingleTaskChooser",
+        resultClass = taskType.taskDataClass,
+        prompt = prompt,
+        model = coordinator.planSettings.defaultModel,
+        parsingModel = coordinator.planSettings.parsingModel,
+        temperature = coordinator.planSettings.temperature,
+        describer = describer,
+        parserPrompt = "Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
+          .joinToString("\n\n") {
+            "\n    ${it.name}:\n      ${describer.describe(it.taskDataClass).replace("\n", "\n  ")}\n    ".trim()
+          }
       )
-    )
-    val taskImpl = TaskType.getImpl(settings, taskConfig)
-    val result = StringBuilder()
-    taskImpl.run(
-      agent = coordinator,
-      messages = listOf(
-        userMessage
-      ),
-      task = task,
-      api = api,
-      resultFn = { result.append(it) },
-      api2 = api2,
-      planSettings = settings,
-    )
-    task.add(renderMarkdown("Task completed. Result:\n${result}"))
-    task.complete()
+      val input = listOf(userMessage) + contextData() +
+              listOf(
+                "Please choose the next single task to execute based on the current status.\nIf there are no tasks to execute, return {}."
+              )
+      val taskConfig = actor.answer(input, api).obj
+      task.add(renderMarkdown("Executing ${taskType.name}:\n```json\n${JsonUtil.toJson(taskConfig)}\n```"))
+      val taskImpl = TaskType.getImpl(settings, taskConfig)
+      val result = StringBuilder()
+      taskImpl.run(
+        agent = coordinator,
+        messages = listOf(
+          userMessage
+        ),
+        task = task,
+        api = api,
+        resultFn = { result.append(it) },
+        api2 = api2,
+        planSettings = settings,
+      )
+      task.add(renderMarkdown("Task completed. Result:\n${result}"))
+      task.complete()
+    } catch (e: Exception) {
+      log.error("Error executing task", e)
+      task.error(null, e)
+    }
   }
 
   protected open fun logDebug(message: String, data: Any? = null) {

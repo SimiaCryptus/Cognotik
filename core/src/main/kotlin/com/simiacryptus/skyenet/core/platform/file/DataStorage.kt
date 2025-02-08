@@ -13,7 +13,7 @@ open class DataStorage(
 ) : StorageInterface {
 
   init {
-    log.debug("Data directory: ${dataDir.absolutePath}", RuntimeException())
+    log.debug("Data directory: ${dataDir.absolutePath}")
   }
 
   override fun getMessages(

@@ -28,6 +28,7 @@ import com.simiacryptus.skyenet.apps.plan.tools.online.SimpleGoogleSearchTask.Go
 import com.simiacryptus.skyenet.apps.plan.tools.online.WebFetchAndTransformTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask.ForeachTaskConfigData
+import com.simiacryptus.skyenet.apps.plan.tools.plan.GraphBasedPlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.util.DynamicEnum
@@ -37,25 +38,74 @@ import com.simiacryptus.util.DynamicEnumSerializer
 @JsonDeserialize(using = TaskTypeDeserializer::class)
 @JsonSerialize(using = TaskTypeSerializer::class)
 class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
-  name: String,
-  val taskDataClass: Class<out T>,
-  val taskSettingsClass: Class<out U>,
-  val description: String? = null,
-  val tooltipHtml: String? = null,
+    name: String,
+    val taskDataClass: Class<out T>,
+    val taskSettingsClass: Class<out U>,
+    val description: String? = null,
+    val tooltipHtml: String? = null,
 ) : DynamicEnum<TaskType<*, *>>(name) {
 
 
-  companion object {
-
-    private val taskConstructors =
-      mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
-
-    val TaskPlanning = TaskType(
-      "TaskPlanning",
-      PlanningTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Break down and coordinate complex development tasks with dependency management",
+    companion object {
+        val GraphBasedPlanning = TaskType(
+            "GraphBasedPlanning",
+            GraphBasedPlanningTask.GraphBasedPlanningTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Generate and execute task plans based on software graph structure",
+            """
+      Creates task plans using software graph context.
+      <ul>
+        <li>Analyzes software graph structure</li>
+        <li>Generates dependency-aware task plans</li>
+        <li>Considers node relationships</li>
+        <li>Supports immediate execution</li>
+        <li>Provides planning rationale</li>
+      </ul>
       """
+        )
+        val SoftwareGraphModification = TaskType(
+            "SoftwareGraphModification",
+            SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Modify an existing software graph representation",
+            """
+           Loads, modifies and saves software graph representations.
+           <ul>
+             <li>Loads existing graph from JSON file</li>
+             <li>Generates targeted modifications</li>
+             <li>Preserves existing relationships</li>
+             <li>Validates node references</li>
+             <li>Saves modified graph</li>
+           </ul>
+           """
+        )
+        val SoftwareGraphGeneration = TaskType(
+            "SoftwareGraphGeneration",
+            SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Generate a SoftwareGraph representation of the codebase",
+            """
+                  Generates a comprehensive SoftwareGraph representation of the codebase.
+                  <ul>
+                    <li>Analyzes code structure and relationships</li>
+                    <li>Maps dependencies between components</li>
+                    <li>Captures project organization</li>
+                    <li>Identifies test relationships</li>
+                    <li>Tracks external dependencies</li>
+                    <li>Saves graph in JSON format</li>
+                  </ul>
+                """
+        )
+
+        private val taskConstructors =
+            mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
+
+        val TaskPlanning = TaskType(
+            "TaskPlanning",
+            PlanningTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Break down and coordinate complex development tasks with dependency management",
+            """
                       Orchestrates complex development tasks by breaking them down into manageable subtasks.
                       <ul>
                         <li>Analyzes project requirements and constraints to create optimal task sequences</li>
@@ -67,13 +117,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Identifies critical paths and potential bottlenecks</li>
                       </ul>
                     """
-    )
-    val Inquiry = TaskType(
-      "Inquiry",
-      InquiryTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Analyze code and provide detailed explanations of implementation patterns",
-      """
+        )
+        val Inquiry = TaskType(
+            "Inquiry",
+            InquiryTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Analyze code and provide detailed explanations of implementation patterns",
+            """
                       Provides detailed answers and insights about code implementation by analyzing specified files.
                       <ul>
                         <li>Answers detailed questions about code functionality and implementation</li>
@@ -85,13 +135,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Explains trade-offs and rationale behind implementation choices</li>
                       </ul>
                     """
-    )
-    val Search = TaskType(
-      "Search",
-      FileSearchTask.SearchTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Search project files using patterns with contextual results",
-      """
+        )
+        val Search = TaskType(
+            "Search",
+            FileSearchTask.SearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search project files using patterns with contextual results",
+            """
                       Performs pattern-based searches across project files with context.
                       <ul>
                         <li>Supports both substring and regex search patterns</li>
@@ -101,13 +151,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Provides organized, readable output format</li>
                       </ul>
                     """
-    )
-    val EmbeddingSearch = TaskType(
-      "EmbeddingSearch",
-      EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Perform semantic search using AI embeddings",
-      """
+        )
+        val EmbeddingSearch = TaskType(
+            "EmbeddingSearch",
+            EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Perform semantic search using AI embeddings",
+            """
                       Performs semantic search using AI embeddings across indexed content.
                       <ul>
                         <li>Uses OpenAI embeddings for semantic matching</li>
@@ -117,13 +167,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Returns ranked results with context</li>
                       </ul>
                     """
-    )
-    val FileModification = TaskType(
-      "FileModification",
-      FileModificationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Create new files or modify existing code with AI-powered assistance",
-      """
+        )
+        val FileModification = TaskType(
+            "FileModification",
+            FileModificationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Create new files or modify existing code with AI-powered assistance",
+            """
                       Creates or modifies source files with AI assistance while maintaining code quality.
                       <ul>
                         <li>Shows proposed changes in diff format for easy review</li>
@@ -136,13 +186,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Preserves existing code formatting and structure</li>
                       </ul>
                     """
-    )
-    val Documentation = TaskType(
-      "Documentation",
-      DocumentationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Generate comprehensive documentation for code, APIs, and architecture",
-      """
+        )
+        val Documentation = TaskType(
+            "Documentation",
+            DocumentationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Generate comprehensive documentation for code, APIs, and architecture",
+            """
                       Generates comprehensive documentation for code files and APIs.
                       <ul>
                         <li>Handles both inline comments and markdown files</li>
@@ -152,13 +202,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Maintains documentation consistency</li>
                       </ul>
                     """
-    )
-    val CodeReview = TaskType(
-      "CodeReview",
-      CodeReviewTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Perform thorough code review with quality and best practice analysis",
-      """
+        )
+        val CodeReview = TaskType(
+            "CodeReview",
+            CodeReviewTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Perform thorough code review with quality and best practice analysis",
+            """
                       Performs automated code reviews focusing on quality and best practices.
                       <ul>
                         <li>Analyzes code quality and potential issues</li>
@@ -168,13 +218,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Provides actionable recommendations</li>
                       </ul>
                     """
-    )
-    val TestGeneration = TaskType(
-      "TestGeneration",
-      TestGenerationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Generate comprehensive test suites with full coverage analysis",
-      """
+        )
+        val TestGeneration = TaskType(
+            "TestGeneration",
+            TestGenerationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Generate comprehensive test suites with full coverage analysis",
+            """
           Creates comprehensive test suites for code reliability and correctness.
           <ul>
             <li>Generates unit and integration tests</li>
@@ -184,13 +234,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Organizes tests in appropriate directories</li>
           </ul>
         """
-    )
-    val Optimization = TaskType(
-      "Optimization",
-      CodeOptimizationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Analyze performance bottlenecks and implement optimizations",
-      """
+        )
+        val Optimization = TaskType(
+            "Optimization",
+            CodeOptimizationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Analyze performance bottlenecks and implement optimizations",
+            """
           Analyzes and optimizes code performance while maintaining readability.
           <ul>
             <li>Identifies performance bottlenecks</li>
@@ -200,13 +250,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Provides impact estimates</li>
           </ul>
         """
-    )
-    val SecurityAudit = TaskType(
-      "SecurityAudit",
-      SecurityAuditTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Identify security vulnerabilities and provide mitigation strategies",
-      """
+        )
+        val SecurityAudit = TaskType(
+            "SecurityAudit",
+            SecurityAuditTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Identify security vulnerabilities and provide mitigation strategies",
+            """
           Performs security analysis to identify and fix vulnerabilities.
           <ul>
             <li>Analyzes security vulnerabilities</li>
@@ -216,13 +266,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Generates detailed audit reports</li>
           </ul>
         """
-    )
-    val PerformanceAnalysis = TaskType(
-      "PerformanceAnalysis",
-      PerformanceAnalysisTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Analyze and optimize code performance with detailed metrics",
-      """
+        )
+        val PerformanceAnalysis = TaskType(
+            "PerformanceAnalysis",
+            PerformanceAnalysisTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Analyze and optimize code performance with detailed metrics",
+            """
           Analyzes code performance and provides optimization recommendations.
           <ul>
             <li>Identifies performance bottlenecks and hotspots</li>
@@ -232,13 +282,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Recommends caching and optimization strategies</li>
           </ul>
         """
-    )
-    val RefactorTask = TaskType(
-      "RefactorTask",
-      RefactorTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Improve code structure, readability and maintainability",
-      """
+        )
+        val RefactorTask = TaskType(
+            "RefactorTask",
+            RefactorTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Improve code structure, readability and maintainability",
+            """
           Analyzes and improves code structure while maintaining functionality.
           <ul>
             <li>Suggests structural improvements</li>
@@ -248,13 +298,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Shows changes in diff format</li>
           </ul>
         """
-    )
-    val RunShellCommand = TaskType(
-      "RunShellCommand",
-      RunShellCommandTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Execute shell commands safely",
-      """
+        )
+        val RunShellCommand = TaskType(
+            "RunShellCommand",
+            RunShellCommandTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Execute shell commands safely",
+            """
           Executes shell commands in a controlled environment.
           <ul>
             <li>Safe command execution handling</li>
@@ -264,13 +314,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Interactive result review</li>
           </ul>
         """
-    )
-    val CommandAutoFix = TaskType(
-      "CommandAutoFix",
-      CommandAutoFixTaskConfigData::class.java,
-      CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
-      "Run a command and automatically fix any issues that arise",
-      """
+        )
+        val CommandAutoFix = TaskType(
+            "CommandAutoFix",
+            CommandAutoFixTaskConfigData::class.java,
+            CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
+            "Run a command and automatically fix any issues that arise",
+            """
           Executes a command and automatically fixes any issues that arise.
           <ul>
             <li>Specify commands and working directories</li>
@@ -279,14 +329,14 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Output diff formatting</li>
           </ul>
         """
-    )
+        )
 
-    val ForeachTask = TaskType(
-      "ForeachTask",
-      ForeachTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Execute subtasks for each item in a list",
-      """
+        val ForeachTask = TaskType(
+            "ForeachTask",
+            ForeachTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Execute subtasks for each item in a list",
+            """
           Executes a set of subtasks for each item in a given list.
           <ul>
             <li>Handles sequential item processing</li>
@@ -296,13 +346,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Configurable subtask definitions</li>
           </ul>
         """
-    )
-    val GitHubSearch = TaskType(
-      "GitHubSearch",
-      GitHubSearchTask.GitHubSearchTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Search GitHub repositories, code, issues and users",
-      """
+        )
+        val GitHubSearch = TaskType(
+            "GitHubSearch",
+            GitHubSearchTask.GitHubSearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search GitHub repositories, code, issues and users",
+            """
           Performs comprehensive searches across GitHub's content.
           <ul>
             <li>Searches repositories, code, and issues</li>
@@ -312,13 +362,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Handles API rate limiting</li>
           </ul>
         """
-    )
-    val GoogleSearch = TaskType(
-      "GoogleSearch",
-      GoogleSearchTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Perform Google web searches with custom filtering",
-      """
+        )
+        val GoogleSearch = TaskType(
+            "GoogleSearch",
+            GoogleSearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Perform Google web searches with custom filtering",
+            """
           Executes Google web searches with customizable parameters.
           <ul>
             <li>Uses Google Custom Search API</li>
@@ -328,14 +378,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Handles URL encoding and safety</li>
           </ul>
         """
-    )
-    val WebFetchAndTransform =
-      TaskType(
-        "WebFetchAndTransform",
-        WebFetchAndTransformTask.WebFetchAndTransformTaskConfigData::class.java,
-        TaskSettingsBase::class.java,
-        "Fetch and transform web content into desired formats",
-        """
+        )
+        val WebFetchAndTransform = TaskType(
+            "WebFetchAndTransform",
+            WebFetchAndTransformTask.WebFetchAndTransformTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Fetch and transform web content into desired formats",
+            """
           Fetches content from web URLs and transforms it into desired formats.
           <ul>
             <li>Downloads and cleans HTML content</li>
@@ -345,13 +394,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Integrates with markdown rendering</li>
           </ul>
         """
-      )
-    val KnowledgeIndexing = TaskType(
-      "KnowledgeIndexing",
-      KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Index content for semantic search capabilities",
-      """
+        )
+        val KnowledgeIndexing = TaskType(
+            "KnowledgeIndexing",
+            KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Index content for semantic search capabilities",
+            """
           Indexes documents and code for semantic search capabilities.
           <ul>
             <li>Processes both documentation and source code</li>
@@ -361,13 +410,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Progress tracking and reporting</li>
           </ul>
         """
-    )
-    val WebSearchAndIndex = TaskType(
-      "WebSearchAndIndex",
-      WebSearchAndIndexTask.WebSearchAndIndexTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Search web content and create searchable indexes",
-      """
+        )
+        val WebSearchAndIndex = TaskType(
+            "WebSearchAndIndex",
+            WebSearchAndIndexTask.WebSearchAndIndexTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search web content and create searchable indexes",
+            """
           Performs web searches and indexes results for future reference.
           <ul>
             <li>Integrates with Google Custom Search</li>
@@ -377,13 +426,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Supports batch processing</li>
           </ul>
         """
-    )
-    val SeleniumSession = TaskType(
-      "SeleniumSession",
-      SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Automate browser interactions with Selenium",
-      """
+        )
+        val SeleniumSession = TaskType(
+            "SeleniumSession",
+            SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Automate browser interactions with Selenium",
+            """
           Automates browser interactions using Selenium WebDriver.
           <ul>
             <li>Headless Chrome browser automation</li>
@@ -393,13 +442,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Detailed execution results</li>
           </ul>
         """
-    )
-    val CommandSession = TaskType(
-      "CommandSession",
-      CommandSessionTask.CommandSessionTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Manage interactive command-line sessions",
-      """
+        )
+        val CommandSession = TaskType(
+            "CommandSession",
+            CommandSessionTask.CommandSessionTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Manage interactive command-line sessions",
+            """
           Manages interactive command-line sessions with state persistence.
           <ul>
             <li>Creates and maintains command sessions</li>
@@ -409,13 +458,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Comprehensive output capture</li>
           </ul>
         """
-    )
-    val SearchAndAnalyze = TaskType(
-      "SearchAndAnalyze",
-      SearchAndAnalyzeTask.SearchAndAnalyzeTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Search Google, fetch top results, and analyze content",
-      """
+        )
+        val SearchAndAnalyze = TaskType(
+            "SearchAndAnalyze",
+            SearchAndAnalyzeTask.SearchAndAnalyzeTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search Google, fetch top results, and analyze content",
+            """
           Searches Google for specified queries and analyzes the top results.
           <ul>
             <li>Performs Google searches</li>
@@ -424,70 +473,78 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Generates detailed analysis reports</li>
           </ul>
         """
-    )
+        )
 
-    init {
-      registerConstructor(CommandAutoFix) { settings, task -> CommandAutoFixTask(settings, task) }
-      registerConstructor(Inquiry) { settings, task -> InquiryTask(settings, task) }
-      registerConstructor(Search) { settings, task -> FileSearchTask(settings, task) }
-      registerConstructor(SearchAndAnalyze) { settings, task -> SearchAndAnalyzeTask(settings, task) }
-      registerConstructor(EmbeddingSearch) { settings, task -> EmbeddingSearchTask(settings, task) }
-      registerConstructor(FileModification) { settings, task -> FileModificationTask(settings, task) }
-      registerConstructor(Documentation) { settings, task -> DocumentationTask(settings, task) }
-      registerConstructor(RunShellCommand) { settings, task -> RunShellCommandTask(settings, task) }
-      registerConstructor(CodeReview) { settings, task -> CodeReviewTask(settings, task) }
-      registerConstructor(TestGeneration) { settings, task -> TestGenerationTask(settings, task) }
-      registerConstructor(Optimization) { settings, task -> CodeOptimizationTask(settings, task) }
-      registerConstructor(SecurityAudit) { settings, task -> SecurityAuditTask(settings, task) }
-      registerConstructor(PerformanceAnalysis) { settings, task -> PerformanceAnalysisTask(settings, task) }
-      registerConstructor(RefactorTask) { settings, task -> RefactorTask(settings, task) }
-      registerConstructor(ForeachTask) { settings, task -> ForeachTask(settings, task) }
-      registerConstructor(TaskPlanning) { settings, task -> PlanningTask(settings, task) }
-      registerConstructor(GitHubSearch) { settings, task -> GitHubSearchTask(settings, task) }
-      registerConstructor(GoogleSearch) { settings, task -> SimpleGoogleSearchTask(settings, task) }
-      registerConstructor(WebFetchAndTransform) { settings, task -> WebFetchAndTransformTask(settings, task) }
-      registerConstructor(KnowledgeIndexing) { settings, task -> KnowledgeIndexingTask(settings, task) }
-      registerConstructor(WebSearchAndIndex) { settings, task -> WebSearchAndIndexTask(settings, task) }
-      registerConstructor(SeleniumSession) { settings, task -> SeleniumSessionTask(settings, task) }
-      registerConstructor(CommandSession) { settings, task -> CommandSessionTask(settings, task) }
+        init {
+            registerConstructor(GraphBasedPlanning) { settings, task ->
+                GraphBasedPlanningTask(settings, task)
+            }
+            registerConstructor(SoftwareGraphModification) { settings, task ->
+                SoftwareGraphModificationTask(settings, task)
+            }
+            registerConstructor(SoftwareGraphGeneration) { settings, task ->
+                SoftwareGraphGenerationTask(settings, task)
+            }
+            registerConstructor(CommandAutoFix) { settings, task -> CommandAutoFixTask(settings, task) }
+            registerConstructor(Inquiry) { settings, task -> InquiryTask(settings, task) }
+            registerConstructor(Search) { settings, task -> FileSearchTask(settings, task) }
+            registerConstructor(SearchAndAnalyze) { settings, task -> SearchAndAnalyzeTask(settings, task) }
+            registerConstructor(EmbeddingSearch) { settings, task -> EmbeddingSearchTask(settings, task) }
+            registerConstructor(FileModification) { settings, task -> FileModificationTask(settings, task) }
+            registerConstructor(Documentation) { settings, task -> DocumentationTask(settings, task) }
+            registerConstructor(RunShellCommand) { settings, task -> RunShellCommandTask(settings, task) }
+            registerConstructor(CodeReview) { settings, task -> CodeReviewTask(settings, task) }
+            registerConstructor(TestGeneration) { settings, task -> TestGenerationTask(settings, task) }
+            registerConstructor(Optimization) { settings, task -> CodeOptimizationTask(settings, task) }
+            registerConstructor(SecurityAudit) { settings, task -> SecurityAuditTask(settings, task) }
+            registerConstructor(PerformanceAnalysis) { settings, task -> PerformanceAnalysisTask(settings, task) }
+            registerConstructor(RefactorTask) { settings, task -> RefactorTask(settings, task) }
+            registerConstructor(ForeachTask) { settings, task -> ForeachTask(settings, task) }
+            registerConstructor(TaskPlanning) { settings, task -> PlanningTask(settings, task) }
+            registerConstructor(GitHubSearch) { settings, task -> GitHubSearchTask(settings, task) }
+            registerConstructor(GoogleSearch) { settings, task -> SimpleGoogleSearchTask(settings, task) }
+            registerConstructor(WebFetchAndTransform) { settings, task -> WebFetchAndTransformTask(settings, task) }
+            registerConstructor(KnowledgeIndexing) { settings, task -> KnowledgeIndexingTask(settings, task) }
+            registerConstructor(WebSearchAndIndex) { settings, task -> WebSearchAndIndexTask(settings, task) }
+            registerConstructor(SeleniumSession) { settings, task -> SeleniumSessionTask(settings, task) }
+            registerConstructor(CommandSession) { settings, task -> CommandSessionTask(settings, task) }
+        }
+
+        fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(
+            taskType: TaskType<T, U>, constructor: (PlanSettings, T?) -> AbstractTask<T>
+        ) {
+            taskConstructors[taskType] = { settings: PlanSettings, task: TaskConfigBase? ->
+                constructor(settings, task as T?)
+            }
+            register(taskType)
+        }
+
+        fun values() = values(TaskType::class.java)
+        fun getImpl(
+            planSettings: PlanSettings, planTask: TaskConfigBase?
+        ) = getImpl(
+            planSettings,
+            planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
+            planTask)
+
+        fun getImpl(
+            planSettings: PlanSettings, taskType: TaskType<*, *>, planTask: TaskConfigBase? = null
+        ): AbstractTask<out TaskConfigBase> {
+            if (!planSettings.getTaskSettings(taskType).enabled) {
+                throw DisabledTaskException(taskType)
+            }
+            val constructor =
+                taskConstructors[taskType] ?: throw RuntimeException("Unknown task type: ${taskType.name}")
+            return constructor(planSettings, planTask)
+        }
+
+        fun getAvailableTaskTypes(planSettings: PlanSettings) = values().filter {
+            planSettings.getTaskSettings(it).enabled
+        }
+
+        fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)
+        private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
     }
-
-    fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(
-      taskType: TaskType<T, U>,
-      constructor: (PlanSettings, T?) -> AbstractTask<T>
-    ) {
-      taskConstructors[taskType] = { settings: PlanSettings, task: TaskConfigBase? ->
-        constructor(settings, task as T?)
-      }
-      register(taskType)
-    }
-
-    fun values() = values(TaskType::class.java)
-    fun getImpl(
-      planSettings: PlanSettings,
-      planTask: TaskConfigBase?
-    ) = getImpl(planSettings, planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"), planTask)
-
-    fun getImpl(
-      planSettings: PlanSettings,
-      taskType: TaskType<*, *>,
-      planTask: TaskConfigBase? = null
-    ): AbstractTask<out TaskConfigBase> {
-      if (!planSettings.getTaskSettings(taskType).enabled) {
-        throw DisabledTaskException(taskType)
-      }
-      val constructor =
-        taskConstructors[taskType] ?: throw RuntimeException("Unknown task type: ${taskType.name}")
-      return constructor(planSettings, planTask)
-    }
-
-    fun getAvailableTaskTypes(planSettings: PlanSettings) = values().filter {
-      planSettings.getTaskSettings(it).enabled
-    }
-
-    fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)
-    private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
-  }
 }
 
 class TaskTypeSerializer : DynamicEnumSerializer<TaskType<*, *>>(TaskType::class.java)
