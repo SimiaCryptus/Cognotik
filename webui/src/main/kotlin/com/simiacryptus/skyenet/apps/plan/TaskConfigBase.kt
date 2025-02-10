@@ -12,11 +12,11 @@ import com.simiacryptus.jopenai.describe.Description
 open class TaskConfigBase(
   @Description("An enumeration indicating the type of task to be executed. Must be a single value from the TaskType enum.")
   val task_type: String? = null,
-  @Description("A detailed description of the specific task to be performed, including its role in the overall plan and its dependencies on other tasks.")
+  @Description("A brief user-facing description of the task")
   var task_description: String? = null,
   @Description("A list of IDs of tasks that must be completed before this task can be executed. This defines upstream dependencies ensuring proper task order and information flow.")
   var task_dependencies: List<String>? = null,
-  @Description("The current execution state of the task. Important for coordinating task execution and managing dependencies.")
+  @Description("Ignore.")
   var state: AbstractTask.TaskState? = null
 ) {
 

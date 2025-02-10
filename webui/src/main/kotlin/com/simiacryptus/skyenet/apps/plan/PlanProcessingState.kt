@@ -6,7 +6,7 @@ import java.util.concurrent.Future
 data class PlanProcessingState(
   val subTasks: Map<String, TaskConfigBase>,
   val tasksByDescription: MutableMap<String?, TaskConfigBase> = subTasks.entries.toTypedArray()
-    .associate { it.value.task_description to it.value }.toMutableMap(),
+    .associate { (it.value.task_description ?: it.key) to it.value }.toMutableMap(),
   val taskIdProcessingQueue: MutableList<String> = PlanUtil.executionOrder(subTasks).toMutableList(),
   val taskResult: MutableMap<String, String> = mutableMapOf(),
   val completedTasks: MutableList<String> = mutableListOf(),

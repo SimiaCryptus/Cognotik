@@ -1,7 +1,6 @@
 package com.simiacryptus.skyenet.apps.plan
 
 
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -14,15 +13,16 @@ import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
-import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -85,13 +85,7 @@ class PlanCoordinator(
     api: API,
     api2: OpenAIClient,
   ): PlanProcessingState {
-    val api = (api as ChatClient).getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+    val api = (api as ChatClient).getChildClient(task)
     val planProcessingState = newState(plan)
     try {
       val diagramTask = ui.newTask(false).apply { task.add(placeholder) }
@@ -140,13 +134,7 @@ class PlanCoordinator(
     api2: OpenAIClient,
   ) {
     val sessionTask = ui.newTask(false).apply { task.add(placeholder) }
-    val api = (api as ChatClient).getChildClient().apply {
-      val createFile = sessionTask.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        sessionTask.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+    val api = (api as ChatClient).getChildClient(task)
     val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
       override fun renderTabButtons(): String {
         diagramBuffer?.set(
@@ -179,7 +167,7 @@ class PlanCoordinator(
     taskIdProcessingQueue.forEach { taskId ->
       val newTask = ui.newTask(false)
       planProcessingState.uitaskMap[taskId] = newTask
-      val subtask = planProcessingState.subTasks[taskId]
+      val subtask: TaskConfigBase? = planProcessingState.subTasks[taskId]
       val description = subtask?.task_description
       log.debug("Creating task tab: $taskId ${System.identityHashCode(subtask)} $description")
       taskTabs[description ?: taskId] = newTask.placeholder
@@ -222,13 +210,7 @@ class PlanCoordinator(
                   "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }, ui = ui
             )
           )
-          val api = api.getChildClient().apply {
-            val createFile = task1.createFile(".logs/api-${UUID.randomUUID()}.log")
-            createFile.second?.apply {
-              logStreams += this.outputStream().buffered()
-              task1.verbose("API log: <a href=\"file:///$this\">$this</a>")
-            }
-          }
+          val api = api.getChildClient(task)
           val impl = getImpl(planSettings, subTask)
           val messages = listOf(
             userMessage,
@@ -280,6 +262,42 @@ class PlanCoordinator(
     planSettings = planSettings,
     root = root
   )
+
+  fun executeTask(
+    task: TaskConfigBase,
+    messages: List<String>,
+    sessionTask: SessionTask,
+    api: API,
+    api2: OpenAIClient
+  ) {
+    try {
+      val api = (api as ChatClient).getChildClient(sessionTask)
+      val impl = getImpl(planSettings, task, strict = false)
+      sessionTask.add(
+        renderMarkdown(
+          """
+          ## Executing Task
+          ${TRIPLE_TILDE}json
+          ${JsonUtil.toJson(task)}
+          ${TRIPLE_TILDE}
+          """.trimIndent(),
+          ui = ui
+        )
+      )
+      impl.run(
+        agent = this,
+        messages = messages,
+        task = sessionTask,
+        api = api,
+        api2 = api2,
+        resultFn = { /* Individual task execution doesn't need result storage */ },
+        planSettings = planSettings
+      )
+    } catch (e: Throwable) {
+      log.warn("Error during task execution", e)
+      sessionTask.error(ui, e)
+    }
+  }
 
   companion object : Planner() {
     private val log = LoggerFactory.getLogger(PlanCoordinator::class.java)

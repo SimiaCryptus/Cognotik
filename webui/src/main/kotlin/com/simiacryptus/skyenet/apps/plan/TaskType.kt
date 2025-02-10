@@ -18,6 +18,9 @@ import com.simiacryptus.skyenet.apps.plan.tools.file.PerformanceAnalysisTask.Per
 import com.simiacryptus.skyenet.apps.plan.tools.file.RefactorTask.RefactorTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.file.SecurityAuditTask.SecurityAuditTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.file.TestGenerationTask.TestGenerationTaskConfigData
+import com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask
+import com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphGenerationTask
+import com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphModificationTask
 import com.simiacryptus.skyenet.apps.plan.tools.knowledge.EmbeddingSearchTask
 import com.simiacryptus.skyenet.apps.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.skyenet.apps.plan.tools.knowledge.WebSearchAndIndexTask
@@ -28,7 +31,6 @@ import com.simiacryptus.skyenet.apps.plan.tools.online.SimpleGoogleSearchTask.Go
 import com.simiacryptus.skyenet.apps.plan.tools.online.WebFetchAndTransformTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask.ForeachTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.plan.GraphBasedPlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.util.DynamicEnum
@@ -521,16 +523,23 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
 
         fun values() = values(TaskType::class.java)
         fun getImpl(
-            planSettings: PlanSettings, planTask: TaskConfigBase?
+            planSettings: PlanSettings,
+            planTask: TaskConfigBase?,
+            strict: Boolean = true
         ) = getImpl(
-            planSettings,
-            planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
-            planTask)
+            planSettings = planSettings,
+            taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
+            planTask = planTask,
+            strict = strict
+        )
 
         fun getImpl(
-            planSettings: PlanSettings, taskType: TaskType<*, *>, planTask: TaskConfigBase? = null
+            planSettings: PlanSettings,
+            taskType: TaskType<*, *>,
+            planTask: TaskConfigBase? = null,
+            strict: Boolean = true
         ): AbstractTask<out TaskConfigBase> {
-            if (!planSettings.getTaskSettings(taskType).enabled) {
+            if (strict && !planSettings.getTaskSettings(taskType).enabled) {
                 throw DisabledTaskException(taskType)
             }
             val constructor =

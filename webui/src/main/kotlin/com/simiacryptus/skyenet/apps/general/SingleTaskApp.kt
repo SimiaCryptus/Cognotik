@@ -14,9 +14,9 @@ import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import java.io.File
-import java.util.*
 
 open class SingleTaskApp(
   applicationName: String = "Single Task App",
@@ -83,13 +83,7 @@ open class SingleTaskApp(
     ui: ApplicationInterface
   ) {
     task.echo(renderMarkdown(userMessage))
-    val api = (api as ChatClient).getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+    val api = (api as ChatClient).getChildClient(task)
     val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
     api.budget = settings.budget
     val coordinator = PlanCoordinator(

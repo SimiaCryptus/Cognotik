@@ -14,6 +14,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.application.ApplicationSocketManager
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.SocketManager
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import java.awt.image.BufferedImage
 import java.io.File
@@ -57,7 +58,7 @@ open class DocumentParserApp(
       val progressBar = progressBar(ui.newTask())
       socketManager.pool.submit {
         run(
-          mainTask = ui.newTask(),
+          task = ui.newTask(),
           ui = ui,
           fileInputs = (app.fileInputs ?: settings.fileInputs?.map { File(it).toPath() } ?: error("File input not provided")),
           maxPages = settings.maxPages.coerceAtMost(Int.MAX_VALUE),
@@ -74,7 +75,7 @@ open class DocumentParserApp(
     val settings = getSettings(session, user, Settings::class.java) ?: Settings()
     ui.socketManager!!.pool.submit {
       run(
-        mainTask = ui.newTask(),
+        task = ui.newTask(),
         ui = ui,
         fileInputs = (this.fileInputs ?: settings.fileInputs?.map<String, Path> { File(it).toPath() } ?: error("File input not provided")),
         maxPages = settings.maxPages.coerceAtMost(Int.MAX_VALUE),
@@ -85,7 +86,7 @@ open class DocumentParserApp(
   }
 
   private fun run(
-    mainTask: SessionTask,
+    task: SessionTask,
     ui: ApplicationInterface,
     fileInputs: List<Path>,
     maxPages: Int,
@@ -99,24 +100,18 @@ open class DocumentParserApp(
         throw IllegalArgumentException("No input files provided")
       }
 
-      mainTask.header("Knowledge Extractor")
-      val api = (api as ChatClient).getChildClient().apply {
-        val createFile = mainTask.createFile(".logs/api-${UUID.randomUUID()}.log")
-        createFile.second?.apply {
-          logStreams += this.outputStream().buffered()
-          mainTask.verbose("API log: <a href=\"file:///$this\">$this</a>")
-        }
-      }
+      task.header("Knowledge Extractor")
+      val api = (api as ChatClient).getChildClient(task)
       // Create output directory
       val outputDir = root.resolve("output").apply<File> { mkdirs() }
       if (!outputDir.exists()) {
         throw IOException("Failed to create output directory: $outputDir")
       }
 
-      val docTabs = TabbedDisplay(mainTask)
+      val docTabs = TabbedDisplay(task)
       fileInputs.map { it.toFile() }.forEach { file ->
         if (!file.exists()) {
-          mainTask.error(ui, IllegalArgumentException("File not found: $file"))
+          task.error(ui, IllegalArgumentException("File not found: $file"))
           return
         }
         ui.socketManager?.pool?.submit {
@@ -134,13 +129,7 @@ open class DocumentParserApp(
             var runningDocument = parsingModel.newDocument()
             val futures = pageSets.toList().mapNotNull { batchStart ->
               val pageTask = ui.newTask(false)
-              val api = api.getChildClient().apply {
-                val createFile = pageTask.createFile(".logs/api-${UUID.randomUUID()}.log")
-                createFile.second?.apply {
-                  logStreams += this.outputStream().buffered()
-                  pageTask.verbose("API log: <a href=\"file:///$this\">$this</a>")
-                }
-              }
+              val api = api.getChildClient(pageTask)
               try {
                 val batchEnd = min(batchStart + pagesPerBatch, pageCount)
                 val text = reader.getText(batchStart, batchEnd)
@@ -204,7 +193,7 @@ open class DocumentParserApp(
               try {
                 it.get()
               } catch (e: Throwable) {
-                mainTask.error(ui, e)
+                task.error(ui, e)
                 null
               }
             }.fold(parsingModel.newDocument())
@@ -224,7 +213,7 @@ open class DocumentParserApp(
         }
       }
     } catch (e: Throwable) {
-      mainTask.error(ui, e)
+      task.error(ui, e)
     }
   }
 

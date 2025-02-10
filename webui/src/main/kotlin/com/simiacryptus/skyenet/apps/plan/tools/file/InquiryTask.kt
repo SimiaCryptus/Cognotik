@@ -1,6 +1,5 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
@@ -11,6 +10,7 @@ import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.apps.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.util.JsonUtil
@@ -90,10 +90,11 @@ class InquiryTask(
       ).filter { it.isNotBlank() }
     }
 
+    val taskConfig: InquiryTaskConfigData? = this.taskConfig
     val inquiryResult = if (planSettings.allowBlocking) Discussable(
       task = task,
       userMessage = {
-        "Expand ${this.taskConfig?.task_description ?: ""}\nQuestions: ${
+        "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
           taskConfig?.inquiry_questions?.joinToString(
             "\n"
           )
@@ -106,7 +107,7 @@ class InquiryTask(
       },
       ui = agent.ui,
       reviseResponse = { usermessages: List<Pair<String, Role>> ->
-        val inStr = "Expand ${this.taskConfig?.task_description ?: ""}\nQuestions: ${
+        val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
           taskConfig?.inquiry_questions?.joinToString("\n")
         }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
         val messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
@@ -121,7 +122,7 @@ class InquiryTask(
       semaphore = Semaphore(0),
     ).call() else inquiryActor.answer(
       toInput(
-        "Expand ${this.taskConfig?.task_description ?: ""}\nQuestions: ${
+        "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
           taskConfig?.inquiry_questions?.joinToString(
             "\n"
           )

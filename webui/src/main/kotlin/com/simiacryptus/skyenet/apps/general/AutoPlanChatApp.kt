@@ -16,6 +16,7 @@ import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import java.io.File
 import java.util.*
@@ -83,22 +84,139 @@ open class AutoPlanChatApp(
   data class ThinkingStatus(
     @Description("The original user prompt or request that initiated the conversation.")
     var initialPrompt: String? = null,
-    @Description("The hierarchical goals structure defining both immediate and long-term objectives.")
+    @Description("Confidence level or certainty rating in the current overall thinking state.")
+    var confidence: Double? = null,
+    @Description("An iteration counter to add temporal context.")
+    var iteration: Int = 0,
+    @Description("The hierarchical goals structure defining both immediate and long-term objectives. Note: updated to include priorities and rigidity flags.")
     val goals: Goals? = null,
-    @Description("The accumulated knowledge, facts, and uncertainties gathered during the conversation.")
+    @Description("The accumulated knowledge, facts, uncertainties and past reflections gathered during the conversation.")
     val knowledge: Knowledge? = null,
-    @Description("The operational context including task history, current state, and planned actions.")
+    @Description("The operational context including task history, current state, and planned actions, with monitoring for anomalous outputs.")
     val executionContext: ExecutionContext? = null
   )
 
-  @Description("The goals of the AI assistant.")
+    data class ExecutionRecord(
+        val time: Date? = Date(),
+        val iteration: Int = 0,
+        val task: TaskConfigBase? = null,
+        val result: String? = null,
+        @Description("Meta-cognitive reflection about the task execution – including what went well and what could be improved.")
+        val reflections: Reflection? = null
+    )
   data class Goals(
-    @Description("Immediate objectives that need to be accomplished in the current iteration.")
-    val shortTerm: MutableList<Any>? = null,
+      @Description("Immediate objectives that need to be accomplished in the current iteration. Each goal can indicate its rigidity and priority.")
+      val shortTerm: MutableList<Goal>? = null,
     @Description("Overall objectives that span multiple iterations or the entire conversation.")
-    val longTerm: MutableList<Any>? = null
+      val longTerm: MutableList<Goal>? = null
   )
 
+    data class Goal(
+        val objective: String,
+        @Description("Flag indicating if this goal is rigid (non-negotiable) or flexible.")
+        val isRigid: Boolean = false,
+        @Description("Priority level with lower numbers indicating a higher priority.")
+        val priority: Int = 5
+    )
+
+    data class Reflection(
+        @Description("What went well during this task execution.")
+        val positiveNotes: String,
+        @Description("What could be improved for future iterations.")
+        val improvementSuggestions: String,
+        @Description("Optional error metrics or confidence adjustment from the task.")
+        val errorMetric: Double? = null
+    )
+
+    protected open fun updateThinking(
+        api: ChatClient,
+        planSettings: PlanSettings,
+        thinkingStatus: ThinkingStatus?,
+        completedTasks: List<ExecutionRecord>,
+        session: Session,
+    ): ThinkingStatus = ParsedActor(
+        name = "UpdateQuestionsActor",
+        resultClass = ThinkingStatus::class.java,
+        exampleInstance = ThinkingStatus(
+            initialPrompt = "Create a Python script to analyze log files and generate a summary report",
+            confidence = 0.8,
+            iteration = 1,
+            goals = Goals(
+                shortTerm = mutableListOf(
+                    Goal("Understand log file format requirements", isRigid = true, priority = 1),
+                    Goal("Define report structure", priority = 2),
+                    Goal("Plan implementation approach", priority = 3)
+                ),
+                longTerm = mutableListOf(
+                    Goal("Deliver working Python script", isRigid = true, priority = 1),
+                    Goal("Ensure robust error handling", priority = 2),
+                    Goal("Provide documentation", priority = 3)
+                )
+            ),
+            knowledge = Knowledge(
+                facts = mutableListOf(
+                    "Project requires Python programming",
+                    "Output format needs to be a summary report",
+                    "Input consists of log files"
+                ),
+                hypotheses = mutableListOf(
+                    "Log files might be in different formats",
+                    "Performance optimization may be needed for large files"
+                ),
+                openQuestions = mutableListOf(
+                    "What is the specific log file format?",
+                    "Are there any performance requirements?",
+                    "What specific metrics should be included in the report?"
+                )
+            ),
+            executionContext = ExecutionContext(
+                completedTasks = mutableListOf(
+                    "Initial requirements analysis",
+                    "Project scope definition"
+                ),
+                currentTask = CurrentTask(
+                    taskId = "TASK_003",
+                    description = "Design log parsing algorithm"
+                ),
+                nextSteps = mutableListOf(
+                    "Implement log file reader",
+                    "Create report generator",
+                    "Add error handling",
+                    "Invoke reflect task if needed"
+                )
+            )
+        ),
+        prompt = """
+        Given the current thinking status, the last completed task, its result, and any repeating error signals,
+        update the open questions and next steps to guide the planning process.
+        Reflect on what went well and what could be improved.
+        Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
+        If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
+    """.trimIndent(),
+        model = planSettings.defaultModel,
+        parsingModel = planSettings.parsingModel,
+        temperature = planSettings.temperature,
+        describer = planSettings.describer()
+    ).answer(
+        listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}") + contextData() +
+                completedTasks.flatMap { record ->
+                    val task: TaskConfigBase? = record.task
+                    listOf(
+                        "Completed task: ${task?.task_description}",
+                        "Task result: ${record.result}",
+                        record.reflections?.let { "Reflection: Positive: ${it.positiveNotes}, Improvements: ${it.improvementSuggestions}" }
+                            ?: ""
+                    )
+                } + (currentUserMessages.get(session.sessionId)?.let { listOf("User message: $it") } ?: listOf()),
+        api
+    ).obj.apply {
+        currentUserMessages.get(session.sessionId)?.set(null)
+        knowledge?.facts?.apply {
+            this.addAll(completedTasks.mapIndexed { index, (task, result, _) ->
+                "Task ${(executionContext?.completedTasks?.size ?: 0) + index + 1} Result: $result"
+            })
+        }
+    }
   @Description("The knowledge base of the AI assistant.")
   data class Knowledge(
     @Description("Verified information and concrete data gathered from task results and user input.")
@@ -127,11 +245,7 @@ open class AutoPlanChatApp(
     val description: String? = null
   )
 
-  data class ExecutionRecord(
-    val time: Date? = Date(),
-    val task: TaskConfigBase? = null,
-    val result: String? = null
-  )
+
 
   data class Tasks(
     val tasks: MutableList<TaskConfigBase>? = null
@@ -174,15 +288,7 @@ open class AutoPlanChatApp(
     val thinkingStatus = thinkingStatuses.computeIfAbsent(session.sessionId) { AtomicReference<ThinkingStatus?>(null) }
     val task = ui.newTask(true)
     val (currentUserMessage, _, executionRecords) = getState(session.sessionId)
-    val api = (api as ChatClient).getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        logDebug("Created API log file", this)
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
-
+      val api = (api as ChatClient).getChildClient(task)
     val tabbedDisplay = TabbedDisplay(task)
     val executor = ui.socketManager!!.pool
     var continueLoop = true
@@ -228,14 +334,7 @@ open class AutoPlanChatApp(
           logDebug("Starting iteration $iteration")
           task.complete()
           val task = ui.newTask(false).apply { tabbedDisplay["Iteration $iteration"] = placeholder }
-          val api = api.getChildClient().apply {
-            val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-            createFile.second?.apply {
-              logStreams += this.outputStream().buffered()
-              logDebug("Created iteration API log file", this)
-              task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-            }
-          }
+            val api = api.getChildClient(task)
           val tabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
           ui.newTask(false).apply {
             tabbedDisplay["Inputs"] = placeholder
@@ -262,7 +361,7 @@ open class AutoPlanChatApp(
           logDebug("Retrieved next tasks", nextTask)
 
           val taskResults = mutableListOf<Pair<TaskConfigBase, Future<String>>>()
-          for ((index, currentTask) in nextTask.withIndex()) {
+            for ((index, currentTask: TaskConfigBase) in nextTask.withIndex()) {
             val currentTaskId = "task_${index + 1}"
             logDebug("Executing task $currentTaskId", currentTask)
             val taskExecutionTask = ui.newTask(false)
@@ -338,13 +437,7 @@ open class AutoPlanChatApp(
     thinkingStatus: ThinkingStatus?,
     session: Session,
   ): String {
-    val api = api.getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+      val api = api.getChildClient(task)
     val taskImpl = TaskType.getImpl(coordinator.planSettings, currentTask)
     val result = StringBuilder()
     taskImpl.run(
@@ -432,92 +525,6 @@ open class AutoPlanChatApp(
     }
   }
 
-  protected open fun updateThinking(
-    api: ChatClient,
-    planSettings: PlanSettings,
-    thinkingStatus: ThinkingStatus?,
-    completedTasks: List<ExecutionRecord>,
-    session: Session,
-  ): ThinkingStatus = ParsedActor(
-    name = "UpdateQuestionsActor",
-    resultClass = ThinkingStatus::class.java,
-    exampleInstance = ThinkingStatus(
-      initialPrompt = "Create a Python script to analyze log files and generate a summary report",
-      goals = Goals(
-        shortTerm = mutableListOf(
-          "Understand log file format requirements",
-          "Define report structure",
-          "Plan implementation approach"
-        ),
-        longTerm = mutableListOf(
-          "Deliver working Python script",
-          "Ensure robust error handling",
-          "Provide documentation"
-        )
-      ),
-      knowledge = Knowledge(
-        facts = mutableListOf(
-          "Project requires Python programming",
-          "Output format needs to be a summary report",
-          "Input consists of log files"
-        ),
-        hypotheses = mutableListOf(
-          "Log files might be in different formats",
-          "Performance optimization may be needed for large files"
-        ),
-        openQuestions = mutableListOf(
-          "What is the specific log file format?",
-          "Are there any performance requirements?",
-          "What specific metrics should be included in the report?"
-        )
-      ),
-      executionContext = ExecutionContext(
-        completedTasks = mutableListOf(
-          "Initial requirements analysis",
-          "Project scope definition"
-        ),
-        currentTask = CurrentTask(
-          taskId = "TASK_003",
-          description = "Design log parsing algorithm"
-        ),
-        nextSteps = mutableListOf(
-          "Implement log file reader",
-          "Create report generator",
-          "Add error handling"
-        )
-      )
-    ),
-    prompt = """
-        Given the current thinking status, the last completed task, and its result,
-        update the open questions to guide the next steps of the planning process.
-        Consider what information is still needed and what new questions arise from the task result.
-        Update the current goal if necessary, adjust the progress, suggest next steps, and add any new insights.
-        Update the knowledge base with new facts and hypotheses.
-        Update the estimated time remaining and adjust the confidence level based on progress.
-        Reassess challenges, available resources, and alternative approaches.
-    """.trimIndent(),
-    model = planSettings.defaultModel,
-    parsingModel = planSettings.parsingModel,
-    temperature = planSettings.temperature,
-    describer = planSettings.describer()
-  ).answer(
-    listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}") + contextData() +
-        completedTasks.flatMap { record ->
-          listOf(
-            "Completed task: ${record.task?.task_description}",
-            "Task result: ${record.result}"
-          )
-        } + (currentUserMessages.get(session.sessionId)?.let { listOf("User message: $it") } ?: listOf()),
-    api
-  ).obj.apply {
-    currentUserMessages.get(session.sessionId)?.set(null)
-    knowledge?.facts?.apply {
-      this.addAll(completedTasks.mapIndexed { index, (task, result) ->
-        "Task ${(executionContext?.completedTasks?.size ?: 0) + index + 1} Result: $result"
-      })
-    }
-  }
-
   protected open fun initThinking(
     planSettings: PlanSettings,
     userMessage: String,
@@ -529,8 +536,8 @@ open class AutoPlanChatApp(
       exampleInstance = ThinkingStatus(
         initialPrompt = "Example prompt",
         goals = Goals(
-          shortTerm = mutableListOf("Understand the user's request"),
-          longTerm = mutableListOf("Complete the user's task")
+            shortTerm = mutableListOf(Goal("Understand the user's request")),
+            longTerm = mutableListOf(Goal("Complete the user's task"))
         ),
         knowledge = Knowledge(
           facts = mutableListOf("Initial Context: User's request received"),

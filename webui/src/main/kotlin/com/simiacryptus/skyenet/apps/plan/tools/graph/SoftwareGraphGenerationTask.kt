@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.plan.tools.file
+package com.simiacryptus.skyenet.apps.plan.tools.graph
 
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -6,7 +6,11 @@ import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.apps.graph.SoftwareNodeType
-import com.simiacryptus.skyenet.apps.plan.*
+import com.simiacryptus.skyenet.apps.plan.AbstractTask
+import com.simiacryptus.skyenet.apps.plan.PlanCoordinator
+import com.simiacryptus.skyenet.apps.plan.PlanSettings
+import com.simiacryptus.skyenet.apps.plan.TaskType
+import com.simiacryptus.skyenet.apps.plan.tools.file.AbstractFileTask
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask

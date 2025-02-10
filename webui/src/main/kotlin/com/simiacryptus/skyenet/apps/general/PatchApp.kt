@@ -18,11 +18,11 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.application.ApplicationSocketManager
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.SocketManager
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
-import java.util.*
 
 abstract class PatchApp(
   override val root: File,
@@ -222,13 +222,7 @@ abstract class PatchApp(
     changed: MutableSet<Path>,
     api: ChatClient,
   ) {
-    val api = api.getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+    val api = api.getChildClient(task)
     val plan = ParsedActor(
       resultClass = ParsedErrors::class.java,
       exampleInstance = ParsedErrors(

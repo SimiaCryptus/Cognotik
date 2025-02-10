@@ -74,35 +74,27 @@ open class PlanSettings(
 
   fun planningActor(): ParsedActor<TaskBreakdownResult> {
     val planTaskSettings = this.getTaskSettings(TaskType.TaskPlanning)
+    // Note: the platform automatically reads and provides the necessary JSON software graph.
+    // The prompt below should focus purely on breaking down the user instruction without re-framing the JSON data.
     val prompt = """
                       Given a user request, identify and list smaller, actionable tasks that can be directly implemented in code.
-                      
+                      (Do not repeat or ask for the JSON content since the platform already handles reading the software graph.)
                       For each task:
-                      * Detail files input and output file
-                      * Describe task execution dependencies and order
-                      * Provide a brief description of the task
-                      * Specify important interface and integration details (each task will run independently off of a copy of this plan)
-                      
-                      Tasks can be of the following types: 
-                      """.trimIndent() + getAvailableTaskTypes(this).joinToString("\n") { taskType ->
+                      * Provide input/output file names if applicable
+                      * Describe any execution dependencies and the order in which tasks should be run
+                      * Write a brief description of the task and its role
+                      * Mention any important interface or integration details
+                      The available task types are:
+                      """.trimIndent() + "\n  " + getAvailableTaskTypes(this).joinToString("\n") { taskType ->
       "* ${getImpl(this, taskType).promptSegment()}"
     } + """
-                      
-                      Creating directories and initializing source control are out of scope.
+                      (Remember: the JSON file content is already loaded by the platform.)
                       """.trimIndent() + (if (planTaskSettings.enabled) "Do not start your plan with a plan to plan!\n" else "")
     val describer = describer()
-    val parserPrompt = """
-Task Subtype Schema:
-
-${
-      getAvailableTaskTypes(this).joinToString("\n\n") { taskType ->
-        """
-${taskType.name}:
-  ${describer.describe(taskType.taskDataClass).replace("\n", "\n  ")}
-""".trim()
-      }
-    }
-                """.trimIndent()
+    val parserPrompt =
+      ("\nTask Subtype Schema:\n\n" + getAvailableTaskTypes(this).joinToString("\n\n") { taskType ->
+        "\n${taskType.name}:\n  ${describer.describe(taskType.taskDataClass).replace("\n", "\n  ")}\n".trim()
+      } + "\n")
     return ParsedActor(
       name = "TaskBreakdown",
       resultClass = TaskBreakdownResult::class.java,

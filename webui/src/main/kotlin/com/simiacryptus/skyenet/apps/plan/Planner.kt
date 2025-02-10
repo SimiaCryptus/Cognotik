@@ -7,10 +7,10 @@ import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
-import java.util.*
 
 open class Planner {
 
@@ -24,13 +24,7 @@ open class Planner {
     planSettings: PlanSettings,
     api: API
   ): TaskBreakdownWithPrompt {
-    val api = (api as ChatClient).getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+    val api = (api as ChatClient).getChildClient(task)
     val toInput = inputFn(codeFiles, files, root)
     task.echo(userMessage)
     return if (planSettings.allowBlocking)

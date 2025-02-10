@@ -20,11 +20,11 @@ import com.simiacryptus.skyenet.util.TensorflowProjector
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 open class OutlineApp(
@@ -135,14 +135,7 @@ class OutlineAgent(
 
   fun buildMap() {
     val task = ui.newTask(false)
-    val api = (api as ChatClient).getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        log.debug("Created API log file")
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+    val api = (api as ChatClient).getChildClient(task)
     tabbedDisplay["Content"] = task.placeholder
     val outlineManager = try {
       task.echo(renderMarkdown(this.userMessage, ui = ui))
@@ -263,14 +256,7 @@ class OutlineAgent(
     for ((item, childNode) in terminalNodeMap) {
       activeThreadCounter.incrementAndGet()
       val task = ui.newTask(false)
-      val api = (api as ChatClient).getChildClient().apply {
-        val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-        createFile.second?.apply {
-          logStreams += this.outputStream().buffered()
-          log.debug("Created API log file")
-          task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-        }
-      }
+      val api = (api as ChatClient).getChildClient(task)
       tabbedDisplay[item] = task.placeholder
       ApplicationServices.clientManager.getPool(session, user).submit {
         try {

@@ -1,7 +1,6 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
 import com.simiacryptus.diff.AddApplyFileDiffLinks
-
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
@@ -14,9 +13,8 @@ import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
-import java.util.concurrent.Semaphore
 import java.io.File
-import java.lang.ProcessBuilder
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
 class FileModificationTask(
@@ -167,10 +165,11 @@ class FileModificationTask(
     val semaphore = Semaphore(0)
     val onComplete = { semaphore.release() }
     val process = { sb: StringBuilder ->
+      val taskConfig: FileModificationTaskConfigData? = this.taskConfig
       val codeResult = fileModificationActor.answer(
         (messages + listOf(
           getInputFileWithDiff(),
-          this.taskConfig?.task_description ?: "",
+          taskConfig?.task_description ?: "",
         )).filter { it.isNotBlank() }, api
       )
       resultFn(codeResult)

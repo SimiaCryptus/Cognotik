@@ -101,15 +101,6 @@ open class ClientManager {
       val userSettings = userSettingsManager.getUserSettings(user)
       val userApi =
         if (userSettings.apiKeys.isNotEmpty()) {
-          /*
-          MonitoredClient(
-              key = userSettings.apiKeys,
-              apiBase = userSettings.apiBase,
-              logfile = sessionDir.resolve("openai.log"),
-              session = session,
-              user = user,
-              workPool = getPool(session, user),
-          )*/
           ChatClient(
             key = userSettings.apiKeys,
             apiBase = userSettings.apiBase,

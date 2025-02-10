@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.plan.tools.file
+package com.simiacryptus.skyenet.apps.plan.tools.graph
 
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -46,17 +46,22 @@ class SoftwareGraphModificationTask(
             name = "SoftwareGraphModification",
             resultClass = GraphModificationResult::class.java,
             prompt = """
-         Analyze the provided software graph and generate modifications based on the given goal.
-         Return only the delta changes that should be applied to the graph.
-         
-         Consider:
-         - Only include nodes that need to be modified
-         - Preserve existing relationships where appropriate
-         - Ensure all new NodeId values are unique
-         - Validate all references between nodes
-         
-         Format the response as a valid SoftwareGraph JSON structure containing only the delta changes.
-       """.trimIndent(),
+                Analyze the provided software graph and generate modifications based on the given goal.
+                Return only the delta changes that should be applied to the graph.
+                
+                Consider:
+                - Only include nodes that need to be modified
+                - Preserve existing relationships where appropriate
+                - Ensure all new NodeId values are unique
+                - Validate all references between nodes
+                
+                Format the response as a valid SoftwareGraph JSON structure containing only the delta changes.
+                
+                Node Types:
+                """.trimIndent() + SoftwareNodeType.values().joinToString("\n") {
+                "* " + it.name + ": " + it.description?.replace("\n", "\n  ") +
+                        "\n    " + planSettings.describer().describe(it.nodeClass).replace("\n", "\n    ")
+            },
             model = planSettings.getTaskSettings(TaskType.SoftwareGraphModification).model ?: planSettings.defaultModel,
             parsingModel = planSettings.parsingModel,
             temperature = planSettings.temperature,
@@ -88,14 +93,11 @@ class SoftwareGraphModificationTask(
         val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(inputFile.readText(), SoftwareNodeType.SoftwareGraph::class.java)
 
         // Generate the modification delta
-        val response = graphModificationActor.respond(
-            messages = graphModificationActor.chatMessages(
-                messages + listOf(
-                    "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
-                    "Modification goal: ${taskConfig?.modification_goal}"
-                ),
+        val response = graphModificationActor.answer(
+            messages + listOf(
+                "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
+                "Modification goal: ${taskConfig.modification_goal}"
             ),
-            input = messages,
             api = api
         )
 
@@ -105,7 +107,13 @@ class SoftwareGraphModificationTask(
 
         // Save the modified graph
         val outputFile = (planSettings.workingDir?.let { File(it) } ?: File("."))
-            .resolve(taskConfig.output_graph_file ?: taskConfig.input_graph_file)
+            .resolve(
+                when {
+                    !taskConfig.output_graph_file.isNullOrBlank() -> taskConfig.output_graph_file
+                    taskConfig.input_graph_file.isNotBlank() -> taskConfig.input_graph_file
+                    else -> "modified_graph.json"
+                }
+            )
         outputFile.parentFile?.mkdirs()
         outputFile.writeText(JsonUtil.toJson(newGraph))
 

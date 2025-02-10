@@ -1,5 +1,6 @@
 package com.simiacryptus.skyenet.webui.session
 
+import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.core.actors.CodingActor
@@ -9,6 +10,7 @@ import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.File
+import java.util.*
 import java.util.function.Consumer
 
 abstract class SessionTask(
@@ -208,3 +210,21 @@ val Throwable.stackTraceTxt: String
     printStackTrace(pw)
     return sw.toString()
   }
+
+fun ChatClient.getChildClient(task: SessionTask): ChatClient = this.getChildClient().apply {
+  val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log").second
+  // Handle potential null from createFile
+  createFile?.apply {
+    val buffered = this.outputStream().buffered()
+    // Pring a header and stack trace
+    buffered.write("API Logging Started\n".toByteArray())
+    buffered.write("Stack Trace:\n".toByteArray())
+    val stackTrace = Thread.currentThread().stackTrace
+    stackTrace.forEach { element ->
+      buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
+    }
+    logStreams += buffered
+    task.add("Initializing API logging...")
+    task.verbose("API log: <a href=\"file:///$this\">$this</a>")
+  }
+}

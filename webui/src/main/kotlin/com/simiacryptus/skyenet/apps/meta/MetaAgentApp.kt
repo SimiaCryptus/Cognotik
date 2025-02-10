@@ -29,13 +29,13 @@ import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.SocketTimeoutException
-import java.util.*
 import kotlin.reflect.KClass
 
 open class MetaAgentApp(
@@ -439,13 +439,7 @@ open class MetaAgentAgent(
     task: SessionTask, actorDesign: ActorDesign,
     userMessage: String, design: ParsedResponse<AgentDesign>
   ): Pair<String, String> {
-    val api = (api as ChatClient).getChildClient().apply {
-      val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
-      createFile.second?.apply {
-        logStreams += this.outputStream().buffered()
-        task.verbose("API log: <a href=\"file:///$this\">$this</a>")
-      }
-    }
+    val api = (api as ChatClient).getChildClient(task)
     //language=HTML
     task.header("Actor: ${actorDesign.name}")
     val type = actorDesign.type
@@ -527,19 +521,13 @@ open class MetaAgentAgent(
   ): Map<String, String> {
     val flowImpls = HashMap<String, String>()
     design.obj.logicFlow?.items?.forEach { logicFlowItem ->
-      val message = ui.newTask()
+      val task = ui.newTask()
       try {
-        val api = (api as ChatClient).getChildClient().apply {
-          val createFile = message.createFile(".logs/api-${UUID.randomUUID()}.log")
-          createFile.second?.apply {
-            logStreams += this.outputStream().buffered()
-            message.verbose("API log: <a href=\"file:///$this\">$this</a>")
-          }
-        }
-        message.header("Logic Flow: ${logicFlowItem.name}")
+        val api = (api as ChatClient).getChildClient(task)
+        task.header("Logic Flow: ${logicFlowItem.name}")
         var code: String? = null
         val onComplete = java.util.concurrent.Semaphore(0)
-        Retryable(ui, message) {
+        Retryable(ui, task) {
           try {
             code = execWrap {
               flowStepDesigner.answer(
@@ -561,7 +549,7 @@ open class MetaAgentAgent(
               "```kotlin\n$code\n```", ui = ui
             )
           } catch (e: CodingActor.FailedToImplementException) {
-            message.error(ui, e)
+            task.error(ui, e)
             code = e.code ?: ""
             renderMarkdown(
               "```kotlin" + code + "```" + ui.hrefLink("Accept", classname = "href-link cmd-button") {
@@ -572,10 +560,10 @@ open class MetaAgentAgent(
           }
         }
         onComplete.acquire()
-        message.complete()
+        task.complete()
         flowImpls[logicFlowItem.name!!] = code!!
       } catch (e: Throwable) {
-        message.error(ui, e)
+        task.error(ui, e)
         throw e
       }
     }
