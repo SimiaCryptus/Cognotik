@@ -44,14 +44,11 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
             TestCodeFileNode::class.java,
             "Test Code File"
         )
-
         val ScmProject = SoftwareNodeType(
             "ScmProject",
             ScmProjectNode::class.java,
             "Source Control Management Project"
         )
-
-
         val CodeFile = SoftwareNodeType(
             "CodeFile",
             CodeFileNode::class.java,
