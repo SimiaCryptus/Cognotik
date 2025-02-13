@@ -17,11 +17,6 @@ class SoftwareGraphModificationTask(
     planTask: SoftwareGraphModificationTaskConfigData?
 ) : AbstractTask<SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData>(planSettings, planTask) {
 
-    data class GraphModificationResult(
-        @Description("The delta to be applied to the software graph")
-        val graphDelta: SoftwareNodeType.SoftwareGraph = SoftwareNodeType.SoftwareGraph()
-    )
-
     class SoftwareGraphModificationTaskConfigData(
         @Description("The path to the input software graph JSON file")
         val input_graph_file: String? = null,
@@ -39,12 +34,10 @@ class SoftwareGraphModificationTask(
         state = state
     )
 
-    val exampleInstance by lazy { GraphModificationResult(SoftwareNodeType.SoftwareGraph()) }
-
     private val graphModificationActor by lazy {
         ParsedActor(
             name = "SoftwareGraphModification",
-            resultClass = GraphModificationResult::class.java,
+            resultClass = SoftwareNodeType.SoftwareGraph::class.java,
             prompt = """
                 Analyze the provided software graph and generate modifications based on the given goal.
                 Return only the delta changes that should be applied to the graph.
@@ -60,13 +53,12 @@ class SoftwareGraphModificationTask(
                 Node Types:
                 """.trimIndent() + SoftwareNodeType.values().joinToString("\n") {
                 "* " + it.name + ": " + it.description?.replace("\n", "\n  ") +
-                        "\n    " + planSettings.describer().describe(it.nodeClass).replace("\n", "\n    ")
+                        "\n    " + planSettings.describer().describe(rawType = it.nodeClass).replace("\n", "\n    ")
             },
             model = planSettings.getTaskSettings(TaskType.SoftwareGraphModification).model ?: planSettings.defaultModel,
             parsingModel = planSettings.parsingModel,
             temperature = planSettings.temperature,
             describer = planSettings.describer(),
-            exampleInstance = exampleInstance
         )
     }
 
@@ -102,7 +94,7 @@ class SoftwareGraphModificationTask(
         )
 
         // Apply the delta to create the new graph
-        val deltaGraph = response.obj.graphDelta
+        val deltaGraph = response.obj
         val newGraph = originalGraph + deltaGraph
 
         // Save the modified graph
@@ -132,10 +124,9 @@ class SoftwareGraphModificationTask(
             appendLine("### Final Graph Statistics:")
             appendLine("- Total nodes: ${newGraph.nodes.size}")
             appendLine("- Node types:")
-            newGraph.nodes.groupBy { it.javaClass.simpleName }
-                .forEach { (type, nodes) ->
-                    appendLine("  - $type: ${nodes.size} nodes")
-                }
+            newGraph.nodes.groupBy { it.javaClass.simpleName }.forEach { (type, nodes) ->
+                appendLine("  - $type: ${nodes.size} nodes")
+            }
         }
 
         task.add(MarkdownUtil.renderMarkdown(summary, ui = agent.ui))

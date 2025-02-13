@@ -22,10 +22,6 @@ class SoftwareGraphGenerationTask(
   planSettings: PlanSettings,
   planTask: SoftwareGraphGenerationTaskConfigData?
  ) : AbstractTask<SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData>(planSettings, planTask) {
-  data class GraphGenerationResult(
-    @Description("The generated software graph representing the codebase structure")
-    val graph: SoftwareNodeType.SoftwareGraph = SoftwareNodeType.SoftwareGraph()
-  )
 
   class SoftwareGraphGenerationTaskConfigData(
     @Description("The output file path where the software graph will be saved")
@@ -44,9 +40,6 @@ class SoftwareGraphGenerationTask(
     state = state
   )
 
-  val exampleInstance by lazy { GraphGenerationResult(SoftwareNodeType.SoftwareGraph().apply {
-
-  }) }
 
   val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
     "com.simiacryptus", "aicoder.actions"
@@ -56,16 +49,15 @@ class SoftwareGraphGenerationTask(
   private val graphGenerationActor by lazy {
     ParsedActor(
       name = "SoftwareGraphGenerator",
-      resultClass = GraphGenerationResult::class.java,
+      resultClass = SoftwareNodeType.SoftwareGraph::class.java,
       prompt = "Analyze the provided code files and generate a SoftwareGraph representation.\nThe graph should accurately represent the software architecture including:\n\nAvailable Node Types:\n" +
               SoftwareNodeType.values().joinToString("\n") {
-            "* ${it.name}: ${it.description?.replace("\n","\n  ")}\n    ${describer.describe(it.nodeClass).replace("\n", "\n    ")}"
+            "* ${it.name}: ${it.description?.replace("\n","\n  ")}\n    ${describer.describe(rawType = it.nodeClass).replace("\n", "\n    ")}"
           } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
       model = planSettings.getTaskSettings(TaskType.SoftwareGraphGeneration).model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
       describer = planSettings.describer(),
-      exampleInstance = exampleInstance
     )
   }
 
@@ -114,9 +106,6 @@ class SoftwareGraphGenerationTask(
       api = api
     )
 
-    // Parse and validate the generated graph
-    val graph = response.obj.graph
-
     // Save the graph to file
     val outputFile = File(planSettings.workingDir ?: ".").resolve(taskConfig?.output_file.let { when {
           it.isNullOrBlank() -> "software_graph.json"
@@ -125,7 +114,7 @@ class SoftwareGraphGenerationTask(
     })
     try {
       outputFile.parentFile?.mkdirs()
-      outputFile.writeText(JsonUtil.toJson(graph))
+      outputFile.writeText(JsonUtil.toJson(response.obj))
       
       val summary = buildString {
         appendLine("# Software Graph Generation Complete")
@@ -133,10 +122,9 @@ class SoftwareGraphGenerationTask(
         appendLine("Generated graph saved to: ${outputFile.absolutePath}")
         appendLine()
         appendLine("## Graph Statistics")
-        appendLine("- Total nodes: ${graph.nodes.size}")
+        appendLine("- Total nodes: ${response.obj.nodes.size}")
         appendLine("- Node types:")
-        graph.nodes.groupBy { it.javaClass.simpleName }
-          .forEach { (type, nodes) ->
+        response.obj.nodes.groupBy { it.javaClass.simpleName }.forEach { (type, nodes) ->
             appendLine("  - $type: ${nodes.size} nodes")
           }
       }

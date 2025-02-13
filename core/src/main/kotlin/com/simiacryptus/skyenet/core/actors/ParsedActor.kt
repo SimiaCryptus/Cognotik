@@ -56,7 +56,7 @@ open class ParsedActor<T : Any>(
   private inner class ParsedResponseImpl(api: API, vararg messages: ApiModel.ChatMessage) :
     ParsedResponse<T>(resultClass!!) {
     override val text =
-      response(*messages, api = api).choices.first().message?.content ?: throw RuntimeException("No response")
+      response(*messages, api = api).choices.firstOrNull()?.message?.content ?: throw RuntimeException("No response")
     private val _obj: T by lazy { getParser(api, parserPrompt).apply(text) }
     override val obj get() = _obj
   }
@@ -134,13 +134,11 @@ open class ParsedActor<T : Any>(
     throw MultiExeption(exceptions)
   }
 
-  override fun respond(input: List<String>, api: API, vararg messages: ApiModel.ChatMessage): ParsedResponse<T> {
-    try {
-      return ParsedResponseImpl(api, *messages)
-    } catch (e: Exception) {
-      log.info("Failed to parse response", e)
-      throw e
-    }
+  override fun respond(input: List<String>, api: API, vararg messages: ApiModel.ChatMessage): ParsedResponse<T> = try {
+    ParsedResponseImpl(api, *messages)
+  } catch (e: Exception) {
+    log.info("Failed to parse response", e)
+    throw e
   }
 
   override fun withModel(model: ChatModel): ParsedActor<T> = ParsedActor(

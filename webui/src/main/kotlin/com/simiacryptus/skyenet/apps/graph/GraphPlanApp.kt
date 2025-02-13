@@ -11,6 +11,7 @@ import com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask.Gra
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
 
@@ -47,6 +48,7 @@ class GraphPlanApp(
       val planSettings = getSettings(session, user, PlanSettings::class.java)
       if (api is ChatClient) api.budget = planSettings?.budget ?: 2.0
       val task = ui.newTask()
+      val api = (api as ChatClient).getChildClient(task)
       PlanCoordinator(
         user = user,
         session = session,
