@@ -8,6 +8,7 @@ import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.skyenet.core.util.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import org.slf4j.LoggerFactory
 
@@ -154,7 +155,7 @@ class LargeOutputActor(
               val sectionResponse = response(
                 ApiModel.ChatMessage(
                   role = ApiModel.Role.system,
-                  content = (step.prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
+                  content = (step.prompt + "\n\n" + patchFormatPrompt).toContentList()
                 ),
                 ApiModel.ChatMessage(
                   role = ApiModel.Role.user,
@@ -171,7 +172,7 @@ class LargeOutputActor(
             val refinementResponse = response(
               ApiModel.ChatMessage(
                 role = ApiModel.Role.system,
-                content = (step.prompt + "\n\n" + SimpleDiffApplier.patchEditorPrompt).toContentList()
+                content = (step.prompt + "\n\n" + patchFormatPrompt).toContentList()
               ),
               ApiModel.ChatMessage(
                 role = ApiModel.Role.user,

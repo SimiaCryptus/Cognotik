@@ -462,6 +462,7 @@ open class MetaAgentAgent(
     var code = ""
     val onComplete = java.util.concurrent.Semaphore(0)
     Retryable(ui, task) {
+      val task = ui.newTask(false)
       val TT = "```"
       try {
         val response = execWrap {
@@ -475,9 +476,10 @@ open class MetaAgentAgent(
         }
         code = response.code
         onComplete.release()
-        renderMarkdown(
+        (renderMarkdown(
           "${TT}kotlin\n$code\n```", ui = ui
-        )
+        )).apply { task.add(this) }
+        task.placeholder
       } catch (e: CodingActor.FailedToImplementException) {
         task.error(ui, e)
         code = e.code ?: ""
@@ -490,7 +492,8 @@ open class MetaAgentAgent(
             autoEvaluate = false
             onComplete.release()
           }, ui = ui
-        )
+        ).apply { task.add(this) }
+        task.placeholder
       }
     }
     onComplete.acquire()
@@ -528,6 +531,7 @@ open class MetaAgentAgent(
         var code: String? = null
         val onComplete = java.util.concurrent.Semaphore(0)
         Retryable(ui, task) {
+          val task = ui.newTask(false)
           try {
             code = execWrap {
               flowStepDesigner.answer(
@@ -545,9 +549,10 @@ open class MetaAgentAgent(
               ).code
             }
             onComplete.release()
-            renderMarkdown(
+            task.add(renderMarkdown(
               "```kotlin\n$code\n```", ui = ui
-            )
+            ))
+            task.placeholder
           } catch (e: CodingActor.FailedToImplementException) {
             task.error(ui, e)
             code = e.code ?: ""

@@ -22,7 +22,7 @@ class GraphBasedPlanningTask(
     ) : TaskConfigBase(
         task_type = TaskType.GraphBasedPlanning.name,
         task_description = task_description,
-        task_dependencies = task_dependencies,
+        task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 

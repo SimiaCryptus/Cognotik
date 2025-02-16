@@ -27,7 +27,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
   ) : TaskConfigBase(
     task_type = task_type,
     task_description = task_description,
-    task_dependencies = task_dependencies,
+    task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
 

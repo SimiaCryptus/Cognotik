@@ -6,13 +6,14 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.Retryable
+import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.core.util.FileValidationUtils
-import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
-import com.simiacryptus.skyenet.util.MarkdownUtil
+import com.simiacryptus.skyenet.core.util.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.application.ApplicationSocketManager
@@ -43,6 +44,20 @@ abstract class PatchApp(
     const val tripleTilde = "`" + "``" // This is a workaround for the markdown parser when editing this file
   }
 
+  /**
+   * Helper to render command output using a consistent markdown format.
+   */
+  private fun renderCommandOutput(output: OutputResult): String {
+    return renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")
+  }
+
+  // Track the last parsed error details and use them as the example instance if available
+  private var lastParsedErrors: ParsedErrors? = null
+
+  // Stateful records of previous run results and parsed error results
+  private val previousRunResults = mutableListOf<OutputResult>()
+  private val previousParsedErrorsRecords = mutableListOf<ParsedErrors>()
+
   // Add structured logging
   private fun logEvent(event: String, data: Map<String, Any?>) {
     log.info("$event: ${JsonUtil.toJson(data)}")
@@ -50,7 +65,12 @@ abstract class PatchApp(
 
   abstract fun codeFiles(): Set<Path>
   abstract fun codeSummary(paths: List<Path>): String
-  abstract fun output(task: SessionTask, settings: Settings): OutputResult
+  abstract fun output(
+    task: SessionTask,
+    settings: Settings,
+    ui: ApplicationInterface,
+    tabs: TabbedDisplay = TabbedDisplay(task)
+  ): OutputResult
   abstract fun searchFiles(searchStrings: List<String>): Set<Path>
   override val singleInput = true
   override val stickyInput = false
@@ -65,32 +85,28 @@ abstract class PatchApp(
       retryOnOffButton?.clear()
       task.update()
     }
-    if(settings.autoFix && settings.maxRetries > 0) {
+    if (settings.autoFix && settings.maxRetries > 0) {
       retryOnOffButton = task.add(disableButton)
     }
     lateinit var retry: Retryable
-    retry = Retryable(
-      ui = ui,
-      task = task,
-      process = { content ->
-        if (retries < 0) {
-          retries = when {
-            settings.autoFix -> settings.maxRetries
-            else -> 0
-          }
+    retry = Retryable(ui = ui, task = task) { content ->
+      if (retries < 0) {
+        retries = when {
+          settings.autoFix -> settings.maxRetries
+          else -> 0
         }
-        val newTask = ui.newTask(false)
-        newTask.add("Running Command")
-        Thread {
-          val result = run(ui, newTask)
-          if (result.exitCode != 0 && retries > 0) {
-            retry.retry()
-          }
-          retries -= 1
-        }.start()
-        newTask.placeholder
       }
-    )
+      val newTask = ui.newTask(false)
+      newTask.add("Running Commands")
+      Thread {
+        val result = run(ui, newTask)
+        if (result.exitCode != 0 && retries > 0) {
+          retry.retry()
+        }
+        retries -= 1
+      }.start()
+      newTask.placeholder
+    }
     return socketManager
   }
 
@@ -114,14 +130,12 @@ abstract class PatchApp(
   )
 
   data class ParsedError(
-    @Description("The error message")
-    val message: String? = null,
-    @Description("Files identified as needing modification and issue-related files")
-    val relatedFiles: List<String>? = null,
-    @Description("Files identified as needing modification and issue-related files")
-    val fixFiles: List<String>? = null,
-    @Description("Search strings to find relevant files")
-    val searchStrings: List<String>? = null
+    @Description("The error message") val message: String? = null,
+    @Description("Problem severity (higher numbers indicate more fatal issues)") val severity: Int = 0,
+    @Description("Problem complexity (higher numbers indicate more difficult issues)") val complexity: Int = 0,
+    @Description("Files identified as needing modification and issue-related files") val relatedFiles: List<String>? = null,
+    @Description("Files identified as needing modification and issue-related files") val fixFiles: List<String>? = null,
+    @Description("Search strings to find relevant files") val searchStrings: List<String>? = null
   )
 
   data class Settings(
@@ -155,23 +169,23 @@ abstract class PatchApp(
     task: SessionTask,
   ): OutputResult {
     // Execute each command in sequence
-    val output = output(task, settings)
+    val tabs = TabbedDisplay(task)
+    val output = output(task, settings, ui, tabs)
+    previousRunResults.add(output)
     if (output.exitCode == 0 && settings.exitCodeOption == "nonzero") {
       task.complete(
-        "<div>\n<div><b>Command executed successfully</b></div>\n${MarkdownUtil.renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")}\n</div>"
+        "<div>\n<div><b>Command executed successfully</b></div>\n</div>"
       )
       return output
     }
     if (settings.exitCodeOption == "zero" && output.exitCode != 0) {
       task.complete(
-        "<div>\n<div><b>Command failed</b></div>\n${MarkdownUtil.renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")}\n</div>"
+        "<div>\n<div><b>Command failed</b> (ignoring)</div>\n</div>"
       )
       return output
     }
+    val task = ui.newTask(false).apply { tabs["Fix"] = placeholder }
     try {
-      task.add(
-        "<div>\n<div><b>Command exit code: ${output.exitCode}</b></div>\n${MarkdownUtil.renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")}\n</div>"
-      )
       fixAll(settings, output, task, ui, api)
     } catch (e: Exception) {
       task.error(ui, e)
@@ -189,21 +203,15 @@ abstract class PatchApp(
     // Add logging for operation start
     logEvent(
       "Starting fix operation", mapOf(
-        "exitCode" to output.exitCode,
-        "settings" to settings
+        "exitCode" to output.exitCode, "settings" to settings
       )
     )
     Retryable(ui, task) { content ->
+      val task = ui.newTask(false)
       fixAllInternal(
-        settings = settings,
-        output = output,
-        task = task,
-        ui = ui,
-        changed = mutableSetOf(),
-        api = api
+        settings = settings, output = output, task = task, ui = ui, changed = mutableSetOf(), api = api
       )
-      content.clear()
-      ""
+      task.placeholder
     }.also {
       // Add logging for operation completion
       logEvent(
@@ -224,8 +232,7 @@ abstract class PatchApp(
   ) {
     val api = api.getChildClient(task)
     val plan = ParsedActor(
-      resultClass = ParsedErrors::class.java,
-      exampleInstance = ParsedErrors(
+      resultClass = ParsedErrors::class.java, exampleInstance = lastParsedErrors ?: ParsedErrors(
         listOf(
           ParsedError(
             message = "Error message",
@@ -234,9 +241,7 @@ abstract class PatchApp(
             searchStrings = listOf("def exampleFunction", "TODO")
           )
         )
-      ),
-      model = model,
-      prompt = ("""
+      ), model = model, prompt = ("""
         You are a helpful AI that helps people with coding.
         
         You will be answering questions about the following project:
@@ -257,40 +262,54 @@ abstract class PatchApp(
         "$promptPrefix\n\n${tripleTilde}\n${output.output}\n${tripleTilde}"
       ), api = api
     )
+
     task.add(
       AgentPatterns.displayMapInTabs(
         mapOf(
-          "Text" to MarkdownUtil.renderMarkdown(plan.text, ui = ui),
-          "JSON" to MarkdownUtil.renderMarkdown(
-            "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n${tripleTilde}",
+          "Text" to renderMarkdown(plan.text, ui = ui),
+          "JSON" to renderMarkdown("${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n${tripleTilde}", ui = ui),
+          "Process Details" to renderMarkdown(
+            "Exit Code: ${output.exitCode}\nCommand Output:\n${tripleTilde}\n${output.output}\n${tripleTilde}",
             ui = ui
-          ),
+          )
         )
       )
     )
+    // Update the last parsed error details so they can be used in subsequent runs
+    lastParsedErrors = plan.obj
     val progressHeader = task.header("Processing tasks")
-    plan.obj.errors?.forEach { error ->
+    // Record the current error parsing result for future reference
+    previousParsedErrorsRecords.add(plan.obj)
+    // Process errors ordered by fixPriority (lower number = higher priority)
+    plan.obj.errors?.sortedBy { it.severity * it.complexity }?.takeLast(1)?.forEach { error ->
       task.header("Processing error: ${error.message}")
-      task.verbose(MarkdownUtil.renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
+      task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
       // Search for files using the provided search strings
       val searchResults = error.searchStrings?.flatMap { searchString ->
         FileValidationUtils.filteredWalk(settings.workingDirectory!!) { !FileValidationUtils.isGitignore(it.toPath()) }
           .filter { FileValidationUtils.isLLMIncludableFile(it) }
-          .filter { it.readText().contains(searchString, ignoreCase = true) }
-          .map { it.toPath() }
-          .toList()
+          .filter { it.readText().contains(searchString, ignoreCase = true) }.map { it.toPath() }.toList()
       }?.toSet() ?: emptySet()
-      task.verbose(
-        MarkdownUtil.renderMarkdown(
-          "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}", tabs = false, ui = ui
+      if (searchResults.isNotEmpty()) {
+        task.verbose(
+          renderMarkdown(
+            "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}", tabs = false, ui = ui
+          )
         )
-      )
-      Retryable(ui, task) { content ->
+      }
+      Retryable(ui, task) {
+        val task = ui.newTask(false)
         fix(
-          error, searchResults.toList().map { it.toFile().absolutePath },
-          output, ui, content, settings.autoFix, changed, api
+          error,
+          searchResults.toList().map { it.toFile().absolutePath },
+          output,
+          ui,
+          settings.autoFix,
+          changed,
+          api,
+          task
         )
-        content.toString()
+        task.placeholder
       }
     }
     progressHeader?.clear()
@@ -302,25 +321,24 @@ abstract class PatchApp(
     additionalFiles: List<String>? = null,
     output: OutputResult,
     ui: ApplicationInterface,
-    content: StringBuilder,
     autoFix: Boolean,
     changed: MutableSet<Path>,
     api: ChatClient,
+    task: SessionTask,
   ) {
-    val paths =
-      (
-          (error.fixFiles ?: emptyList()) +
-              (error.relatedFiles ?: emptyList()) +
-              (additionalFiles ?: emptyList())
-          ).map {
-          try {
-            File(it).toPath()
-          } catch (e: Throwable) {
-            log.warn("Error: root=${root}    ", e)
-            null
-          }
-        }.filterNotNull()
+    val paths = ((error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList()) + (additionalFiles
+      ?: emptyList())).map {
+      try {
+        File(it).toPath()
+      } catch (e: Throwable) {
+        log.warn("Error: root=${root}    ", e)
+        null
+      }
+    }.filterNotNull()
     val prunedPaths = prunePaths(paths, 50 * 1024)
+    task.verbose(renderMarkdown(
+        "Files identified for modification:\n\n${prunedPaths.joinToString("\n") { "* `$it` (${it.toFile().length()} bytes)" }}", tabs = false, ui = ui
+      ))
     val summary = codeSummary(prunedPaths)
     val response = SimpleActor(
       prompt = """
@@ -328,23 +346,22 @@ abstract class PatchApp(
         
         You will be answering questions about the following code:
         
-        """.trimIndent() + summary + "\n" + SimpleDiffApplier.patchEditorPrompt + """
+        """.trimIndent() + summary + "\n" + patchFormatPrompt + """
         
         If needed, new files can be created by using code blocks labeled with the filename in the same manner.
-        """.trimIndent(),
-      model = model
+        """.trimIndent(), model = model
     ).answer(
       listOf(
         "$promptPrefix\n\n${tripleTilde}\n${output.output}\n${tripleTilde}\n\nFocus on and Fix the Error:\n  ${
           error.message?.replace(
-            "\n",
-            "\n  "
+            "\n", "\n  "
           ) ?: ""
         }\n${if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else ""}"
       ), api = api
     )
-    var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-      ui.socketManager!!,
+    val socketManager = ui.socketManager ?: throw IllegalStateException("Socket Manager is not available")
+    val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
+      socketManager,
       root = root.toPath(),
       response = response,
       ui = ui,
@@ -359,8 +376,7 @@ abstract class PatchApp(
       },
       model = model,
     )
-    content.clear()
-    content.append("<div>${MarkdownUtil.renderMarkdown(markdown!!)}</div>")
+    task.complete("<div>${renderMarkdown(markdown)}</div>")
   }
 
 }

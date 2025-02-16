@@ -37,7 +37,7 @@ class CommandAutoFixTask(
   ) : TaskConfigBase(
     task_type = TaskType.CommandAutoFix.name,
     task_description = task_description,
-    task_dependencies = task_dependencies,
+    task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
 

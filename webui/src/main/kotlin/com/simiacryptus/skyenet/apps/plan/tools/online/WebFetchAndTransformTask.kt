@@ -39,7 +39,7 @@ open class WebFetchAndTransformTask(
   ) : TaskConfigBase(
     task_type = TaskType.WebFetchAndTransform.name,
     task_description = task_description,
-    task_dependencies = task_dependencies,
+    task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
 

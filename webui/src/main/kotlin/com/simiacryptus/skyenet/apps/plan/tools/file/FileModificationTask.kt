@@ -164,8 +164,8 @@ class FileModificationTask(
 
     val semaphore = Semaphore(0)
     val onComplete = { semaphore.release() }
-    val process = { sb: StringBuilder ->
-      val taskConfig: FileModificationTaskConfigData? = this.taskConfig
+    Retryable(agent.ui, task = task) { sb: StringBuilder ->
+      val taskConfig: FileModificationTaskConfigData? = taskConfig
       val codeResult = fileModificationActor.answer(
         (messages + listOf(
           getInputFileWithDiff(),
@@ -213,9 +213,9 @@ class FileModificationTask(
             onComplete()
           }
         }
-      }
+      }.apply { task.add(this) }
+      task.placeholder
     }
-    Retryable(agent.ui, task = task, process = process)
     try {
       semaphore.acquire()
     } catch (e: Throwable) {

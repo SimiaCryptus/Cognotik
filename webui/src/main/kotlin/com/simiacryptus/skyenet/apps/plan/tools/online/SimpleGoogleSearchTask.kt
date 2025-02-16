@@ -31,7 +31,7 @@ class SimpleGoogleSearchTask(
   ) : TaskConfigBase(
     task_type = TaskType.GoogleSearch.name,
     task_description = task_description,
-    task_dependencies = task_dependencies,
+    task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
 

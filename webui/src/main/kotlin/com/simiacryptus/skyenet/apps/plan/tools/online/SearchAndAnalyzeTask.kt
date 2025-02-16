@@ -54,7 +54,7 @@ class SearchAndAnalyzeTask(
   ) : TaskConfigBase(
     task_type = TaskType.SearchAndAnalyze.name,
     task_description = task_description,
-    task_dependencies = task_dependencies,
+    task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
 

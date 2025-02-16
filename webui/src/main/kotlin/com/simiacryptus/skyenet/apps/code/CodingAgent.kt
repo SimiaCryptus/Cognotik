@@ -72,19 +72,19 @@ open class CodingAgent<T : Interpreter>(
     codeRequest: CodingActor.CodeRequest,
     task: SessionTask = mainTask,
   ) {
-    val newTask = ui.newTask(root = false)
-    task.complete(newTask.placeholder)
-    Retryable(ui, newTask) {
-      val newTask = ui.newTask(root = false)
+    val task = ui.newTask(root = false)
+    task.complete(task.placeholder)
+    Retryable(ui, task) {
+      val task = ui.newTask(root = false)
       ui.socketManager?.scheduledThreadPoolExecutor!!.schedule({
         ui.socketManager.pool.submit {
-          val statusSB = newTask.add("Running...")
-          displayCode(newTask, codeRequest)
+          val statusSB = task.add("Running...")
+          displayCode(task, codeRequest)
           statusSB?.clear()
-          newTask.complete()
+          task.complete()
         }
       }, 100, TimeUnit.MILLISECONDS)
-      newTask.placeholder
+      task.placeholder
     }
   }
 

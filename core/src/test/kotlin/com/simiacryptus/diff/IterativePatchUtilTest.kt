@@ -1,81 +1,84 @@
 package com.simiacryptus.diff
 
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class IterativePatchUtilTest {
 
-  @Test
-  fun testPatchExactMatch() {
-    val source = """
-            line1
-            line2
-            line3
-        """.trimIndent()
-    val patch = """
-            line1
-            line2
-            line3
-        """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(source.trim().replace("\r\n", "\n"), result.replace("\r\n", "\n"))
-  }
+    private fun normalize(text: String) = text.trim().replace("\r\n", "\n")
 
-  // ... (other existing tests)
-  @Test
-  fun testPatchAddLine() {
-    val source = """
+    @Test
+    fun testPatchExactMatch() {
+        val source = """
             line1
             line2
             line3
         """.trimIndent()
-    val patch = """
+        val patch = """
+            line1
+            line2
+            line3
+        """.trimIndent()
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(source), normalize(result))
+    }
+
+    @Test
+    fun testPatchAddLine() {
+        val source = """
+            line1
+            line2
+            line3
+        """.trimIndent()
+        val patch = """
             line1
             line2
             +newLine
             line3
         """.trimIndent()
-    val expected = """
+        val expected = """
             line1
             line2
             newLine
             line3
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.replace("\r\n", "\n"))
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
 
-  @Test
-  fun testPatchModifyLine() {
-    val source = """
+    }
+
+    @Test
+    fun testPatchModifyLine() {
+        val source = """
             line1
             line2
             line3
         """.trimIndent()
-    val patch = """
+        val patch = """
             line1
             -line2
             +modifiedLine2
             line3
         """.trimIndent()
-    val expected = """
+        val expected = """
             line1
             modifiedLine2
             line3
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.replace("\r\n", "\n"))
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
 
-  @Test
-  fun testPatchModifyLineWithComments() {
-    val source = """
+    }
+
+    @Test
+    fun testPatchModifyLineWithComments() {
+        val source = """
             line1
             line3
             line2
         """.trimIndent()
-    val patch = """
+        val patch = """
             line1
             line3
             // This comment should be ignored
@@ -83,44 +86,44 @@ class IterativePatchUtilTest {
             +modifiedLine2
             # LLMs sometimes get chatty and add stuff to patches__
         """.trimIndent()
-    val expected = """
+        val expected = """
             line1
             line3
             modifiedLine2
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.replace("\r\n", "\n"))
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testPatchRemoveLine() {
-    val source = """
+    @Test
+    fun testPatchRemoveLine() {
+        val source = """
             line1
             line2
             line3
         """.trimIndent()
-    val patch = """
+        val patch = """
             line1
           - line2
             line3
         """.trimIndent()
-    val expected = """
+        val expected = """
             line1
             line3
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.replace("\r\n", "\n"))
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testPatchAdd2Line2() {
-    val source = """
+    @Test
+    fun testPatchAdd2Line2() {
+        val source = """
             line1
             
             line2
             line3
         """.trimIndent()
-    val patch = """
+        val patch = """
             line1
           + lineA
           
@@ -129,7 +132,7 @@ class IterativePatchUtilTest {
             line2
             line3
         """.trimIndent()
-    val expected = """
+        val expected = """
            line1
             lineA
             lineB
@@ -137,19 +140,19 @@ class IterativePatchUtilTest {
            line2
            line3
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.replace("\r\n", "\n"))
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testPatchAdd2Line3() {
-    val source = """
+    @Test
+    fun testPatchAdd2Line3() {
+        val source = """
             line1
             
             line2
             line3
         """.trimIndent()
-    val patch = """
+        val patch = """
             line1
             // extraneous comment
           + lineA
@@ -158,7 +161,7 @@ class IterativePatchUtilTest {
             line2
             line3
         """.trimIndent()
-    val expected = """
+        val expected = """
            line1
             lineA
             lineB
@@ -166,13 +169,13 @@ class IterativePatchUtilTest {
            line2
            line3
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.replace("\r\n", "\n"))
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testFromData1() {
-    val source = """
+    @Test
+    fun testFromData1() {
+        val source = """
         function updateTabs() {
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.addEventListener('click', (event) => { // Ensure the event is passed as a parameter
@@ -193,7 +196,7 @@ class IterativePatchUtilTest {
             });
         }
         """.trimIndent()
-    val patch = """
+        val patch = """
         tabsParent.querySelectorAll('.tab-content').forEach(content => {
             const contentParent = content.closest('.tabs-container');
             if (contentParent === tabsParent) {
@@ -207,7 +210,7 @@ class IterativePatchUtilTest {
             }
         });
         """.trimIndent()
-    val expected = """
+        val expected = """
         function updateTabs() {
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.addEventListener('click', (event) => { // Ensure the event is passed as a parameter
@@ -219,10 +222,10 @@ class IterativePatchUtilTest {
                         if (contentParent === tabsParent) {
                             if (content.getAttribute('data-tab') === forTab) {
                                 content.classList.add('active');
-                                button.classList.add('active'); // Mark the button as active
+                   button.classList.add('active'); // Mark the button as active
                             } else if (content.classList.contains('active')) {
                                 content.classList.remove('active')
-                                button.classList.remove('active'); // Ensure the button is not marked as active
+                   button.classList.remove('active'); // Ensure the button is not marked as active
                             }
                         }
                     });
@@ -230,16 +233,13 @@ class IterativePatchUtilTest {
             });
         }
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(
-      expected.replace("\\s*\r?\n\\s*".toRegex(), "\n"),
-      result.replace("\\s*\r?\n\\s*".toRegex(), "\n")
-    )
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testFromData2() {
-    val source = """
+    @Test
+    fun testFromData2() {
+        val source = """
             export class StandardChessModel implements GameModel {
                 geometry: BoardGeometry;
                 state: GameState;
@@ -275,7 +275,7 @@ class IterativePatchUtilTest {
     
             // Similar changes for black pawns
         """.trimIndent()
-    val patch = """
+        val patch = """
          export class StandardChessModel implements GameModel {
              // ... other methods ...
         
@@ -287,7 +287,7 @@ class IterativePatchUtilTest {
              // ... other methods ...
          }
         """.trimIndent()
-    val expected = """
+        val expected = """
             export class StandardChessModel implements GameModel {
                 geometry: BoardGeometry;
                 state: GameState;
@@ -323,63 +323,57 @@ class IterativePatchUtilTest {
     
             // Similar changes for black pawns
         """.trimIndent()
-    val result = IterativePatchUtil.applyPatch(source, patch)
-    assertEquals(
-      expected.replace("\\s*\r?\n\\s*".toRegex(), "\n"),
-      result.replace("\\s*\r?\n\\s*".toRegex(), "\n")
-    )
-  }
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
 
-  @Test
-  fun testGeneratePatchNoChanges() {
-    val oldCode = "line1\nline2\nline3"
-    val newCode = oldCode
-    val result = IterativePatchUtil.generatePatch(oldCode, newCode)
-    val expected = ""
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.trim().replace("\r\n", "\n"))
-  }
+    @Test
+    fun testGeneratePatchNoChanges() {
+        val oldCode = "line1\nline2\nline3"
+        val newCode = oldCode
+        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val expected = ""
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testGeneratePatchAddLine() {
-    val oldCode = "line1\nline2\nline3"
-    val newCode = "line1\nline2\nnewLine\nline3"
-    val result = IterativePatchUtil.generatePatch(oldCode, newCode)
-    val expected = "  line1\n  line2\n+ newLine\n  line3"
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.trim().replace("\r\n", "\n"))
-  }
+    @Test
+    fun testGeneratePatchAddLine() {
+        val oldCode = "line1\nline2\nline3"
+        val newCode = "line1\nline2\nnewLine\nline3"
+        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val expected = "  line1\n  line2\n+ newLine\n  line3"
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testGeneratePatchRemoveLine() {
-    val oldCode = "line1\nline2\nline3"
-    val newCode = "line1\nline3"
-    val result = IterativePatchUtil.generatePatch(oldCode, newCode)
-    val expected = "  line1\n- line2\n  line3"
-    assertEquals(expected.trim().replace("\r\n", "\n"), result.trim().replace("\r\n", "\n"))
-  }
+    @Test
+    fun testGeneratePatchRemoveLine() {
+        val oldCode = "line1\nline2\nline3"
+        val newCode = "line1\nline3"
+        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val expected = "  line1\n- line2\n  line3"
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testGeneratePatchModifyLine() {
-    val oldCode = "line1\nline2\nline3"
-    val newCode = "line1\nmodifiedLine2\nline3"
-    val result = IterativePatchUtil.generatePatch(oldCode, newCode)
-    val expected = "  line1\n- line2\n+ modifiedLine2\n  line3"
-    assertEquals(
-      expected.trim().replace("\r\n", "\n"),
-      result.trim().replace("\r\n", "\n")
-    )
-  }
+    @Test
+    fun testGeneratePatchModifyLine() {
+        val oldCode = "line1\nline2\nline3"
+        val newCode = "line1\nmodifiedLine2\nline3"
+        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val expected = "  line1\n- line2\n+ modifiedLine2\n  line3"
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testGeneratePatchComplexChanges() {
-    val oldCode = """
+    @Test
+    fun testGeneratePatchComplexChanges() {
+        val oldCode = """
             function example() {
                 console.log("Hello");
                 // Some comment
                 return true;
             }
         """.trimIndent()
-    val newCode = """
+        val newCode = """
             function example() {
                 console.log("Hello, World!");
                 // Modified comment
@@ -387,8 +381,8 @@ class IterativePatchUtilTest {
                 return x > 0;
             }
         """.trimIndent()
-    val result = IterativePatchUtil.generatePatch(oldCode, newCode)
-    val expected = """
+        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val expected = """
               function example() {
             -     console.log("Hello");
             -     // Some comment
@@ -399,15 +393,12 @@ class IterativePatchUtilTest {
             +     return x > 0;
               }
         """.trimIndent()
-    assertEquals(
-      expected.trim().replace("\r\n", "\n"),
-      result.trim().replace("\r\n", "\n")
-    )
-  }
+        Assertions.assertEquals(normalize(expected), normalize(result))
+    }
 
-  @Test
-  fun testGeneratePatchMoveLineUpwardsMultiplePositions() {
-    val oldCode = """
+    @Test
+    fun testGeneratePatchMoveLineUpwardsMultiplePositions() {
+        val oldCode = """
             line1
             line2
             line3
@@ -416,7 +407,7 @@ class IterativePatchUtilTest {
             line6
         """.trimIndent()
 
-    val newCode = """
+        val newCode = """
             line1
             line5
             line2
@@ -425,7 +416,7 @@ class IterativePatchUtilTest {
             line6
         """.trimIndent()
 
-    val expectedPatch = """
+        val expectedPatch = """
               line1
             - line2
             - line3
@@ -437,13 +428,13 @@ class IterativePatchUtilTest {
               line6
         """.trimIndent()
 
-    val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
-    assertEquals(expectedPatch, actualPatch)
-  }
+        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
+    }
 
-  @Test
-  fun testGeneratePatchMoveLineDownwardsMultiplePositions() {
-    val oldCode = """
+    @Test
+    fun testGeneratePatchMoveLineDownwardsMultiplePositions() {
+        val oldCode = """
             line1
             line2
             line3
@@ -452,7 +443,7 @@ class IterativePatchUtilTest {
             line6
         """.trimIndent()
 
-    val newCode = """
+        val newCode = """
             line1
             line3
             line4
@@ -461,7 +452,7 @@ class IterativePatchUtilTest {
             line2
         """.trimIndent()
 
-    val expectedPatch = """
+        val expectedPatch = """
               line1
             - line2
               line3
@@ -471,13 +462,13 @@ class IterativePatchUtilTest {
             + line2
         """.trimIndent()
 
-    val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
-    assertEquals(expectedPatch, actualPatch)
-  }
+        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
+    }
 
-  @Test
-  fun testGeneratePatchSwapLines() {
-    val oldCode = """
+    @Test
+    fun testGeneratePatchSwapLines() {
+        val oldCode = """
             line1
             line2
             line3
@@ -486,7 +477,7 @@ class IterativePatchUtilTest {
             line6
         """.trimIndent()
 
-    val newCode = """
+        val newCode = """
             line1
             line4
             line3
@@ -495,7 +486,7 @@ class IterativePatchUtilTest {
             line6
         """.trimIndent()
 
-    val expectedPatch = """
+        val expectedPatch = """
               line1
             - line2
             - line3
@@ -506,13 +497,13 @@ class IterativePatchUtilTest {
               line6
         """.trimIndent()
 
-    val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
-    assertEquals(expectedPatch, actualPatch)
-  }
+        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
+    }
 
-  @Test
-  fun testGeneratePatchMoveAdjacentLines() {
-    val oldCode = """
+    @Test
+    fun testGeneratePatchMoveAdjacentLines() {
+        val oldCode = """
             line1
             line2
             line3
@@ -521,7 +512,7 @@ class IterativePatchUtilTest {
             line6
         """.trimIndent()
 
-    val newCode = """
+        val newCode = """
             line1
             line4
             line5
@@ -530,7 +521,7 @@ class IterativePatchUtilTest {
             line6
         """.trimIndent()
 
-    val expectedPatch = """
+        val expectedPatch = """
               line1
             - line2
             - line3
@@ -541,13 +532,13 @@ class IterativePatchUtilTest {
               line6
         """.trimIndent()
 
-    val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
-    assertEquals(expectedPatch, actualPatch)
-  }
+        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
+    }
 
-  @Test
-  fun testGeneratePatchMoveLineUpwards() {
-    val oldCode = """
+    @Test
+    fun testGeneratePatchMoveLineUpwards() {
+        val oldCode = """
             line1
             line2
             line3
@@ -555,7 +546,7 @@ class IterativePatchUtilTest {
             line5
             line6
         """.trimIndent()
-    val newCode = """
+        val newCode = """
             line1
             line2
             line5
@@ -563,7 +554,7 @@ class IterativePatchUtilTest {
             line4
             line6
         """.trimIndent()
-    val expectedPatch = """
+        val expectedPatch = """
               line1
               line2
             - line3
@@ -573,13 +564,13 @@ class IterativePatchUtilTest {
             + line4
               line6
         """.trimIndent()
-    val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
-    assertEquals(expectedPatch, actualPatch)
-  }
+        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
+    }
 
-  @Test
-  fun testGeneratePatchMoveLineDownwards() {
-    val oldCode = """
+    @Test
+    fun testGeneratePatchMoveLineDownwards() {
+        val oldCode = """
             line1
             line2
             line3
@@ -587,7 +578,7 @@ class IterativePatchUtilTest {
             line5
             line6
         """.trimIndent()
-    val newCode = """
+        val newCode = """
             line1
             line3
             line4
@@ -595,7 +586,7 @@ class IterativePatchUtilTest {
             line2
             line6
         """.trimIndent()
-    val expectedPatch = """
+        val expectedPatch = """
               line1
             - line2
               line3
@@ -604,7 +595,7 @@ class IterativePatchUtilTest {
             + line2
               line6
         """.trimIndent()
-    val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
-    assertEquals(expectedPatch, actualPatch)
-  }
+        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
+    }
 }

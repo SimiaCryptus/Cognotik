@@ -6,8 +6,10 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.apps.general.PlanAheadApp
 import com.simiacryptus.skyenet.apps.plan.*
+import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
@@ -41,49 +43,157 @@ class GraphOrderedPlanApp(
     api = api,
     api2 = api2
 ) {
-
+    data class ExtraTaskDependencies(
+        val dependencies: Map<String, List<String>> = emptyMap()
+    )
     override fun userMessage(
         session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API
     ) {
         val task = ui.newTask()
         val api = (api as ChatClient).getChildClient(task)
         try {
-            // Retrieve and validate plan settings
             val planSettings = getSettings(session, user, PlanSettings::class.java)
                 ?: throw IllegalArgumentException("Plan settings not found")
             api.budget = planSettings.budget
+            task.add("Reading graph file: $graphFile")
             val graphFileContent = readGraphFile(planSettings)
             val softwareGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
                 graphFileContent, SoftwareNodeType.SoftwareGraph::class.java
             )
             log.debug("Successfully read graph file. Size: ${graphFileContent.length} characters; ${softwareGraph.nodes.size} nodes.")
+            task.add("Successfully loaded graph with ${softwareGraph.nodes.size} nodes")
             val orderedNodes = orderGraphNodes(softwareGraph.nodes)
+            task.add("Ordered ${orderedNodes.size} nodes by priority")
             val cumulativeTasks = transformNodesToPlan(orderedNodes, planSettings, userMessage, graphFile, api)
+            addDependencies(cumulativeTasks, graphFileContent, userMessage, api)
             val plan = PlanUtil.filterPlan { cumulativeTasks } ?: emptyMap()
             log.info("Ordered plan built successfully. Proceeding to execute DAG.")
-            val agent = PlanCoordinator(
-                user = user,
-                session = session,
-                dataStorage = dataStorage,
-                ui = ui,
-                root = planSettings.workingDir?.let { File(it).toPath() } ?: dataStorage.getDataDir(user, session)
-                    .toPath(),
-                planSettings = planSettings)
-            task.add(buildPlanSummary(plan))
+            task.add("Plan generated successfully with ${plan.size} tasks")
+            task.add("Starting plan execution...")
+            task.add(buildPlanSummary(plan).let(::renderMarkdown))
             task.add(
                 buildExecutionSummary(
-                    agent.executePlan(
+                    PlanCoordinator(
+                        user = user,
+                        session = session,
+                        dataStorage = dataStorage,
+                        ui = ui,
+                        root = planSettings.workingDir?.let { File(it).toPath() } ?: dataStorage.getDataDir(
+                            user,
+                            session
+                        ).toPath(),
+                        planSettings = planSettings
+                    ).executePlan(
                         plan = plan,
                         task = task,
                         userMessage = userMessage,
                         api = api,
                         api2 = api2
-                    )
-                ))
+                    )).let(::renderMarkdown))
+            task.add("Plan execution completed")
         } catch (e: Exception) {
             task.error(ui, e)
+            task.add("Error during ordered planning: ${e.message}")
             log.error("Error during ordered planning: ${e.message}", e)
         }
+    }
+
+    private fun addDependencies(
+        cumulativeTasks: MutableMap<String, TaskConfigBase>,
+        graphFileContent: String,
+        userMessage: String,
+        api: ChatClient
+    ) {
+        log.debug("Starting dependency analysis for ${cumulativeTasks.size} tasks")
+        // Validate input parameters
+        if (cumulativeTasks.isEmpty()) {
+            log.warn("No tasks provided for dependency analysis")
+            return
+        }
+        try {
+            val existingDependencies = cumulativeTasks.mapValues {
+                it.value.task_dependencies?.toSet() ?: emptySet()
+            }
+
+            ParsedActor(
+                resultClass = ExtraTaskDependencies::class.java,
+                prompt = """
+                    Analyze the current plan context and the provided software graph to identify missing task dependencies.
+                    Consider:
+                    1. Code file dependencies from the graph
+                    2. Test dependencies on implementation files
+                    3. Package and project hierarchical dependencies
+                    4. Build and deployment order requirements
+                    Only suggest new dependencies that are not already present.
+                    Ensure all suggested task IDs exist in the current plan.
+                """.trimIndent(),
+            ).answer(
+                listOf(
+                    "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
+                    "Current aggregated plan so far (if any):\n```json\n${JsonUtil.toJson(cumulativeTasks)}\n```",
+                    "Complete Software Graph from file `$graphFile` is given below:\n```json\n$graphFileContent\n```",
+                    "User Instruction/Query: $userMessage\nPlease evaluate the context and provide your suggested changes or instructions to improve the software plan."
+                ), api = api
+            ).obj.dependencies.forEach { (taskToEdit, newUpstreams) ->
+                // Validate task exists
+                val task = cumulativeTasks[taskToEdit]
+                if (task == null) {
+                    log.warn("Attempted to add dependencies to non-existent task: $taskToEdit")
+                    return@forEach
+                }
+                // Initialize dependencies list if null
+                if (task.task_dependencies == null) {
+                    task.task_dependencies = mutableListOf()
+                }
+                // Filter and add only valid new dependencies
+                val validNewDependencies = newUpstreams.filter { upstreamId ->
+                    if (!cumulativeTasks.containsKey(upstreamId)) {
+                        log.warn("Skipping invalid dependency $upstreamId for task $taskToEdit")
+                        false
+                    } else if (wouldCreateCycle(taskToEdit, upstreamId, cumulativeTasks)) {
+                        log.warn("Skipping cyclic dependency $upstreamId for task $taskToEdit")
+                        false
+                    } else {
+                        true
+                    }
+                }
+                task.task_dependencies?.addAll(validNewDependencies)
+                if (validNewDependencies.isNotEmpty()) {
+                    log.debug("Added ${validNewDependencies.size} dependencies to task $taskToEdit: ${validNewDependencies.joinToString()}")
+                }
+            }
+            // Log summary of changes
+            val newDependencies = cumulativeTasks.mapValues {
+                (it.value.task_dependencies?.toSet() ?: emptySet()) - (existingDependencies[it.key] ?: emptySet())
+            }.filterValues { it.isNotEmpty() }
+            if (newDependencies.isNotEmpty()) {
+                log.info("Added new dependencies to ${newDependencies.size} tasks")
+                newDependencies.forEach { (taskId, deps) ->
+                    log.debug("Task $taskId: Added dependencies: ${deps.joinToString()}")
+                }
+            } else {
+                log.debug("No new dependencies were added")
+            }
+        } catch (e: Exception) {
+            log.error("Error during dependency analysis", e)
+            throw RuntimeException("Failed to analyze and add dependencies", e)
+        }
+    }
+
+    /**
+     * Check if adding a dependency would create a cycle in the task graph
+     */
+    private fun wouldCreateCycle(
+        taskId: String,
+        newDependencyId: String,
+        tasks: Map<String, TaskConfigBase>,
+        visited: MutableSet<String> = mutableSetOf()
+    ): Boolean {
+        if (taskId == newDependencyId) return true
+        if (!visited.add(newDependencyId)) return false
+        return tasks[newDependencyId]?.task_dependencies?.any { dependencyId ->
+            wouldCreateCycle(taskId, dependencyId, tasks, visited)
+        } ?: false
     }
 
     /**
@@ -128,14 +238,13 @@ class GraphOrderedPlanApp(
         api: API
     ): MutableMap<String, TaskConfigBase> {
         val tasks = mutableMapOf<String, TaskConfigBase>()
-        val graphTxt = readGraphFile(planSettings)  // reuse the helper for consistency
         nodes.forEach {
             tasks.putAll(
                 getNodePlan(
                     planSettings = planSettings,
                     tasks = tasks,
                     graphFile = graphFile,
-                    graphTxt = graphTxt,
+                    graphTxt = readGraphFile(planSettings),
                     node = it,
                     userMessage = userMessage,
                     api = api
@@ -154,13 +263,16 @@ class GraphOrderedPlanApp(
         userMessage: String,
         api: API
     ): Map<String, TaskConfigBase>? {
-        // Configure retry parameters
         val maxRetries = 3
         val retryDelayMillis = 1000L
         var attempt = 0
-        while (attempt < maxRetries) {
+        fun combine(node: SoftwareNodeType.NodeBase<*>, key: String) = when {
+            key.startsWith(node.id.toString(), false) -> key
+            else -> "${node.id}_$key"
+        }
+        while (true) {
             try {
-                val answer = planSettings.planningActor().answer(
+                return planSettings.planningActor().answer(
                     listOf(
                         "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
                         "Current aggregated plan so far (if any):\n```json\n${JsonUtil.toJson(tasks)}\n```",
@@ -168,20 +280,19 @@ class GraphOrderedPlanApp(
                         "Details of the focused node with ID `${node.id}`:\n```json\n${JsonUtil.toJson(node)}\n```",
                         "User Instruction/Query: $userMessage\nPlease evaluate the context and provide your suggested changes or instructions to improve the software plan."
                     ).filter { it.isNotBlank() }, api = api
-                )
-                // Rewrite the keys by prefixing the node id
-                val answerTasks = answer.obj.tasksByID
-                return answerTasks?.mapKeys { "${node.id}_${it.key}" }
+                ).obj.tasksByID?.mapKeys { combine(node, it.key) }?.mapValues {
+                    it.value.task_dependencies = it.value.task_dependencies?.map { combine(node, it) }?.toMutableList();
+                    it.value
+                }
             } catch (e: Exception) {
-                attempt++
-                if (attempt >= maxRetries) {
+                if (attempt++ >= maxRetries) {
                     throw e
                 }
                 Thread.sleep(retryDelayMillis)
             }
         }
-        return null
     }
+
 
     /**
      * Build a plan summary string for UI display.

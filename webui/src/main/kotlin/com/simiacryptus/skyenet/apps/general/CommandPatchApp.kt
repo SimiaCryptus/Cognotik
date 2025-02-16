@@ -3,7 +3,9 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import java.io.File
 import java.nio.file.Path
@@ -29,7 +31,12 @@ class CommandPatchApp(
       }\n$tripleTilde"
     }
 
-  override fun output(task: SessionTask, settings: Settings) = OutputResult(
+  override fun output(
+    task: SessionTask,
+    settings: Settings,
+    ui: ApplicationInterface,
+    tabs: TabbedDisplay
+  ) = OutputResult(
     exitCode = 1,
     output = command
   )

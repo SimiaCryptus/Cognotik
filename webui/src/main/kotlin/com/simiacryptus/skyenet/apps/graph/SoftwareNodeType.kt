@@ -93,19 +93,17 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         override var id: NodeId<ScmProjectNode> = NodeId.createNew(),
         override val type: String = "ScmProject",
         @Description("IDs of code projects in this SCM project")
-        val projectIds: MutableSet<NodeId<CodeProjectNode>> = mutableSetOf<NodeId<CodeProjectNode>>().toSortedSet { o1, o2 ->
+        var projectIds: MutableSet<NodeId<CodeProjectNode>>? = mutableSetOf<NodeId<CodeProjectNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
         @Description("Name of the SCM project")
-        var name: String = "",
-        @Description("Version control system type (e.g. git, svn)")
-        var scmType: String = "git",
-        @Description("Repository URL")
-        var repositoryUrl: String = "",
-        @Description("Current branch or version")
-        var branch: String = "main"
+        var name: String? = null,
+        @Description("Project status (e.g. Planning, In Development, Maintenance)")
+        var status: String? = "Planning",
+        @Description("Project priority (e.g. High, Medium, Low)")
+        var priority: String? = "Medium"
     ) : NodeBase<ScmProjectNode>
 
 
@@ -113,11 +111,11 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         override var id: NodeId<ProjectImportNode> = NodeId.createNew(),
         override val type: String = "ProjectImport",
         @Description("Source location of the imported project")
-        var sourceLocation: String = "",
+        var sourceLocation: String? = null,
         @Description("Import configuration settings")
-        var importConfig: Map<String, String> = mutableMapOf<String, String>().toSortedMap(),
+        var importConfig: Map<String, String>? = mutableMapOf<String, String>().toSortedMap(),
         @Description("List of imported resources")
-        val importedResources: MutableSet<String> = mutableSetOf<String>().toSortedSet(),
+        var importedResources: MutableSet<String>? = mutableSetOf<String>().toSortedSet(),
     ) : NodeBase<ProjectImportNode>
 
     data class CodeFileNode(
@@ -126,66 +124,86 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         @Description("Parent package containing this file")
         var packageId: NodeId<CodePackageNode>? = null,
         @Description("List of files this file depends on")
-        val dependencyIds: MutableSet<NodeId<CodeFileNode>> = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1, o2 ->
+        var dependencyIds: MutableSet<NodeId<CodeFileNode>>? = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
         @Description("List of specification documents for this file")
-        val specificationIds: MutableSet<NodeId<SpecificationDocumentNode>> = mutableSetOf<NodeId<SpecificationDocumentNode>>().toSortedSet { o1, o2 ->
+        val specificationIds: MutableSet<NodeId<SpecificationDocumentNode>> = mutableSetOf<NodeId<SpecificationDocumentNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
-        val importIds: MutableSet<NodeId<ProjectImportNode>> = mutableSetOf<NodeId<ProjectImportNode>>().toSortedSet { o1, o2 ->
+        val importIds: MutableSet<NodeId<ProjectImportNode>> = mutableSetOf<NodeId<ProjectImportNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
         @Description("Programming language")
-        var language: String = "",
+        var language: String? = null,
         @Description("File path relative to project root")
-        var path: String = "",
+        var path: String? = null,
+        @Description("Code complexity metrics")
+        var metrics: Map<String, Double>? = null,
+        @Description("Identified design patterns")
+        var designPatterns: MutableSet<String>? = null,
+        @Description("Code quality issues")
+        var qualityIssues: MutableList<String>? = null,
+        @Description("Documentation coverage percentage")
+        var docCoverage: Double? = null
     ) : NodeBase<CodeFileNode>
 
     data class CodePackageNode(
         override var id: NodeId<CodePackageNode> = NodeId.createNew(),
         override val type: String = "CodePackage",
         var projectId: NodeId<CodeProjectNode>? = null,
-        val fileIds: MutableSet<NodeId<CodeFileNode>> = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1, o2 ->
+        val fileIds: MutableSet<NodeId<CodeFileNode>> = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
-        val specificationIds: MutableSet<NodeId<SpecificationDocumentNode>> = mutableSetOf<NodeId<SpecificationDocumentNode>>().toSortedSet { o1, o2 ->
+        val specificationIds: MutableSet<NodeId<SpecificationDocumentNode>> = mutableSetOf<NodeId<SpecificationDocumentNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
-        val importIds: MutableSet<NodeId<ProjectImportNode>> = mutableSetOf<NodeId<ProjectImportNode>>().toSortedSet { o1, o2 ->
+        val importIds: MutableSet<NodeId<ProjectImportNode>> = mutableSetOf<NodeId<ProjectImportNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
         @Description("Package name")
-        var name: String = "",
+        var name: String? = null,
         @Description("Package description")
-        var description: String = "",
+         var description: String? = null,
+        @Description("Package-level architecture patterns")
+        var architecturePatterns: MutableSet<String>? = null,
+        @Description("Package dependencies and their coupling metrics")
+        var dependencyMetrics: Map<String, Double>? = null,
+        @Description("Package cohesion score")
+        var cohesionScore: Double? = null
     ) : NodeBase<CodePackageNode>
 
     data class CodeProjectNode(
         override var id: NodeId<CodeProjectNode> = NodeId.createNew(),
         override val type: String = "CodeProject",
         var projectId: NodeId<ScmProjectNode>? = null,
+        val packageIds: MutableSet<NodeId<CodePackageNode>> = mutableSetOf<NodeId<CodePackageNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
         @Description("Project name")
-        var name: String = "",
-        @Description("Build system (e.g. maven, gradle)")
-        var buildSystem: String = "",
-        val packageIds: MutableSet<NodeId<CodePackageNode>> = mutableSetOf<NodeId<CodePackageNode>>().toSortedSet { o1, o2 ->
-            o1.value.compareTo(
-                o2.value
-            )
-        },
+        var name: String? = null,
+        @Description("Minimum required dependencies (e.g. Java 11, Python 3.8)")
+        var requirements: Map<String, String>? = mutableMapOf(),
+        @Description("Development status (e.g. Alpha, Beta, Production)")
+        var developmentStatus: String? = "Alpha",
+        @Description("Project architecture style")
+        var architectureStyle: String? = null,
+        @Description("Technical debt estimate")
+        var technicalDebt: Map<String, Double>? = null,
+        @Description("Code duplication percentage")
+        var duplicationPercentage: Double? = null,
+        @Description("Overall maintainability score")
+        var maintainabilityScore: Double? = null
     ) : NodeBase<CodeProjectNode>
 
     data class SpecificationDocumentNode(
@@ -193,9 +211,13 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         override val type: String = "SpecificationDocument",
         var projectId: NodeId<ScmProjectNode>? = null,
         @Description("Document title")
-        var title: String = "",
+        var title: String? = null,
         @Description("Document type (e.g. API, Architecture)")
-        var documentType: String = "",
+        var documentType: String? = null,
+        @Description("Document status (e.g. Draft, Review, Approved)")
+        var status: String? = "Draft",
+        @Description("Document classification (e.g. Public, Internal, Confidential)")
+        var classification: String? = "Internal"
     ) : NodeBase<SpecificationDocumentNode>
 
     data class TestCodeFileNode(
@@ -204,25 +226,24 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         @Description("Parent package containing this test file")
         var packageId: NodeId<CodePackageNode>? = null,
         @Description("Code files being tested")
-        val testedFileIds: MutableSet<NodeId<CodeFileNode>> = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1, o2 ->
+        val testedFileIds: MutableSet<NodeId<CodeFileNode>> = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
         @Description("Test dependencies")
-        val dependencyIds: MutableSet<NodeId<CodeFileNode>> = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1, o2 ->
+        val dependencyIds: MutableSet<NodeId<CodeFileNode>> = mutableSetOf<NodeId<CodeFileNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
             o1.value.compareTo(
                 o2.value
             )
         },
         @Description("Test framework being used (e.g. JUnit, TestNG)")
-        var testFramework: String = "",
+        var testFramework: String? = null,
         @Description("Test category (e.g. Unit, Integration, E2E)")
-        var testCategory: String = "Unit",
+        var testCategory: String? = "Unit",
         @Description("File path relative to project test root")
-        var path: String = "",
-        @Description("Programming language")
-        var language: String = "",
+        var path: String? = null,
+        var language: String? = null
     ) : NodeBase<TestCodeFileNode>
 
     @JsonDeserialize(using = SoftwareGraphDeserializer::class)
@@ -343,7 +364,7 @@ operator fun NodeBase<*>.minus(other: NodeBase<*>) = when {
     this.javaClass != other.javaClass -> throw IllegalArgumentException("Cannot merge nodes of different types")
     this is CodeFileNode && other is CodeFileNode -> {
         this.copy(
-            dependencyIds = this.dependencyIds.minus(other.dependencyIds).toMutableSet(),
+            dependencyIds = this.dependencyIds?.minus(other.dependencyIds ?: emptySet())?.toMutableSet(),
             specificationIds = this.specificationIds.minus(other.specificationIds).toMutableSet(),
             importIds = this.importIds.minus(other.importIds).toMutableSet()
         )
@@ -372,14 +393,14 @@ operator fun NodeBase<*>.minus(other: NodeBase<*>) = when {
 
     this is ScmProjectNode && other is ScmProjectNode -> {
         this.copy(
-            projectIds = this.projectIds.minus(other.projectIds).toMutableSet()
+            projectIds = this.projectIds?.minus(other.projectIds ?: emptySet())?.toMutableSet()
         )
     }
 
     this is ProjectImportNode && other is ProjectImportNode -> {
         this.copy(
-            importedResources = this.importedResources.minus(other.importedResources).toMutableSet(),
-            importConfig = this.importConfig.filterKeys { !other.importConfig.containsKey(it) }
+            importedResources = this.importedResources?.minus(other.importedResources ?: emptySet())?.toMutableSet(),
+            importConfig = this.importConfig?.filterKeys { false == other.importConfig?.containsKey(it) }
         )
     }
 
@@ -399,13 +420,13 @@ operator fun NodeBase<*>.plus(other: NodeBase<*>) = when {
     this is CodeFileNode && other is CodeFileNode -> {
         this.copy(
             packageId = other.packageId ?: this.packageId,
-            dependencyIds = this.dependencyIds.union(other.dependencyIds)
-                .toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
-            specificationIds = this.specificationIds.union(other.specificationIds)
-                .toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
-            importIds = this.importIds.union(other.importIds).toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
-            language = other.language.ifEmpty { this.language },
-            path = other.path.ifEmpty { this.path }
+            dependencyIds = this.dependencyIds?.union(other.dependencyIds ?: emptySet())
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+            specificationIds = this.specificationIds?.union(other.specificationIds ?: emptySet())
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<SpecificationDocumentNode>>(),
+            importIds = this.importIds.union(other.importIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+            language = other.language?.ifEmpty { this.language },
+            path = other.path?.ifEmpty { this.path }
         )
     }
 
@@ -413,59 +434,56 @@ operator fun NodeBase<*>.plus(other: NodeBase<*>) = when {
         this.copy(
             packageId = other.packageId ?: this.packageId,
             testedFileIds = this.testedFileIds.union(other.testedFileIds)
-                .toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<CodeFileNode>>(),
             dependencyIds = this.dependencyIds.union(other.dependencyIds)
-                .toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
-            testFramework = other.testFramework.ifEmpty { this.testFramework },
-            testCategory = other.testCategory.ifEmpty { this.testCategory },
-            path = other.path.ifEmpty { this.path },
-            language = other.language.ifEmpty { this.language }
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<CodeFileNode>>(),
+            testFramework = other.testFramework?.ifEmpty { this.testFramework },
+            testCategory = other.testCategory?.ifEmpty { this.testCategory },
+            path = other.path?.ifEmpty { this.path },
+            language = other.language?.ifEmpty { this.language }
         )
     }
 
     this is CodePackageNode && other is CodePackageNode -> {
         this.copy(
             projectId = other.projectId ?: this.projectId,
-            fileIds = this.fileIds.union(other.fileIds).toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
+            fileIds = this.fileIds.union(other.fileIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
             specificationIds = this.specificationIds.union(other.specificationIds)
-                .toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
-            importIds = this.importIds.union(other.importIds).toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
-            name = other.name.ifEmpty { this.name },
-            description = other.description.ifEmpty { this.description }
+                .toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+            importIds = this.importIds.union(other.importIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+            name = other.name?.ifEmpty { this.name },
+            description = other.description?.ifEmpty { this.description }
         )
     }
 
     this is CodeProjectNode && other is CodeProjectNode -> {
         this.copy(
             projectId = other.projectId ?: this.projectId,
-            name = other.name.ifEmpty { this.name },
-            buildSystem = other.buildSystem.ifEmpty { this.buildSystem },
-            packageIds = this.packageIds.union(other.packageIds).toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) }
+            name = other.name?.ifEmpty { this.name },
+            packageIds = this.packageIds.union(other.packageIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) }
         )
     }
 
     this is ScmProjectNode && other is ScmProjectNode -> {
         this.copy(
-            projectIds = this.projectIds.union(other.projectIds).toSortedSet { o1, o2 -> o1.value.compareTo(o2.value) },
-            name = other.name.ifEmpty { this.name },
-            scmType = other.scmType.ifEmpty { this.scmType },
-            repositoryUrl = other.repositoryUrl.ifEmpty { this.repositoryUrl },
-            branch = other.branch.ifEmpty { this.branch }
+            projectIds = this.projectIds?.union(other.projectIds ?: emptySet())
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<CodeProjectNode>>(),
+            name = other.name?.ifEmpty { this.name },
         )
     }
 
     this is ProjectImportNode && other is ProjectImportNode -> {
         this.copy(
-            importedResources = this.importedResources.union(other.importedResources).toSortedSet(),
-            importConfig = this.importConfig + other.importConfig
+            importedResources = this.importedResources?.union(other.importedResources ?: emptySet())?.toSortedSet() ?: mutableSetOf(),
+            importConfig = (this.importConfig ?: emptyMap<String,String>()) + (other.importConfig ?: emptyMap<String,String>())
         )
     }
 
     this is SpecificationDocumentNode && other is SpecificationDocumentNode -> {
         this.copy(
             projectId = other.projectId ?: this.projectId,
-            title = other.title.ifEmpty { this.title },
-            documentType = other.documentType.ifEmpty { this.documentType }
+            title = other.title?.ifEmpty { this.title },
+            documentType = other.documentType?.ifEmpty { this.documentType }
         )
     }
 

@@ -76,7 +76,7 @@ class SeleniumSessionTask(
   ) : TaskConfigBase(
     task_type = TaskType.SeleniumSession.name,
     task_description = task_description,
-    task_dependencies = task_dependencies,
+    task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
   override fun promptSegment() = """

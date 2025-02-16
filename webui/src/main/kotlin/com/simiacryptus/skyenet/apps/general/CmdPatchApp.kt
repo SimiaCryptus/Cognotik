@@ -3,13 +3,19 @@ package com.simiacryptus.skyenet.apps.general
 
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.skyenet.TabbedDisplay
+import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.skyenet.set
+import com.simiacryptus.skyenet.util.MarkdownUtil
+import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+
+private val String.renderMarkdown: String get() = MarkdownUtil.renderMarkdown(this)
 
 class CmdPatchApp(
   root: Path,
@@ -22,13 +28,6 @@ class CmdPatchApp(
 
   companion object {
     private val log = LoggerFactory.getLogger(CmdPatchApp::class.java)
-
-    val String.htmlEscape: String
-      get() = this.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-        .replace("'", "&#39;")
 
     fun truncate(output: String, kb: Int = 32): String {
       var returnVal = output
@@ -91,64 +90,86 @@ class CmdPatchApp(
     return str
   }
 
-  override fun output(task: SessionTask, settings: Settings): OutputResult = run {
-    var exitCode = 0
-    lateinit var buffer: StringBuilder
-    for ((index, cmdSettings) in settings.commands.withIndex()) {
-      buffer = StringBuilder()
-      val details = StringBuilder()
-      val processBuilder = ProcessBuilder(
-        (listOf(cmdSettings.executable.absolutePath) + cmdSettings.arguments.split(" ").filter(String::isNotBlank)).apply {
-          details.appendLine(withIndex().joinToString("\n") { "${it.index}: ${it.value}" })
-        }
-      ).directory(cmdSettings.workingDirectory.apply {
-        details.appendLine("Working Directory: ${this}")
-      })
-      processBuilder.environment().putAll(System.getenv().apply {
-        details.appendLine(entries.joinToString("\n") { "${it.key}=${it.value}" })
-      })
-      task.header(processBuilder.command().joinToString(" "))
-      val taskOutput = task.add("Executing command ${index + 1}/${settings.commands.size}")
-      log.info("Executing command ${index + 1}/${settings.commands.size}:\n  ${details.toString().replace("\n", "\n  ")}")
-      val process = processBuilder.start()
-      Thread {
-        var lastUpdate = 0L
-        process.errorStream.bufferedReader().use { reader ->
-          var line: String?
-          while (reader.readLine().also { line = it } != null) {
-            buffer.append(line).append("\n")
-            if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
-              taskOutput?.set("<pre>\n${truncate(buffer.toString())}\n</pre>")
-              task.update()
-              lastUpdate = System.currentTimeMillis()
-            }
-          }
-          task.update()
-        }
-      }.start()
-      process.inputStream.bufferedReader().use { reader ->
-        var line: String?
-        var lastUpdate = 0L
-        while (reader.readLine().also { line = it } != null) {
-          buffer.append(line).append("\n")
-          if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
-            taskOutput?.set("<pre>\n${truncate(buffer.toString())}\n</pre>")
+  override fun output(
+    task: SessionTask,
+    settings: Settings,
+    ui: ApplicationInterface,
+    tabs: TabbedDisplay
+  ): OutputResult {
+    run {
+      var exitCode = 0
+      for ((index, cmdSettings) in settings.commands.withIndex()) {
+        val processBuilder = ProcessBuilder(
+          listOf(cmdSettings.executable.absolutePath) + cmdSettings.arguments.split(" ").filter(String::isNotBlank)
+        ).directory(cmdSettings.workingDirectory)
+        processBuilder.environment().putAll(System.getenv())
+        val cmdString = processBuilder.command().joinToString(" ")
+        val task = ui.newTask(false).apply { tabs[cmdString] = placeholder }
+        task.add("Working Directory: ${cmdSettings.workingDirectory}")
+        task.add("Command: ${cmdString}")
+        val taskOutput = task.add("")
+        val process = processBuilder.start()
+        val cancelButton = task.add(task.hrefLink("Stop") {
+          process.destroy()
+        })
+        val buffer = StringBuilder()
+        fun addOutput(taskOutput: StringBuilder?, task: SessionTask) {
+          synchronized(task) {
+            taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n```".renderMarkdown)
             task.update()
-            lastUpdate = System.currentTimeMillis()
           }
         }
+
+        Thread {
+          var lastUpdate = 0L
+          var line: String?
+          try {
+            process.errorStream.bufferedReader().use { reader ->
+              while (reader.readLine().also { line = it } != null) {
+                buffer.append(line).append("\n")
+                if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
+                  addOutput(taskOutput, task)
+                  lastUpdate = System.currentTimeMillis()
+                }
+              }
+            }
+          } finally {
+            addOutput(taskOutput, task)
+            cancelButton?.clear()
+          }
+        }.start()
+
+        Thread {
+          var line: String?
+          var lastUpdate = 0L
+          try {
+            process.inputStream.bufferedReader().use { reader ->
+              while (reader.readLine().also { line = it } != null) {
+                buffer.append(line).append("\n")
+                if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
+                  addOutput(taskOutput, task)
+                  lastUpdate = System.currentTimeMillis()
+                }
+              }
+            }
+          } finally {
+            addOutput(taskOutput, task)
+            cancelButton?.clear()
+          }
+        }.start()
+
+        if (!process.waitFor(5, TimeUnit.MINUTES)) {
+          process.destroy()
+          cancelButton?.clear()
+          throw RuntimeException("Process timed out")
+        }
+        exitCode = process.exitValue()
+        cancelButton?.clear()
         task.update()
+        if (exitCode != 0) return OutputResult(exitCode, outputString(buffer))
       }
-      if (!process.waitFor(5, TimeUnit.MINUTES)) {
-        process.destroy()
-        throw RuntimeException("Process timed out")
-      }
-      exitCode = process.exitValue()
-      if (exitCode != 0) break
     }
-    task.complete()
-    val output = outputString(buffer)
-    return OutputResult(exitCode, output)
+    return OutputResult(1, "No commands to execute")
   }
 
   fun stop() {

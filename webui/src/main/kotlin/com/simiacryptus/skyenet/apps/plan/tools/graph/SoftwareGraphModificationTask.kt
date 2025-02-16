@@ -30,7 +30,7 @@ class SoftwareGraphModificationTask(
     ) : TaskConfigBase(
         task_type = TaskType.SoftwareGraphModification.name,
         task_description = task_description,
-        task_dependencies = task_dependencies,
+        task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 

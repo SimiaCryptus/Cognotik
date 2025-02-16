@@ -15,7 +15,7 @@ open class TaskConfigBase(
   @Description("A brief user-facing description of the task")
   var task_description: String? = null,
   @Description("A list of IDs of tasks that must be completed before this task can be executed. This defines upstream dependencies ensuring proper task order and information flow.")
-  var task_dependencies: List<String>? = null,
+  var task_dependencies: MutableList<String>? = null,
   @Description("Ignore.")
   var state: AbstractTask.TaskState? = null
 ) {

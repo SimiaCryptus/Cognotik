@@ -51,15 +51,16 @@ open class ChatSocketManager(
     val messagesCopy = messages.toList()
     try {
       val ui = ApplicationInterface(this)
-      val process = { it: StringBuilder ->
+      Retryable(ui, task) { it: StringBuilder ->
+        val task = ui.newTask(false)
         val response = respond(api, messagesCopy)
         messages.dropLastWhile { it.role == ApiModel.Role.assistant }
         messages += ApiModel.ChatMessage(ApiModel.Role.assistant, response.toContentList())
         val renderResponse = renderResponse(response, task)
         onResponse(renderResponse, renderRequest)
-        renderResponse
+        renderResponse.apply { task.add(this) }
+        task.placeholder
       }
-      Retryable(ui, task, process)
     } catch (e: Exception) {
       log.info("Error in chat", e)
       task.error(ApplicationInterface(this), e)

@@ -133,7 +133,7 @@ object PlanUtil {
       }
     }
     tasksByID.forEach {
-      it.value.task_dependencies = it.value.task_dependencies?.filter { it in tasksByID.keys }
+      it.value.task_dependencies = it.value.task_dependencies?.filter { it in tasksByID.keys }?.toMutableList()
       it.value.state = TaskState.Pending
     }
     try {

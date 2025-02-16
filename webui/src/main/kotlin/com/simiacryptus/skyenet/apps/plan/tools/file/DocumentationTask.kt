@@ -83,10 +83,11 @@ class DocumentationTask(
     val onComplete = {
       semaphore.release()
     }
-    val process = { sb: StringBuilder ->
+    Retryable(agent.ui, task = task) { sb: StringBuilder ->
+      val task = agent.ui.newTask(false)
       val itemsToDocument = taskConfig?.topics ?: emptyList()
       val docResult = documentationGeneratorActor.answer(
-        messages + listOf<String>(
+        messages + listOf(
           getInputFileCode(),
           "Items to document: ${itemsToDocument.joinToString(", ")}",
           "Output files: ${taskConfig?.output_files?.joinToString(", ") ?: ""}"
@@ -131,9 +132,9 @@ class DocumentationTask(
             onComplete()
           }, ui = agent.ui
         )
-      }
+      }.apply { task.add(this) }
+      task.placeholder
     }
-    Retryable(agent.ui, task = task, process = process)
     try {
       semaphore.acquire()
     } catch (e: Throwable) {
