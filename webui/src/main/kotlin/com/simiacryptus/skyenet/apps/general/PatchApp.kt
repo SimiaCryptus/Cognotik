@@ -11,7 +11,9 @@ import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.filteredWalk
+import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.isGitignore
+import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.isLLMIncludableFile
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -129,13 +131,17 @@ abstract class PatchApp(
     val errors: List<ParsedError>? = null
   )
 
+  data class SearchQuery(
+    @Description("The search pattern to be used in file content matching") val pattern: String,
+    @Description("A glob expression to filter which files to run the search against") val fileGlob: String
+  )
   data class ParsedError(
     @Description("The error message") val message: String? = null,
     @Description("Problem severity (higher numbers indicate more fatal issues)") val severity: Int = 0,
     @Description("Problem complexity (higher numbers indicate more difficult issues)") val complexity: Int = 0,
     @Description("Files identified as needing modification and issue-related files") val relatedFiles: List<String>? = null,
     @Description("Files identified as needing modification and issue-related files") val fixFiles: List<String>? = null,
-    @Description("Search strings to find relevant files") val searchStrings: List<String>? = null
+    @Description("Search queries containing both a pattern and a file glob") val searchQueries: List<SearchQuery>? = null
   )
 
   data class Settings(
@@ -170,27 +176,24 @@ abstract class PatchApp(
   ): OutputResult {
     // Execute each command in sequence
     val tabs = TabbedDisplay(task)
-    val output = output(task, settings, ui, tabs)
-    previousRunResults.add(output)
-    if (output.exitCode == 0 && settings.exitCodeOption == "nonzero") {
-      task.complete(
-        "<div>\n<div><b>Command executed successfully</b></div>\n</div>"
-      )
-      return output
+
+    val outputResult = output(task, settings, ui, tabs)
+    previousRunResults.add(outputResult)
+    if (outputResult.exitCode == 0 && settings.exitCodeOption == "nonzero") {
+      task.complete("<div>\n<div><b>Command executed successfully</b></div>\n</div>")
+      return outputResult
     }
-    if (settings.exitCodeOption == "zero" && output.exitCode != 0) {
-      task.complete(
-        "<div>\n<div><b>Command failed</b> (ignoring)</div>\n</div>"
-      )
-      return output
+    if (settings.exitCodeOption == "zero" && outputResult.exitCode != 0) {
+      task.complete("<div>\n<div><b>Command failed</b> (ignoring)</div>\n</div>")
+      return outputResult
     }
-    val task = ui.newTask(false).apply { tabs["Fix"] = placeholder }
+    val fixTask = ui.newTask(false).apply { tabs["Fix"] = placeholder }
     try {
-      fixAll(settings, output, task, ui, api)
+      fixAll(settings, outputResult, fixTask, ui, api)
     } catch (e: Exception) {
-      task.error(ui, e)
+      fixTask.error(ui, e)
     }
-    return output
+    return outputResult
   }
 
   private fun fixAll(
@@ -238,7 +241,12 @@ abstract class PatchApp(
             message = "Error message",
             relatedFiles = listOf("src/main/java/com/example/Example.java"),
             fixFiles = listOf("src/main/java/com/example/Example.java"),
-            searchStrings = listOf("def exampleFunction", "TODO")
+            searchQueries = listOf(
+              SearchQuery(
+                pattern = "error message",
+                fileGlob = "**/*.java"
+              )
+            )
           )
         )
       ), model = model, prompt = ("""
@@ -281,14 +289,20 @@ abstract class PatchApp(
     // Record the current error parsing result for future reference
     previousParsedErrorsRecords.add(plan.obj)
     // Process errors ordered by fixPriority (lower number = higher priority)
-    plan.obj.errors?.sortedBy { it.severity * it.complexity }?.takeLast(1)?.forEach { error ->
+    plan.obj.errors?.sortedBy { it.severity.toDouble() / it.complexity }?.takeLast(1)?.forEach { error ->
       task.header("Processing error: ${error.message}")
       task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
       // Search for files using the provided search strings
-      val searchResults = error.searchStrings?.flatMap { searchString ->
-        FileValidationUtils.filteredWalk(settings.workingDirectory!!) { !FileValidationUtils.isGitignore(it.toPath()) }
-          .filter { FileValidationUtils.isLLMIncludableFile(it) }
-          .filter { it.readText().contains(searchString, ignoreCase = true) }.map { it.toPath() }.toList()
+      val searchResults = error.searchQueries?.flatMap { query ->
+        val filter1 = filteredWalk(settings.workingDirectory!!) { !isGitignore(it.toPath()) }
+          .filter { isLLMIncludableFile(it) }
+        val filter2 = filter1.filter { file ->
+          java.nio.file.FileSystems.getDefault()
+            .getPathMatcher("glob:" + query.fileGlob)
+            .matches(file.toPath())
+        }
+        val filter3 = filter2.filter { it.readText().contains(query.pattern, ignoreCase = true) }
+        filter3.map { it.toPath() }.toList()
       }?.toSet() ?: emptySet()
       if (searchResults.isNotEmpty()) {
         task.verbose(
@@ -326,18 +340,33 @@ abstract class PatchApp(
     api: ChatClient,
     task: SessionTask,
   ) {
+    val api = api.getChildClient(task)
     val paths = ((error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList()) + (additionalFiles
-      ?: emptyList())).map {
+      ?: emptyList())).map { filePath ->
       try {
-        File(it).toPath()
+        // First, remove the root path prefix if present so that the LLM-generated absolute paths become relative.
+        // Then, strip a leading slash if still present.
+        val normalizedRoot = root.absolutePath.replace(File.separatorChar, '/')
+        var relativePath =
+          if (filePath.contains(normalizedRoot)) filePath.replaceFirst(normalizedRoot, "") else filePath
+        if (relativePath.startsWith("/")) {
+          relativePath = relativePath.drop(1)
+        }
+        File(relativePath).toPath()
       } catch (e: Throwable) {
-        log.warn("Error: root=${root}    ", e)
+        log.warn("Error: root=${root}", e)
         null
       }
     }.filterNotNull()
     val prunedPaths = prunePaths(paths, 50 * 1024)
     task.verbose(renderMarkdown(
-        "Files identified for modification:\n\n${prunedPaths.joinToString("\n") { "* `$it` (${it.toFile().length()} bytes)" }}", tabs = false, ui = ui
+      "Files identified for modification:\n\n${
+        prunedPaths.joinToString("\n") {
+          "* `$it` (${
+            root.toPath().resolve(it).toFile().length()
+          } bytes)"
+        }
+      }", tabs = false, ui = ui
       ))
     val summary = codeSummary(prunedPaths)
     val response = SimpleActor(

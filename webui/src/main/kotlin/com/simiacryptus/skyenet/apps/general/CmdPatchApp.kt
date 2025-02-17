@@ -75,6 +75,7 @@ class CmdPatchApp(
         "Error reading file `${path}` - ${e.message}"
       }
     }
+  val tripleTilde = "```"
 
   override fun projectSummary(): String {
     val codeFiles = codeFiles()
@@ -120,43 +121,24 @@ class CmdPatchApp(
           }
         }
 
-        Thread {
+        // Extracted function to read the process stream (error or input)
+        fun readStream(stream: java.io.InputStream) {
           var lastUpdate = 0L
-          var line: String?
-          try {
-            process.errorStream.bufferedReader().use { reader ->
-              while (reader.readLine().also { line = it } != null) {
-                buffer.append(line).append("\n")
-                if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
-                  addOutput(taskOutput, task)
-                  lastUpdate = System.currentTimeMillis()
-                }
+          stream.bufferedReader().useLines { lines ->
+            lines.forEach { line ->
+              buffer.append(line).append("\n")
+              if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
+                addOutput(taskOutput, task)
+                lastUpdate = System.currentTimeMillis()
               }
             }
-          } finally {
-            addOutput(taskOutput, task)
-            cancelButton?.clear()
           }
-        }.start()
+          addOutput(taskOutput, task)
+          cancelButton?.clear()
+        }
+        Thread { readStream(process.errorStream) }.start()
+        Thread { readStream(process.inputStream) }.start()
 
-        Thread {
-          var line: String?
-          var lastUpdate = 0L
-          try {
-            process.inputStream.bufferedReader().use { reader ->
-              while (reader.readLine().also { line = it } != null) {
-                buffer.append(line).append("\n")
-                if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
-                  addOutput(taskOutput, task)
-                  lastUpdate = System.currentTimeMillis()
-                }
-              }
-            }
-          } finally {
-            addOutput(taskOutput, task)
-            cancelButton?.clear()
-          }
-        }.start()
 
         if (!process.waitFor(5, TimeUnit.MINUTES)) {
           process.destroy()
