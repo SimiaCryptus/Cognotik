@@ -94,35 +94,41 @@ interface MessageListProps {
     messages?: Message[];
 }
 
-export const expandMessageReferences = (content: string, messages: Message[]): string => {
-    if (!content) return '';
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = content;
-    const processedRefs = new Set<string>();
+export const expandMessageReferences = (
+    content: string,
+    messages: Message[],
+    processedRefs: Set<string> = new Set<string>()
+): string => {
 
-    const processNode = (node: HTMLElement) => {
-        const messageID = node.getAttribute("message-id");
-        if (messageID && !processedRefs.has(messageID)) {
-            if (messageID?.startsWith('z')) {
-                processedRefs.add(messageID); // Mark this reference as processed
-                const referencedMessage = messages.find(m => m.id === messageID);
-                if (referencedMessage) {
-                    node.innerHTML = expandMessageReferences(referencedMessage.content, messages);
-                } else {
-                    if (DEBUG_LOGGING) {
-                        console.warn('[MessageList] Referenced message not found:', messageID);
-                    }
-                }
-            }
+  if (!content) return '';
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = content;
+  // Use an iterative approach with a queue to avoid recursion
+  const queue: HTMLElement[] = [tempDiv];
+  while (queue.length > 0) {
+    const currentNode = queue.shift();
+    if (!currentNode) continue;
+    const messageID = currentNode.getAttribute("message-id");
+    if (messageID && !processedRefs.has(messageID) && messageID.startsWith('z')) {
+      processedRefs.add(messageID);
+      const referencedMessage = messages.find(m => m.id === messageID);
+      if (referencedMessage) {
+        // Replace the inner content with the referenced message content
+        currentNode.innerHTML = referencedMessage.content;
+      } else {
+        if (DEBUG_LOGGING) {
+          console.warn('[MessageList] Referenced message not found:', messageID);
         }
-        Array.from(node.children).forEach(child => {
-            if (child instanceof HTMLElement) {
-                processNode(child);
-            }
-        });
-    };
-    processNode(tempDiv);
-    return tempDiv.innerHTML;
+      }
+    }
+    // Add all children for further processing (they might contain nested refs)
+    Array.from(currentNode.children).forEach(child => {
+      if (child instanceof HTMLElement) {
+        queue.push(child);
+      }
+    });
+  }
+  return tempDiv.innerHTML;
 };
 
 const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {

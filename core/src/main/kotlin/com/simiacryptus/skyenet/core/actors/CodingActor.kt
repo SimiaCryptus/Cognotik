@@ -160,8 +160,40 @@ ${details ?: ""}
       val blocks = extractTextBlocks(respondWithCode)
       val renderedResponse = getRenderedResponse(blocks)
       val codedInstruction = codeInterceptor(getCode(language, blocks))
-      log.debug("Response: \n\t${renderedResponse.replace("\n", "\n\t", false)}")
-      log.debug("New Code: \n\t${codedInstruction.replace("\n", "\n\t", false)}")
+      log.debug(
+        "Response: \n\t${
+          renderedResponse.lineSequence()
+            .map {
+                  when {
+                    it.isBlank() -> {
+                      when {
+                        it.length < "\t".length -> "\t"
+                        else -> it
+                      }
+                    }
+
+                    else -> "\t" + it
+                  }
+            }
+            .joinToString("\n")
+        }")
+      log.debug(
+        "New Code: \n\t${
+          codedInstruction.lineSequence()
+            .map {
+                  when {
+                    it.isBlank() -> {
+                      when {
+                        it.length < "\t".length -> "\t"
+                        else -> it
+                      }
+                    }
+
+                    else -> "\t" + it
+                  }
+            }
+            .joinToString("\n")
+        }")
       result = CodeResultImpl(
         *messages,
         input = input,
@@ -251,8 +283,40 @@ ${details ?: ""}
           val codeBlocks = extractTextBlocks(chat(api, request, model))
           val renderedResponse = getRenderedResponse(codeBlocks)
           val codedInstruction = codeInterceptor(getCode(language, codeBlocks))
-          log.debug("Response: \n\t${renderedResponse.replace("\n", "\n\t", false)}")
-          log.debug("New Code: \n\t${codedInstruction.replace("\n", "\n\t", false)}")
+          log.debug(
+            "Response: \n\t${
+              renderedResponse.lineSequence()
+                .map {
+                  when {
+                    it.isBlank() -> {
+                              when {
+                                it.length < "\t".length -> "\t"
+                                else -> it
+                              }
+                    }
+
+                    else -> "\t" + it
+                  }
+                }
+                .joinToString("\n")
+            }")
+          log.debug(
+            "New Code: \n\t${
+              codedInstruction.lineSequence()
+                .map {
+                  when {
+                    it.isBlank() -> {
+                              when {
+                                it.length < "\t".length -> "\t"
+                                else -> it
+                              }
+                    }
+
+                    else -> "\t" + it
+                  }
+                }
+                .joinToString("\n")
+            }")
           var workingCode = codedInstruction
           var workingRenderedResponse = renderedResponse
           for (fixAttempt in 0..input.fixIterations) {
@@ -283,8 +347,38 @@ ${TT}
               val codeBlocks = extractTextBlocks(respondWithCode)
               workingRenderedResponse = getRenderedResponse(codeBlocks)
               workingCode = codeInterceptor(getCode(language, codeBlocks))
-              log.debug("Response: \n\t" + workingRenderedResponse.replace("\n", "\n\t", false))
-              log.debug("New Code: \n\t${workingCode.replace("\n", "\n\t", false)}")
+              log.debug(
+                "Response: \n\t" + workingRenderedResponse.lineSequence()
+                  .map {
+                    when {
+                      it.isBlank() -> {
+                        when {
+                                    it.length < "\t".length -> "\t"
+                                    else -> it
+                        }
+                      }
+
+                      else -> "\t" + it
+                    }
+                  }
+                  .joinToString("\n"))
+              log.debug(
+                "New Code: \n\t${
+                  workingCode.lineSequence()
+                    .map {
+                      when {
+                        it.isBlank() -> {
+                          when {
+                            it.length < "\t".length -> "\t"
+                            else -> it
+                          }
+                        }
+
+                        else -> "\t" + it
+                      }
+                    }
+                    .joinToString("\n")
+                }")
             }
           }
         } catch (ex: FailedToImplementException) {
@@ -363,7 +457,20 @@ Correct the code and try again.
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(CodingActor::class.java)
 
-    fun String.indent(indent: String = "  ") = this.replace("\n", "\n$indent")
+    fun String.indent(indent: String = "  ") = this.lineSequence()
+      .map {
+        when {
+          it.isBlank() -> {
+            when {
+              it.length < indent.length -> indent
+              else -> it
+            }
+          }
+
+          else -> indent + it
+        }
+      }
+      .joinToString("\n")
 
     fun extractTextBlocks(response: String): List<Pair<String, String>> {
       val codeBlockRegex = Regex("(?s)$TT(.*?)\\n(.*?)${TT}")
@@ -422,7 +529,8 @@ Correct the code and try again.
 
     fun String.sortCode(bodyWrapper: (String) -> String = { it }): String {
       val (imports, otherCode) = this.split("\n").partition { it.trim().startsWith("import ") }
-      return imports.map { it.trim() }.distinct().sorted().joinToString("\n") + "\n\n" + bodyWrapper(otherCode.joinToString("\n"))
+      return imports.map { it.trim() }.distinct().sorted()
+        .joinToString("\n") + "\n\n" + bodyWrapper(otherCode.joinToString("\n"))
     }
 
     fun String.camelCase(locale: Locale = Locale.getDefault()): String {
@@ -466,7 +574,11 @@ Correct the code and try again.
     }
 
     fun errorMessage(ex: ScriptException, code: String) = try {
-      "${TT}text\n${ex.message ?: ""} at line ${ex.lineNumber} column ${ex.columnNumber}\n  ${if (ex.lineNumber > 0) code.split("\n")[ex.lineNumber - 1] else ""}\n  ${
+      "${TT}text\n${ex.message ?: ""} at line ${ex.lineNumber} column ${ex.columnNumber}\n  ${
+        if (ex.lineNumber > 0) code.split(
+          "\n"
+        )[ex.lineNumber - 1] else ""
+      }\n  ${
         if (ex.columnNumber > 0) " ".repeat(
           ex.columnNumber - 1
         ) + "^" else ""

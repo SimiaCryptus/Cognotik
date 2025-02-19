@@ -52,8 +52,21 @@ class SoftwareGraphModificationTask(
                 
                 Node Types:
                 """.trimIndent() + SoftwareNodeType.values().joinToString("\n") {
-                "* " + it.name + ": " + it.description?.replace("\n", "\n  ") +
-                        "\n    " + planSettings.describer().describe(rawType = it.nodeClass).replace("\n", "\n    ")
+                "* " + it.name + ": " + it.description?.prependIndent("  ") +
+                        "\n    " + planSettings.describer().describe(rawType = it.nodeClass).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
             },
             model = planSettings.getTaskSettings(TaskType.SoftwareGraphModification).model ?: planSettings.defaultModel,
             parsingModel = planSettings.parsingModel,

@@ -167,7 +167,7 @@ object IterativePatchUtil {
                         while (nextSourceLine.matchingLine == null || nextSourceLine.type == DELETE) {
                             // Safeguard to prevent infinite loop
                             if (++iterationCount > maxIterations) {
-                                log.error("Exceeded maximum iterations in markMovedLines")
+                                log.error("Exceeded maximum iterations $maxIterations in markMovedLines")
                                 break
                             }
                             nextSourceLine = nextSourceLine.nextLine ?: break

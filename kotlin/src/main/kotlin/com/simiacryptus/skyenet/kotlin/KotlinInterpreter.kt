@@ -75,7 +75,22 @@ open class KotlinInterpreter(
   override fun run(code: String): Any? {
     val wrappedCode = wrapCode(code)
     log.debug(
-      "Running:\n   ${wrappedCode.trimIndent().replace("\n", "\n\t")}"
+      "Running:\n   ${
+        wrappedCode.trimIndent().lineSequence()
+          .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
+
+                  else -> "  " + it
+                }
+          }
+          .joinToString("\n")
+      }"
     )
     val bindings: Bindings?
     val compile: CompiledScript

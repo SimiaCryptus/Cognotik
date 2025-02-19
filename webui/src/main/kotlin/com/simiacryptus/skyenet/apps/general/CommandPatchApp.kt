@@ -16,9 +16,10 @@ class CommandPatchApp(
   settings: Settings,
   api: ChatClient,
   model: ChatModel,
+  parsingModel: ChatModel,
   private val files: Array<out File>?,
   val command: String,
-) : PatchApp(root, settings, api, model) {
+) : PatchApp(root, settings, api, model, parsingModel) {
   override fun codeFiles() = getFiles(files)
     .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
     .map { root.toPath().relativize(it) ?: it }.toSet()
@@ -26,7 +27,7 @@ class CommandPatchApp(
   override fun codeSummary(paths: List<Path>): String = paths
     .filter { it.toFile().exists() }
     .joinToString("\n\n") { path ->
-      "# ${settings.workingDirectory?.toPath()?.relativize(path)}\n$tripleTilde${path.toString().split('.').lastOrNull()}\n${
+      "# ${ path.toFile().findAbsolute(settings.workingDirectory, root, File("."))}\n$tripleTilde${path.toString().split('.').lastOrNull()}\n${
         path.toFile().readText(Charsets.UTF_8)
       }\n$tripleTilde"
     }
@@ -45,11 +46,11 @@ class CommandPatchApp(
     val codeFiles = codeFiles()
     return codeFiles
       .asSequence()
-      .filter { settings.workingDirectory?.toPath()?.resolve(it)?.toFile()?.exists() == true }
-      .distinct().sorted()
+      .map { it.toFile().findAbsolute(settings.workingDirectory, root, File(".")) }
+      .filter { it.exists() }.distinct().sorted()
       .joinToString("\n") { path ->
         "* ${path} - ${
-          settings.workingDirectory?.toPath()?.resolve(path)?.toFile()?.length() ?: "?"
+          settings.workingDirectory?.resolve(path)?.length() ?: "?"
         } bytes".trim()
       }
   }

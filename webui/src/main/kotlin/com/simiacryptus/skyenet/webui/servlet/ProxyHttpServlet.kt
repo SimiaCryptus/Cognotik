@@ -152,25 +152,109 @@ open class ProxyHttpServlet(
     when (path) {
       "moderations" -> {
         log.info(
-          "Proxy $path\nRequest: ${
-            JsonUtil.toJson(parsedRequest).replace("\n", "\n\t")
-          }\nResponse: ${JsonUtil.toJson(body).replace("\n", "\n\t")}"
+            "Proxy $path\nRequest: ${
+                JsonUtil.toJson(parsedRequest).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
+            }\nResponse: ${
+                JsonUtil.toJson(body).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
+            }"
         )
       }
 
       "chat/completions" -> {
         log.info(
-          "Proxy $path\nRequest: ${
-            JsonUtil.toJson(parsedRequest).replace("\n", "\n\t")
-          }\nResponse: ${JsonUtil.toJson(body).replace("\n", "\n\t")}"
+            "Proxy $path\nRequest: ${
+                JsonUtil.toJson(parsedRequest).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
+            }\nResponse: ${
+                JsonUtil.toJson(body).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
+            }"
         )
       }
 
       else -> {
         log.info(
-          "Proxy $path\nRequest: ${
-            JsonUtil.toJson(parsedRequest).replace("\n", "\n\t")
-          }\nResponse: ${JsonUtil.toJson(body).replace("\n", "\n\t")}"
+            "Proxy $path\nRequest: ${
+                JsonUtil.toJson(parsedRequest).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
+            }\nResponse: ${
+                JsonUtil.toJson(body).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
+            }"
         )
       }
     }

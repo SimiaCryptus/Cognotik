@@ -112,7 +112,22 @@ open class SingleTaskApp(
         describer = describer,
         parserPrompt = "Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
           .joinToString("\n\n") {
-            "\n    ${it.name}:\n      ${describer.describe(it.taskDataClass).replace("\n", "\n  ")}\n    ".trim()
+              "\n    ${it.name}:\n      ${
+                  describer.describe(it.taskDataClass).lineSequence()
+                      .map {
+                          when {
+                              it.isBlank() -> {
+                                  when {
+                                      it.length < "  ".length -> "  "
+                                      else -> it
+                                  }
+                              }
+
+                              else -> "  " + it
+                          }
+                      }
+                      .joinToString("\n")
+              }\n    ".trim()
           }
       )
       val input = listOf(userMessage) + contextData() +

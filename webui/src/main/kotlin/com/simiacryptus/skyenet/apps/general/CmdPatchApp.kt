@@ -22,9 +22,9 @@ class CmdPatchApp(
   settings: Settings,
   api: ChatClient,
   val files: Array<out File>?,
-  model: ChatModel
-) : PatchApp(root.toFile(), settings, api, model) {
-  private var stopRequested = false
+  model: ChatModel,
+  parsingModel: ChatModel,
+) : PatchApp(root.toFile(), settings, api, model, parsingModel = parsingModel) {
 
   companion object {
     private val log = LoggerFactory.getLogger(CmdPatchApp::class.java)
@@ -62,20 +62,20 @@ class CmdPatchApp(
 
   override fun codeSummary(paths: List<Path>): String = paths
     .filter {
-      val file = settings.workingDirectory?.resolve(it.toFile())
+      val file = settings.workingDirectory?.resolve(it.toFile())?.findAbsolute(settings.workingDirectory, root, File("."))
       file?.exists() == true && !file.isDirectory && file.length() < (256 * 1024)
     }
     .joinToString("\n\n") { path ->
       try {
         "# ${path}\n${tripleTilde}${path.toString().split('.').lastOrNull()}\n${
-          settings.workingDirectory?.resolve(path.toFile())?.readText(Charsets.UTF_8)
+          settings.workingDirectory?.findAbsolute(settings.workingDirectory, root, File("."))?.readText(Charsets.UTF_8)
         }\n${tripleTilde}"
       } catch (e: Exception) {
         log.warn("Error reading file", e)
         "Error reading file `${path}` - ${e.message}"
       }
     }
-  val tripleTilde = "```"
+  private val tripleTilde = "```"
 
   override fun projectSummary(): String {
     val codeFiles = codeFiles()
@@ -108,15 +108,29 @@ class CmdPatchApp(
         val task = ui.newTask(false).apply { tabs[cmdString] = placeholder }
         task.add("Working Directory: ${cmdSettings.workingDirectory}")
         task.add("Command: ${cmdString}")
-        val taskOutput = task.add("")
+        task.add("Model: ${model} / ${parsingModel}")
         val process = processBuilder.start()
+        task.add("Started at: ${java.time.Instant.now()}")
+        val timeDisplay = task.add("Elapsed Time: 0s")
         val cancelButton = task.add(task.hrefLink("Stop") {
           process.destroy()
         })
+        val taskOutput = task.add("")
+        Thread {
+          val startTime = System.currentTimeMillis()
+          while (process.isAlive) {
+            timeDisplay?.set("Elapsed Time: ${(System.currentTimeMillis() - startTime).toDouble() / 1000}s")
+            task.update()
+            process.waitFor(5, TimeUnit.SECONDS)
+          }
+          timeDisplay?.set("Elapsed Time: ${(System.currentTimeMillis() - startTime).toDouble() / 1000}s")
+          task.update()
+        }.start()
         val buffer = StringBuilder()
         fun addOutput(taskOutput: StringBuilder?, task: SessionTask) {
           synchronized(task) {
-            taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n```".renderMarkdown)
+            val extraInfo = "[Verbose Info] - Updated at: ${java.time.Instant.now()} | Buffer size: ${buffer.length} chars"
+            taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n\n${extraInfo}\n```".renderMarkdown)
             task.update()
           }
         }
@@ -154,9 +168,6 @@ class CmdPatchApp(
     return OutputResult(1, "No commands to execute")
   }
 
-  fun stop() {
-    stopRequested = true
-  }
 
   private fun outputString(buffer: StringBuilder): String {
     var output = buffer.toString()

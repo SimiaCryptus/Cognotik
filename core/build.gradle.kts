@@ -35,6 +35,9 @@ dependencies {
 
   implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13")
   implementation(group = "org.hsqldb", name = "hsqldb", version = hsqldb_version)
+  implementation(project(":antlr"))
+  implementation("org.antlr:antlr4-runtime:4.13.2")
+//  antlr("org.antlr:antlr4:4.13.2")
 
   implementation("org.apache.commons:commons-text:1.11.0")
 
@@ -48,7 +51,9 @@ dependencies {
   implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
   implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
   implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
-
+  
+  
+  
   compileOnly("org.ow2.asm:asm:9.6")
   compileOnly(kotlin("stdlib"))
   compileOnly(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")

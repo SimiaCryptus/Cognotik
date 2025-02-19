@@ -123,7 +123,23 @@ open class ParsedActor<T : Any>(
                 ?: throw RuntimeException("Result class undefined")
             )
           } catch (e: Exception) {
-            throw RuntimeException("Failed to parse response: ${it.replace("\n", "\n  ")}", e)
+            throw RuntimeException(
+                "Failed to parse response: ${
+                    it.lineSequence()
+                        .map {
+                            when {
+                                it.isBlank() -> {
+                                    when {
+                                        it.length < "  ".length -> "  "
+                                        else -> it
+                                    }
+                                }
+
+                                else -> "  " + it
+                            }
+                        }
+                        .joinToString("\n")
+                }", e)
           }
         }
       } catch (e: Exception) {

@@ -52,7 +52,22 @@ class SoftwareGraphGenerationTask(
       resultClass = SoftwareNodeType.SoftwareGraph::class.java,
       prompt = "Analyze the provided code files and generate a SoftwareGraph representation.\nThe graph should accurately represent the software architecture including:\n\nAvailable Node Types:\n" +
               SoftwareNodeType.values().joinToString("\n") {
-            "* ${it.name}: ${it.description?.replace("\n","\n  ")}\n    ${describer.describe(rawType = it.nodeClass).replace("\n", "\n    ")}"
+                "* ${it.name}: ${it.description?.replace("\n", "\n  ")}\n    ${
+                  describer.describe(rawType = it.nodeClass).lineSequence()
+                    .map {
+                      when {
+                        it.isBlank() -> {
+                          when {
+                            it.length < "  ".length -> "  "
+                            else -> it
+                          }
+                        }
+
+                        else -> "  " + it
+                      }
+                    }
+                    .joinToString("\n")
+                }"
           } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
       model = planSettings.getTaskSettings(TaskType.SoftwareGraphGeneration).model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,

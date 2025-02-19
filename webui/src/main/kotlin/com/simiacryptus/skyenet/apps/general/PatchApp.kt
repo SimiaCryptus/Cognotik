@@ -15,6 +15,7 @@ import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.filtered
 import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.isGitignore
 import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.isLLMIncludableFile
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
@@ -26,13 +27,16 @@ import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
+import java.text.SimpleDateFormat
 
 abstract class PatchApp(
   override val root: File,
   protected val settings: Settings,
   private val api: ChatClient,
-  private val model: ChatModel,
-  private val promptPrefix: String = """The following command was run and produced an error:"""
+  val model: ChatModel,
+  val parsingModel: ChatModel,
+  private val promptPrefix: String = """The following command was run and produced an error:""",
+  private val fixesPerIteration: Int = 1000,
 ) : ApplicationServer(
   applicationName = "Magic Code Fixer",
   path = "/fixCmd",
@@ -58,7 +62,7 @@ abstract class PatchApp(
 
   // Stateful records of previous run results and parsed error results
   private val previousRunResults = mutableListOf<OutputResult>()
-  private val previousParsedErrorsRecords = mutableListOf<ParsedErrors>()
+  private val previousParsedErrorsRecords = mutableListOf<ParsedErrorRecord>()
 
   // Add structured logging
   private fun logEvent(event: String, data: Map<String, Any?>) {
@@ -99,7 +103,6 @@ abstract class PatchApp(
         }
       }
       val newTask = ui.newTask(false)
-      newTask.add("Running Commands")
       Thread {
         val result = run(ui, newTask)
         if (result.exitCode != 0 && retries > 0) {
@@ -126,9 +129,14 @@ abstract class PatchApp(
     }
     return prunedPaths
   }
-
+  
   data class ParsedErrors(
     val errors: List<ParsedError>? = null
+  )
+  
+  data class ParsedErrorRecord(
+    val errors: ParsedErrors? = null,
+    val timestamp: Long = System.currentTimeMillis()
   )
 
   data class SearchQuery(
@@ -137,6 +145,7 @@ abstract class PatchApp(
   )
   data class ParsedError(
     @Description("The error message") val message: String? = null,
+    @Description("Summarize output to distill details related to the error message") val details: String? = null,
     @Description("Problem severity (higher numbers indicate more fatal issues)") val severity: Int = 0,
     @Description("Problem complexity (higher numbers indicate more difficult issues)") val complexity: Int = 0,
     @Description("Files identified as needing modification and issue-related files") val relatedFiles: List<String>? = null,
@@ -224,6 +233,14 @@ abstract class PatchApp(
       )
     }
   }
+  
+  fun recentErrors() = previousParsedErrorsRecords.flatMap { it.errors?.errors ?: emptySet() }
+    .groupBy { it.message }
+    .let { errors ->
+      ParsedErrors(errors.map { (message, errors) ->
+        errors.maxByOrNull { it.severity }!!
+      })
+    }
 
   private fun fixAllInternal(
     settings: Settings,
@@ -235,10 +252,12 @@ abstract class PatchApp(
   ) {
     val api = api.getChildClient(task)
     val plan = ParsedActor(
-      resultClass = ParsedErrors::class.java, exampleInstance = lastParsedErrors ?: ParsedErrors(
+      resultClass = ParsedErrors::class.java,
+      exampleInstance = if (previousParsedErrorsRecords.isEmpty()) ParsedErrors(
         listOf(
           ParsedError(
             message = "Error message",
+            details = "Line 123: error message\n\nThis is a detailed description of the error, mainly copied from the output",
             relatedFiles = listOf("src/main/java/com/example/Example.java"),
             fixFiles = listOf("src/main/java/com/example/Example.java"),
             searchQueries = listOf(
@@ -249,7 +268,10 @@ abstract class PatchApp(
             )
           )
         )
-      ), model = model, prompt = ("""
+      ) else recentErrors(),
+      model = model,
+      parsingModel = parsingModel,
+      prompt = ("""
         You are a helpful AI that helps people with coding.
         
         You will be answering questions about the following project:
@@ -270,7 +292,10 @@ abstract class PatchApp(
         "$promptPrefix\n\n${tripleTilde}\n${output.output}\n${tripleTilde}"
       ), api = api
     )
-
+    
+    // Update the last parsed error details so they can be used in subsequent runs
+    lastParsedErrors = plan.obj
+    val progressHeader = task.header("Processing tasks...")
     task.add(
       AgentPatterns.displayMapInTabs(
         mapOf(
@@ -283,18 +308,18 @@ abstract class PatchApp(
         )
       )
     )
-    // Update the last parsed error details so they can be used in subsequent runs
-    lastParsedErrors = plan.obj
-    val progressHeader = task.header("Processing tasks")
     // Record the current error parsing result for future reference
-    previousParsedErrorsRecords.add(plan.obj)
+    previousParsedErrorsRecords.add(ParsedErrorRecord(plan.obj))
     // Process errors ordered by fixPriority (lower number = higher priority)
-    plan.obj.errors?.sortedBy { it.severity.toDouble() / it.complexity }?.takeLast(1)?.forEach { error ->
-      task.header("Processing error: ${error.message}")
+    val tabs = TabbedDisplay(task)
+    plan.obj.errors?.sortedBy { it.severity.toDouble() / it.complexity }?.takeLast(fixesPerIteration)?.forEach { error ->
+      val task = ui.newTask(false).apply { tabs[error.message ?: "Error"] = placeholder }
+      task.header("Processing error: ${error.message} (Severity: ${error.severity}, Complexity: ${error.complexity})")
       task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
+      task.verbose(renderMarkdown("[Extra Details] Error processed at: ${java.time.Instant.now()}", tabs = false, ui = ui))
       // Search for files using the provided search strings
       val searchResults = error.searchQueries?.flatMap { query ->
-        val filter1 = filteredWalk(settings.workingDirectory!!) { !isGitignore(it.toPath()) }
+        val filter1 = filteredWalk(settings.workingDirectory ?: root) { !isGitignore(it.toPath()) }
           .filter { isLLMIncludableFile(it) }
         val filter2 = filter1.filter { file ->
           java.nio.file.FileSystems.getDefault()
@@ -313,20 +338,22 @@ abstract class PatchApp(
       }
       Retryable(ui, task) {
         val task = ui.newTask(false)
-        fix(
-          error,
-          searchResults.toList().map { it.toFile().absolutePath },
-          output,
-          ui,
-          settings.autoFix,
-          changed,
-          api,
-          task
-        )
+        Thread {
+          fix(
+            error,
+            searchResults.toList().map { it.toFile().absolutePath },
+            output,
+            ui,
+            settings.autoFix,
+            changed,
+            api,
+            task
+          )
+        }.start()
         task.placeholder
       }
     }
-    progressHeader?.clear()
+    progressHeader?.set("Finished processing tasks")
     task.append("", false)
   }
 
@@ -347,8 +374,10 @@ abstract class PatchApp(
         // First, remove the root path prefix if present so that the LLM-generated absolute paths become relative.
         // Then, strip a leading slash if still present.
         val normalizedRoot = root.absolutePath.replace(File.separatorChar, '/')
+        // Trim the file path at the first space if it exists
+        val cleanPath = filePath.substringBefore(" ")
         var relativePath =
-          if (filePath.contains(normalizedRoot)) filePath.replaceFirst(normalizedRoot, "") else filePath
+          if (cleanPath.contains(normalizedRoot)) cleanPath.replaceFirst(normalizedRoot, "") else cleanPath
         if (relativePath.startsWith("/")) {
           relativePath = relativePath.drop(1)
         }
@@ -359,16 +388,27 @@ abstract class PatchApp(
       }
     }.filterNotNull()
     val prunedPaths = prunePaths(paths, 50 * 1024)
+    val (previousErrorOccurances, others) = previousParsedErrorsRecords
+      .partition { it.errors?.errors?.any { it.message == error.message } == true }
+    
+    task.verbose(
+      renderMarkdown(
+        "Previous occurrences of this error:\n\n" +
+        previousErrorOccurances.joinToString("\n") {
+          "* " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(it.timestamp)
+        } + "\nNon-matching instances: ${others.size}", tabs = false, ui = ui
+      )
+    )
     task.verbose(renderMarkdown(
       "Files identified for modification:\n\n${
-        prunedPaths.joinToString("\n") {
+        prunedPaths.distinct().joinToString("\n") {
           "* `$it` (${
             root.toPath().resolve(it).toFile().length()
           } bytes)"
         }
       }", tabs = false, ui = ui
       ))
-    val summary = codeSummary(prunedPaths)
+    val summary = codeSummary(prunedPaths.distinct())
     val response = SimpleActor(
       prompt = """
         You are a helpful AI that helps people with coding.
@@ -378,14 +418,14 @@ abstract class PatchApp(
         """.trimIndent() + summary + "\n" + patchFormatPrompt + """
         
         If needed, new files can be created by using code blocks labeled with the filename in the same manner.
-        """.trimIndent(), model = model
+        """.trimIndent(),
+      model = model,
     ).answer(
       listOf(
-        "$promptPrefix\n\n${tripleTilde}\n${output.output}\n${tripleTilde}\n\nFocus on and Fix the Error:\n  ${
-          error.message?.replace(
-            "\n", "\n  "
-          ) ?: ""
-        }\n${if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else ""}"
+        "$promptPrefix\n\n" +
+            "Focus on and Fix the Error:\n  ${error.message ?: ""}\n" +
+            (if (error.details?.isNotBlank() == true) "Details:\n  ${error.details}\n" else "") +
+            (if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else "")
       ), api = api
     )
     val socketManager = ui.socketManager ?: throw IllegalStateException("Socket Manager is not available")

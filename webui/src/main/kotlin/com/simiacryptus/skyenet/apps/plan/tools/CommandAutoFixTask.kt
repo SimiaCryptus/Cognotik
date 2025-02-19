@@ -111,8 +111,8 @@ class CommandAutoFixTask(
           ),
           api = api,
           files = agent.files,
-          model = taskSettings.model
-            ?: agent.planSettings.defaultModel,
+          model = taskSettings.model ?: agent.planSettings.defaultModel,
+          parsingModel = agent.planSettings.parsingModel,
         ).run(
           ui = agent.ui,
           task = task

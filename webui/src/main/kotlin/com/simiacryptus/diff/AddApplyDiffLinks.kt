@@ -3,6 +3,7 @@ package com.simiacryptus.diff
 import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
 import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil
+import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -13,9 +14,8 @@ class AddApplyDiffLinks {
   companion object {
     val log = org.slf4j.LoggerFactory.getLogger(AddApplyDiffLinks::class.java)
 
-    private const val MAX_DIFF_SIZE_CHARS = 100000
 
-    private val DIFF_PATTERN = """(?s)(?<![^\n])```diff\n(.*?)\n```""".toRegex()
+    private val diffApplier = SimpleDiffApplier()
 
     fun addApplyDiffLinks(
       self: SocketManagerBase,
@@ -29,9 +29,6 @@ class AddApplyDiffLinks {
 
   }
 
-  private fun validateDiffSize(diff: String): Boolean {
-    return diff.length <= MAX_DIFF_SIZE_CHARS
-  }
 
   fun apply(
     socketManagerBase: SocketManagerBase,
@@ -42,40 +39,12 @@ class AddApplyDiffLinks {
     ui: ApplicationInterface,
     shouldAutoApply: Boolean = false,
   ): String {
-    val matches = DIFF_PATTERN.findAll(response).distinct()
+    val matches = SimpleDiffApplier.DIFF_PATTERN.findAll(response).distinct()
+
 
     val patch = { code: String, diff: String ->
-      if (!validateDiffSize(diff)) {
-        throw IllegalArgumentException("Diff size exceeds maximum limit")
-      }
-
-      val isParenthesisBalanced = FileValidationUtils.isParenthesisBalanced(code)
-      val isQuoteBalanced = FileValidationUtils.isQuoteBalanced(code)
-      val isSingleQuoteBalanced = FileValidationUtils.isSingleQuoteBalanced(code)
-      val isCurlyBalanced = FileValidationUtils.isCurlyBalanced(code)
-      val isSquareBalanced = FileValidationUtils.isSquareBalanced(code)
-      val newCode = IterativePatchUtil.applyPatch(code, diff).replace("\r", "")
-      val isParenthesisBalancedNew = FileValidationUtils.isParenthesisBalanced(newCode)
-      val isQuoteBalancedNew = FileValidationUtils.isQuoteBalanced(newCode)
-      val isSingleQuoteBalancedNew = FileValidationUtils.isSingleQuoteBalanced(newCode)
-      val isCurlyBalancedNew = FileValidationUtils.isCurlyBalanced(newCode)
-      val isSquareBalancedNew = FileValidationUtils.isSquareBalanced(newCode)
-      val isError = (isCurlyBalanced && !isCurlyBalancedNew) ||
-          (isSquareBalanced && !isSquareBalancedNew) ||
-          (isParenthesisBalanced && !isParenthesisBalancedNew) ||
-          (isQuoteBalanced && !isQuoteBalancedNew) ||
-          (isSingleQuoteBalanced && !isSingleQuoteBalancedNew)
-      PatchResult(
-        newCode, !isError, if (!isError) null else {
-          val error = StringBuilder()
-          if (!isCurlyBalancedNew) error.append("Curly braces are not balanced\n")
-          if (!isSquareBalancedNew) error.append("Square braces are not balanced\n")
-          if (!isParenthesisBalancedNew) error.append("Parenthesis are not balanced\n")
-          if (!isQuoteBalancedNew) error.append("Quotes are not balanced\n")
-          if (!isSingleQuoteBalancedNew) error.append("Single quotes are not balanced\n")
-          error.toString()
-        }
-      )
+        val result = diffApplier.apply(code, "```diff\n$diff\n```")
+        PatchResult(result.newCode, result.isValid, result.error)
     }
 
     val withLinks = matches.fold(response) { markdown, diffBlock ->
@@ -92,6 +61,12 @@ class AddApplyDiffLinks {
               ```
               <div class="cmd-button">Diff Automatically Applied</div>""")
           }
+          // Add error message if patch is not valid
+          return@fold markdown.replace(diffBlock.value,
+            """```diff
+            $diffVal
+            ```
+            <div class="cmd-button">Error: ${newCode.error ?: "Invalid patch"}</div>""")
         } catch (e: Throwable) {
           log.error("Error auto-applying diff", e)
           return@fold markdown.replace(diffBlock.value,

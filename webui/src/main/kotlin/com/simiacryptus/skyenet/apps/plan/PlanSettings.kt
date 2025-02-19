@@ -93,7 +93,22 @@ open class PlanSettings(
     val describer = describer()
     val parserPrompt =
       ("\nTask Subtype Schema:\n\n" + getAvailableTaskTypes(this).joinToString("\n\n") { taskType ->
-        "\n${taskType.name}:\n  ${describer.describe(taskType.taskDataClass).replace("\n", "\n  ")}\n".trim()
+          "\n${taskType.name}:\n  ${
+              describer.describe(taskType.taskDataClass).lineSequence()
+                  .map {
+                      when {
+                          it.isBlank() -> {
+                              when {
+                                  it.length < "  ".length -> "  "
+                                  else -> it
+                              }
+                          }
+
+                          else -> "  " + it
+                      }
+                  }
+                  .joinToString("\n")
+          }\n".trim()
       } + "\n")
     return ParsedActor(
       name = "TaskBreakdown",

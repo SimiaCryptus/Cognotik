@@ -68,7 +68,21 @@ open class OutlineManager(val rootNode: OutlinedText) {
       sb.append("* " + ((description?.replace("\n", "\\n") ?: name)?.trim() ?: ""))
       sb.append("\n")
       children?.forEach { item ->
-        sb.append((item.getTextOutline().trim() + "\n").replace("\n", "\n  "))
+        sb.append(
+          (item.getTextOutline().trim() + "\n").lineSequence()
+            .map {
+                  when {
+                    it.isBlank() -> {
+                      when {
+                        it.length < "  ".length -> "  "
+                        else -> it
+                      }
+                    }
+
+                    else -> "  " + it
+                  }
+            }
+            .joinToString("\n"))
       }
       return sb.toString()
     }

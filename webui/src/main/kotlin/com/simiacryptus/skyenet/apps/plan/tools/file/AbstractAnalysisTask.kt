@@ -81,7 +81,8 @@ abstract class AbstractAnalysisTask<T : AbstractFileTask.FileTaskConfigBase>(
         model = agent.planSettings.getTaskSettings(TaskType.valueOf(taskConfig?.task_type!!)).model
           ?: agent.planSettings.defaultModel,
         files = agent.files,
-        command = analysisResult
+        command = analysisResult,
+        parsingModel = agent.planSettings.parsingModel,
       ).run(
         ui = agent.ui,
         task = task

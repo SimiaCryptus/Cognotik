@@ -163,7 +163,7 @@ class LargeOutputActor(
                 ),
                 api = api
               )
-              val modifiedSection = diffApplier.apply(content, sectionResponse.choices.first().message?.content ?: "")
+              val modifiedSection = diffApplier.apply(content, sectionResponse.choices.first().message?.content ?: "").newCode
               modifiedContent += if (header.isNotEmpty()) "$header\n$modifiedSection\n\n" else modifiedSection
             }
             accumulatedResponse = modifiedContent.trim()
@@ -183,7 +183,7 @@ class LargeOutputActor(
             accumulatedResponse = diffApplier.apply(
               accumulatedResponse,
               refinementResponse.choices.first().message?.content ?: ""
-            )
+            ).newCode
           }
         }
       } catch (e: Exception) {

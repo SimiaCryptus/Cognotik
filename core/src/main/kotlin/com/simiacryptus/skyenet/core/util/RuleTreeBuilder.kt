@@ -25,7 +25,22 @@ object RuleTreeBuilder {
     getRuleExpression(doNotMatch, toMatch.toSortedSet(), !result)
   } else """
       when {
-        ${getRules(toMatch.toSet(), doNotMatch.toSortedSet(), result).replace("\n", "\n  ")}
+        ${
+      getRules(toMatch.toSet(), doNotMatch.toSortedSet(), result).lineSequence()
+          .map {
+              when {
+                  it.isBlank() -> {
+                      when {
+                          it.length < "  ".length -> "  "
+                          else -> it
+                      }
+                  }
+
+                  else -> "  " + it
+              }
+          }
+          .joinToString("\n")
+  }
         else -> ${!result}
       }        
       """.trimIndent().trim()
@@ -70,7 +85,7 @@ object RuleTreeBuilder {
 //                """
 //                path.endsWith("${bestNextSuffix.first.escape}") -> {
 //                  val path = path.removeSuffix("${bestNextSuffix.first.bestSuffix().escape}")
-//                  ${subRules.replace("\n", "\n  ")}
+//                  ${subRules.prependIndent("  ")}
 //                }
 //                """.trimIndent() + "\n"
 //              )
@@ -93,10 +108,25 @@ object RuleTreeBuilder {
                 result
               )
               sb.append(
-                """
+                  """
                 path.startsWith("${bestNextPrefix.escape}") -> {
                   val path = path.substring(${bestNextPrefix.length})
-                  ${subRules.replace("\n", "\n  ")}
+                  ${
+                      subRules.lineSequence()
+                          .map {
+                              when {
+                                  it.isBlank() -> {
+                                      when {
+                                          it.length < "  ".length -> "  "
+                                          else -> it
+                                      }
+                                  }
+
+                                  else -> "  " + it
+                              }
+                          }
+                          .joinToString("\n")
+                  }
                 }
                 """.trimIndent() + "\n"
               )
