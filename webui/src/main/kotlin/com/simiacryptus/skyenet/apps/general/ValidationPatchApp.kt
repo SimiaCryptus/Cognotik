@@ -3,12 +3,13 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.TabbedDisplay
-import com.simiacryptus.skyenet.core.util.*
+import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
-import org.slf4j.LoggerFactory
 
 class ValidationPatchApp(
     root: File,
@@ -40,11 +41,10 @@ class ValidationPatchApp(
         tabs: TabbedDisplay
     ): OutputResult {
         val validationErrors = mutableListOf<ValidationError>()
-        val tabs = TabbedDisplay(task)
-        val paths = getFiles(files)
-        paths.forEach { file ->
-            val task = ui.newTask(false).apply { tabs[file.toString()] = placeholder }
-            
+        // Use the provided tabs instance; avoid shadowing variable names.
+        val filePaths = getFiles(files)
+        filePaths.forEach { file ->
+            val fileTask = ui.newTask(false).apply { tabs[file.toString()] = placeholder }
             try {
                 val validator = SimpleDiffApplier.getValidator(file.toFile().toString()) ?: return@forEach
                 val content = file.toFile().readText()
@@ -54,38 +54,41 @@ class ValidationPatchApp(
                         val validationError = ValidationError(
                             file = file,
                             validator = validator::class.simpleName ?: "Unknown",
-                            message = it.message
+                            message = it.message,
+                            line = it.line ?: 0,
+                            column = it.column ?: 0
                         )
                         validationErrors.add(validationError)
                     }
-                    task.add("Validation failed: ${getValidationMessage(validator)}")
+                    fileTask.add("Validation failed: ${errors.joinToString("\n") { "* " + it.message }}".renderMarkdown)
                 } else {
-                    task.add("Validation passed: ${validator::class.simpleName}")
+                    fileTask.add("Validation passed: ${validator::class.simpleName}")
                 }
-                task.complete("File passed validation checks.")
+                if (errors.isEmpty()) tabs.delete(file.toString())
+                fileTask.complete("File passed validation checks.")
             } catch (e: Exception) {
-                task.error(null, e)
-                log.error("Error validating file: ${file}", e)
+                fileTask.error(null, e)
+                log.error("Error validating file: $file", e)
                 validationErrors.add(
                     ValidationError(
                         file = file,
                         validator = "FileRead",
-                        message = "Error reading/validating file: ${e.message}"
+                        message = "Error reading/validating file: ${e.message}",
+                        line = 0,
+                        column = 0
                     )
                 )
             }
         }
-
-        // Format validation results
         val output = buildString {
             if (validationErrors.isEmpty()) {
                 append("All files passed validation checks.")
             } else {
                 append("Found ${validationErrors.size} validation errors:\n\n")
                 validationErrors.groupBy { it.file }.forEach { (file, errors) ->
-                    append("File: ${file}\n")
+                    append("File: $file\n")
                     errors.forEach { error ->
-                        append("- [${error.validator}] ${error.message}\n")
+                        append("- [${error.validator}] Line ${error.line}, Column ${error.column}: ${error.message}\n")
                     }
                     append("\n")
                 }
@@ -95,13 +98,25 @@ class ValidationPatchApp(
         task.complete(output)
         return OutputResult(
             exitCode = if (validationErrors.isEmpty()) 0 else 1,
-            output = output
+            output = output,
+            errors = ParsedErrors(validationErrors.groupBy { it.file }.map { (file, errors) ->
+                ParsedError(
+                    message = file.toString(),
+                    details = errors.joinToString("\n") { "- [${it.validator}] Line ${it.line}, Column ${it.column}: ${it.message}" },
+                    severity = 5,
+                    complexity = 5,
+                    research = ResearchNotes(
+                        fixFiles = listOf(file.toString())
+                    ),
+                    locations = errors.map { CodeLocation(it.file.toString(), it.line, it.column) }
+                )
+            })
         )
-    }
 
+    }
+    
     private fun getFiles(virtualFiles: Array<out File>?): Set<Path> {
         val codeFiles = mutableSetOf<Path>()
-        FileValidationUtils.expandFileList(*virtualFiles?.map { it.toPath().toFile() }?.toTypedArray() ?: emptyArray()).apply { codeFiles.addAll(this.map { it.toPath() }) }
         virtualFiles?.forEach { file ->
             if (file.isDirectory) {
                 if (!file.name.startsWith(".")) {
@@ -111,36 +126,18 @@ class ValidationPatchApp(
                 codeFiles.add(file.toPath())
             }
         }
+        // Optionally include files returned by expandFileList from the utility if present.
+        codeFiles.addAll(
+            FileValidationUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
+                .map { it.toPath() }
+        )
         return codeFiles
     }
-
-    private fun getValidationMessage(validator: GrammarValidator): String {
-        return when(validator) {
-            is KotlinGrammarValidator -> validationMessages["kotlin"] ?: "Invalid Kotlin syntax"
-            is ParenMatchingValidator -> validationMessages["parenthesis"] ?: "Syntax validation failed"
-            else -> "Validation failed"
-        }
-    }
-
+    
     override fun codeFiles(): Set<Path> = getFiles(files)
         .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
         .map { root.toPath().relativize(it) ?: it }.toSet()
-
-    override fun codeSummary(paths: List<Path>): String {
-        val a = paths.map { it.toFile().findAbsolute(settings.workingDirectory, root, File(".")) }
-        val b = a.filter { it.exists() && !it.isDirectory && it.length() < (256 * 1024) }
-        return b.joinToString("\n\n") { path ->
-                try {
-                    "# ${path}\n```${path.toString().split('.').lastOrNull()}\n${
-                        path.readText()
-                    }\n```"
-                } catch (e: Exception) {
-                    log.warn("Error reading file", e)
-                    "Error reading file `${path}` - ${e.message}"
-                }
-            }
-    }
-
+    
     override fun projectSummary(): String = codeFiles()
         .asSequence()
         .filter { root.toPath().resolve(it).toFile().exists() }
@@ -160,7 +157,9 @@ class ValidationPatchApp(
     data class ValidationError(
         val file: Path,
         val validator: String,
-        val message: String
+        val message: String,
+        val line: Int = 0,
+        val column: Int = 0
     )
 }
 

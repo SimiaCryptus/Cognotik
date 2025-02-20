@@ -87,6 +87,18 @@ open class TabbedDisplay(
   open fun label(i: Int): String {
     return "${tabs.size + 1}"
   }
+  open fun delete(name: String): Boolean {
+    log.debug("Deleting tab: $name")
+    val index = find(name)
+    return if (index != null) {
+      tabs.removeAt(index)
+      update()
+      true
+    } else {
+      false
+    }
+  }
+
 
   open fun clear() {
     log.debug("Clearing all tabs")

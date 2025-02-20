@@ -24,7 +24,7 @@ class CommandPatchApp(
     .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
     .map { root.toPath().relativize(it) ?: it }.toSet()
 
-  override fun codeSummary(paths: List<Path>): String = paths
+  override fun codeSummary(paths: List<Path>, error: ParsedError): String = paths
     .filter { it.toFile().exists() }
     .joinToString("\n\n") { path ->
       "# ${ path.toFile().findAbsolute(settings.workingDirectory, root, File("."))}\n$tripleTilde${path.toString().split('.').lastOrNull()}\n${

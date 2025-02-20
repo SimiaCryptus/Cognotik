@@ -44,7 +44,7 @@ class AddApplyDiffLinks {
 
     val patch = { code: String, diff: String ->
         val result = diffApplier.apply(code, "```diff\n$diff\n```")
-        PatchResult(result.newCode, result.isValid, result.error)
+        PatchResult(result.newCode, result.isValid, null)
     }
 
     val withLinks = matches.fold(response) { markdown, diffBlock ->

@@ -25,6 +25,7 @@ object MarkdownUtil {
     ui: ApplicationInterface? = null,
     markdownEditor: (String) -> String,
   ): String {
+    if (rawMarkdown.isBlank()) return ""
     val markdown = markdownEditor(rawMarkdown)
     val stackInfo = """
 <ol style="visibility: hidden; height: 0;">

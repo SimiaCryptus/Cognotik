@@ -349,7 +349,8 @@ open class AddApplyFileDiffLinks {
     val applydiffTask = ui.newTask(false)
     lateinit var hrefLink: StringBuilder
     
-    var newCode = diffApplier.apply(prevCode, "```diff\n$diffVal\n```", filename).patchResult
+    val apply = diffApplier.apply(prevCode, "```diff\n$diffVal\n```", filename)
+    var newCode = apply.patchResult
     val echoDiff = try {
       IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
     } catch (e: Throwable) {
@@ -586,7 +587,11 @@ open class AddApplyFileDiffLinks {
     return newValue
   }
   
-  private val DiffApplicationResult.patchResult get() = PatchResult(newCode, isValid, error)
+  private val DiffApplicationResult.patchResult get() = PatchResult(
+    newCode,
+    isValid,
+    errors.joinToString("\n") { it.message }
+  )
   
   // Function to load file contents
   private fun load(filepath: Path?) = loadFile(filepath)

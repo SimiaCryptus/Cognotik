@@ -15,7 +15,7 @@ import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
-private val String.renderMarkdown: String get() = MarkdownUtil.renderMarkdown(this)
+val String.renderMarkdown: String get() = MarkdownUtil.renderMarkdown(this)
 
 class CmdPatchApp(
   root: Path,
@@ -60,7 +60,7 @@ class CmdPatchApp(
     .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
     .map { root.toPath().relativize(it) ?: it }.toSet()
 
-  override fun codeSummary(paths: List<Path>): String = paths
+  override fun codeSummary(paths: List<Path>, error: ParsedError): String = paths
     .filter {
       val file = settings.workingDirectory?.resolve(it.toFile())?.findAbsolute(settings.workingDirectory, root, File("."))
       file?.exists() == true && !file.isDirectory && file.length() < (256 * 1024)
