@@ -93,7 +93,7 @@ class FileValidationUtils {
         file.isDirectory -> false
         file.name.startsWith(".") -> false
         file.name.endsWith(".data") -> true
-        file.length() > (256 * 1024) -> false
+        file.length() > 1e8 -> false
         isGitignore(file.toPath()) -> false
         file.extension.lowercase(Locale.getDefault()) in setOf(
           "jar",
@@ -117,7 +117,7 @@ class FileValidationUtils {
           it.name.startsWith(".") -> arrayOf()
           it.name.endsWith(".data") -> arrayOf(it)
           isGitignore(it.toPath()) -> arrayOf()
-          it.length() > 1e6 -> arrayOf()
+          it.length() > 1e8 -> arrayOf()
           it.extension.lowercase(Locale.getDefault()) in
               setOf("jar", "zip", "class", "png", "jpg", "jpeg", "gif", "ico") -> arrayOf()
 

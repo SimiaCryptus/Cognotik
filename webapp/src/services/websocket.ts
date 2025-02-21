@@ -319,44 +319,44 @@ export class WebSocketService {
         }
         let isDestroyed = false;
 
+
+        // Combined onopen handler
         this.ws.onopen = () => {
             if (isDestroyed) return;
-            console.log('[WebSocket] Connection established');
+            console.log('[WebSocket] Connection established successfully');
             this.connectionState = 'connected';
             this.reconnectAttempts = 0;
             this.isReconnecting = false;
+            this.connectionStartTime = Date.now();
             this.lastHeartbeatResponse = Date.now();
             this.startHeartbeat();
-            this.connectionHandlers.forEach(handler => handler(true));
-        };
-        // Debounce message processing
-        const debouncedProcessMessages = debounce((messages: Message[]) => {
-            const batch = [...messages];
-            this.aggregateBuffer = [];
-            batch.forEach(msg => this.messageHandlers.forEach(handler => handler(msg)));
-        }, this.AGGREGATE_INTERVAL);
-
-        this.ws.onopen = () => {
-            console.log('[WebSocket] Connection established successfully');
-            this.reconnectAttempts = 0;
-            this.isReconnecting = false;
-            this.connectionStartTime = Date.now();
             this.connectionHandlers.forEach(handler => handler(true));
             if (this.connectionTimeout) {
                 clearTimeout(this.connectionTimeout);
             }
         };
+        const debouncedProcessMessages = debounce((messages: Message[]) => {
+            const batch = [...messages];
+            this.aggregateBuffer = [];
+            batch.forEach(msg => this.messageHandlers.forEach(handler => handler(msg)));
+        }, this.AGGREGATE_INTERVAL);
         this.ws.onmessage = (event) => {
-            // Handle heartbeat responses
-            try {
-                const data = JSON.parse(event.data);
-                if (data.type === 'pong') {
-                    this.lastHeartbeatResponse = Date.now();
-                    return;
-                }
-            } catch (e) {
-                // Not a JSON message, process normally
+        // Handle heartbeat responses or reply to ping messages
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'pong') {
+                this.lastHeartbeatResponse = Date.now();
+                return;
             }
+            if (data.type === 'ping') {
+                // Reply with pong when a ping is received and log the event
+                console.debug('[WebSocket] Received ping, sending pong');
+                this.ws?.send(JSON.stringify({ type: 'pong' }));
+                return;
+            }
+        } catch (e) {
+            // Not a JSON message, process normally
+        }
             // Handle message event normally - remove incorrect close handling logic
             this.forcedClose = false;
             const currentTime = Date.now();

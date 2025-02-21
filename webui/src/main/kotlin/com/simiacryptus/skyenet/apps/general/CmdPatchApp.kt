@@ -16,6 +16,7 @@ import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 val String.renderMarkdown: String get() = MarkdownUtil.renderMarkdown(this)
+fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMarkdown(this, tabs = tabs)
 
 class CmdPatchApp(
   root: Path,
@@ -68,7 +69,7 @@ class CmdPatchApp(
     .joinToString("\n\n") { path ->
       try {
         "# ${path}\n${tripleTilde}${path.toString().split('.').lastOrNull()}\n${
-          settings.workingDirectory?.findAbsolute(settings.workingDirectory, root, File("."))?.readText(Charsets.UTF_8)
+          path.toFile().findAbsolute(settings.workingDirectory, root, File(".")).readText(Charsets.UTF_8)
         }\n${tripleTilde}"
       } catch (e: Exception) {
         log.warn("Error reading file", e)

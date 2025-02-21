@@ -251,71 +251,62 @@ export const updateTabs = debounce(() => {
     if (isMutating) {
         return;
     }
+
+
     try {
         const currentStates = getAllTabStates();
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));
         isMutating = true;
         const visibleTabs = new Set<string>();
-
         tabsContainers.forEach(container => {
-            if (processed.has(container.id)) {
-                return;
-            }
+            if (processed.has(container.id)) return;
             processed.add(container.id);
-
             setupTabContainer(container);
             const activeTab = getActiveTab(container.id) ||
                 currentStates.get(container.id)?.activeTab ||
                 container.querySelector('.tabs .tab-button.active')?.getAttribute('data-for-tab');
             if (activeTab) {
-                // Mark active tab as visible by its cache key
                 visibleTabs.add(getCacheKey(container.id, activeTab));
-                const state: TabState = {
-                    containerId: container.id,
-                    activeTab: activeTab
-                };
-                tabStates.set(container.id, state);
+                tabStates.set(container.id, { containerId: container.id, activeTab });
                 restoreTabState(container);
             } else {
                 const firstButton = container.querySelector(':scope > .tabs > .tab-button');
                 if (firstButton instanceof HTMLElement) {
                     const firstTabId = firstButton.getAttribute('data-for-tab');
-                    if (firstTabId) {
-                        setActiveTab(firstButton, container);
-                    }
+                    if (firstTabId) setActiveTab(firstButton, container);
                 } else {
                     console.warn(`No active tab found for container ${container.id}`);
                 }
             }
         });
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            const tabId = tab.getAttribute('data-tab');
+        // Batch removal of off-screen tab content inside a requestAnimationFrame to reduce reflow
+        requestAnimationFrame(() => {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                const tabId = tab.getAttribute('data-tab');
                 const container = tab.closest('.tabs-container');
-            const containerId = container?.id;
-            const cacheKey = containerId && tabId ? getCacheKey(containerId, tabId) : null;
-            if (tabId && cacheKey && !visibleTabs.has(cacheKey) && !tab.hasAttribute('data-keep-mounted') && !tab.hasAttribute('data-cached')) {
-                const containerEl = tab.closest('.tabs-container');
-            if (containerEl) {
-                setupTabContainer(containerEl);
-            }
-                if (containerEl) {
-                    cacheTabContent(containerEl, tab);
+                const containerId = container?.id;
+                const cacheKey = containerId && tabId ? getCacheKey(containerId, tabId) : null;
+                if (tabId && cacheKey && !visibleTabs.has(cacheKey) &&
+                    !tab.hasAttribute('data-keep-mounted') && !tab.hasAttribute('data-cached')) {
+                    if (container) {
+                        setupTabContainer(container);
+                        cacheTabContent(container, tab);
+                    }
                     tab.remove();
                 }
-            }
+            });
         });
         processed.clear();
     } catch (error) {
         errors.updateErrors++;
-        console.error(`Error during tab update:`, {
-            error,
-            totalErrors: errors.updateErrors
-        });
+        console.error(`Error during tab update:`, { error, totalErrors: errors.updateErrors });
     } finally {
         isMutating = false;
     }
-}, 100);
+}, 250);
+                // Wrap updateTabs in requestAnimationFrame to batch DOM updates
+                requestAnimationFrame(() => updateTabs());
 
 
 function setupTabContainer(container: Element) {

@@ -3,7 +3,10 @@ package com.simiacryptus.skyenet.core.util
 import com.simiacryptus.skyenet.core.util.GrammarValidator.ValidationError
 
 data class DiffApplicationResult(
-  val newCode: String, val errors: List<ValidationError>, val isValid: Boolean = errors.isEmpty()
+  val newCode: String,
+  val errors: List<ValidationError>,
+  val isValid: Boolean = errors.isEmpty(),
+  val validator: GrammarValidator
 )
 
 
@@ -62,6 +65,6 @@ class SimpleDiffApplier {
     if (newErrors.isNotEmpty()) {
       log.error("Error applying diff: ${newErrors.joinToString("\n") { it.message }}")
     }
-    return DiffApplicationResult(currentCode, newErrors)
+    return DiffApplicationResult(currentCode, newErrors, validator=validator)
   }
 }

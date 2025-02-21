@@ -6,6 +6,7 @@ import {useWebSocket} from '../hooks/useWebSocket';
 import {addMessage} from '../store/slices/messageSlice';
 import MessageList from './MessageList';
 import InputArea from './InputArea';
+import Spinner from './common/Spinner';
 import {Message, MessageType} from '../types/messages';
 import websocket from '@services/websocket';
 
@@ -158,6 +159,12 @@ const ChatContainer = styled.div`
     return isArchive ? (
         <ChatContainer data-testid="chat-container" id="chat-container">
             <MessageList/>
+            {!isConnected && (
+                <div className="connection-status">
+                    <Spinner size="small" aria-label="Connecting..." />
+                    <span>Connecting...</span>
+                </div>
+            )}
         </ChatContainer>
     ) : (
         <ChatContainer data-testid="chat-container" id="chat-container">

@@ -192,9 +192,27 @@ abstract class SocketManagerBase(
   }
 
   final override fun onWebSocketText(socket: ChatSocket, message: String) {
-    log.debug("Received WebSocket message: {} from socket: {}", message, socket)
-    if (canWrite(socket.user)) pool.submit {
 //      log.debug("{} - Received message: {}", session, message)
+    log.debug("Received WebSocket message: {} from socket: {}", message, socket)
+    // Intercept and properly handle heartbeat ping/pong messages
+    val trimmed = message.trim()
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      if (trimmed.contains("\"type\":\"pong\"")) {
+        log.debug("Received heartbeat pong - updating heartbeat timestamp.")
+        // Optionally update a heartbeat timestamp here if needed
+        return
+      }
+      if (trimmed.contains("\"type\":\"ping\"")) {
+        log.debug("Received heartbeat ping - sending pong response.")
+        try {
+          socket.remote.sendString("{\"type\":\"pong\"}")
+        } catch (e: Exception) {
+          log.info("Error sending pong response", e)
+        }
+        return
+      }
+    }
+    if (canWrite(socket.user)) pool.submit {
       try {
         val opCmdPattern = """![a-z]{3,7},.*""".toRegex()
         if (opCmdPattern.matches(message)) {

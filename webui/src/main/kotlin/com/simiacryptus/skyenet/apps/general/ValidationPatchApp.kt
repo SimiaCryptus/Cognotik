@@ -95,7 +95,7 @@ class ValidationPatchApp(
             }
         }
 
-        task.complete(output)
+        task.complete(output.renderMarkdown)
         return OutputResult(
             exitCode = if (validationErrors.isEmpty()) 0 else 1,
             output = output,
@@ -117,16 +117,6 @@ class ValidationPatchApp(
     
     private fun getFiles(virtualFiles: Array<out File>?): Set<Path> {
         val codeFiles = mutableSetOf<Path>()
-        virtualFiles?.forEach { file ->
-            if (file.isDirectory) {
-                if (!file.name.startsWith(".")) {
-                    file.listFiles()?.let { codeFiles.addAll(getFiles(it)) }
-                }
-            } else {
-                codeFiles.add(file.toPath())
-            }
-        }
-        // Optionally include files returned by expandFileList from the utility if present.
         codeFiles.addAll(
             FileValidationUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
                 .map { it.toPath() }
@@ -167,6 +157,7 @@ fun File.findAbsolute(vararg roots: File?): File {
     if (this.absoluteFile.exists()) {
         return this.absoluteFile
     }
+    if (this.isAbsolute) return File(toString().trimStart('/')).findAbsolute(*roots)
     for (root in roots.filterNotNull()) {
         val resolved = root.resolve(this)
         if (resolved.exists()) {

@@ -332,20 +332,69 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     /* Loading Spinner Styles */
     .spinner-border {
         display: inline-block;
-        width: 2rem;
-        height: 2rem;
+       --spinner-diameter: 2rem;
+       inline-size: var(--spinner-diameter);
+       block-size: var(--spinner-diameter);
         vertical-align: text-bottom;
-        border: 0.25em solid ${({theme}) => theme.colors.primary};
+       border-width: calc(var(--spinner-diameter) * 0.125);
+       border-style: solid;
+       border-color: currentColor;
+       color: ${({theme}) => theme.colors.primary};
         border-right-color: transparent;
         border-radius: 50%;
-        animation: spinner-border 0.75s linear infinite;
+       animation: spinner-border 0.75s linear infinite;
+       aspect-ratio: 1;
+       box-sizing: border-box;
+       flex-shrink: 0;
+       min-inline-size: var(--spinner-diameter);
+       min-block-size: var(--spinner-diameter);
+       max-inline-size: var(--spinner-diameter);
+       max-block-size: var(--spinner-diameter);
+       will-change: transform;
+       transform-origin: center center;
+       position: relative;
+       contain: size layout;
+       isolation: isolate;
     }
+    /* Loading states */
+    .message-list-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+    .connection-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        justify-content: center;
+        color: ${({theme}) => theme.colors.text};
+        background: ${({theme}) => theme.colors.background};
+    }
+   /* Size variants for spinner */
+   .spinner-border.small {
+       --spinner-diameter: 1rem;
+   }
+   .spinner-border.large {
+       --spinner-diameter: 3rem;
+   }
 
     @keyframes spinner-border {
         to {
-            transform: rotate(360deg);
+           transform: rotate(360deg) translateZ(0);
         }
     }
+   /* Ensure spinner container maintains aspect ratio */
+   [role="status"] {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       aspect-ratio: 1;
+       contain: layout;
+       aspect-ratio: 1;
+       position: relative;
+   }
 
     /* Screen reader only text */
     .sr-only {
@@ -365,7 +414,6 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 4rem;
     }
 
     /* Improve button accessibility */

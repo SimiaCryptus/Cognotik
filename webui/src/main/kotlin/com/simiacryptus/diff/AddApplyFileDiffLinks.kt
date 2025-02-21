@@ -5,9 +5,11 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
+import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.util.DiffApplicationResult
 import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.isGitignore
+import com.simiacryptus.skyenet.core.util.GrammarValidator
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
@@ -18,26 +20,61 @@ import com.simiacryptus.skyenet.webui.session.SocketManagerBase
 import org.apache.commons.text.similarity.LevenshteinDistance
 import java.io.File
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicReference
+import java.time.Duration
+import java.time.Instant
 import kotlin.io.path.readText
 
 open class AddApplyFileDiffLinks {
   // Add constants for commonly used strings
   companion object {
-    
+    var loggingEnabled = true
     private val diffApplier = SimpleDiffApplier()
     private val log = org.slf4j.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
       debug("Initializing AddApplyFileDiffLinks")
     }
-    
-    /** Validation message mapping */
-    private val VALIDATION_MESSAGES = mapOf(
-      "curly" to "Curly braces are not balanced",
-      "square" to "Square braces are not balanced",
-      "parenthesis" to "Parenthesis are not balanced",
-      "quote" to "Quotes are not balanced",
-      "singleQuote" to "Single quotes are not balanced"
-    )
+    private fun logFileOperation(
+      filepath: Path,
+      originalCode: String,
+      patch: String?,
+      newCode: String,
+      operationType: String,
+      startTime: Instant,
+      validator: GrammarValidator? = null
+    ) {
+      if(loggingEnabled) try {
+        val logFile = filepath.resolveSibling(filepath.fileName.toString() + ".log").toFile()
+        val duration = Duration.between(startTime, Instant.now())
+        val originalSize = filepath.toFile().length()
+        val stackTrace = Thread.currentThread().stackTrace
+          .drop(2) // Skip getStackTrace
+          .take(10) // Get first 5 frames
+          .joinToString("\n    ")
+        val logEntry = buildString {
+          appendLine("─".repeat(80))
+          appendLine("Timestamp: ${Instant.now()}")
+          appendLine("Operation: $operationType")
+          appendLine("Duration: ${duration.toMillis()}ms")
+          appendLine("File: ${filepath.fileName}")
+          appendLine("Original Size: $originalSize bytes")
+          appendLine("New Size: ${filepath.toFile().length()} bytes")
+          appendLine("Validator: ${validator?.javaClass?.simpleName ?: "None"}")
+          appendLine("Stack Trace:")
+          appendLine("    $stackTrace")
+          appendLine("Original Code:")
+          originalCode.lines().forEach { appendLine("    $it") }
+          if (patch != null) {
+            appendLine("Patch:")
+            patch.lines().forEach { appendLine("    $it") }
+          }
+          appendLine("New Code:")
+          newCode.lines().forEach { appendLine("    $it") }
+          appendLine()
+        }
+        logFile.appendText(logEntry)
+      } catch (e: Throwable) {
+        log.error("Failed to write operation log", e)
+      }
+    }
     
     fun instrumentFileDiffs(
       self: SocketManagerBase,
@@ -218,9 +255,11 @@ open class AddApplyFileDiffLinks {
     val filepath = root.resolve(filename)
     if (shouldAutoApply(filepath) && !filepath.toFile().exists()) {
       try {
+        val startTime = Instant.now()
         filepath.parent?.toFile()?.mkdirs()
         filepath.toFile().writeText(codeValue, Charsets.UTF_8)
         handle(mapOf(File(filename).toPath() to codeValue))
+        logFileOperation(filepath, "", null, codeValue, "NEW_FILE", startTime)
         return "\n```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Automatically Saved ${filepath}</div>"
       } catch (e: Throwable) {
         return "\n```${codeLang}\n${codeValue}\n```\n\n<div class=\"cmd-button\">Error Auto-Saving ${filename}: ${e.message}</div>"
@@ -230,9 +269,11 @@ open class AddApplyFileDiffLinks {
       lateinit var hrefLink: StringBuilder
       hrefLink = commandTask.complete(hrefLink("Save File", classname = "href-link cmd-button") {
         try {
+          val startTime = Instant.now()
           filepath.parent?.toFile()?.mkdirs()
           filepath.toFile().writeText(codeValue, Charsets.UTF_8)
           handle(mapOf(File(filename).toPath() to codeValue))
+          logFileOperation(filepath, "", null, codeValue, "NEW_FILE", startTime)
           hrefLink.set("""<div class="cmd-button">Saved ${filepath}</div>""")
           commandTask.complete()
         } catch (e: Throwable) {
@@ -256,6 +297,11 @@ open class AddApplyFileDiffLinks {
     log.debug("Resolving filename '{}' relative to root '{}'", filename, root)
     // Trim whitespace from filename
     var filename = filename.trim().split(" ").firstOrNull() ?: ""
+    // Return early if filename is empty
+    if (filename.isEmpty()) {
+      log.warn("Empty filename provided")
+      return ""
+    }
     
     // Extract filename from backticks if present (e.g., `filename.txt` -> filename.txt)
     if (pattern_backticks.containsMatchIn(filename)) {
@@ -266,7 +312,7 @@ open class AddApplyFileDiffLinks {
     // Try to convert filename to absolute path and make it relative to root if possible
     try {
       val path = File(filename).toPath()
-      if (root.contains(path)) {
+      if (path.startsWith(root)) {
         filename = path.toString().relativizeFrom(root)
         log.debug("Relativized path to: {}", filename)
       }
@@ -276,19 +322,23 @@ open class AddApplyFileDiffLinks {
     
     // If file doesn't exist directly under root, try to find it recursively
     try {
-      if (!root.resolve(filename).toFile().exists()) {
+      val resolvedPath = root.resolve(filename)
+      if (!resolvedPath.toFile().exists() || !resolvedPath.toFile().isFile) {
         log.debug("File not found directly under root, searching recursively")
         // Search recursively through root directory for matching file
         // Normalize path separators to handle cross-platform paths
         root.toFile().listFilesRecursively()
-          .find { it.toString().replace("\\", "/").endsWith(filename.replace("\\", "/")) }?.toString()
+          .filter { it.isFile }  // Only consider files, not directories
+          .find { it.toString().replace("\\", "/").endsWith(filename.replace("\\", "/")) }
+          ?.toString()
           ?.apply {
             filename = relativizeFrom(root)
             log.debug("Found file recursively at: {}", filename)
           }
       }
     } catch (e: Throwable) {
-      log.error("Error searching for file '{}' recursively: {}", filename, e.message, e)
+      log.error("Error searching for file '{}' recursively: {}", filename, e.message)
+      log.debug("Stack trace:", e)
     }
     
     // If file doesn't exist directly under root, try to find it using string distance
@@ -318,7 +368,11 @@ open class AddApplyFileDiffLinks {
   
   private fun File.listFilesRecursively(): List<File> {
     val files = mutableListOf<File>()
-    this.listFiles()?.filterNot { isGitignore(it.toPath()) }?.forEach {
+    this.listFiles()?.filter { 
+      !isGitignore(it.toPath()) && 
+      !it.name.startsWith(".") &&  // Skip hidden files/directories
+      !it.name.equals("node_modules") // Skip node_modules directory
+    }?.forEach {
       files.add(it.absoluteFile)
       if (it.isDirectory) {
         files.addAll(it.listFilesRecursively())
@@ -384,10 +438,11 @@ open class AddApplyFileDiffLinks {
       if (newCode.isValid) {
         if (shouldAutoApply(filepath ?: root.resolve(filename))) {
           try {
+            val startTime = Instant.now()
             filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
-            val originalCode = AtomicReference(prevCode)
             handle(mapOf(relativize to newCode.newCode))
-            val revertButton = createRevertButton(filepath, originalCode.get(), handle)
+            logFileOperation(filepath, prevCode, diffVal, newCode.newCode, "AUTO_PATCH", startTime, apply.validator)
+            val revertButton = createRevertButton(filepath, prevCode, handle)
             return "\n```diff\n$diffVal\n```\n" + """<div class="cmd-button">Diff Automatically Applied to ${filepath}</div>""" + revertButton
           } catch (e: Throwable) {
             log.error("Error auto-applying diff", e)
@@ -441,10 +496,12 @@ open class AddApplyFileDiffLinks {
     var originalCode = prevCode
     val apply1 = hrefLink("Apply Diff", classname = "href-link cmd-button") {
       try {
+        val startTime = Instant.now()
         originalCode = load(filepath)
         newCode = diffApplier.apply(originalCode, "```diff\n$diffVal\n```", null).patchResult
         filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
         handle(mapOf(relativize to newCode.newCode))
+        logFileOperation(filepath, originalCode, diffVal, newCode.newCode, "MANUAL_PATCH", startTime, apply.validator)
         hrefLink.set("<div class=\"cmd-button\">Diff Applied</div>$revert")
         applydiffTask.complete()
       } catch (e: Throwable) {
@@ -582,7 +639,7 @@ open class AddApplyFileDiffLinks {
     val newValue = if (newCode.isValid) {
       mainTabs + "\n" + applydiffTask.placeholder
     } else {
-      mainTabs + """<div class="warning">Warning: The patch is not valid: ${newCode.error ?: "???"}</div>""" + applydiffTask.placeholder
+      mainTabs + """<div class="warning">Warning: The patch is not valid: ${newCode.error?.renderMarkdown() ?: "???"}</div>""" + applydiffTask.placeholder
     }
     return newValue
   }
@@ -590,7 +647,7 @@ open class AddApplyFileDiffLinks {
   private val DiffApplicationResult.patchResult get() = PatchResult(
     newCode,
     isValid,
-    errors.joinToString("\n") { it.message }
+    errors.joinToString("\n") { "* ${it.message} (line ${it.line})" }
   )
   
   // Function to load file contents

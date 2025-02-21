@@ -305,45 +305,41 @@ abstract class PatchApp(
     plan.obj.errors
       ?.groupBy { it.message }
 //      ?.sortedBy { it.severity.toDouble() / it.complexity }?.takeLast(fixesPerIteration)
-      ?.forEach { msg, errors ->
-        val task = ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
-        errors.forEach { error ->
-          task.header("Processing error: $msg")
-          task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
-          task.verbose(renderMarkdown("[Extra Details] Error processed at: ${Instant.now()}", tabs = false, ui = ui))
-          // Search for files using the provided search strings
-          val searchResults = error.research?.searchQueries?.flatMap { query ->
-            val filter1 = filteredWalk(settings.workingDirectory ?: root) { !isGitignore(it.toPath()) }.filter { isLLMIncludableFile(it) }
-            val filter2 = filter1.filter { file ->
-              FileSystems.getDefault().getPathMatcher("glob:" + query.fileGlob).matches(file.toPath())
-            }
-            val filter3 = filter2.filter { it.readText().contains(query.pattern, ignoreCase = true) }
-            filter3.map { it.toPath() }.toList()
-          }?.toSet() ?: emptySet()
-          if (searchResults.isNotEmpty()) {
-            task.verbose(
-              renderMarkdown(
-                "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}", tabs = false, ui = ui
+      ?.map { (msg, errors) ->
+        ui.socketManager?.pool?.submit {
+          val task = ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
+          errors.forEach { error ->
+            task.header("Processing error: $msg")
+            task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
+            task.verbose(renderMarkdown("[Extra Details] Error processed at: ${Instant.now()}", tabs = false, ui = ui))
+            // Search for files using the provided search strings
+            val searchResults = error.research?.searchQueries?.flatMap { query ->
+              val filter1 = filteredWalk(settings.workingDirectory ?: root) { !isGitignore(it.toPath()) }.filter { isLLMIncludableFile(it) }
+              val filter2 = filter1.filter { file ->
+                FileSystems.getDefault().getPathMatcher("glob:" + query.fileGlob).matches(file.toPath())
+              }
+              val filter3 = filter2.filter { it.readText().contains(query.pattern, ignoreCase = true) }
+              filter3.map { it.toPath() }.toList()
+            }?.toSet() ?: emptySet()
+            if (searchResults.isNotEmpty()) {
+              task.verbose(
+                renderMarkdown(
+                  "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}", tabs = false, ui = ui
+                )
               )
+            }
+            fix(
+              error,
+              searchResults.toList().map { it.toFile().absolutePath },
+              ui,
+              settings.autoFix,
+              changed,
+              api,
+              task
             )
           }
-          Retryable(ui, task) {
-            val task = ui.newTask(false)
-            Thread {
-              fix(
-                error,
-                searchResults.toList().map { it.toFile().absolutePath },
-                ui,
-                settings.autoFix,
-                changed,
-                api,
-                task
-              )
-            }.start()
-            task.placeholder
-          }
         }
-      }
+      }?.toTypedArray()?.onEach { it?.get() }
     progressHeader?.set("Finished processing tasks")
     task.append("", false)
   }
@@ -391,6 +387,9 @@ abstract class PatchApp(
              1) predict the files that need to be fixed
              2) predict related files that may be needed to debug the issue
              3) specify a search string to find relevant files - be as specific as possible
+             4) provide a listing of the error locations in the code, including filename and line and column numbers
+             5) provide a severity and complexity rating from 1-10
+             6) summarize the output to distill details related to the error message
           """.trimIndent() + (if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else ""))
     ).answer(
       listOf(

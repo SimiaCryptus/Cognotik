@@ -95,6 +95,18 @@ object IterativePatchUtil {
      */
     fun applyPatch(source: String, patch: String): String {
         log.info("Starting patch application process")
+        // Check if patch contains any explicit diff markers (additions or deletions)
+        val hasAddOrDeleteLines = patch.lines().any { line ->
+            val trimmed = line.trimStart()
+            trimmed.startsWith("+") || trimmed.startsWith("-")
+        }
+        if (!hasAddOrDeleteLines) {
+            // Patch appears to be provided as a snippet using context lines alone.
+            // Instead of assuming a full replacement, try to apply it as a snippet patch.
+            log.info("Patch with context lines only detected. Attempting to apply as snippet patch.")
+            return applySnippetPatch(source, patch)
+        }
+
         // Parse the source and patch texts into lists of line records
         val sourceLines = parseLines(source)
         var patchLines = parsePatchLines(patch, sourceLines)
@@ -820,5 +832,36 @@ object IterativePatchUtil {
     }
 
     private val log = LoggerFactory.getLogger(IterativePatchUtil::class.java)
-
+    
+    /**
+     * Applies a snippet patch that consists solely of context lines.
+     * It searches for the first and last (normalized) lines of the patch in the source.
+     * If found, the block within (and including) those anchors is replaced by the patch snippet.
+     * If not found, the original source is returned unchanged.
+     */
+    private fun applySnippetPatch(source: String, patch: String): String {
+        val patchLines = patch.lines().filter { it.isNotBlank() }
+        if (patchLines.isEmpty()) return source
+        val sourceLines = source.lines().toMutableList()
+        val normalizedSource = sourceLines.map { normalizeLine(it) }
+        // Normalize each patch line so that comparisons ignore whitespace differences.
+        val normalizedPatch = patchLines.map { normalizeLine(it) }
+        // Use the first and last lines in the patch as anchors.
+        val firstContext = normalizedPatch.first()
+        val lastContext = normalizedPatch.last()
+        // Find the first occurrence of the first anchor and the last occurrence of the last anchor in the source.
+        val startIndex = normalizedSource.indexOfFirst { it == firstContext }
+        val endIndex = normalizedSource.indexOfLast { it == lastContext }
+        if (startIndex == -1 || endIndex == -1 || endIndex < startIndex) {
+            log.warn("Could not locate context anchors from patch in the source. Snippet patch not applied.")
+            return source
+        }
+        log.info("Applying snippet patch from source line $startIndex to $endIndex")
+        // Replace the block between startIndex and endIndex (inclusive) with the patch snippet.
+        val newSource = mutableListOf<String>()
+        newSource.addAll(sourceLines.subList(0, startIndex))
+        newSource.addAll(patchLines)
+        newSource.addAll(sourceLines.subList(endIndex + 1, sourceLines.size))
+        return newSource.joinToString("\n")
+    }
 }

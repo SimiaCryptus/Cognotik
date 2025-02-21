@@ -8,6 +8,7 @@ import {debounce, resetTabState, updateTabs} from '../utils/tabHandling';
 import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
 import {Message} from "../types/messages";
+import Spinner from './common/Spinner';
 import './MessageList.css';
 
 const DEBUG_LOGGING = process.env.NODE_ENV === 'development';
@@ -203,11 +204,12 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const element = entry.target;
-                        if (element.tagName === 'CODE') {
-                            requestIdleCallback(() => {
-                                Prism.highlightElement(element);
-                            });
-                        }
+            if (element.tagName === 'CODE') {
+                // Batch highlighting via requestIdleCallback and ensure one reflow per batch
+                requestIdleCallback(() => {
+                    Prism.highlightElement(element);
+                });
+            }
                         observer.unobserve(element);
                     }
                 });
@@ -248,6 +250,11 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             ref={messageListRef}
             className={containerClassName}
         >
+            {messages.length === 0 && (
+                <div className="message-list-loading">
+                    <Spinner size="large" aria-label="Loading messages..." />
+                </div>
+            )}
             {finalMessages.map((message) => {
                 return <div
                     key={message.id}

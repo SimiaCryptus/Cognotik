@@ -21,6 +21,7 @@ import {
     FaChevronDown,
     FaEdit
 } from 'react-icons/fa';
+import { debounce } from '../utils/tabHandling';
 const CollapseButton = styled.button`
     position: absolute;
     top: -12px;
@@ -231,7 +232,12 @@ interface InputAreaProps {
 const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
     log('Initializing component');
     const [message, setMessage] = useState('');
+    // Debounce preview mode toggling to avoid rapid switching that can trigger flicker
     const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const togglePreviewMode = useCallback(
+      debounce((flag: boolean) => setIsPreviewMode(flag), 150),
+      []
+    );
     const [isCollapsed, setIsCollapsed] = useState(false);
     const config = useSelector((state: RootState) => state.config);
     const messages = useSelector((state: RootState) => state.messages.messages);
@@ -326,169 +332,164 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
 
 
     return (
-        <>
-        {isCollapsed ? (
-            <CollapsedPlaceholder 
-                onClick={handleToggleCollapse}
-                data-testid="expand-input"
-            >
-                <FaChevronUp /> Click to expand input area
-            </CollapsedPlaceholder>
-        ) : (
         <InputContainer 
             $hide={shouldHideInput}
             data-testid="input-container"
             id="chat-input-container"
+            className={isCollapsed ? 'collapsed' : 'expanded'}
         >
             <CollapseButton
                 onClick={handleToggleCollapse}
-                title="Collapse input area"
-                data-testid="collapse-input"
+                title={isCollapsed ? "Expand input area" : "Collapse input area"}
+                data-testid={isCollapsed ? "expand-input" : "collapse-input"}
             >
-                <FaChevronDown />
+                {isCollapsed ? <FaChevronUp /> : <FaChevronDown />}
             </CollapseButton>
-            <StyledForm onSubmit={handleSubmit}>
-                <div style={{ width: '100%' }}>
-                    <EditorToolbar>
-                        <div className="toolbar-section">
-                            <ToolbarButton
-                                type="button"
-                                onClick={() => setIsPreviewMode(!isPreviewMode)}
-                                title={isPreviewMode ? "Edit" : "Preview"}
-                                className={isPreviewMode ? 'active' : ''}
-                            >
-                                {isPreviewMode ? <FaEdit /> : <FaEye />}
-                            </ToolbarButton>
+            <div className="input-area-content">
+                <StyledForm onSubmit={handleSubmit}>
+                    <div style={{ width: '100%' }}>
+                        <EditorToolbar>
+                            <div className="toolbar-section">
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => setIsPreviewMode(!isPreviewMode)}
+                                  title={isPreviewMode ? "Edit" : "Preview"}
+                                  className={isPreviewMode ? 'active' : ''}
+                                >
+                                    {isPreviewMode ? <FaEdit /> : <FaEye />}
+                                </ToolbarButton>
+                            </div>
+                            <div className="toolbar-section">
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('# $1')}
+                                  title="Heading"
+                                >
+                                    <FaHeading />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('**$1**')}
+                                  title="Bold"
+                                >
+                                    <FaBold />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('*$1*')}
+                                  title="Italic"
+                                >
+                                    <FaItalic />
+                                </ToolbarButton>
+                            </div>
+                            <div className="toolbar-section">
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('`$1`')}
+                                  title="Inline Code"
+                                >
+                                    <FaCode />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('```\n$1\n```')}
+                                  title="Code Block"
+                                >
+                                    <FaCode style={{ marginRight: '2px' }} /><FaCode />
+                                </ToolbarButton>
+                            </div>
+                            <div className="toolbar-section">
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('- $1')}
+                                  title="Bullet List"
+                                >
+                                    <FaListUl />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('> $1')}
+                                  title="Quote"
+                                >
+                                    <FaQuoteRight />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('- [ ] $1')}
+                                  title="Task List"
+                                >
+                                    <FaCheckSquare />
+                                </ToolbarButton>
+                            </div>
+                            <div className="toolbar-section">
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('[$1](url)')}
+                                  title="Link"
+                                >
+                                    <FaLink />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={() => insertMarkdown('![$1](image-url)')}
+                                  title="Image"
+                                >
+                                    <FaImage />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                  type="button"
+                                  onClick={insertTable}
+                                  title="Table"
+                                >
+                                    <FaTable />
+                                </ToolbarButton>
+                            </div>
+                        </EditorToolbar>
+                        <div className="input-modes">
+                        <div className={`preview-mode ${isPreviewMode ? 'visible' : 'hidden'}`} style={{ transition: 'opacity 0.2s ease' }}>
+                                <PreviewContainer>
+                                    <ReactMarkdown 
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            code({node, className, children, ...props}) {
+                                                return <pre className={className}>
+                                                        <code {...props}>{children}</code>
+                                                    </pre>;
+                                            }
+                                        }}
+                                    >
+                                        {message}
+                                    </ReactMarkdown>
+                                </PreviewContainer>
+                            </div>
+                            <div className={`edit-mode ${isPreviewMode ? 'hidden' : 'visible'}`}>
+                                <TextArea
+                                    ref={textAreaRef}
+                                    data-testid="chat-input"
+                                    id="chat-input"
+                                    value={message}
+                                    onChange={handleMessageChange}
+                                    onKeyPress={handleKeyPress}
+                                    placeholder="Type a message... (Markdown supported)"
+                                    rows={3}
+                                    aria-label="Message input"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
                         </div>
-                        <div className="toolbar-section">
-                            <ToolbarButton 
-                                type="button"
-                                onClick={() => insertMarkdown('# $1')}
-                                title="Heading"
-                            >
-                                <FaHeading />
-                            </ToolbarButton>
-                        <ToolbarButton 
-                            type="button"
-                            onClick={() => insertMarkdown('**$1**')}
-                            title="Bold"
+                        <SendButton
+                            type="submit"
+                            data-testid="send-button" 
+                            id="send-message-button"
+                            disabled={isSubmitting || !message.trim()}
+                            aria-label="Send message"
                         >
-                            <FaBold />
-                        </ToolbarButton>
-                        <ToolbarButton 
-                            type="button"
-                            onClick={() => insertMarkdown('*$1*')}
-                            title="Italic"
-                        >
-                            <FaItalic />
-                        </ToolbarButton>
-                        </div>
-                        <div className="toolbar-section">
-                        <ToolbarButton 
-                            type="button"
-                            onClick={() => insertMarkdown('`$1`')}
-                            title="Inline Code"
-                        >
-                            <FaCode />
-                        </ToolbarButton>
-                        <ToolbarButton 
-                            type="button"
-                            onClick={() => insertMarkdown('```\n$1\n```')}
-                            title="Code Block"
-                        >
-                            <FaCode style={{ marginRight: '2px' }} /><FaCode />
-                        </ToolbarButton>
-                        </div>
-                        <div className="toolbar-section">
-                            <ToolbarButton 
-                                type="button"
-                                onClick={() => insertMarkdown('- $1')}
-                                title="Bullet List"
-                            >
-                                <FaListUl />
-                            </ToolbarButton>
-                            <ToolbarButton 
-                                type="button"
-                                onClick={() => insertMarkdown('> $1')}
-                                title="Quote"
-                            >
-                                <FaQuoteRight />
-                            </ToolbarButton>
-                            <ToolbarButton 
-                                type="button"
-                                onClick={() => insertMarkdown('- [ ] $1')}
-                                title="Task List"
-                            >
-                                <FaCheckSquare />
-                            </ToolbarButton>
-                        </div>
-                        <div className="toolbar-section">
-                            <ToolbarButton 
-                                type="button"
-                                onClick={() => insertMarkdown('[$1](url)')}
-                                title="Link"
-                            >
-                                <FaLink />
-                            </ToolbarButton>
-                            <ToolbarButton 
-                                type="button"
-                                onClick={() => insertMarkdown('![$1](image-url)')}
-                                title="Image"
-                            >
-                                <FaImage />
-                            </ToolbarButton>
-                            <ToolbarButton 
-                                type="button"
-                                onClick={insertTable}
-                                title="Table"
-                            >
-                                <FaTable />
-                            </ToolbarButton>
-                        </div>
-                    </EditorToolbar>
-                {isPreviewMode ? (
-                    <PreviewContainer>
-                        <ReactMarkdown 
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                                code({node, className, children, ...props}) {
-                                    return <pre className={className}>
-                                            <code {...props}>{children}</code>
-                                        </pre>;
-                                }
-                            }}
-                        >
-                            {message}
-                        </ReactMarkdown>
-                    </PreviewContainer>
-                ) : (
-                    <TextArea
-                        ref={textAreaRef}
-                        data-testid="chat-input"
-                        id="chat-input"
-                        value={message}
-                        onChange={handleMessageChange}
-                        onKeyPress={handleKeyPress}
-                        placeholder="Type a message... (Markdown supported)"
-                        rows={3}
-                        aria-label="Message input"
-                        disabled={isSubmitting}
-                    />
-                )}
-                <SendButton
-                    type="submit"
-                    data-testid="send-button" 
-                    id="send-message-button"
-                    disabled={isSubmitting || !message.trim()}
-                    aria-label="Send message"
-                >
-                    Send
-                </SendButton>
-                </div>
-            </StyledForm>
+                            Send
+                        </SendButton>
+                    </div>
+                </StyledForm>
+            </div>
         </InputContainer>
-        )}
-        </>
     );
 });
 
