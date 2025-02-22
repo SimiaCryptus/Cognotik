@@ -103,12 +103,25 @@ abstract class SessionTask(
   fun header(
     @Description("The message to add")
     message: String,
+    level: Int = 0,
     @Description("Whether to show the spinner for the task (default: true)")
     showSpinner: Boolean = true,
-    @Description("The html tag to wrap the message in (default: div)")
-    tag: String = "div",
     additionalClasses: String = ""
-  ) = add(message, showSpinner, tag, additionalClasses)
+  ) = add(
+    message = message,
+    showSpinner = showSpinner,
+    tag = when {
+      level <= 0 -> "div"
+      level == 1 -> "h1"
+      level == 2 -> "h2"
+      level == 3 -> "h3"
+      level == 4 -> "h4"
+      level == 5 -> "h5"
+      level == 6 -> "h6"
+      else -> "div"
+    },
+    additionalClasses = additionalClasses.split(" ").toSet().plus("response-header").joinToString(" ")
+  )
 
   @Description("Adds a verbose message to the task output; verbose messages are hidden by default.")
   fun verbose(

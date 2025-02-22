@@ -141,7 +141,7 @@ class OutlineAgent(
       task.echo(renderMarkdown(this.userMessage, ui = ui))
       val root = initial.answer(listOf(this.userMessage), api = api)
       task.add(renderMarkdown(root.text, ui = ui))
-      task.verbose(JsonUtil.toJson(root.obj))
+      task.verbose("```json\n${JsonUtil.toJson(root.obj)}\n```".renderMarkdown())
       task.complete()
       OutlineManager(OutlineManager.OutlinedText(root.text, root.obj))
     } catch (e: Exception) {
@@ -176,9 +176,9 @@ class OutlineAgent(
   ): List<OutlineManager.Node> {
     val finalOutlineMessage = ui.newTask(false)
     tabbedDisplay["Outline"] = finalOutlineMessage.placeholder
-    finalOutlineMessage.header("Final Outline")
+    finalOutlineMessage.header("Final Outline", 1)
     val finalOutline = outlineManager.buildFinalOutline()
-    finalOutlineMessage.verbose(JsonUtil.toJson(finalOutline))
+    finalOutlineMessage.verbose("```json\n${JsonUtil.toJson(finalOutline)}\n```".renderMarkdown())
     val textOutline = NodeList(finalOutline).getTextOutline()
     finalOutlineMessage.complete(renderMarkdown(textOutline, ui = ui))
     sessionDir.resolve("finalOutline.json").writeText(JsonUtil.toJson(finalOutline))
@@ -193,7 +193,7 @@ class OutlineAgent(
   ) {
     val projectorMessage = ui.newTask(false)
     tabbedDisplay["Projector"] = projectorMessage.placeholder
-    projectorMessage.header("Embedding Projector")
+    projectorMessage.header("Embedding Projector", 1)
     try {
       val response = TensorflowProjector(
         api = api,
@@ -218,7 +218,7 @@ class OutlineAgent(
   ) {
     val finalRenderMessage = ui.newTask(false)
     tabbedDisplay["Final Essay"] = finalRenderMessage.placeholder
-    finalRenderMessage.header("Final Render")
+    finalRenderMessage.header("Final Render", 1)
     try {
       val finalEssay = buildFinalEssay(NodeList(finalOutline), outlineManager)
       sessionDir.resolve("finalEssay.md").writeText(finalEssay)
@@ -295,10 +295,10 @@ class OutlineAgent(
       log.debug("Skipping: ${parent.text}")
       return null
     }
-    message.header("Expand $sectionName")
+    message.header("Expand $sectionName", 3)
     val answer = expand.withModel(model).answer(listOf(this.userMessage, parent.text, sectionName), api = api)
     message.add(renderMarkdown(answer.text, ui = ui))
-    message.verbose(JsonUtil.toJson(answer.obj), false)
+    message.verbose("```json\n${JsonUtil.toJson(answer.obj)}\n```".renderMarkdown(), false)
     val newNode = OutlineManager.OutlinedText(answer.text, answer.obj)
     outlineManager.nodes.add(newNode)
     return newNode

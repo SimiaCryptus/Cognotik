@@ -19,8 +19,8 @@ class RefactorTask(
     task_type = TaskType.RefactorTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
-    input_files = input_files,
-    output_files = output_files,
+    related_files = input_files,
+    files = output_files,
     state = state
   )
 

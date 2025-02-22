@@ -1,5 +1,5 @@
 // Core theme types
-export type ThemeName = 'main' | 'night' | 'forest' | 'pony' | 'alien' | 'sunset' | 'ocean' | 'cyberpunk';
+export type ThemeName = 'default' | 'main' | 'night' | 'forest' | 'pony' | 'alien' | 'sunset' | 'ocean' | 'cyberpunk';
 
 export interface ThemeColors {
     primary: string;
@@ -16,6 +16,7 @@ export interface ThemeColors {
     warning: string;
     info: string;
     disabled: string;
+    critical: string;
     primaryDark?: string;
     secondaryDark?: string;
     errorDark?: string;
@@ -75,12 +76,14 @@ export interface ThemeLogging {
         trace: string;
         verbose: string;
         system: string;
+        critical: string;  // Add critical log color
     };
     fontSize: {
         normal: string;
         large: string;
         small: string;
         system: string;
+        critical: string;  // Add critical font size
     };
     padding: {
         message: string;
@@ -94,6 +97,7 @@ export interface ThemeLogging {
         debug: string;
         success: string;
         system: string;
+        critical: string;  // Add critical background
     };
     border: {
         radius: string;
@@ -104,6 +108,9 @@ export interface ThemeLogging {
         format: string;
         color: string;
         show: boolean;
+    };
+    display: {
+        maxLines: number;
     };
 }
 
@@ -129,6 +136,5 @@ export interface BaseTheme {
         fast: string;
         slow: string;
     };
-    activeTab?: string;
     _init?: () => void;
 }

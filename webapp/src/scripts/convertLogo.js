@@ -9,9 +9,9 @@ sharp(inputPath)
   .png()
   .toFile(outputPath)
   .then(info => {
-    console.log('Successfully converted logo.svg to logo256.png');
-    console.log(info);
+    console.log(`Logo converted successfully: ${info.width}x${info.height}px, ${info.size} bytes`);
   })
   .catch(err => {
-    console.error('Error converting logo:', err);
+    console.error(`Logo conversion failed: ${err.message}`);
+    process.exit(1);
   });

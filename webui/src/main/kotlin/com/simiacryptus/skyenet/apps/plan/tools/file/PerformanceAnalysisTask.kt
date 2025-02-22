@@ -22,8 +22,8 @@ class PerformanceAnalysisTask(
     task_type = TaskType.PerformanceAnalysis.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
-    input_files = input_files,
-    output_files = output_files,
+    related_files = input_files,
+    files = output_files,
     state = state
   )
 
@@ -52,7 +52,7 @@ class PerformanceAnalysisTask(
   """.trimIndent()
 
   fun getFiles(): List<String> {
-    return taskConfig?.input_files ?: emptyList()
+    return taskConfig?.related_files ?: emptyList()
   }
 
 

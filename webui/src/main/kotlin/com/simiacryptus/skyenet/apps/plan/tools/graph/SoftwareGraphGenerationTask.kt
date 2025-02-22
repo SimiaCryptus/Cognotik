@@ -36,7 +36,7 @@ class SoftwareGraphGenerationTask(
     task_type = TaskType.SoftwareGraphGeneration.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
-    input_files = input_files,
+    related_files = input_files,
     state = state
   )
 
@@ -84,7 +84,7 @@ class SoftwareGraphGenerationTask(
   """.trimIndent()
 
   fun getInputFileCode(): String {
-    val inputFiles = taskConfig?.input_files ?: return ""
+    val inputFiles = taskConfig?.related_files ?: return ""
     return inputFiles.joinToString("\n\n") { filePath ->
       val file = File(filePath)
       if (file.exists()) {

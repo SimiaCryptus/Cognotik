@@ -1,6 +1,7 @@
 import {useDispatch} from 'react-redux';
 import WebSocketService from '../services/websocket';
 import {setModalContent, showModal as showModalAction} from '../store/slices/uiSlice';
+import {logger} from '../utils/logger';
 import Prism from 'prismjs';
 
 export const useModal = () => {
@@ -40,6 +41,10 @@ export const useModal = () => {
 
     const openModal = (endpoint: string, event?: React.MouseEvent) => {
         if (event) {
+            logger.debug(
+                'Modal open prevented default event',
+                {endpoint}
+            );
             event.preventDefault();
             event.stopPropagation();
         }
@@ -55,7 +60,10 @@ export const useModal = () => {
             }
         })
             .then(response => {
-                if (!response.ok) {
+                if (!response.ok) { 
+                    logger.error('Modal fetch failed', {
+                        status: response.status, endpoint
+                    });
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.text();
@@ -67,8 +75,12 @@ export const useModal = () => {
                 });
             })
             .catch(error => {
-                console.error('[Modal] Failed to load content:', error);
-                dispatch(setModalContent('<div class="error">Error loading content: ' + error.message + '</div>'));
+                logger.error('Modal content load failed', {
+                    error: error.message,
+                    endpoint,
+                    stack: error.stack
+                });
+                dispatch(setModalContent(`<div class="error">Error loading content: ${error.message}</div>`));
                 // Keep modal open to show error
             });
     };

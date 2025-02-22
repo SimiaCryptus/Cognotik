@@ -11,7 +11,7 @@ interface ThemeProviderProps {
 }
 
 const LOG_PREFIX = '[ThemeProvider]';
-const FALLBACK_THEME: ThemeName = 'main';
+const DEFAULT_THEME: ThemeName = 'main';
 const prismThemes: Record<ThemeName, string> = {
     main: 'prism',
     night: 'prism-dark',
@@ -20,16 +20,17 @@ const prismThemes: Record<ThemeName, string> = {
     alien: 'prism-tomorrow',
     sunset: 'prism-twilight',
     ocean: 'prism-okaidia',
-    cyberpunk: 'prism-tomorrow'
+    cyberpunk: 'prism-tomorrow',
+    default: 'prism',
 };
 
 const loadPrismTheme = async (themeName: ThemeName) => {
     const prismTheme = prismThemes[themeName] || 'prism';
     try {
         await import(`prismjs/themes/${prismTheme}.css`);
-        console.debug(`${LOG_PREFIX} Loaded Prism theme: ${prismTheme}`);
+        // Remove debug log as successful theme loading is expected behavior
     } catch (error) {
-        console.warn(`${LOG_PREFIX} Failed to load Prism theme: ${prismTheme}`, error);
+        console.error(`${LOG_PREFIX} Failed to load Prism theme: ${prismTheme}. This will affect code highlighting.`, error);
     }
 };
 
@@ -41,7 +42,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
 
     useEffect(() => {
         if (!themes[currentTheme]) {
-            console.warn(`${LOG_PREFIX} Invalid theme "${currentTheme}", falling back to ${FALLBACK_THEME}`);
+            console.error(`${LOG_PREFIX} Theme "${currentTheme}" not found. Falling back to ${DEFAULT_THEME} theme. This indicates a potential application configuration issue.`);
             return;
         }
 
@@ -135,11 +136,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
     }, [currentTheme]);
 
     const theme = themes[currentTheme] || themes.main;
-    if (!themes[currentTheme]) {
-        console.warn(
-            `${LOG_PREFIX} Theme "${currentTheme}" not found. Falling back to main theme.`
-        );
-    }
+    // Remove duplicate theme warning - already handled above
 
     return (
         <StyledThemeProvider theme={theme}>

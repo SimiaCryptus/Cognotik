@@ -56,20 +56,20 @@ const getArchivedMessages = () => {
         if (!messagesEl) return null;
         return JSON.parse(messagesEl.textContent || '[]');
     } catch (err) {
-        console.error('Failed to parse archived messages:', err);
+        console.error(`${LOG_PREFIX} Critical: Failed to parse archived messages:`, err);
         return null;
     }
 };
 
-const APP_VERSION = '1.0.0';
-const LOG_PREFIX = '[App]';
+const APP_VERSION = '1.0.0'; 
+const LOG_PREFIX = '[SkyeNet]';
 Prism.manual = true;
 
 
 // Create a separate component for the app content
 const AppContent: React.FC = () => {
     if (!isArchive) {
-        console.group(`${LOG_PREFIX} Initializing v${APP_VERSION}`);
+        console.info(`${LOG_PREFIX} Initializing application v${APP_VERSION}`);
     }
     const appConfig = useSelector((state: RootState) => state.config);
     const dispatch = useDispatch();
@@ -99,15 +99,14 @@ const AppContent: React.FC = () => {
             document.title = appConfig.applicationName;
         }
     }, [appConfig.applicationName]);
-    console.debug('WebSocket state:', {
-        sessionId,
-        isConnected
-    });
+    if (!isConnected) {
+        console.warn(`${LOG_PREFIX} WebSocket disconnected - sessionId: ${sessionId}`);
+    }
 
     React.useEffect(() => {
         const cleanup = setupUIHandlers();
         return () => {
-            cleanup();
+            cleanup(); 
         };
     }, []);
 
@@ -116,9 +115,6 @@ const AppContent: React.FC = () => {
         qr.addData('https://example.com');
         qr.make();
 
-        return () => {
-            console.debug(`${LOG_PREFIX} Cleanup complete`);
-        };
     }, []);
 
     return (
@@ -146,8 +142,7 @@ const App: React.FC = () => {
     );
 };
 
-console.groupEnd();
-console.log(`${LOG_PREFIX} v${APP_VERSION} loaded successfully`);
+console.info(`${LOG_PREFIX} Application initialized successfully`);
 
 
 export default App;

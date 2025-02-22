@@ -100,7 +100,7 @@ open class DocumentParserApp(
         throw IllegalArgumentException("No input files provided")
       }
 
-      task.header("Knowledge Extractor")
+      task.header("Knowledge Extractor", 2)
       val api = (api as ChatClient).getChildClient(task)
       // Create output directory
       val outputDir = root.resolve("output").apply<File> { mkdirs() }

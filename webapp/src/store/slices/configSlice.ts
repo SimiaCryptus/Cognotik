@@ -28,10 +28,6 @@ const loadWebSocketConfig = () => {
     try {
         const savedConfig = localStorage.getItem('websocketConfig');
         if (savedConfig) {
-            console.log('[ConfigSlice] Loading saved WebSocket config:', {
-                source: 'localStorage',
-                config: JSON.parse(savedConfig)
-            });
             return JSON.parse(savedConfig);
         }
     } catch (error) {
@@ -87,7 +83,6 @@ const configSlice = createSlice({
     initialState,
     reducers: {
         setAppInfo: (state, action: PayloadAction<any>) => {
-            console.info('Setting app info:', action.payload);
             if (action.payload) {
                 if (action.payload.applicationName) {
                     state.applicationName = action.payload.applicationName;
@@ -112,9 +107,6 @@ const configSlice = createSlice({
             }
         },
         resetConfig: () => {
-            console.log('[ConfigSlice] Resetting to initial state', {
-                newState: initialState
-            });
             return initialState;
         },
         setConnectionConfig: (state, action: PayloadAction<{
@@ -132,18 +124,10 @@ const configSlice = createSlice({
             state.websocket.timeout = action.payload.timeout;
         },
         setTheme: (state, action: PayloadAction<ThemeName>) => {
-            console.log('[ConfigSlice] Setting theme:', {
-                previous: state.theme.current,
-                new: action.payload
-            });
             state.theme.current = action.payload;
             localStorage.setItem('theme', action.payload);
         },
         toggleAutoTheme: (state) => {
-            console.log('[ConfigSlice] Toggling auto theme:', {
-                previous: state.theme.autoSwitch,
-                new: !state.theme.autoSwitch
-            });
             state.theme.autoSwitch = !state.theme.autoSwitch;
         },
         updateWebSocketConfig: (state, action: PayloadAction<Partial<WebSocketConfig>>) => {
@@ -153,16 +137,10 @@ const configSlice = createSlice({
                 return;
             }
 
-            console.log('[ConfigSlice] Updating WebSocket config:', {
-                previous: state.websocket,
-                updates: action.payload,
-                merged: {...state.websocket, ...action.payload}
-            });
             state.websocket = {...state.websocket, ...action.payload};
             // Persist to localStorage
             try {
                 localStorage.setItem('websocketConfig', JSON.stringify(state.websocket));
-                console.log('[ConfigSlice] WebSocket config persisted to localStorage');
             } catch (error) {
                 console.error('[ConfigSlice] Failed to persist WebSocket config:', {
                     source: 'localStorage',
@@ -171,46 +149,21 @@ const configSlice = createSlice({
             }
         },
         updateConfig: (state: AppConfig, action: PayloadAction<Partial<AppConfig>>) => {
-            console.log('[ConfigSlice] Updating config:', {
-                previous: state,
-                updates: action.payload,
-                merged: {...state, ...action.payload}
-            });
             return {...state, ...action.payload};
         },
         toggleSingleInput: (state: AppConfig) => {
-            console.log('[ConfigSlice] Toggling single input:', {
-                previous: state.singleInput,
-                new: !state.singleInput
-            });
             state.singleInput = !state.singleInput;
         },
         toggleStickyInput: (state: AppConfig) => {
-            console.log('[ConfigSlice] Toggling sticky input:', {
-                previous: state.stickyInput,
-                new: !state.stickyInput
-            });
             state.stickyInput = !state.stickyInput;
         },
         toggleLoadImages: (state: AppConfig) => {
-            console.log('[ConfigSlice] Toggling load images:', {
-                previous: state.loadImages,
-                new: !state.loadImages
-            });
             state.loadImages = !state.loadImages;
         },
         toggleMenubar: (state: AppConfig) => {
-            console.log('[ConfigSlice] Toggling menubar:', {
-                previous: state.showMenubar,
-                new: !state.showMenubar
-            });
             state.showMenubar = !state.showMenubar;
         },
         setApplicationName: (state: AppConfig, action: PayloadAction<string>) => {
-            console.log('[ConfigSlice] Setting application name:', {
-                previous: state.applicationName,
-                new: action.payload
-            });
             state.applicationName = action.payload;
         },
     },

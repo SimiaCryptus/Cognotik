@@ -187,7 +187,7 @@ open class CodingAgent<T : Interpreter>(
     task: SessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}
   ) {
     formHandle?.clear()
-    val header = task.header(message)
+    val header = task.header(message, 2)
     try {
       fn()
     } finally {

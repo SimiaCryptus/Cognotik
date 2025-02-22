@@ -253,7 +253,8 @@ export const ThemeMenu: React.FC = () => {
         logDebug('Theme change initiated', {
             from: currentTheme,
             to: themeName,
-            timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        isDefaultTheme: themeName === 'main' // Use 'main' as default theme instead of 'default'
         });
 
         setIsLoading(true);

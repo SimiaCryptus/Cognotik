@@ -9,29 +9,39 @@ const originalConsole = {
     error: console.error,
     warn: console.warn,
     debug: console.debug,
+    info: console.info,
 };
-// Custom formatter for test console output
+ // Custom formatter for test output
 const formatTestOutput = (type, ...args) => {
     const timestamp = new Date().toISOString();
     return `[TEST ${type.toUpperCase()}][${timestamp}] ${args.join(' ')}`;
 };
+// Define log levels
+const LOG_LEVELS = {
+    ERROR: 3,
+    WARN: 2,
+    INFO: 1,
+    DEBUG: 0
+};
+const CURRENT_LOG_LEVEL = process.env.LOG_LEVEL ? LOG_LEVELS[process.env.LOG_LEVEL.toUpperCase()] : LOG_LEVELS.INFO;
+
 // Override console methods for tests
 beforeAll(() => {
-    console.log = (...args) => {
-        // Only log if not empty or undefined
-        if (args.length > 0 && args[0] !== undefined) {
-            originalConsole.log(formatTestOutput('log', ...args));
-        }
-    };
     console.error = (...args) => {
         originalConsole.error(formatTestOutput('error', ...args));
     };
     console.warn = (...args) => {
-        originalConsole.warn(formatTestOutput('warn', ...args));
+        if (CURRENT_LOG_LEVEL <= LOG_LEVELS.WARN) {
+            originalConsole.warn(formatTestOutput('warn', ...args));
+        }
+    };
+    console.log = console.info = (...args) => {
+        if (CURRENT_LOG_LEVEL <= LOG_LEVELS.INFO && args.length > 0 && args[0] !== undefined) {
+            originalConsole.log(formatTestOutput('info', ...args));
+        }
     };
     console.debug = (...args) => {
-        // Only show debug logs if explicitly enabled
-        if (process.env.DEBUG_MODE === 'true') {
+        if (CURRENT_LOG_LEVEL <= LOG_LEVELS.DEBUG) {
             originalConsole.debug(formatTestOutput('debug', ...args));
         }
     };
@@ -41,5 +51,6 @@ afterAll(() => {
     console.log = originalConsole.log;
     console.error = originalConsole.error;
     console.warn = originalConsole.warn;
+    console.info = originalConsole.info;
     console.debug = originalConsole.debug;
 });

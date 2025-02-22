@@ -7,12 +7,11 @@ const reportWebVitals = (onPerfEntry) => {
             getFCP(onPerfEntry);
             getLCP(onPerfEntry);
             getTTFB(onPerfEntry);
-            console.debug('Web vitals metrics initialized successfully');
         }).catch(error => {
             console.error('Web-vitals initialization failed:', error.message);
         });
     } else {
-        console.warn('Invalid performance metrics handler provided');
+       console.warn('Web-vitals initialization failed: onPerfEntry must be a valid function');
     }
 };
 

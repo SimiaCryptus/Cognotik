@@ -4,41 +4,22 @@ import type {BaseTheme, ThemeColors, ThemeName} from '../types/theme';
 export type {ThemeName};
 
 // Enhanced logger configuration
-const logger = {
+const themeLogger = {
     styles: {
         theme: 'color: #4CAF50; font-weight: bold',
         action: 'color: #2196F3; font-weight: bold',
-        timestamp: 'color: #9E9E9E',
-        details: 'color: #757575',
     },
-    log(action: string, themeName: string, details?: object) {
+    log(action: string, themeName: string) {
         console.groupCollapsed(
             `%cTheme %c${action} %c${themeName}`,
             this.styles.theme,
             this.styles.action,
             this.styles.theme
         );
-        console.log(
-            '%cTimestamp:%c %s',
-            this.styles.details,
-            'color: inherit',
-            new Date().toISOString()
-        );
-        if (details) {
-            console.log('%cDetails:', this.styles.details);
-            console.table(details);
-        }
         console.groupEnd();
     }
 };
 
-// Logger for theme operations
-const logTheme = (action: string, themeName: string) => {
-    logger.log(action, themeName, {
-        timestamp: new Date().toISOString(),
-        theme: themeName
-    });
-};
 
 
 interface ThemeSizing {
@@ -82,71 +63,12 @@ interface ThemeTypography {
     };
 }
 
-interface ExtendedTheme extends BaseTheme {
-    colors: ThemeColors;
-    sizing: ThemeSizing;
-    typography: ThemeTypography;
-    name: string;
-    shadows: {
-        small: string;
-        medium: string;
-        large: string;
-    };
-    transitions: {
-        default: string;
-        fast: string;
-        slow: string;
-    };
-    config: {
-        stickyInput: boolean;
-        singleInput: boolean;
-    };
-    logging: {
-        colors: {
-            error: string;
-            warning: string;
-            info: string;
-            debug: string;
-            success: string;
-            trace: string;
-            verbose: string;
-            system: string;
-        };
-        fontSize: {
-            normal: string;
-            large: string;
-            small: string;
-            system: string;
-        };
-        padding: {
-            message: string;
-            container: string;
-            timestamp: string;
-        };
-        background: {
-            error: string;
-            warning: string;
-            info: string;
-            debug: string;
-            success: string;
-            system: string;
-        };
-        border: {
-            radius: string;
-            style: string;
-            width: string;
-        };
-        timestamp: {
-            format: string;
-            color: string;
-            show: boolean;
-        };
-    };
-}
+// Use BaseTheme directly instead of ExtendedTheme
+type ExtendedTheme = BaseTheme;
 
 const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
     _init() {
-        logger.log('base initialized', 'default');
+        themeLogger.log('initialized', 'base');
     },
     shadows: {
         small: '0 1px 3px rgba(0, 0, 0, 0.12)',
@@ -171,13 +93,15 @@ const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
             success: '#34C759',
             trace: '#8E8E93',
             verbose: '#C7C7CC',
-            system: '#48484A'
+            system: '#48484A',
+            critical: '#FF3B30'
         },
         fontSize: {
             normal: '0.9rem',
             large: '1.1rem',
             small: '0.8rem',
-            system: '0.85rem'
+            system: '0.85rem',
+            critical: '1.2rem'
         },
         padding: {
             message: '0.5rem',
@@ -190,7 +114,8 @@ const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
             info: '#E3F2FD',
             debug: '#F3E5F5',
             success: '#E8F5E9',
-            system: '#FAFAFA'
+            system: '#FAFAFA',
+            critical: '#FFEBEE'
         },
         border: {
             radius: '4px',
@@ -201,6 +126,9 @@ const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
             format: 'HH:mm:ss',
             color: '#8E8E93',
             show: true
+        },
+        display: {
+            maxLines: 0,
         }
     },
     sizing: {
@@ -264,6 +192,7 @@ export const mainTheme: BaseTheme = {
         secondaryDark: '#4240aa',
         errorDark: '#cc2f26',
         successDark: '#2a9f47',
+        critical: '#FF3B30', // Adding critical color (same as error for consistency)
         disabled: '#E5E5EA', // Make sure this is defined in all themes
         primaryDark: '#0056b3', // Add darker shade of primary
         hover: '#2C5282', // Add hover color
@@ -291,6 +220,7 @@ export const nightTheme: ExtendedTheme = {
         secondaryDark: '#4b49b8',
         errorDark: '#cc372e',
         successDark: '#28ac3c',
+        critical: '#FF453A', // Adding critical color
         disabled: '#2C2C2E', // Ensure consistent property definition
     },
     ...baseTheme,
@@ -316,6 +246,7 @@ export const forestTheme: ExtendedTheme = {
         secondaryDark: '#337456',
         errorDark: '#ab2020',
         successDark: '#42926d',
+        critical: '#D62828', // Adding critical color
         disabled: '#2D3B35', // Ensure consistent property definition
     },
     ...baseTheme,
@@ -338,6 +269,7 @@ export const ponyTheme: ExtendedTheme = {
         warning: '#FFB6C1',
         info: '#DB7093',
         primaryDark: '#ff1493',
+        critical: '#FF1493', // Adding critical color
         disabled: '#F8E1E7', // Ensure consistent property definition
     },
     ...baseTheme,
@@ -360,12 +292,20 @@ export const alienTheme: ExtendedTheme = {
         warning: '#FFFF00',
         info: '#00FFFF',
         primaryDark: '#2bbb0e',
+        critical: '#FF0000', // Adding critical color
         disabled: '#1C1C1C', // Ensure consistent property definition
     },
     ...baseTheme,
 };
 
 export const themes = {
+    default: {
+        ...mainTheme,
+        name: 'default' as ThemeName,
+        colors: {
+            ...mainTheme.colors,
+        }
+    },
     main: mainTheme,
     night: nightTheme,
     forest: forestTheme,
@@ -389,6 +329,7 @@ export const themes = {
             info: '#3498DB',
             primaryDark: '#E74C3C',
             disabled: '#7F8C8D',
+            critical: '#E74C3C', // Adding critical color
         },
         ...baseTheme,
     },
@@ -410,7 +351,8 @@ export const themes = {
             info: '#48CAE4',
             primaryDark: '#0096C7',
             disabled: '#415A77',
-            hover: '#0077B6'
+             hover: '#0077B6',
+            critical: '#FF6B6B', // Adding critical color
         },
         ...baseTheme,
     },
@@ -432,20 +374,14 @@ export const themes = {
             info: '#00FFFF',
             primaryDark: '#CC00CC',
             disabled: '#4A4A4A',
-            hover: '#FF69B4'
+             hover: '#FF69B4',
+            critical: '#FF0000', // Adding critical color
         },
         ...baseTheme,
     },
 };
-// Enhanced logging for available themes
-Object.keys(themes).forEach(theme => {
-    logTheme('initialized', theme);
-});
 
 // Export a helper function to log theme changes
 export const logThemeChange = (from: ThemeName, to: ThemeName) => {
-    logger.log('changed', `${from} → ${to}`, {
-        from,
-        to
-    });
+    themeLogger.log('changed', `${from} → ${to}`);
 };

@@ -1,14 +1,16 @@
 import React, {useEffect, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import styled from 'styled-components';
-import {fetchAppConfig, isArchive} from '../services/appConfig';
+import {fetchAppConfig} from '../services/appConfig';
+import {isArchive, APP_NAME} from '../utils/constants';
+import {logger} from '../utils/logger';
 import {useWebSocket} from '../hooks/useWebSocket';
 import {addMessage} from '../store/slices/messageSlice';
 import MessageList from './MessageList';
 import InputArea from './InputArea';
 import Spinner from './common/Spinner';
-import {Message, MessageType} from '../types/messages';
-import websocket from '@services/websocket';
+import {Message, MessageType} from '../types/messages'; 
+import {WebSocketService} from '../services/websocket';
 
 
 const LOG_PREFIX = '[ChatInterface]';
@@ -21,7 +23,7 @@ interface WebSocketMessage {
 
 interface ChatInterfaceProps {
     sessionId?: string;
-    websocket: typeof websocket;
+    websocket: WebSocketService;
     isConnected: boolean;
 }
 
@@ -42,15 +44,12 @@ const ChatContainer = styled.div`
                                                      }) => {
     const DEBUG = process.env.NODE_ENV === 'development';
     const debugLog = (message: string, data?: any) => {
-        if (DEBUG) {
-            console.debug(`${LOG_PREFIX} ${message}`, data);
-        }
+    logger.debug(`${LOG_PREFIX} ${message}`, data);
     };
-    const [messages, setMessages] = React.useState<Message[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [sessionId] = useState(() => propSessionId || window.location.hash.slice(1) || 'new');
     const dispatch = useDispatch();
     const ws = useWebSocket(sessionId);
-     debugLog('Initializing chat interface', {sessionId, isConnected});
 
 
     useEffect(() => {
@@ -63,9 +62,9 @@ const ChatContainer = styled.div`
             try {
                 const config = await fetchAppConfig(sessionId);
                 if (mounted && config) {
-                    debugLog('App config loaded successfully');
+                    console.info(`${LOG_PREFIX} App config loaded successfully`);
                 } else {
-                    console.warn('Could not load app config, using defaults');
+                    console.warn(`${LOG_PREFIX} Could not load app config, using defaults`);
                 }
             } catch (error) {
                 console.error('Failed to fetch app config:', error);
@@ -81,9 +80,6 @@ const ChatContainer = styled.div`
         // Skip effect in archive mode
         if (isArchive) return;
 
-        debugLog('Setting up message handler', {
-            wsReadyState: ws.readyState
-        });
         // Add cleanup flag to prevent state updates after unmount
         let isComponentMounted = true;
 
@@ -91,9 +87,7 @@ const ChatContainer = styled.div`
             if (!isComponentMounted) return;
 
 
-            // Handle HTML messages differently
             if (data.isHtml) {
-                debugLog('Processing HTML message');
                 const newMessage = {
                     id: `${Date.now()}`,
                     content: data.data || '',
@@ -112,13 +106,10 @@ const ChatContainer = styled.div`
             }
             // Handle regular messages
             if (!data.data || typeof data.data !== 'string') {
-                console.warn(`${LOG_PREFIX} Invalid message format received:`, data);
                 return;
             }
             // Ignore connect messages
             if (data.data.includes('"type":"connect"')) {
-                console.debug(`${LOG_PREFIX} Ignoring connect message`);
-                console.groupEnd();
                 return;
             }
 
@@ -134,7 +125,6 @@ const ChatContainer = styled.div`
                 rawHtml: null,
                 sanitized: false
             };
-            console.groupEnd();
 
             dispatch(addMessage(messageObject));
         };
@@ -142,14 +132,12 @@ const ChatContainer = styled.div`
         websocket.addMessageHandler(handleMessage);
         return () => {
             isComponentMounted = false;
-            debugLog('Cleaning up message handler');
             websocket.removeMessageHandler(handleMessage);
         };
     }, [DEBUG, dispatch, isConnected, sessionId, websocket, ws.readyState]);
 
     const handleSendMessage = (msg: string) => {
-        console.log(`${LOG_PREFIX} Sending message`, {
-            messageLength: msg.length,
+        console.info(`${LOG_PREFIX} Sending message - length: ${msg.length}`, {
             sessionId,
             isConnected
         });

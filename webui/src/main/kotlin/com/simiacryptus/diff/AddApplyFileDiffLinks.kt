@@ -199,11 +199,11 @@ open class AddApplyFileDiffLinks {
       
       // Process diff blocks and add patch links
       val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, diffBlock ->
-        val value = diffBlock.second.groupValues[2].trim()
+        val diffValue = diffBlock.second.groupValues[2].trim()
         val header =
           headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
         val filename = resolve(root, header)
-        val newValue = renderDiffBlock(root, filename, value, handle, ui, api, shouldAutoApply)
+        val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, api, shouldAutoApply)
         markdown.replace(diffBlock.second.value, newValue)
       }
       // Process code blocks and add save links
@@ -216,7 +216,8 @@ open class AddApplyFileDiffLinks {
         }
         val header =
           headers.lastOrNull { it.first.last < codeBlock.first.first }?.second ?: defaultFile ?: "Unknown"
-        val newMarkdown = renderNewFile(header, root, ui, shouldAutoApply, codeValue, handle, lang)
+        val filename = resolve(root, header ?: "Unknown")
+        val newMarkdown = renderNewFile(root, filename, codeValue, handle, ui, lang, shouldAutoApply)
         markdown.replace(codeBlock.second.value, newMarkdown)
       }
       return withSaveLinks
@@ -243,15 +244,14 @@ open class AddApplyFileDiffLinks {
   }
   
   private fun SocketManagerBase.renderNewFile(
-    header: String?,
     root: Path,
-    ui: ApplicationInterface,
-    shouldAutoApply: (Path) -> Boolean,
+    filename: String,
     codeValue: String,
     handle: (Map<Path, String>) -> Unit,
-    codeLang: String
+    ui: ApplicationInterface,
+    codeLang: String,
+    shouldAutoApply: (Path) -> Boolean
   ): String {
-    val filename = resolve(root, header ?: "Unknown")
     val filepath = root.resolve(filename)
     if (shouldAutoApply(filepath) && !filepath.toFile().exists()) {
       try {
@@ -513,9 +513,9 @@ open class AddApplyFileDiffLinks {
     if (echoDiff.isNotBlank()) {
       // Add "Fix Patch" button if the patch is not valid
       if (!newCode.isValid) {
-        val fixPatchLink = hrefLink("Fix Patch", classname = "href-link cmd-button") {
+        fixTask.complete(hrefLink("Fix Patch", classname = "href-link cmd-button") {
           try {
-            val header = fixTask.header("Attempting to fix patch...")
+            val header = fixTask.header("Attempting to fix patch...", 4)
             val patchFixer = createPatchFixerActor()
             val echoDiff = try {
               IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
@@ -535,8 +535,7 @@ open class AddApplyFileDiffLinks {
           } catch (e: Throwable) {
             log.error("Error in fix patch", e)
           }
-        }
-        fixTask.complete(fixPatchLink)
+        })
       }
       
       // Create "Apply Diff (Bottom to Top)" button

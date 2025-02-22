@@ -27,14 +27,7 @@ object MarkdownUtil {
   ): String {
     if (rawMarkdown.isBlank()) return ""
     val markdown = markdownEditor(rawMarkdown)
-    val stackInfo = """
-<ol style="visibility: hidden; height: 0;">
-${Thread.currentThread().stackTrace.joinToString("\n") { "<li>" + it.toString() + "</li>" }}
-</ol>
-      """
-    val asHtml =
-      stackInfo + HtmlRenderer.builder(options).build().render(Parser.builder(options).build().parse(markdown))
-        .let { renderMermaid(it, ui, tabs) }
+    val asHtml = HtmlRenderer.builder(options).build().render(Parser.builder(options).build().parse(markdown)).let { renderMermaid(it, ui, tabs) }
     return when {
       markdown.isBlank() -> ""
       asHtml == rawMarkdown -> asHtml

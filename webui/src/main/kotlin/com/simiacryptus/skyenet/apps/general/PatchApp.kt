@@ -262,7 +262,7 @@ abstract class PatchApp(
       // Update the last parsed error details so they can be used in subsequent runs
       val parsedErrors: ParsedErrors = plan.obj
       lastParsedErrors = parsedErrors
-      val progressHeader = fixTask.header("Processing tasks...")
+      val progressHeader = fixTask.header("Processing tasks...", 3)
       fixTask.add(
         AgentPatterns.displayMapInTabs(
           mapOf(
@@ -309,7 +309,7 @@ abstract class PatchApp(
         ui.socketManager?.pool?.submit {
           val task = ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
           errors.forEach { error ->
-            task.header("Processing error: $msg")
+            task.header("Processing error: $msg", 3)
             task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
             task.verbose(renderMarkdown("[Extra Details] Error processed at: ${Instant.now()}", tabs = false, ui = ui))
             // Search for files using the provided search strings

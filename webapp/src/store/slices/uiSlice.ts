@@ -7,8 +7,8 @@ const safeStorage = {
             localStorage.setItem(key, value);
             return true;
         } catch (error: unknown) {
-            console.warn('[UI Slice] localStorage save failed:', {
-                error,
+            console.error('[UI Slice] localStorage save failed:', {
+                error: error instanceof Error ? error.message : String(error),
                 key
             });
             // Try to clear old items if storage is full
@@ -66,10 +66,15 @@ const initialState: UiState = {
 
 // Only log meaningful state changes
 const logStateChange = (action: string, payload: any = null, prevState: any = null) => {
+    // Only log critical state changes
+    const criticalChanges = ['theme', 'verboseMode'];
+    if (!criticalChanges.includes(action.toLowerCase())) {
+        return;
+    }
     if (prevState !== null && JSON.stringify(payload) !== JSON.stringify(prevState)) {
-        console.log(`[UI Slice] ${action}:`, {
-            change: {from: prevState, to: payload}
-        });
+        console.debug(`[UI Slice] ${action}:`, 
+            `${prevState} → ${payload}`
+        );
     }
 };
 
@@ -78,7 +83,6 @@ export const uiSlice = createSlice({
     initialState,
     reducers: {
         setActiveTab: (state, action: PayloadAction<string>) => {
-            logStateChange('Active tab', action.payload, state.activeTab);
             state.activeTab = action.payload;
         },
         setTheme: (state, action: PayloadAction<ThemeName>) => {
@@ -93,12 +97,10 @@ export const uiSlice = createSlice({
             safeStorage.setItem('theme', newTheme);
         },
         showModal: (state, action: PayloadAction<string>) => {
-            logStateChange('Modal', action.payload, state.modalType);
             state.modalOpen = true;
             state.modalType = action.payload;
         },
         hideModal: (state) => {
-            logStateChange('Modal', null, state.modalType);
             state.modalOpen = false;
             state.modalType = null;
             state.modalContent = '';

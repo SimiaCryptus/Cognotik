@@ -4,14 +4,14 @@ import WebSocketService from '../services/websocket';
 import {debounce} from './tabHandling';
 
 export const setupUIHandlers = () => {
-    console.debug('Initializing UI event handlers');
 
     // Create debounced handler outside event listener
     const handleKeyboardShortcut = debounce((event: KeyboardEvent) => {
         if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'V') {
             event.preventDefault();
-            console.debug('Shortcut: Toggle verbose mode');
             store.dispatch(toggleVerbose());
+            // Log state changes that affect app behavior
+            console.info('Verbose mode toggled via keyboard shortcut');
         }
     }, 250);
 
@@ -42,7 +42,6 @@ export const setupUIHandlers = () => {
 
         if (messageAction && messageId) {
             event.preventDefault();
-            console.debug(`Message action: ${messageAction} (ID: ${messageId})`);
             handleMessageAction(messageId, messageAction);
         }
     });
@@ -50,6 +49,7 @@ export const setupUIHandlers = () => {
 };
 
 const handleMessageAction = (messageId: string, action: string) => {
-    console.info(`WebSocket message: ${action} (ID: ${messageId})`);
+    // Log important WebSocket operations that could affect system state
+    console.info(`WebSocket action triggered: ${action} for message ${messageId}`);
     WebSocketService.send(`!${messageId},${action}`);
 };

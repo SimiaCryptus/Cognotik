@@ -1,10 +1,7 @@
 export type LogLevel =
-    | 'debug'    // Detailed debugging info
-    | 'info'     // General operational info
-    | 'warn'     // Warning messages for potentially problematic situations
-    | 'error'    // Error messages for serious problems
-    | 'critical' // Critical errors that need immediate attention
-    | 'none';    // No logging
+    | 'critical' // Critical errors requiring immediate attention (e.g. system failures, security issues)
+    | 'error'    // Significant errors that impact functionality but aren't critical
+    | 'none';    // Logging disabled
 
 
 // Explicitly export MessageType
@@ -16,7 +13,8 @@ export type MessageType =
     | 'loading'
     | 'reference'
     | 'response'
-    | 'log';      // Specific type for log messages
+    | 'log'       // Critical system events and errors
+    | 'alert';    // Time-sensitive notifications requiring attention
 
 export interface Message {
     id: string;
@@ -26,11 +24,12 @@ export interface Message {
     timestamp: number;
     parentId?: string;
     logLevel?: LogLevel;
-    logCategory?: string;    // Optional category for grouping logs
-    logPriority?: number;    // Optional priority level 1-5
+    logCategory?: 'security' | 'system' | 'performance' | 'data';  // Strict categories for critical events
+    severity?: 1 | 2;        // 1: Immediate action required, 2: Action required soon
     isHtml: boolean;
     rawHtml: string | null;
     sanitized: boolean;
+    resolved?: boolean;      // Track if critical issues were addressed
 }
 
 export interface MessageUpdate {

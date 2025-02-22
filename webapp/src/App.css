@@ -164,15 +164,25 @@
     padding: 1rem;
     animation: fadeIn 0.3s ease-in-out;
     display: flex;
+    position: fixed;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
     opacity: 0;
-    visibility: hidden;
-    position: absolute;
+    padding: 0;
+    margin: 0;
 }
 
 .tab-content.active {
     display: flex;
     opacity: 1;
-    visibility: visible;
+    position: relative;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    pointer-events: auto;
+    padding: 1rem;
     position: relative;
 }
 

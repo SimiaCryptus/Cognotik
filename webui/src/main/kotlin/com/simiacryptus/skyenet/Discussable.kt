@@ -33,7 +33,7 @@ ${
 ${
       ui.hrefLink("♻") {
         val newTask = ui.newTask(false)
-        val header = newTask.header("Retrying...")
+        val header = newTask.header("Retrying...", 4)
         val idx: Int = size
         this.set(label(idx), newTask.placeholder)
         main(idx, newTask)
@@ -198,7 +198,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
       if (heading.isNotBlank()) task.echo(heading)
       val idx = tabs.size
       val newTask = ui.newTask(false)
-      val header = newTask.header("Processing...")
+      val header = newTask.header("Processing...", 4)
       tabs[tabs.label(idx)] = newTask.placeholder
       try {
         main(idx, newTask)

@@ -3,16 +3,26 @@ import {createGlobalStyle} from 'styled-components';
 
 // Enhanced logging function with timestamp
 const logStyleChange = (component: string, property: string, value: any) => {
-    // Only log in development environment
-    if (process.env.NODE_ENV === 'development') {
-        const timestamp = new Date().toISOString();
-        // Only log significant style changes
-        if (property === 'theme' || property === 'transition' || property.startsWith('critical-')) {
-            console.log(`[${timestamp}] GlobalStyles: ${component} - ${property}:`, value);
-        }
+    // Exit if not in development environment
+    if (process.env.NODE_ENV !== 'development') {
+        return;
     }
-
+    const timestamp = new Date().toISOString();
+    const criticalEvents = [
+        'theme-transition',
+        'theme-change',
+        'font-load',
+        'style-init',
+        'accessibility-violation'
+    ];
+    // Only log critical style changes
+    if (criticalEvents.some(event => property.includes(event))) {
+        console.log(`[${timestamp}] GlobalStyles: ${component} - ${property}:`, value);
+    }
 };
+
+// Add logging for initial style load
+logStyleChange('GlobalStyles', 'style-init', 'Styles initialized');
 
 export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     /* Improved scrollbar styling */
@@ -71,6 +81,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Raleway:wght@600;700;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap');
+    ${() => { logStyleChange('Fonts', 'font-load', 'Web fonts loaded'); return ''; }}
 
     /* Override Prism.js theme colors to match current theme */
     .token.comment,
@@ -654,7 +665,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         &.theme-transition-complete:after {
             opacity: 1;
             ${() => {
-                logStyleChange('body', 'critical-theme-transition', 'completed');
+                logStyleChange('body', 'theme-transition', 'completed');
                 return '';
             }}
         }
@@ -682,12 +693,28 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         box-shadow: ${({theme}) => theme.shadows.medium};
     }
 
+
     .verbose-wrapper {
         display: none;
         transition: all 0.3s ease;
     }
-
     .verbose-wrapper.verbose-visible {
         display: inline !important;
+    }
+    /* Response header styles: improves the look and feel of response headers */
+    .response-header {
+        background-color: ${({theme}) => theme.colors.surface};
+        border-bottom: 2px solid ${({theme}) => theme.colors.primary};
+        padding: 1rem;
+        margin-bottom: 1rem;
+        font-family: var(--font-heading);
+        color: ${({theme}) => theme.colors.text.primary};
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .response-header:hover {
+        background-color: ${({theme}) => theme.colors.background};
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 `;

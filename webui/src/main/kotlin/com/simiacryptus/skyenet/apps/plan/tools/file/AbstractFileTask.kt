@@ -19,10 +19,10 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
     task_type: String,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
-    @Description("The relative file paths to be used as input for the task")
-    val input_files: List<String>? = null,
+    @Description("Additional relative file paths to be used as input for the task")
+    val related_files: List<String>? = null,
     @Description("The relative file paths to be generated as output for the task")
-    val output_files: List<String>? = null,
+    val files: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : TaskConfigBase(
     task_type = task_type,
@@ -32,7 +32,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
   )
 
   protected fun getInputFileCode(): String =
-    ((taskConfig?.input_files ?: listOf()) + (taskConfig?.output_files ?: listOf()))
+    ((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf()))
       .flatMap { pattern: String ->
         val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
         Files.walk(root).asSequence()

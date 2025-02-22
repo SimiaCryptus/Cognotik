@@ -13,9 +13,10 @@ class ChatSocket(
 
   override fun onWebSocketConnect(session: Session) {
     super.onWebSocketConnect(session)
-    //log.debug("{} - Socket connected: {}", session, session.remote)
     sessionState.addSocket(this, session)
-    sessionState.getReplay().forEach {
+    // Extract lastMessageTime from query parameters
+    val lastMessageTime = session.upgradeRequest.parameterMap["lastMessageTime"]?.firstOrNull()?.toLongOrNull() ?: 0L
+    sessionState.getReplay(lastMessageTime).forEach {
       try {
         remote.sendString(it)
       } catch (e: Exception) {
@@ -37,5 +38,3 @@ class ChatSocket(
 
   companion object
 }
-
-

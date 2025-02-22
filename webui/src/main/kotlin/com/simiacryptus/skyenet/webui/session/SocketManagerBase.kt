@@ -28,6 +28,7 @@ abstract class SocketManagerBase(
   ) ?: LinkedHashMap(),
   private val applicationClass: Class<*>,
 ) : SocketManager {
+  private val messageTimestamps = HashMap<String, Long>()
   private val sockets: MutableMap<ChatSocket, org.eclipse.jetty.websocket.api.Session> = ConcurrentHashMap()
   private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
   private val messageVersions = HashMap<String, AtomicInteger>()
@@ -169,11 +170,11 @@ abstract class SocketManagerBase(
     }
   }
 
-  final override fun getReplay(): List<String> {
+  final override fun getReplay(since: Long): List<String> {
     log.debug("Getting replay messages")
-    return messageStates.entries.map {
-      "${it.key},${messageVersions.computeIfAbsent(it.key) { AtomicInteger(1) }.get()},${it.value}"
-    }
+    return messageStates.entries
+      .filter { messageTimestamps[it.key] ?: 0L > since }
+      .map { "${it.key},${messageVersions.computeIfAbsent(it.key) { AtomicInteger(1) }.get()},${it.value}" }
   }
 
   private fun setMessage(key: String, value: String): Int {
@@ -185,6 +186,7 @@ abstract class SocketManagerBase(
     }
     dataStorage?.updateMessage(owner, session, key, value)
     messageStates.put(key, value)
+    messageTimestamps[key] = System.currentTimeMillis()
     val incrementAndGet = synchronized(messageVersions)
     { messageVersions.getOrPut(key) { AtomicInteger(0) } }.incrementAndGet()
 //    log.debug("Setting message - Key: {}, v{}, Value: {} bytes", key, incrementAndGet, value.length)

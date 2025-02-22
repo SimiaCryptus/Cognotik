@@ -51,7 +51,7 @@ const ModalContent = styled.div`
         }
     }
 `;
-const LOG_PREFIX = '[Modal]';
+const LOG_PREFIX = '[UI:Modal]';
 
 
 export const Modal: React.FC = () => {
@@ -59,10 +59,17 @@ export const Modal: React.FC = () => {
     const {modalOpen, modalType, modalContent} = useSelector((state: RootState) => state.ui);
 
     useEffect(() => {
+        // Only log state changes
+        const logMessage = modalOpen 
+            ? `Opening modal - Type: ${modalType}, Content length: ${modalContent?.length || 0}`
+            : `Closing modal - Type: ${modalType}`;
+            
         if (modalOpen) {
-            console.log(`${LOG_PREFIX} Opening modal of type: ${modalType}`);
+            console.info(`${LOG_PREFIX} ${logMessage}`);
+        } else {
+            console.debug(`${LOG_PREFIX} ${logMessage}`);
         }
-    }, [modalOpen, modalType, modalContent]);
+    }, [modalOpen, modalType]);
 
     if (!modalOpen) {
         return null;

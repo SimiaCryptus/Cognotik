@@ -1,5 +1,11 @@
 import {ThemeName} from './theme';
 import {ConsoleStyle} from "../types";
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
+export interface LogFilter {
+    include?: string[];
+    exclude?: string[];
+}
+
 
 export interface WebSocketConfig {
     url: string;
@@ -14,7 +20,8 @@ export interface ConsoleConfig {
     showTimestamp: boolean;
     showLevel: boolean;
     showSource: boolean;
-    logLevel: 'debug' | 'info' | 'warn' | 'error';
+    logLevel: LogLevel;
+    filter?: LogFilter;
     styles: {
         debug: ConsoleStyle;
         info: ConsoleStyle;
@@ -26,8 +33,10 @@ export interface ConsoleConfig {
 export interface LoggingConfig {
     enabled: boolean;
     maxEntries: number;
-    minLogLevel: 'debug' | 'info' | 'warn' | 'error';
+    minLogLevel: LogLevel;
     persistLogs: boolean;
+    criticalEventsOnly?: boolean;
+    filter?: LogFilter;
     console: ConsoleConfig;
 }
 

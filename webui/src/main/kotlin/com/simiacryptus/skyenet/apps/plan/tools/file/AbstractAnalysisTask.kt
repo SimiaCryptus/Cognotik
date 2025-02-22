@@ -20,7 +20,7 @@ abstract class AbstractAnalysisTask<T : AbstractFileTask.FileTaskConfigBase>(
 
   protected fun validateConfig() {
     requireNotNull(taskConfig) { "Task configuration is required" }
-    require(!((taskConfig.input_files ?: emptyList()) + (taskConfig.output_files ?: emptyList())).isEmpty()) {
+    require(!((taskConfig.related_files ?: emptyList()) + (taskConfig.files ?: emptyList())).isEmpty()) {
       "At least one input or output file must be specified"
     }
   }

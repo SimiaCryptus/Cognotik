@@ -195,7 +195,7 @@ open class MetaAgentAgent(
     val task = ui.newTask()
     task.add("Building Final Code")
     try {
-      task.header("Final Code")
+      task.header("Final Code", 2)
 
       val imports = (actImpls.values + flowImpl.values + listOf(mainImpl)).flatMap { it.imports() }.toSortedSet()
         .joinToString("\n")
@@ -389,7 +389,7 @@ open class MetaAgentAgent(
   ): String {
     val task = ui.newTask()
     try {
-      task.header("Main Function")
+      task.header("Main Function", 2)
       val codeRequest = CodingActor.CodeRequest(
         messages = listOf(
           userMessage to Role.user,
@@ -405,7 +405,7 @@ open class MetaAgentAgent(
       val mainFunction = execWrap { flowStepDesigner.answer(codeRequest, api = api).code }
       task.verbose(
         renderMarkdown(
-          "```kotlin\n$mainFunction\n```", ui = ui
+          "```kotlin\n$mainFunction\n```", ui = ui, tabs = false
         ), tag = "div"
       )
       task.complete()
@@ -441,7 +441,7 @@ open class MetaAgentAgent(
   ): Pair<String, String> {
     val api = (api as ChatClient).getChildClient(task)
     //language=HTML
-    task.header("Actor: ${actorDesign.name}")
+    task.header("Actor: ${actorDesign.name}", 2)
     val type = actorDesign.type
     val codeRequest = CodingActor.CodeRequest(
       messages = listOf(
@@ -527,7 +527,7 @@ open class MetaAgentAgent(
       val task = ui.newTask()
       try {
         val api = (api as ChatClient).getChildClient(task)
-        task.header("Logic Flow: ${logicFlowItem.name}")
+        task.header("Logic Flow: ${logicFlowItem.name}", 2)
         var code: String? = null
         val onComplete = java.util.concurrent.Semaphore(0)
         Retryable(ui, task) {

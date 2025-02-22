@@ -1,8 +1,15 @@
 // Logging utility for menu components
 const logMenuComponent = (componentName: string) => {
-    console.log(`[Menu] Loaded ${componentName}`);
+    // Only log in development mode
     if (process.env.NODE_ENV === 'development') {
-        console.debug(`[Menu] ${componentName} initialized in ${process.env.NODE_ENV} mode`);
+        console.debug(`[Menu] ${componentName} initialized`);
+    } else {
+        // In production, only log if component fails to load
+        try {
+            require(`./${componentName}`);
+        } catch (error) {
+            console.error(`[Menu] Failed to load ${componentName}:`, error);
+        }
     }
 };
 

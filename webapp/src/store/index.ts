@@ -1,28 +1,24 @@
-import {configureStore, Middleware} from '@reduxjs/toolkit';
+import { configureStore, Middleware } from '@reduxjs/toolkit';
 import configReducer from './slices/configSlice';
 import messageReducer from './slices/messageSlice';
 import uiReducer from './slices/uiSlice';
 import userReducer from './slices/userSlice';
 
-// Utility function to get formatted timestamp
-const getTimestamp = () => new Date().toISOString().split('T')[1].slice(0, -1);
+// Utility function to get formatted timestamp with milliseconds
+const getTimestamp = () => {
+    const now = new Date();
+    return `${now.toLocaleTimeString()}.${now.getMilliseconds().toString().padStart(3, '0')}`;
+};
+// Define critical action types that should always be logged
+const CRITICAL_ACTIONS = [
+    'user/login',
+    'user/logout',
+    'config/update',
+    'messages/error'
+];
 
 const logger: Middleware = (store) => (next) => (action: unknown) => {
-    const timestamp = getTimestamp();
-    const actionObj = action as any;
-    // Only log in development environment
-    if (process.env.NODE_ENV === 'development') {
-        console.group(`Redux Action @ ${timestamp}`);
-        console.log('Action:', {
-            type: actionObj.type,
-            payload: actionObj.payload
-        });
-    }
-
-    const result = next(action);
-
-    process.env.NODE_ENV === 'development' && console.groupEnd();
-    return result;
+    return next(action);
 };
 
 export const store = configureStore({
@@ -44,11 +40,9 @@ export const store = configureStore({
                     ignoredPaths: ['items.dates'],
                 },
             }).concat(logger)
-            : getDefaultMiddleware(),
+            : getDefaultMiddleware().concat(logger), // Always include logger for critical actions
 });
 
 export type RootState = ReturnType<typeof store.getState>;
-// Add development-only warning
-if (process.env.NODE_ENV === 'development') {
-    console.info('Redux Store Initialized in Development Mode');
-}
+// Log store initialization
+console.info(`Redux Store Initialized in ${process.env.NODE_ENV} Mode`);

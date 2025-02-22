@@ -49,29 +49,28 @@ open class AutoPlanChatApp(
 ) {
   override val stickyInput = true
   override val singleInput = false
-
+  
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(AutoPlanChatApp::class.java)
     private val currentUserMessages = mutableMapOf<String, AtomicReference<String?>>()
     private val runningStates = mutableMapOf<String, Boolean>()
     private val executionRecordMap = mutableMapOf<String, MutableList<ExecutionRecord>>()
     private val thinkingStatuses = mutableMapOf<String, AtomicReference<ThinkingStatus?>>()
-
+    
     @Synchronized
     private fun getState(sessionId: String): Triple<AtomicReference<String?>, Boolean, MutableList<ExecutionRecord>> {
       return Triple(
         currentUserMessages.getOrPut(sessionId) { AtomicReference(null) },
         runningStates.getOrPut(sessionId) { false },
-        executionRecordMap.getOrPut(sessionId) { mutableListOf() }
-      )
+        executionRecordMap.getOrPut(sessionId) { mutableListOf() })
     }
-
+    
     @Synchronized
     private fun setState(sessionId: String, running: Boolean) {
       runningStates[sessionId] = running
     }
   }
-
+  
   private fun logDebug(message: String, data: Any? = null) {
     if (data != null) {
       log.debug("$message: ${JsonUtil.toJson(data)}")
@@ -79,184 +78,133 @@ open class AutoPlanChatApp(
       log.debug(message)
     }
   }
-
+  
   @Description("The current thinking status of the AI assistant.")
   data class ThinkingStatus(
-    @Description("The original user prompt or request that initiated the conversation.")
-    var initialPrompt: String? = null,
-    @Description("Confidence level or certainty rating in the current overall thinking state.")
-    var confidence: Double? = null,
-    @Description("An iteration counter to add temporal context.")
-    var iteration: Int = 0,
-    @Description("The hierarchical goals structure defining both immediate and long-term objectives. Note: updated to include priorities and rigidity flags.")
-    val goals: Goals? = null,
-    @Description("The accumulated knowledge, facts, uncertainties and past reflections gathered during the conversation.")
-    val knowledge: Knowledge? = null,
-    @Description("The operational context including task history, current state, and planned actions, with monitoring for anomalous outputs.")
-    val executionContext: ExecutionContext? = null
+    @Description("The original user prompt or request that initiated the conversation.") var initialPrompt: String? = null,
+    @Description("Confidence level or certainty rating in the current overall thinking state.") var confidence: Double? = null,
+    @Description("An iteration counter to add temporal context.") var iteration: Int = 0,
+    @Description("The hierarchical goals structure defining both immediate and long-term objectives. Note: updated to include priorities and rigidity flags.") val goals: Goals? = null,
+    @Description("The accumulated knowledge, facts, uncertainties and past reflections gathered during the conversation.") val knowledge: Knowledge? = null,
+    @Description("The operational context including task history, current state, and planned actions, with monitoring for anomalous outputs.") val executionContext: ExecutionContext? = null
   )
-
-    data class ExecutionRecord(
-        val time: Date? = Date(),
-        val iteration: Int = 0,
-        val task: TaskConfigBase? = null,
-        val result: String? = null,
-        @Description("Meta-cognitive reflection about the task execution – including what went well and what could be improved.")
-        val reflections: Reflection? = null
-    )
+  
+  data class ExecutionRecord(
+    val time: Date? = Date(),
+    val iteration: Int = 0,
+    val task: TaskConfigBase? = null,
+    val result: String? = null,
+    @Description("Meta-cognitive reflection about the task execution – including what went well and what could be improved.") val reflections: Reflection? = null
+  )
+  
   data class Goals(
-      @Description("Immediate objectives that need to be accomplished in the current iteration. Each goal can indicate its rigidity and priority.")
-      val shortTerm: MutableList<Goal>? = null,
-    @Description("Overall objectives that span multiple iterations or the entire conversation.")
-      val longTerm: MutableList<Goal>? = null
+    @Description("Immediate objectives that need to be accomplished in the current iteration. Each goal can indicate its rigidity and priority.") val shortTerm: MutableList<Goal>? = null,
+    @Description("Overall objectives that span multiple iterations or the entire conversation.") val longTerm: MutableList<Goal>? = null
   )
-
-    data class Goal(
-        val objective: String,
-        @Description("Flag indicating if this goal is rigid (non-negotiable) or flexible.")
-        val isRigid: Boolean = false,
-        @Description("Priority level with lower numbers indicating a higher priority.")
-        val priority: Int = 5
-    )
-
-    data class Reflection(
-        @Description("What went well during this task execution.")
-        val positiveNotes: String,
-        @Description("What could be improved for future iterations.")
-        val improvementSuggestions: String,
-        @Description("Optional error metrics or confidence adjustment from the task.")
-        val errorMetric: Double? = null
-    )
-
-    protected open fun updateThinking(
-        api: ChatClient,
-        planSettings: PlanSettings,
-        thinkingStatus: ThinkingStatus?,
-        completedTasks: List<ExecutionRecord>,
-        session: Session,
-    ): ThinkingStatus = ParsedActor(
-        name = "UpdateQuestionsActor",
-        resultClass = ThinkingStatus::class.java,
-        exampleInstance = ThinkingStatus(
-            initialPrompt = "Create a Python script to analyze log files and generate a summary report",
-            confidence = 0.8,
-            iteration = 1,
-            goals = Goals(
-                shortTerm = mutableListOf(
-                    Goal("Understand log file format requirements", isRigid = true, priority = 1),
-                    Goal("Define report structure", priority = 2),
-                    Goal("Plan implementation approach", priority = 3)
-                ),
-                longTerm = mutableListOf(
-                    Goal("Deliver working Python script", isRigid = true, priority = 1),
-                    Goal("Ensure robust error handling", priority = 2),
-                    Goal("Provide documentation", priority = 3)
-                )
-            ),
-            knowledge = Knowledge(
-                facts = mutableListOf(
-                    "Project requires Python programming",
-                    "Output format needs to be a summary report",
-                    "Input consists of log files"
-                ),
-                hypotheses = mutableListOf(
-                    "Log files might be in different formats",
-                    "Performance optimization may be needed for large files"
-                ),
-                openQuestions = mutableListOf(
-                    "What is the specific log file format?",
-                    "Are there any performance requirements?",
-                    "What specific metrics should be included in the report?"
-                )
-            ),
-            executionContext = ExecutionContext(
-                completedTasks = mutableListOf(
-                    "Initial requirements analysis",
-                    "Project scope definition"
-                ),
-                currentTask = CurrentTask(
-                    taskId = "TASK_003",
-                    description = "Design log parsing algorithm"
-                ),
-                nextSteps = mutableListOf(
-                    "Implement log file reader",
-                    "Create report generator",
-                    "Add error handling",
-                    "Invoke reflect task if needed"
-                )
-            )
-        ),
-        prompt = """
+  
+  data class Goal(
+    val objective: String,
+    @Description("Flag indicating if this goal is rigid (non-negotiable) or flexible.") val isRigid: Boolean = false,
+    @Description("Priority level with lower numbers indicating a higher priority.") val priority: Int = 5
+  )
+  
+  data class Reflection(
+    @Description("What went well during this task execution.") val positiveNotes: String,
+    @Description("What could be improved for future iterations.") val improvementSuggestions: String,
+    @Description("Optional error metrics or confidence adjustment from the task.") val errorMetric: Double? = null
+  )
+  
+  protected open fun updateThinking(
+    api: ChatClient,
+    planSettings: PlanSettings,
+    thinkingStatus: ThinkingStatus?,
+    completedTasks: List<ExecutionRecord>,
+    session: Session,
+  ): ThinkingStatus = ParsedActor(
+    name = "UpdateQuestionsActor",
+    resultClass = ThinkingStatus::class.java,
+    exampleInstance = ThinkingStatus(
+      initialPrompt = "Create a Python script to analyze log files and generate a summary report", confidence = 0.8, iteration = 1, goals = Goals(
+        shortTerm = mutableListOf(
+          Goal("Understand log file format requirements", isRigid = true, priority = 1),
+          Goal("Define report structure", priority = 2),
+          Goal("Plan implementation approach", priority = 3)
+        ), longTerm = mutableListOf(
+          Goal("Deliver working Python script", isRigid = true, priority = 1),
+          Goal("Ensure robust error handling", priority = 2),
+          Goal("Provide documentation", priority = 3)
+        )
+      ), knowledge = Knowledge(
+        facts = mutableListOf(
+          "Project requires Python programming", "Output format needs to be a summary report", "Input consists of log files"
+        ), hypotheses = mutableListOf(
+          "Log files might be in different formats", "Performance optimization may be needed for large files"
+        ), openQuestions = mutableListOf(
+          "What is the specific log file format?", "Are there any performance requirements?", "What specific metrics should be included in the report?"
+        )
+      ), executionContext = ExecutionContext(
+        completedTasks = mutableListOf(
+          "Initial requirements analysis", "Project scope definition"
+        ), currentTask = CurrentTask(
+          taskId = "TASK_003", description = "Design log parsing algorithm"
+        ), nextSteps = mutableListOf(
+          "Implement log file reader", "Create report generator", "Add error handling", "Invoke reflect task if needed"
+        )
+      )
+    ),
+    prompt = """
         Given the current thinking status, the last completed task, its result, and any repeating error signals,
         update the open questions and next steps to guide the planning process.
         Reflect on what went well and what could be improved.
         Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
         If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
-        model = planSettings.defaultModel,
-        parsingModel = planSettings.parsingModel,
-        temperature = planSettings.temperature,
-        describer = planSettings.describer()
-    ).answer(
-        listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}") + contextData() +
-                completedTasks.flatMap { record ->
-                    val task: TaskConfigBase? = record.task
-                    listOf(
-                        "Completed task: ${task?.task_description}",
-                        "Task result: ${record.result}",
-                        record.reflections?.let { "Reflection: Positive: ${it.positiveNotes}, Improvements: ${it.improvementSuggestions}" }
-                            ?: ""
-                    )
-                } + (currentUserMessages.get(session.sessionId)?.let { listOf("User message: $it") } ?: listOf()),
-        api
-    ).obj.apply {
-        currentUserMessages.get(session.sessionId)?.set(null)
-        knowledge?.facts?.apply {
-            this.addAll(completedTasks.mapIndexed { index, (task, result, _) ->
-                "Task ${(executionContext?.completedTasks?.size ?: 0) + index + 1} Result: $result"
-            })
-        }
+    model = planSettings.defaultModel,
+    parsingModel = planSettings.parsingModel,
+    temperature = planSettings.temperature,
+    describer = planSettings.describer()
+  ).answer(listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}") + contextData() + completedTasks.flatMap { record ->
+    val task: TaskConfigBase? = record.task
+    listOf(
+      "Completed task: ${task?.task_description}",
+      "Task result: ${record.result}",
+      record.reflections?.let { "Reflection: Positive: ${it.positiveNotes}, Improvements: ${it.improvementSuggestions}" } ?: "")
+  } + (currentUserMessages.get(session.sessionId)?.let { listOf("User message: $it") } ?: listOf()), api).obj.apply {
+    currentUserMessages.get(session.sessionId)?.set(null)
+    knowledge?.facts?.apply {
+      this.addAll(completedTasks.mapIndexed { index, (task, result, _) ->
+        "Task ${(executionContext?.completedTasks?.size ?: 0) + index + 1} Result: $result"
+      })
     }
+  }
+  
   @Description("The knowledge base of the AI assistant.")
   data class Knowledge(
-    @Description("Verified information and concrete data gathered from task results and user input.")
-    val facts: MutableList<Any>? = null,
-    @Description("Tentative conclusions and working assumptions that need verification.")
-    val hypotheses: MutableList<Any>? = null,
-    @Description("Unresolved questions and areas requiring further investigation or clarification.")
-    val openQuestions: MutableList<Any>? = null
+    @Description("Verified information and concrete data gathered from task results and user input.") val facts: MutableList<Any>? = null,
+    @Description("Tentative conclusions and working assumptions that need verification.") val hypotheses: MutableList<Any>? = null,
+    @Description("Unresolved questions and areas requiring further investigation or clarification.") val openQuestions: MutableList<Any>? = null
   )
-
+  
   @Description("The execution context of the AI assistant.")
   data class ExecutionContext(
-    @Description("History of successfully executed tasks and their outcomes.")
-    val completedTasks: MutableList<Any>? = null,
-    @Description("Details of the task currently in progress, if any.")
-    val currentTask: CurrentTask? = null,
-    @Description("Planned future actions and their expected outcomes.")
-    val nextSteps: MutableList<Any>? = null
+    @Description("History of successfully executed tasks and their outcomes.") val completedTasks: MutableList<Any>? = null,
+    @Description("Details of the task currently in progress, if any.") val currentTask: CurrentTask? = null,
+    @Description("Planned future actions and their expected outcomes.") val nextSteps: MutableList<Any>? = null
   )
-
+  
   @Description("The current task being executed.")
   data class CurrentTask(
-    @Description("Unique identifier for tracking and referencing the task.")
-    val taskId: String? = null,
-    @Description("Detailed description of the task's objectives and requirements.")
-    val description: String? = null
+    @Description("Unique identifier for tracking and referencing the task.") val taskId: String? = null,
+    @Description("Detailed description of the task's objectives and requirements.") val description: String? = null
   )
-
-
-
+  
+  
   data class Tasks(
     val tasks: MutableList<TaskConfigBase>? = null
   )
-
+  
   override fun userMessage(
-    session: Session,
-    user: User?,
-    userMessage: String,
-    ui: ApplicationInterface,
-    api: API
+    session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API
   ) {
     try {
       logDebug("Received user message", userMessage)
@@ -276,41 +224,34 @@ open class AutoPlanChatApp(
       ui.newTask().add(renderMarkdown("An error occurred while processing your message: ${e.message}", ui = ui))
     }
   }
-
+  
   protected open fun startAutoPlanChat(
-    session: Session,
-    user: User?,
-    userMessage: String,
-    ui: ApplicationInterface,
-    api: API
+    session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API
   ) {
     logDebug("Starting auto plan chat with initial message", userMessage)
     val thinkingStatus = thinkingStatuses.computeIfAbsent(session.sessionId) { AtomicReference<ThinkingStatus?>(null) }
     val task = ui.newTask(true)
     val (currentUserMessage, _, executionRecords) = getState(session.sessionId)
-      val api = (api as ChatClient).getChildClient(task)
-    val tabbedDisplay = TabbedDisplay(task)
-    val executor = ui.socketManager!!.pool
+    val api = (api as ChatClient).getChildClient(task)
+    task.echo(userMessage.renderMarkdown())
+    
     var continueLoop = true
+    lateinit var stopLink: StringBuilder
+    val executor = ui.socketManager!!.pool
+    stopLink = task.add(ui.hrefLink("Stop") {
+      logDebug("Stop button clicked - terminating execution")
+      continueLoop = false
+      executor.shutdown()
+      stopLink.set("Stopped")
+      task.complete()
+    })!!
+    
+    val tabbedDisplay = TabbedDisplay(task)
     executor.execute {
       try {
         logDebug("Starting main execution loop")
-        ui.newTask(false).let { task ->
-          tabbedDisplay["Controls"] = task.placeholder
-          lateinit var stopLink: StringBuilder
-          stopLink = task.add(ui.hrefLink("Stop") {
-            logDebug("Stop button clicked - terminating execution")
-            continueLoop = false
-            executor.shutdown()
-            stopLink.set("Stopped")
-            task.complete()
-          })!!
-        }
         tabbedDisplay.update()
         task.complete()
-        val initialPromptTask = ui.newTask(false)
-        initialPromptTask.add(renderMarkdown("Starting Auto Plan Chat for prompt: $userMessage"))
-        tabbedDisplay["Initial Prompt"] = initialPromptTask.placeholder
         val planSettings = getSettings(session, user, PlanSettings::class.java) ?: planSettings.copy(allowBlocking = false)
         logDebug("Initialized plan settings", planSettings)
         api.budget = planSettings.budget
@@ -320,29 +261,27 @@ open class AutoPlanChatApp(
           dataStorage = dataStorage,
           ui = ui,
           root = planSettings.workingDir?.let { File(it).toPath() } ?: dataStorage.getDataDir(user, session).toPath(),
-          planSettings = planSettings
-        )
+          planSettings = planSettings)
         logDebug("Created plan coordinator")
         val initialStatus = initThinking(planSettings, userMessage, api)
         logDebug("Initialized thinking status", initialStatus)
         initialStatus.initialPrompt = userMessage
         thinkingStatus.set(initialStatus)
-        initialPromptTask.complete(renderMarkdown("Initial Thinking Status:\n${formatThinkingStatus(thinkingStatus.get()!!)}"))
-
+        
         var iteration = 0
         while (iteration++ < maxIterations && continueLoop) {
           logDebug("Starting iteration $iteration")
           task.complete()
           val task = ui.newTask(false).apply { tabbedDisplay["Iteration $iteration"] = placeholder }
-            val api = api.getChildClient(task)
+          val api = api.getChildClient(task)
           val tabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
           ui.newTask(false).apply {
             tabbedDisplay["Inputs"] = placeholder
-            header("Project Info")
+            header("Project Info", 1)
             contextData().forEach { add(renderMarkdown(it)) }
-            header("Evaluation Records")
+            header("Evaluation Records", 1)
             formatEvalRecords(session = session).forEach { add(renderMarkdown(it)) }
-            header("Current Thinking Status")
+            header("Current Thinking Status", 1)
             formatThinkingStatus(thinkingStatus.get()!!).let { add(renderMarkdown(it)) }
           }
           val nextTask = try {
@@ -359,9 +298,9 @@ open class AutoPlanChatApp(
             break
           }
           logDebug("Retrieved next tasks", nextTask)
-
+          
           val taskResults = mutableListOf<Pair<TaskConfigBase, Future<String>>>()
-            for ((index, currentTask: TaskConfigBase) in nextTask.withIndex()) {
+          for ((index, currentTask: TaskConfigBase) in nextTask.withIndex()) {
             val currentTaskId = "task_${index + 1}"
             logDebug("Executing task $currentTaskId", currentTask)
             val taskExecutionTask = ui.newTask(false)
@@ -375,7 +314,7 @@ open class AutoPlanChatApp(
             tabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
             val future = executor.submit<String> {
               try {
-                runTask(api, api2, task, coordinator, currentTask, currentTaskId, userMessage, taskExecutionTask, thinkingStatus.get(), session)
+                runTask(api, api2, coordinator, currentTask, currentTaskId, userMessage, taskExecutionTask, thinkingStatus.get(), session)
               } catch (e: Exception) {
                 taskExecutionTask.error(ui, e)
                 log.error("Error executing task", e)
@@ -388,13 +327,11 @@ open class AutoPlanChatApp(
             val result = future.get()
             logDebug("Task completed", mapOf("task" to task, "result" to result))
             ExecutionRecord(
-              time = Date(),
-              task = task,
-              result = result
+              time = Date(), task = task, result = result
             )
           }
           executionRecords.addAll(completedTasks)
-
+          
           val thinkingStatusTask = ui.newTask(false).apply { tabbedDisplay["Thinking Status"] = placeholder }
           logDebug("Updating thinking status")
           thinkingStatus.set(
@@ -422,37 +359,33 @@ open class AutoPlanChatApp(
         task.complete()
       }
     }
-
+    
   }
-
+  
   protected open fun runTask(
     api: ChatClient,
     api2: OpenAIClient,
-    task: SessionTask,
     coordinator: PlanCoordinator,
     currentTask: TaskConfigBase,
     currentTaskId: String,
     userMessage: String,
-    taskExecutionTask: SessionTask,
+    task: SessionTask,
     thinkingStatus: ThinkingStatus?,
     session: Session,
   ): String {
-      val api = api.getChildClient(task)
+    val api = api.getChildClient(task)
     val taskImpl = TaskType.getImpl(coordinator.planSettings, currentTask)
     val result = StringBuilder()
     taskImpl.run(
       agent = coordinator.copy(
         planSettings = coordinator.planSettings.copy(
-          taskSettings = coordinator.planSettings.taskSettings.toList().toTypedArray().toMap().toMutableMap().apply {
-            this[TaskType.TaskPlanning.name] = TaskSettingsBase(task_type = TaskType.TaskPlanning.name, enabled = false, model = null)
-          }
-        )
-      ),
+        taskSettings = coordinator.planSettings.taskSettings.toList().toTypedArray().toMap().toMutableMap().apply {
+          this[TaskType.TaskPlanning.name] = TaskSettingsBase(task_type = TaskType.TaskPlanning.name, enabled = false, model = null)
+        })),
       messages = listOf(
-        userMessage,
-        "Current thinking status:\n${formatThinkingStatus(thinkingStatus!!)}"
+        userMessage, "Current thinking status:\n${formatThinkingStatus(thinkingStatus!!)}"
       ) + formatEvalRecords(session = session),
-      task = taskExecutionTask,
+      task = task,
       api = api,
       resultFn = { result.append(it) },
       api2 = api2,
@@ -460,7 +393,7 @@ open class AutoPlanChatApp(
     )
     return result.toString()
   }
-
+  
   protected open fun getNextTask(
     api: ChatClient,
     planSettings: PlanSettings,
@@ -484,10 +417,11 @@ open class AutoPlanChatApp(
         append("Given the following input, choose up to ")
         append(maxTasksPerIteration)
         append("tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
+        append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
         append("Available task types:\n")
         append(TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
-            "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent().indent("  ")}"
-          })
+          "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent().indent("  ")}"
+        })
         append("\nChoose the most suitable task types and provide details of how they should be executed.")
       },
       model = coordinator.planSettings.defaultModel,
@@ -498,15 +432,13 @@ open class AutoPlanChatApp(
         "${taskType.name}:\n  ${describer1.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")}".trim()
       })
     ).answer(
-      listOf(userMessage) + contextData() +
-          listOf(
-            """
+      listOf(userMessage) + contextData() + listOf(
+        """
                 Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}
                 Please choose the next single task to execute based on the current status.
                 If there are no tasks to execute, return {}.
             """.trimIndent()
-          )
-          + formatEvalRecords(session = session), api
+      ) + formatEvalRecords(session = session), api
     ).obj.tasks?.map { task ->
       task to (if (task.task_type == null) {
         null
@@ -524,26 +456,19 @@ open class AutoPlanChatApp(
       return tasks.mapNotNull { it.second }.take(maxTasksPerIteration)
     }
   }
-
+  
   protected open fun initThinking(
-    planSettings: PlanSettings,
-    userMessage: String,
-    api: ChatClient
+    planSettings: PlanSettings, userMessage: String, api: ChatClient
   ): ThinkingStatus {
     val initialStatus = ParsedActor(
       name = "ThinkingStatusInitializer",
       resultClass = ThinkingStatus::class.java,
       exampleInstance = ThinkingStatus(
-        initialPrompt = "Example prompt",
-        goals = Goals(
-            shortTerm = mutableListOf(Goal("Understand the user's request")),
-            longTerm = mutableListOf(Goal("Complete the user's task"))
-        ),
-        knowledge = Knowledge(
-          facts = mutableListOf("Initial Context: User's request received"),
-          openQuestions = mutableListOf("What is the first task?")
-        ),
-        executionContext = ExecutionContext(
+        initialPrompt = "Example prompt", goals = Goals(
+          shortTerm = mutableListOf(Goal("Understand the user's request")), longTerm = mutableListOf(Goal("Complete the user's task"))
+        ), knowledge = Knowledge(
+          facts = mutableListOf("Initial Context: User's request received"), openQuestions = mutableListOf("What is the first task?")
+        ), executionContext = ExecutionContext(
           nextSteps = mutableListOf("Analyze the initial prompt", "Identify key objectives"),
         )
       ),
@@ -574,7 +499,7 @@ open class AutoPlanChatApp(
     ).answer(listOf(userMessage) + contextData(), api).obj
     return initialStatus
   }
-
+  
   protected open fun formatEvalRecords(maxTotalLength: Int = maxTaskHistoryChars, session: Session): List<String> {
     var currentLength = 0
     val formattedRecords = mutableListOf<String>()
@@ -611,13 +536,13 @@ ${
     }
     return formattedRecords
   }
-
+  
   protected open fun formatThinkingStatus(thinkingStatus: ThinkingStatus) = """
 ```json
 ${JsonUtil.toJson(thinkingStatus)}
 ```
 """
-
-
+  
+  
   protected open fun contextData(): List<String> = emptyList()
 }

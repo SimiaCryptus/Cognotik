@@ -22,8 +22,8 @@ class CodeReviewTask(
     task_type = TaskType.CodeReview.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
-    input_files = input_files,
-    output_files = output_files,
+    related_files = input_files,
+    files = output_files,
     state = state
   )
 
@@ -42,7 +42,7 @@ class CodeReviewTask(
     """.trimIndent()
 
   override fun getAnalysisInstruction(): String {
-    val filesToReview = taskConfig?.input_files?.joinToString(", ") ?: "all provided files"
+    val filesToReview = taskConfig?.related_files?.joinToString(", ") ?: "all provided files"
     val focusAreas = taskConfig?.focusAreas?.joinToString(", ")
     return "Review the following code files: $filesToReview" +
         if (focusAreas != null) ". Focus on these areas: $focusAreas" else ""

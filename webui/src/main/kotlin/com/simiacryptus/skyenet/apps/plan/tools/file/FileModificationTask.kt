@@ -35,8 +35,8 @@ class FileModificationTask(
     task_type = TaskType.FileModification.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
-    input_files = input_files,
-    output_files = output_files,
+    related_files = input_files,
+    files = output_files,
     state = state
   )
   private fun getGitDiff(filePath: String): String? {
@@ -59,7 +59,7 @@ class FileModificationTask(
   private fun getInputFileWithDiff(): String {
     if (!taskConfig?.includeGitDiff!!) return getInputFileCode()
     val fileContent = getInputFileCode()
-    val gitDiffs = (taskConfig?.input_files ?: listOf())
+    val gitDiffs = (taskConfig?.related_files ?: listOf())
       .mapNotNull { file -> 
         getGitDiff(file)?.let { diff -> 
           "Git diff for $file:\n$diff"
@@ -152,12 +152,12 @@ class FileModificationTask(
     api2: OpenAIClient,
     planSettings: PlanSettings
   ) {
-    val defaultFile = if (((taskConfig?.input_files ?: listOf()) + (taskConfig?.output_files ?: listOf())).isEmpty()) {
+    val defaultFile = if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).isEmpty()) {
       task.complete("CONFIGURATION ERROR: No input files specified")
       resultFn("CONFIGURATION ERROR: No input files specified")
       return
-    } else if (((taskConfig?.input_files ?: listOf()) + (taskConfig?.output_files ?: listOf())).distinct().size == 1) {
-      ((taskConfig?.input_files ?: listOf()) + (taskConfig?.output_files ?: listOf())).first()
+    } else if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).distinct().size == 1) {
+      ((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).first()
     } else {
       null
     }

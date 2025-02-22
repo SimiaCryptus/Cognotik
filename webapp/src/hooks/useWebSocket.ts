@@ -3,7 +3,7 @@ import {useDispatch} from 'react-redux';
 import {addMessage} from '../store/slices/messageSlice';
 import WebSocketService from '../services/websocket';
 import {debounce} from '../utils/tabHandling';
-import {Message} from "../types/messages";
+import {Message, MessageType} from "../types/messages";
 
 export const useWebSocket = (sessionId: string) => {
     const RECONNECT_MAX_DELAY = 30000;
@@ -58,16 +58,18 @@ export const useWebSocket = (sessionId: string) => {
         };
 
         if (!sessionId) {
-            console.warn('[WebSocket] No sessionId provided, skipping connection');
+            console.error('[WebSocket] Critical: No sessionId provided, connection aborted');
             return;
         }
 
+        let lastMessageTime = 0;
         const handleMessage = (message: Message) => {
             // Ensure message has required fields
-            if (!message.id || !message.version) {
-                console.warn('[WebSocket] Received message missing required fields:', message);
+        if (!message?.id || !message?.version) {
                 return;
             }
+            // Store the timestamp of the last received message
+            lastMessageTime = message.timestamp || Date.now();
             dispatch(addMessage(message));
         };
 
@@ -77,15 +79,24 @@ export const useWebSocket = (sessionId: string) => {
                 setError(null);
                 setIsReconnecting(false);
                 connectionAttemptRef.current = 0;
+                console.log(`[WebSocket] Connected successfully at ${new Date().toISOString()}`);
             }
         };
+
         const handleError = (err: Error) => {
-            console.error('[WebSocket] Connection error:', err);
             if (isCleanedUp) return;
 
             setError(err);
             if (connectionStatus.current.attempts < MAX_RECONNECT_ATTEMPTS) {
+                console.error(
+                    `[WebSocket] Connection error (attempt ${connectionStatus.current.attempts}/${MAX_RECONNECT_ATTEMPTS}):`,
+                    err.message
+                );
                 setTimeout(attemptConnection, getReconnectDelay());
+            } else {
+                console.error(
+                    `[WebSocket] Critical: Max reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached at ${new Date().toISOString()}`
+                );
             }
             setIsReconnecting(true);
         };
@@ -94,12 +105,13 @@ export const useWebSocket = (sessionId: string) => {
         WebSocketService.addConnectionHandler(handleConnectionChange);
         WebSocketService.addErrorHandler(handleError);
         WebSocketService.on('reconnecting', handleReconnecting);
+        // Initiate WebSocket connection
         WebSocketService.connect(sessionId);
 
         return () => {
             isCleanedUp = true;
             clearTimeout(connectionTimeout);
-            console.log('[WebSocket] Cleaning up WebSocket connection and handlers');
+            console.log(`[WebSocket] Disconnecting at ${new Date().toISOString()}`);
             WebSocketService.removeMessageHandler(handleMessage);
             WebSocketService.removeConnectionHandler(handleConnectionChange);
             WebSocketService.removeErrorHandler(handleError);

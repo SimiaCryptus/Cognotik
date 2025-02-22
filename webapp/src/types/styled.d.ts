@@ -82,6 +82,7 @@ declare module 'styled-components' {
         logging: {
             colors: {
                 error: string;
+                critical?: string;  // Make critical optional
                 warning: string;
                 info: string;
                 debug: string;
@@ -91,13 +92,10 @@ declare module 'styled-components' {
             };
             fontSize: {
                 normal: string;
+                critical?: string;  // Make critical optional
                 large: string;
                 small: string;
                 system: string;
-            };
-            levels: {
-                default: string;
-                critical: string;
             };
             padding: {
                 message: string;
@@ -106,6 +104,7 @@ declare module 'styled-components' {
             };
             background: {
                 error: string;
+                critical?: string;  // Make critical optional
                 warning: string;
                 info: string;
                 debug: string;
@@ -120,11 +119,17 @@ declare module 'styled-components' {
             timestamp: {
                 format: string;
                 color: string;
-                showForCritical: boolean;
+                show: boolean;
+                showForCritical?: boolean;
+                criticalFormat?: string;
             };
-            display: {
-                maxLines: number;
+            display?: {
+                maxLines?: number;
+                criticalRetentionDays?: number;
+                criticalPriority?: boolean;
             };
+            criticalNotification?: boolean;
+            criticalLogLevel?: string[];
         };
     }
 }

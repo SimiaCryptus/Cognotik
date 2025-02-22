@@ -6,20 +6,22 @@ interface ErrorFallbackProps {
 
 const ErrorFallback: React.FC<ErrorFallbackProps> = ({error}) => {
     useEffect(() => {
-        // Log critical error information while avoiding sensitive data
-        console.error('Application error:', {
+        // Log structured error information with timestamp and error details
+        console.error('[Critical Error]', {
+            timestamp: new Date().toISOString(),
             message: error.message,
             name: error.name,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            componentStack: error.cause || 'No component stack available'
         });
     }, [error]);
 
     return (
-        <div role="alert">
+        <div role="alert" className="error-boundary-fallback">
             <h2>Something went wrong:</h2>
-            <pre>{error.message}</pre>
+            <pre className="error-message">{error.message}</pre>
             {process.env.NODE_ENV === 'development' && (
-                <pre style={{whiteSpace: 'pre-wrap'}}>{error.stack}</pre>
+                <pre className="error-stack" style={{whiteSpace: 'pre-wrap'}}>{error.stack}</pre>
             )}
         </div>
     );

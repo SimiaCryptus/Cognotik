@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useEffect } from 'react';
 
 export type SpinnerSize = 'small' | 'medium' | 'large';
 
@@ -20,6 +21,18 @@ const Spinner: React.FC<SpinnerProps> = ({
   className = '',
   'aria-label': ariaLabel = 'Loading...'
 }) => {
+  useEffect(() => {
+    // Log only in development environment
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`Spinner mounted with size: ${size}`);
+    }
+    return () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('Spinner unmounted');
+      }
+    };
+  }, [size]);
+
   const sizeClass = size !== 'medium' ? size : '';
   
   return (

@@ -82,11 +82,15 @@ const DEBUG = process.env.NODE_ENV === 'development';
 const log = (message: string, data?: unknown) => {
     if (DEBUG) {
         if (data) {
-            console.log(`[InputArea] ${message}`, data);
+            console.debug(`[InputArea] ${message}`, data);
         } else {
-            console.log(`[InputArea] ${message}`);
+            console.debug(`[InputArea] ${message}`);
         }
     }
+};
+// Critical error logging
+const logError = (message: string, error?: unknown) => {
+    console.error(`[InputArea] ${message}`, error);
 };
 
 interface InputContainerProps {
@@ -230,7 +234,7 @@ interface InputAreaProps {
 }
 
 const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
-    log('Initializing component');
+    // Remove non-critical initialization log
     const [message, setMessage] = useState('');
     // Debounce preview mode toggling to avoid rapid switching that can trigger flicker
     const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -243,12 +247,15 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
     const messages = useSelector((state: RootState) => state.messages.messages);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const handleToggleCollapse = useCallback(() => {
-        setIsCollapsed(prev => !prev);
-        if (isCollapsed) {
-            // Focus textarea when expanding
+    setIsCollapsed(prev => {
+        const newVal = !prev;
+        // If the input area is being expanded (i.e. newVal is false), focus the textarea.
+        if (!newVal) {
             setTimeout(() => textAreaRef.current?.focus(), 0);
         }
-    }, [isCollapsed]);
+        return newVal;
+    });
+    }, []);
     const textAreaRef = React.useRef<HTMLTextAreaElement>(null);
     const shouldHideInput = config.singleInput && messages.length > 0;
     // Add syntax highlighting effect
@@ -288,7 +295,6 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
         e.preventDefault();
         if (isSubmitting) return;
 
-        log('Submit attempt');
         if (message.trim()) {
             setIsSubmitting(true);
             log('Sending message', {
@@ -298,19 +304,16 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
             Promise.resolve(onSendMessage(message)).finally(() => {
                 setMessage('');
                 setIsSubmitting(false);
-                log('Message sent and form reset');
+            }).catch(error => {
+                logError('Failed to send message', error);
             });
         } else {
-            log('Empty message, not sending');
+            log('Empty message submission prevented');
         }
     }, [message, onSendMessage]);
 
     const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newMessage = e.target.value;
-        log('Message changed', {
-            length: newMessage.length,
-            isEmpty: newMessage.trim().length === 0
-        });
         setMessage(newMessage);
     }, []);
 
@@ -322,28 +325,51 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
     }, [handleSubmit]);
 
     React.useEffect(() => {
-        log('Component mounted', {configState: config});
-        // Focus the textarea when component mounts
-        textAreaRef.current?.focus();
+        try {
+            textAreaRef.current?.focus();
+        } catch (error) {
+            logError('Failed to focus input on mount', error);
+        }
         return () => {
-            log('Component unmounting');
+            // Remove non-critical unmounting log
         };
     }, [config]);
 
 
+    if (isCollapsed) {
+        return (
+            <InputContainer 
+                $hide={shouldHideInput}
+                data-testid="input-container"
+                id="chat-input-container"
+                className="collapsed"
+            >
+                <CollapseButton
+                    onClick={handleToggleCollapse}
+                    title="Expand input area"
+                    data-testid="expand-input"
+                >
+                    <FaChevronUp />
+                </CollapseButton>
+                <CollapsedPlaceholder onClick={handleToggleCollapse}>
+                    Click to expand input
+                </CollapsedPlaceholder>
+            </InputContainer>
+        );
+    }
     return (
         <InputContainer 
             $hide={shouldHideInput}
             data-testid="input-container"
             id="chat-input-container"
-            className={isCollapsed ? 'collapsed' : 'expanded'}
+            className="expanded"
         >
             <CollapseButton
                 onClick={handleToggleCollapse}
-                title={isCollapsed ? "Expand input area" : "Collapse input area"}
-                data-testid={isCollapsed ? "expand-input" : "collapse-input"}
+                title="Collapse input area"
+                data-testid="collapse-input"
             >
-                {isCollapsed ? <FaChevronUp /> : <FaChevronDown />}
+                <FaChevronDown />
             </CollapseButton>
             <div className="input-area-content">
                 <StyledForm onSubmit={handleSubmit}>
@@ -446,36 +472,41 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
                             </div>
                         </EditorToolbar>
                         <div className="input-modes">
-                        <div className={`preview-mode ${isPreviewMode ? 'visible' : 'hidden'}`} style={{ transition: 'opacity 0.2s ease' }}>
-                                <PreviewContainer>
-                                    <ReactMarkdown 
-                                        remarkPlugins={[remarkGfm]}
-                                        components={{
-                                            code({node, className, children, ...props}) {
-                                                return <pre className={className}>
-                                                        <code {...props}>{children}</code>
-                                                    </pre>;
-                                            }
-                                        }}
-                                    >
-                                        {message}
-                                    </ReactMarkdown>
-                                </PreviewContainer>
-                            </div>
-                            <div className={`edit-mode ${isPreviewMode ? 'hidden' : 'visible'}`}>
-                                <TextArea
-                                    ref={textAreaRef}
-                                    data-testid="chat-input"
-                                    id="chat-input"
-                                    value={message}
-                                    onChange={handleMessageChange}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder="Type a message... (Markdown supported)"
-                                    rows={3}
-                                    aria-label="Message input"
-                                    disabled={isSubmitting}
-                                />
-                            </div>
+                            {isPreviewMode ? (
+                                <div style={{ display: 'block', transition: 'opacity 0.2s ease' }}>
+                                    <PreviewContainer>
+                                        <ReactMarkdown 
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                code({node, className, children, ...props}) {
+                                                    return (
+                                                        <pre className={className}>
+                                                            <code {...props}>{children}</code>
+                                                        </pre>
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            {message}
+                                        </ReactMarkdown>
+                                    </PreviewContainer>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'block', transition: 'opacity 0.2s ease' }}>
+                                    <TextArea
+                                        ref={textAreaRef}
+                                        data-testid="chat-input"
+                                        id="chat-input"
+                                        value={message}
+                                        onChange={handleMessageChange}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Type a message... (Markdown supported)"
+                                        rows={3}
+                                        aria-label="Message input"
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <SendButton
                             type="submit"

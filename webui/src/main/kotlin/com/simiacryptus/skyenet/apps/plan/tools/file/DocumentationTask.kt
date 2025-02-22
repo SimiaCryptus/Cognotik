@@ -32,8 +32,8 @@ class DocumentationTask(
     task_type = TaskType.Documentation.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
-    input_files = input_files,
-    output_files = output_files,
+    related_files = input_files,
+    files = output_files,
     state = state
   )
 
@@ -75,7 +75,7 @@ class DocumentationTask(
     api2: OpenAIClient,
     planSettings: PlanSettings
   ) {
-    if (((taskConfig?.input_files ?: listOf()) + (taskConfig?.output_files ?: listOf())).isEmpty()) {
+    if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).isEmpty()) {
       task.complete("No input or output files specified")
       return
     }
@@ -90,7 +90,7 @@ class DocumentationTask(
         messages + listOf(
           getInputFileCode(),
           "Items to document: ${itemsToDocument.joinToString(", ")}",
-          "Output files: ${taskConfig?.output_files?.joinToString(", ") ?: ""}"
+          "Output files: ${taskConfig?.files?.joinToString(", ") ?: ""}"
         ).filter { it.isNotBlank() }, api
       )
       resultFn(docResult)
@@ -108,7 +108,7 @@ class DocumentationTask(
           api = api,
           shouldAutoApply = { agent.planSettings.autoFix },
           model = planSettings.getTaskSettings(TaskType.Documentation).model ?: planSettings.defaultModel,
-          defaultFile = taskConfig?.output_files?.firstOrNull(),
+          defaultFile = taskConfig?.files?.firstOrNull(),
         )
         task.complete()
         onComplete()

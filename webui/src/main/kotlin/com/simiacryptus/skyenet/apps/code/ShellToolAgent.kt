@@ -346,7 +346,7 @@ abstract class ShellToolAgent<T : Interpreter>(
               var regenButton: StringBuilder? = null
               regenButton = task.complete(super.ui.hrefLink("♻", "href-link regen-button") {
                 regenButton?.clear()
-                val header = task.header("Regenerating...")
+                val header = task.header("Regenerating...", 4)
                 super.displayCode(task, codeRequest)
                 header?.clear()
                 error?.clear()
@@ -385,7 +385,7 @@ abstract class ShellToolAgent<T : Interpreter>(
                 var regenButton: StringBuilder? = null
                 regenButton = task.complete(super.ui.hrefLink("♻", "href-link regen-button") {
                   regenButton?.clear()
-                  val header = task.header("Regenerating...")
+                  val header = task.header("Regenerating...", 4)
                   super.displayCode(task, codeRequest)
                   header?.clear()
                   error?.clear()

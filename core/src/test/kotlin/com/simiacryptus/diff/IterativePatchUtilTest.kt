@@ -89,7 +89,9 @@ class IterativePatchUtilTest {
         val expected = """
             line1
             line3
+            // This comment should be ignored
             modifiedLine2
+            # LLMs sometimes get chatty and add stuff to patches__
         """.trimIndent()
         val result = IterativePatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
@@ -162,12 +164,14 @@ class IterativePatchUtilTest {
             line3
         """.trimIndent()
         val expected = """
-           line1
-            lineA
-            lineB
-           
-           line2
-           line3
+          line1
+          // extraneous comment
+           lineA
+           lineB
+          // llms sometimes get chatty and add stuff to patches
+          
+          line2
+          line3
         """.trimIndent()
         val result = IterativePatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
@@ -275,7 +279,7 @@ class IterativePatchUtilTest {
     
             // Similar changes for black pawns
         """.trimIndent()
-        val patch = """
+      val patch = """
          export class StandardChessModel implements GameModel {
              // ... other methods ...
         
@@ -287,8 +291,9 @@ class IterativePatchUtilTest {
              // ... other methods ...
          }
         """.trimIndent()
-        val expected = """
+      val expected = """
             export class StandardChessModel implements GameModel {
+            // ... other methods ...
                 geometry: BoardGeometry;
                 state: GameState;
                 private moveHistory: MoveHistory;
@@ -310,6 +315,7 @@ class IterativePatchUtilTest {
                 getWinner(): ChessColor | 'draw' | null {
                     return null;
                 }
+            // ... other methods ...
     
                 importState(stateString: string): GameState {
                     // Implement import state logic
@@ -323,8 +329,8 @@ class IterativePatchUtilTest {
     
             // Similar changes for black pawns
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
-        Assertions.assertEquals(normalize(expected), normalize(result))
+      val result = IterativePatchUtil.applyPatch(source, patch)
+      Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
 

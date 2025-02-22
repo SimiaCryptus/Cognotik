@@ -638,28 +638,30 @@ object IterativePatchUtil {
     private fun parsePatchLines(text: String, sourceLines: List<LineRecord>): List<LineRecord> {
         log.debug("Starting to parse patch lines")
         val patchLines = setLinks(text.lines().mapIndexed { index, line ->
+            val trimmed = line.trimStart()
             LineRecord(
                 index = index,
                 line = run {
-                    val trimmed = line.trimStart()
                     when {
+                        // If the line starts with a context marker, remove it.
+                        trimmed.startsWith("  ") -> trimmed.substring(2)
+                        // Skip diff metadata lines.
                         trimmed.startsWith("+++") || trimmed.startsWith("---") || trimmed.startsWith("@@") -> null
-                        // If one of the source lines already equals this (normalized), keep as-is
-                        sourceLines.any { patchLine ->
-                            normalizeLine(
-                                patchLine.line ?: ""
-                            ) == normalizeLine(line)
-                        } -> line
-
+                        // For explicit insertions/deletions, remove the marker.
                         trimmed.startsWith("+") -> trimmed.substring(1)
                         trimmed.startsWith("-") -> trimmed.substring(1)
-                        else -> line
+                        // Otherwise, use the trimmed line
+                        else -> trimmed
                     }
                 },
                 type = when {
-                    line.trimStart().startsWith("+") -> ADD
-                    line.trimStart().startsWith("-") -> DELETE
-                    else -> CONTEXT
+                    // Explicit markers take precedence.
+                    trimmed.startsWith("+") -> ADD
+                    trimmed.startsWith("-") -> DELETE
+                    // If the (trimmed) line appears in the source then it is context…
+                    sourceLines.any { normalizeLine(it.line ?: "") == normalizeLine(trimmed) } -> CONTEXT
+                    // …otherwise, even without a marker, treat it as an insertion.
+                    else -> ADD
                 }
             )
         }.filter { it.line != null }).toMutableList()

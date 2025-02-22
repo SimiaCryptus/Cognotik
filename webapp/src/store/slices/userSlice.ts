@@ -4,20 +4,28 @@ import {UserInfo} from '../../types';
 const initialState: UserInfo = {
     name: '',
     isAuthenticated: false,
-    preferences: {},
+    preferences: {} as Record<string, unknown>,
 };
 
 const logStateChange = (actionName: string, prevState: UserInfo, newState: UserInfo) => {
-    const changes = Object.keys(newState).reduce((acc: Record<string, { old: any, new: any }>, key) => {
-        if (JSON.stringify(prevState[key as keyof UserInfo]) !== JSON.stringify(newState[key as keyof UserInfo])) {
-            acc[key] = {
-                old: prevState[key as keyof UserInfo],
-                new: newState[key as keyof UserInfo]
-            };
+    // Only log authentication state changes and critical preference updates
+    if (actionName === 'login' || actionName === 'logout') {
+        console.log(`Auth State Change [${actionName}] ${new Date().toISOString()}:`, {
+            user: newState.name,
+            authenticated: newState.isAuthenticated
+        });
+    } else if (actionName === 'updatePreferences') {
+        // Log only if critical preferences are changed
+        const criticalPrefs = ['theme', 'notifications', 'privacy'];
+         const criticalChanges = Object.keys(newState.preferences ?? {})
+            .filter(key => criticalPrefs.includes(key))
+            .reduce((acc, key) => ({
+                ...acc, [key]: newState.preferences?.[key]
+            }), {});
+        if (Object.keys(criticalChanges).length > 0) {
+            console.log(`Critical Preferences Updated ${new Date().toISOString()}:`, criticalChanges);
         }
-        return acc;
-    }, {});
-    console.log(`User State [${actionName}] ${new Date().toISOString()}:`, changes);
+    }
 };
 
 
@@ -45,7 +53,7 @@ const userSlice = createSlice({
         },
         updatePreferences: (state: UserInfo, action: PayloadAction<Record<string, unknown>>) => {
             const prevState = {...state};
-            state.preferences = {...state.preferences, ...action.payload};
+            state.preferences = {...(state.preferences ?? {}), ...action.payload};
             logStateChange('updatePreferences', prevState, state);
         },
     },

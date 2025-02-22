@@ -38,10 +38,10 @@ const extractMessageAction = (target: HTMLElement): { messageId: string | undefi
 
 const handleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    const {messageId, action} = extractMessageAction(target);
+    const { messageId, action } = extractMessageAction(target);
     if (messageId && action) {
         if (DEBUG_LOGGING) {
-            console.debug('[MessageList] Action clicked:', {messageId, action});
+            console.debug('[MessageList] Action clicked:', { messageId, action });
         }
         e.preventDefault();
         e.stopPropagation();
