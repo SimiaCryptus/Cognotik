@@ -304,8 +304,18 @@ abstract class PatchApp(
     progressHeader: StringBuilder?
   ) {
     val tabs = TabbedDisplay(task)
-    plan.obj.errors
-      ?.filter { !settings.ignoreWarnings || !it.isWarning }
+    val errors = plan.obj.errors ?: emptyList()
+    val hasErrors = errors.any { !it.isWarning }
+    val filteredErrors = errors.filter { 
+      if (hasErrors) {
+        // If there are errors, respect ignoreWarnings setting
+        !settings.ignoreWarnings || !it.isWarning
+      } else {
+        // If there are only warnings, process them regardless of ignoreWarnings
+        true
+      }
+    }
+    filteredErrors
       ?.groupBy { it.message }
 //      ?.sortedBy { it.severity.toDouble() / it.complexity }?.takeLast(fixesPerIteration)
       ?.map { (msg, errors) ->
