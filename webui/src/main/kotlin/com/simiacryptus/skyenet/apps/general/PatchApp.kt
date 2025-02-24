@@ -39,7 +39,6 @@ abstract class PatchApp(
   val model: ChatModel,
   val parsingModel: ChatModel,
   private val promptPrefix: String = """The following command was run and produced an error:""",
-  private val fixesPerIteration: Int = 1000,
 ) : ApplicationServer(
   applicationName = "Magic Code Fixer",
   path = "/fixCmd",
@@ -197,6 +196,7 @@ abstract class PatchApp(
     @Description("Summarize output to distill details related to the error message") val details: String? = null,
     @Description("Problem severity (higher numbers indicate more fatal issues)") val severity: Int = 0,
     @Description("Problem complexity (higher numbers indicate more difficult issues)") val complexity: Int = 0,
+    @Description("Whether this is a warning rather than an error") val isWarning: Boolean = false,
     
     
     @Description("Locations in code where the error occurs") val locations: List<CodeLocation>? = null,
@@ -208,6 +208,8 @@ abstract class PatchApp(
     val autoFix: Boolean = false,
     val maxRetries: Int = 3,
     var exitCodeOption: String = "nonzero",
+    val ignoreWarnings: Boolean = true,
+  val includeGitDiffs: Boolean = false,
   ) {
     // For backwards compatibility and convenience
     var workingDirectory: File?
@@ -303,6 +305,7 @@ abstract class PatchApp(
   ) {
     val tabs = TabbedDisplay(task)
     plan.obj.errors
+      ?.filter { !settings.ignoreWarnings || !it.isWarning }
       ?.groupBy { it.message }
 //      ?.sortedBy { it.severity.toDouble() / it.complexity }?.takeLast(fixesPerIteration)
       ?.map { (msg, errors) ->
@@ -353,6 +356,7 @@ abstract class PatchApp(
           ParsedError(
             message = "Error message",
             details = "Line 123: error message\n\nThis is a detailed description of the error, mainly copied from the output",
+            isWarning = false,
             locations = listOf(
               CodeLocation(
                 file = "src/main/java/com/example/Example.java",

@@ -164,18 +164,22 @@ open class AddApplyFileDiffLinks {
           defaultFile = defaultFile,
         )
       }
+      
       val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex() // capture filename
       val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex() // capture filename
       val findAll = codeblockPattern.findAll(response).toList()
         .groupBy { block -> findHeader(block, response) ?: defaultFile }
       val findAllGreedy = codeblockGreedyPattern.findAll(response).toList()
         .groupBy { block -> findHeader(block, response) ?: defaultFile }
-      val resolvedMatches = mutableMapOf<String?, List<MatchResult>>()
+      val resolvedMatches = mutableListOf<Pair<String?, List<MatchResult>>>()
       if (findAllGreedy.values.flatten().any { it.groupValues[1] == "markdown" }) {
-        resolvedMatches.putAll(findAllGreedy)
+//        resolvedMatches.add(findAllGreedy)
+        findAllGreedy.forEach { s, matchResults -> resolvedMatches.add(s to matchResults) }
       } else {
-        resolvedMatches.putAll(findAll)
+//        resolvedMatches.add(findAll)
+        findAll.forEach { s, matchResults -> resolvedMatches.add(s to matchResults) }
       }
+      
       val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex() // capture filename
       val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
       fun getFile(root: Path, header: String): File = root.resolve(resolve(root, header)).toFile()
@@ -187,7 +191,7 @@ open class AddApplyFileDiffLinks {
           log.info("Error processing code block", e)
           false
         }
-      }.flatMap { it.value }.map { it.range to it }.toList()
+      }.flatMap { it.second }.map { it.range to it }.toList()
       val patchBlocks = resolvedMatches.filter { (header, block) ->
         try {
           getFile(root, header ?: return@filter false).exists()
@@ -195,7 +199,7 @@ open class AddApplyFileDiffLinks {
           log.info("Error processing code block", e)
           false
         }
-      }.flatMap { it.value }.map { it.range to it }.toList()
+      }.flatMap { it.second }.map { it.range to it }.toList()
       
       // Process diff blocks and add patch links
       val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, diffBlock ->

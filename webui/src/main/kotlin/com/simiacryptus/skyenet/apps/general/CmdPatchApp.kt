@@ -68,9 +68,31 @@ class CmdPatchApp(
     }
     .joinToString("\n\n") { path ->
       try {
+      val gitDiff = if (settings.includeGitDiffs) {
+        try {
+          // Use the full path relative to working directory
+          val relativePath = path.toString()
+          val process = ProcessBuilder("git", "diff", "HEAD", "--", relativePath)
+            .directory(settings.workingDirectory)
+            .start()
+          val diffOutput = process.inputStream.bufferedReader().use {
+            if (!process.waitFor(30, TimeUnit.SECONDS)) {
+              process.destroy()
+              log.warn("Git diff timed out for $path")
+              ""
+            }
+            it.readText()
+          }
+          if (diffOutput.isNotBlank()) "\nGit Diff:\n```diff\n$diffOutput\n```" else ""
+        } catch (e: Exception) {
+          log.info("Failed to get git diff for $path: ${e.message}")
+          ""
+        }
+      } else ""
+
         "# ${path}\n${tripleTilde}${path.toString().split('.').lastOrNull()}\n${
           path.toFile().findAbsolute(settings.workingDirectory, root, File(".")).readText(Charsets.UTF_8)
-        }\n${tripleTilde}"
+      }\n${tripleTilde}$gitDiff"
       } catch (e: Exception) {
         log.warn("Error reading file", e)
         "Error reading file `${path}` - ${e.message}"
@@ -112,21 +134,10 @@ class CmdPatchApp(
         task.add("Model: ${model} / ${parsingModel}")
         val process = processBuilder.start()
         task.add("Started at: ${java.time.Instant.now()}")
-        val timeDisplay = task.add("Elapsed Time: 0s")
         val cancelButton = task.add(task.hrefLink("Stop") {
           process.destroy()
         })
         val taskOutput = task.add("")
-        Thread {
-          val startTime = System.currentTimeMillis()
-          while (process.isAlive) {
-            timeDisplay?.set("Elapsed Time: ${(System.currentTimeMillis() - startTime).toDouble() / 1000}s")
-            task.update()
-            process.waitFor(5, TimeUnit.SECONDS)
-          }
-          timeDisplay?.set("Elapsed Time: ${(System.currentTimeMillis() - startTime).toDouble() / 1000}s")
-          task.update()
-        }.start()
         val buffer = StringBuilder()
         fun addOutput(taskOutput: StringBuilder?, task: SessionTask) {
           synchronized(task) {
@@ -139,8 +150,10 @@ class CmdPatchApp(
         // Extracted function to read the process stream (error or input)
         fun readStream(stream: java.io.InputStream) {
           var lastUpdate = 0L
-          stream.bufferedReader().useLines { lines ->
-            lines.forEach { line ->
+          stream.bufferedReader().use { reader ->
+            while (true) {
+              val line = reader.readLine() ?: break
+              if (line.isBlank()) continue
               buffer.append(line).append("\n")
               if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
                 addOutput(taskOutput, task)
