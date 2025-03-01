@@ -94,7 +94,7 @@ class FileValidationUtils {
         file.name.startsWith(".") -> false
         file.name.endsWith(".data") -> true
         file.length() > 1e8 -> false
-        isGitignore(file.toPath()) -> false
+        isGitignore(file.toPath()) || isLLMIgnored(file.toPath()) -> false
         file.extension.lowercase(Locale.getDefault()) in setOf(
           "jar",
           "zip",
@@ -116,7 +116,7 @@ class FileValidationUtils {
         (when {
           it.name.startsWith(".") -> arrayOf()
           it.name.endsWith(".data") -> arrayOf(it)
-          isGitignore(it.toPath()) -> arrayOf()
+          isGitignore(it.toPath()) || isLLMIgnored(it.toPath()) -> arrayOf()
           it.length() > 1e8 -> arrayOf()
           it.extension.lowercase(Locale.getDefault()) in
               setOf("jar", "zip", "class", "png", "jpg", "jpeg", "gif", "ico") -> arrayOf()
@@ -125,6 +125,56 @@ class FileValidationUtils {
           else -> arrayOf(it)
         }).toList()
       }.toTypedArray()
+    }
+    
+    fun isLLMIgnored(path: Path): Boolean {
+      // Check common directories to ignore
+      when {
+        path.name == "node_modules" -> return true
+        path.name == "target" -> return true
+        path.name == "build" -> return true
+        path.name.startsWith(".") -> return true
+      }
+      var currentDir = path.toFile().parentFile
+      currentDir ?: return false
+      while (!currentDir.resolve(".llm").exists()) { // When a '.llm' folder is found, we stop searching up
+        currentDir.resolve(".llmignore").let {
+          if (it.exists()) {
+            val llmignore = it.readText()
+            if (llmignore.split("\n").any { line ->
+                try {
+                  val trimmedLine = line.trim()
+                  if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) return@any false
+                  // Convert .llmignore pattern to regex
+                  val regexPattern = "^" + Regex.escape(trimmedLine)
+                    .replace("\\*", ".*")
+                    .replace("\\?", ".") + "$"
+                  return@any path.fileName.toString().matches(Regex(regexPattern))
+                } catch (e: Throwable) {
+                  return@any false
+                }
+              }) return true
+          }
+        }
+        currentDir = currentDir.parentFile ?: return false
+      }
+      // Check the final directory's .llmignore if present
+      currentDir.resolve(".llmignore").let {
+        if (it.exists()) {
+          val llmignore = it.readText()
+          if (llmignore.split("\n").any { line ->
+              val trimmedLine = line.trim()
+              if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) return@any false
+              val regexPattern = "^" + Regex.escape(trimmedLine)
+                .replace("\\*", ".*")
+                .replace("\\?", ".") + "$"
+              path.fileName.toString().matches(Regex(regexPattern))
+            }) {
+            return true
+          }
+        }
+      }
+      return false
     }
 
     fun isGitignore(path: Path): Boolean {

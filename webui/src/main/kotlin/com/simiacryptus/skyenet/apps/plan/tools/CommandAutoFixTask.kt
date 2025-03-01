@@ -106,8 +106,9 @@ class CommandAutoFixTask(
                 additionalInstructions = ""
               )
             ),
+            autoFix = agent.planSettings.autoFix,
             exitCodeOption = "nonzero",
-            autoFix = agent.planSettings.autoFix
+            includeLineNumbers = false,
           ),
           api = api,
           files = agent.files,

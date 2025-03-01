@@ -61,43 +61,8 @@ class CmdPatchApp(
     .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
     .map { root.toPath().relativize(it) ?: it }.toSet()
 
-  override fun codeSummary(paths: List<Path>, error: ParsedError): String = paths
-    .filter {
-      val file = settings.workingDirectory?.resolve(it.toFile())?.findAbsolute(settings.workingDirectory, root, File("."))
-      file?.exists() == true && !file.isDirectory && file.length() < (256 * 1024)
-    }
-    .joinToString("\n\n") { path ->
-      try {
-      val gitDiff = if (settings.includeGitDiffs) {
-        try {
-          // Use the full path relative to working directory
-          val relativePath = path.toString()
-          val process = ProcessBuilder("git", "diff", "HEAD", "--", relativePath)
-            .directory(settings.workingDirectory)
-            .start()
-          val diffOutput = process.inputStream.bufferedReader().use {
-            if (!process.waitFor(30, TimeUnit.SECONDS)) {
-              process.destroy()
-              log.warn("Git diff timed out for $path")
-              ""
-            }
-            it.readText()
-          }
-          if (diffOutput.isNotBlank()) "\nGit Diff:\n```diff\n$diffOutput\n```" else ""
-        } catch (e: Exception) {
-          log.info("Failed to get git diff for $path: ${e.message}")
-          ""
-        }
-      } else ""
 
-        "# ${path}\n${tripleTilde}${path.toString().split('.').lastOrNull()}\n${
-          path.toFile().findAbsolute(settings.workingDirectory, root, File(".")).readText(Charsets.UTF_8)
-      }\n${tripleTilde}$gitDiff"
-      } catch (e: Exception) {
-        log.warn("Error reading file", e)
-        "Error reading file `${path}` - ${e.message}"
-      }
-    }
+  
   private val tripleTilde = "```"
 
   override fun projectSummary(): String {

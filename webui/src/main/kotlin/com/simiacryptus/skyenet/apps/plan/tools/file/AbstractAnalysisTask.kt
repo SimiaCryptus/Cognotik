@@ -74,8 +74,9 @@ abstract class AbstractAnalysisTask<T : AbstractFileTask.FileTaskConfigBase>(
               additionalInstructions = ""
             )
           ),
+          autoFix = agent.planSettings.autoFix,
           exitCodeOption = "nonzero",
-          autoFix = agent.planSettings.autoFix
+          includeLineNumbers = false,
         ),
         api = api as ChatClient,
         model = agent.planSettings.getTaskSettings(TaskType.valueOf(taskConfig?.task_type!!)).model

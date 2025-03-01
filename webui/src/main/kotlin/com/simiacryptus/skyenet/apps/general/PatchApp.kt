@@ -31,6 +31,7 @@ import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
 abstract class PatchApp(
   override val root: File,
@@ -63,7 +64,7 @@ abstract class PatchApp(
    * treating anything after the space as a note or comment.
    */
   private fun cleanFilePath(filePath: String): String = filePath.substringBefore(" ").trim()
-
+  
   private fun renderCommandOutput(output: OutputResult): String {
     return renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")
   }
@@ -80,6 +81,7 @@ abstract class PatchApp(
   }
   
   abstract fun codeFiles(): Set<Path>
+  
   open fun codeSummary(paths: List<Path>, error: ParsedError): String {
     val a = paths.map { it.toFile().findAbsolute(settings.workingDirectory, root, File(".")) }
     val b = a.filter { it.exists() && !it.isDirectory && it.length() < (256 * 1024) }
@@ -91,24 +93,48 @@ abstract class PatchApp(
       try {
         val fileContent = path.readText()
         val lines = fileContent.lines()
-        val annotatedLines = lines.mapIndexed { index, line ->
-          val lineNum = index + 1
-          val location = errorLocations[lineNum]
+      val annotatedLines = lines.mapIndexed { lineIndex, line ->
+        val lineNumber = lineIndex + 1
+        val linePrefix = if (settings.includeLineNumbers) "$lineNumber: " else ""
+        val index = lineIndex + 1
+          val location = errorLocations[index]
           if (location != null) {
-            line + "/* Error at column ${location.column ?: "?"}: ${error.message ?: "?"} */"
+          linePrefix + line + "/* Error at column ${location.column ?: "?"}: ${error.message ?: "?"} */"
           } else {
-            line
+          linePrefix + line
           }
         }
+        val gitDiff = if (settings.includeGitDiffs) {
+          try {
+            // Use the full path relative to working directory
+            val relativePath = path.toString()
+            val process = ProcessBuilder("git", "diff", "HEAD", "--", relativePath)
+              .directory(settings.workingDirectory)
+              .start()
+            val diffOutput = process.inputStream.bufferedReader().use {
+              if (!process.waitFor(30, TimeUnit.SECONDS)) {
+                process.destroy()
+                log.warn("Git diff timed out for $path")
+                ""
+              }
+              it.readText()
+            }
+            if (diffOutput.isNotBlank()) "\nGit Diff:\n```diff\n$diffOutput\n```" else ""
+          } catch (e: Exception) {
+            log.info("Failed to get git diff for $path: ${e.message}")
+            ""
+          }
+        } else ""
         "# ${path}\n```${path.toString().split('.').lastOrNull()}\n${
           annotatedLines.joinToString("\n")
-        }\n```"
+        }\n```$gitDiff"
       } catch (e: Exception) {
         log.warn("Error reading file", e)
         "Error reading file `${path}` - ${e.message}"
       }
     }
   }
+  
   abstract fun output(
     task: SessionTask, settings: Settings, ui: ApplicationInterface, tabs: TabbedDisplay = TabbedDisplay(task)
   ): OutputResult
@@ -178,6 +204,7 @@ abstract class PatchApp(
     @Description("The search pattern to be used in file content matching") val pattern: String,
     @Description("A glob expression to filter which files to run the search against") val fileGlob: String
   )
+  
   data class CodeLocation(
     @Description("The file path") val file: String,
     @Description("The line number in the file") val line: Int? = null,
@@ -190,7 +217,7 @@ abstract class PatchApp(
     @Description("Search queries to find relevant code") val searchQueries: List<SearchQuery>? = null
   )
   
-
+  
   data class ParsedError(
     @Description("The error message") val message: String? = null,
     @Description("Summarize output to distill details related to the error message") val details: String? = null,
@@ -209,7 +236,8 @@ abstract class PatchApp(
     val maxRetries: Int = 3,
     var exitCodeOption: String = "nonzero",
     val ignoreWarnings: Boolean = true,
-  val includeGitDiffs: Boolean = false,
+    val includeGitDiffs: Boolean = false,
+    val includeLineNumbers: Boolean = false,
   ) {
     // For backwards compatibility and convenience
     var workingDirectory: File?
@@ -289,10 +317,10 @@ abstract class PatchApp(
   }
   
   fun recentErrors() = previousParsedErrorsRecords.flatMap { it.errors?.errors ?: emptySet() }.groupBy { it.message }.let { errors ->
-      ParsedErrors(errors.map { (message, errors) ->
-        errors.maxByOrNull { it.severity }!!
-      })
-    }
+    ParsedErrors(errors.map { (message, errors) ->
+      errors.maxByOrNull { it.severity }!!
+    })
+  }
   
   private fun fixAllErrors(
     task: SessionTask,
@@ -306,7 +334,7 @@ abstract class PatchApp(
     val tabs = TabbedDisplay(task)
     val errors = plan.obj.errors ?: emptyList()
     val hasErrors = errors.any { !it.isWarning }
-    val filteredErrors = errors.filter { 
+    val filteredErrors = errors.filter {
       if (hasErrors) {
         // If there are errors, respect ignoreWarnings setting
         !settings.ignoreWarnings || !it.isWarning
