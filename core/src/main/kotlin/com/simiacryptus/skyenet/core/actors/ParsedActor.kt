@@ -19,9 +19,9 @@ open class ParsedActor<T : Any>(
   val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
   prompt: String = "",
   name: String? = resultClass?.simpleName,
-  model: TextModel = OpenAIModels.GPT4o,
+  model: TextModel,
   temperature: Double = 0.3,
-  val parsingModel: TextModel = OpenAIModels.GPT4oMini,
+  val parsingModel: TextModel,
   val deserializerRetries: Int = 2,
   open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
     "com.simiacryptus", "aicoder.actions"

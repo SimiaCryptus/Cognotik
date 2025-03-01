@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 class ParsedActorDesigner(
   interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
   symbols: Map<String, Any> = mapOf(),
-  model: ChatModel = OpenAIModels.GPT4o,
+  model: ChatModel,
   temperature: Double = 0.3,
 ) : CodingActor(
   interpreterClass = interpreterClass,
@@ -70,6 +70,7 @@ class ParsedActorDesigner(
     """.trimIndent(),
   model = model,
   temperature = temperature,
+  fallbackModel = model,
 ) {
   init {
     evalFormat = false

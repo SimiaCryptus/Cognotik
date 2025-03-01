@@ -62,7 +62,8 @@ open class CodeParsingModel(
       exampleInstance = exampleInstance,
       prompt = "",
       parsingModel = parsingModel,
-      temperature = temperature
+      temperature = temperature,
+      model = parsingModel
     ).getParser(
       api, promptSuffix = promptSuffix
     )

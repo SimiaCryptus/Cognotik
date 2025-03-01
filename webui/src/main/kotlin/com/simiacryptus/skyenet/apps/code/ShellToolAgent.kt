@@ -65,7 +65,7 @@ abstract class ShellToolAgent<T : Interpreter>(
 ) {
   override val actor: CodingActor
     get() = CodingActor(
-      interpreter, symbols = symbols, temperature = temperature, details = details, model = model
+      interpreter, symbols = symbols, temperature = temperature, details = details, model = model, fallbackModel = model as ChatModel
     )
 
   override fun displayFeedback(task: SessionTask, request: CodingActor.CodeRequest, response: CodeResult) {

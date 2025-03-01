@@ -123,12 +123,12 @@ open class AddApplyFileDiffLinks {
   }
   
   
-  protected open fun createPatchFixerActor(): SimpleActor {
+  protected open fun createPatchFixerActor(chatModel: ChatModel): SimpleActor {
     return SimpleActor(
       prompt = """
         You are a helpful AI that helps people with coding.
         
-        """.trimIndent() + patchFormatPrompt, model = OpenAIModels.GPT4o, temperature = 0.3
+        """.trimIndent() + patchFormatPrompt, model = chatModel, temperature = 0.3
     )
   }
   
@@ -520,7 +520,7 @@ open class AddApplyFileDiffLinks {
         fixTask.complete(hrefLink("Fix Patch", classname = "href-link cmd-button") {
           try {
             val header = fixTask.header("Attempting to fix patch...", 4)
-            val patchFixer = createPatchFixerActor()
+            val patchFixer = createPatchFixerActor(model!!)
             val echoDiff = try {
               IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
             } catch (e: Throwable) {

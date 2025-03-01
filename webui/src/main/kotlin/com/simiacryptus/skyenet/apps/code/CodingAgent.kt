@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.code
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.skyenet.Retryable
@@ -38,8 +39,7 @@ open class CodingAgent<T : Interpreter>(
 ) {
   val actors = mapOf(
     ActorTypes.CodingActor to CodingActor(
-      interpreter, symbols = symbols, temperature = temperature, details = details, model = model
-    )
+      interpreter, symbols = symbols, temperature = temperature, details = details, model = model, fallbackModel = model as ChatModel )
   ).map { it.key.name to it.value }.toMap()
   enum class ActorTypes {
     CodingActor

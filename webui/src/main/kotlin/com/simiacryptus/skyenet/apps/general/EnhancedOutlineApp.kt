@@ -4,7 +4,6 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.OutlineManager.NodeList
@@ -34,28 +33,13 @@ data class PhaseConfig(
 )
 
 data class EnhancedSettings(
-  val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
+  val parsingModel: ChatModel,
   val temperature: Double = 0.3,
   val minTokensForExpansion: Int = 16,
   val showProjector: Boolean = true,
   val writeFinalEssay: Boolean = true,
   val budget: Double = 2.0,
   val phaseConfigs: List<PhaseConfig> = listOf(
-      PhaseConfig(
-        "extract the core concepts",
-        "What is the core idea based on the input?",
-        OpenAIModels.GPT4o
-      ),
-      PhaseConfig(
-        "extract detailed insights", 
-        "What additional insights can further elaborate this concept?",
-        OpenAIModels.GPT4oMini
-      ),
-      PhaseConfig(
-        "assemble the comprehensive outline",
-        "How do you summarize and integrate the ideas?",
-        OpenAIModels.GPT4oMini
-      )
   )
 )
 
@@ -73,11 +57,11 @@ class EnhancedOutlineApp(
     get() = ("<div>" + renderMarkdown(
       """
           Enhanced Outline Agent allows you to customize each phase.
-
+          
           You may configure:
           • Extraction for each phase (what to extract)
           • Custom questions (what to answer when expanding the next level)
-
+          
           For example:
           1. **Initial Phase**: ${settings?.phaseConfigs?.getOrNull(0)?.extract ?: "Default extraction"}
           2. **Expansion Phase**: ${settings?.phaseConfigs?.getOrNull(1)?.expansionQuestion ?: "Default question"}
@@ -87,9 +71,6 @@ class EnhancedOutlineApp(
 
   override val settingsClass: Class<*> get() = EnhancedSettings::class.java
 
-  @Suppress("UNCHECKED_CAST")
-  override fun <T : Any> initSettings(session: Session): T? = EnhancedSettings() as T
-
   override fun userMessage(
     session: Session,
     user: User?,
@@ -97,7 +78,7 @@ class EnhancedOutlineApp(
     ui: ApplicationInterface,
     api: API
   ) {
-    val settings = this.settings ?: getSettings(session, user) ?: EnhancedSettings()
+    val settings = this.settings ?: getSettings(session, user)!!
     EnhancedOutlineAgent(
       api = api,
       api2 = api2,
@@ -114,6 +95,11 @@ class EnhancedOutlineApp(
       ui = ui,
     ).buildMap()
   }
+  
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Any> initSettings(session: Session): T = EnhancedSettings(
+    parsingModel = settings?.parsingModel!!
+  ) as T
 }
 
 class EnhancedOutlineAgent(
@@ -347,7 +333,7 @@ object EnhancedOutlineActors {
   ) = mapOf(
     ActorType.INITIAL to enhancedInitialAuthor(temperature, firstLevelModel, parsingModel, phaseConfigs.getOrNull(0)),
     ActorType.EXPAND to enhancedExpansionAuthor(temperature, parsingModel, phaseConfigs.getOrNull(1)),
-    ActorType.FINAL to enhancedFinalWriter(temperature, firstLevelModel, maxIterations = 10, phaseConfig = phaseConfigs.getOrNull(2))
+    ActorType.FINAL to enhancedFinalWriter(temperature, firstLevelModel, maxIterations = 10)
   )
 
   private fun enhancedInitialAuthor(
@@ -386,8 +372,7 @@ object EnhancedOutlineActors {
   private fun enhancedFinalWriter(
     temperature: Double,
     model: ChatModel,
-    maxIterations: Int,
-    phaseConfig: PhaseConfig?
+    maxIterations: Int
   ) = LargeOutputActor(
     model = model,
     temperature = temperature,

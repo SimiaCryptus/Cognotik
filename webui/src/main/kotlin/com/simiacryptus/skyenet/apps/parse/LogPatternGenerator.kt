@@ -31,7 +31,8 @@ class LogPatternGenerator(
       exampleInstance = PatternResponse(),
       prompt = "",
       parsingModel = parsingModel,
-      temperature = temperature
+      temperature = temperature,
+      model = parsingModel,
     ).getParser(api, promptSuffix = promptSuffix)
 
     return parser.apply(text).patterns ?: emptyList()

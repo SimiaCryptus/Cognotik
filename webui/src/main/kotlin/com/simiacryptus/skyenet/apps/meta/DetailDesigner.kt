@@ -6,6 +6,7 @@ import com.simiacryptus.skyenet.core.actors.ParsedActor
 
 class DetailDesigner(
   model: ChatModel,
+  parsingModel: ChatModel,
   temperature: Double
 ) : ParsedActor<AgentFlowDesign>(
   resultClass = AgentFlowDesign::class.java,
@@ -40,7 +41,7 @@ class DetailDesigner(
   ),
   model = model,
   temperature = temperature,
-  parsingModel = OpenAIModels.GPT4o,
+  parsingModel = parsingModel,
   prompt = """
         You are an expert detailed software designer specializing in AI agent systems.
         

@@ -127,6 +127,8 @@ class GraphOrderedPlanApp(
                     Only suggest new dependencies that are not already present.
                     Ensure all suggested task IDs exist in the current plan.
                 """.trimIndent(),
+                model = model,
+                parsingModel = parsingModel,
             ).answer(
                 listOf(
                     "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",

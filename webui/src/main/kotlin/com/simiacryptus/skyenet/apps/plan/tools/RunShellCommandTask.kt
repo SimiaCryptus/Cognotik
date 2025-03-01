@@ -53,6 +53,8 @@ class RunShellCommandTask(
       model = planSettings.getTaskSettings(TaskType.valueOf(planTask?.task_type!!)).model
         ?: planSettings.defaultModel,
       temperature = planSettings.temperature,
+      fallbackModel = planSettings.getTaskSettings(TaskType.valueOf(planTask?.task_type!!)).model
+        ?: planSettings.defaultModel
     )
   }
 

@@ -6,7 +6,8 @@ import com.simiacryptus.skyenet.core.actors.ParsedActor
 
 class ActorDesigner(
   model: ChatModel,
-  temperature: Double
+  parsingModel : ChatModel,
+    temperature: Double
 ) : ParsedActor<AgentActorDesign>(
   resultClass = AgentActorDesign::class.java,
   exampleInstance = AgentActorDesign(
@@ -21,7 +22,7 @@ class ActorDesigner(
   ),
   model = model,
   temperature = temperature,
-  parsingModel = OpenAIModels.GPT4oMini,
+  parsingModel = parsingModel,
   prompt = """
         You are an AI actor designer.
         

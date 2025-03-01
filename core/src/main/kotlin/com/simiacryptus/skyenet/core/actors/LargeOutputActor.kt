@@ -37,7 +37,7 @@ class LargeOutputActor(
         5. For the initial iteration, provide a high level document structure with a few expansion markers. Each '...sectionName...' will be expanded in subsequent iterations.
     """.trimIndent(),
   name: String? = null,
-  model: TextModel = OpenAIModels.GPT4o,
+  model: TextModel,
   temperature: Double = 0.3,
   private val maxIterations: Int = 3,
   private val namedEllipsisPattern: Regex = Regex("""\.\.\.(?<sectionName>[\w\s\-_]+?)\.\.\."""),

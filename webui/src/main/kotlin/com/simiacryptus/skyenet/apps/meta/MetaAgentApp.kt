@@ -66,7 +66,7 @@ open class MetaAgentApp(
     }</div>"
 
   data class Settings(
-    val model: ChatModel = OpenAIModels.GPT4o,
+    val model: ChatModel = OpenAIModels.GPT4oMini,
     val validateCode: Boolean = true,
     val temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -93,9 +93,10 @@ open class MetaAgentApp(
         session = session,
         api = api,
         ui = ui,
-        model = settings?.model ?: OpenAIModels.GPT4oMini,
+        model = settings?.model ?: throw RuntimeException("Model is required"),
         autoEvaluate = settings?.validateCode ?: true,
         temperature = settings?.temperature ?: 0.3,
+        parsingModel = settings?.model ?: throw RuntimeException("Model is required"),
       )
       try {
         agent.buildAgent(userMessage = userMessage)
@@ -135,13 +136,14 @@ open class MetaAgentAgent(
   val session: Session,
   val ui: ApplicationInterface,
   val api: API,
-  model: ChatModel = OpenAIModels.GPT4oMini,
+  val model: ChatModel,
+  val parsingModel: ChatModel,
   var autoEvaluate: Boolean = true,
   temperature: Double = 0.3,
 ) {
 
   private val highLevelDesigner by lazy { HighLevelDesigner(model, temperature) }
-  private val detailDesigner by lazy { DetailDesigner(model, temperature) }
+  private val detailDesigner by lazy { DetailDesigner(model, parsingModel = parsingModel, temperature = temperature) }
   private val interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class
 
   val symbols = mapOf(
@@ -149,7 +151,7 @@ open class MetaAgentAgent(
     "api" to api,
     "pool" to ApplicationServices.clientManager.getPool(session, user),
   )
-  private val actorDesigner by lazy { ActorDesigner(model, temperature) }
+  private val actorDesigner by lazy { ActorDesigner(model, parsingModel = parsingModel, temperature = temperature) }
   private val simpleActorDesigner by lazy { SimpleActorDesigner(interpreterClass, symbols, model, temperature) }
   private val imageActorDesigner by lazy { ImageActorDesigner(interpreterClass, symbols, model, temperature) }
   private val parsedActorDesigner by lazy { ParsedActorDesigner(interpreterClass, symbols, model, temperature) }
@@ -580,7 +582,7 @@ open class MetaAgentAgent(
 
 class MetaAgentActors(
   val symbols: Map<String, Any> = mapOf(),
-  val model: ChatModel = OpenAIModels.GPT4o,
+  val model: ChatModel,
   val temperature: Double = 0.3,
 ) {
 

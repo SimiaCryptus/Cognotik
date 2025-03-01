@@ -16,6 +16,7 @@ class SimpleActorDesigner(
   symbols = symbols,
   model = model,
   temperature = temperature,
+  fallbackModel = model,
   details = """
         You are a software implementation assistant.
         Your task is to implement a "simple" actor that takes part in a larger system.

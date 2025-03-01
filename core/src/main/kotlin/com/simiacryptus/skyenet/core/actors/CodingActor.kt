@@ -28,8 +28,8 @@ open class CodingActor(
   ),
   name: String? = interpreterClass.simpleName,
   val details: String? = null,
-  model: TextModel = OpenAIModels.GPT4o,
-  val fallbackModel: ChatModel = OpenAIModels.GPT4o,
+  model: TextModel,
+  val fallbackModel: ChatModel,
   temperature: Double = 0.1,
   val runtimeSymbols: Map<String, Any> = mapOf(),
   var codeInterceptor: CodeInterceptor = { it }

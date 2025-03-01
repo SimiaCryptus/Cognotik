@@ -69,6 +69,7 @@ class CodingActorDesigner(
     """.trimIndent().trim(),
   model = model,
   temperature = temperature,
+  fallbackModel = model,
 ) {
   init {
     evalFormat = false

@@ -87,6 +87,7 @@ class FlowStepDesigner(
   runtimeSymbols = mapOf(
     "log" to log
   ),
+  fallbackModel = model,
 ) {
   init {
     evalFormat = false

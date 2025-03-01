@@ -53,6 +53,7 @@ class ImageActorDesigner(
     """.trimIndent(),
   model = model,
   temperature = temperature,
+  fallbackModel = model,
 ) {
   init {
     evalFormat = false
