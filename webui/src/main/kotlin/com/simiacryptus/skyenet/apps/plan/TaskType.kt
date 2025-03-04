@@ -9,21 +9,13 @@ import com.simiacryptus.skyenet.apps.plan.tools.RunShellCommandTask
 import com.simiacryptus.skyenet.apps.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.SeleniumSessionTask
 import com.simiacryptus.skyenet.apps.plan.tools.file.*
-import com.simiacryptus.skyenet.apps.plan.tools.file.CodeOptimizationTask.CodeOptimizationTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.file.CodeReviewTask.CodeReviewTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.file.DocumentationTask.DocumentationTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.file.InquiryTask.InquiryTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.file.PerformanceAnalysisTask.PerformanceAnalysisTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.file.RefactorTask.RefactorTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.file.SecurityAuditTask.SecurityAuditTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.file.TestGenerationTask.TestGenerationTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphGenerationTask
 import com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphModificationTask
 import com.simiacryptus.skyenet.apps.plan.tools.knowledge.EmbeddingSearchTask
 import com.simiacryptus.skyenet.apps.plan.tools.knowledge.KnowledgeIndexingTask
-import com.simiacryptus.skyenet.apps.plan.tools.knowledge.WebSearchAndIndexTask
 import com.simiacryptus.skyenet.apps.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.skyenet.apps.plan.tools.online.SearchAndAnalyzeTask
 import com.simiacryptus.skyenet.apps.plan.tools.online.SimpleGoogleSearchTask
@@ -189,118 +181,6 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
         )
-        val Documentation = TaskType(
-            "Documentation",
-            DocumentationTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Generate comprehensive documentation for code, APIs, and architecture",
-            """
-                      Generates comprehensive documentation for code files and APIs.
-                      <ul>
-                        <li>Handles both inline comments and markdown files</li>
-                        <li>Generates detailed API documentation</li>
-                        <li>Documents design decisions and rationale</li>
-                        <li>Supports interactive approval workflow</li>
-                        <li>Maintains documentation consistency</li>
-                      </ul>
-                    """
-        )
-        val CodeReview = TaskType(
-            "CodeReview",
-            CodeReviewTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Perform thorough code review with quality and best practice analysis",
-            """
-                      Performs automated code reviews focusing on quality and best practices.
-                      <ul>
-                        <li>Analyzes code quality and potential issues</li>
-                        <li>Identifies bugs and performance problems</li>
-                        <li>Reviews security vulnerabilities</li>
-                        <li>Suggests specific improvements</li>
-                        <li>Provides actionable recommendations</li>
-                      </ul>
-                    """
-        )
-        val TestGeneration = TaskType(
-            "TestGeneration",
-            TestGenerationTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Generate comprehensive test suites with full coverage analysis",
-            """
-          Creates comprehensive test suites for code reliability and correctness.
-          <ul>
-            <li>Generates unit and integration tests</li>
-            <li>Creates positive and negative test cases</li>
-            <li>Tests edge cases and boundary conditions</li>
-            <li>Follows language-specific testing practices</li>
-            <li>Organizes tests in appropriate directories</li>
-          </ul>
-        """
-        )
-        val Optimization = TaskType(
-            "Optimization",
-            CodeOptimizationTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Analyze performance bottlenecks and implement optimizations",
-            """
-          Analyzes and optimizes code performance while maintaining readability.
-          <ul>
-            <li>Identifies performance bottlenecks</li>
-            <li>Suggests algorithmic improvements</li>
-            <li>Analyzes memory usage patterns</li>
-            <li>Recommends caching strategies</li>
-            <li>Provides impact estimates</li>
-          </ul>
-        """
-        )
-        val SecurityAudit = TaskType(
-            "SecurityAudit",
-            SecurityAuditTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Identify security vulnerabilities and provide mitigation strategies",
-            """
-          Performs security analysis to identify and fix vulnerabilities.
-          <ul>
-            <li>Analyzes security vulnerabilities</li>
-            <li>Reviews authentication/authorization</li>
-            <li>Checks data handling practices</li>
-            <li>Provides security recommendations</li>
-            <li>Generates detailed audit reports</li>
-          </ul>
-        """
-        )
-        val PerformanceAnalysis = TaskType(
-            "PerformanceAnalysis",
-            PerformanceAnalysisTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Analyze and optimize code performance with detailed metrics",
-            """
-          Analyzes code performance and provides optimization recommendations.
-          <ul>
-            <li>Identifies performance bottlenecks and hotspots</li>
-            <li>Measures execution time and resource usage</li>
-            <li>Suggests algorithmic and structural improvements</li>
-            <li>Provides quantitative performance metrics</li>
-            <li>Recommends caching and optimization strategies</li>
-          </ul>
-        """
-        )
-        val RefactorTask = TaskType(
-            "RefactorTask",
-            RefactorTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Improve code structure, readability and maintainability",
-            """
-          Analyzes and improves code structure while maintaining functionality.
-          <ul>
-            <li>Suggests structural improvements</li>
-            <li>Reduces code complexity</li>
-            <li>Improves naming conventions</li>
-            <li>Enhances code organization</li>
-            <li>Shows changes in diff format</li>
-          </ul>
-        """
-        )
         val RunShellCommand = TaskType(
             "RunShellCommand",
             RunShellCommandTaskConfigData::class.java,
@@ -413,22 +293,6 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
         )
-        val WebSearchAndIndex = TaskType(
-            "WebSearchAndIndex",
-            WebSearchAndIndexTask.WebSearchAndIndexTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Search web content and create searchable indexes",
-            """
-          Performs web searches and indexes results for future reference.
-          <ul>
-            <li>Integrates with Google Custom Search</li>
-            <li>Downloads and processes search results</li>
-            <li>Creates searchable indexes</li>
-            <li>Handles content download and storage</li>
-            <li>Supports batch processing</li>
-          </ul>
-        """
-        )
         val SeleniumSession = TaskType(
             "SeleniumSession",
             SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
@@ -493,21 +357,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             registerConstructor(SearchAndAnalyze) { settings, task -> SearchAndAnalyzeTask(settings, task) }
             registerConstructor(EmbeddingSearch) { settings, task -> EmbeddingSearchTask(settings, task) }
             registerConstructor(FileModification) { settings, task -> FileModificationTask(settings, task) }
-            registerConstructor(Documentation) { settings, task -> DocumentationTask(settings, task) }
             registerConstructor(RunShellCommand) { settings, task -> RunShellCommandTask(settings, task) }
-            registerConstructor(CodeReview) { settings, task -> CodeReviewTask(settings, task) }
-            registerConstructor(TestGeneration) { settings, task -> TestGenerationTask(settings, task) }
-            registerConstructor(Optimization) { settings, task -> CodeOptimizationTask(settings, task) }
-            registerConstructor(SecurityAudit) { settings, task -> SecurityAuditTask(settings, task) }
-            registerConstructor(PerformanceAnalysis) { settings, task -> PerformanceAnalysisTask(settings, task) }
-            registerConstructor(RefactorTask) { settings, task -> RefactorTask(settings, task) }
             registerConstructor(ForeachTask) { settings, task -> ForeachTask(settings, task) }
             registerConstructor(TaskPlanning) { settings, task -> PlanningTask(settings, task) }
             registerConstructor(GitHubSearch) { settings, task -> GitHubSearchTask(settings, task) }
             registerConstructor(GoogleSearch) { settings, task -> SimpleGoogleSearchTask(settings, task) }
             registerConstructor(WebFetchAndTransform) { settings, task -> WebFetchAndTransformTask(settings, task) }
             registerConstructor(KnowledgeIndexing) { settings, task -> KnowledgeIndexingTask(settings, task) }
-            registerConstructor(WebSearchAndIndex) { settings, task -> WebSearchAndIndexTask(settings, task) }
             registerConstructor(SeleniumSession) { settings, task -> SeleniumSessionTask(settings, task) }
             registerConstructor(CommandSession) { settings, task -> CommandSessionTask(settings, task) }
         }

@@ -11,6 +11,8 @@ import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask.FileMo
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask.TaskBreakdownResult
 import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.util.Selenium2S3.Companion.chromeDriver
+import org.openqa.selenium.remote.RemoteWebDriver
 
 
 open class PlanSettings(
@@ -136,7 +138,11 @@ open class PlanSettings(
       }
     }
   }
-
+  
+  fun driver(): RemoteWebDriver {
+    return chromeDriver()
+  }
+  
   companion object {
     var exampleInstance = TaskBreakdownResult(
       tasksByID = mapOf(

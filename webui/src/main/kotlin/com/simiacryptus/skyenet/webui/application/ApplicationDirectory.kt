@@ -56,6 +56,7 @@ abstract class ApplicationDirectory(
   open val proxyHttpServlet: HttpServlet = ProxyHttpServlet()
   open val apiKeyServlet: HttpServlet = ApiKeyServlet()
   open val welcomeServlet: HttpServlet = WelcomeServlet(this)
+  open val chessServlet: HttpServlet = WelcomeServlet(this)
 
   open fun authenticatedWebsite(): OAuthBase? = OAuthGoogle(
     redirectUri = "$domainName/oauth2callback",
@@ -131,6 +132,9 @@ abstract class ApplicationDirectory(
       authenticatedWebsite()?.configure(it, false) ?: it
     },
     newWebAppContext("/api", welcomeServlet).let {
+      authenticatedWebsite()?.configure(it, false) ?: it
+    },
+    newWebAppContext("/chess", ResourceCollection(allResources("chess").map(::newResource)), "chess", chessServlet).let {
       authenticatedWebsite()?.configure(it, false) ?: it
     },
   ).toTypedArray() + childWebApps.map {

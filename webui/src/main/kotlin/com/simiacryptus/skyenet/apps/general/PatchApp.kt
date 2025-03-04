@@ -87,21 +87,22 @@ abstract class PatchApp(
     val b = a.filter { it.exists() && !it.isDirectory && it.length() < (256 * 1024) }
     return b.joinToString("\n\n") { path ->
       val errorLocations = error.locations?.filter { loc ->
-        loc.file.endsWith(path.name) || path.absolutePath.endsWith(loc.file)
-      }?.associateBy { it.line } ?: emptyMap()
+        loc.file?.endsWith(path.name) == true || loc.file?.let { path.absolutePath.endsWith(it) } == true
+      }?.flatMap {
+        it.lines ?: emptyList()
+      }?.toSet() ?: emptySet()
       
       try {
         val fileContent = path.readText()
         val lines = fileContent.lines()
-      val annotatedLines = lines.mapIndexed { lineIndex, line ->
-        val lineNumber = lineIndex + 1
-        val linePrefix = if (settings.includeLineNumbers) "$lineNumber: " else ""
-        val index = lineIndex + 1
-          val location = errorLocations[index]
-          if (location != null) {
-          linePrefix + line + "/* Error at column ${location.column ?: "?"}: ${error.message ?: "?"} */"
+        val annotatedLines = lines.mapIndexed { lineIndex, line ->
+          val lineNumber = lineIndex + 1
+          val linePrefix = if (settings.includeLineNumbers) "$lineNumber: " else ""
+          val index = lineIndex + 1
+          if (errorLocations.contains(index)) {
+            linePrefix + line + "/* Error: ${error.message ?: "?"} */"
           } else {
-          linePrefix + line
+            linePrefix + line
           }
         }
         val gitDiff = if (settings.includeGitDiffs) {
@@ -115,7 +116,6 @@ abstract class PatchApp(
               if (!process.waitFor(30, TimeUnit.SECONDS)) {
                 process.destroy()
                 log.warn("Git diff timed out for $path")
-                ""
               }
               it.readText()
             }
@@ -201,14 +201,13 @@ abstract class PatchApp(
   )
   
   data class SearchQuery(
-    @Description("The search pattern to be used in file content matching") val pattern: String,
-    @Description("A glob expression to filter which files to run the search against") val fileGlob: String
+    @Description("The search pattern to be used in file content matching") val pattern: String? = null,
+    @Description("A glob expression to filter which files to run the search against") val fileGlob: String? = null
   )
   
   data class CodeLocation(
-    @Description("The file path") val file: String,
-    @Description("The line number in the file") val line: Int? = null,
-    @Description("The column number in the file") val column: Int? = null
+    @Description("The file path") val file: String? = null,
+    @Description("The line number in the file") val lines: List<Int>? = null,
   )
   
   data class ResearchNotes(
@@ -221,11 +220,9 @@ abstract class PatchApp(
   data class ParsedError(
     @Description("The error message") val message: String? = null,
     @Description("Summarize output to distill details related to the error message") val details: String? = null,
-    @Description("Problem severity (higher numbers indicate more fatal issues)") val severity: Int = 0,
-    @Description("Problem complexity (higher numbers indicate more difficult issues)") val complexity: Int = 0,
-    @Description("Whether this is a warning rather than an error") val isWarning: Boolean = false,
-    
-    
+    @Description("Problem severity (higher numbers indicate more fatal issues)") val severity: Int? = 0,
+    @Description("Problem complexity (higher numbers indicate more difficult issues)") val complexity: Int? = 0,
+    @Description("Whether this is a warning rather than an error") val isWarning: Boolean? = false,
     @Description("Locations in code where the error occurs") val locations: List<CodeLocation>? = null,
     @Description("Research notes about files and search patterns") val research: ResearchNotes? = null
   )
@@ -304,9 +301,7 @@ abstract class PatchApp(
           ).filter { it.value.isNotBlank() },
         )
       )
-      // Record the current error parsing result for future reference
       previousParsedErrorsRecords.add(ParsedErrorRecord(parsedErrors))
-      // Process errors ordered by fixPriority (lower number = higher priority)
       fixAllErrors(
         task = fixTask, plan = plan, ui = ui, settings = settings, changed = mutableSetOf(), api = api, progressHeader = progressHeader
       )
@@ -316,9 +311,9 @@ abstract class PatchApp(
     return outputResult
   }
   
-  fun recentErrors() = previousParsedErrorsRecords.flatMap { it.errors?.errors ?: emptySet() }.groupBy { it.message }.let { errors ->
-    ParsedErrors(errors.map { (message, errors) ->
-      errors.maxByOrNull { it.severity }!!
+  private fun recentErrors() = previousParsedErrorsRecords.flatMap { it.errors?.errors ?: emptySet() }.groupBy { it.message }.let { errors ->
+    ParsedErrors(errors.map { (_, errors) ->
+      errors.maxByOrNull { it.severity ?: 0 }!!
     })
   }
   
@@ -333,20 +328,16 @@ abstract class PatchApp(
   ) {
     val tabs = TabbedDisplay(task)
     val errors = plan.obj.errors ?: emptyList()
-    val hasErrors = errors.any { !it.isWarning }
+    val hasErrors = errors.any { it.isWarning != true }
     val filteredErrors = errors.filter {
       if (hasErrors) {
-        // If there are errors, respect ignoreWarnings setting
-        !settings.ignoreWarnings || !it.isWarning
+        !settings.ignoreWarnings || (it.isWarning != true) // If there are errors, respect ignoreWarnings setting
       } else {
-        // If there are only warnings, process them regardless of ignoreWarnings
-        true
+        true // If there are only warnings, process them regardless of ignoreWarnings
       }
     }
-    filteredErrors
-      ?.groupBy { it.message }
-//      ?.sortedBy { it.severity.toDouble() / it.complexity }?.takeLast(fixesPerIteration)
-      ?.map { (msg, errors) ->
+    filteredErrors.groupBy { it.message }
+      .map { (msg, errors) ->
         ui.socketManager?.pool?.submit {
           val task = ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
           errors.forEach { error ->
@@ -359,7 +350,7 @@ abstract class PatchApp(
               val filter2 = filter1.filter { file ->
                 FileSystems.getDefault().getPathMatcher("glob:" + query.fileGlob).matches(file.toPath())
               }
-              val filter3 = filter2.filter { it.readText().contains(query.pattern, ignoreCase = true) }
+              val filter3 = filter2.filter { it.readText().contains(query.pattern ?: "", ignoreCase = true) }
               filter3.map { it.toPath() }.toList()
             }?.toSet() ?: emptySet()
             if (searchResults.isNotEmpty()) {
@@ -369,18 +360,10 @@ abstract class PatchApp(
                 )
               )
             }
-            fix(
-              error,
-              searchResults.toList().map { it.toFile().absolutePath },
-              ui,
-              settings.autoFix,
-              changed,
-              api,
-              task
-            )
+            fix(error, searchResults.toList().map { it.toFile().absolutePath }, ui, settings.autoFix, changed, api, task)
           }
         }
-      }?.toTypedArray()?.onEach { it?.get() }
+      }.toTypedArray().onEach { it?.get() }
     progressHeader?.set("Finished processing tasks")
     task.append("", false)
   }
@@ -398,8 +381,7 @@ abstract class PatchApp(
             locations = listOf(
               CodeLocation(
                 file = "src/main/java/com/example/Example.java",
-                line = 123,
-                column = 45
+                lines = listOf(123),
               )
             ),
             research = ResearchNotes(
@@ -460,7 +442,7 @@ abstract class PatchApp(
         // Then, strip a leading slash if still present.
         val normalizedRoot = root.absolutePath.replace(File.separatorChar, '/')
         // Clean the file path (anything after a space is treated as a note/comment)
-        val cleanPath = cleanFilePath(filePath)
+        val cleanPath = filePath?.let { cleanFilePath(it) } ?: return@mapNotNull null
         var relativePath = if (cleanPath.contains(normalizedRoot)) cleanPath.replaceFirst(normalizedRoot, "") else cleanPath
         if (relativePath.startsWith("/")) {
           relativePath = relativePath.drop(1)

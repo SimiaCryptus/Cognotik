@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.core.util
 
 import java.io.File
+import java.io.InputStream
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.name
@@ -106,9 +107,59 @@ class FileValidationUtils {
           "ico",
           "stl"
         ) -> false
+        isBinaryFile(file) -> false
 
         else -> true
       }
+    }
+    /**
+     * Checks if a file is likely to be binary by examining its content
+     * @param file The file to check
+     * @return true if the file appears to be binary, false otherwise
+     */
+    fun isBinaryFile(file: File): Boolean {
+      if (!file.exists() || file.isDirectory || file.length() == 0L) {
+        return false
+      }
+      // Check common binary file extensions first for efficiency
+      val binaryExtensions = setOf(
+        "jar", "zip", "class", "png", "jpg", "jpeg", "gif", "ico", "stl",
+        "exe", "dll", "so", "dylib", "bin", "dat", "pdf", "doc", "docx", "xls", "xlsx"
+      )
+      if (file.extension.lowercase(Locale.getDefault()) in binaryExtensions) {
+        return true
+      }
+      // Sample the beginning of the file to check for binary content
+      return try {
+        file.inputStream().use { input ->
+          isBinaryStream(input)
+        }
+      } catch (e: Exception) {
+        // If we can't read the file, assume it's not binary
+        false
+      }
+    }
+    /**
+     * Checks if an input stream contains binary data by sampling the first bytes
+     * @param input The input stream to check
+     * @return true if the stream appears to contain binary data, false otherwise
+     */
+    private fun isBinaryStream(input: InputStream): Boolean {
+      val sampleSize = 1000
+      val bytes = ByteArray(sampleSize)
+      val bytesRead = input.read(bytes, 0, sampleSize)
+      if (bytesRead <= 0) return false
+      // Count the number of bytes that are outside the printable ASCII range
+      // or are control characters other than common whitespace
+      var binaryCount = 0
+      for (i in 0 until bytesRead) {
+        val b = bytes[i].toInt() and 0xFF
+        if (b == 0 || (b < 9 && b != 7) || (b > 13 && b < 32) || b >= 127) {
+          binaryCount++
+        }
+      }
+      // If more than 10% of the bytes are binary, consider it a binary file
+      return binaryCount.toDouble() / bytesRead > 0.1
     }
 
     fun expandFileList(vararg data: File): Array<File> {
@@ -120,6 +171,7 @@ class FileValidationUtils {
           it.length() > 1e8 -> arrayOf()
           it.extension.lowercase(Locale.getDefault()) in
               setOf("jar", "zip", "class", "png", "jpg", "jpeg", "gif", "ico") -> arrayOf()
+          isBinaryFile(it) -> arrayOf()
 
           it.isDirectory -> expandFileList(*it.listFiles() ?: arrayOf())
           else -> arrayOf(it)

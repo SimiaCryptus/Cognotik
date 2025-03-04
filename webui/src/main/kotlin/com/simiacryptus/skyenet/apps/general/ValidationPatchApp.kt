@@ -108,7 +108,7 @@ class ValidationPatchApp(
                     research = ResearchNotes(
                         fixFiles = listOf(file.toString())
                     ),
-                    locations = errors.map { CodeLocation(it.file.toString(), it.line, it.column) }
+                    locations = errors.map { CodeLocation(it.file.toString(), listOf(it.line)) }
                 )
             })
         )
