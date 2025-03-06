@@ -26,13 +26,17 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.regex.Pattern
+import kotlin.math.min
 
 class SearchAndAnalyzeTask(
   planSettings: PlanSettings,
   planTask: SearchAndAnalyzeTaskConfigData?,
   val follow_links: Boolean = true,
   val max_link_depth: Int = 2,
+  val max_pages_per_task: Int = 30,
+  val max_final_output_size: Int = 10000,
 ) : AbstractTask<SearchAndAnalyzeTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
   enum class FetchMethod {
     @JsonProperty("httpClient") HttpClient,
@@ -46,6 +50,9 @@ class SearchAndAnalyzeTask(
     @Description("Whether to follow links found in the analysis") val follow_links: Boolean = true,
     @Description("Maximum depth for following links") val max_link_depth: Int = 1,
     @Description("Method used to fetch content from URLs (httpClient or selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
+    @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int = 30,
+    @Description("Whether to create a final summary of all results") val create_final_summary: Boolean = true,
+    @Description("Maximum size of the final output in characters") val max_final_output_size: Int = 10000,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
@@ -64,6 +71,12 @@ class SearchAndAnalyzeTask(
     ** Results will be saved to .websearch directory for future reference
     ** Links found in analysis can be automatically followed for deeper research
   """.trimIndent()
+  data class PageToProcess(
+    val url: String,
+    val title: String,
+    val depth: Int
+  )
+  
   
   override fun run(
     agent: PlanCoordinator,
@@ -81,8 +94,17 @@ class SearchAndAnalyzeTask(
     val visitedUrls = mutableSetOf<String>()
     visitedUrls.addAll(urlContentCache.keys)
     
-    // Process each result
     val items = (searchData["items"] as List<Map<String, Any>>?)?.take(20)
+    // Create processing queue
+    val pageQueue = LinkedBlockingQueue<PageToProcess>()
+    items?.forEach { item ->
+      pageQueue.add(PageToProcess(
+        url = item["link"] as String,
+        title = (item["title"] as? String) ?: "Untitled",
+        depth = 0
+      ))
+    }
+    
     val analysisResults = buildString {
       appendLine("# Analysis of Search Results")
       appendLine()
@@ -96,14 +118,15 @@ class SearchAndAnalyzeTask(
       appendLine()
       appendLine("---")
       appendLine()
-      // Create a queue of URLs to process with their depth
-      val urlQueue = mutableListOf<Pair<Map<String, Any>, Int>>()
-      items?.forEach { item -> urlQueue.add(Pair(item, 0)) }
+      
       var processedCount = 0
-      while (urlQueue.isNotEmpty() && processedCount < 30) { // Limit to prevent excessive processing
-        val (item, depth) = urlQueue.removeAt(0)
-        val url = item["link"] as String
-        val title = item["title"] as? String ?: "Untitled"
+      val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
+      while (pageQueue.isNotEmpty() && processedCount < maxPages) {
+        val page = pageQueue.poll()
+        val url = page.url
+        val title = page.title
+        val depth = page.depth
+        
         if (url in visitedUrls) {
           log.info("Skipping already visited URL: $url")
           continue
@@ -141,13 +164,13 @@ class SearchAndAnalyzeTask(
           val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
           val maxDepth = taskConfig?.max_link_depth ?: max_link_depth
           if (shouldFollowLinks && depth < maxDepth) {
-            val links = extractLinksFromMarkdown(analysis)
-            links.forEach { (linkText, linkUrl) ->
-              if (linkUrl !in visitedUrls) {
-                val linkItem = mapOf(
-                  "title" to linkText, "link" to linkUrl
-                )
-                urlQueue.add(Pair(linkItem, depth + 1))
+            extractLinksFromMarkdown(analysis).forEach { (linkText, linkUrl) ->
+              if (linkUrl !in visitedUrls && !pageQueue.any { it.url == linkUrl }) {
+                pageQueue.add(PageToProcess(
+                  url = linkUrl,
+                  title = linkText,
+                  depth = depth + 1
+                ))
               }
             }
           }
@@ -159,9 +182,77 @@ class SearchAndAnalyzeTask(
       }
     }
     
-    task.add(MarkdownUtil.renderMarkdown(analysisResults, ui = agent.ui))
-    resultFn(analysisResults)
+    // Check if we need to create a final summary
+    val finalOutput = if (taskConfig?.create_final_summary != false && analysisResults.length > (taskConfig?.max_final_output_size ?: max_final_output_size)) {
+      createFinalSummary(analysisResults, api, planSettings)
+    } else {
+      analysisResults
+    }
+    task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
+    resultFn(finalOutput)
   }
+  private fun createFinalSummary(analysisResults: String, api: API, planSettings: PlanSettings): String {
+    log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
+    val maxSize = taskConfig?.max_final_output_size ?: max_final_output_size
+    // If the analysis is not too much larger than our target, just truncate it
+    if (analysisResults.length < maxSize * 1.5) {
+      log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
+      return analysisResults.substring(0, min(analysisResults.length, maxSize)) + 
+        "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
+    }
+    // Extract the header section (everything before the first URL analysis)
+    val headerEndIndex = analysisResults.indexOf("## 1. [")
+    val header = if (headerEndIndex > 0) {
+      analysisResults.substring(0, headerEndIndex)
+    } else {
+      "# Analysis of Search Results\n\n"
+    }
+    // Extract all the URL sections
+    val urlSections = extractUrlSections(analysisResults)
+    log.info("Extracted ${urlSections.size} URL sections for summarization")
+    // Create a summary prompt
+    val summaryPrompt = listOf(
+      "Create a comprehensive summary of the following web search results and analyses.",
+      "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
+      "Analysis goal: ${taskConfig?.content_query ?: taskConfig?.task_description ?: "Provide key insights"}",
+      "For each source, extract the most important insights, facts, and conclusions.",
+      "Organize information by themes rather than by source when possible.",
+      "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
+      "Include the most important links that should be followed up on.",
+      "Keep your response under ${maxSize / 1000}K characters.",
+      "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
+    ).joinToString("\n\n")
+    // Generate the summary
+    val summary = SimpleActor(
+      prompt = summaryPrompt,
+      model = planSettings.defaultModel,
+    ).answer(listOf(summaryPrompt), api)
+    // Combine the header with the summary
+    return header + summary
+  }
+  private fun extractUrlSections(analysisResults: String): List<String> {
+    val sections = mutableListOf<String>()
+    val sectionPattern = Pattern.compile("## \\d+\\. \\[([^\\]]+)\\]\\(([^)]+)\\)(.*?)(?=## \\d+\\. \\[|$)", Pattern.DOTALL)
+    val matcher = sectionPattern.matcher(analysisResults)
+    while (matcher.find()) {
+      val title = matcher.group(1)
+      val url = matcher.group(2)
+      val content = matcher.group(3).trim()
+      // Create a condensed version of each section
+      val condensed = "**[${title}](${url})**: ${summarizeSection(content)}"
+      sections.add(condensed)
+    }
+    return sections
+  }
+  private fun summarizeSection(content: String): String {
+    // Extract the first paragraph or first few sentences
+    val firstParagraph = content.split("\n\n").firstOrNull()?.trim() ?: ""
+    if (firstParagraph.length < 300) return firstParagraph
+    // If first paragraph is too long, get first few sentences
+    val sentences = content.split(". ").take(3)
+    return sentences.joinToString(". ") + (if (sentences.size >= 3) "..." else "")
+  }
+  
   
   protected fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor): String {
     // Check if URL is already in cache

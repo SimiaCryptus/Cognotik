@@ -45,7 +45,6 @@ class IterativePatchUtilTest {
         """.trimIndent()
         val result = IterativePatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
-
     }
 
     @Test
@@ -68,7 +67,6 @@ class IterativePatchUtilTest {
         """.trimIndent()
         val result = IterativePatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
-
     }
 
     @Test
@@ -89,9 +87,7 @@ class IterativePatchUtilTest {
         val expected = """
             line1
             line3
-            // This comment should be ignored
             modifiedLine2
-            # LLMs sometimes get chatty and add stuff to patches__
         """.trimIndent()
         val result = IterativePatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
@@ -165,10 +161,8 @@ class IterativePatchUtilTest {
         """.trimIndent()
         val expected = """
           line1
-          // extraneous comment
            lineA
            lineB
-          // llms sometimes get chatty and add stuff to patches
           
           line2
           line3
@@ -293,7 +287,6 @@ class IterativePatchUtilTest {
         """.trimIndent()
       val expected = """
             export class StandardChessModel implements GameModel {
-            // ... other methods ...
                 geometry: BoardGeometry;
                 state: GameState;
                 private moveHistory: MoveHistory;
@@ -315,7 +308,6 @@ class IterativePatchUtilTest {
                 getWinner(): ChessColor | 'draw' | null {
                     return null;
                 }
-            // ... other methods ...
     
                 importState(stateString: string): GameState {
                     // Implement import state logic
