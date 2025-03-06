@@ -55,63 +55,6 @@ class DataTableCompilationTask(
   data class RowData(val rowId: String, val data: Map<String, String>)
   data class TableData(val rows: List<Map<String, Any>>, val columns: List<Column>)
   
-  private val rowIdentificationActor by lazy {
-    ParsedActor(
-      name = "RowIdentifier",
-      resultClass = Rows::class.java,
-      prompt = """
-                Analyze the provided files and identify distinct rows for a data table based on the following instructions:
-                ${taskConfig?.row_identification_instructions}
-                
-                For each row you identify:
-                1. Assign a unique row ID - should be a short, descriptive string
-                2. List the source files that contain data for this row
-            """.trimIndent(),
-      model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
-      parsingModel = planSettings.parsingModel,
-      temperature = planSettings.temperature,
-      describer = planSettings.describer(),
-    )
-  }
-  
-  private val columnIdentificationActor by lazy {
-    ParsedActor(
-      name = "ColumnIdentifier",
-      resultClass = Columns::class.java,
-      prompt = """
-                Analyze the provided files and identify distinct columns for a data table based on the following instructions:
-                ${taskConfig?.column_identification_instructions}
-                
-                For each column you identify:
-                1. Assign a unique column ID - should be a short, descriptive string
-                2. Provide a detailed description of what the column represents
-            """.trimIndent(),
-      model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
-      parsingModel = planSettings.parsingModel,
-      temperature = planSettings.temperature,
-      describer = planSettings.describer(),
-    )
-  }
-  
-  private val rowDataExtractor by lazy {
-    ParsedActor(
-      name = "CellExtractor",
-      resultClass = RowData::class.java,
-      prompt = """
-                Extract data for a specific row from the provided source files, column list, and row id.
-                
-                Extraction Instructions:
-                ${taskConfig?.cell_extraction_instructions}
-                
-                Return only the extracted cell value as plain text. If no value can be determined, return "N/A".
-            """.trimIndent(),
-      model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
-      parsingModel = planSettings.parsingModel,
-      temperature = planSettings.temperature,
-      describer = planSettings.describer(),
-    )
-  }
-  
   override fun promptSegment() = """
         DataTableCompilation - Compile structured data tables from multiple files
           ** Specify file glob patterns to include in the compilation
@@ -157,7 +100,41 @@ class DataTableCompilationTask(
       "### ${file.name}\n```\n${content.take(1000)}${if (content.length > 1000) "..." else ""}\n```"
     }
     
-    val columnsResponse = columnIdentificationActor.answer(
+    val columnsResponse = ParsedActor(
+      name = "ColumnIdentifier",
+      resultClass = Columns::class.java,
+      exampleInstance = Columns(
+        listOf(
+          Column(
+            id = "Name",
+            name = "Name of the fruit",
+            description = "The name of the fruit in the row"
+          ),
+          Column(
+            id = "Color",
+            name = "Color of the fruit",
+            description = "The color of the fruit in the row"
+          ),
+          Column(
+            id = "Taste",
+            name = "Taste of the fruit",
+            description = "The taste of the fruit in the row"
+          )
+        )
+      ),
+      prompt = """
+                Analyze the provided files and identify distinct columns for a data table based on the following instructions:
+                ${taskConfig?.column_identification_instructions}
+                
+                For each column you identify:
+                1. Assign a unique column ID - should be a short, descriptive string
+                2. Provide a detailed description of what the column represents
+            """.trimIndent(),
+      model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
+      parsingModel = planSettings.parsingModel,
+      temperature = planSettings.temperature,
+      describer = planSettings.describer(),
+    ).answer(
       listOf(
         fileContentString
       ),
@@ -171,7 +148,37 @@ class DataTableCompilationTask(
         description = it.description,
       )
     }
-    val rowsList = rowIdentificationActor.answer(
+    val rowsList = ParsedActor(
+      name = "RowIdentifier",
+      resultClass = Rows::class.java,
+      exampleInstance = Rows(
+        listOf(
+          Row(
+            id = "Apple",
+            sourceFiles = listOf("apples.md", "apple_recipes.md")
+          ),
+          Row(
+            id = "Banana",
+            sourceFiles = listOf("bananas.md", "banana_recipes.md")
+          )
+        )
+      ),
+      prompt = """
+                You are a data extraction agent that is building a data table.
+                Analyze the provided files and identify ALL distinct rows found in the data:
+                
+                Special Instructions:
+                ${taskConfig?.row_identification_instructions}
+                
+                For each row you identify:
+                1. Assign a unique row ID - should be a short, descriptive string
+                2. List the source files that contain data for this row
+            """.trimIndent(),
+      model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
+      parsingModel = planSettings.parsingModel,
+      temperature = planSettings.temperature,
+      describer = planSettings.describer(),
+    ).answer(
       listOf(
         fileContentString,
         "Columns:\n" + columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }
@@ -184,7 +191,6 @@ class DataTableCompilationTask(
     
     // Step 4: Extract rows
     task.add(MarkdownUtil.renderMarkdown("## Step 4: Extracting cell data for each row", ui = agent.ui))
-    
     val tableData = mutableListOf<Map<String, Any>>()
     val progressTotal = rowsList.obj.rows.size
     var progressCurrent = 0
@@ -192,28 +198,32 @@ class DataTableCompilationTask(
     rowsList.obj.rows.forEach { row ->
       progressCurrent++
       task.add(MarkdownUtil.renderMarkdown("Processing row ${progressCurrent}/${progressTotal}: ${row.id}", ui = agent.ui))
-      
-      // Get relevant file contents for this row
-      val relevantFileContentString = row.sourceFiles.mapNotNull { fileName ->
-        matchedFiles.find { it.name == fileName || it.toString().endsWith(fileName) }
-      }.joinToString("\n\n") { file ->
-        "### ${file.name}\n```\n${readFileContent(file).indent("  ")}\n```"
-      }
-      
-      // Create context for the cell extractor
-      val context = """
-        Row ID: ${row.id}
-        
-        Columns:
-        ${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}
-        
-        Source Files:
-        $relevantFileContentString
-      """.trimIndent()
-      
-      // Extract data for this row
-      val rowDataResponse = rowDataExtractor.answer(
-        listOf(context),
+      val rowDataResponse = ParsedActor(
+        name = "CellExtractor",
+        resultClass = RowData::class.java,
+        exampleInstance = RowData(
+          rowId = "Apple",
+          data = mapOf(
+            "Name" to "Apple",
+            "Color" to "Red",
+            "Taste" to "Sweet"
+          )
+        ),
+        prompt = "Extract data for a data row for `${row.id}` from the provided source files.\n\n" +
+            "Expected Columns:\n${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}\n\n" +
+            "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n",
+        model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
+        parsingModel = planSettings.parsingModel,
+        temperature = planSettings.temperature,
+        describer = planSettings.describer(),
+      ).answer(
+        listOf(
+          "Source Files:\n" + row.sourceFiles.mapNotNull { fileName ->
+            matchedFiles.find { it.name == fileName || it.toString().endsWith(fileName) }
+          }.joinToString("\n\n") { file ->
+            "### ${file.name}\n```\n${readFileContent(file).indent("  ")}\n```"
+          }
+        ),
         api = api
       )
       
@@ -293,12 +303,14 @@ class DataTableCompilationTask(
       - Saved compiled data to: ${outputFile.absolutePath}
     """.trimIndent() + "\n\n" + "### Compiled Data\n\n${
       StringWriter().use {
-        writeMarkdown(columnsList, BufferedWriter(it), tableData)
+        BufferedWriter(it).use {
+          writeMarkdown(columnsList, it, tableData)
+        }
         it.toString()
       }
     }").renderMarkdown()
     
-    task.add(MarkdownUtil.renderMarkdown(resultMessage, ui = agent.ui))
+    //task.add(MarkdownUtil.renderMarkdown(resultMessage, ui = agent.ui))
     resultFn(resultMessage)
   }
   

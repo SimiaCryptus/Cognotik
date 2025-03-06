@@ -1,7 +1,7 @@
 package com.simiacryptus.skyenet.apps.plan.tools.online
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
@@ -9,24 +9,26 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
-import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.util.HtmlSimplifier
 import com.simiacryptus.skyenet.util.MarkdownUtil
+import com.simiacryptus.skyenet.util.Selenium2S3
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
-import com.simiacryptus.skyenet.util.Selenium2S3
 import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
 
@@ -34,34 +36,37 @@ class SearchAndAnalyzeTask(
   planSettings: PlanSettings,
   planTask: SearchAndAnalyzeTaskConfigData?,
   val follow_links: Boolean = true,
-  val max_link_depth: Int = 2,
-  val max_pages_per_task: Int = 30,
+  val max_pages_per_task: Int = 100,
   val max_final_output_size: Int = 10000,
+  val concurrent_page_processing: Int = 5,
+  val request_timeout_seconds: Int = 30
 ) : AbstractTask<SearchAndAnalyzeTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
   enum class FetchMethod {
-    @JsonProperty("httpClient") HttpClient,
-    @JsonProperty("selenium") Selenium
+    HttpClient,
+    Selenium
   }
   
-
+  
   class SearchAndAnalyzeTaskConfigData(
-    @Description("The search query to use for Google search") val search_query: String = "",
-    @Description("The question(s) considered when processing the content") val content_query: String = "",
-    @Description("Whether to follow links found in the analysis") val follow_links: Boolean = true,
-    @Description("Maximum depth for following links") val max_link_depth: Int = 1,
-    @Description("Method used to fetch content from URLs (httpClient or selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
-    @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int = 30,
-    @Description("Whether to create a final summary of all results") val create_final_summary: Boolean = true,
-    @Description("Maximum size of the final output in characters") val max_final_output_size: Int = 10000,
+    @Description("The search query to use for Google search") val search_query: String? = "",
+    @Description("The question(s) considered when processing the content") val content_query: String? = "",
+    @Description("Whether to follow links found in the analysis") val follow_links: Boolean? = true,
+    @Description("Method used to fetch content from URLs (HttpClient or Selenium)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
+    @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
+    @Description("Whether to create a final summary of all results") val create_final_summary: Boolean? = true,
+    @Description("Maximum size of the final output in characters") val max_final_output_size: Int? = 10000,
+    @Description("Number of pages to process concurrently") val concurrent_page_processing: Int? = 5,
+    @Description("Timeout in seconds for HTTP requests") val request_timeout_seconds: Int? = 30,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
     task_type = TaskType.SearchAndAnalyze.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
   )
+  
   private var selenium: Selenium? = null
   
-
+  
   val urlContentCache = ConcurrentHashMap<String, String>()
   
   override fun promptSegment() = """
@@ -71,10 +76,21 @@ class SearchAndAnalyzeTask(
     ** Results will be saved to .websearch directory for future reference
     ** Links found in analysis can be automatically followed for deeper research
   """.trimIndent()
+  
+  fun cleanup() {
+    try {
+      selenium?.let {
+        it.quit()
+        selenium = null
+      }
+    } catch (e: Exception) {
+      log.error("Error cleaning up Selenium resources", e)
+    }
+  }
+  
+  
   data class PageToProcess(
-    val url: String,
-    val title: String,
-    val depth: Int
+    val url: String, val title: String, val depth: Int
   )
   
   
@@ -95,14 +111,191 @@ class SearchAndAnalyzeTask(
     visitedUrls.addAll(urlContentCache.keys)
     
     val items = (searchData["items"] as List<Map<String, Any>>?)?.take(20)
-    // Create processing queue
-    val pageQueue = LinkedBlockingQueue<PageToProcess>()
+    // Create processing queue with initial items
+    val pageQueue = LinkedBlockingQueue<PageToProcess>().apply {
+      items?.forEach { item ->
+        add(
+          PageToProcess(
+            url = item["link"] as String, title = (item["title"] as? String) ?: "Untitled", depth = 0
+          )
+        )
+      }
+    }
+    
+    // Create a thread-safe map to store analysis results by index
+    val analysisResultsMap = ConcurrentHashMap<Int, String>()
+    val processedCount = AtomicInteger(0)
+    val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
+    val concurrentProcessing = taskConfig?.concurrent_page_processing ?: concurrent_page_processing
+    
+    // Process pages concurrently
+    val futures = mutableListOf<CompletableFuture<*>>()
+    
+    // Header for the analysis results
+    val header = buildString {
+      appendLine("# Analysis of Search Results")
+      appendLine()
+      appendLine("**Search Query:** ${taskConfig?.search_query}")
+      appendLine()
+      appendLine("**URLs Analyzed:**")
+      items?.forEach { item ->
+        appendLine("- [${item["title"]}](${item["link"]})")
+      }
+      appendLine()
+      appendLine("---")
+      appendLine()
+    }
+    
+    
+    // Create a fixed number of worker tasks that will process pages from the queue
+    repeat(concurrentProcessing) {
+      if (pageQueue.isNotEmpty() && processedCount.get() < maxPages) {
+        val future = CompletableFuture.runAsync {
+          // Each worker continuously processes pages until the queue is empty or max pages reached
+          while (true) {
+            // Atomically check if we've reached the max pages limit
+            val currentCount = processedCount.get()
+            if (currentCount >= maxPages) break
+            
+            // Try to get the next page from the queue
+            val page = pageQueue.poll() ?: break
+            
+            // Increment the counter and get the new index
+            val currentIndex = processedCount.incrementAndGet()
+            
+            try {
+              processPage(
+                page, currentIndex, visitedUrls, webSearchDir, pageQueue, analysisResultsMap, api, planSettings, agent.pool
+              )
+            } catch (e: Exception) {
+              log.error("Error processing page: ${page.url}", e)
+              analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page.title}](${page.url})\n\n*Error processing this result: ${e.message}*\n\n"
+            }
+          }
+        }.exceptionally { e ->
+          log.error("Worker thread failed", e)
+          null
+        }
+        
+        futures.add(future)
+      }
+    }
+    
+    // Wait for all futures to complete
+    CompletableFuture.allOf(*futures.toTypedArray()).join()
+    
+    // Combine all results in order
+    val analysisResults = header + (1..processedCount.get()).asSequence().mapNotNull {
+      analysisResultsMap[it]
+    }.joinToString("\n")
+    
+    // Check if we need to create a final summary
+    val finalOutput = if (taskConfig?.create_final_summary != false && analysisResults.length > (taskConfig?.max_final_output_size ?: max_final_output_size)) {
+      createFinalSummary(analysisResults, api, planSettings)
+    } else {
+      analysisResults
+    }
+    task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
+    resultFn(finalOutput)
+  }
+  
+  private fun processPage(
+    page: PageToProcess,
+    index: Int,
+    visitedUrls: MutableSet<String>,
+    webSearchDir: File,
+    pageQueue: LinkedBlockingQueue<PageToProcess>,
+    resultsMap: ConcurrentHashMap<Int, String>,
+    api: API,
+    planSettings: PlanSettings,
+    pool: ThreadPoolExecutor
+  ) {
+    val url = page.url
+    val title = page.title
+    val depth = page.depth
+    
+    // Skip if URL already visited (with thread safety)
+    synchronized(visitedUrls) {
+      if (url in visitedUrls) {
+        log.info("Skipping already visited URL: $url")
+        return
+      }
+      visitedUrls.add(url)
+    }
+    
+    val result = buildString {
+      appendLine("## ${index}. [${title}]($url)")
+      if (depth > 0) {
+        appendLine("*(Follow-up link, depth: $depth)*")
+      }
+      appendLine()
+      
+      try {
+        // Fetch and transform content
+        val content = fetchAndProcessUrl(url, webSearchDir, index, pool)
+        if (content.isBlank()) {
+          appendLine("*Empty content, skipping this result*")
+          appendLine()
+          return@buildString
+        }
+        
+        val analysisGoal = when {
+          taskConfig?.content_query?.isNotBlank() == true -> taskConfig.content_query
+          taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
+          else -> "Analyze the content and provide insights."
+        }
+        val analysis = transformContent(content, analysisGoal, api, planSettings)
+        saveAnalysis(webSearchDir, url, analysis, index)
+        
+        appendLine(analysis)
+        appendLine()
+        
+        // Extract and follow links if enabled and not at max depth
+        val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
+        if (shouldFollowLinks) {
+          // Extract links once outside the synchronized block
+          val extractedLinks = extractLinksFromMarkdown(analysis)
+          
+          // Process links in batches to reduce synchronization overhead
+          synchronized(visitedUrls) {
+            extractedLinks
+              .filter { (_, linkUrl) ->
+                linkUrl !in visitedUrls && !pageQueueContainsUrl(pageQueue, linkUrl)
+              }
+              .forEach { (linkText, linkUrl) ->
+                pageQueue.add(
+                  PageToProcess(
+                    url = linkUrl, title = linkText, depth = depth + 1
+                  )
+                )
+                // Add to visited URLs immediately to prevent duplicate processing
+                visitedUrls.add(linkUrl)
+              }
+          }
+        }
+      } catch (e: Exception) {
+        log.error("Error processing URL: $url", e)
+        appendLine("*Error processing this result: ${e.message}*")
+        appendLine()
+      }
+    }
+    
+    resultsMap[index] = result
+  }
+  
+  private fun pageQueueContainsUrl(queue: LinkedBlockingQueue<PageToProcess>, url: String): Boolean {
+    return queue.any { it.url == url }
+  }
+  
+  /* Original run method removed
     items?.forEach { item ->
-      pageQueue.add(PageToProcess(
-        url = item["link"] as String,
-        title = (item["title"] as? String) ?: "Untitled",
-        depth = 0
-      ))
+      pageQueue.add(
+        PageToProcess(
+          url = item["link"] as String,
+          title = (item["title"] as? String) ?: "Untitled",
+          depth = 0
+        )
+      )
     }
     
     val analysisResults = buildString {
@@ -162,15 +355,16 @@ class SearchAndAnalyzeTask(
           appendLine()
           // Extract and follow links if enabled and not at max depth
           val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
-          val maxDepth = taskConfig?.max_link_depth ?: max_link_depth
-          if (shouldFollowLinks && depth < maxDepth) {
+          if (shouldFollowLinks) {
             extractLinksFromMarkdown(analysis).forEach { (linkText, linkUrl) ->
               if (linkUrl !in visitedUrls && !pageQueue.any { it.url == linkUrl }) {
-                pageQueue.add(PageToProcess(
-                  url = linkUrl,
-                  title = linkText,
-                  depth = depth + 1
-                ))
+                pageQueue.add(
+                  PageToProcess(
+                    url = linkUrl,
+                    title = linkText,
+                    depth = depth + 1
+                  )
+                )
               }
             }
           }
@@ -191,14 +385,18 @@ class SearchAndAnalyzeTask(
     task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
     resultFn(finalOutput)
   }
+*/
+  
   private fun createFinalSummary(analysisResults: String, api: API, planSettings: PlanSettings): String {
     log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
     val maxSize = taskConfig?.max_final_output_size ?: max_final_output_size
     // If the analysis is not too much larger than our target, just truncate it
     if (analysisResults.length < maxSize * 1.5) {
       log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
-      return analysisResults.substring(0, min(analysisResults.length, maxSize)) + 
-        "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
+      return analysisResults.substring(
+        0,
+        min(analysisResults.length, maxSize)
+      ) + "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
     }
     // Extract the header section (everything before the first URL analysis)
     val headerEndIndex = analysisResults.indexOf("## 1. [")
@@ -230,6 +428,7 @@ class SearchAndAnalyzeTask(
     // Combine the header with the summary
     return header + summary
   }
+  
   private fun extractUrlSections(analysisResults: String): List<String> {
     val sections = mutableListOf<String>()
     val sectionPattern = Pattern.compile("## \\d+\\. \\[([^\\]]+)\\]\\(([^)]+)\\)(.*?)(?=## \\d+\\. \\[|$)", Pattern.DOTALL)
@@ -244,6 +443,7 @@ class SearchAndAnalyzeTask(
     }
     return sections
   }
+  
   private fun summarizeSection(content: String): String {
     // Extract the first paragraph or first few sentences
     val firstParagraph = content.split("\n\n").firstOrNull()?.trim() ?: ""
@@ -254,62 +454,74 @@ class SearchAndAnalyzeTask(
   }
   
   
-  protected fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor): String {
+  fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor): String {
     // Check if URL is already in cache
     if (urlContentCache.containsKey(url)) {
       log.info("Using cached content for URL: $url")
       return urlContentCache[url]!!
     }
-    fun fetchWithHttpClient(): String { val client = HttpClient.newBuilder().build()
-    val request = HttpRequest.newBuilder().uri(URI.create(url))
-      .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36").GET().build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-    val contentType = response.headers().firstValue("Content-Type").orElse("")
-    if (contentType.isNotEmpty() && !contentType.startsWith("text/")) {
-      return ""
-    }
-    val body = response.body()
-    if (body.isBlank()) {
-      return ""
-    }
-    saveRawContent(webSearchDir.resolve(".raw"), url, body, index)
-    val content = HtmlSimplifier.scrubHtml(
-      str = body,
-      baseUrl = url,
-      includeCssData = false,
-      simplifyStructure = true,
-      keepObjectIds = false,
-      preserveWhitespace = false,
-      keepScriptElements = false,
-      keepInteractiveElements = false,
-      keepMediaElements = false,
-      keepEventHandlers = false
-    )
-    // Cache the processed content
-    urlContentCache[url] = content
-    return content
-  }
-  fun fetchWithSelenium(pool: ThreadPoolExecutor): String {
-    if (selenium == null) {
-      selenium = Selenium2S3(
-        pool = pool,
-        cookies = null,
-        driver = planSettings.driver()
+    fun fetchWithHttpClient(): String {
+      val client = HttpClient.newBuilder()
+        .connectTimeout(java.time.Duration.ofSeconds((taskConfig?.request_timeout_seconds ?: request_timeout_seconds).toLong()))
+        .build()
+      val request = HttpRequest.newBuilder().uri(URI.create(url))
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36").GET()
+        .timeout(java.time.Duration.ofSeconds((taskConfig?.request_timeout_seconds ?: request_timeout_seconds).toLong()))
+        .build()
+      val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+      val contentType = response.headers().firstValue("Content-Type").orElse("")
+      if (contentType.isNotEmpty() && !contentType.startsWith("text/")) {
+        return ""
+      }
+      val body = response.body()
+      if (body.isBlank()) {
+        return ""
+      }
+      saveRawContent(webSearchDir.resolve(".raw"), url, body, index)
+      val content = HtmlSimplifier.scrubHtml(
+        str = body,
+        baseUrl = url,
+        includeCssData = false,
+        simplifyStructure = true,
+        keepObjectIds = false,
+        preserveWhitespace = false,
+        keepScriptElements = false,
+        keepInteractiveElements = false,
+        keepMediaElements = false,
+        keepEventHandlers = false
       )
+      // Cache the processed content
+      urlContentCache[url] = content
+      return content
     }
-    selenium?.navigate(url)
-    return selenium?.getPageSource() ?: ""
-  }
+    
+    fun fetchWithSelenium(pool: ThreadPoolExecutor): String {
+      if (selenium == null) {
+        selenium = Selenium2S3(
+          pool = pool, cookies = null, driver = planSettings.driver()
+        )
+      }
+      try {
+        selenium?.navigate(url)
+        val pageSource = selenium?.getPageSource() ?: ""
+        if (pageSource.isNotBlank()) {
+          // Cache the processed content
+          urlContentCache[url] = pageSource
+        }
+        return pageSource
+      } catch (e: Exception) {
+        log.error("Error fetching with Selenium: $url", e)
+        return ""
+      }
+    }
     return when (taskConfig?.fetch_method ?: FetchMethod.HttpClient) {
       FetchMethod.HttpClient -> fetchWithHttpClient()
       FetchMethod.Selenium -> {
         try {
           fetchWithSelenium(pool)
         } finally {
-          selenium?.let {
-            it.quit()
-            selenium = null
-          }
+          // Don't quit Selenium after each page - reuse it for better performance
+          // We'll close it at the end of the task
         }
       }
     }
@@ -319,13 +531,16 @@ class SearchAndAnalyzeTask(
     val links = mutableListOf<Pair<String, String>>()
     val linkPattern = Pattern.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
     val matcher = linkPattern.matcher(markdown)
+    // Pre-compile the pattern for URL validation
+    val validUrlPattern = Pattern.compile("^(http|https)://.*")
+    
     while (matcher.find()) {
       val linkText = matcher.group(1)
       val linkUrl = matcher.group(2)
       // Validate URL
       try {
-        val uri = URI.create(linkUrl)
-        if (uri.scheme == "http" || uri.scheme == "https") {
+        // Use pattern matching first as it's faster than URI creation
+        if (validUrlPattern.matcher(linkUrl).matches()) {
           links.add(Pair(linkText, linkUrl))
         }
       } catch (e: Exception) {
