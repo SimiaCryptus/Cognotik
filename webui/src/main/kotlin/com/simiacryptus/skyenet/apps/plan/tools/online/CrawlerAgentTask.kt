@@ -25,14 +25,6 @@ import java.util.concurrent.ThreadPoolExecutor
 import java.util.regex.Pattern
 import kotlin.math.min
 
-interface FetchStrategy {
-  fun fetch(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor, planSettings: PlanSettings): String
-}
-
-interface SeedStrategy {
-  fun getSeedItems(taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?, planSettings: PlanSettings): List<Map<String, Any>>?
-}
-
 class CrawlerAgentTask(
   planSettings: PlanSettings,
   planTask: SearchAndAnalyzeTaskConfigData?,

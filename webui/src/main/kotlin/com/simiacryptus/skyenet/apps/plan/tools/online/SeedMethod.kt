@@ -9,6 +9,11 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+
+interface SeedStrategy {
+  fun getSeedItems(taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?, planSettings: PlanSettings): List<Map<String, Any>>?
+}
+
 enum class SeedMethod {
   GoogleSearch {
     override fun createStrategy(task: CrawlerAgentTask): SeedStrategy = object : SeedStrategy {

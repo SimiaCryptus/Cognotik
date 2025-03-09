@@ -9,6 +9,11 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.ThreadPoolExecutor
 
+
+interface FetchStrategy {
+  fun fetch(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor, planSettings: PlanSettings): String
+}
+
 enum class FetchMethod {
   HttpClient {
     override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = object : FetchStrategy {
