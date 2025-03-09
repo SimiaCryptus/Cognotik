@@ -1,83 +1,75 @@
 package com.simiacryptus.skyenet.apps.plan.tools.online
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
-import com.simiacryptus.skyenet.core.util.Selenium
+import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.util.HtmlSimplifier
+import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
-import com.simiacryptus.skyenet.util.Selenium2S3
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.regex.Pattern
 import kotlin.math.min
 
-class SearchAndAnalyzeTask(
+interface FetchStrategy {
+  fun fetch(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor, planSettings: PlanSettings): String
+}
+
+interface SeedStrategy {
+  fun getSeedItems(taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?, planSettings: PlanSettings): List<Map<String, Any>>?
+}
+
+
+class CrawlerAgentTask(
   planSettings: PlanSettings,
   planTask: SearchAndAnalyzeTaskConfigData?,
   val follow_links: Boolean = true,
-  val max_link_depth: Int = 2,
-  val max_pages_per_task: Int = 30,
+  val max_pages_per_task: Int = 100,
   val max_final_output_size: Int = 10000,
-) : AbstractTask<SearchAndAnalyzeTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
-  enum class FetchMethod {
-    @JsonProperty("httpClient") HttpClient,
-    @JsonProperty("selenium") Selenium
-  }
-  
+) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
+
 
   class SearchAndAnalyzeTaskConfigData(
-    @Description("The search query to use for Google search") val search_query: String = "",
-    @Description("The question(s) considered when processing the content") val content_query: String = "",
-    @Description("Whether to follow links found in the analysis") val follow_links: Boolean = true,
-    @Description("Maximum depth for following links") val max_link_depth: Int = 1,
+    @Description("The search query to use for Google search") val search_query: String? = null,
+    @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
+    @Description("The question(s) considered when processing the content") val content_query: String? = null,
+    @Description("Method to seed the crawler (googleSearch or directUrls)") val seed_method: SeedMethod = SeedMethod.GoogleSearch,
     @Description("Method used to fetch content from URLs (httpClient or selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
-    @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int = 30,
-    @Description("Whether to create a final summary of all results") val create_final_summary: Boolean = true,
-    @Description("Maximum size of the final output in characters") val max_final_output_size: Int = 10000,
+    @Description("Whether to follow links found in the analysis") val follow_links: Boolean? = null,
+    @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = null,
+    @Description("Maximum size of the final output in characters") val max_final_output_size: Int? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
     task_type = TaskType.SearchAndAnalyze.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
   )
-  private var selenium: Selenium? = null
-  
 
-  val urlContentCache = ConcurrentHashMap<String, String>()
-  
+  var selenium: Selenium? = null
+
   override fun promptSegment() = """
-    SearchAndAnalyze - Search Google, fetch top results, and analyze content
+    SearchAndAnalyze - Analyze web content from Google search or direct URLs
     ** Specify the search query
+    ** Or provide direct URLs to analyze
     ** Specify the analysis goal or focus
     ** Results will be saved to .websearch directory for future reference
     ** Links found in analysis can be automatically followed for deeper research
   """.trimIndent()
-  data class PageToProcess(
-    val url: String,
-    val title: String,
-    val depth: Int
-  )
-  
-  
+
   override fun run(
     agent: PlanCoordinator,
     messages: List<String>,
@@ -87,90 +79,126 @@ class SearchAndAnalyzeTask(
     api2: OpenAIClient,
     planSettings: PlanSettings
   ) {
-    val searchResults = performGoogleSearch(planSettings)
-    val searchData: Map<String, Any> = ObjectMapper().readValue(searchResults)
     val webSearchDir = File(agent.root.toFile(), ".websearch")
     if (!webSearchDir.exists()) webSearchDir.mkdirs()
     val visitedUrls = mutableSetOf<String>()
     visitedUrls.addAll(urlContentCache.keys)
-    
-    val items = (searchData["items"] as List<Map<String, Any>>?)?.take(20)
+
     // Create processing queue
-    val pageQueue = LinkedBlockingQueue<PageToProcess>()
-    items?.forEach { item ->
-      pageQueue.add(PageToProcess(
-        url = item["link"] as String,
-        title = (item["title"] as? String) ?: "Untitled",
-        depth = 0
-      ))
+    val pageQueue = LinkedBlockingQueue<LinkData>()
+
+    // Get the seed strategy based on the selected method
+    val seedMethod = taskConfig?.seed_method ?: SeedMethod.GoogleSearch
+    val seedItems = seedMethod.createStrategy(this).getSeedItems(taskConfig, planSettings)
+    seedItems?.forEach { item ->
+      pageQueue.add(
+        LinkData(
+          link = item["link"] as String,
+          title = (item["title"] as? String) ?: "Untitled",
+          relevance_score = 100.0
+        ).apply { depth = 0 }
+      )
     }
-    
+
     val analysisResults = buildString {
       appendLine("# Analysis of Search Results")
       appendLine()
-      // Display search query and URLs
-      appendLine("**Search Query:** ${taskConfig?.search_query}")
+      // Display seed method, search query or direct URLs
+      when (seedMethod) {
+        SeedMethod.GoogleSearch -> {
+          appendLine("**Search Query:** ${taskConfig?.search_query}")
+        }
+
+        SeedMethod.DirectUrls -> {
+          appendLine("**Direct URLs:**")
+          taskConfig?.direct_urls?.split(",")?.forEach { url ->
+            appendLine("- $url")
+          }
+        }
+      }
       appendLine()
       appendLine("**URLs Analyzed:**")
-      items?.forEach { item ->
+      seedItems?.forEach { item ->
         appendLine("- [${item["title"]}](${item["link"]})")
       }
       appendLine()
       appendLine("---")
       appendLine()
-      
+
       var processedCount = 0
       val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
       while (pageQueue.isNotEmpty() && processedCount < maxPages) {
         val page = pageQueue.poll()
-        val url = page.url
+        val url = page.link
         val title = page.title
-        val depth = page.depth
-        
+
         if (url in visitedUrls) {
           log.info("Skipping already visited URL: $url")
           continue
         }
         visitedUrls.add(url)
         processedCount++
-        
+
         appendLine("## ${processedCount}. [${title}]($url)")
-        if (depth > 0) {
-          appendLine("*(Follow-up link, depth: $depth)*")
-        }
         appendLine()
-        
+
         try {
-          // Fetch and transform content for each result
-          
           val content = fetchAndProcessUrl(url, webSearchDir, processedCount, agent.pool)
           if (content.isBlank()) {
             appendLine("*Empty content, skipping this result*")
             appendLine()
             continue
           }
-          
+
           val analysisGoal = when {
             taskConfig?.content_query?.isNotBlank() == true -> taskConfig.content_query
             taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
             else -> "Analyze the content and provide insights."
           }
-          val analysis = transformContent(content, analysisGoal, api, planSettings)
+          val analysis: ParsedResponse<ParsedPage> = transformContent(content, analysisGoal, api, planSettings)
+          if (analysis.obj.page_type == PageType.Error) {
+            appendLine("*Error processing this result: ${analysis.obj.page_information?.let { JsonUtil.toJson(it) }}*")
+            appendLine()
+            saveAnalysis(webSearchDir.resolve("error").apply {
+              parentFile.mkdirs()
+            }, url, analysis, processedCount)
+            continue
+          }
+          if (analysis.obj.page_type == PageType.Irrelevant) {
+            appendLine("*Irrelevant content, skipping this result*")
+            appendLine()
+            saveAnalysis(webSearchDir.resolve("irrelevant").apply {
+              parentFile.mkdirs()
+            }, url, analysis, processedCount)
+            continue
+          }
           saveAnalysis(webSearchDir, url, analysis, processedCount)
-          
+
           appendLine(analysis)
           appendLine()
           // Extract and follow links if enabled and not at max depth
           val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
-          val maxDepth = taskConfig?.max_link_depth ?: max_link_depth
-          if (shouldFollowLinks && depth < maxDepth) {
-            extractLinksFromMarkdown(analysis).forEach { (linkText, linkUrl) ->
-              if (linkUrl !in visitedUrls && !pageQueue.any { it.url == linkUrl }) {
-                pageQueue.add(PageToProcess(
-                  url = linkUrl,
-                  title = linkText,
-                  depth = depth + 1
-                ))
+          if (shouldFollowLinks) {
+            // First try to use the structured link data if available
+            val linkData = analysis.obj.link_data
+            if (!linkData.isNullOrEmpty()) {
+              linkData.forEach { link ->
+                if (link.link !in visitedUrls && !pageQueue.any { it.link == link.link }) {
+                  pageQueue.add(link.apply { depth = depth + 1 })
+                }
+              }
+            } else {
+              // Fallback to extracting links from markdown
+              extractLinksFromMarkdown(analysis.text).forEach { (linkText, linkUrl) ->
+                if (linkUrl !in visitedUrls && !pageQueue.any { it.link == linkUrl }) {
+                  pageQueue.add(
+                    LinkData(
+                      link = linkUrl,
+                      title = linkText,
+                      relevance_score = 50.0
+                    ).apply { depth = depth + 1 }
+                  )
+                }
               }
             }
           }
@@ -181,24 +209,23 @@ class SearchAndAnalyzeTask(
         }
       }
     }
-    
+
     // Check if we need to create a final summary
-    val finalOutput = if (taskConfig?.create_final_summary != false && analysisResults.length > (taskConfig?.max_final_output_size ?: max_final_output_size)) {
-      createFinalSummary(analysisResults, api, planSettings)
-    } else {
-      analysisResults
-    }
+    val finalOutput = createFinalSummary(analysisResults, api, planSettings)
     task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
     resultFn(finalOutput)
   }
+
   private fun createFinalSummary(analysisResults: String, api: API, planSettings: PlanSettings): String {
     log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
     val maxSize = taskConfig?.max_final_output_size ?: max_final_output_size
     // If the analysis is not too much larger than our target, just truncate it
     if (analysisResults.length < maxSize * 1.5) {
       log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
-      return analysisResults.substring(0, min(analysisResults.length, maxSize)) + 
-        "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
+      return analysisResults.substring(
+        0,
+        min(analysisResults.length, maxSize)
+      ) + "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
     }
     // Extract the header section (everything before the first URL analysis)
     val headerEndIndex = analysisResults.indexOf("## 1. [")
@@ -210,26 +237,28 @@ class SearchAndAnalyzeTask(
     // Extract all the URL sections
     val urlSections = extractUrlSections(analysisResults)
     log.info("Extracted ${urlSections.size} URL sections for summarization")
-    // Create a summary prompt
-    val summaryPrompt = listOf(
-      "Create a comprehensive summary of the following web search results and analyses.",
-      "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
-      "Analysis goal: ${taskConfig?.content_query ?: taskConfig?.task_description ?: "Provide key insights"}",
-      "For each source, extract the most important insights, facts, and conclusions.",
-      "Organize information by themes rather than by source when possible.",
-      "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
-      "Include the most important links that should be followed up on.",
-      "Keep your response under ${maxSize / 1000}K characters.",
-      "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
-    ).joinToString("\n\n")
     // Generate the summary
     val summary = SimpleActor(
-      prompt = summaryPrompt,
+      prompt = listOf(
+        "Create a comprehensive summary of the following web search results and analyses.",
+        "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
+        "Analysis goal: ${taskConfig?.content_query ?: taskConfig?.task_description ?: "Provide key insights"}",
+        "For each source, extract the most important insights, facts, and conclusions.",
+        "Organize information by themes rather than by source when possible.",
+        "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
+        "Include the most important links that should be followed up on.",
+        "Keep your response under ${maxSize / 1000}K characters.",
+      ).joinToString("\n\n"),
       model = planSettings.defaultModel,
-    ).answer(listOf(summaryPrompt), api)
+    ).answer(
+      listOf(
+        "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
+      ), api
+    )
     // Combine the header with the summary
     return header + summary
   }
+
   private fun extractUrlSections(analysisResults: String): List<String> {
     val sections = mutableListOf<String>()
     val sectionPattern = Pattern.compile("## \\d+\\. \\[([^\\]]+)\\]\\(([^)]+)\\)(.*?)(?=## \\d+\\. \\[|$)", Pattern.DOTALL)
@@ -244,6 +273,7 @@ class SearchAndAnalyzeTask(
     }
     return sections
   }
+
   private fun summarizeSection(content: String): String {
     // Extract the first paragraph or first few sentences
     val firstParagraph = content.split("\n\n").firstOrNull()?.trim() ?: ""
@@ -252,69 +282,16 @@ class SearchAndAnalyzeTask(
     val sentences = content.split(". ").take(3)
     return sentences.joinToString(". ") + (if (sentences.size >= 3) "..." else "")
   }
-  
-  
+
+
   protected fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor): String {
-    // Check if URL is already in cache
     if (urlContentCache.containsKey(url)) {
       log.info("Using cached content for URL: $url")
       return urlContentCache[url]!!
     }
-    fun fetchWithHttpClient(): String { val client = HttpClient.newBuilder().build()
-    val request = HttpRequest.newBuilder().uri(URI.create(url))
-      .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36").GET().build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-    val contentType = response.headers().firstValue("Content-Type").orElse("")
-    if (contentType.isNotEmpty() && !contentType.startsWith("text/")) {
-      return ""
-    }
-    val body = response.body()
-    if (body.isBlank()) {
-      return ""
-    }
-    saveRawContent(webSearchDir.resolve(".raw"), url, body, index)
-    val content = HtmlSimplifier.scrubHtml(
-      str = body,
-      baseUrl = url,
-      includeCssData = false,
-      simplifyStructure = true,
-      keepObjectIds = false,
-      preserveWhitespace = false,
-      keepScriptElements = false,
-      keepInteractiveElements = false,
-      keepMediaElements = false,
-      keepEventHandlers = false
-    )
-    // Cache the processed content
-    urlContentCache[url] = content
-    return content
+    return this.taskConfig?.fetch_method?.createStrategy(this)?.fetch(url, webSearchDir, index, pool, planSettings) ?: ""
   }
-  fun fetchWithSelenium(pool: ThreadPoolExecutor): String {
-    if (selenium == null) {
-      selenium = Selenium2S3(
-        pool = pool,
-        cookies = null,
-        driver = planSettings.driver()
-      )
-    }
-    selenium?.navigate(url)
-    return selenium?.getPageSource() ?: ""
-  }
-    return when (taskConfig?.fetch_method ?: FetchMethod.HttpClient) {
-      FetchMethod.HttpClient -> fetchWithHttpClient()
-      FetchMethod.Selenium -> {
-        try {
-          fetchWithSelenium(pool)
-        } finally {
-          selenium?.let {
-            it.quit()
-            selenium = null
-          }
-        }
-      }
-    }
-  }
-  
+
   private fun extractLinksFromMarkdown(markdown: String): List<Pair<String, String>> {
     val links = mutableListOf<Pair<String, String>>()
     val linkPattern = Pattern.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
@@ -334,9 +311,9 @@ class SearchAndAnalyzeTask(
     }
     return links
   }
-  
-  
-  private fun saveRawContent(webSearchDir: File, url: String, content: String, index: Int) {
+
+
+  fun saveRawContent(webSearchDir: File, url: String, content: String, index: Int) {
     try {
       val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
       val urlSafe = url.replace(Regex("[^a-zA-Z0-9]"), "_").take(50)
@@ -347,8 +324,8 @@ class SearchAndAnalyzeTask(
       log.error("Failed to save raw content for URL: $url", e)
     }
   }
-  
-  private fun saveAnalysis(webSearchDir: File, url: String, analysis: String, index: Int) {
+
+  private fun saveAnalysis(webSearchDir: File, url: String, analysis: ParsedResponse<ParsedPage>, index: Int) {
     try {
       val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
       val urlSafe = url.replace(Regex("https?://"), "").replace(Regex("[^a-zA-Z0-9]"), "_").take(100)
@@ -363,38 +340,15 @@ class SearchAndAnalyzeTask(
       )
       val metadataJson = ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
       // Write file with commented JSON header followed by the analysis
-      val contentWithHeader = "<!-- ${metadataJson} -->\n\n$analysis"
+      val contentWithHeader = "<!-- ${metadataJson}${analysis.obj.let { JsonUtil.toJson(it) }} -->\n\n${analysis.text}"
       analysisFile.writeText(contentWithHeader)
     } catch (e: Exception) {
       log.error("Failed to save analysis for URL: $url", e)
     }
   }
-  
-  
-  private fun performGoogleSearch(planSettings: PlanSettings): String {
-    val client = HttpClient.newBuilder().build()
-    val encodedQuery = URLEncoder.encode(taskConfig?.search_query?.trim(), "UTF-8")
-    val uriBuilder =
-      "https://www.googleapis.com/customsearch/v1?key=${planSettings.googleApiKey}" + "&cx=${planSettings.googleSearchEngineId}&q=$encodedQuery&num=${10}"
-    val request = HttpRequest.newBuilder().uri(URI.create(uriBuilder)).GET().build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-    val statusCode = response.statusCode()
-    when {
-      statusCode == 400 -> {
-        throw RuntimeException("Google API request failed with status $statusCode: ${response.body()}")
-      }
-      
-      statusCode != 200 -> {
-        throw RuntimeException("Google API request failed with status $statusCode: ${response.body()}")
-      }
-      
-      else -> {
-        return response.body()
-      }
-    }
-  }
-  
-  private fun transformContent(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): String {
+
+
+  private fun transformContent(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): ParsedResponse<ParsedPage> {
     // Check if content is too large and needs to be split
     val maxChunkSize = 50000
     if (content.length <= maxChunkSize) {
@@ -416,19 +370,58 @@ class SearchAndAnalyzeTask(
     }
     // Create a summary of all chunks
     val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n")
-    val summaryPrompt = listOf(
-      "Below are analyses of different parts of a web page related to this goal: $analysisGoal",
-      "Individual analyses: \n${combinedAnalysis.indent("  ")}",
-      "Create a unified summary that combines the key insights from all parts.",
-      "Use markdown formatting for your response, with * characters for bullets.",
-      "Identify the most important links that should be followed up on according to the goal."
-    ).joinToString("\n\n")
-    return SimpleActor(
-      prompt = summaryPrompt,
-      model = planSettings.defaultModel,
-    ).answer(listOf(summaryPrompt), api)
+    return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, api)
   }
-  
+
+  private fun pageParsedResponse(
+    planSettings: PlanSettings,
+    analysisGoal: String,
+    combinedAnalysis: String,
+    api: API
+  ): ParsedResponse<ParsedPage> {
+    val answer: ParsedResponse<ParsedPage> = ParsedActor(
+      prompt = listOf(
+        "Create a unified summary that combines the key insights from all parts.",
+        "Use markdown formatting for your response, with * characters for bullets.",
+        "Identify the most important links that should be followed up on according to the goal."
+      ).joinToString("\n\n"),
+      resultClass = ParsedPage::class.java,
+      model = planSettings.defaultModel,
+      describer = planSettings.describer(),
+      parsingModel = planSettings.parsingModel,
+    ).answer(
+      listOf(
+        listOf(
+          "Below are analyses of different parts of a web page related to this goal: $analysisGoal",
+          "Individual analyses: \n${combinedAnalysis.indent("  ")}",
+        ).joinToString("\n\n")
+      ), api
+    )
+    return answer
+  }
+
+  enum class PageType {
+    Error,
+    Irrelevant,
+    OK
+  }
+
+  data class ParsedPage(
+    val page_type: PageType? = null,
+    val page_information: Any? = null,
+    val tags: List<String>? = null,
+    val link_data: List<LinkData>? = null,
+  )
+
+  data class LinkData(
+    val link: String,
+    val title: String,
+    val tags: List<String>? = null,
+    @Description("1-100") val relevance_score: Double
+  ) {
+    var depth: Int = 0
+  }
+
   private fun splitContentIntoChunks(content: String, maxChunkSize: Int): List<String> {
     val chunks = mutableListOf<String>()
     var remainingContent = content
@@ -445,7 +438,7 @@ class SearchAndAnalyzeTask(
     }
     return chunks
   }
-  
+
   private fun findBreakPoint(text: String, maxSize: Int): Int {
     // Look for paragraph breaks near the max size
     val paragraphBreakSearch = text.substring(0, minOf(maxSize, text.length)).lastIndexOf("\n\n")
@@ -465,22 +458,18 @@ class SearchAndAnalyzeTask(
     // If no good break point, just use the max size
     return minOf(maxSize, text.length)
   }
-  
-  private fun processContentChunk(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): String {
-    val promptList = listOf(
-      "Analyze the following web content according to this goal: $analysisGoal",
-      "Content: \n${content.indent("  ")}",
-      "Use markdown formatting for your response, with * characters for bullets.",
-      "Identify links that should be followed up on according to the goal.",
-    )
-    val prompt = promptList.joinToString("\n\n")
-    return SimpleActor(
-      prompt = prompt,
-      model = planSettings.defaultModel,
-    ).answer(listOf(prompt), api)
-  }
-  
+
+  private fun processContentChunk(content: String, analysisGoal: String, api: API, planSettings: PlanSettings) = pageParsedResponse(
+    planSettings = planSettings,
+    analysisGoal = analysisGoal,
+    combinedAnalysis = content,
+    api = api
+  )
+
+  val urlContentCache = ConcurrentHashMap<String, String>()
+
   companion object {
-    private val log = LoggerFactory.getLogger(SearchAndAnalyzeTask::class.java)
+    private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
+
   }
 }
