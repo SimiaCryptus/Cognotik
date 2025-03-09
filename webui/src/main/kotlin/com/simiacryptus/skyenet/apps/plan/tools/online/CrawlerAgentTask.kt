@@ -33,7 +33,6 @@ interface SeedStrategy {
   fun getSeedItems(taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?, planSettings: PlanSettings): List<Map<String, Any>>?
 }
 
-
 class CrawlerAgentTask(
   planSettings: PlanSettings,
   planTask: SearchAndAnalyzeTaskConfigData?,
