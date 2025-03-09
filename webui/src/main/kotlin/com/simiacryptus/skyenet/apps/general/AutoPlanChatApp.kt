@@ -30,7 +30,7 @@ open class AutoPlanChatApp(
   model: ChatModel,
   parsingModel: ChatModel,
   domainName: String = "localhost",
-  showMenubar: Boolean = true,
+  showMenubar: Boolean = true,  
   api: API? = null,
   api2: OpenAIClient,
   val maxTaskHistoryChars: Int = 20000,
