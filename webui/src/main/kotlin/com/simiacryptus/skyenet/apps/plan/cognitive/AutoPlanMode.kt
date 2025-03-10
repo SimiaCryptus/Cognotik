@@ -63,10 +63,6 @@ class AutoPlanMode(
     }
   }
 
-  override fun execute() {
-    // This is handled by startAutoPlanChat
-  }
-
   private fun startAutoPlanChat(userMessage: String) {
     log.debug("Starting auto plan chat with initial message: $userMessage")
     val task = ui.newTask(true)

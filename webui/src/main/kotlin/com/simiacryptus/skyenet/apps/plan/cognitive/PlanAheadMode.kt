@@ -34,10 +34,6 @@ class PlanAheadMode(
     execute(userMessage)
   }
 
-  override fun execute() {
-    // This is handled by handleUserMessage
-  }
-
   private fun execute(userMessage: String) {
     try {
       val apiClient = api as ChatClient

@@ -52,10 +52,6 @@ class SingleTaskMode(
     }
   }
 
-  override fun execute() {
-    // This is handled by handleUserMessage
-  }
-
   private fun execute(task: SessionTask, userMessage: String) {
     task.echo(renderMarkdown(userMessage))
     val apiClient = (api as ChatClient).getChildClient(task)

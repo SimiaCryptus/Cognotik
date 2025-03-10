@@ -24,10 +24,6 @@ interface CognitiveMode {
    * Handle a user message and trigger the appropriate planning or execution.
    */
   fun handleUserMessage(userMessage: String)
-  /**
-   * Execute the mode’s planning/execution loop. This might be a single shot or iterative execution.
-   */
-  fun execute()
 }
 
 interface CognitiveModeStrategy {
