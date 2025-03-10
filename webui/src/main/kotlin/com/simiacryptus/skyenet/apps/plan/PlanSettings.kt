@@ -30,7 +30,6 @@ open class PlanSettings(
     )
   }.mapKeys { it.key.name }.toMutableMap(),
   var autoFix: Boolean = false,
-  var allowBlocking: Boolean = true,
   val env: Map<String, String>? = mapOf(),
   val workingDir: String? = ".",
   val language: String? = if (isWindows) "powershell" else "bash",
@@ -53,7 +52,6 @@ open class PlanSettings(
     budget: Double = this.budget,
     taskSettings: MutableMap<String, TaskSettingsBase> = this.taskSettings,
     autoFix: Boolean = this.autoFix,
-    allowBlocking: Boolean = this.allowBlocking,
     env: Map<String, String>? = this.env,
     workingDir: String? = this.workingDir,
     language: String? = this.language,
@@ -65,7 +63,6 @@ open class PlanSettings(
     budget = budget,
     taskSettings = taskSettings,
     autoFix = autoFix,
-    allowBlocking = allowBlocking,
     env = env,
     workingDir = workingDir,
     language = language,

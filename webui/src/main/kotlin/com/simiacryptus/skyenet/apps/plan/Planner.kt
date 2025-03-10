@@ -27,7 +27,7 @@ open class Planner {
     val api = (api as ChatClient).getChildClient(task)
     val toInput = inputFn(codeFiles, files, root)
     task.echo(userMessage)
-    return if (planSettings.allowBlocking)
+    return if (!planSettings.autoFix)
       Discussable(
         task = task,
         heading = "",
