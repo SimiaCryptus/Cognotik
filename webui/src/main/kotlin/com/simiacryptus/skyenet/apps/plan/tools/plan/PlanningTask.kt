@@ -60,7 +60,7 @@ class PlanningTask(
     val newTask = agent.ui.newTask(false).apply { add(placeholder) }
     fun toInput(s: String) = (messages + listOf(s)).filter { it.isNotBlank() }
 
-    val subPlan = if (planSettings.allowBlocking && !planSettings.autoFix) {
+    val subPlan = if (!planSettings.autoFix) {
       createSubPlanDiscussable(newTask, userMessage, ::toInput, api, agent.ui, planSettings).call().obj
     } else {
       val design = planSettings.planningActor().answer(

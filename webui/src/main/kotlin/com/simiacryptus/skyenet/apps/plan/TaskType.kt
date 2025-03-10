@@ -8,7 +8,7 @@ import com.simiacryptus.skyenet.apps.plan.tools.CommandSessionTask
 import com.simiacryptus.skyenet.apps.plan.tools.RunShellCommandTask
 import com.simiacryptus.skyenet.apps.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.SeleniumSessionTask
-import com.simiacryptus.skyenet.apps.plan.tools.data.DataTableCompilationTask
+import com.simiacryptus.skyenet.apps.plan.tools.knowledge.DataTableCompilationTask
 import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask
 import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.file.FileSearchTask
@@ -20,10 +20,7 @@ import com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphModificationT
 import com.simiacryptus.skyenet.apps.plan.tools.knowledge.EmbeddingSearchTask
 import com.simiacryptus.skyenet.apps.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.skyenet.apps.plan.tools.online.GitHubSearchTask
-import com.simiacryptus.skyenet.apps.plan.tools.online.SearchAndAnalyzeTask
-import com.simiacryptus.skyenet.apps.plan.tools.online.SimpleGoogleSearchTask
-import com.simiacryptus.skyenet.apps.plan.tools.online.SimpleGoogleSearchTask.GoogleSearchTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.online.WebFetchAndTransformTask
+import com.simiacryptus.skyenet.apps.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask.ForeachTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask
@@ -256,34 +253,6 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val GoogleSearch = TaskType(
-      "GoogleSearch", GoogleSearchTaskConfigData::class.java, TaskSettingsBase::class.java, "Perform Google web searches with custom filtering", """
-          Executes Google web searches with customizable parameters.
-          <ul>
-            <li>Uses Google Custom Search API</li>
-            <li>Supports result count configuration</li>
-            <li>Includes metadata and snippets</li>
-            <li>Formats results in markdown</li>
-            <li>Handles URL encoding and safety</li>
-          </ul>
-        """
-    )
-    val WebFetchAndTransform = TaskType(
-      "WebFetchAndTransform",
-      WebFetchAndTransformTask.WebFetchAndTransformTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Fetch and transform web content into desired formats",
-      """
-          Fetches content from web URLs and transforms it into desired formats.
-          <ul>
-            <li>Downloads and cleans HTML content</li>
-            <li>Converts content to specified formats</li>
-            <li>Handles content size limitations</li>
-            <li>Supports custom transformation goals</li>
-            <li>Integrates with markdown rendering</li>
-          </ul>
-        """
-    )
     val KnowledgeIndexing = TaskType(
       "KnowledgeIndexing",
       KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
@@ -334,7 +303,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     )
     val SearchAndAnalyze = TaskType(
       "SearchAndAnalyze",
-      SearchAndAnalyzeTask.SearchAndAnalyzeTaskConfigData::class.java,
+      CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Search Google, fetch top results, and analyze content",
       """
@@ -356,15 +325,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
       registerConstructor(CommandAutoFix) { settings, task -> CommandAutoFixTask(settings, task) }
       registerConstructor(Inquiry) { settings, task -> InquiryTask(settings, task) }
       registerConstructor(Search) { settings, task -> FileSearchTask(settings, task) }
-      registerConstructor(SearchAndAnalyze) { settings, task -> SearchAndAnalyzeTask(settings, task) }
+      registerConstructor(SearchAndAnalyze) { settings, task -> CrawlerAgentTask(settings, task) }
       registerConstructor(EmbeddingSearch) { settings, task -> EmbeddingSearchTask(settings, task) }
       registerConstructor(FileModification) { settings, task -> FileModificationTask(settings, task) }
       registerConstructor(RunShellCommand) { settings, task -> RunShellCommandTask(settings, task) }
       registerConstructor(ForeachTask) { settings, task -> ForeachTask(settings, task) }
       registerConstructor(TaskPlanning) { settings, task -> PlanningTask(settings, task) }
       registerConstructor(GitHubSearch) { settings, task -> GitHubSearchTask(settings, task) }
-      registerConstructor(GoogleSearch) { settings, task -> SimpleGoogleSearchTask(settings, task) }
-      registerConstructor(WebFetchAndTransform) { settings, task -> WebFetchAndTransformTask(settings, task) }
       registerConstructor(KnowledgeIndexing) { settings, task -> KnowledgeIndexingTask(settings, task) }
       registerConstructor(SeleniumSession) { settings, task -> SeleniumSessionTask(settings, task) }
       registerConstructor(CommandSession) { settings, task -> CommandSessionTask(settings, task) }

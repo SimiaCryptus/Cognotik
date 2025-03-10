@@ -21,7 +21,7 @@ import java.util.function.Consumer
 
 abstract class SocketManagerBase(
   protected val session: Session,
-  protected val dataStorage: StorageInterface?,
+  val dataStorage: StorageInterface?,
   protected val owner: User? = null,
   private val messageStates: LinkedHashMap<String, String> = dataStorage?.getMessages(
     owner, session

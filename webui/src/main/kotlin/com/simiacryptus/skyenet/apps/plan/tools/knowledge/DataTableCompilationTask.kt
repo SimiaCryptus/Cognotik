@@ -1,4 +1,4 @@
-package com.simiacryptus.skyenet.apps.plan.tools.data
+package com.simiacryptus.skyenet.apps.plan.tools.knowledge
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.jopenai.ChatClient
