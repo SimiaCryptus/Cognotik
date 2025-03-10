@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import ErrorFallback from './components/ErrorBoundary/ErrorFallback';
 import './App.css';
 import websocket from './services/websocket';
+import {setConnectionStatus, setConnectionError} from './store/slices/connectionSlice';
 import ChatInterface from './components/ChatInterface';
 import ThemeProvider from './themes/ThemeProvider';
 import {Menu} from "./components/Menu/Menu";
@@ -75,6 +76,8 @@ const AppContent: React.FC = () => {
     const dispatch = useDispatch();
     // Only load archived messages once on mount
     const [archivedMessagesLoaded, setArchivedMessagesLoaded] = React.useState(false);
+    // Use the useWebSocket hook instead of direct websocket access
+    const { isConnected, error } = useSelector((state: RootState) => state.connection);
 
     // Load archived messages on mount if in archive mode
     React.useEffect(() => {
@@ -88,7 +91,6 @@ const AppContent: React.FC = () => {
     }, [dispatch, archivedMessagesLoaded]);
 
     const sessionId = websocket.getSessionId();
-    const isConnected = websocket.isConnected();
     React.useEffect(() => {
         // Skip websocket setup if loading from archive
         if (appConfig.isArchive) {
@@ -98,10 +100,17 @@ const AppContent: React.FC = () => {
         if (appConfig.applicationName) {
             document.title = appConfig.applicationName;
         }
-    }, [appConfig.applicationName]);
+    }, [appConfig.applicationName, appConfig.isArchive]);
+    
     if (!isConnected) {
         console.warn(`${LOG_PREFIX} WebSocket disconnected - sessionId: ${sessionId}`);
     }
+    // Log WebSocket errors for debugging
+    React.useEffect(() => {
+        if (error) {
+            console.error(`${LOG_PREFIX} WebSocket error:`, error.message);
+        }
+    }, [error]);
 
     React.useEffect(() => {
         const cleanup = setupUIHandlers();

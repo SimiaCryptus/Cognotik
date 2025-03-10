@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
 
-class SearchAndAnalyzeTask(
+class CrawlerAgentTask(
   planSettings: PlanSettings,
   planTask: SearchAndAnalyzeTaskConfigData?,
   val follow_links: Boolean = true,
@@ -40,12 +40,11 @@ class SearchAndAnalyzeTask(
   val max_final_output_size: Int = 10000,
   val concurrent_page_processing: Int = 5,
   val request_timeout_seconds: Int = 30
-) : AbstractTask<SearchAndAnalyzeTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
   enum class FetchMethod {
     HttpClient,
     Selenium
   }
-  
   
   class SearchAndAnalyzeTaskConfigData(
     @Description("The search query to use for Google search") val search_query: String? = "",
@@ -57,14 +56,16 @@ class SearchAndAnalyzeTask(
     @Description("Maximum size of the final output in characters") val max_final_output_size: Int? = 10000,
     @Description("Number of pages to process concurrently") val concurrent_page_processing: Int? = 5,
     @Description("Timeout in seconds for HTTP requests") val request_timeout_seconds: Int? = 30,
+    val direct_urls: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
     task_type = TaskType.SearchAndAnalyze.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
-  )
+  ) {
+  }
   
-  private var selenium: Selenium? = null
+  var selenium: Selenium? = null
   
   
   val urlContentCache = ConcurrentHashMap<String, String>()
@@ -551,7 +552,7 @@ class SearchAndAnalyzeTask(
   }
   
   
-  private fun saveRawContent(webSearchDir: File, url: String, content: String, index: Int) {
+  fun saveRawContent(webSearchDir: File, url: String, content: String, index: Int) {
     try {
       val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
       val urlSafe = url.replace(Regex("[^a-zA-Z0-9]"), "_").take(50)
@@ -696,6 +697,6 @@ class SearchAndAnalyzeTask(
   }
   
   companion object {
-    private val log = LoggerFactory.getLogger(SearchAndAnalyzeTask::class.java)
+    private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
   }
 }

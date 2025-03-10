@@ -204,7 +204,7 @@ abstract class SocketManagerBase(
         // Optionally update a heartbeat timestamp here if needed
         return
       }
-      if (trimmed.contains("\"type\":\"ping\"")) {
+      if (trimmed.contains("\"type\":\"ping\"") || trimmed.contains("\"type\":\"heartbeat\"")) {
         log.debug("Received heartbeat ping - sending pong response.")
         try {
           socket.remote.sendString("{\"type\":\"pong\"}")

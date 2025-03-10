@@ -3,6 +3,7 @@ import configReducer from './slices/configSlice';
 import messageReducer from './slices/messageSlice';
 import uiReducer from './slices/uiSlice';
 import userReducer from './slices/userSlice';
+import connectionReducer from './slices/connectionSlice';
 
 // Utility function to get formatted timestamp with milliseconds
 const getTimestamp = () => {
@@ -27,6 +28,7 @@ export const store = configureStore({
         config: configReducer,
         messages: messageReducer,
         user: userReducer,
+        connection: connectionReducer,
     },
     middleware: (getDefaultMiddleware) =>
         process.env.NODE_ENV === 'development'
