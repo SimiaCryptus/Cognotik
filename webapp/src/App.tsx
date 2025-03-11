@@ -93,14 +93,14 @@ const AppContent: React.FC = () => {
     const sessionId = websocket.getSessionId();
     React.useEffect(() => {
         // Skip websocket setup if loading from archive
-        if (appConfig.isArchive) {
+        if (isArchive) {
             return;
         }
 
         if (appConfig.applicationName) {
             document.title = appConfig.applicationName;
         }
-    }, [appConfig.applicationName, appConfig.isArchive]);
+    }, [appConfig.applicationName]);
     
     if (!isConnected) {
         console.warn(`${LOG_PREFIX} WebSocket disconnected - sessionId: ${sessionId}`);

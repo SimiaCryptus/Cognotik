@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {fetchAppConfig} from '../services/appConfig';
 import {isArchive, APP_NAME} from '../utils/constants';
@@ -11,6 +11,7 @@ import InputArea from './InputArea';
 import Spinner from './common/Spinner';
 import {Message, MessageType} from '../types/messages'; 
 import {WebSocketService} from '../services/websocket';
+import {RootState} from '../store';
 
 
 const LOG_PREFIX = '[ChatInterface]';
@@ -50,6 +51,7 @@ const ChatContainer = styled.div`
     const [sessionId] = useState(() => propSessionId || window.location.hash.slice(1) || 'new');
     const dispatch = useDispatch();
     const ws = useWebSocket(sessionId);
+    const appConfig = useSelector((state: RootState) => state.config);
 
 
     useEffect(() => {
@@ -60,9 +62,10 @@ const ChatContainer = styled.div`
         const loadAppConfig = async () => {
             if (!sessionId) return;
             try {
-                const config = await fetchAppConfig(sessionId);
+                // Fix: Use the correct endpoint path for app config
+                const config = await fetchAppConfig(sessionId, '/appInfo');
                 if (mounted && config) {
-                    console.info(`${LOG_PREFIX} App config loaded successfully`);
+                    console.info(`${LOG_PREFIX} App config loaded successfully`, config);
                 } else {
                     console.warn(`${LOG_PREFIX} Could not load app config, using defaults`);
                 }

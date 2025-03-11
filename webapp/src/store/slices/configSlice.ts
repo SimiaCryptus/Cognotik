@@ -4,8 +4,9 @@ import {ThemeName} from '../../types/theme';
 
 // Helper function to validate theme name
 const isValidTheme = (theme: string | null): theme is ThemeName => {
-    return theme === 'main' || theme === 'night' || theme === 'forest' ||
-        theme === 'pony' || theme === 'alien' || theme === 'sunset';
+    return theme === 'default' || theme === 'main' || theme === 'night' || 
+        theme === 'forest' || theme === 'pony' || theme === 'alien' || 
+        theme === 'sunset' || theme === 'ocean' || theme === 'cyberpunk';
 };
 // Load theme from localStorage with type safety
 const loadSavedTheme = (): ThemeName => {
@@ -52,6 +53,7 @@ const initialState: AppConfig = {
     loadImages: true,
     showMenubar: true,
     applicationName: 'Chat App',
+    isArchive: document.documentElement.hasAttribute('data-archive'),
     websocket: loadWebSocketConfig(),
     logging: {
         enabled: true,
