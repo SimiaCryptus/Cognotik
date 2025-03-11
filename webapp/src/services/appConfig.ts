@@ -29,7 +29,7 @@ export const themeStorage = {
   },
 };
 // Add fetchAppConfig function
-export const fetchAppConfig = async (sessionId: string, endpoint = '/config') : Promise<any> => {
+export const fetchAppConfig = async (sessionId: string, endpoint = 'appInfo') : Promise<any> => {
   if (loadConfigPromise) {
     return loadConfigPromise;
   }

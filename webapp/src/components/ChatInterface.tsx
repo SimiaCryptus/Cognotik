@@ -63,7 +63,7 @@ const ChatContainer = styled.div`
             if (!sessionId) return;
             try {
                 // Fix: Use the correct endpoint path for app config
-                const config = await fetchAppConfig(sessionId, '/appInfo');
+                const config = await fetchAppConfig(sessionId);
                 if (mounted && config) {
                     console.info(`${LOG_PREFIX} App config loaded successfully`, config);
                 } else {
