@@ -160,7 +160,7 @@ const ChatContainer = styled.div`
     ) : (
         <ChatContainer data-testid="chat-container" id="chat-container">
             <MessageList/>
-            <InputArea onSendMessage={handleSendMessage}/>
+            <InputArea onSendMessage={handleSendMessage} isWebSocketConnected={isConnected} />
         </ChatContainer>
     );
 };

@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
-class AutoPlanMode(
+open class AutoPlanMode(
   override val ui: ApplicationInterface,
   override val api: API,
   override val planSettings: PlanSettings,
@@ -91,9 +91,9 @@ class AutoPlanMode(
         val coordinator = PlanCoordinator(
           user = user,
           session = session,
-          dataStorage = ui.socketManager.dataStorage!!,
+          dataStorage = ui.socketManager?.dataStorage!!,
           ui = ui,
-          root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager.dataStorage?.getDataDir(user, session)?.toPath() ?: File(".").toPath(),
+          root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager?.dataStorage?.getDataDir(user, session)?.toPath() ?: File(".").toPath(),
           planSettings = planSettings
         )
         log.debug("Created plan coordinator")

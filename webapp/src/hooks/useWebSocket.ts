@@ -71,14 +71,11 @@ export const useWebSocket = (sessionId: string) => {
             return;
         }
 
-        let lastMessageTime = 0;
         const handleMessage = (message: Message) => {
             // Ensure message has required fields
         if (!message?.id || !message?.version) {
                 return;
             }
-            // Store the timestamp of the last received message
-            lastMessageTime = message.timestamp || Date.now();
             dispatch(addMessage(message));
         };
 

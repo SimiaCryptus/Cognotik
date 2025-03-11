@@ -231,9 +231,10 @@ const SendButton = styled.button`
 
 interface InputAreaProps {
     onSendMessage: (message: string) => void;
+    isWebSocketConnected?: boolean;
 }
 
-const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
+const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected = true}: InputAreaProps) {
     // Remove non-critical initialization log
     const [message, setMessage] = useState('');
     // Debounce preview mode toggling to avoid rapid switching that can trigger flicker
@@ -293,7 +294,7 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
 
     const handleSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
-        if (isSubmitting) return;
+        if (isSubmitting || !isWebSocketConnected) return;
 
         if (message.trim()) {
             setIsSubmitting(true);
@@ -310,7 +311,7 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
         } else {
             log('Empty message submission prevented');
         }
-    }, [message, onSendMessage]);
+    }, [message, onSendMessage, isSubmitting, isWebSocketConnected]);
 
     const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newMessage = e.target.value;
@@ -318,11 +319,11 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
     }, []);
 
     const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && isWebSocketConnected) {
             e.preventDefault();
             handleSubmit(e);
         }
-    }, [handleSubmit]);
+    }, [handleSubmit, isWebSocketConnected]);
 
     React.useEffect(() => {
         try {
@@ -334,6 +335,19 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
             // Remove non-critical unmounting log
         };
     }, [config]);
+    // Create a message to show when disconnected
+    const connectionStatusMessage = !isWebSocketConnected ? (
+        <div style={{ 
+            color: 'red', 
+            fontSize: '0.8rem', 
+            marginTop: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            ⚠️ Connection lost. Reconnecting... (Your message will be preserved)
+        </div>
+    ) : null;
 
 
     if (isCollapsed) {
@@ -353,6 +367,7 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
                 </CollapseButton>
                 <CollapsedPlaceholder onClick={handleToggleCollapse}>
                     Click to expand input
+                    {connectionStatusMessage}
                 </CollapsedPlaceholder>
             </InputContainer>
         );
@@ -500,7 +515,9 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
                                         value={message}
                                         onChange={handleMessageChange}
                                         onKeyPress={handleKeyPress}
-                                        placeholder="Type a message... (Markdown supported)"
+                                        placeholder={isWebSocketConnected 
+                                            ? "Type a message... (Markdown supported)" 
+                                            : "Connection lost. Reconnecting..."}
                                         rows={3}
                                         aria-label="Message input"
                                         disabled={isSubmitting}
@@ -508,14 +525,15 @@ const InputArea = memo(function InputArea({onSendMessage}: InputAreaProps) {
                                 </div>
                             )}
                         </div>
+                        {connectionStatusMessage}
                         <SendButton
                             type="submit"
                             data-testid="send-button" 
                             id="send-message-button"
-                            disabled={isSubmitting || !message.trim()}
+                            disabled={isSubmitting || !message.trim() || !isWebSocketConnected}
                             aria-label="Send message"
                         >
-                            Send
+                            {isWebSocketConnected ? 'Send' : 'Reconnecting...'}
                         </SendButton>
                     </div>
                 </StyledForm>
