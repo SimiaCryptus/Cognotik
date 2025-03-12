@@ -68,7 +68,7 @@ abstract class SocketManagerBase(
     operationID: String,
     responseContents: String,
     spinner: String = SessionTask.spinner,
-    private val buffer: MutableList<StringBuilder> = mutableListOf(StringBuilder(responseContents))
+    buffer: MutableList<StringBuilder> = mutableListOf(StringBuilder(responseContents))
   ) : SessionTask(
     messageID = operationID, buffer = buffer, spinner = spinner
   ) {

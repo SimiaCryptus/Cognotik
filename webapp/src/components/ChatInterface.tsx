@@ -88,8 +88,6 @@ const ChatContainer = styled.div`
 
         const handleMessage = (data: WebSocketMessage) => {
             if (!isComponentMounted) return;
-
-
             if (data.isHtml) {
                 const newMessage = {
                     id: `${Date.now()}`,
@@ -128,7 +126,6 @@ const ChatContainer = styled.div`
                 rawHtml: null,
                 sanitized: false
             };
-
             dispatch(addMessage(messageObject));
         };
 
@@ -160,7 +157,7 @@ const ChatContainer = styled.div`
     ) : (
         <ChatContainer data-testid="chat-container" id="chat-container">
             <MessageList/>
-            <InputArea onSendMessage={handleSendMessage} isWebSocketConnected={isConnected} />
+            <InputArea onSendMessage={handleSendMessage} isWebSocketConnected={ws.isConnected} />
         </ChatContainer>
     );
 };
