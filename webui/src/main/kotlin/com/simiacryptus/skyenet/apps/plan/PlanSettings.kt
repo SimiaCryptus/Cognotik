@@ -36,6 +36,9 @@ open class PlanSettings(
   var githubToken: String? = null,
   var googleApiKey: String? = null,
   var googleSearchEngineId: String? = null,
+  var maxTaskHistoryChars: Int = 10000,
+  var maxTasksPerIteration: Int = 3,
+  var maxIterations: Int = 10,
 ) {
 
   fun getTaskSettings(taskType: TaskType<*, *>): TaskSettingsBase = taskSettings[taskType.name] ?: TaskSettingsBase(taskType.name)
@@ -69,6 +72,9 @@ open class PlanSettings(
     githubToken = this.githubToken,
     googleApiKey = this.googleApiKey,
     googleSearchEngineId = this.googleSearchEngineId,
+    maxTaskHistoryChars = this.maxTaskHistoryChars,
+    maxTasksPerIteration = this.maxTasksPerIteration,
+    maxIterations = this.maxIterations,
   )
 
   fun planningActor(): ParsedActor<TaskBreakdownResult> {

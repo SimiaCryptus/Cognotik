@@ -54,30 +54,7 @@ class PlanCoordinator(
           ""
         }
       }
-
-  fun executeTaskBreakdownWithPrompt(
-    jsonInput: String,
-    api: API,
-    api2: OpenAIClient,
-    task: SessionTask
-  ) {
-    try {
-      lateinit var taskBreakdownWithPrompt: TaskBreakdownWithPrompt
-      val plan = filterPlan {
-        taskBreakdownWithPrompt = JsonUtil.fromJson(jsonInput, TaskBreakdownWithPrompt::class.java)
-        taskBreakdownWithPrompt.plan
-      }
-      task.add(
-        renderMarkdown(
-          "## Executing TaskBreakdownWithPrompt\nPrompt: ${taskBreakdownWithPrompt.prompt}\nPlan Text:\n```\n${taskBreakdownWithPrompt.planText}\n```", ui = ui
-        )
-      )
-      executePlan(plan ?: emptyMap(), task, taskBreakdownWithPrompt.prompt, api, api2)
-    } catch (e: Exception) {
-      task.error(ui, e)
-    }
-  }
-
+  
   fun executePlan(
     plan: Map<String, TaskConfigBase>,
     task: SessionTask,

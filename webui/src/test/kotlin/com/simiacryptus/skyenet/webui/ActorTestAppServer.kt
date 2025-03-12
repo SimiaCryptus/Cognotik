@@ -87,7 +87,7 @@ object ActorTestAppServer : com.simiacryptus.skyenet.webui.application.Applicati
             autoFix = true,
             env = mapOf(),
             workingDir = ".",
-            language = if (isWindows) "powershell" else "bash",
+            language = if (isWindows) "powershell" else "bash",,
           ).apply {
             setTaskSettings(
               TaskType.TaskPlanning, TaskSettingsBase(
