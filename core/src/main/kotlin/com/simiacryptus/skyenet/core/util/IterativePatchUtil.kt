@@ -595,35 +595,40 @@ object IterativePatchUtil {
   private fun parsePatchLines(text: String, sourceLines: List<LineRecord>): List<LineRecord> {
     log.debug("Starting to parse patch lines")
     val patchLines = setLinks(text.lines().mapIndexed { index, line ->
-      val trimmed = line.trimStart()
+      // First, check if the line begins with the context marker ("  ") without trimming.
+      val isContext = line.startsWith("  ")
+      // If so, remove exactly two spaces; otherwise trim normally.
+      val content = if(isContext) line.substring(2) else line.trimStart()
       LineRecord(
         index = index,
-       line = run {
+        line = run {
            when {
              // If the line is a comment starting with '//' or '#', treat it as context.
-             trimmed.startsWith("//") || trimmed.startsWith("#") -> trimmed
-             // If the line starts with a context marker, remove it.
-             trimmed.startsWith("  ") -> trimmed.substring(2)
+             content.startsWith("//") || content.startsWith("#") -> content
+             // For context lines, use the content directly.
+             isContext -> content
              // Skip diff metadata lines.
-             trimmed.startsWith("+++") || trimmed.startsWith("---") || trimmed.startsWith("@@") -> null
+             content.startsWith("+++") || content.startsWith("---") || content.startsWith("@@") -> null
              // For explicit insertions/deletions, remove the marker.
-             trimmed.startsWith("+") -> trimmed.substring(1)
-             trimmed.startsWith("-") -> trimmed.substring(1)
-             // Otherwise, use the trimmed line
-             else -> trimmed
+             content.startsWith("+") -> content.substring(1)
+             content.startsWith("-") -> content.substring(1)
+             // Otherwise, use the content as is.
+             else -> content
            }
          },
          type = when {
-           // If the line is a comment, treat it as context.
-           trimmed.startsWith("//") || trimmed.startsWith("#") -> CONTEXT
-           // Explicit markers take precedence.
-           trimmed.startsWith("+") -> ADD
-           trimmed.startsWith("-") -> DELETE
-           // If the (trimmed) line appears in the source then it is context…
-           sourceLines.any { normalizeLine(it.line ?: "") == normalizeLine(trimmed) } -> CONTEXT
-           // …otherwise, even without a marker, treat it as an insertion.
-           else -> ADD
-        }
+            // Always mark a raw context line as CONTEXT.
+            isContext -> CONTEXT
+            // If the line is a comment, treat it as context.
+            content.startsWith("//") || content.startsWith("#") -> CONTEXT
+            // Explicit markers take precedence.
+            content.startsWith("+") -> ADD
+            content.startsWith("-") -> DELETE
+            // If the content appears in the source then it is context…
+            sourceLines.any { normalizeLine(it.line ?: "") == normalizeLine(content) } -> CONTEXT
+            // …otherwise, even without a marker, treat it as an insertion.
+            else -> ADD
+         }
       )
     }.filter { it.line != null }).toMutableList()
     
