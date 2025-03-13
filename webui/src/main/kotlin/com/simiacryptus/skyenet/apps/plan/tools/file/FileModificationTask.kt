@@ -164,60 +164,64 @@ class FileModificationTask(
 
     val semaphore = Semaphore(0)
     val onComplete = { semaphore.release() }
-    Retryable(agent.ui, task = task) { sb: StringBuilder ->
-      val taskConfig: FileModificationTaskConfigData? = taskConfig
-      val codeResult = fileModificationActor.answer(
-        (messages + listOf(
-          getInputFileWithDiff(),
-          taskConfig?.task_description ?: "",
-        )).filter { it.isNotBlank() }, api
-      )
-      resultFn(codeResult)
-      if (agent.planSettings.autoFix) {
-        task.complete()
-        onComplete()
-        renderMarkdown(codeResult, ui = agent.ui) {
-          AddApplyFileDiffLinks.instrumentFileDiffs(
-            agent.ui.socketManager!!,
-            root = agent.root,
-            response = it,
-            handle = { newCodeMap ->
-              newCodeMap.forEach { (path, newCode) ->
-                task.complete("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
-              }
-            },
-            ui = agent.ui,
-            api = api,
-            shouldAutoApply = { agent.planSettings.autoFix },
-            model = planSettings.getTaskSettings(TaskType.FileModification).model ?: planSettings.defaultModel,
-            defaultFile = defaultFile
-          ) + "\n\n## Auto-applied changes"
-        }
-      } else {
-        renderMarkdown(codeResult, ui = agent.ui) {
-          AddApplyFileDiffLinks.instrumentFileDiffs(
-            agent.ui.socketManager!!,
-            root = agent.root,
-            response = it,
-            handle = { newCodeMap ->
-              newCodeMap.forEach { (path, newCode) ->
-                task.complete("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
-              }
-            },
-            ui = agent.ui,
-            api = api,
-            model = planSettings.getTaskSettings(TaskType.FileModification).model ?: planSettings.defaultModel,
-            defaultFile = defaultFile,
-          ) + acceptButtonFooter(agent.ui) {
-            task.complete()
-            onComplete()
+    val completionNotes = mutableListOf<String>()
+    Retryable(agent.ui, task = task) {
+      val task = agent.ui.newTask(false)
+      agent.ui.socketManager?.pool?.submit {
+        val codeResult = fileModificationActor.answer(
+          (messages + listOf(
+            getInputFileWithDiff(),
+            this.taskConfig?.task_description ?: "",
+          )).filter { it.isNotBlank() }, api
+        )
+        if (agent.planSettings.autoFix) {
+          val markdown = renderMarkdown(codeResult, ui = agent.ui) {
+            AddApplyFileDiffLinks.instrumentFileDiffs(
+              agent.ui.socketManager,
+              root = agent.root,
+              response = it,
+              handle = { newCodeMap ->
+                newCodeMap.forEach { (path, newCode) ->
+                  completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
+                }
+              },
+              ui = agent.ui,
+              api = api,
+              shouldAutoApply = { agent.planSettings.autoFix },
+              model = planSettings.getTaskSettings(TaskType.FileModification).model ?: planSettings.defaultModel,
+              defaultFile = defaultFile
+            ) + "\n\n## Auto-applied changes"
           }
-        }
-      }.apply { task.add(this) }
+          task.complete()
+          onComplete()
+          markdown
+        } else {
+          renderMarkdown(codeResult, ui = agent.ui) {
+            AddApplyFileDiffLinks.instrumentFileDiffs(
+              agent.ui.socketManager,
+              root = agent.root,
+              response = it,
+              handle = { newCodeMap ->
+                newCodeMap.forEach { (path, newCode) ->
+                  completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
+                }
+              },
+              ui = agent.ui,
+              api = api,
+              model = planSettings.getTaskSettings(TaskType.FileModification).model ?: planSettings.defaultModel,
+              defaultFile = defaultFile,
+            ) + acceptButtonFooter(agent.ui) {
+              task.complete()
+              onComplete()
+            }
+          }
+        }.apply { task.add(this) }
+      }
       task.placeholder
     }
     try {
       semaphore.acquire()
+      resultFn(completionNotes.joinToString("\n"))
     } catch (e: Throwable) {
       log.warn("Error", e)
     }

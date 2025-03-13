@@ -464,7 +464,7 @@ abstract class PatchApp(
         $summary
         $patchFormatPrompt
         If needed, new files can be created by using code blocks labeled with the filename in the same manner.
-        Note: Ignore any "// ERROR: ..." comments when generating patches - these are just for reference.
+        Note: Ignore any "/* Error: ... */" comments when generating patches - these are just for reference.
         """.trimIndent(),
       model = model,
     ).answer(
@@ -475,7 +475,7 @@ abstract class PatchApp(
       ),
       api = childApi
     ).lines().joinToString("\n") {
-      it.replace(Regex("""/\* Error at .*?\*/"""), "")
+      it.replace(Regex("""/\* Error.*?\*/"""), "")
     }
     val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
       root = root.toPath(),
