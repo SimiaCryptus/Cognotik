@@ -10,6 +10,7 @@ import com.simiacryptus.skyenet.apps.general.PatchApp
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.skyenet.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -77,6 +78,7 @@ class CommandAutoFixTask(
     val taskSettings = agent.planSettings.getTaskSettings(TaskType.CommandAutoFix) as CommandAutoFixTaskSettings
     retryable = Retryable(agent.ui, task = task) {
       val task = agent.ui.newTask(false).apply { it.append(placeholder) }
+      val api = api.getChildClient(task)
       this.taskConfig?.commands?.forEachIndexed { index, commandWithDir ->
         val alias = commandWithDir.command.firstOrNull()
         val commandAutoFixCommands = taskConfig.commands.map {
@@ -118,25 +120,13 @@ class CommandAutoFixTask(
           ui = agent.ui,
           task = task
         )
-        if (outputResult.exitCode != 0) {
-          hasError.set(true)
-        }
         task.add(MarkdownUtil.renderMarkdown("## Command Auto Fix Result for Command ${index + 1}\n", ui = agent.ui, tabs = false))
         task.add(
           if (outputResult.exitCode == 0) {
-            if (agent.planSettings.autoFix) {
-              MarkdownUtil.renderMarkdown("Auto-applied Command Auto Fix\n", ui = agent.ui, tabs = false)
-            } else {
-              MarkdownUtil.renderMarkdown(
-                "Command Auto Fix Result\n",
-                ui = agent.ui, tabs = false
-              )
-            }
+            MarkdownUtil.renderMarkdown("Command Success\n", ui = agent.ui, tabs = false)
           } else {
-            MarkdownUtil.renderMarkdown(
-              "Command Auto Fix Failed\n",
-              ui = agent.ui, tabs = false
-            )
+            hasError.set(true)
+            MarkdownUtil.renderMarkdown("Command Failed: ${outputResult.exitCode}\n", ui = agent.ui, tabs = false)
           }
         )
       }
@@ -148,7 +138,7 @@ class CommandAutoFixTask(
         } else {
           val s = MarkdownUtil.renderMarkdown(
             "## Some Command Auto Fix tasks failed\n",
-            ui = agent.ui
+            ui = agent.ui, tabs = false
           ) + acceptButtonFooter(
             agent.ui
           ) {

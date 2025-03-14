@@ -158,8 +158,8 @@ open class PlanSettings(
         ), "2" to FileModificationTaskConfigData(
           task_description = "Task 2",
           task_dependencies = listOf("1"),
-          input_files = listOf("input2.txt"),
-          output_files = listOf("output2.txt"),
+          related_files = listOf("input2.txt"),
+          files = listOf("output2.txt"),
         ), "3" to PlanningTaskConfigData(
           task_description = "Task 3",
           task_dependencies = listOf("2"),

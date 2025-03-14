@@ -55,6 +55,8 @@ class PlanCoordinator(
         }
       }
   
+  var planProcessingState: PlanProcessingState? = null
+  
   fun executePlan(
     plan: Map<String, TaskConfigBase>,
     task: SessionTask,
@@ -64,6 +66,7 @@ class PlanCoordinator(
   ): PlanProcessingState {
     val api = (api as ChatClient).getChildClient(task)
     val planProcessingState = newState(plan)
+    this.planProcessingState = planProcessingState
     try {
       val diagramTask = ui.newTask(false).apply { task.add(placeholder) }
       executePlan(

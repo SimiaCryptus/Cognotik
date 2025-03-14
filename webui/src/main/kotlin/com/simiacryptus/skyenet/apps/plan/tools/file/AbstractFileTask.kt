@@ -18,11 +18,9 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
   open class FileTaskConfigBase(
     task_type: String,
     task_description: String? = null,
+    @Description("REQUIRED: The files to be generated as output for the task (relative paths)") val files: List<String>? = null,
+    @Description("Additional files used to inform the change, including relevant files created by previous tasks") val related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
-    @Description("Additional relative file paths to be used as input for the task")
-    val related_files: List<String>? = null,
-    @Description("The relative file paths to be generated as output for the task")
-    val files: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : TaskConfigBase(
     task_type = task_type,

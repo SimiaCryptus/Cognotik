@@ -22,8 +22,8 @@ class FileModificationTask(
   planTask: FileModificationTaskConfigData?
 ) : AbstractFileTask<FileModificationTaskConfigData>(planSettings, planTask) {
   class FileModificationTaskConfigData(
-    input_files: List<String>? = null,
-    output_files: List<String>? = null,
+    files: List<String>? = null,
+    related_files: List<String>? = null,
     @Description("Specific modifications to be made to the files")
     val modifications: Any? = null,
     @Description("Whether to include git diff with HEAD")
@@ -35,8 +35,8 @@ class FileModificationTask(
     task_type = TaskType.FileModification.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
-    related_files = input_files,
-    files = output_files,
+    related_files = related_files,
+    files = files,
     state = state
   )
   private fun getGitDiff(filePath: String): String? {
@@ -170,6 +170,19 @@ class FileModificationTask(
       agent.ui.socketManager?.pool?.submit {
         val codeResult = fileModificationActor.answer(
           (messages + listOf(
+            agent.planProcessingState?.tasksByDescription?.filter {
+              this.taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
+            }?.entries?.joinToString("\n\n") {
+              (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
+                val file = root.resolve(it).toFile()
+                if (file.exists()) {
+                  val relativePath = root.relativize(file.toPath())
+                  "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
+                } else {
+                  "File not found: $it"
+                }
+              } ?: ""
+            } ?: "",
             getInputFileWithDiff(),
             this.taskConfig?.task_description ?: "",
           )).filter { it.isNotBlank() }, api

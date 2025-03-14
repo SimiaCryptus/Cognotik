@@ -56,24 +56,18 @@ open class ClientManager {
   fun getPool(
     session: Session,
     user: User?,
-  ): ThreadPoolExecutor {
-    log.debug("Fetching thread pool for session: {}, user: {}", session, user)
-    val key = SessionKey(session, user)
-    return poolCache.getOrPut(key) {
-      createPool(session, user)
-    }
+  ) = poolCache.getOrPut(SessionKey(session, user)) {
+    log.debug("Creating thread pool for session: {}, user: {}", session, user)
+    createPool(session, user)
   }
 
   fun getScheduledPool(
     session: Session,
     user: User?,
     dataStorage: StorageInterface?,
-  ): ListeningScheduledExecutorService {
-    log.debug("Fetching scheduled pool for session: {}, user: {}", session, user)
-    val key = SessionKey(session, user)
-    return scheduledPoolCache.getOrPut(key) {
-      createScheduledPool(session, user, dataStorage)
-    }
+  ) = scheduledPoolCache.getOrPut(SessionKey(session, user)) {
+    log.debug("Creating scheduled pool for session: {}", session)
+    createScheduledPool(session, user, dataStorage)
   }
 
   inner class RecordingThreadFactory(
