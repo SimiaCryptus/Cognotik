@@ -146,7 +146,7 @@ open class AutoPlanMode(
               MarkdownUtil.renderMarkdown(
                 "Executing task: `$currentTaskId` - ${currentTask.task_description}\n```json\n${
                   JsonUtil.toJson(currentTask)
-                }\n```"
+                }\n```", tabs = false
               )
             )
             iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder

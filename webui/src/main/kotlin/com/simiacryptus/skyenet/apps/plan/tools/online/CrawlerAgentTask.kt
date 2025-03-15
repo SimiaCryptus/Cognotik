@@ -1,12 +1,13 @@
 package com.simiacryptus.skyenet.apps.plan.tools.online
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.skyenet.TabbedDisplay
+import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.SimpleActor
@@ -24,8 +25,8 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Future
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.atomic.AtomicInteger
@@ -62,8 +63,7 @@ class CrawlerAgentTask(
     state: TaskState? = null,
   ) : TaskConfigBase(
     task_type = TaskType.SearchAndAnalyze.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
-  ) {
-  }
+  )
   
   var selenium: Selenium? = null
   
@@ -130,7 +130,7 @@ class CrawlerAgentTask(
     val concurrentProcessing = taskConfig?.concurrent_page_processing ?: concurrent_page_processing
     
     // Process pages concurrently
-    val futures = mutableListOf<CompletableFuture<*>>()
+    val futures = mutableListOf<Future<*>>()
     
     // Header for the analysis results
     val header = buildString {
@@ -146,44 +146,48 @@ class CrawlerAgentTask(
       appendLine("---")
       appendLine()
     }
-    
+    task.add(header.renderMarkdown())
     
     // Create a fixed number of worker tasks that will process pages from the queue
-    repeat(concurrentProcessing) {
+    val tabs = TabbedDisplay(task)
+    for (i in 0 until concurrentProcessing) {
       if (pageQueue.isNotEmpty() && processedCount.get() < maxPages) {
-        val future = CompletableFuture.runAsync {
+        val future = agent.pool.submit {
           // Each worker continuously processes pages until the queue is empty or max pages reached
           while (true) {
-            // Atomically check if we've reached the max pages limit
-            val currentCount = processedCount.get()
-            if (currentCount >= maxPages) break
-            
-            // Try to get the next page from the queue
-            val page = pageQueue.poll() ?: break
-            
-            // Increment the counter and get the new index
             val currentIndex = processedCount.incrementAndGet()
-            
+            if (currentIndex > maxPages) break
+            var page: PageToProcess? = null
             try {
-              processPage(
-                page, currentIndex, visitedUrls, webSearchDir, pageQueue, analysisResultsMap, api, planSettings, agent.pool
-              )
+              page = pageQueue.poll() ?: break
+              val task = agent.ui.newTask(false).apply {
+                tabs[page.url] = placeholder
+              }
+              task.add("# ${page.url}".renderMarkdown())
+              val url = page.url
+              val title = page.title
+              val depth = page.depth
+              if (url in visitedUrls) {
+                log.info("Skipping already visited URL: $url")
+                continue
+              }
+              visitedUrls.add(url)
+              val processPage = processPage(currentIndex, title, url, depth, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue)
+              task.add(processPage.renderMarkdown)
+              analysisResultsMap[currentIndex] = processPage
             } catch (e: Exception) {
-              log.error("Error processing page: ${page.url}", e)
-              analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page.title}](${page.url})\n\n*Error processing this result: ${e.message}*\n\n"
+              task.error(agent.ui, e)
+              log.error("Error processing page: ${page?.url}", e)
+              analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.url})\n\n*Error processing this result: ${e.message}*\n\n"
             }
           }
-        }.exceptionally { e ->
-          log.error("Worker thread failed", e)
-          null
         }
-        
         futures.add(future)
       }
     }
     
     // Wait for all futures to complete
-    CompletableFuture.allOf(*futures.toTypedArray()).join()
+    futures.toTypedArray().forEach { it.get() }
     
     // Combine all results in order
     val analysisResults = header + (1..processedCount.get()).asSequence().mapNotNull {
@@ -196,197 +200,82 @@ class CrawlerAgentTask(
     } else {
       analysisResults
     }
-    task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
+    //task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
     resultFn(finalOutput)
   }
   
   private fun processPage(
-    page: PageToProcess,
     index: Int,
-    visitedUrls: MutableSet<String>,
+    title: String,
+    url: String,
+    depth: Int,
     webSearchDir: File,
-    pageQueue: LinkedBlockingQueue<PageToProcess>,
-    resultsMap: ConcurrentHashMap<Int, String>,
+    pool: ThreadPoolExecutor,
+    taskConfig: SearchAndAnalyzeTaskConfigData?,
     api: API,
     planSettings: PlanSettings,
-    pool: ThreadPoolExecutor
-  ) {
-    val url = page.url
-    val title = page.title
-    val depth = page.depth
-    
-    // Skip if URL already visited (with thread safety)
-    synchronized(visitedUrls) {
-      if (url in visitedUrls) {
-        log.info("Skipping already visited URL: $url")
-        return
-      }
-      visitedUrls.add(url)
+    visitedUrls: MutableSet<String>,
+    pageQueue: LinkedBlockingQueue<PageToProcess>
+  ) = buildString {
+    appendLine("## ${index}. [${title}]($url)")
+    if (depth > 0) {
+      appendLine("*(Follow-up link, depth: $depth)*")
     }
+    appendLine()
     
-    val result = buildString {
-      appendLine("## ${index}. [${title}]($url)")
-      if (depth > 0) {
-        appendLine("*(Follow-up link, depth: $depth)*")
+    try {
+      // Fetch and transform content
+      val content = fetchAndProcessUrl(url, webSearchDir, index, pool)
+      if (content.isBlank()) {
+        appendLine("*Empty content, skipping this result*")
+        appendLine()
+        return@buildString
       }
+      
+      val analysisGoal = when {
+        taskConfig?.content_query?.isNotBlank() == true -> taskConfig.content_query
+        taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
+        else -> "Analyze the content and provide insights."
+      }
+      val analysis = transformContent(content, analysisGoal, api, planSettings)
+      saveAnalysis(webSearchDir, url, analysis, index)
+      
+      appendLine(analysis)
       appendLine()
       
-      try {
-        // Fetch and transform content
-        val content = fetchAndProcessUrl(url, webSearchDir, index, pool)
-        if (content.isBlank()) {
-          appendLine("*Empty content, skipping this result*")
-          appendLine()
-          return@buildString
-        }
+      // Extract and follow links if enabled and not at max depth
+      val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
+      if (shouldFollowLinks) {
+        // Extract links once outside the synchronized block
+        val extractedLinks = extractLinksFromMarkdown(analysis)
         
-        val analysisGoal = when {
-          taskConfig?.content_query?.isNotBlank() == true -> taskConfig.content_query
-          taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
-          else -> "Analyze the content and provide insights."
-        }
-        val analysis = transformContent(content, analysisGoal, api, planSettings)
-        saveAnalysis(webSearchDir, url, analysis, index)
-        
-        appendLine(analysis)
-        appendLine()
-        
-        // Extract and follow links if enabled and not at max depth
-        val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
-        if (shouldFollowLinks) {
-          // Extract links once outside the synchronized block
-          val extractedLinks = extractLinksFromMarkdown(analysis)
-          
-          // Process links in batches to reduce synchronization overhead
-          synchronized(visitedUrls) {
-            extractedLinks
-              .filter { (_, linkUrl) ->
-                linkUrl !in visitedUrls && !pageQueueContainsUrl(pageQueue, linkUrl)
-              }
-              .forEach { (linkText, linkUrl) ->
-                pageQueue.add(
-                  PageToProcess(
-                    url = linkUrl, title = linkText, depth = depth + 1
-                  )
+        // Process links in batches to reduce synchronization overhead
+        synchronized(visitedUrls) {
+          extractedLinks
+            .filter { (_, linkUrl) ->
+              linkUrl !in visitedUrls && !pageQueueContainsUrl(pageQueue, linkUrl)
+            }
+            .forEach { (linkText, linkUrl) ->
+              pageQueue.add(
+                PageToProcess(
+                  url = linkUrl, title = linkText, depth = depth + 1
                 )
-                // Add to visited URLs immediately to prevent duplicate processing
-                visitedUrls.add(linkUrl)
-              }
-          }
+              )
+              // Add to visited URLs immediately to prevent duplicate processing
+              visitedUrls.add(linkUrl)
+            }
         }
-      } catch (e: Exception) {
-        log.error("Error processing URL: $url", e)
-        appendLine("*Error processing this result: ${e.message}*")
-        appendLine()
       }
+    } catch (e: Exception) {
+      log.error("Error processing URL: $url", e)
+      appendLine("*Error processing this result: ${e.message}*")
+      appendLine()
     }
-    
-    resultsMap[index] = result
   }
   
   private fun pageQueueContainsUrl(queue: LinkedBlockingQueue<PageToProcess>, url: String): Boolean {
     return queue.any { it.url == url }
   }
-  
-  /* Original run method removed
-    items?.forEach { item ->
-      pageQueue.add(
-        PageToProcess(
-          url = item["link"] as String,
-          title = (item["title"] as? String) ?: "Untitled",
-          depth = 0
-        )
-      )
-    }
-    
-    val analysisResults = buildString {
-      appendLine("# Analysis of Search Results")
-      appendLine()
-      // Display search query and URLs
-      appendLine("**Search Query:** ${taskConfig?.search_query}")
-      appendLine()
-      appendLine("**URLs Analyzed:**")
-      items?.forEach { item ->
-        appendLine("- [${item["title"]}](${item["link"]})")
-      }
-      appendLine()
-      appendLine("---")
-      appendLine()
-      
-      var processedCount = 0
-      val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
-      while (pageQueue.isNotEmpty() && processedCount < maxPages) {
-        val page = pageQueue.poll()
-        val url = page.url
-        val title = page.title
-        val depth = page.depth
-        
-        if (url in visitedUrls) {
-          log.info("Skipping already visited URL: $url")
-          continue
-        }
-        visitedUrls.add(url)
-        processedCount++
-        
-        appendLine("## ${processedCount}. [${title}]($url)")
-        if (depth > 0) {
-          appendLine("*(Follow-up link, depth: $depth)*")
-        }
-        appendLine()
-        
-        try {
-          // Fetch and transform content for each result
-          
-          val content = fetchAndProcessUrl(url, webSearchDir, processedCount, agent.pool)
-          if (content.isBlank()) {
-            appendLine("*Empty content, skipping this result*")
-            appendLine()
-            continue
-          }
-          
-          val analysisGoal = when {
-            taskConfig?.content_query?.isNotBlank() == true -> taskConfig.content_query
-            taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
-            else -> "Analyze the content and provide insights."
-          }
-          val analysis = transformContent(content, analysisGoal, api, planSettings)
-          saveAnalysis(webSearchDir, url, analysis, processedCount)
-          
-          appendLine(analysis)
-          appendLine()
-          // Extract and follow links if enabled and not at max depth
-          val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
-          if (shouldFollowLinks) {
-            extractLinksFromMarkdown(analysis).forEach { (linkText, linkUrl) ->
-              if (linkUrl !in visitedUrls && !pageQueue.any { it.url == linkUrl }) {
-                pageQueue.add(
-                  PageToProcess(
-                    url = linkUrl,
-                    title = linkText,
-                    depth = depth + 1
-                  )
-                )
-              }
-            }
-          }
-        } catch (e: Exception) {
-          log.error("Error processing URL: $url", e)
-          appendLine("*Error processing this result: ${e.message}*")
-          appendLine()
-        }
-      }
-    }
-    
-    // Check if we need to create a final summary
-    val finalOutput = if (taskConfig?.create_final_summary != false && analysisResults.length > (taskConfig?.max_final_output_size ?: max_final_output_size)) {
-      createFinalSummary(analysisResults, api, planSettings)
-    } else {
-      analysisResults
-    }
-    task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
-    resultFn(finalOutput)
-  }
-*/
   
   private fun createFinalSummary(analysisResults: String, api: API, planSettings: PlanSettings): String {
     log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
