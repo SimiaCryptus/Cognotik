@@ -13,7 +13,6 @@ import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.util.HtmlSimplifier
-import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.Selenium2S3
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
@@ -91,7 +90,7 @@ class CrawlerAgentTask(
   
   
   data class PageToProcess(
-    val url: String, val title: String, val depth: Int
+    val url: String, val title: String
   )
   
   
@@ -117,7 +116,7 @@ class CrawlerAgentTask(
       items?.forEach { item ->
         add(
           PageToProcess(
-            url = item["link"] as String, title = (item["title"] as? String) ?: "Untitled", depth = 0
+            url = item["link"] as String, title = (item["title"] as? String) ?: "Untitled"
           )
         )
       }
@@ -128,9 +127,6 @@ class CrawlerAgentTask(
     val processedCount = AtomicInteger(0)
     val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
     val concurrentProcessing = taskConfig?.concurrent_page_processing ?: concurrent_page_processing
-    
-    // Process pages concurrently
-    val futures = mutableListOf<Future<*>>()
     
     // Header for the analysis results
     val header = buildString {
@@ -148,32 +144,28 @@ class CrawlerAgentTask(
     }
     task.add(header.renderMarkdown())
     
-    // Create a fixed number of worker tasks that will process pages from the queue
     val tabs = TabbedDisplay(task)
-    for (i in 0 until concurrentProcessing) {
+    IntRange(0, concurrentProcessing).mapNotNull {
       if (pageQueue.isNotEmpty() && processedCount.get() < maxPages) {
-        val future = agent.pool.submit {
-          // Each worker continuously processes pages until the queue is empty or max pages reached
+        agent.pool.submit {
           while (true) {
             val currentIndex = processedCount.incrementAndGet()
             if (currentIndex > maxPages) break
             var page: PageToProcess? = null
             try {
               page = pageQueue.poll() ?: break
-              val task = agent.ui.newTask(false).apply {
-                tabs[page.url] = placeholder
-              }
-              task.add("# ${page.url}".renderMarkdown())
               val url = page.url
               val title = page.title
-              val depth = page.depth
               if (url in visitedUrls) {
                 log.info("Skipping already visited URL: $url")
                 continue
               }
               visitedUrls.add(url)
-              val processPage = processPage(currentIndex, title, url, depth, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue)
-              task.add(processPage.renderMarkdown)
+              val processPage = processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue)
+              agent.ui.newTask(false).apply {
+                tabs[page.url] = placeholder
+                add(processPage.renderMarkdown)
+              }
               analysisResultsMap[currentIndex] = processPage
             } catch (e: Exception) {
               task.error(agent.ui, e)
@@ -182,19 +174,14 @@ class CrawlerAgentTask(
             }
           }
         }
-        futures.add(future)
+      } else {
+        null
       }
-    }
+    }.toTypedArray().forEach { it.get() }
     
-    // Wait for all futures to complete
-    futures.toTypedArray().forEach { it.get() }
-    
-    // Combine all results in order
     val analysisResults = header + (1..processedCount.get()).asSequence().mapNotNull {
       analysisResultsMap[it]
     }.joinToString("\n")
-    
-    // Check if we need to create a final summary
     val finalOutput = if (taskConfig?.create_final_summary != false && analysisResults.length > (taskConfig?.max_final_output_size ?: max_final_output_size)) {
       createFinalSummary(analysisResults, api, planSettings)
     } else {
@@ -208,7 +195,6 @@ class CrawlerAgentTask(
     index: Int,
     title: String,
     url: String,
-    depth: Int,
     webSearchDir: File,
     pool: ThreadPoolExecutor,
     taskConfig: SearchAndAnalyzeTaskConfigData?,
@@ -218,9 +204,6 @@ class CrawlerAgentTask(
     pageQueue: LinkedBlockingQueue<PageToProcess>
   ) = buildString {
     appendLine("## ${index}. [${title}]($url)")
-    if (depth > 0) {
-      appendLine("*(Follow-up link, depth: $depth)*")
-    }
     appendLine()
     
     try {
@@ -243,25 +226,17 @@ class CrawlerAgentTask(
       appendLine(analysis)
       appendLine()
       
-      // Extract and follow links if enabled and not at max depth
-      val shouldFollowLinks = taskConfig?.follow_links ?: follow_links
-      if (shouldFollowLinks) {
-        // Extract links once outside the synchronized block
+      if (taskConfig?.follow_links ?: follow_links) {
         val extractedLinks = extractLinksFromMarkdown(analysis)
-        
-        // Process links in batches to reduce synchronization overhead
         synchronized(visitedUrls) {
           extractedLinks
-            .filter { (_, linkUrl) ->
-              linkUrl !in visitedUrls && !pageQueueContainsUrl(pageQueue, linkUrl)
-            }
+            .filter { (_, linkUrl) -> linkUrl !in visitedUrls && !pageQueue.any { it.url == linkUrl } }
             .forEach { (linkText, linkUrl) ->
               pageQueue.add(
                 PageToProcess(
-                  url = linkUrl, title = linkText, depth = depth + 1
+                  url = linkUrl, title = linkText
                 )
               )
-              // Add to visited URLs immediately to prevent duplicate processing
               visitedUrls.add(linkUrl)
             }
         }
@@ -271,10 +246,6 @@ class CrawlerAgentTask(
       appendLine("*Error processing this result: ${e.message}*")
       appendLine()
     }
-  }
-  
-  private fun pageQueueContainsUrl(queue: LinkedBlockingQueue<PageToProcess>, url: String): Boolean {
-    return queue.any { it.url == url }
   }
   
   private fun createFinalSummary(analysisResults: String, api: API, planSettings: PlanSettings): String {
@@ -310,24 +281,21 @@ class CrawlerAgentTask(
       "Keep your response under ${maxSize / 1000}K characters.",
       "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
     ).joinToString("\n\n")
-    // Generate the summary
     val summary = SimpleActor(
       prompt = summaryPrompt,
       model = planSettings.defaultModel,
     ).answer(listOf(summaryPrompt), api)
-    // Combine the header with the summary
     return header + summary
   }
   
   private fun extractUrlSections(analysisResults: String): List<String> {
     val sections = mutableListOf<String>()
-    val sectionPattern = Pattern.compile("## \\d+\\. \\[([^\\]]+)\\]\\(([^)]+)\\)(.*?)(?=## \\d+\\. \\[|$)", Pattern.DOTALL)
+    val sectionPattern = Pattern.compile("""## \d+\. \[([^]]+)]\(([^)]+)\)(.*?)(?=## \d+\. \[|$)""", Pattern.DOTALL)
     val matcher = sectionPattern.matcher(analysisResults)
     while (matcher.find()) {
       val title = matcher.group(1)
       val url = matcher.group(2)
       val content = matcher.group(3).trim()
-      // Create a condensed version of each section
       val condensed = "**[${title}](${url})**: ${summarizeSection(content)}"
       sections.add(condensed)
     }
@@ -419,17 +387,14 @@ class CrawlerAgentTask(
   
   private fun extractLinksFromMarkdown(markdown: String): List<Pair<String, String>> {
     val links = mutableListOf<Pair<String, String>>()
-    val linkPattern = Pattern.compile("\\[([^\\]]+)\\]\\(([^)]+)\\)")
+    val linkPattern = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
     val matcher = linkPattern.matcher(markdown)
-    // Pre-compile the pattern for URL validation
     val validUrlPattern = Pattern.compile("^(http|https)://.*")
     
     while (matcher.find()) {
       val linkText = matcher.group(1)
       val linkUrl = matcher.group(2)
-      // Validate URL
       try {
-        // Use pattern matching first as it's faster than URI creation
         if (validUrlPattern.matcher(linkUrl).matches()) {
           links.add(Pair(linkText, linkUrl))
         }
@@ -509,17 +474,14 @@ class CrawlerAgentTask(
     log.info("Content size (${content.length}) exceeds limit, splitting into chunks")
     val chunks = splitContentIntoChunks(content, maxChunkSize)
     log.info("Split content into ${chunks.size} chunks")
-    // Process each chunk
     val chunkResults = chunks.mapIndexed { index, chunk ->
       log.info("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
       val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
       processContentChunk(chunk, chunkGoal, api, planSettings)
     }
-    // Combine and summarize results
     if (chunkResults.size == 1) {
       return chunkResults[0]
     }
-    // Create a summary of all chunks
     val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n")
     val summaryPrompt = listOf(
       "Below are analyses of different parts of a web page related to this goal: $analysisGoal",
@@ -541,7 +503,6 @@ class CrawlerAgentTask(
       val chunkSize = if (remainingContent.length <= maxChunkSize) {
         remainingContent.length
       } else {
-        // Try to find a good breaking point (paragraph or sentence)
         val breakPoint = findBreakPoint(remainingContent, maxChunkSize)
         breakPoint
       }
