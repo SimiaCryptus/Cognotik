@@ -54,7 +54,7 @@ enum class SeedMethod {
         if (taskConfig?.direct_urls.isNullOrEmpty()) {
           throw RuntimeException("Direct URLs are required when using Direct URLs seed method")
         }
-        return taskConfig?.direct_urls?.map { url -> url.trim() }?.filter { url -> url.isNotBlank() }?.mapIndexed { index, url ->
+        return taskConfig?.direct_urls?.let { url -> listOf(url.trim()) }?.filter { url -> url.isNotBlank() }?.mapIndexed { index, url ->
           mapOf(
             "link" to url,
             "title" to "Direct URL ${index + 1}"
