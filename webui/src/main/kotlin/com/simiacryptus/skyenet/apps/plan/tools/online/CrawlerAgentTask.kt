@@ -1,7 +1,6 @@
 package com.simiacryptus.skyenet.apps.plan.tools.online
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -10,11 +9,13 @@ import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
+import com.simiacryptus.skyenet.core.actors.ParsedActor
+import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.util.Selenium
-import com.simiacryptus.skyenet.util.HtmlSimplifier
-import com.simiacryptus.skyenet.util.Selenium2S3
+import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
+import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
@@ -25,7 +26,6 @@ import java.net.http.HttpResponse
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Future
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.atomic.AtomicInteger
@@ -39,24 +39,21 @@ class CrawlerAgentTask(
   val max_pages_per_task: Int = 100,
   val max_final_output_size: Int = 10000,
   val concurrent_page_processing: Int = 5,
-  val request_timeout_seconds: Int = 30
+  val allow_revisit_pages: Boolean = false
 ) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
-  enum class FetchMethod {
-    HttpClient,
-    Selenium
-  }
-  
+
   class SearchAndAnalyzeTaskConfigData(
-    @Description("The search query to use for Google search") val search_query: String? = "",
-    @Description("The question(s) considered when processing the content") val content_query: String? = "",
+    @Description("The search query to use for Google search") val search_query: String? = null,
+    @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
+    @Description("The question(s) considered when processing the content") val content_query: String? = null,
     @Description("Whether to follow links found in the analysis") val follow_links: Boolean? = true,
-    @Description("Method used to fetch content from URLs (HttpClient or Selenium)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
+    @Description("Method to seed the crawler (GoogleSearch or DirectUrls)") val seed_method: SeedMethod = SeedMethod.GoogleSearch,
+    @Description("Method used to fetch content from URLs (HttpClient or Selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
     @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
     @Description("Whether to create a final summary of all results") val create_final_summary: Boolean? = true,
     @Description("Maximum size of the final output in characters") val max_final_output_size: Int? = 10000,
     @Description("Number of pages to process concurrently") val concurrent_page_processing: Int? = 5,
-    @Description("Timeout in seconds for HTTP requests") val request_timeout_seconds: Int? = 30,
-    val direct_urls: List<String>? = null,
+    @Description("Whether to allow analyzing the same URL multiple times") val allow_revisit_pages: Boolean? = false,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
@@ -66,12 +63,12 @@ class CrawlerAgentTask(
   
   var selenium: Selenium? = null
   
-  
   val urlContentCache = ConcurrentHashMap<String, String>()
   
   override fun promptSegment() = """
     SearchAndAnalyze - Search Google, fetch top results, and analyze content
     ** Specify the search query
+    ** Or provide direct URLs to analyze
     ** Specify the analysis goal or focus
     ** Results will be saved to .websearch directory for future reference
     ** Links found in analysis can be automatically followed for deeper research
@@ -88,9 +85,26 @@ class CrawlerAgentTask(
     }
   }
   
+  data class LinkData(
+    val link: String,
+    val title: String,
+    val tags: List<String>? = null,
+    @Description("1-100") val relevance_score: Double = 100.0
+  ) {
+    var depth: Int = 0
+  }
   
-  data class PageToProcess(
-    val url: String, val title: String
+  enum class PageType {
+    Error,
+    Irrelevant,
+    OK
+  }
+
+  data class ParsedPage(
+    val page_type: PageType = PageType.OK,
+    val page_information: Any? = null,
+    val tags: List<String>? = null,
+    val link_data: List<LinkData>? = null,
   )
   
   
@@ -103,20 +117,27 @@ class CrawlerAgentTask(
     api2: OpenAIClient,
     planSettings: PlanSettings
   ) {
-    val searchResults = performGoogleSearch(planSettings)
-    val searchData: Map<String, Any> = ObjectMapper().readValue(searchResults)
     val webSearchDir = File(agent.root.toFile(), ".websearch")
     if (!webSearchDir.exists()) webSearchDir.mkdirs()
     val visitedUrls = mutableSetOf<String>()
-    visitedUrls.addAll(urlContentCache.keys)
     
-    val items = (searchData["items"] as List<Map<String, Any>>?)?.take(20)
+    // Only add cached URLs to visited list if we don't allow revisiting pages
+    if (!(taskConfig?.allow_revisit_pages ?: allow_revisit_pages)) {
+      visitedUrls.addAll(urlContentCache.keys)
+    }
+    
+    // Get the seed strategy based on the selected method
+    val seedMethod = taskConfig?.seed_method ?: SeedMethod.GoogleSearch
+    val seedItems = seedMethod.createStrategy(this).getSeedItems(taskConfig, planSettings)
+    
     // Create processing queue with initial items
-    val pageQueue = LinkedBlockingQueue<PageToProcess>().apply {
-      items?.forEach { item ->
+    val pageQueue = LinkedBlockingQueue<LinkData>().apply {
+      seedItems?.forEach { item ->
         add(
-          PageToProcess(
-            url = item["link"] as String, title = (item["title"] as? String) ?: "Untitled"
+          LinkData(
+            link = item["link"] as String, 
+            title = (item["title"] as? String) ?: "Untitled",
+            relevance_score = 100.0
           )
         )
       }
@@ -132,10 +153,21 @@ class CrawlerAgentTask(
     val header = buildString {
       appendLine("# Analysis of Search Results")
       appendLine()
-      appendLine("**Search Query:** ${taskConfig?.search_query}")
+      // Display seed method, search query or direct URLs
+      when (seedMethod) {
+        SeedMethod.GoogleSearch -> {
+          appendLine("**Search Query:** ${taskConfig?.search_query}")
+        }
+        SeedMethod.DirectUrls -> {
+          appendLine("**Direct URLs:**")
+          taskConfig?.direct_urls?.split(",")?.forEach { url ->
+            appendLine("- $url")
+          }
+        }
+      }
       appendLine()
       appendLine("**URLs Analyzed:**")
-      items?.forEach { item ->
+      seedItems?.forEach { item ->
         appendLine("- [${item["title"]}](${item["link"]})")
       }
       appendLine()
@@ -151,26 +183,27 @@ class CrawlerAgentTask(
           while (true) {
             val currentIndex = processedCount.incrementAndGet()
             if (currentIndex > maxPages) break
-            var page: PageToProcess? = null
+            var page: LinkData? = null
             try {
               page = pageQueue.poll() ?: break
-              val url = page.url
+              val url = page.link
               val title = page.title
-              if (url in visitedUrls) {
+              val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
+              if (!allowRevisit && url in visitedUrls) {
                 log.info("Skipping already visited URL: $url")
                 continue
               }
-              visitedUrls.add(url)
-              val processPage = processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue)
+              if (!allowRevisit) visitedUrls.add(url)
+              val processPageResult = processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue, page.depth)
               agent.ui.newTask(false).apply {
-                tabs[page.url] = placeholder
-                add(processPage.renderMarkdown)
+                tabs[page.link] = placeholder
+                add(processPageResult.renderMarkdown)
               }
-              analysisResultsMap[currentIndex] = processPage
+              analysisResultsMap[currentIndex] = processPageResult
             } catch (e: Exception) {
               task.error(agent.ui, e)
-              log.error("Error processing page: ${page?.url}", e)
-              analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.url})\n\n*Error processing this result: ${e.message}*\n\n"
+              log.error("Error processing page: ${page?.link}", e)
+              analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.link})\n\n*Error processing this result: ${e.message}*\n\n"
             }
           }
         }
@@ -187,7 +220,7 @@ class CrawlerAgentTask(
     } else {
       analysisResults
     }
-    //task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
+    task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
     resultFn(finalOutput)
   }
   
@@ -201,7 +234,8 @@ class CrawlerAgentTask(
     api: API,
     planSettings: PlanSettings,
     visitedUrls: MutableSet<String>,
-    pageQueue: LinkedBlockingQueue<PageToProcess>
+    pageQueue: LinkedBlockingQueue<LinkData>,
+    depth: Int = 0
   ) = buildString {
     appendLine("## ${index}. [${title}]($url)")
     appendLine()
@@ -220,24 +254,69 @@ class CrawlerAgentTask(
         taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
         else -> "Analyze the content and provide insights."
       }
-      val analysis = transformContent(content, analysisGoal, api, planSettings)
+      val analysis: ParsedResponse<ParsedPage> = transformContent(content, analysisGoal, api, planSettings)
+      
+      if (analysis.obj.page_type == PageType.Error) {
+        appendLine("*Error processing this result: ${analysis.obj.page_information?.let { JsonUtil.toJson(it) }}*")
+        appendLine()
+        saveAnalysis(webSearchDir.resolve("error").apply {
+          mkdirs()
+        }, url, analysis, index)
+        return@buildString
+      }
+      
+      if (analysis.obj.page_type == PageType.Irrelevant) {
+        appendLine("*Irrelevant content, skipping this result*")
+        appendLine()
+        saveAnalysis(webSearchDir.resolve("irrelevant").apply {
+          mkdirs()
+        }, url, analysis, index)
+        return@buildString
+      }
+      
       saveAnalysis(webSearchDir, url, analysis, index)
       
-      appendLine(analysis)
+      appendLine(analysis.text)
       appendLine()
       
       if (taskConfig?.follow_links ?: follow_links) {
-        val extractedLinks = extractLinksFromMarkdown(analysis)
-        synchronized(visitedUrls) {
-          extractedLinks
-            .filter { (_, linkUrl) -> linkUrl !in visitedUrls && !pageQueue.any { it.url == linkUrl } }
-            .forEach { (linkText, linkUrl) ->
-              pageQueue.add(
-                PageToProcess(
-                  url = linkUrl, title = linkText
+        // First try to use the structured link data if available
+        val linkData = analysis.obj.link_data
+        val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
+        
+        if (!linkData.isNullOrEmpty()) {
+          synchronized(visitedUrls) {
+            linkData
+              .filter { link -> 
+                (allowRevisit || link.link !in visitedUrls) && 
+                !pageQueue.any { it.link == link.link } 
+              }
+              .forEach { link ->
+                pageQueue.add(
+                  link.apply { this.depth = depth + 1 }
                 )
-              )
-              visitedUrls.add(linkUrl)
+                if (!allowRevisit) visitedUrls.add(link.link)
+              }
+          }
+        } else {
+          // Fallback to extracting links from markdown
+          val extractedLinks = extractLinksFromMarkdown(analysis.text)
+          synchronized(visitedUrls) {
+            extractedLinks
+              .filter { (_, linkUrl) -> 
+                (allowRevisit || linkUrl !in visitedUrls) && 
+                !pageQueue.any { it.link == linkUrl } 
+              }
+              .forEach { (linkText, linkUrl) ->
+                pageQueue.add(
+                  LinkData(
+                    link = linkUrl, 
+                    title = linkText,
+                    relevance_score = 50.0
+                  ).apply { this.depth = depth + 1 }
+                )
+                if (!allowRevisit) visitedUrls.add(linkUrl)
+              }
             }
         }
       }
@@ -310,81 +389,17 @@ class CrawlerAgentTask(
     val sentences = content.split(". ").take(3)
     return sentences.joinToString(". ") + (if (sentences.size >= 3) "..." else "")
   }
-  
-  
+
   fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor): String {
     // Check if URL is already in cache
-    if (urlContentCache.containsKey(url)) {
+    val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
+    if (!allowRevisit && urlContentCache.containsKey(url)) {
       log.info("Using cached content for URL: $url")
       return urlContentCache[url]!!
     }
-    fun fetchWithHttpClient(): String {
-      val client = HttpClient.newBuilder()
-        .connectTimeout(java.time.Duration.ofSeconds((taskConfig?.request_timeout_seconds ?: request_timeout_seconds).toLong()))
-        .build()
-      val request = HttpRequest.newBuilder().uri(URI.create(url))
-        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36").GET()
-        .timeout(java.time.Duration.ofSeconds((taskConfig?.request_timeout_seconds ?: request_timeout_seconds).toLong()))
-        .build()
-      val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-      val contentType = response.headers().firstValue("Content-Type").orElse("")
-      if (contentType.isNotEmpty() && !contentType.startsWith("text/")) {
-        return ""
-      }
-      val body = response.body()
-      if (body.isBlank()) {
-        return ""
-      }
-      saveRawContent(webSearchDir.resolve(".raw"), url, body, index)
-      val content = HtmlSimplifier.scrubHtml(
-        str = body,
-        baseUrl = url,
-        includeCssData = false,
-        simplifyStructure = true,
-        keepObjectIds = false,
-        preserveWhitespace = false,
-        keepScriptElements = false,
-        keepInteractiveElements = false,
-        keepMediaElements = false,
-        keepEventHandlers = false
-      )
-      // Cache the processed content
-      urlContentCache[url] = content
-      return content
-    }
-    
-    fun fetchWithSelenium(pool: ThreadPoolExecutor): String {
-      if (selenium == null) {
-        selenium = Selenium2S3(
-          pool = pool, cookies = null, driver = planSettings.driver()
-        )
-      }
-      try {
-        selenium?.navigate(url)
-        val pageSource = selenium?.getPageSource() ?: ""
-        if (pageSource.isNotBlank()) {
-          // Cache the processed content
-          urlContentCache[url] = pageSource
-        }
-        return pageSource
-      } catch (e: Exception) {
-        log.error("Error fetching with Selenium: $url", e)
-        return ""
-      }
-    }
-    return when (taskConfig?.fetch_method ?: FetchMethod.HttpClient) {
-      FetchMethod.HttpClient -> fetchWithHttpClient()
-      FetchMethod.Selenium -> {
-        try {
-          fetchWithSelenium(pool)
-        } finally {
-          // Don't quit Selenium after each page - reuse it for better performance
-          // We'll close it at the end of the task
-        }
-      }
-    }
+    return (taskConfig?.fetch_method ?: FetchMethod.HttpClient).createStrategy(this).fetch(url, webSearchDir, index, pool, planSettings)
   }
-  
+
   private fun extractLinksFromMarkdown(markdown: String): List<Pair<String, String>> {
     val links = mutableListOf<Pair<String, String>>()
     val linkPattern = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
@@ -418,7 +433,7 @@ class CrawlerAgentTask(
     }
   }
   
-  private fun saveAnalysis(webSearchDir: File, url: String, analysis: String, index: Int) {
+  private fun saveAnalysis(webSearchDir: File, url: String, analysis: ParsedResponse<ParsedPage>, index: Int) {
     try {
       val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
       val urlSafe = url.replace(Regex("https?://"), "").replace(Regex("[^a-zA-Z0-9]"), "_").take(100)
@@ -433,7 +448,7 @@ class CrawlerAgentTask(
       )
       val metadataJson = ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
       // Write file with commented JSON header followed by the analysis
-      val contentWithHeader = "<!-- ${metadataJson} -->\n\n$analysis"
+      val contentWithHeader = "<!-- ${metadataJson}${analysis.obj.let { JsonUtil.toJson(it) }} -->\n\n${analysis.text}"
       analysisFile.writeText(contentWithHeader)
     } catch (e: Exception) {
       log.error("Failed to save analysis for URL: $url", e)
@@ -441,7 +456,7 @@ class CrawlerAgentTask(
   }
   
   
-  private fun performGoogleSearch(planSettings: PlanSettings): String {
+  fun performGoogleSearch(planSettings: PlanSettings): String {
     val client = HttpClient.newBuilder().build()
     val encodedQuery = URLEncoder.encode(taskConfig?.search_query?.trim(), "UTF-8")
     val uriBuilder =
@@ -464,7 +479,7 @@ class CrawlerAgentTask(
     }
   }
   
-  private fun transformContent(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): String {
+  private fun transformContent(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): ParsedResponse<ParsedPage> {
     // Check if content is too large and needs to be split
     val maxChunkSize = 50000
     if (content.length <= maxChunkSize) {
@@ -482,17 +497,30 @@ class CrawlerAgentTask(
     if (chunkResults.size == 1) {
       return chunkResults[0]
     }
-    val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n")
+    val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n") { it.text }
+    return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, api)
+  }
+  
+  private fun pageParsedResponse(
+    planSettings: PlanSettings,
+    analysisGoal: String,
+    content: String,
+    api: API
+  ): ParsedResponse<ParsedPage> {
     val summaryPrompt = listOf(
       "Below are analyses of different parts of a web page related to this goal: $analysisGoal",
-      "Individual analyses: \n${combinedAnalysis.indent("  ")}",
+      "Content: \n${content.indent("  ")}",
       "Create a unified summary that combines the key insights from all parts.",
       "Use markdown formatting for your response, with * characters for bullets.",
       "Identify the most important links that should be followed up on according to the goal."
     ).joinToString("\n\n")
-    return SimpleActor(
+    
+    return ParsedActor(
       prompt = summaryPrompt,
+      resultClass = ParsedPage::class.java,
       model = planSettings.defaultModel,
+      describer = planSettings.describer(),
+      parsingModel = planSettings.parsingModel,
     ).answer(listOf(summaryPrompt), api)
   }
   
@@ -532,18 +560,8 @@ class CrawlerAgentTask(
     return minOf(maxSize, text.length)
   }
   
-  private fun processContentChunk(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): String {
-    val promptList = listOf(
-      "Analyze the following web content according to this goal: $analysisGoal",
-      "Content: \n${content.indent("  ")}",
-      "Use markdown formatting for your response, with * characters for bullets.",
-      "Identify links that should be followed up on according to the goal.",
-    )
-    val prompt = promptList.joinToString("\n\n")
-    return SimpleActor(
-      prompt = prompt,
-      model = planSettings.defaultModel,
-    ).answer(listOf(prompt), api)
+  private fun processContentChunk(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): ParsedResponse<ParsedPage> {
+    return pageParsedResponse(planSettings, analysisGoal, content, api)
   }
   
   companion object {
