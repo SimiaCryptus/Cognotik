@@ -197,9 +197,11 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
 
     useEffect(() => {
         let mounted = true;
+        let observer: IntersectionObserver | null = null;
+        
         if (messageListRef.current) {
             // Use intersection observer for visible elements only
-            const observer = new IntersectionObserver((entries) => {
+            observer = new IntersectionObserver((entries) => {
                 if (!mounted) return;
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -207,22 +209,33 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             if (element.tagName === 'CODE') {
                 // Batch highlighting via requestIdleCallback and ensure one reflow per batch
                 requestIdleCallback(() => {
+                    if (!mounted) return;
                     Prism.highlightElement(element);
                 });
             }
-                        observer.unobserve(element);
+                        if (observer) {
+                            observer.unobserve(element);
+                        }
                     }
                 });
             });
             // Observe code blocks and verbose wrappers
             messageListRef.current.querySelectorAll('pre code').forEach(block => {
-                observer.observe(block);
+                if (observer) {
+                    observer.observe(block);
+                }
             });
             return () => {
                 mounted = false;
-                observer.disconnect();
+                if (observer) {
+                    observer.disconnect();
+                    observer = null;
+                }
             };
         }
+        return () => {
+            mounted = false;
+        };
     }, [messages, verboseMode]);
     const debouncedUpdateTabs = React.useCallback(
         debounce(() => {

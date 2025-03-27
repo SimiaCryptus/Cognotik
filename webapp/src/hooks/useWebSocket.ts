@@ -9,21 +9,17 @@ export const useWebSocket = (sessionId: string) => {
     const RECONNECT_MAX_DELAY = 60000; // Increased to 60 seconds
     const RECONNECT_BASE_DELAY = 1000;
     const CONNECTION_TIMEOUT = 5000;
-    // Add connection status tracking with debounce
     const connectionStatus = useRef({attempts: 0, lastAttempt: 0});
     const RECONNECT_DELAY = 1000; // 1 second delay between attempts
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const [isReconnecting, setIsReconnecting] = useState(false);
     const dispatch = useDispatch();
-    // Add connection attempt tracking
     const connectionAttemptRef = useRef(0);
-    // Add heartbeat mechanism
     const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 
     useEffect(() => {
         let connectionTimeout: NodeJS.Timeout;
-        let heartbeatInterval: NodeJS.Timeout;
         let isCleanedUp = false;
 
         // Implement exponential backoff for reconnection
@@ -48,13 +44,7 @@ export const useWebSocket = (sessionId: string) => {
                 }
             }, CONNECTION_TIMEOUT);
         }, 100);
-        // Add heartbeat function to keep connection alive
-        const sendHeartbeat = () => {
-            if (WebSocketService.isConnected() && !isCleanedUp) {
-                WebSocketService.send(JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }));
-            }
-        };
-        
+
         // Reset connection status when sessionId changes
         connectionStatus.current = {attempts: 0, lastAttempt: 0};
         connectionAttemptRef.current = 0;
@@ -87,9 +77,6 @@ export const useWebSocket = (sessionId: string) => {
                 connectionAttemptRef.current = 0;
                 // Reset connection attempts on successful connection
                 connectionStatus.current.attempts = 0;
-                // Start heartbeat when connected
-                clearInterval(heartbeatInterval);
-                heartbeatInterval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
                 console.log(`[WebSocket] Connected successfully at ${new Date().toISOString()}`);
             } else if (!isCleanedUp) {
                 // Try to reconnect if disconnected unexpectedly
@@ -102,7 +89,12 @@ export const useWebSocket = (sessionId: string) => {
             if (isCleanedUp) return;
 
             setError(err);
-            // No limit on reconnection attempts, just log the current attempt
+            if (connectionStatus.current.attempts >= 10) {
+                console.error(
+                    `[WebSocket] Maximum reconnection attempts reached (${connectionStatus.current.attempts})`
+                );
+                return;
+            }
             console.error(
                 `[WebSocket] Connection error (attempt ${connectionStatus.current.attempts}):`,
                 err.message
@@ -126,7 +118,6 @@ export const useWebSocket = (sessionId: string) => {
         return () => {
             isCleanedUp = true;
             clearTimeout(connectionTimeout);
-            clearInterval(heartbeatInterval);
             console.log(`[WebSocket] Disconnecting at ${new Date().toISOString()}`);
             WebSocketService.removeMessageHandler(handleMessage);
             WebSocketService.removeConnectionHandler(handleConnectionChange);

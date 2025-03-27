@@ -78,6 +78,21 @@ const AppContent: React.FC = () => {
     const [archivedMessagesLoaded, setArchivedMessagesLoaded] = React.useState(false);
     // Use the useWebSocket hook instead of direct websocket access
     const { isConnected, error } = useSelector((state: RootState) => state.connection);
+    // Update connection status in Redux store when websocket status changes
+    React.useEffect(() => {
+        const handleConnectionChange = (connected: boolean) => {
+            dispatch(setConnectionStatus(connected));
+        };
+        const handleError = (error: Error) => {
+            dispatch(setConnectionError(error));
+        };
+        websocket.addConnectionHandler(handleConnectionChange);
+        websocket.addErrorHandler(handleError);
+        return () => {
+            websocket.removeConnectionHandler(handleConnectionChange);
+            websocket.removeErrorHandler(handleError);
+        };
+    }, [dispatch]);
 
     // Load archived messages on mount if in archive mode
     React.useEffect(() => {

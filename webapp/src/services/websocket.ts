@@ -1,10 +1,10 @@
-import { WebSocketLike } from '../types/websocket';
+import {WebSocketLike} from '../types/websocket';
 import {store} from '../store';
 import {Message} from "../types/messages";
 import {WebSocketConfig} from "../types/config";
 import {debounce} from "../utils/tabHandling";
 
- export class WebSocketService implements WebSocketLike {
+export class WebSocketService implements WebSocketLike {
     // Implement required WebSocket-like interface properties
     public readonly CONNECTING = 0;
     public readonly OPEN = 1;
@@ -12,6 +12,7 @@ import {debounce} from "../utils/tabHandling";
     public readonly CLOSED = 3;
     public readyState: number = WebSocket.CLOSED;
     public binaryType = 'blob';
+
     public close(code?: number, reason?: string): void {
         this.forcedClose = true;
         if (this.ws) {
@@ -23,6 +24,7 @@ import {debounce} from "../utils/tabHandling";
         this.connectionState = 'disconnected';
         this.ws = null;
     }
+
     public bufferedAmount = 0;
     public extensions = '';
     public protocol = '';
@@ -48,7 +50,6 @@ import {debounce} from "../utils/tabHandling";
     private forcedClose = false;
     private timers = {
         heartbeat: null as NodeJS.Timeout | null,
-        heartbeatCheck: null as NodeJS.Timeout | null,
         reconnect: null as NodeJS.Timeout | null,
         connection: null as NodeJS.Timeout | null
     };
@@ -88,6 +89,7 @@ import {debounce} from "../utils/tabHandling";
             this.ws = null;
         }
     }
+
     public ws: WebSocket | null = null;
     private messageQueue: string[] = [];
     private isProcessingQueue = false;
@@ -96,7 +98,6 @@ import {debounce} from "../utils/tabHandling";
     private maxReconnectAttempts = 5;
     private reconnectAttempts = 0;
 
-    // Add missing method for connection failure handling
     private handleConnectionFailure(error: Error): void {
         console.error('[WebSocket] Connection failure:', error);
         this.connectionState = 'error';
@@ -117,11 +118,11 @@ import {debounce} from "../utils/tabHandling";
         });
         this.timers = {
             heartbeat: null,
-            heartbeatCheck: null,
             reconnect: null,
             connection: null
         };
     }
+
     private sessionId = '';
     private messageHandlers: ((data: Message) => void)[] = [];
     private connectionHandlers: ((connected: boolean) => void)[] = [];
@@ -232,18 +233,16 @@ import {debounce} from "../utils/tabHandling";
 
     private startHeartbeat(): void {
         if (this.timers.heartbeat) return;
+        this.lastHeartbeatResponse = Date.now();
         this.timers.heartbeat = setInterval(() => {
             if (this.ws?.readyState === WebSocket.OPEN) {
                 this.lastHeartbeatSent = Date.now();
-                this.ws.send(JSON.stringify({type: 'ping'}));
-                this.timers.heartbeatCheck = setTimeout(() => {
-                    const timeSinceLastResponse = Date.now() - this.lastHeartbeatResponse;
-                    if (timeSinceLastResponse > this.HEARTBEAT_TIMEOUT) {
-                        console.error('[WebSocket] Connection lost - heartbeat timeout exceeded');
-                        this.ws?.close();
-                        this.handleConnectionFailure(new Error('Heartbeat timeout'));
-                    }
-                }, this.HEARTBEAT_TIMEOUT);
+                try {
+                    this.ws.send(JSON.stringify({type: 'ping', timestamp: Date.now()}));
+                } catch (error) {
+                    console.error('[WebSocket] Failed to send heartbeat:', error);
+                    this.handleConnectionFailure(new Error('Failed to send heartbeat'));
+                }
             }
         }, this.HEARTBEAT_INTERVAL);
     }
@@ -251,7 +250,9 @@ import {debounce} from "../utils/tabHandling";
     private queueMessage(message: string): void {
         this.messageQueue.push(message);
         if (!this.isProcessingQueue) {
-            this.processMessageQueue();
+            this.processMessageQueue().then(r => {
+                this.debugLog('[WebSocket] Message queue processed:');
+            });
         }
     }
 
@@ -326,15 +327,15 @@ import {debounce} from "../utils/tabHandling";
 
     private getWebSocketPath(): string {
         const path = window.location.pathname;
-        const strings = path.split('/');
+        // Simplify path handling to use the base path
         let wsPath = '/';
-        // Simplify path handling to avoid potential issues
-        if (strings.length >= 2 && strings[1]) {
-            wsPath = '/' + strings[1] + '/';
-        }
-        // Ensure path ends with trailing slash
-        if (!wsPath.endsWith('/')) {
-            wsPath += '/';
+        // If we're in a subdirectory, use that as the base path
+        if (path !== '/' && path.length > 0) {
+            // Extract the first path segment
+            const match = path.match(/^\/([^/]+)/);
+            if (match && match[1]) {
+                wsPath = `/${match[1]}/`;
+            }
         }
         return wsPath;
     }
@@ -348,6 +349,11 @@ import {debounce} from "../utils/tabHandling";
             };
         }
         let isDestroyed = false;
+        // Store original handlers to properly clean them up later
+        const originalOnOpen = this.ws.onopen;
+        const originalOnMessage = this.ws.onmessage;
+        const originalOnClose = this.ws.onclose;
+        const originalOnError = this.ws.onerror;
 
 
         // Combined onopen handler
@@ -368,35 +374,48 @@ import {debounce} from "../utils/tabHandling";
         const debouncedProcessMessages = debounce((messages: Message[]) => {
             const batch = [...messages];
             this.aggregateBuffer = [];
-            batch.forEach(msg => this.messageHandlers.forEach(handler => handler(msg)));
+            // Process messages in chunks to avoid blocking the main thread
+            const processChunk = (startIndex: number, chunkSize: number) => {
+                const endIndex = Math.min(startIndex + chunkSize, batch.length);
+                for (let i = startIndex; i < endIndex; i++) {
+                    const msg = batch[i];
+                    this.messageHandlers.forEach(handler => handler(msg));
+                }
+                if (endIndex < batch.length) {
+                    setTimeout(() => processChunk(endIndex, chunkSize), 0);
+                }
+            };
+            processChunk(0, 10); // Process 10 messages at a time
         }, this.AGGREGATE_INTERVAL);
         this.ws.onmessage = (event) => {
-        // Handle heartbeat responses or reply to ping messages
-        try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'pong') {
-                this.lastHeartbeatResponse = Date.now();
-                return;
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'pong') {
+                    this.lastHeartbeatResponse = Date.now();
+                    return;
+                }
+                if (data.type === 'ping') {
+                    // Reply with pong when a ping is received and log the event
+                    this.ws?.send(JSON.stringify({type: 'pong'}));
+                    return;
+                }
+            } catch (e) {
+                // Not a JSON message, process normally
             }
-            if (data.type === 'ping') {
-                // Reply with pong when a ping is received and log the event
-                this.ws?.send(JSON.stringify({ type: 'pong' }));
-                return;
-            }
-        } catch (e) {
-            // Not a JSON message, process normally
-        }
             // Process incoming message – splitting at the first two commas.
             this.forcedClose = false;
             const data = event.data;
-            // Split only on the first two commas to allow content with commas
-            const segments = data.split(/,(.+)/);
-            if (segments.length < 3) {
+            // Fix message parsing to properly handle commas in content
+            const firstCommaIndex = data.indexOf(',');
+            const secondCommaIndex = firstCommaIndex > -1 ? data.indexOf(',', firstCommaIndex + 1) : -1;
+
+            if (firstCommaIndex === -1 || secondCommaIndex === -1) {
                 console.error('[WebSocket] Invalid message format received:', data);
                 return;
             }
-            const [id, version, ...rest] = data.split(',');
-            const content = rest.join(',');
+            const id = data.substring(0, firstCommaIndex);
+            const version = data.substring(firstCommaIndex + 1, secondCommaIndex);
+            const content = data.substring(secondCommaIndex + 1);
             const timeSinceConnection = Date.now() - this.connectionStartTime;
             const shouldBuffer = timeSinceConnection < 10000; // Buffer for first 10 seconds
 
@@ -469,6 +488,13 @@ import {debounce} from "../utils/tabHandling";
         // Add cleanup method
         return () => {
             isDestroyed = true;
+            // Properly remove event handlers to prevent memory leaks
+            if (this.ws) {
+                this.ws.onopen = originalOnOpen;
+                this.ws.onmessage = originalOnMessage;
+                this.ws.onclose = originalOnClose;
+                this.ws.onerror = originalOnError;
+            }
             this.clearTimers();
         };
     }
@@ -485,33 +511,30 @@ import {debounce} from "../utils/tabHandling";
 
         const maxAttempts = this.maxReconnectAttempts;
         if (this.reconnectAttempts >= maxAttempts) {
-            console.error(`[WebSocket] Connection failed after ${maxAttempts} attempts`);
-            // Dispatch global error state
-            this.errorHandlers.forEach(handler =>
-                handler(new Error(`Maximum reconnection attempts (${maxAttempts}) reached`))
-            );
             this.isReconnecting = false;
             this.reconnectAttempts = 0;
             this.forcedClose = true;
-            return;
-        }
-        this.isReconnecting = true;
-        this.emit('reconnecting', this.reconnectAttempts + 1);
-        console.info(`[WebSocket] Reconnect attempt ${this.reconnectAttempts + 1}/${maxAttempts}`);
-        // Show reconnection status to user
-        this.connectionHandlers.forEach(handler =>
-            handler(false)
-        );
-
-
-        this.timers.reconnect = setTimeout(() => {
-            if (this.ws) {
-                this.ws.close();
-                this.ws = null;
+            console.error(`[WebSocket] Connection failed after ${maxAttempts} attempts`);
+            this.errorHandlers.forEach(handler =>
+                handler(new Error(`Maximum reconnection attempts (${maxAttempts}) reached`))
+            );
+        } else {
+            this.isReconnecting = true;
+            console.info(`[WebSocket] Reconnect attempt ${this.reconnectAttempts + 1}/${maxAttempts}`);
+            this.emit('reconnecting', this.reconnectAttempts + 1);
+            this.connectionHandlers.forEach(handler => handler(false));
+            if(null != this.timers.reconnect) {
+                clearTimeout(this.timers.reconnect);
             }
-            this.reconnectAttempts++;
-            this.connect(this.sessionId);
-        }, backoffDelay);
+            this.timers.reconnect = setTimeout(() => {
+                if (this.ws) {
+                    this.ws.close();
+                    this.ws = null;
+                }
+                this.reconnectAttempts++;
+                this.connect(this.sessionId);
+            }, backoffDelay);
+        }
     }
 }
 
