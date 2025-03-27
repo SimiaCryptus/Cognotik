@@ -43,7 +43,7 @@ class SessionShareServlet(
     return "data:image/png;base64,$base64Image"
   }
 
-  val defaultFactory: (pool: java.util.concurrent.ThreadPoolExecutor, cookies: Array<out jakarta.servlet.http.Cookie>?) -> Selenium =
+  val defaultFactory: (pool: java.util.concurrent.ExecutorService, cookies: Array<out jakarta.servlet.http.Cookie>?) -> Selenium =
     { pool, cookies ->
       val chromeOptions = ChromeOptions().apply {
         addArguments("--headless")

@@ -15,7 +15,7 @@ import com.simiacryptus.skyenet.core.platform.model.UserSettingsInterface
 import com.simiacryptus.skyenet.core.util.Selenium
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.ExecutorService
 
 object ApplicationServices {
   private val log = LoggerFactory.getLogger(ApplicationServices::class.java)

@@ -27,7 +27,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -229,7 +229,7 @@ class CrawlerAgentTask(
     title: String,
     url: String,
     webSearchDir: File,
-    pool: ThreadPoolExecutor,
+    pool: ExecutorService,
     taskConfig: SearchAndAnalyzeTaskConfigData?,
     api: API,
     planSettings: PlanSettings,
@@ -390,7 +390,7 @@ class CrawlerAgentTask(
     return sentences.joinToString(". ") + (if (sentences.size >= 3) "..." else "")
   }
 
-  fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor): String {
+  fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ExecutorService): String {
     // Check if URL is already in cache
     val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
     if (!allowRevisit && urlContentCache.containsKey(url)) {

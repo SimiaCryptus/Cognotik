@@ -3,9 +3,9 @@ package com.simiacryptus.skyenet.webui.servlet
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
-import com.simiacryptus.skyenet.core.platform.ClientManager.RecordingThreadFactory
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface
+import com.simiacryptus.skyenet.core.util.RecordingThreadFactory
 import com.simiacryptus.skyenet.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -72,7 +72,6 @@ class CancelThreadsServlet : HttpServlet() {
       }
       val pool = clientManager.getPool(session, user)
       pool.shutdownNow()
-      (pool.threadFactory as RecordingThreadFactory).threads.filter { it.isAlive }.forEach { it.interrupt() }
       resp.sendRedirect("/")
     }
   }

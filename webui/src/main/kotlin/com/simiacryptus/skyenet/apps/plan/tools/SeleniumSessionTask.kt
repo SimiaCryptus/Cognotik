@@ -127,7 +127,7 @@ class SeleniumSessionTask(
     api2: OpenAIClient,
     planSettings: PlanSettings
   ) {
-    val seleniumFactory: (pool: java.util.concurrent.ThreadPoolExecutor, cookies: Array<out jakarta.servlet.http.Cookie>?) -> Selenium =
+    val seleniumFactory: (pool: java.util.concurrent.ExecutorService, cookies: Array<out jakarta.servlet.http.Cookie>?) -> Selenium =
       { pool, cookies ->
         try {
           Selenium2S3(

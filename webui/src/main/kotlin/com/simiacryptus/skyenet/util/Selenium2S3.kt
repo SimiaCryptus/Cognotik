@@ -26,11 +26,11 @@ import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
-import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.TimeUnit
 
 open class Selenium2S3(
-  val pool: ThreadPoolExecutor = Executors.newCachedThreadPool() as ThreadPoolExecutor,
+  val pool: ExecutorService = Executors.newCachedThreadPool() as ExecutorService,
   private val cookies: Array<out jakarta.servlet.http.Cookie>? = null,
   val driver: RemoteWebDriver = chromeDriver()
 ) : Selenium {
@@ -62,7 +62,6 @@ open class Selenium2S3(
       .setDefaultCookieStore(BasicCookieStore().apply {
         cookies?.forEach { cookie -> addCookie(BasicClientCookie(cookie.name, cookie.value)) }
       })
-      .setThreadFactory(pool.threadFactory)
       .build()
       .also { it.start() }
   }

@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.Future
-import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.TimeUnit
 
 class PlanCoordinator(
@@ -36,7 +36,7 @@ class PlanCoordinator(
   val root: Path
 ) {
 
-  val pool: ThreadPoolExecutor by lazy { ApplicationServices.clientManager.getPool(session, user) }
+  val pool: ExecutorService by lazy { ApplicationServices.clientManager.getPool(session, user) }
 
   val files: Array<File> by lazy {
     FileValidationUtils.expandFileList(root.toFile())
@@ -107,7 +107,7 @@ class PlanCoordinator(
     diagramTask: SessionTask,
     planProcessingState: PlanProcessingState,
     taskIdProcessingQueue: MutableList<String>,
-    pool: ThreadPoolExecutor,
+    pool: ExecutorService,
     userMessage: String,
     plan: Map<String, TaskConfigBase>,
     api: API,

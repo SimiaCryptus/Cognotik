@@ -2,8 +2,8 @@ package com.simiacryptus.skyenet.webui.servlet
 
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.skyenet.core.platform.ApplicationServices.clientManager
-import com.simiacryptus.skyenet.core.platform.ClientManager.RecordingThreadFactory
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.util.RecordingThreadFactory
 import com.simiacryptus.skyenet.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -89,10 +89,6 @@ class SessionThreadsServlet : HttpServlet() {
             <p>Session: """.trimIndent() + session + """</p>
             <p>User: """.trimIndent() + user + """</p>
             <p>Pool: """.trimIndent() + pool + """</p>
-            <p>Threads: """.trimIndent() + pool.activeCount + "/" + pool.poolSize + """</p>
-            <p>Queue: """.trimIndent() + pool.queue.size + "/" + pool.queue.remainingCapacity() + """</p>
-            <p>Completed: """.trimIndent() + pool.completedTaskCount + """</p>
-            <p>Task Count: """.trimIndent() + pool.taskCount + """</p>
             </div>
             <div class='pool-threads'>
             <h1>Thread Stacks</h1>

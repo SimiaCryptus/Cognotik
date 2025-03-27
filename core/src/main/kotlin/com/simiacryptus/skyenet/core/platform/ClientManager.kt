@@ -2,7 +2,6 @@ package com.simiacryptus.skyenet.core.platform
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
-import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.APIProvider
@@ -13,6 +12,7 @@ import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig.da
 import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.core.util.ImmediateExecutorService
 import org.slf4j.LoggerFactory
 import java.util.concurrent.*
 
@@ -40,14 +40,8 @@ open class ClientManager {
     return openAICache.getOrPut(key) { createOpenAIClient(session, user)!! }
   }
 
-  private val poolCache = mutableMapOf<SessionKey, ThreadPoolExecutor>()
-  protected open fun createPool(session: Session, user: User?) =
-    ThreadPoolExecutor(
-      8, Integer.MAX_VALUE,
-      500, TimeUnit.MILLISECONDS,
-      SynchronousQueue(),
-      RecordingThreadFactory(session, user)
-    )
+  private val poolCache = mutableMapOf<SessionKey, ImmediateExecutorService>()
+  protected open fun createPool(session: Session, user: User?) = ImmediateExecutorService(session, user)
 
   private val scheduledPoolCache = mutableMapOf<SessionKey, ListeningScheduledExecutorService>()
   protected open fun createScheduledPool(session: Session, user: User?, dataStorage: StorageInterface?) =
@@ -70,20 +64,6 @@ open class ClientManager {
     createScheduledPool(session, user, dataStorage)
   }
 
-  inner class RecordingThreadFactory(
-    val session: Session,
-    val user: User?
-  ) : ThreadFactory {
-    private val inner = ThreadFactoryBuilder().setNameFormat("Session $session; User $user; #%d").build()
-    val threads = mutableSetOf<Thread>()
-    override fun newThread(r: Runnable): Thread {
-      log.debug("Creating new thread for session: {}, user: {}", session, user)
-      inner.newThread(r).also {
-        threads.add(it)
-        return it
-      }
-    }
-  }
 
   protected open fun createChatClient(
     session: Session,
@@ -169,3 +149,4 @@ open class ClientManager {
     private val log = LoggerFactory.getLogger(ClientManager::class.java)
   }
 }
+

@@ -7,17 +7,17 @@ import java.io.File
 import java.net.URI
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.ExecutorService
 
 
 interface FetchStrategy {
-  fun fetch(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor, planSettings: PlanSettings): String
+  fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String
 }
 
 enum class FetchMethod {
   HttpClient {
     override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = object : FetchStrategy {
-      override fun fetch(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor, planSettings: PlanSettings): String {
+      override fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String {
         val client = java.net.http.HttpClient.newBuilder().build()
         val request = HttpRequest.newBuilder().uri(URI.create(url))
           .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36").GET()
@@ -54,7 +54,7 @@ enum class FetchMethod {
 
   Selenium {
     override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = object : FetchStrategy {
-      override fun fetch(url: String, webSearchDir: File, index: Int, pool: ThreadPoolExecutor, planSettings: PlanSettings): String {
+      override fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String {
         if (task.selenium == null) {
           task.selenium = Selenium2S3(
             pool = pool, cookies = null, driver = planSettings.driver()
