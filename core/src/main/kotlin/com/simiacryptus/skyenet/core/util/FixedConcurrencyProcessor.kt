@@ -10,13 +10,14 @@ import java.util.concurrent.FutureTask
  *
  * @param pool The executor service to use for executing tasks.
  * @param concurrencyLimit The maximum number of concurrent tasks allowed.
- * @param queue An optional blocking queue for managing tasks (default is a linked blocking queue).
  */
 class FixedConcurrencyProcessor(
   val pool: ExecutorService,
-  val concurrencyLimit: Int,
-  val queue: java.util.concurrent.BlockingQueue<Runnable> = java.util.concurrent.LinkedBlockingQueue<Runnable>()
+  val concurrencyLimit: Int
 ) {
+  init {
+    require(concurrencyLimit > 0) { "Concurrency limit must be greater than zero." }
+  }
   private val semaphore = Semaphore(concurrencyLimit)
   
   /**
@@ -43,13 +44,5 @@ class FixedConcurrencyProcessor(
    */
   fun shutdown() {
     pool.shutdown()
-  }
-  /**
-   * Returns the number of available permits in the semaphore.
-   * 
-   * @return The number of available permits
-   */
-  fun availablePermits(): Int {
-    return semaphore.availablePermits()
   }
 }

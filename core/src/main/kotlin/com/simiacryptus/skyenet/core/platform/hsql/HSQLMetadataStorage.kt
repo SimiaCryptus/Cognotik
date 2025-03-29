@@ -18,7 +18,6 @@ class HSQLMetadataStorage(private val dbFile: File) : MetadataStorageInterface {
     log.info("Initializing HSQLMetadataStorage with database file: ${dbFile.absolutePath}")
     Class.forName("org.hsqldb.jdbc.JDBCDriver")
     val connection = DriverManager.getConnection("jdbc:hsqldb:file:${dbFile.absolutePath}/metadata;shutdown=true", "SA", "")
-    log.info("Database connection established successfully")
     createSchema(connection)
     connection
   }
@@ -37,7 +36,6 @@ class HSQLMetadataStorage(private val dbFile: File) : MetadataStorageInterface {
             )
             """
     )
-    log.info("Database schema creation completed")
   }
 
   override fun getSessionName(user: User?, session: Session): String {

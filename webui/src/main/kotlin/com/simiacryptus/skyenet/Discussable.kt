@@ -52,12 +52,12 @@ ${
     try {
       val history = mutableListOf<Pair<String, Role>>()
       val userMessage = userMessage()
-      log.info("User message: $userMessage")
+      //log.info("User message: $userMessage")
       history.add(userMessage to Role.user)
       val design = initialResponse(userMessage)
-      log.info("Initial response generated: $design")
+      //log.info("Initial response generated: $design")
       val rendered = outputFn(design)
-      log.info("Rendered output: $rendered")
+      //log.info("Rendered output: $rendered")
       history.add(rendered to Role.assistant)
       val tabContent = task.add(rendered)!!
       val feedbackForm = feedbackForm(tabIndex, tabContent, design, history, task)

@@ -82,7 +82,6 @@ object IterativePatchUtil {
         DELETE -> patch.append("- ${line.line}\n")
       }
     }
-    log.info("Patch generation completed")
     return patch.toString().trimEnd()
   }
   
@@ -93,7 +92,6 @@ object IterativePatchUtil {
    * @return The text after the patch has been applied.
    */
   fun applyPatch(source: String, patch: String): String {
-    log.info("Starting patch application process")
     // Check if patch contains any explicit diff markers (additions or deletions)
     val hasAddOrDeleteLines = patch.lines().any { line ->
       val trimmed = line.trimStart()
@@ -115,13 +113,8 @@ object IterativePatchUtil {
     // Filter out patch lines that become empty after normalization
     patchLines = patchLines.filter { it.line != null && normalizeLine(it.line!!).isNotEmpty() }
     log.debug("Filtered patch lines: ${patchLines.size}")
-    log.info("Generating patched text")
-    
     val result = generatePatchedText(sourceLines, patchLines)
-    val generatePatchedTextUsingLinks = result.joinToString("\n").trim()
-    log.info("Patch application completed")
-    
-    return generatePatchedTextUsingLinks
+    return result.joinToString("\n").trim()
   }
   
   private fun annihilateNoopLinePairs(diff: MutableList<LineRecord>) {
@@ -262,15 +255,8 @@ object IterativePatchUtil {
     patchLines: List<LineRecord>,
     levenshteinDistance: LevenshteinDistance?
   ) {
-    // Step 1: Link all unique lines in the source and patch that match exactly
-    log.info("Step 1: Linking unique matching lines")
     linkUniqueMatchingLines(sourceLines, patchLines)
-    
-    // Step 2: Link all exact matches in the source and patch which are adjacent to established links
-    log.info("Step 2: Linking adjacent matching lines")
     linkAdjacentMatchingLines(sourceLines, levenshteinDistance)
-    log.info("Step 3: Performing subsequence linking")
-    
     subsequenceLinking(sourceLines, patchLines, levenshteinDistance = levenshteinDistance)
   }
   
