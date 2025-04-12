@@ -12,6 +12,7 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.getChildClient
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
@@ -41,13 +42,12 @@ class GraphOrderedPlanMode(
     log.debug("Initializing GraphOrderedPlanMode with graph file: $graphFile")
   }
 
-  override fun handleUserMessage(userMessage: String) {
+  override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: $userMessage")
-    execute(userMessage)
+    execute(userMessage, task)
   }
 
-  private fun execute(userMessage: String) {
-    val task = ui.newTask()
+  private fun execute(userMessage: String, task: SessionTask) {
     val apiClient = (api as ChatClient).getChildClient(task)
     try {
       apiClient.budget = planSettings.budget

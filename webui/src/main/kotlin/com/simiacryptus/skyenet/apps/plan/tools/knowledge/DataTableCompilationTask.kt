@@ -130,7 +130,7 @@ class DataTableCompilationTask(
                 1. Assign a unique column ID - should be a short, descriptive string
                 2. Provide a detailed description of what the column represents
             """.trimIndent(),
-      model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
+      model = taskSettings.model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
       describer = planSettings.describer(),
@@ -174,7 +174,7 @@ class DataTableCompilationTask(
                 1. Assign a unique row ID - should be a short, descriptive string
                 2. List the source files that contain data for this row
             """.trimIndent(),
-      model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
+      model = taskSettings.model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
       describer = planSettings.describer(),
@@ -212,7 +212,7 @@ class DataTableCompilationTask(
         prompt = "Extract data for a data row for `${row.id}` from the provided source files.\n\n" +
             "Expected Columns:\n${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}\n\n" +
             "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n",
-        model = planSettings.getTaskSettings(TaskType.DataTableCompilation).model ?: planSettings.defaultModel,
+        model = taskSettings.model ?: planSettings.defaultModel,
         parsingModel = planSettings.parsingModel,
         temperature = planSettings.temperature,
         describer = planSettings.describer(),

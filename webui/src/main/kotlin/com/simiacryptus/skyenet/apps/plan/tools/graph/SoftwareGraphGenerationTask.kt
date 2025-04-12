@@ -69,7 +69,7 @@ class SoftwareGraphGenerationTask(
                     .joinToString("\n")
                 }"
           } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
-      model = planSettings.getTaskSettings(TaskType.SoftwareGraphGeneration).model ?: planSettings.defaultModel,
+      model = taskSettings.model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
       describer = planSettings.describer(),

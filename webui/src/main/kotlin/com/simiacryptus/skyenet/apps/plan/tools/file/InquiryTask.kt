@@ -68,7 +68,7 @@ class InquiryTask(
       }).
                 This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
-      model = planSettings.getTaskSettings(TaskType.valueOf(planTask?.task_type!!)).model ?: planSettings.defaultModel,
+      model = taskSettings.model ?: planSettings.defaultModel,
       temperature = planSettings.temperature,
     )
   }

@@ -5,6 +5,8 @@ import com.simiacryptus.skyenet.apps.plan.PlanSettings
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.session.SessionTask
+
 /**
  * The CognitiveMode interface defines the “cognitive” strategy
  * which handles user input, initial planning, execution and iterative
@@ -23,7 +25,7 @@ interface CognitiveMode {
   /**
    * Handle a user message and trigger the appropriate planning or execution.
    */
-  fun handleUserMessage(userMessage: String)
+  fun handleUserMessage(userMessage: String, task: SessionTask)
 }
 
 interface CognitiveModeStrategy {

@@ -88,7 +88,7 @@ open class UnifiedPlanApp(
       }
 
       // Handle the user message with the appropriate cognitive mode
-      cognitiveMode.handleUserMessage(userMessage)
+      cognitiveMode.handleUserMessage(userMessage, ui.newTask(true))
 
     } catch (e: Throwable) {
       log.error("Error processing user message", e)
@@ -150,7 +150,7 @@ open class UnifiedPlanApp(
         ).apply { initialize() }
       }
       // Handle the expanded message with the cognitive mode
-      cognitiveMode.handleUserMessage(currentMessage)
+      cognitiveMode.handleUserMessage(currentMessage, task)
     } else {
       // Recursive case: Process each expansion option
       val expression = match.groupValues[1]

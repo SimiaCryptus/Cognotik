@@ -13,6 +13,7 @@ import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.core.actors.SimpleActor
+import com.simiacryptus.skyenet.core.util.FixedConcurrencyProcessor
 import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
@@ -179,38 +180,31 @@ class CrawlerAgentTask(
     task.add(header.renderMarkdown())
     
     val tabs = TabbedDisplay(task)
-    IntRange(0, concurrentProcessing).mapNotNull {
-      if (pageQueue.isNotEmpty() && processedCount.get() < maxPages) {
-        agent.pool.submit {
-          while (true) {
-            val currentIndex = processedCount.incrementAndGet()
-            if (currentIndex > maxPages) break
-            var page: LinkData? = null
-            try {
-              page = pageQueue.poll() ?: break
-              val url = page.link
-              val title = page.title
-              val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
-              if (!allowRevisit && url in visitedUrls) {
-                log.info("Skipping already visited URL: $url")
-                continue
-              }
-              if (!allowRevisit) visitedUrls.add(url)
-              val processPageResult = processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue, page.depth)
-              agent.ui.newTask(false).apply {
-                tabs[page.link] = placeholder
-                add(processPageResult.renderMarkdown)
-              }
-              analysisResultsMap[currentIndex] = processPageResult
-            } catch (e: Exception) {
-              task.error(agent.ui, e)
-              log.error("Error processing page: ${page?.link}", e)
-              analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.link})\n\n*Error processing this result: ${e.message}*\n\n"
-            }
+    val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
+    pageQueue.take(maxPages).map { page ->
+      exeManager.submit {
+        val currentIndex = processedCount.incrementAndGet()
+        if (currentIndex > maxPages) return@submit
+        try {
+          val url = page.link
+          val title = page.title
+          val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
+          if (!allowRevisit && url in visitedUrls) {
+            log.info("Skipping already visited URL: $url")
+            return@submit
           }
+          if (!allowRevisit) visitedUrls.add(url)
+          val processPageResult = processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue, page.depth)
+          agent.ui.newTask(false).apply {
+            tabs[page.link] = placeholder
+            add(processPageResult.renderMarkdown)
+          }
+          analysisResultsMap[currentIndex] = processPageResult
+        } catch (e: Exception) {
+          task.error(agent.ui, e)
+          log.error("Error processing page: ${page?.link}", e)
+          analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.link})\n\n*Error processing this result: ${e.message}*\n\n"
         }
-      } else {
-        null
       }
     }.toTypedArray().forEach { it.get() }
     
@@ -222,7 +216,10 @@ class CrawlerAgentTask(
     } else {
       analysisResults
     }
-    task.add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
+    agent.ui.newTask(false).apply {
+      tabs["Final Summary"] = placeholder
+      add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
+    }
     resultFn(finalOutput)
   }
   
@@ -364,7 +361,7 @@ class CrawlerAgentTask(
     ).joinToString("\n\n")
     val summary = SimpleActor(
       prompt = summaryPrompt,
-      model = planSettings.defaultModel,
+      model = taskSettings.model!!,
     ).answer(listOf(summaryPrompt), api)
     return header + summary
   }
@@ -519,7 +516,7 @@ class CrawlerAgentTask(
     return ParsedActor(
       prompt = summaryPrompt,
       resultClass = ParsedPage::class.java,
-      model = planSettings.defaultModel,
+      model = taskSettings.model!!,
       describer = planSettings.describer(),
       parsingModel = planSettings.parsingModel,
     ).answer(listOf(summaryPrompt), api)

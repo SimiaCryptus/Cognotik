@@ -65,8 +65,8 @@ class KnowledgeIndexingTask(
     val threadPool = Executors.newFixedThreadPool(8)
     try {
       val parsingModel = when (taskConfig.parsing_type.lowercase()) {
-        "code" -> CodeParsingModel(planSettings.defaultModel, taskConfig.chunk_size)
-        else -> DocumentParsingModel(planSettings.defaultModel, taskConfig.chunk_size)
+        "code" -> CodeParsingModel(taskSettings.model ?: planSettings.defaultModel, taskConfig.chunk_size)
+        else -> DocumentParsingModel(taskSettings.model ?: planSettings.defaultModel, taskConfig.chunk_size)
       }
 
       val progressState = ProgressState()

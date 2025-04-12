@@ -68,7 +68,7 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = planSettings.getTaskSettings(TaskType.SoftwareGraphModification).model ?: planSettings.defaultModel,
+            model = taskSettings.model ?: planSettings.defaultModel,
             parsingModel = planSettings.parsingModel,
             temperature = planSettings.temperature,
             describer = planSettings.describer(),

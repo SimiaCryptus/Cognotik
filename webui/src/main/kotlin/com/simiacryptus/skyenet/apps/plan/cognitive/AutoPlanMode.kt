@@ -49,7 +49,7 @@ open class AutoPlanMode(
     log.debug("Initializing AutoPlanMode")
   }
 
-  override fun handleUserMessage(userMessage: String) {
+  override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: $userMessage")
     if (!isRunning) {
       isRunning = true
@@ -57,8 +57,7 @@ open class AutoPlanMode(
       startAutoPlanChat(userMessage)
     } else {
       log.debug("Injecting user message into ongoing chat")
-      val userMessageTask = ui.newTask()
-      userMessageTask.echo(MarkdownUtil.renderMarkdown("User: $userMessage", ui = ui))
+      task.echo(MarkdownUtil.renderMarkdown("User: $userMessage", ui = ui))
       currentUserMessage.set(userMessage)
     }
   }

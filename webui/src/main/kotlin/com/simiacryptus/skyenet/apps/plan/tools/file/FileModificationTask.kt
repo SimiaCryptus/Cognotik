@@ -132,7 +132,7 @@ class FileModificationTask(
         }
         $TRIPLE_TILDE
         """.trimIndent(),
-      model = planSettings.getTaskSettings(TaskType.FileModification).model ?: planSettings.defaultModel,
+      model = taskSettings.model ?: planSettings.defaultModel,
       temperature = planSettings.temperature,
     )
   }
@@ -201,7 +201,7 @@ class FileModificationTask(
               ui = agent.ui,
               api = api,
               shouldAutoApply = { agent.planSettings.autoFix },
-              model = planSettings.getTaskSettings(TaskType.FileModification).model ?: planSettings.defaultModel,
+              model = taskSettings.model ?: planSettings.defaultModel,
               defaultFile = defaultFile
             ) + "\n\n## Auto-applied changes"
           }
@@ -221,7 +221,7 @@ class FileModificationTask(
               },
               ui = agent.ui,
               api = api,
-              model = planSettings.getTaskSettings(TaskType.FileModification).model ?: planSettings.defaultModel,
+              model = taskSettings.model ?: planSettings.defaultModel,
               defaultFile = defaultFile,
             ) + acceptButtonFooter(agent.ui) {
               task.complete()

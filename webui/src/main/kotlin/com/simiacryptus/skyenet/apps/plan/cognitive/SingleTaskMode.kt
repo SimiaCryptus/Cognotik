@@ -40,9 +40,8 @@ class SingleTaskMode(
     log.debug("SingleTaskMode initialized with task type: ${enabledTasks.first().name}")
   }
 
-  override fun handleUserMessage(userMessage: String) {
+  override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
-    val task = ui.newTask(true)
     Retryable(ui, task) {
       val subtask = ui.newTask(false)
       ui.socketManager?.pool?.submit {

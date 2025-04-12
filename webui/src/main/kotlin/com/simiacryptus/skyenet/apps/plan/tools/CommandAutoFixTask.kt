@@ -61,7 +61,10 @@ class CommandAutoFixTask(
       * Available commands:
       """.trimIndent() + settings.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}" }).trim()
   }
-
+  
+  override val taskSettings: CommandAutoFixTaskSettings
+    get() = super.taskSettings as CommandAutoFixTaskSettings
+  
   override fun run(
     agent: PlanCoordinator,
     messages: List<String>,
@@ -76,7 +79,6 @@ class CommandAutoFixTask(
     val hasError = AtomicBoolean(false)
     val onComplete = { semaphore.release() }
     var retryable: Retryable? = null
-    val taskSettings = agent.planSettings.getTaskSettings(TaskType.CommandAutoFix) as CommandAutoFixTaskSettings
     retryable = Retryable(agent.ui, task = task) {
       val task = agent.ui.newTask(false).apply { it.append(placeholder) }
       val api = api.getChildClient(task)

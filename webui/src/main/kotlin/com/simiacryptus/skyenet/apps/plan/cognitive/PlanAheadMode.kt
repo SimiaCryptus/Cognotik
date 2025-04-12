@@ -9,6 +9,7 @@ import com.simiacryptus.skyenet.apps.plan.PlanSettings
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
+import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 
@@ -29,12 +30,12 @@ class PlanAheadMode(
     log.debug("Initializing PlanAheadMode")
   }
 
-  override fun handleUserMessage(userMessage: String) {
+  override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: $userMessage")
-    execute(userMessage)
+    execute(userMessage, task)
   }
 
-  private fun execute(userMessage: String) {
+  private fun execute(userMessage: String, task: SessionTask) {
     try {
       val apiClient = api as ChatClient
       apiClient.budget = planSettings.budget ?: 2.0
@@ -48,7 +49,6 @@ class PlanAheadMode(
         planSettings = planSettings
       )
 
-      val task = ui.newTask()
       val plan = initialPlan(
         codeFiles = coordinator.codeFiles,
         files = coordinator.files,
