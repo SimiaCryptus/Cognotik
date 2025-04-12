@@ -5,22 +5,20 @@ import {RootState} from '../store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
-import { 
-    FaBold, 
-    FaItalic, 
-    FaCode, 
-    FaListUl, 
-    FaQuoteRight, 
-    FaLink, 
-    FaHeading,
-    FaTable,
-    FaCheckSquare,
-    FaImage,
-    FaEye,
-    FaChevronUp,
-    FaChevronDown,
-    FaEdit
-} from 'react-icons/fa';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import CodeIcon from '@mui/icons-material/Code';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import LinkIcon from '@mui/icons-material/Link';
+import TitleIcon from '@mui/icons-material/Title';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import ImageIcon from '@mui/icons-material/Image';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import EditIcon from '@mui/icons-material/Edit';
 import { debounce } from '../utils/tabHandling';
 const CollapseButton = styled.button`
     position: absolute;
@@ -239,10 +237,6 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
     const [message, setMessage] = useState('');
     // Debounce preview mode toggling to avoid rapid switching that can trigger flicker
     const [isPreviewMode, setIsPreviewMode] = useState(false);
-    const togglePreviewMode = useCallback(
-      debounce((flag: boolean) => setIsPreviewMode(flag), 150),
-      []
-    );
     const [isCollapsed, setIsCollapsed] = useState(false);
     const config = useSelector((state: RootState) => state.config);
     const messages = useSelector((state: RootState) => state.messages.messages);
@@ -363,7 +357,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                     title="Expand input area"
                     data-testid="expand-input"
                 >
-                    <FaChevronUp />
+                <KeyboardArrowUpIcon fontSize="small" />
                 </CollapseButton>
                 <CollapsedPlaceholder onClick={handleToggleCollapse}>
                     Click to expand input
@@ -384,7 +378,8 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                 title="Collapse input area"
                 data-testid="collapse-input"
             >
-                <FaChevronDown />
+                <KeyboardArrowDownIcon fontSize="small" />
+
             </CollapseButton>
             <div className="input-area-content">
                 <StyledForm onSubmit={handleSubmit}>
@@ -393,11 +388,14 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                             <div className="toolbar-section">
                                 <ToolbarButton
                                   type="button"
-                                  onClick={() => setIsPreviewMode(!isPreviewMode)}
+                                  onClick={() => {
+                                    const newValue = !isPreviewMode;
+                                    debounce(() => setIsPreviewMode(newValue), 150)();
+                                  }}
                                   title={isPreviewMode ? "Edit" : "Preview"}
                                   className={isPreviewMode ? 'active' : ''}
                                 >
-                                    {isPreviewMode ? <FaEdit /> : <FaEye />}
+                                    {isPreviewMode ? <EditIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
@@ -406,21 +404,21 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                                   onClick={() => insertMarkdown('# $1')}
                                   title="Heading"
                                 >
-                                    <FaHeading />
+                                    <TitleIcon fontSize="small" />
                                 </ToolbarButton>
                                 <ToolbarButton
                                   type="button"
                                   onClick={() => insertMarkdown('**$1**')}
                                   title="Bold"
                                 >
-                                    <FaBold />
+                                    <FormatBoldIcon fontSize="small" />
                                 </ToolbarButton>
                                 <ToolbarButton
                                   type="button"
                                   onClick={() => insertMarkdown('*$1*')}
                                   title="Italic"
                                 >
-                                    <FaItalic />
+                                    <FormatItalicIcon fontSize="small" />
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
@@ -429,14 +427,17 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                                   onClick={() => insertMarkdown('`$1`')}
                                   title="Inline Code"
                                 >
-                                    <FaCode />
+                                    <CodeIcon fontSize="small" />
                                 </ToolbarButton>
                                 <ToolbarButton
                                   type="button"
                                   onClick={() => insertMarkdown('```\n$1\n```')}
                                   title="Code Block"
                                 >
-                                    <FaCode style={{ marginRight: '2px' }} /><FaCode />
+                                    <div style={{ display: 'flex' }}>
+                                        <CodeIcon fontSize="small" style={{ marginRight: '2px' }} />
+                                        <CodeIcon fontSize="small" />
+                                    </div>
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
@@ -445,21 +446,21 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                                   onClick={() => insertMarkdown('- $1')}
                                   title="Bullet List"
                                 >
-                                    <FaListUl />
+                                    <FormatListBulletedIcon fontSize="small" />
                                 </ToolbarButton>
                                 <ToolbarButton
                                   type="button"
                                   onClick={() => insertMarkdown('> $1')}
                                   title="Quote"
                                 >
-                                    <FaQuoteRight />
+                                    <FormatQuoteIcon fontSize="small" />
                                 </ToolbarButton>
                                 <ToolbarButton
                                   type="button"
                                   onClick={() => insertMarkdown('- [ ] $1')}
                                   title="Task List"
                                 >
-                                    <FaCheckSquare />
+                                    <CheckBoxIcon fontSize="small" />
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
@@ -468,21 +469,21 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                                   onClick={() => insertMarkdown('[$1](url)')}
                                   title="Link"
                                 >
-                                    <FaLink />
+                                    <LinkIcon fontSize="small" />
                                 </ToolbarButton>
                                 <ToolbarButton
                                   type="button"
                                   onClick={() => insertMarkdown('![$1](image-url)')}
                                   title="Image"
                                 >
-                                    <FaImage />
+                                    <ImageIcon fontSize="small" />
                                 </ToolbarButton>
                                 <ToolbarButton
                                   type="button"
                                   onClick={insertTable}
                                   title="Table"
                                 >
-                                    <FaTable />
+                                    <TableChartIcon fontSize="small" />
                                 </ToolbarButton>
                             </div>
                         </EditorToolbar>
