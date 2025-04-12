@@ -8,6 +8,7 @@ import com.simiacryptus.skyenet.Retryable
 import com.simiacryptus.skyenet.apps.general.CmdPatchApp
 import com.simiacryptus.skyenet.apps.general.PatchApp
 import com.simiacryptus.skyenet.apps.plan.*
+import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.getChildClient

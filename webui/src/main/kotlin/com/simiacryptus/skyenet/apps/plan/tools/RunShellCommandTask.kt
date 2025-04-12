@@ -6,6 +6,7 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.skyenet.apps.code.CodingAgent
 import com.simiacryptus.skyenet.apps.plan.*
+import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.actors.CodingActor
 import com.simiacryptus.skyenet.interpreter.ProcessInterpreter
 import com.simiacryptus.skyenet.webui.session.SessionTask

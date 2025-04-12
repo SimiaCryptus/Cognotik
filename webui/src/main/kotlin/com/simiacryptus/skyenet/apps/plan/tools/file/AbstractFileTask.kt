@@ -4,8 +4,8 @@ import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.AbstractTask
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
-import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.apps.plan.tools.file.AbstractFileTask.FileTaskConfigBase
+import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.streams.asSequence

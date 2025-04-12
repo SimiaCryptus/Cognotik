@@ -25,6 +25,7 @@ import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask.ForeachTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask.PlanningTaskConfigData
+import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer

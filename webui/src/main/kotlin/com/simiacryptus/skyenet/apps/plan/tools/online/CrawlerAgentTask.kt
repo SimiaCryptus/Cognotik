@@ -8,6 +8,7 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.apps.plan.*
+import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
@@ -16,6 +17,7 @@ import com.simiacryptus.skyenet.core.util.Selenium
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.util.toJson
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
@@ -45,7 +47,7 @@ class CrawlerAgentTask(
   class SearchAndAnalyzeTaskConfigData(
     @Description("The search query to use for Google search") val search_query: String? = null,
     @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
-    @Description("The question(s) considered when processing the content") val content_query: String? = null,
+    @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
     @Description("Whether to follow links found in the analysis") val follow_links: Boolean? = true,
     @Description("Method to seed the crawler (GoogleSearch or DirectUrls)") val seed_method: SeedMethod = SeedMethod.GoogleSearch,
     @Description("Method used to fetch content from  URLs (HttpClient or Selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
@@ -250,7 +252,7 @@ class CrawlerAgentTask(
       }
       
       val analysisGoal = when {
-        taskConfig?.content_query?.isNotBlank() == true -> taskConfig.content_query
+        taskConfig?.content_queries != null -> taskConfig.content_queries.toJson()
         taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
         else -> "Analyze the content and provide insights."
       }
@@ -352,7 +354,7 @@ class CrawlerAgentTask(
     val summaryPrompt = listOf(
       "Create a comprehensive summary of the following web search results and analyses.",
       "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
-      "Analysis goal: ${taskConfig?.content_query ?: taskConfig?.task_description ?: "Provide key insights"}",
+      "Analysis goal: ${taskConfig?.content_queries ?: taskConfig?.task_description ?: "Provide key insights"}",
       "For each source, extract the most important insights, facts, and conclusions.",
       "Organize information by themes rather than by source when possible.",
       "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
@@ -423,10 +425,9 @@ class CrawlerAgentTask(
   
   fun saveRawContent(webSearchDir: File, url: String, content: String, index: Int) {
     try {
-      val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
       val urlSafe = url.replace(Regex("[^a-zA-Z0-9]"), "_").take(50)
       webSearchDir.mkdirs()
-      val rawFile = File(webSearchDir, "${urlSafe}_${timestamp}_${index}.html")
+      val rawFile = File(webSearchDir, urlSafe + ".html")
       rawFile.writeText(content)
     } catch (e: Exception) {
       log.error("Failed to save raw content for URL: $url", e)
@@ -444,7 +445,7 @@ class CrawlerAgentTask(
         "timestamp" to LocalDateTime.now().toString(),
         "index" to index,
         "query" to (taskConfig?.search_query ?: ""),
-        "content_query" to (taskConfig?.content_query ?: "")
+        "content_query" to (taskConfig?.content_queries ?: "")
       )
       val metadataJson = ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
       // Write file with commented JSON header followed by the analysis
@@ -568,3 +569,4 @@ class CrawlerAgentTask(
     private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
   }
 }
+

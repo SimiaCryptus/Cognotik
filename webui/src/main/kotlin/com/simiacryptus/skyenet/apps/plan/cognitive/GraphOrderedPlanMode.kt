@@ -6,6 +6,7 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.apps.plan.cognitive.CognitiveMode
 import com.simiacryptus.skyenet.apps.plan.cognitive.CognitiveModeStrategy
+import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User

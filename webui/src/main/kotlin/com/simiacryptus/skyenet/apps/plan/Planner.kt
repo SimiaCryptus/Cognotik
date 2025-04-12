@@ -5,6 +5,7 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
+import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask

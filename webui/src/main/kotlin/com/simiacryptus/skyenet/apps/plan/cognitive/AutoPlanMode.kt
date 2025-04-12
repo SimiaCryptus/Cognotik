@@ -32,10 +32,10 @@ open class AutoPlanMode(
   override val planSettings: PlanSettings,
   override val session: Session,
   override val user: User?,
-  private val api2: com.simiacryptus.jopenai.OpenAIClient,
-  private val maxTaskHistoryChars: Int = 20000,
-  private val maxTasksPerIteration: Int = 3,
-  private val maxIterations: Int = 100
+  private val api2: OpenAIClient,
+  private val maxTaskHistoryChars: Int = planSettings.maxTaskHistoryChars,
+  private val maxTasksPerIteration: Int = planSettings.maxTasksPerIteration,
+  private val maxIterations: Int = planSettings.maxIterations
 ) : CognitiveMode {
   private val log = LoggerFactory.getLogger(AutoPlanMode::class.java)
 
@@ -66,36 +66,43 @@ open class AutoPlanMode(
   private fun startAutoPlanChat(userMessage: String) {
     log.debug("Starting auto plan chat with initial message: $userMessage")
     val task = ui.newTask(true)
-    val apiClient = (api as ChatClient).getChildClient(task)
+    val apiClient = (api as? ChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
     task.echo(MarkdownUtil.renderMarkdown(userMessage))
 
     var continueLoop = true
     lateinit var stopLink: StringBuilder
-    val executor = ui.socketManager!!.pool
+    val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
     stopLink = task.add(ui.hrefLink("Stop") {
       log.debug("Stop button clicked - terminating execution")
       continueLoop = false
-      executor.shutdown()
+      // executor.shutdown() // Avoid shutting down the shared pool
       stopLink.set("Stopped")
       task.complete()
     })!!
 
     val tabbedDisplay = TabbedDisplay(task)
     executor.execute {
+      val socketManager = ui.socketManager ?: run {
+        log.error("SocketManager is null, cannot proceed.")
+        task.error(ui, IllegalStateException("SocketManager is null"))
+        return@execute
+      }
       try {
         log.debug("Starting main execution loop")
         tabbedDisplay.update()
         task.complete()
 
         apiClient.budget = planSettings.budget
-        val coordinator = PlanCoordinator(
-          user = user,
-          session = session,
-          dataStorage = ui.socketManager?.dataStorage!!,
-          ui = ui,
-          root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager?.dataStorage?.getDataDir(user, session)?.toPath() ?: File(".").toPath(),
-          planSettings = planSettings
-        )
+        val coordinator = socketManager.dataStorage?.let {
+          PlanCoordinator(
+            user = user,
+            session = session,
+            dataStorage = it,
+            ui = ui,
+            root = planSettings.workingDir?.let { File(it).toPath() } ?: socketManager.dataStorage.getDataDir(user, session).toPath() ?: File(".").toPath(),
+            planSettings = planSettings
+          )
+        }
         log.debug("Created plan coordinator")
 
         val initialStatus = initThinking(planSettings, userMessage, apiClient)
@@ -107,6 +114,7 @@ open class AutoPlanMode(
         while (iteration++ < maxIterations && continueLoop) {
           log.debug("Starting iteration $iteration")
           task.complete()
+          val currentThinkingStatus = thinkingStatus.get() ?: throw IllegalStateException("ThinkingStatus is null at iteration $iteration")
           val iterationTask = ui.newTask(false).apply { tabbedDisplay["Iteration $iteration"] = placeholder }
           val iterationApi = apiClient.getChildClient(iterationTask)
           val iterationTabbedDisplay = TabbedDisplay(iterationTask, additionalClasses = "iteration")
@@ -118,12 +126,17 @@ open class AutoPlanMode(
             header("Evaluation Records", 1)
             formatEvalRecords().forEach { add(MarkdownUtil.renderMarkdown(it)) }
             header("Current Thinking Status", 1)
-            formatThinkingStatus(thinkingStatus.get()!!).let { add(MarkdownUtil.renderMarkdown(it)) }
+            formatThinkingStatus(currentThinkingStatus).let { add(MarkdownUtil.renderMarkdown(it)) }
           }
 
           val nextTask = try {
             log.debug("Getting next task")
-            getNextTask(iterationApi, coordinator, userMessage, thinkingStatus.get())
+            if (coordinator != null) {
+              getNextTask(iterationApi, coordinator, userMessage, currentThinkingStatus)
+            } else {
+              log.error("Coordinator is null, cannot get next task")
+              null
+            }
           } catch (e: Exception) {
             log.error("Error choosing next task", e)
             iterationTabbedDisplay["Errors"]?.append(MarkdownUtil.renderMarkdown("Error choosing next task: ${e.message}"))
@@ -153,7 +166,12 @@ open class AutoPlanMode(
 
             val future = executor.submit<String> {
               try {
-                runTask(iterationApi, coordinator, currentTask, currentTaskId, userMessage, taskExecutionTask)
+                if (coordinator != null) {
+                  runTask(iterationApi, coordinator, currentTask, userMessage, taskExecutionTask)
+                } else {
+                  log.error("Coordinator is null, cannot run task")
+                  ""
+                }
               } catch (e: Exception) {
                 taskExecutionTask.error(ui, e)
                 log.error("Error executing task", e)
@@ -176,12 +194,17 @@ open class AutoPlanMode(
           executionRecords.addAll(completedTasks)
 
           val thinkingStatusTask = ui.newTask(false).apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
-          log.debug("Updating thinking status")
-          thinkingStatus.set(
-            updateThinking(iterationApi, thinkingStatus.get(), completedTasks)
-          )
-          log.debug("Updated thinking status")
-          thinkingStatusTask.complete(MarkdownUtil.renderMarkdown("Updated Thinking Status:\n${formatThinkingStatus(thinkingStatus.get()!!)}"))
+          try {
+            log.debug("Updating thinking status")
+            val updatedStatus = updateThinking(iterationApi, currentThinkingStatus, completedTasks)
+            thinkingStatus.set(updatedStatus)
+            log.debug("Updated thinking status")
+            thinkingStatusTask.complete(MarkdownUtil.renderMarkdown("Updated Thinking Status:\n${formatThinkingStatus(updatedStatus)}"))
+          } catch (e: Exception) {
+            log.error("Error updating thinking status", e)
+            thinkingStatusTask.error(ui, e)
+            iterationTabbedDisplay["Errors"]?.append(MarkdownUtil.renderMarkdown("Error updating thinking status: ${e.message}"))
+          }
         }
 
         log.debug("Main execution loop completed")
@@ -210,11 +233,11 @@ open class AutoPlanMode(
     api: ChatClient,
     coordinator: PlanCoordinator,
     currentTask: TaskConfigBase,
-    currentTaskId: String,
     userMessage: String,
     task: SessionTask
   ): String {
     val taskApi = api.getChildClient(task)
+    val currentThinkingStatus = thinkingStatus.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
     val taskImpl = TaskType.getImpl(coordinator.planSettings, currentTask)
     val result = StringBuilder()
 
@@ -228,7 +251,7 @@ open class AutoPlanMode(
       ),
       messages = listOf(
         userMessage,
-        "Current thinking status:\n${formatThinkingStatus(thinkingStatus.get()!!)}"
+        "Current thinking status:\n${formatThinkingStatus(currentThinkingStatus)}"
       ) + formatEvalRecords(),
       task = task,
       api = taskApi,
@@ -244,7 +267,7 @@ open class AutoPlanMode(
     api: ChatClient,
     coordinator: PlanCoordinator,
     userMessage: String,
-    thinkingStatus: ThinkingStatus?
+    thinkingStatus: ThinkingStatus
   ): List<TaskConfigBase>? {
     val describer = planSettings.describer()
 
@@ -279,7 +302,7 @@ open class AutoPlanMode(
     ).answer(
       listOf(userMessage) + contextData() + listOf(
         """
-        Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}
+        Current thinking status: ${formatThinkingStatus(thinkingStatus)}
         Please choose the next single task to execute based on the current status.
         If there are no tasks to execute, return {}.
         """.trimIndent()
@@ -354,7 +377,7 @@ open class AutoPlanMode(
 
   private fun updateThinking(
     api: ChatClient,
-    thinkingStatus: ThinkingStatus?,
+    thinkingStatus: ThinkingStatus,
     completedTasks: List<ExecutionRecord>
   ): ThinkingStatus = ParsedActor(
     name = "UpdateQuestionsActor",
@@ -419,7 +442,7 @@ open class AutoPlanMode(
     parsingModel = planSettings.parsingModel,
     temperature = planSettings.temperature,
     describer = planSettings.describer()
-  ).answer(listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus!!)}") +
+  ).answer(listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus)}") +
       contextData() +
       completedTasks.flatMap { record ->
         val task: TaskConfigBase? = record.task

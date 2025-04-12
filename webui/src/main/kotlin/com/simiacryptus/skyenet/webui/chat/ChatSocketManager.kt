@@ -8,6 +8,7 @@ import com.simiacryptus.skyenet.Retryable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
+import com.simiacryptus.skyenet.core.util.FixedConcurrencyProcessor
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.application.ApplicationServer
@@ -53,7 +54,7 @@ open class ChatSocketManager(
       Retryable(ui, task) { it: StringBuilder ->
         val task = ui.newTask(false)
         val aggregateResponse = StringBuilder()
-        processMsgRecursive(api, userMessage, task, messages.toList(), aggregateResponse)
+        processMsgRecursive(api, userMessage, task, messages.toList(), aggregateResponse, FixedConcurrencyProcessor(this.pool, 4))
         messages.dropLastWhile { it.role == ApiModel.Role.assistant } // Clear previous assistant messages to avoid duplication if retrying
         messages += ApiModel.ChatMessage(ApiModel.Role.assistant, aggregateResponse.toString().toContentList())
         task.placeholder
@@ -65,13 +66,14 @@ open class ChatSocketManager(
   }
   
   
-  private val expansionExpressionPattern = Regex("""\{([^\|\}\{]+(?:\|[^\|\}\{]+)+)}""")
+  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{]+)+)}""")
   private fun processMsgRecursive(
     api: ChatClient,
     currentMessage: String,
     task: SessionTask,
     baseMessages: List<ApiModel.ChatMessage>, // Pass the history without the current user turn
-    aggregateResponse: StringBuilder
+    aggregateResponse: StringBuilder,
+    fixedConcurrencyProcessor: FixedConcurrencyProcessor
   ) {
     // Find the *first* expansion pattern in the current message string
     val match = expansionExpressionPattern.find(currentMessage)
@@ -87,14 +89,16 @@ open class ChatSocketManager(
       val expression = match.groupValues[1]
       val options = expression.split('|')
       val tabs = TabbedDisplay(task) // Create tabs for the current level of expansion
-      for (option in options) {
-        // Create a new sub-task for this option, nested under the current task's tabs
-        val subTask = newTask(false, false).apply { tabs[option] = placeholder }
-        // Replace the *first* occurrence of the pattern with the current option
-        val nextMessage = currentMessage.replaceFirst(match.value, option)
-        // Recurse with the modified message and the new sub-task
-        processMsgRecursive(api, nextMessage, subTask, baseMessages, aggregateResponse)
-      }
+      options.map { option ->
+        fixedConcurrencyProcessor.submit {
+          // Create a new sub-task for this option, nested under the current task's tabs
+          val subTask = newTask(false, false).apply { tabs[option] = placeholder }
+          // Replace the *first* occurrence of the pattern with the current option
+          val nextMessage = currentMessage.replaceFirst(match.value, option)
+          // Recurse with the modified message and the new sub-task
+          processMsgRecursive(api, nextMessage, subTask, baseMessages, aggregateResponse, fixedConcurrencyProcessor)
+        }
+      }.toTypedArray().forEach { it.get() }
     }
   }
   
