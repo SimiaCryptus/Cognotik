@@ -4,6 +4,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.skyenet.Retryable
+import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.plan.PlanCoordinator
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
 import com.simiacryptus.skyenet.apps.plan.TaskType
@@ -114,17 +115,22 @@ open class SingleTaskMode(
       val taskImpl = TaskType.getImpl(planSettings, taskConfig)
       val result = StringBuilder()
 
+      val tabs = TabbedDisplay(task)
       taskImpl.run(
         agent = coordinator,
         messages = listOf(userMessage),
-        task = task,
+        task = ui.newTask(false).apply {
+          tabs["Task"] = placeholder
+        },
         api = apiClient,
         resultFn = { result.append(it) },
         api2 = api2,
         planSettings = planSettings,
       )
-
-      task.add(renderMarkdown("Task completed. Result:\n${result}"))
+      ui.newTask(false).apply {
+        tabs["Output"] = placeholder
+        complete(renderMarkdown("Task completed. Result:\n${result}"))
+      }
       task.complete()
     } catch (e: Exception) {
       log.error("Error executing task", e)

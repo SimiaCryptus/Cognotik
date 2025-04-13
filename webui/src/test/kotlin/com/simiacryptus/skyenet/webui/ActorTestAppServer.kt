@@ -90,15 +90,15 @@ object ActorTestAppServer : com.simiacryptus.skyenet.webui.application.Applicati
             language = if (isWindows) "powershell" else "bash",,
           ).apply {
             setTaskSettings(
-              TaskType.TaskPlanning, TaskSettingsBase(
-                TaskType.TaskPlanning.name,
+              TaskType.TaskPlanningTask, TaskSettingsBase(
+                TaskType.TaskPlanningTask.name,
                 enabled = true,
                 model = OpenAIModels.GPT4o,
               )
             )
             setTaskSettings(
-              TaskType.RunShellCommand, TaskSettingsBase(
-                TaskType.RunShellCommand.name,
+              TaskType.RunShellCommandTask, TaskSettingsBase(
+                TaskType.RunShellCommandTask.name,
                 enabled = false,
                 model = OpenAIModels.GPT4o,
               )

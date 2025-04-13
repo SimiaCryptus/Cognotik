@@ -20,14 +20,14 @@ class GraphBasedPlanningTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskConfigBase(
-        task_type = TaskType.GraphBasedPlanning.name,
+        task_type = TaskType.GraphBasedPlanningTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-     GraphBasedPlanning - Use a software graph to generate an actionable sub-plan.
+     GraphBasedPlanningTask - Use a software graph to generate an actionable sub-plan.
        ** Include the file path to the input graph file and the instruction.
     """.trimIndent()
 

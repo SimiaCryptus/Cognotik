@@ -2,28 +2,11 @@ package com.simiacryptus.skyenet.apps.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.skyenet.apps.plan.tools.CommandAutoFixTask
 import com.simiacryptus.skyenet.apps.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.CommandSessionTask
-import com.simiacryptus.skyenet.apps.plan.tools.RunShellCommandTask
 import com.simiacryptus.skyenet.apps.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.SeleniumSessionTask
-import com.simiacryptus.skyenet.apps.plan.tools.knowledge.DataTableCompilationTask
-import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask
 import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.file.FileSearchTask
-import com.simiacryptus.skyenet.apps.plan.tools.file.InquiryTask
 import com.simiacryptus.skyenet.apps.plan.tools.file.InquiryTask.InquiryTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask
-import com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphGenerationTask
-import com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphModificationTask
-import com.simiacryptus.skyenet.apps.plan.tools.knowledge.EmbeddingSearchTask
-import com.simiacryptus.skyenet.apps.plan.tools.knowledge.KnowledgeIndexingTask
-import com.simiacryptus.skyenet.apps.plan.tools.online.GitHubSearchTask
-import com.simiacryptus.skyenet.apps.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask.ForeachTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
@@ -41,9 +24,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
   
   
   companion object {
-    val GraphBasedPlanning = TaskType(
-      "GraphBasedPlanning",
-      GraphBasedPlanningTask.GraphBasedPlanningTaskConfigData::class.java,
+    val GraphBasedPlanningTask = TaskType(
+      "GraphBasedPlanningTask",
+      com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask.GraphBasedPlanningTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Generate and execute task plans based on software graph structure",
       """
@@ -57,9 +40,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
       </ul>
       """
     )
-    val DataTableCompilation = TaskType(
-      "DataTableCompilation",
-      DataTableCompilationTask.DataTableCompilationTaskConfigData::class.java,
+    val DataTableCompilationTask = TaskType(
+      "DataTableCompilationTask",
+      com.simiacryptus.skyenet.apps.plan.tools.knowledge.DataTableCompilationTask.DataTableCompilationTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Compile structured data tables from multiple files",
       """
@@ -74,9 +57,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
           """
     )
-    val SoftwareGraphModification = TaskType(
-      "SoftwareGraphModification",
-      SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData::class.java,
+    val SoftwareGraphModificationTask = TaskType(
+      "SoftwareGraphModificationTask",
+      com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Modify an existing software graph representation",
       """
@@ -90,9 +73,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
            </ul>
            """
     )
-    val SoftwareGraphGeneration = TaskType(
-      "SoftwareGraphGeneration",
-      SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData::class.java,
+    val SoftwareGraphGenerationTask = TaskType(
+      "SoftwareGraphGenerationTask",
+      com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Generate a SoftwareGraph representation of the codebase",
       """
@@ -110,8 +93,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     
     private val taskConstructors = mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
     
-    val TaskPlanning = TaskType(
-      "TaskPlanning",
+    val TaskPlanningTask = TaskType(
+      "TaskPlanningTask",
       PlanningTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Break down and coordinate complex development tasks with dependency management",
@@ -128,8 +111,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
     )
-    val Inquiry = TaskType(
-      "Inquiry",
+    val InquiryTask = TaskType(
+      "InquiryTask",
       InquiryTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Analyze code and provide detailed explanations of implementation patterns",
@@ -146,9 +129,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
     )
-    val FileSearch = TaskType(
-      "FileSearch",
-      FileSearchTask.SearchTaskConfigData::class.java,
+    val FileSearchTask = TaskType(
+      "FileSearchTask",
+      com.simiacryptus.skyenet.apps.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Search project files using patterns with contextual results",
       """
@@ -162,9 +145,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
     )
-    val EmbeddingSearch = TaskType(
-      "EmbeddingSearch",
-      EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
+    val EmbeddingSearchTask = TaskType(
+      "EmbeddingSearchTask",
+      com.simiacryptus.skyenet.apps.plan.tools.knowledge.EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Perform semantic search using AI embeddings",
       """
@@ -178,8 +161,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
     )
-    val FileModification = TaskType(
-      "FileModification",
+    val FileModificationTask = TaskType(
+      "FileModificationTask",
       FileModificationTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Create new files or modify existing code with AI-powered assistance",
@@ -197,8 +180,12 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
     )
-    val RunShellCommand = TaskType(
-      "RunShellCommand", RunShellCommandTaskConfigData::class.java, TaskSettingsBase::class.java, "Execute shell commands safely", """
+    val RunShellCommandTask = TaskType(
+      "RunShellCommandTask",
+      RunShellCommandTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Execute shell commands safely",
+      """
           Executes shell commands in a controlled environment.
           <ul>
             <li>Safe command execution handling</li>
@@ -209,10 +196,10 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val CommandAutoFix = TaskType(
-      "CommandAutoFix",
+    val CommandAutoFixTask = TaskType(
+      "CommandAutoFixTask",
       CommandAutoFixTaskConfigData::class.java,
-      CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
+      com.simiacryptus.skyenet.apps.plan.tools.CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
       "Run a command and automatically fix any issues that arise",
       """
           Executes a command and automatically fixes any issues that arise.
@@ -226,7 +213,11 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     )
     
     val ForeachTask = TaskType(
-      "ForeachTask", ForeachTaskConfigData::class.java, TaskSettingsBase::class.java, "Execute subtasks for each item in a list", """
+      "ForeachTask",
+      ForeachTaskConfigData::class.java,
+      TaskSettingsBase::class.java,
+      "Execute subtasks for each item in a list",
+      """
           Executes a set of subtasks for each item in a given list.
           <ul>
             <li>Handles sequential item processing</li>
@@ -237,9 +228,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val GitHubSearch = TaskType(
-      "GitHubSearch",
-      GitHubSearchTask.GitHubSearchTaskConfigData::class.java,
+    val GitHubSearchTask = TaskType(
+      "GitHubSearchTask",
+      com.simiacryptus.skyenet.apps.plan.tools.online.GitHubSearchTask.GitHubSearchTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Search GitHub repositories, code, issues and users",
       """
@@ -253,9 +244,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val KnowledgeIndexing = TaskType(
-      "KnowledgeIndexing",
-      KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
+    val KnowledgeIndexingTask = TaskType(
+      "KnowledgeIndexingTask",
+      com.simiacryptus.skyenet.apps.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Index content for semantic search capabilities",
       """
@@ -269,9 +260,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val SeleniumSession = TaskType(
-      "SeleniumSession",
-      SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
+    val SeleniumSessionTask = TaskType(
+      "SeleniumSessionTask",
+      com.simiacryptus.skyenet.apps.plan.tools.SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Automate browser interactions with Selenium",
       """
@@ -285,9 +276,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val CommandSession = TaskType(
-      "CommandSession",
-      CommandSessionTask.CommandSessionTaskConfigData::class.java,
+    val CommandSessionTask = TaskType(
+      "CommandSessionTask",
+      com.simiacryptus.skyenet.apps.plan.tools.CommandSessionTask.CommandSessionTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Manage interactive command-line sessions",
       """
@@ -301,9 +292,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val WebSearch = TaskType(
-      "WebSearch",
-      CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
+    val WebSearchTask = TaskType(
+      "CrawlerAgentTask",
+      com.simiacryptus.skyenet.apps.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Search Google, fetch top results, and analyze content",
       """
@@ -318,23 +309,23 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     )
     
     init {
-      registerConstructor(GraphBasedPlanning) { settings, task -> GraphBasedPlanningTask(settings, task) }
-      registerConstructor(SoftwareGraphModification) { settings, task -> SoftwareGraphModificationTask(settings, task) }
-      registerConstructor(SoftwareGraphGeneration) { settings, task -> SoftwareGraphGenerationTask(settings, task) }
-      registerConstructor(DataTableCompilation) { settings, task -> DataTableCompilationTask(settings, task) }
-      registerConstructor(CommandAutoFix) { settings, task -> CommandAutoFixTask(settings, task) }
-      registerConstructor(Inquiry) { settings, task -> InquiryTask(settings, task) }
-      registerConstructor(FileSearch) { settings, task -> FileSearchTask(settings, task) }
-      registerConstructor(WebSearch) { settings, task -> CrawlerAgentTask(settings, task) }
-      registerConstructor(EmbeddingSearch) { settings, task -> EmbeddingSearchTask(settings, task) }
-      registerConstructor(FileModification) { settings, task -> FileModificationTask(settings, task) }
-      registerConstructor(RunShellCommand) { settings, task -> RunShellCommandTask(settings, task) }
-      registerConstructor(ForeachTask) { settings, task -> ForeachTask(settings, task) }
-      registerConstructor(TaskPlanning) { settings, task -> PlanningTask(settings, task) }
-      registerConstructor(GitHubSearch) { settings, task -> GitHubSearchTask(settings, task) }
-      registerConstructor(KnowledgeIndexing) { settings, task -> KnowledgeIndexingTask(settings, task) }
-      registerConstructor(SeleniumSession) { settings, task -> SeleniumSessionTask(settings, task) }
-      registerConstructor(CommandSession) { settings, task -> CommandSessionTask(settings, task) }
+      registerConstructor(GraphBasedPlanningTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask(settings, task) }
+      registerConstructor(SoftwareGraphModificationTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphModificationTask(settings, task) }
+      registerConstructor(SoftwareGraphGenerationTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphGenerationTask(settings, task) }
+      registerConstructor(DataTableCompilationTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.knowledge.DataTableCompilationTask(settings, task) }
+      registerConstructor(CommandAutoFixTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.CommandAutoFixTask(settings, task) }
+      registerConstructor(InquiryTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.file.InquiryTask(settings, task) }
+      registerConstructor(FileSearchTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.file.FileSearchTask(settings, task) }
+      registerConstructor(WebSearchTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.online.CrawlerAgentTask(settings, task) }
+      registerConstructor(EmbeddingSearchTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.knowledge.EmbeddingSearchTask(settings, task) }
+      registerConstructor(FileModificationTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask(settings, task) }
+      registerConstructor(RunShellCommandTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.RunShellCommandTask(settings, task) }
+      registerConstructor(ForeachTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask(settings, task) }
+      registerConstructor(TaskPlanningTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask(settings, task) }
+      registerConstructor(GitHubSearchTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.online.GitHubSearchTask(settings, task) }
+      registerConstructor(KnowledgeIndexingTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.knowledge.KnowledgeIndexingTask(settings, task) }
+      registerConstructor(SeleniumSessionTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.SeleniumSessionTask(settings, task) }
+      registerConstructor(CommandSessionTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.CommandSessionTask(settings, task) }
     }
     
     fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(

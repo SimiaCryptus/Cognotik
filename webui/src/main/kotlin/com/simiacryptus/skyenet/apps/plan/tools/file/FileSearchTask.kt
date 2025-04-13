@@ -31,7 +31,7 @@ class FileSearchTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
-    task_type = TaskType.FileSearch.name,
+    task_type = TaskType.FileSearchTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
@@ -40,7 +40,7 @@ class FileSearchTask(
   override fun promptSegment(): String {
     val availableFiles = getAvailableFiles()
     return """
-    Search - Search for patterns in files and provide results with context
+    FileSearchTask - Search for patterns in files and provide results with context
       ** Specify the search pattern (substring or regex)
       ** Specify whether the pattern is a regex or a substring
       ** Specify the number of context lines to include

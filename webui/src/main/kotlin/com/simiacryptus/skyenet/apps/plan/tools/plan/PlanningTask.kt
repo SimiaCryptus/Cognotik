@@ -24,7 +24,7 @@ class PlanningTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : TaskConfigBase(
-    task_type = TaskType.TaskPlanning.name,
+    task_type = TaskType.TaskPlanningTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
@@ -36,7 +36,7 @@ class PlanningTask(
   )
 
   override fun promptSegment() = """
-    Task Planning:
+    PlanningTask:
       * Perform high-level planning and organization of tasks.
       * Decompose the overall goal into smaller, actionable tasks based on current information, ensuring proper information flow between tasks.
       * Specify prior tasks and the overall goal of the task, emphasizing dependencies to ensure each task is connected with its upstream and downstream tasks.
@@ -127,7 +127,7 @@ class PlanningTask(
     coordinator.copy(
       planSettings = coordinator.planSettings.copy(
         taskSettings = coordinator.planSettings.taskSettings.toList().toTypedArray().toMap().toMutableMap().apply {
-          this["TaskPlanning"] = TaskSettingsBase(enabled = false, model = null, task_type = TaskType.TaskPlanning.name)
+          this["TaskPlanning"] = TaskSettingsBase(enabled = false, model = null, task_type = TaskType.TaskPlanningTask.name)
         }
       )
     ).executePlan(

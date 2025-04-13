@@ -2,7 +2,6 @@ package com.simiacryptus.skyenet.apps.plan
 
 import com.simiacryptus.skyenet.AgentPatterns
 import com.simiacryptus.skyenet.apps.plan.AbstractTask.TaskState
-import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.util.JsonUtil
@@ -121,7 +120,7 @@ object PlanUtil {
     val obj = fn() ?: emptyMap()
     val tasksByID = obj.filter { (k, v) ->
       when {
-        v.task_type == TaskType.TaskPlanning.name && v.task_dependencies.isNullOrEmpty() ->
+        v.task_type == TaskType.TaskPlanningTask.name && v.task_dependencies.isNullOrEmpty() ->
           if (retries <= 0) {
             log.warn("TaskPlanning task $k has no dependencies: " + JsonUtil.toJson(obj))
             true

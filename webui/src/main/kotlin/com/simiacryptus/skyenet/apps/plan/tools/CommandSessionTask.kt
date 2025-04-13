@@ -54,7 +54,7 @@ class CommandSessionTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
-    task_type = TaskType.CommandSession.name,
+    task_type = TaskType.CommandSessionTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
@@ -65,7 +65,7 @@ class CommandSessionTask(
       "  ** Session $id"
     }
     return """
-           CommandSession - Create and manage a stateful interactive command session
+           CommandSessionTask - Create and manage a stateful interactive command session
            ** Specify the command to start an interactive session
            ** Provide inputs to send to the session
            ** Session persists between commands for stateful interactions

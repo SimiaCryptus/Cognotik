@@ -43,7 +43,7 @@ class CrawlerAgentTask(
   val concurrent_page_processing: Int = 5,
   val allow_revisit_pages: Boolean = false
 ) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
-
+  
   class SearchAndAnalyzeTaskConfigData(
     @Description("The search query to use for Google search") val search_query: String? = null,
     @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
@@ -60,7 +60,7 @@ class CrawlerAgentTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
-    task_type = TaskType.WebSearch.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
+    task_type = TaskType.WebSearchTask.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
   )
   
   var selenium: Selenium? = null
@@ -68,7 +68,7 @@ class CrawlerAgentTask(
   val urlContentCache = ConcurrentHashMap<String, String>()
   
   override fun promptSegment() = """
-    SearchAndAnalyze - Search Google, fetch top results, and analyze content
+    CrawlerAgentTask - Search Google, fetch top results, and analyze content
     ** Specify the search query
     ** Or provide direct URLs to analyze
     ** Specify the analysis goal or focus
@@ -103,7 +103,7 @@ class CrawlerAgentTask(
     Irrelevant,
     OK
   }
-
+  
   data class ParsedPage(
     val page_type: PageType = PageType.OK,
     val page_information: Any? = null,
@@ -123,12 +123,6 @@ class CrawlerAgentTask(
   ) {
     val webSearchDir = File(agent.root.toFile(), ".websearch")
     if (!webSearchDir.exists()) webSearchDir.mkdirs()
-    val visitedUrls = mutableSetOf<String>()
-    
-    // Only add cached URLs to visited list if we don't allow revisiting pages
-    if (!(taskConfig?.allow_revisit_pages ?: allow_revisit_pages)) {
-      visitedUrls.addAll(urlContentCache.keys)
-    }
     
     // Get the seed strategy based on the selected method
     val seedMethod = taskConfig?.seed_method ?: SeedMethod.GoogleSearch
@@ -139,7 +133,7 @@ class CrawlerAgentTask(
       seedItems?.forEach { item ->
         add(
           LinkData(
-            link = item["link"] as String, 
+            link = item["link"] as String,
             title = (item["title"] as? String) ?: "Untitled",
             relevance_score = 100.0
           )
@@ -149,7 +143,6 @@ class CrawlerAgentTask(
     
     // Create a thread-safe map to store analysis results by index
     val analysisResultsMap = ConcurrentHashMap<Int, String>()
-    val processedCount = AtomicInteger(0)
     val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
     val concurrentProcessing = taskConfig?.concurrent_page_processing ?: concurrent_page_processing
     
@@ -162,9 +155,10 @@ class CrawlerAgentTask(
         SeedMethod.GoogleSearch -> {
           appendLine("**Search Query:** ${taskConfig?.search_query}")
         }
+        
         SeedMethod.DirectUrls -> {
           appendLine("**Direct URLs:**")
-          taskConfig?.direct_urls?.split(",")?.forEach { url ->
+          pageQueue.filter { it.completed }.map { it.link}.forEach { url ->
             appendLine("- $url")
           }
         }
@@ -183,49 +177,137 @@ class CrawlerAgentTask(
     val tabs = TabbedDisplay(task)
     val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
     val futureMap = mutableMapOf<String, Future<*>>()
-    var pageIndex = 0
-    while (pageIndex < pageQueue.size && pageIndex < maxPages) {
-      while (pageIndex < pageQueue.size && pageIndex < maxPages) {
-        val page = synchronized(pageQueue) {
-          pageQueue.filter { !it.started }.sortedByDescending { it.relevance_score }.firstOrNull()?.apply { started = true } ?: throw Exception("No more pages to process")
-        }
-        log.info("Processing page: ${page.toJson()}")
-        futureMap[page.link] = exeManager.submit {
-          val currentIndex = processedCount.incrementAndGet()
-          if (currentIndex > maxPages) return@submit
-          try {
-            val url = page.link
-            val title = page.title
-            val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
-            if (!allowRevisit && url in visitedUrls) {
-              log.info("Skipping already visited URL: $url")
+    val processedCount = AtomicInteger(0)
+    try {
+      while (
+        pageQueue.count { !it.completed } > 0 &&
+        pageQueue.count { it.completed } < maxPages
+      ) {
+        while (
+          pageQueue.count { it.started } < maxPages && // Ensure we don't start more than maxPages
+          pageQueue.count { !it.started } > 0
+        ) {
+          val page = synchronized(pageQueue) {
+            pageQueue.filter { !it.started }.maxByOrNull { it.relevance_score }?.apply { started = true }
+          } ?: break
+          log.info("Queued page: ${page.toJson()}")
+          futureMap[page.link] = exeManager.submit {
+            log.info("Processing page: ${page.toJson()}")
+            val task = agent.ui.newTask(false).apply { tabs[page.link] = placeholder }
+            val currentIndex = processedCount.incrementAndGet()
+            if (currentIndex > maxPages) {
+              log.info("Max pages reached, stopping processing")
               return@submit
             }
-            if (!allowRevisit) visitedUrls.add(url)
-            val processPageResult =
-              processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue, page.depth)
-            agent.ui.newTask(false).apply {
-              tabs[page.link] = placeholder
-              add(processPageResult.renderMarkdown)
+            try {
+              val url = page.link
+              val title = page.title
+              val processPageResult =
+                buildString {
+                  appendLine("## ${currentIndex}. [${title}]($url)")
+                  appendLine()
+                  
+                  try {
+                    // Fetch and transform content
+                    val content = fetchAndProcessUrl(url, webSearchDir, currentIndex, agent.pool)
+                    if (content.isBlank()) {
+                      appendLine("*Empty content, skipping this result*")
+                      appendLine()
+                      return@buildString
+                    }
+                    
+                    val analysisGoal = when {
+                      taskConfig?.content_queries != null -> taskConfig.content_queries.toJson()
+                      taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
+                      else -> "Analyze the content and provide insights."
+                    }
+                    val analysis: ParsedResponse<ParsedPage> = transformContent(content, analysisGoal, api, planSettings)
+                    
+                    if (analysis.obj.page_type == PageType.Error) {
+                      appendLine("*Error processing this result: ${analysis.obj.page_information?.let { JsonUtil.toJson(it) }}*")
+                      appendLine()
+                      saveAnalysis(webSearchDir.resolve("error").apply {
+                        mkdirs()
+                      }, url, analysis, currentIndex)
+                      return@buildString
+                    }
+                    
+                    if (analysis.obj.page_type == PageType.Irrelevant) {
+                      appendLine("*Irrelevant content, skipping this result*")
+                      appendLine()
+                      saveAnalysis(webSearchDir.resolve("irrelevant").apply {
+                        mkdirs()
+                      }, url, analysis, currentIndex)
+                      return@buildString
+                    }
+                    
+                    saveAnalysis(webSearchDir, url, analysis, currentIndex)
+                    
+                    appendLine(analysis.text)
+                    appendLine()
+                    
+                    if (taskConfig?.follow_links ?: follow_links) {
+                      // First try to use the structured link data if available
+                      var linkData = analysis.obj.link_data
+                      val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
+                      if (linkData.isNullOrEmpty()) {
+                        linkData = extractLinksFromMarkdown(analysis.text)
+                        log.info("Extracted ${linkData.size} links from markdown")
+                      } else {
+                        log.info("Using ${linkData.size} structured links from analysis")
+                      }
+                      linkData
+                        .filter { link ->
+                          VALID_URL_PATTERN.matcher(link.link).matches() &&
+                              (allowRevisit || pageQueue.none { it.link == link.link })
+                        }
+                        .forEach { link ->
+                          log.info("Adding link to queue: ${link.toJson()}")
+                          pageQueue.add(
+                            link.apply { depth = page.depth + 1 }
+                          )
+                        }
+                    }
+                  } catch (e: Exception) {
+                    log.error("Error processing URL: $url", e)
+                    appendLine("*Error processing this result: ${e.message}*")
+                    appendLine()
+                  }
+                }
+              task.add(processPageResult.renderMarkdown)
+              analysisResultsMap[currentIndex] = processPageResult
+              log.info("Processed page: ${page.toJson()}")
+            } catch (e: Exception) {
+              task.error(agent.ui, e)
+              log.error("Error processing page: ${page.link}", e)
+              analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page.title}](${page.link})\n\n*Error processing this result: ${e.message}*\n\n"
+            } finally {
+              page.completed = true
+              log.info("Status: # completed: ${pageQueue.count { it.completed }} / ${pageQueue.size}; # queued: ${pageQueue.count { !it.completed }}")
             }
-            analysisResultsMap[currentIndex] = processPageResult
+          }
+        }
+        log.info("Waiting for ${futureMap.size} tasks to complete")
+        log.info("Status: # completed: ${pageQueue.count { it.completed }} / ${pageQueue.size}; # queued: ${pageQueue.count { !it.completed }}")
+        Thread.sleep(1000)
+        futureMap.values.forEach {
+          try {
+            it.get()
           } catch (e: Exception) {
-            task.error(agent.ui, e)
-            log.error("Error processing page: ${page?.link}", e)
-            analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.link})\n\n*Error processing this result: ${e.message}*\n\n"
-          } finally {
-            page.completed = true
+            log.info("Task finished: ${e.message}")
           }
         }
       }
-      futureMap.values.forEach { it.get() }
+    } catch (e: Exception) {
+      log.error("Error during processing", e)
+    } finally {
+      log.info("Processing completed")
     }
-    
     val analysisResults = header + (1..processedCount.get()).asSequence().mapNotNull {
       analysisResultsMap[it]
     }.joinToString("\n")
     val finalOutput = if (taskConfig?.create_final_summary != false && analysisResults.length > (taskConfig?.max_final_output_size ?: max_final_output_size)) {
-      createFinalSummary(analysisResults, api, planSettings)
+      createFinalSummary(analysisResults, api)
     } else {
       analysisResults
     }
@@ -236,109 +318,7 @@ class CrawlerAgentTask(
     resultFn(finalOutput)
   }
   
-  private fun processPage(
-    index: Int,
-    title: String,
-    url: String,
-    webSearchDir: File,
-    pool: ExecutorService,
-    taskConfig: SearchAndAnalyzeTaskConfigData?,
-    api: API,
-    planSettings: PlanSettings,
-    visitedUrls: MutableSet<String>, pageQueue: MutableList<LinkData>,
-    depth: Int = 0
-  ) = buildString {
-    appendLine("## ${index}. [${title}]($url)")
-    appendLine()
-    
-    try {
-      // Fetch and transform content
-      val content = fetchAndProcessUrl(url, webSearchDir, index, pool)
-      if (content.isBlank()) {
-        appendLine("*Empty content, skipping this result*")
-        appendLine()
-        return@buildString
-      }
-      
-      val analysisGoal = when {
-        taskConfig?.content_queries != null -> taskConfig.content_queries.toJson()
-        taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
-        else -> "Analyze the content and provide insights."
-      }
-      val analysis: ParsedResponse<ParsedPage> = transformContent(content, analysisGoal, api, planSettings)
-      
-      if (analysis.obj.page_type == PageType.Error) {
-        appendLine("*Error processing this result: ${analysis.obj.page_information?.let { JsonUtil.toJson(it) }}*")
-        appendLine()
-        saveAnalysis(webSearchDir.resolve("error").apply {
-          mkdirs()
-        }, url, analysis, index)
-        return@buildString
-      }
-      
-      if (analysis.obj.page_type == PageType.Irrelevant) {
-        appendLine("*Irrelevant content, skipping this result*")
-        appendLine()
-        saveAnalysis(webSearchDir.resolve("irrelevant").apply {
-          mkdirs()
-        }, url, analysis, index)
-        return@buildString
-      }
-      
-      saveAnalysis(webSearchDir, url, analysis, index)
-      
-      appendLine(analysis.text)
-      appendLine()
-      
-      if (taskConfig?.follow_links ?: follow_links) {
-        // First try to use the structured link data if available
-        val linkData = analysis.obj.link_data
-        val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
-        
-        if (!linkData.isNullOrEmpty()) {
-          synchronized(visitedUrls) {
-            linkData
-              .filter { link -> 
-                (allowRevisit || link.link !in visitedUrls) && 
-                !pageQueue.any { it.link == link.link } 
-              }
-              .forEach { link ->
-                pageQueue.add(
-                  link.apply { this.depth = depth + 1 }
-                )
-                if (!allowRevisit) visitedUrls.add(link.link)
-              }
-          }
-        } else {
-          // Fallback to extracting links from markdown
-          val extractedLinks = extractLinksFromMarkdown(analysis.text)
-          synchronized(visitedUrls) {
-            extractedLinks
-              .filter { (_, linkUrl) -> 
-                (allowRevisit || linkUrl !in visitedUrls) && 
-                !pageQueue.any { it.link == linkUrl } 
-              }
-              .forEach { (linkText, linkUrl) ->
-                pageQueue.add(
-                  LinkData(
-                    link = linkUrl, 
-                    title = linkText,
-                    relevance_score = 50.0
-                  ).apply { this.depth = depth + 1 }
-                )
-                if (!allowRevisit) visitedUrls.add(linkUrl)
-              }
-            }
-        }
-      }
-    } catch (e: Exception) {
-      log.error("Error processing URL: $url", e)
-      appendLine("*Error processing this result: ${e.message}*")
-      appendLine()
-    }
-  }
-  
-  private fun createFinalSummary(analysisResults: String, api: API, planSettings: PlanSettings): String {
+  private fun createFinalSummary(analysisResults: String, api: API): String {
     log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
     val maxSize = taskConfig?.max_final_output_size ?: max_final_output_size
     // If the analysis is not too much larger than our target, just truncate it
@@ -354,27 +334,28 @@ class CrawlerAgentTask(
     val header = if (headerEndIndex > 0) {
       analysisResults.substring(0, headerEndIndex)
     } else {
-      "# Analysis of Search Results\n\n"
+      "# Web Search: ${taskConfig?.search_query ?: taskConfig?.direct_urls ?: ""}\n\n"
     }
     // Extract all the URL sections
     val urlSections = extractUrlSections(analysisResults)
     log.info("Extracted ${urlSections.size} URL sections for summarization")
-    // Create a summary prompt
-    val summaryPrompt = listOf(
-      "Create a comprehensive summary of the following web search results and analyses.",
-      "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
-      "Analysis goal: ${taskConfig?.content_queries ?: taskConfig?.task_description ?: "Provide key insights"}",
-      "For each source, extract the most important insights, facts, and conclusions.",
-      "Organize information by themes rather than by source when possible.",
-      "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
-      "Include the most important links that should be followed up on.",
-      "Keep your response under ${maxSize / 1000}K characters.",
-      "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
-    ).joinToString("\n\n")
     val summary = SimpleActor(
-      prompt = summaryPrompt,
+      prompt = listOf(
+        "Create a comprehensive summary of the following web search results and analyses.",
+        "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
+        "Analysis goal: ${taskConfig?.content_queries ?: taskConfig?.task_description ?: "Provide key insights"}",
+        "For each source, extract the most important insights, facts, and conclusions.",
+        "Organize information by themes rather than by source when possible.",
+        "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
+        "Include the most important links that should be followed up on.",
+        "Keep your response under ${maxSize / 1000}K characters."
+      ).joinToString("\n\n"),
       model = taskSettings.model!!,
-    ).answer(listOf(summaryPrompt), api)
+    ).answer(
+      listOf(
+        "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
+      ), api
+    )
     return header + summary
   }
   
@@ -400,8 +381,8 @@ class CrawlerAgentTask(
     val sentences = content.split(". ").take(3)
     return sentences.joinToString(". ") + (if (sentences.size >= 3) "..." else "")
   }
-
-  fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ExecutorService): String {
+  
+  private fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ExecutorService): String {
     // Check if URL is already in cache
     val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
     if (!allowRevisit && urlContentCache.containsKey(url)) {
@@ -412,10 +393,9 @@ class CrawlerAgentTask(
   }
   
   
-  private fun extractLinksFromMarkdown(markdown: String): List<Pair<String, String>> {
+  private fun extractLinksFromMarkdown(markdown: String): List<LinkData> {
     val links = mutableListOf<Pair<String, String>>()
     val matcher = LINK_PATTERN.matcher(markdown)
-    
     while (matcher.find()) {
       val linkText = matcher.group(1)
       val linkUrl = matcher.group(2)
@@ -427,11 +407,16 @@ class CrawlerAgentTask(
         log.warn("Invalid URL found in markdown: $linkUrl")
       }
     }
-    return links
+    return links.map { (linkText, linkUrl) ->
+      LinkData(
+        link = linkUrl,
+        title = linkText,
+        relevance_score = 50.0
+      )
+    }
   }
   
-  
-  fun saveRawContent(webSearchDir: File, url: String, content: String, index: Int) {
+  fun saveRawContent(webSearchDir: File, url: String, content: String) {
     try {
       val urlSafe = url.replace(Regex("[^a-zA-Z0-9]"), "_").take(50)
       webSearchDir.mkdirs()
@@ -461,30 +446,6 @@ class CrawlerAgentTask(
       analysisFile.writeText(contentWithHeader)
     } catch (e: Exception) {
       log.error("Failed to save analysis for URL: $url", e)
-    }
-  }
-  
-  
-  fun performGoogleSearch(planSettings: PlanSettings): String {
-    val client = HttpClient.newBuilder().build()
-    val encodedQuery = URLEncoder.encode(taskConfig?.search_query?.trim(), "UTF-8")
-    val uriBuilder =
-      "https://www.googleapis.com/customsearch/v1?key=${planSettings.googleApiKey}" + "&cx=${planSettings.googleSearchEngineId}&q=$encodedQuery&num=${10}"
-    val request = HttpRequest.newBuilder().uri(URI.create(uriBuilder)).GET().build()
-    val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-    val statusCode = response.statusCode()
-    when {
-      statusCode == 400 -> {
-        throw RuntimeException("Google API request failed with status $statusCode: ${response.body()}")
-      }
-      
-      statusCode != 200 -> {
-        throw RuntimeException("Google API request failed with status $statusCode: ${response.body()}")
-      }
-      
-      else -> {
-        return response.body()
-      }
     }
   }
   

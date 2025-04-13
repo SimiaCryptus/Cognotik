@@ -24,7 +24,7 @@ open class PlanSettings(
   val taskSettings: MutableMap<String, TaskSettingsBase> = TaskType.values().associateWith { taskType ->
     TaskSettingsBase(
       taskType.name, when (taskType) {
-        TaskType.FileModification, TaskType.Inquiry -> true
+        TaskType.FileModificationTask, TaskType.InquiryTask -> true
         else -> false
       }
     )
@@ -79,7 +79,7 @@ open class PlanSettings(
   )
 
   fun planningActor(): ParsedActor<TaskBreakdownResult> {
-    val planTaskSettings = this.getTaskSettings(TaskType.TaskPlanning)
+    val planTaskSettings = this.getTaskSettings(TaskType.TaskPlanningTask)
     // Note: the platform automatically reads and provides the necessary JSON software graph.
     // The prompt below should focus purely on breaking down the user instruction without re-framing the JSON data.
     val prompt = """

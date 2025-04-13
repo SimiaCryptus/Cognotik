@@ -31,7 +31,7 @@ enum class FetchMethod {
         if (body.isBlank()) {
           return ""
         }
-        task.saveRawContent(webSearchDir.resolve("raw_pages"), url, body, index)
+        task.saveRawContent(webSearchDir.resolve("raw_pages"), url, body)
         val content = HtmlSimplifier.scrubHtml(
           str = body,
           baseUrl = url,
@@ -44,7 +44,7 @@ enum class FetchMethod {
           keepMediaElements = false,
           keepEventHandlers = false
         )
-        task.saveRawContent(webSearchDir.resolve("reduced_pages"), url, content, index)
+        task.saveRawContent(webSearchDir.resolve("reduced_pages"), url, content)
         // Cache the processed content
         task.urlContentCache[url] = content
         return content

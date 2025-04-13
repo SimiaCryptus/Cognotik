@@ -33,7 +33,7 @@ class SoftwareGraphGenerationTask(
     input_files: List<String>? = null,
     state: TaskState? = null
   ) : AbstractFileTask.FileTaskConfigBase(
-    task_type = TaskType.SoftwareGraphGeneration.name,
+    task_type = TaskType.SoftwareGraphGenerationTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
     related_files = input_files,
@@ -77,7 +77,7 @@ class SoftwareGraphGenerationTask(
   }
 
   override fun promptSegment() = """
-    SoftwareGraphGeneration - Generate a SoftwareGraph representation of the codebase
+    SoftwareGraphGenerationTask - Generate a SoftwareGraph representation of the codebase
       ** Specify the output file path for the generated graph
       ** Optionally specify node types to focus on
       ** List input files to analyze for graph generation

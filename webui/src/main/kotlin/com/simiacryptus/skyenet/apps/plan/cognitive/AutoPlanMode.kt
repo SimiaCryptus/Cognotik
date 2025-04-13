@@ -14,7 +14,6 @@ import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.skyenet.core.util.FixedConcurrencyProcessor
 import com.simiacryptus.skyenet.set
-import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
@@ -248,7 +247,7 @@ open class AutoPlanMode(
       agent = coordinator.copy(
         planSettings = coordinator.planSettings.copy(
           taskSettings = coordinator.planSettings.taskSettings.toList().toTypedArray().toMap().toMutableMap().apply {
-            this[TaskType.TaskPlanning.name] = TaskSettingsBase(task_type = TaskType.TaskPlanning.name, enabled = false, model = null)
+            this[TaskType.TaskPlanningTask.name] = TaskSettingsBase(task_type = TaskType.TaskPlanningTask.name, enabled = false, model = null)
           }
         )
       ),

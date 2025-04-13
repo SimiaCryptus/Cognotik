@@ -32,7 +32,7 @@ class FileModificationTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null
   ) : FileTaskConfigBase(
-    task_type = TaskType.FileModification.name,
+    task_type = TaskType.FileModificationTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies,
     related_files = related_files,
@@ -138,7 +138,7 @@ class FileModificationTask(
   }
 
   override fun promptSegment() = """
-   FileModification - Modify existing files or create new files
+   FileModificationTask - Modify existing files or create new files
      ** For each file, specify the relative file path and the goal of the modification or creation
      ** List input files/tasks to be examined when designing the modifications or new files
   """.trimIndent()

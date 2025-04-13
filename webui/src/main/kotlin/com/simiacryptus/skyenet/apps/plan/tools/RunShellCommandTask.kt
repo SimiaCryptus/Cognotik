@@ -29,7 +29,7 @@ class RunShellCommandTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null
   ) : TaskConfigBase(
-    task_type = TaskType.RunShellCommand.name,
+    task_type = TaskType.RunShellCommandTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
@@ -59,7 +59,7 @@ class RunShellCommandTask(
   }
 
   override fun promptSegment() = """
-    RunShellCommand - Execute shell commands and provide the output
+    RunShellCommandTask - Execute shell commands and provide the output
       ** Specify the command to be executed, or describe the task to be performed
       ** List input files/tasks to be examined when writing the command
       ** Optionally specify a working directory for the command execution

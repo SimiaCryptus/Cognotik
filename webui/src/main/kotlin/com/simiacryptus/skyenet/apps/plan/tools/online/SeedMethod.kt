@@ -25,7 +25,7 @@ enum class SeedMethod {
         }
         val client = HttpClient.newBuilder().build()
         // Use taskConfig parameter consistently
-        val query = taskConfig.search_query.trim()
+        val query = taskConfig?.search_query?.trim()
         val encodedQuery = URLEncoder.encode(query, "UTF-8")
         // Define constants to avoid magic numbers
         val resultCount = 10
@@ -42,7 +42,11 @@ enum class SeedMethod {
         }
         
         val searchData: Map<String, Any> = ObjectMapper().readValue(response.body())
-        return (searchData["items"] as? List<Map<String, Any>>)?.take(searchLimit)
+        val items = searchData["items"] as? List<Map<String, Any>>
+        if (items.isNullOrEmpty()) {
+          throw RuntimeException("No search results found for query: $query")
+        }
+        return items.take(searchLimit)
       }
 
     }
@@ -53,7 +57,7 @@ enum class SeedMethod {
         if (taskConfig?.direct_urls.isNullOrEmpty()) {
           throw RuntimeException("Direct URLs are required when using Direct URLs seed method")
         }
-        return taskConfig?.direct_urls?.let { url -> listOf(url.trim()) }?.filter { url -> url.isNotBlank() }?.mapIndexed { index, url ->
+        return taskConfig?.direct_urls?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }?.mapIndexed { index, url ->
           mapOf(
             "link" to url,
             "title" to "Direct URL ${index + 1}"

@@ -33,14 +33,14 @@ class GitHubSearchTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
-    task_type = TaskType.GitHubSearch.name,
+    task_type = TaskType.GitHubSearchTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
 
   override fun promptSegment() = """
-    GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or users
+    GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics, or users
     ** Specify the search query
     ** Specify the type of search (code, commits, issues, repositories, topics, users)
     ** Specify the number of results to return (max 100)

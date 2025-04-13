@@ -55,7 +55,7 @@ dependencies {
     exclude(group = "com.intellij.remoterobot", module = "remote-robot")
   }
   implementation("io.github.bonigarcia:webdrivermanager:5.9.2")
-  implementation("org.jsoup:jsoup:1.18.1")
+  implementation("org.jsoup:jsoup:1.19.1")
 
   implementation("com.google.zxing:core:3.5.3")
   implementation("com.google.zxing:javase:3.5.3")

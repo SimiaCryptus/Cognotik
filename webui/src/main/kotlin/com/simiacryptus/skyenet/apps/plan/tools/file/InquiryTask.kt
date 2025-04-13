@@ -36,18 +36,18 @@ class InquiryTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
-    task_type = TaskType.Inquiry.name,
+    task_type = TaskType.InquiryTask.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )
 
   override fun promptSegment() = if (!planSettings.autoFix) """
-    Inquiry - Answer questions by reading in files and providing a summary that can be discussed with and approved by the user
+    InquiryTask - Answer questions by reading in files and providing a summary that can be discussed with and approved by the user
         ** Specify the questions and the goal of the inquiry
         ** List input files to be examined when answering the questions
     """.trimIndent() else """
-    Inquiry - Answer questions by reading in files and providing a report
+    InquiryTask - Answer questions by reading in files and providing a report
         ** Specify the questions and the goal of the inquiry
         ** List input files to be examined when answering the questions
     """.trimIndent()
