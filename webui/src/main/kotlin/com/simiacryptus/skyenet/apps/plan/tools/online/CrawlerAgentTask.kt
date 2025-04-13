@@ -8,7 +8,6 @@ import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.apps.plan.*
-import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
@@ -29,8 +28,8 @@ import java.net.http.HttpResponse
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -61,7 +60,7 @@ class CrawlerAgentTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = null,
   ) : TaskConfigBase(
-    task_type = TaskType.SearchAndAnalyze.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
+    task_type = TaskType.WebSearch.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
   )
   
   var selenium: Selenium? = null
@@ -94,6 +93,8 @@ class CrawlerAgentTask(
     val tags: List<String>? = null,
     @Description("1-100") val relevance_score: Double = 100.0
   ) {
+    var started: Boolean = false
+    var completed: Boolean = false
     var depth: Int = 0
   }
   
@@ -134,7 +135,7 @@ class CrawlerAgentTask(
     val seedItems = seedMethod.createStrategy(this).getSeedItems(taskConfig, planSettings)
     
     // Create processing queue with initial items
-    val pageQueue = LinkedBlockingQueue<LinkData>().apply {
+    val pageQueue = mutableListOf<LinkData>().apply {
       seedItems?.forEach { item ->
         add(
           LinkData(
@@ -181,32 +182,44 @@ class CrawlerAgentTask(
     
     val tabs = TabbedDisplay(task)
     val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
-    pageQueue.take(maxPages).map { page ->
-      exeManager.submit {
-        val currentIndex = processedCount.incrementAndGet()
-        if (currentIndex > maxPages) return@submit
-        try {
-          val url = page.link
-          val title = page.title
-          val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
-          if (!allowRevisit && url in visitedUrls) {
-            log.info("Skipping already visited URL: $url")
-            return@submit
+    val futureMap = mutableMapOf<String, Future<*>>()
+    var pageIndex = 0
+    while (pageIndex < pageQueue.size && pageIndex < maxPages) {
+      while (pageIndex < pageQueue.size && pageIndex < maxPages) {
+        val page = synchronized(pageQueue) {
+          pageQueue.filter { !it.started }.sortedByDescending { it.relevance_score }.firstOrNull()?.apply { started = true } ?: throw Exception("No more pages to process")
+        }
+        log.info("Processing page: ${page.toJson()}")
+        futureMap[page.link] = exeManager.submit {
+          val currentIndex = processedCount.incrementAndGet()
+          if (currentIndex > maxPages) return@submit
+          try {
+            val url = page.link
+            val title = page.title
+            val allowRevisit = taskConfig?.allow_revisit_pages ?: allow_revisit_pages
+            if (!allowRevisit && url in visitedUrls) {
+              log.info("Skipping already visited URL: $url")
+              return@submit
+            }
+            if (!allowRevisit) visitedUrls.add(url)
+            val processPageResult =
+              processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue, page.depth)
+            agent.ui.newTask(false).apply {
+              tabs[page.link] = placeholder
+              add(processPageResult.renderMarkdown)
+            }
+            analysisResultsMap[currentIndex] = processPageResult
+          } catch (e: Exception) {
+            task.error(agent.ui, e)
+            log.error("Error processing page: ${page?.link}", e)
+            analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.link})\n\n*Error processing this result: ${e.message}*\n\n"
+          } finally {
+            page.completed = true
           }
-          if (!allowRevisit) visitedUrls.add(url)
-          val processPageResult = processPage(currentIndex, title, url, webSearchDir, agent.pool, taskConfig, api, planSettings, visitedUrls, pageQueue, page.depth)
-          agent.ui.newTask(false).apply {
-            tabs[page.link] = placeholder
-            add(processPageResult.renderMarkdown)
-          }
-          analysisResultsMap[currentIndex] = processPageResult
-        } catch (e: Exception) {
-          task.error(agent.ui, e)
-          log.error("Error processing page: ${page?.link}", e)
-          analysisResultsMap[currentIndex] = "## ${currentIndex}. [${page?.title}](${page?.link})\n\n*Error processing this result: ${e.message}*\n\n"
         }
       }
-    }.toTypedArray().forEach { it.get() }
+      futureMap.values.forEach { it.get() }
+    }
     
     val analysisResults = header + (1..processedCount.get()).asSequence().mapNotNull {
       analysisResultsMap[it]
@@ -232,8 +245,7 @@ class CrawlerAgentTask(
     taskConfig: SearchAndAnalyzeTaskConfigData?,
     api: API,
     planSettings: PlanSettings,
-    visitedUrls: MutableSet<String>,
-    pageQueue: LinkedBlockingQueue<LinkData>,
+    visitedUrls: MutableSet<String>, pageQueue: MutableList<LinkData>,
     depth: Int = 0
   ) = buildString {
     appendLine("## ${index}. [${title}]($url)")
@@ -398,18 +410,17 @@ class CrawlerAgentTask(
     }
     return (taskConfig?.fetch_method ?: FetchMethod.HttpClient).createStrategy(this).fetch(url, webSearchDir, index, pool, planSettings)
   }
-
+  
+  
   private fun extractLinksFromMarkdown(markdown: String): List<Pair<String, String>> {
     val links = mutableListOf<Pair<String, String>>()
-    val linkPattern = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
-    val matcher = linkPattern.matcher(markdown)
-    val validUrlPattern = Pattern.compile("^(http|https)://.*")
+    val matcher = LINK_PATTERN.matcher(markdown)
     
     while (matcher.find()) {
       val linkText = matcher.group(1)
       val linkUrl = matcher.group(2)
       try {
-        if (validUrlPattern.matcher(linkUrl).matches()) {
+        if (VALID_URL_PATTERN.matcher(linkUrl).matches()) {
           links.add(Pair(linkText, linkUrl))
         }
       } catch (e: Exception) {
@@ -564,6 +575,7 @@ class CrawlerAgentTask(
   
   companion object {
     private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
+    private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
+    private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
   }
 }
-

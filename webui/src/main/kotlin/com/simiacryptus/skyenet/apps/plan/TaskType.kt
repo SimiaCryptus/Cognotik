@@ -25,7 +25,6 @@ import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.ForeachTask.ForeachTaskConfigData
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask
 import com.simiacryptus.skyenet.apps.plan.tools.plan.PlanningTask.PlanningTaskConfigData
-import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer
@@ -147,8 +146,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
     )
-    val Search = TaskType(
-      "Search",
+    val FileSearch = TaskType(
+      "FileSearch",
       FileSearchTask.SearchTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Search project files using patterns with contextual results",
@@ -302,8 +301,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
     )
-    val SearchAndAnalyze = TaskType(
-      "SearchAndAnalyze",
+    val WebSearch = TaskType(
+      "WebSearch",
       CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Search Google, fetch top results, and analyze content",
@@ -325,8 +324,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
       registerConstructor(DataTableCompilation) { settings, task -> DataTableCompilationTask(settings, task) }
       registerConstructor(CommandAutoFix) { settings, task -> CommandAutoFixTask(settings, task) }
       registerConstructor(Inquiry) { settings, task -> InquiryTask(settings, task) }
-      registerConstructor(Search) { settings, task -> FileSearchTask(settings, task) }
-      registerConstructor(SearchAndAnalyze) { settings, task -> CrawlerAgentTask(settings, task) }
+      registerConstructor(FileSearch) { settings, task -> FileSearchTask(settings, task) }
+      registerConstructor(WebSearch) { settings, task -> CrawlerAgentTask(settings, task) }
       registerConstructor(EmbeddingSearch) { settings, task -> EmbeddingSearchTask(settings, task) }
       registerConstructor(FileModification) { settings, task -> FileModificationTask(settings, task) }
       registerConstructor(RunShellCommand) { settings, task -> RunShellCommandTask(settings, task) }

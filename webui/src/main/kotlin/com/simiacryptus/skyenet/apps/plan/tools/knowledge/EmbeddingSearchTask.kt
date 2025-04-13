@@ -164,14 +164,19 @@ EmbeddingSearch - Search for similar embeddings in index files and provide top r
 
   private fun getNodeAtPath(jsonNode: JsonNode, path: String): JsonNode {
     var currentNode = jsonNode
+
     path.split(".").forEach { segment ->
       currentNode = when {
         segment.contains("[") -> {
           val (arrayName, indexPart) = segment.split("[", limit = 2)
-          val index = indexPart.substringBefore("]").toInt()
+          val index = indexPart.substringBefore("]").toIntOrNull() ?: run {
+            log.warn("Invalid index in path segment: $segment")
+            return currentNode
+          }
           val field = currentNode.get(arrayName)
           val child = field?.get(index)
           if (child == null) {
+            log.warn("Child not found for segment: $segment in path: $path")
             return currentNode
           }
           child
@@ -180,6 +185,7 @@ EmbeddingSearch - Search for similar embeddings in index files and provide top r
         else -> {
           val child = currentNode.get(segment)
           if (child == null) {
+            log.warn("Child not found for segment: $segment in path: $path")
             return currentNode
           }
           child

@@ -97,15 +97,17 @@ class CommandSessionTask(
           .redirectErrorStream(true)
           .start()
           .also { newProcess ->
+            log.info("Started new process for command: ${taskConfig.command.joinToString(" ")}")
             taskConfig.sessionId?.let { id -> activeSessions[id] = newProcess }
           }
-
-      val reader = BufferedReader(InputStreamReader(process?.inputStream))
-      val writer = PrintWriter(process?.outputStream, true)
+      
+      val reader = BufferedReader(InputStreamReader(process!!.inputStream))
+      val writer = PrintWriter(process.outputStream, true)
 
       val results = taskConfig.inputs.map { input ->
         try {
           writer.println(input)
+          writer.flush()
           val output = StringBuilder()
           val endTime = System.currentTimeMillis() + taskConfig.timeout
           while (System.currentTimeMillis() < endTime) {

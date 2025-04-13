@@ -39,6 +39,7 @@ open class PlanSettings(
   var maxTaskHistoryChars: Int = 10000,
   var maxTasksPerIteration: Int = 3,
   var maxIterations: Int = 10,
+  val enableExpansionSyntax: Boolean = false, // Enable {option1|option2} syntax
 ) {
 
   fun getTaskSettings(taskType: TaskType<*, *>): TaskSettingsBase = taskSettings[taskType.name] ?: TaskSettingsBase(taskType.name)

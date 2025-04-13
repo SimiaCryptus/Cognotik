@@ -5,14 +5,17 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.TabbedDisplay
+import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.apps.plan.tools.file.FileModificationTask
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
+import com.simiacryptus.skyenet.core.util.FixedConcurrencyProcessor
 import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil
+import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.getChildClient
@@ -44,6 +47,7 @@ open class AutoPlanMode(
   private val executionRecords = mutableListOf<ExecutionRecord>()
   private val thinkingStatus = AtomicReference<ThinkingStatus?>(null)
   private var isRunning = false
+  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{]+)+)}""")
 
   override fun initialize() {
     log.debug("Initializing AutoPlanMode")
@@ -57,7 +61,7 @@ open class AutoPlanMode(
       startAutoPlanChat(userMessage)
     } else {
       log.debug("Injecting user message into ongoing chat")
-      task.echo(MarkdownUtil.renderMarkdown("User: $userMessage", ui = ui))
+      task.echo(renderMarkdown("User: $userMessage", ui = ui))
       currentUserMessage.set(userMessage)
     }
   }
@@ -66,7 +70,7 @@ open class AutoPlanMode(
     log.debug("Starting auto plan chat with initial message: $userMessage")
     val task = ui.newTask(true)
     val apiClient = (api as? ChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
-    task.echo(MarkdownUtil.renderMarkdown(userMessage))
+    task.echo(renderMarkdown(userMessage))
 
     var continueLoop = true
     lateinit var stopLink: StringBuilder
@@ -121,30 +125,30 @@ open class AutoPlanMode(
           ui.newTask(false).apply {
             iterationTabbedDisplay["Inputs"] = placeholder
             header("Project Info", 1)
-            contextData().forEach { add(MarkdownUtil.renderMarkdown(it)) }
+            contextData().forEach { add(renderMarkdown(it)) }
             header("Evaluation Records", 1)
-            formatEvalRecords().forEach { add(MarkdownUtil.renderMarkdown(it)) }
+            formatEvalRecords().forEach { add(renderMarkdown(it)) }
             header("Current Thinking Status", 1)
-            formatThinkingStatus(currentThinkingStatus).let { add(MarkdownUtil.renderMarkdown(it)) }
+            add(renderMarkdown(formatThinkingStatus(currentThinkingStatus)))
           }
 
           val nextTask = try {
             log.debug("Getting next task")
             if (coordinator != null) {
-              getNextTask(iterationApi, coordinator, userMessage, currentThinkingStatus)
+              getNextTask(iterationApi, coordinator, userMessage, currentThinkingStatus, iterationTask)
             } else {
               log.error("Coordinator is null, cannot get next task")
               null
             }
           } catch (e: Exception) {
             log.error("Error choosing next task", e)
-            iterationTabbedDisplay["Errors"]?.append(MarkdownUtil.renderMarkdown("Error choosing next task: ${e.message}"))
+            iterationTabbedDisplay["Errors"]?.append(renderMarkdown("Error choosing next task: ${e.message}"))
             break
           }
 
           if (nextTask?.isEmpty() != false) {
             log.debug("No more tasks to execute")
-            iterationTask.add(MarkdownUtil.renderMarkdown("No more tasks to execute. Finishing Auto Plan Chat."))
+            iterationTask.add(renderMarkdown("No more tasks to execute. Finishing Auto Plan Chat."))
             break
           }
           log.debug("Retrieved next tasks: ${nextTask.size}")
@@ -155,7 +159,7 @@ open class AutoPlanMode(
             log.debug("Executing task $currentTaskId")
             val taskExecutionTask = ui.newTask(false)
             taskExecutionTask.add(
-              MarkdownUtil.renderMarkdown(
+              renderMarkdown(
                 "Executing task: `$currentTaskId` - ${currentTask.task_description}\n```json\n${
                   JsonUtil.toJson(currentTask)
                 }\n```", tabs = false
@@ -198,11 +202,11 @@ open class AutoPlanMode(
             val updatedStatus = updateThinking(iterationApi, currentThinkingStatus, completedTasks)
             thinkingStatus.set(updatedStatus)
             log.debug("Updated thinking status")
-            thinkingStatusTask.complete(MarkdownUtil.renderMarkdown("Updated Thinking Status:\n${formatThinkingStatus(updatedStatus)}"))
+            thinkingStatusTask.complete(renderMarkdown("Updated Thinking Status:\n${formatThinkingStatus(updatedStatus)}"))
           } catch (e: Exception) {
             log.error("Error updating thinking status", e)
             thinkingStatusTask.error(ui, e)
-            iterationTabbedDisplay["Errors"]?.append(MarkdownUtil.renderMarkdown("Error updating thinking status: ${e.message}"))
+            iterationTabbedDisplay["Errors"]?.append(renderMarkdown("Error updating thinking status: ${e.message}"))
           }
         }
 
@@ -216,7 +220,7 @@ open class AutoPlanMode(
         isRunning = false
         val summaryTask = ui.newTask(false).apply { tabbedDisplay["Summary"] = placeholder }
         summaryTask.add(
-          MarkdownUtil.renderMarkdown(
+          renderMarkdown(
             "Auto Plan Chat completed. Final thinking status:\n${
               thinkingStatus.get()?.let {
                 formatThinkingStatus(it)
@@ -266,11 +270,12 @@ open class AutoPlanMode(
     api: ChatClient,
     coordinator: PlanCoordinator,
     userMessage: String,
-    thinkingStatus: ThinkingStatus
+    thinkingStatus: ThinkingStatus,
+    task: SessionTask
   ): List<TaskConfigBase>? {
     val describer = planSettings.describer()
-
-    val tasks = ParsedActor(
+    
+    val parsedActor = ParsedActor(
       name = "TaskChooser",
       resultClass = Tasks::class.java,
       exampleInstance = Tasks(
@@ -298,7 +303,8 @@ open class AutoPlanMode(
       parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
         "${taskType.name}:\n  ${describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")}".trim()
       })
-    ).answer(
+    )
+    val answer = parsedActor.answer(
       listOf(userMessage) + contextData() + listOf(
         """
         Current thinking status: ${formatThinkingStatus(thinkingStatus)}
@@ -306,11 +312,36 @@ open class AutoPlanMode(
         If there are no tasks to execute, return {}.
         """.trimIndent()
       ) + formatEvalRecords(), api
-    ).obj.tasks?.map { task ->
+    
+    ) // Raw LLM response text
+    // Process expansions recursively
+    val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
+    val processor = FixedConcurrencyProcessor(executor, 4) // Use a concurrency level of 4 for expansions
+    val expandedTasks = processTaskExpansionRecursive(
+      currentText = answer.text,
+      task = task, // The main task for this getNextTask step
+      api = api,
+      parsedActor = parsedActor,
+      processor = processor
+    )
+    /* // Original direct parsing:
+    
+    val chosenTasks = parsedActor.getParser(api).apply(answer.text) /*answer.obj*/
+    val tasks = chosenTasks.tasks?.map { task ->
       task to (if (task.task_type == null) {
         null
       } else {
         TaskType.getImpl(coordinator.planSettings, task)
+      })?.taskConfig
+    }
+    */
+    // Combine tasks from all expansion branches
+    val allChosenTasks = expandedTasks.flatMap { it.tasks ?: emptyList() }
+    val tasks = allChosenTasks.map { taskConfigBase ->
+      taskConfigBase to (if (taskConfigBase.task_type == null) {
+        null
+      } else {
+        TaskType.getImpl(coordinator.planSettings, taskConfigBase)
       })?.taskConfig
     }
 
@@ -322,6 +353,48 @@ open class AutoPlanMode(
       return null
     } else {
       return tasks.mapNotNull { it.second }.take(maxTasksPerIteration)
+    }
+  }
+  
+  /**
+   * Recursively processes task selection text containing expansion expressions {option1|option2}.
+   * Creates tabs for each expansion branch and parses the final text at the leaf nodes.
+   */
+  private fun processTaskExpansionRecursive(
+    currentText: String,
+    task: SessionTask, // The UI task for displaying this level/branch
+    api: ChatClient,
+    parsedActor: ParsedActor<Tasks>,
+    processor: FixedConcurrencyProcessor
+  ): List<Tasks> {
+    val match = expansionExpressionPattern.find(currentText)
+    if (match == null) {
+      // Base case: No more expansions, parse this text
+      task.add(currentText.renderMarkdown) // Display the final text before parsing
+      return try {
+        val chosenTasks = parsedActor.getParser(api).apply(currentText)
+        listOf(chosenTasks)
+      } catch (e: Exception) {
+        log.error("Error parsing task text: $currentText", e)
+        task.error(ui, e)
+        emptyList() // Return empty list if parsing fails for this branch
+      }
+    } else {
+      // Recursive case: Expansion found
+      val expression = match.groupValues[1]
+      val options = expression.split('|')
+      val tabs = TabbedDisplay(task) // Create tabs under the current task
+      val futures = options.map { option ->
+        processor.submit<List<Tasks>> {
+          // Create a sub-task for this option's tab
+          val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
+          // Replace the first occurrence of the pattern
+          val nextText = currentText.replaceFirst(match.value, option)
+          // Recurse
+          processTaskExpansionRecursive(nextText, subTask, api, parsedActor, processor)
+        }
+      }
+      return futures.flatMap { it.get() } // Collect results from all branches
     }
   }
 
@@ -501,11 +574,7 @@ open class AutoPlanMode(
     return formattedRecords
   }
 
-  private fun formatThinkingStatus(thinkingStatus: ThinkingStatus) = """
-    ```json
-    ${JsonUtil.toJson(thinkingStatus)}
-    ```
-  """
+  private fun formatThinkingStatus(thinkingStatus: ThinkingStatus) = "```json\n${JsonUtil.toJson(thinkingStatus)}\n```"
   
   override fun contextData(): List<String> = emptyList()
 
