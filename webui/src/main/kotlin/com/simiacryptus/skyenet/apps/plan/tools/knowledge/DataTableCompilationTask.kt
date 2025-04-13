@@ -30,7 +30,7 @@ class DataTableCompilationTask(
   class DataTableCompilationTaskConfigData(
     @Description("List of file glob patterns to include in the data compilation")
     val file_patterns: List<String> = listOf(),
-    @Description("Output file path where the compiled data table will be saved (CSV or JSON)")
+    @Description("REQUIRED: Output file path where the compiled data table will be saved (CSV or JSON)")
     val output_file: String = "compiled_data.json",
     @Description("Instructions for identifying rows in the data")
     val row_identification_instructions: String = "",
@@ -211,7 +211,8 @@ class DataTableCompilationTask(
         ),
         prompt = "Extract data for a data row for `${row.id}` from the provided source files.\n\n" +
             "Expected Columns:\n${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}\n\n" +
-            "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n",
+            "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n" +
+            "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
         model = taskSettings.model ?: planSettings.defaultModel,
         parsingModel = planSettings.parsingModel,
         temperature = planSettings.temperature,

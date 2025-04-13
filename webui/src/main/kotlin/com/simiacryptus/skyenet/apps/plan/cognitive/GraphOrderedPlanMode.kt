@@ -6,7 +6,6 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.apps.plan.cognitive.CognitiveMode
 import com.simiacryptus.skyenet.apps.plan.cognitive.CognitiveModeStrategy
-import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
@@ -23,7 +22,7 @@ import java.io.File
  * This mode reads a software graph, orders nodes by priority, transforms each node into
  * a plan task, and executes the resulting plan.
  */
-class GraphOrderedPlanMode(
+open class GraphOrderedPlanMode(
   override val ui: ApplicationInterface,
   override val api: API,
   override val planSettings: PlanSettings,
@@ -46,7 +45,9 @@ class GraphOrderedPlanMode(
     log.debug("Handling user message: $userMessage")
     execute(userMessage, task)
   }
-
+  
+  override fun contextData(): List<String> = emptyList()
+  
   private fun execute(userMessage: String, task: SessionTask) {
     val apiClient = (api as ChatClient).getChildClient(task)
     try {
@@ -74,7 +75,7 @@ class GraphOrderedPlanMode(
             session = session,
             dataStorage = ui.socketManager?.dataStorage!!,
             ui = ui,
-            root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager.dataStorage?.getDataDir(
+            root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getDataDir(
               user,
               session
             )?.toPath() ?: File(".").toPath(),
@@ -126,7 +127,8 @@ class GraphOrderedPlanMode(
         model = planSettings.defaultModel,
         parsingModel = planSettings.parsingModel,
       ).answer(
-        listOf(
+        contextData() +
+            listOf(
           "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
           "Current aggregated plan so far (if any):\n```json\n${JsonUtil.toJson(cumulativeTasks)}\n```",
           "Complete Software Graph from file `$graphFile` is given below:\n```json\n$graphFileContent\n```",
@@ -271,6 +273,7 @@ class GraphOrderedPlanMode(
     while (true) {
       try {
         return planSettings.planningActor().answer(
+          contextData() +
           listOf(
             "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
             "Current aggregated plan so far (if any):\n```json\n${JsonUtil.toJson(tasks)}\n```",

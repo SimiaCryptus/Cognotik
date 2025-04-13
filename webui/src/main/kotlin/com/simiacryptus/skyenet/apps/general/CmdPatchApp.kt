@@ -5,7 +5,7 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils
 import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -48,7 +48,7 @@ class CmdPatchApp(
     virtualFiles?.forEach { file ->
       if (file.isDirectory) {
         if (file.name.startsWith(".")) return@forEach
-        if (FileValidationUtils.isGitignore(file.toPath())) return@forEach
+        if (FileSelectionUtils.isGitignore(file.toPath())) return@forEach
         codeFiles.addAll(getFiles(file.listFiles()))
       } else {
         codeFiles.add((file.toPath()))
@@ -156,8 +156,8 @@ class CmdPatchApp(
   }
 
   override fun searchFiles(searchStrings: List<String>) = searchStrings.flatMap { searchString ->
-    FileValidationUtils.filteredWalk(settings.workingDirectory!!) { !FileValidationUtils.isGitignore(it.toPath()) }
-      .filter { FileValidationUtils.isLLMIncludableFile(it) }
+    FileSelectionUtils.filteredWalk(settings.workingDirectory!!) { !FileSelectionUtils.isGitignore(it.toPath()) }
+      .filter { FileSelectionUtils.isLLMIncludableFile(it) }
       .filter { it.readText().contains(searchString, ignoreCase = true) }
       .map { it.toPath() }
       .toList()

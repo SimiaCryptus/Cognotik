@@ -3,7 +3,7 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.TabbedDisplay
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils
 import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
@@ -118,7 +118,7 @@ class ValidationPatchApp(
     private fun getFiles(virtualFiles: Array<out File>?): Set<Path> {
         val codeFiles = mutableSetOf<Path>()
         codeFiles.addAll(
-            FileValidationUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
+          FileSelectionUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
                 .map { it.toPath() }
         )
         return codeFiles

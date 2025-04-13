@@ -1,16 +1,15 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.*
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 import java.nio.file.FileSystems
 import java.nio.file.Files
-import java.nio.file.Path
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 import kotlin.streams.asSequence
@@ -53,7 +52,7 @@ class FileSearchTask(
   private fun getAvailableFiles(): List<String> {
     return try {
       Files.walk(root)
-        .filter { path -> FileValidationUtils.isLLMIncludableFile(path.toFile()) }
+        .filter { path -> FileSelectionUtils.isLLMIncludableFile(path.toFile()) }
         .map { path -> root.relativize(path).toString() }
         .sorted()
         .collect(Collectors.toList())
@@ -91,7 +90,7 @@ class FileSearchTask(
         Files.walk(root).asSequence()
           .filter { path ->
             matcher.matches(root.relativize(path)) &&
-                FileValidationUtils.isLLMIncludableFile(path.toFile())
+                FileSelectionUtils.isLLMIncludableFile(path.toFile())
           }
           .flatMap { path ->
             val relativePath = root.relativize(path).toString()

@@ -3,12 +3,11 @@ package com.simiacryptus.diff
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.core.actors.SimpleActor
 import com.simiacryptus.skyenet.core.util.DiffApplicationResult
-import com.simiacryptus.skyenet.core.util.FileValidationUtils.Companion.isGitignore
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils.Companion.isGitignore
 import com.simiacryptus.skyenet.core.util.GrammarValidator
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil.patchFormatPrompt

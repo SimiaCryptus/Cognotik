@@ -16,7 +16,7 @@ import java.io.File
 /**
  * A cognitive mode that implements the traditional plan-ahead strategy.
  */
-class PlanAheadMode(
+open class PlanAheadMode(
   override val ui: ApplicationInterface,
   override val api: API,
   override val planSettings: PlanSettings,
@@ -29,7 +29,9 @@ class PlanAheadMode(
   override fun initialize() {
     log.debug("Initializing PlanAheadMode")
   }
-
+  
+  override fun contextData(): List<String> = emptyList()
+  
   override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: $userMessage")
     execute(userMessage, task)
@@ -45,7 +47,7 @@ class PlanAheadMode(
         session = session,
         dataStorage = ui.socketManager?.dataStorage!!,
         ui = ui,
-        root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager.dataStorage?.getDataDir(user, session)?.toPath() ?: File(".").toPath(),
+        root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getDataDir(user, session)?.toPath() ?: File(".").toPath(),
         planSettings = planSettings
       )
 
@@ -57,7 +59,8 @@ class PlanAheadMode(
         userMessage = userMessage,
         ui = coordinator.ui,
         planSettings = coordinator.planSettings,
-        api = api
+        api = api,
+        contextFn = { contextData() }
       )
 
       coordinator.executePlan(plan.plan, task, userMessage = userMessage, api = api, api2 = api2)

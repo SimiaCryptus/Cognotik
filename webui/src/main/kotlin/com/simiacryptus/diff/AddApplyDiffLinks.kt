@@ -1,7 +1,6 @@
 package com.simiacryptus.diff
 
 import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.skyenet.core.util.IterativePatchUtil
 import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import com.simiacryptus.skyenet.set

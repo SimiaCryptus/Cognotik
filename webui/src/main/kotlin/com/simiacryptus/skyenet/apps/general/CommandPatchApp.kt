@@ -1,10 +1,10 @@
 package com.simiacryptus.skyenet.apps.general
 
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import java.io.File
@@ -49,8 +49,8 @@ class CommandPatchApp(
 
   override fun searchFiles(searchStrings: List<String>): Set<Path> {
     return searchStrings.flatMap { searchString ->
-      FileValidationUtils.filteredWalk(settings.workingDirectory!!) { !FileValidationUtils.isGitignore(it.toPath()) }
-        .filter { FileValidationUtils.isLLMIncludableFile(it) }
+      FileSelectionUtils.filteredWalk(settings.workingDirectory!!) { !FileSelectionUtils.isGitignore(it.toPath()) }
+        .filter { FileSelectionUtils.isLLMIncludableFile(it) }
         .filter { it.readText().contains(searchString, ignoreCase = true) }
         .map { it.toPath() }
         .toList()
@@ -65,7 +65,7 @@ class CommandPatchApp(
       files?.forEach { file ->
         if (file.isDirectory) {
           if (file.name.startsWith(".")) return@forEach
-          if (FileValidationUtils.isGitignore(file.toPath())) return@forEach
+          if (FileSelectionUtils.isGitignore(file.toPath())) return@forEach
           if (file.name.endsWith(".png")) return@forEach
           if (file.length() > 1024 * 256) return@forEach
           codeFiles.addAll(getFiles(file.listFiles()))

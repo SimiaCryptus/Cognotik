@@ -26,6 +26,8 @@ interface CognitiveMode {
    * Handle a user message and trigger the appropriate planning or execution.
    */
   fun handleUserMessage(userMessage: String, task: SessionTask)
+  
+  fun contextData(): List<String>
 }
 
 interface CognitiveModeStrategy {
@@ -37,4 +39,5 @@ interface CognitiveModeStrategy {
     session: Session,
     user: User?
   ): CognitiveMode
+  
 }

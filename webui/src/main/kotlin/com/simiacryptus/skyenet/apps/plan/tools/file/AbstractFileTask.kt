@@ -1,11 +1,11 @@
 package com.simiacryptus.skyenet.apps.plan.tools.file
 
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.skyenet.apps.plan.AbstractTask
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
-import com.simiacryptus.skyenet.apps.plan.tools.file.AbstractFileTask.FileTaskConfigBase
 import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
+import com.simiacryptus.skyenet.apps.plan.tools.file.AbstractFileTask.FileTaskConfigBase
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.streams.asSequence
@@ -36,7 +36,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
         Files.walk(root).asSequence()
           .filter { path ->
             matcher.matches(root.relativize(path)) &&
-                FileValidationUtils.isLLMIncludableFile(path.toFile())
+                FileSelectionUtils.isLLMIncludableFile(path.toFile())
           }
           .map { path ->
             root.relativize(path).toString()

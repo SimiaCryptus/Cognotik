@@ -506,8 +506,8 @@ open class AutoPlanMode(
     ${JsonUtil.toJson(thinkingStatus)}
     ```
   """
-
-  protected open fun contextData(): List<String> = emptyList()
+  
+  override fun contextData(): List<String> = emptyList()
 
   // Data classes for the thinking status
   @Description("The current thinking status of the AI assistant.")

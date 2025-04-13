@@ -6,70 +6,8 @@ import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.name
 
-class FileValidationUtils {
+class FileSelectionUtils {
   companion object {
-    fun isCurlyBalanced(code: String): Boolean {
-      var count = 0
-      for (char in code) {
-        when (char) {
-          '{' -> count++
-          '}' -> count--
-        }
-        if (count < 0) return false
-      }
-      return count == 0
-    }
-
-    fun isSingleQuoteBalanced(code: String): Boolean {
-      var count = 0
-      var escaped = false
-      for (char in code) {
-        when {
-          char == '\\' -> escaped = !escaped
-          char == '\'' && !escaped -> count++
-          else -> escaped = false
-        }
-      }
-      return count % 2 == 0
-    }
-
-    fun isSquareBalanced(code: String): Boolean {
-      var count = 0
-      for (char in code) {
-        when (char) {
-          '[' -> count++
-          ']' -> count--
-        }
-        if (count < 0) return false
-      }
-      return count == 0
-    }
-
-    fun isParenthesisBalanced(code: String): Boolean {
-      var count = 0
-      for (char in code) {
-        when (char) {
-          '(' -> count++
-          ')' -> count--
-        }
-        if (count < 0) return false
-      }
-      return count == 0
-    }
-
-    fun isQuoteBalanced(code: String): Boolean {
-      var count = 0
-      var escaped = false
-      for (char in code) {
-        when {
-          char == '\\' -> escaped = !escaped
-          char == '"' && !escaped -> count++
-          else -> escaped = false
-        }
-      }
-      return count % 2 == 0
-    }
-
     fun filteredWalk(
       file: File,
       maxFilesPerDir: Int = 20,
@@ -92,10 +30,10 @@ class FileValidationUtils {
       return when {
         !file.exists() -> false
         file.isDirectory -> false
-        file.name.startsWith(".") -> false
         file.name.endsWith(".data") -> true
         file.length() > 1e8 -> false
-        isGitignore(file.toPath()) || isLLMIgnored(file.toPath()) -> false
+        isGitignore(file.toPath()) -> false
+        isLLMIgnored(file.toPath()) -> false
         file.extension.lowercase(Locale.getDefault()) in setOf(
           "jar",
           "zip",
@@ -154,8 +92,12 @@ class FileValidationUtils {
       var binaryCount = 0
       for (i in 0 until bytesRead) {
         val b = bytes[i].toInt() and 0xFF
-        if (b == 0 || (b < 9 && b != 7) || (b > 13 && b < 32) || b >= 127) {
-          binaryCount++
+        when {
+          b == 0 -> binaryCount++ // Null character
+          b == 7 -> {} // Bell character
+          b < 9  -> binaryCount++ // Control characters
+          b > 13 && b < 32 -> binaryCount++ // Control characters
+          b >= 127 -> binaryCount++ // Non-ASCII characters
         }
       }
       // If more than 10% of the bytes are binary, consider it a binary file
@@ -165,14 +107,13 @@ class FileValidationUtils {
     fun expandFileList(vararg data: File): Array<File> {
       return data.flatMap {
         (when {
-          it.name.startsWith(".") -> arrayOf()
           it.name.endsWith(".data") -> arrayOf(it)
-          isGitignore(it.toPath()) || isLLMIgnored(it.toPath()) -> arrayOf()
+          isGitignore(it.toPath()) -> arrayOf()
+          isLLMIgnored(it.toPath()) -> arrayOf()
           it.length() > 1e8 -> arrayOf()
           it.extension.lowercase(Locale.getDefault()) in
               setOf("jar", "zip", "class", "png", "jpg", "jpeg", "gif", "ico") -> arrayOf()
           isBinaryFile(it) -> arrayOf()
-
           it.isDirectory -> expandFileList(*it.listFiles() ?: arrayOf())
           else -> arrayOf(it)
         }).toList()
@@ -185,7 +126,6 @@ class FileValidationUtils {
         path.name == "node_modules" -> return true
         path.name == "target" -> return true
         path.name == "build" -> return true
-        path.name.startsWith(".") -> return true
       }
       var currentDir = path.toFile().parentFile
       currentDir ?: return false
@@ -208,7 +148,7 @@ class FileValidationUtils {
               }) return true
           }
         }
-        currentDir = currentDir.parentFile ?: return false
+        currentDir = currentDir.parentFile ?: break
       }
       // Check the final directory's .llmignore if present
       currentDir.resolve(".llmignore").let {
@@ -234,7 +174,6 @@ class FileValidationUtils {
         path.name == "node_modules" -> return true
         path.name == "target" -> return true
         path.name == "build" -> return true
-        path.name.startsWith(".") -> return true
       }
       var currentDir = path.toFile().parentFile
       currentDir ?: return false
@@ -257,7 +196,7 @@ class FileValidationUtils {
               }) return true
           }
         }
-        currentDir = currentDir.parentFile ?: return false
+        currentDir = currentDir.parentFile ?: break
       }
       // After .git is found, check the final directory's .gitignore
       currentDir.resolve(".gitignore").let {

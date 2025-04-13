@@ -21,7 +21,7 @@ import java.io.File
 /**
  * A cognitive mode that executes a single task based on user input.
  */
-class SingleTaskMode(
+open class SingleTaskMode(
   override val ui: ApplicationInterface,
   override val api: API,
   override val planSettings: PlanSettings,
@@ -131,8 +131,8 @@ class SingleTaskMode(
       task.error(null, e)
     }
   }
-
-  protected open fun contextData() = emptyList<String>()
+  
+  override fun contextData() = emptyList<String>()
 
   companion object : CognitiveModeStrategy {
     override fun getCognitiveMode(

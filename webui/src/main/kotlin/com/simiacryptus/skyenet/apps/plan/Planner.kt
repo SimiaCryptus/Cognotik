@@ -5,7 +5,6 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
-import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.actors.ParsedResponse
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
@@ -24,7 +23,8 @@ open class Planner {
     userMessage: String,
     ui: ApplicationInterface,
     planSettings: PlanSettings,
-    api: API
+    api: API,
+    contextFn: () -> List<String> = { emptyList() },
   ): TaskBreakdownWithPrompt {
     val api = (api as ChatClient).getChildClient(task)
     val toInput = inputFn(codeFiles, files, root)
@@ -38,7 +38,7 @@ open class Planner {
           newPlan(
             api,
             planSettings,
-            toInput(userMessage)
+            toInput(userMessage) + contextFn()
           )
         },
         outputFn = {
@@ -75,7 +75,7 @@ open class Planner {
       newPlan(
         api,
         planSettings,
-        toInput(userMessage)
+        toInput(userMessage) + contextFn()
       ).let {
         TaskBreakdownWithPrompt(
           prompt = userMessage,

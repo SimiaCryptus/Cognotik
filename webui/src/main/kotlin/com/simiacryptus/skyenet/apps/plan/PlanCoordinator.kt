@@ -9,12 +9,11 @@ import com.simiacryptus.skyenet.apps.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.skyenet.apps.plan.PlanUtil.filterPlan
 import com.simiacryptus.skyenet.apps.plan.PlanUtil.getAllDependencies
 import com.simiacryptus.skyenet.apps.plan.TaskType.Companion.getImpl
-import com.simiacryptus.skyenet.apps.plan.TaskConfigBase
 import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils
 import com.simiacryptus.skyenet.set
 import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
@@ -24,8 +23,8 @@ import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
-import java.util.concurrent.Future
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 class PlanCoordinator(
@@ -40,7 +39,7 @@ class PlanCoordinator(
   val pool: ExecutorService by lazy { ApplicationServices.clientManager.getPool(session, user) }
 
   val files: Array<File> by lazy {
-    FileValidationUtils.expandFileList(root.toFile())
+    FileSelectionUtils.expandFileList(root.toFile())
   }
 
   val codeFiles: Map<Path, String>

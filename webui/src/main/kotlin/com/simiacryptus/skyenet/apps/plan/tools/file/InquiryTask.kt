@@ -10,7 +10,7 @@ import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.apps.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.util.FileValidationUtils
+import com.simiacryptus.skyenet.core.util.FileSelectionUtils
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.util.JsonUtil
@@ -142,7 +142,7 @@ class InquiryTask(
         Files.walk(root).asSequence()
           .filter { path ->
             matcher.matches(root.relativize(path)) &&
-                FileValidationUtils.isLLMIncludableFile(path.toFile())
+                FileSelectionUtils.isLLMIncludableFile(path.toFile())
           }
           .map { path ->
             root.relativize(path).toString()
