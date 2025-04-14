@@ -12,10 +12,14 @@ import java.util.*
 
 class HSQLMetadataStorage(private val dbFile: File) : MetadataStorageInterface {
   private val log = LoggerFactory.getLogger(javaClass)
+  
+  init {
+    log.info("Initializing HSQL Metadata Storage with ${dbFile.absolutePath}", RuntimeException("Stack trace"))
+  }
 
   private val connection: Connection by lazy {
     require(dbFile.absoluteFile.exists() || dbFile.absoluteFile.mkdirs()) { "Unable to create database directory: ${dbFile.absolutePath}" }
-    log.info("Initializing HSQLMetadataStorage with database file: ${dbFile.absolutePath}")
+    log.info("Initializing HSQLMetadataStorage with database file: ${dbFile.absolutePath}", RuntimeException("Stack trace"))
     Class.forName("org.hsqldb.jdbc.JDBCDriver")
     val connection = DriverManager.getConnection("jdbc:hsqldb:file:${dbFile.absolutePath}/metadata;shutdown=true", "SA", "")
     createSchema(connection)
@@ -108,7 +112,7 @@ class HSQLMetadataStorage(private val dbFile: File) : MetadataStorageInterface {
     statement.setString(4, ids.joinToString(","))
     statement.setTimestamp(5, Timestamp(System.currentTimeMillis()))
     statement.executeUpdate()
-    log.info("Set ${ids.size} message IDs for session: ${session.sessionId}")
+    log.debug("Set ${ids.size} message IDs for session: ${session.sessionId}")
   }
 
   override fun getSessionTime(user: User?, session: Session): Date? {

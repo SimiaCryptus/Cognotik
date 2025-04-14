@@ -24,9 +24,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
   
   
   companion object {
-    val GraphBasedPlanningTask = TaskType(
-      "GraphBasedPlanningTask",
-      com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask.GraphBasedPlanningTaskConfigData::class.java,
+    val SoftwareGraphPlanningTask = TaskType(
+      "SoftwareGraphPlanningTask",
+      com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphPlanningTask.GraphBasedPlanningTaskConfigData::class.java,
       TaskSettingsBase::class.java,
       "Generate and execute task plans based on software graph structure",
       """
@@ -309,7 +309,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     )
     
     init {
-      registerConstructor(GraphBasedPlanningTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.graph.GraphBasedPlanningTask(settings, task) }
+      registerConstructor(SoftwareGraphPlanningTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphPlanningTask(settings, task) }
       registerConstructor(SoftwareGraphModificationTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphModificationTask(settings, task) }
       registerConstructor(SoftwareGraphGenerationTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.graph.SoftwareGraphGenerationTask(settings, task) }
       registerConstructor(DataTableCompilationTask) { settings, task -> com.simiacryptus.skyenet.apps.plan.tools.knowledge.DataTableCompilationTask(settings, task) }

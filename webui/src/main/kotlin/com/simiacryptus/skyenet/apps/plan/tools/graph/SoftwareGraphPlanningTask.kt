@@ -9,9 +9,9 @@ import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 
-class GraphBasedPlanningTask(
+class SoftwareGraphPlanningTask(
     planSettings: PlanSettings, planTask: GraphBasedPlanningTaskConfigData?
-) : AbstractTask<GraphBasedPlanningTask.GraphBasedPlanningTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<SoftwareGraphPlanningTask.GraphBasedPlanningTaskConfigData>(planSettings, planTask) {
 
     class GraphBasedPlanningTaskConfigData(
         @Description("REQUIRED: The path to the input software graph JSON file") val input_graph_file: String? = null,
@@ -20,7 +20,7 @@ class GraphBasedPlanningTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskConfigBase(
-        task_type = TaskType.GraphBasedPlanningTask.name,
+        task_type = TaskType.SoftwareGraphPlanningTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -82,6 +82,6 @@ class GraphBasedPlanningTask(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(GraphBasedPlanningTask::class.java)
+        private val log = LoggerFactory.getLogger(SoftwareGraphPlanningTask::class.java)
     }
 }

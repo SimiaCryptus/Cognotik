@@ -1,25 +1,20 @@
 package com.simiacryptus.skyenet.core.platform
 
-import com.simiacryptus.skyenet.core.platform.file.*
+import com.simiacryptus.skyenet.core.platform.file.AuthenticationManager
+import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
+import com.simiacryptus.skyenet.core.platform.file.DataStorage
+import com.simiacryptus.skyenet.core.platform.file.UserSettingsManager
 import com.simiacryptus.skyenet.core.platform.hsql.HSQLMetadataStorage
 import com.simiacryptus.skyenet.core.platform.hsql.HSQLUsageManager
+import com.simiacryptus.skyenet.core.platform.model.*
 import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig.isLocked
-import com.simiacryptus.skyenet.core.platform.model.AuthenticationInterface
-import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface
-import com.simiacryptus.skyenet.core.platform.model.CloudPlatformInterface
-import com.simiacryptus.skyenet.core.platform.model.MetadataStorageInterface
-import com.simiacryptus.skyenet.core.platform.model.StorageInterface
-import com.simiacryptus.skyenet.core.platform.model.UsageInterface
-import com.simiacryptus.skyenet.core.platform.model.UserSettingsInterface
-import com.simiacryptus.skyenet.core.util.Selenium
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.concurrent.ExecutorService
 
 object ApplicationServices {
   private val log = LoggerFactory.getLogger(ApplicationServices::class.java)
-
+  
   var authorizationManager: AuthorizationInterface = AuthorizationManager()
     set(value) {
       require(!isLocked) { "ApplicationServices is locked" }
@@ -35,12 +30,20 @@ object ApplicationServices {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
     }
-  var dataStorageFactory: (File) -> StorageInterface = { DataStorage(it) }
+  
+  private val storageCache = mutableMapOf<File, StorageInterface>()
+  var dataStorageFactory: (File) -> StorageInterface = { file ->
+    storageCache.getOrPut(file) { DataStorage(file) }
+  }
     private set(value) {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
     }
-  var metadataStorageFactory: (File) -> MetadataStorageInterface = { HSQLMetadataStorage(it) }
+
+  private val metadataStorageCache = mutableMapOf<File, MetadataStorageInterface>()
+  var metadataStorageFactory: (File) -> MetadataStorageInterface = { file ->
+    metadataStorageCache.getOrPut(file) { HSQLMetadataStorage(file) }
+  }
     private set(value) {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
@@ -60,5 +63,5 @@ object ApplicationServices {
       require(!isLocked) { "ApplicationServices is locked" }
       field = value
     }
-
+  
 }

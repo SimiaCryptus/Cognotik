@@ -53,10 +53,20 @@ open class ChatSocketManager(
       val ui = ApplicationInterface(this)
       Retryable(ui, task) { it: StringBuilder ->
         val task = ui.newTask(false)
-        val aggregateResponse = StringBuilder()
-        processMsgRecursive(api, userMessage, task, messages.toList(), aggregateResponse, FixedConcurrencyProcessor(this.pool, 4))
-        messages.dropLastWhile { it.role == ApiModel.Role.assistant } // Clear previous assistant messages to avoid duplication if retrying
-        messages += ApiModel.ChatMessage(ApiModel.Role.assistant, aggregateResponse.toString().toContentList())
+        pool.submit {
+          task.add("")
+          val function1s = processMsgRecursive(api, userMessage, task, messages.toList())
+          val aggregateResponse = StringBuilder()
+          val fixedConcurrencyProcessor = FixedConcurrencyProcessor(this.pool, 4)
+          function1s.forEach { function1 ->
+            fixedConcurrencyProcessor.submit {
+              function1(aggregateResponse)
+            }
+          }
+          messages.dropLastWhile { it.role == ApiModel.Role.assistant } // Clear previous assistant messages to avoid duplication if retrying
+          messages += ApiModel.ChatMessage(ApiModel.Role.assistant, aggregateResponse.toString().toContentList())
+          task.complete()
+        }
         task.placeholder
       }
     } catch (e: Exception) {
@@ -65,43 +75,34 @@ open class ChatSocketManager(
     }
   }
   
-  
   private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{]+)+)}""")
+  
   private fun processMsgRecursive(
     api: ChatClient,
     currentMessage: String,
     task: SessionTask,
     baseMessages: List<ApiModel.ChatMessage>, // Pass the history without the current user turn
-    aggregateResponse: StringBuilder,
-    fixedConcurrencyProcessor: FixedConcurrencyProcessor
-  ) {
-    // Find the *first* expansion pattern in the current message string
+  ): List<(StringBuilder) -> Unit> {
     val match = expansionExpressionPattern.find(currentMessage)
-    if (match == null) {
-      // Base case: No more expansions found, process this version of the message
-      val finalMessages = baseMessages + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
+    return if (match == null) listOf { aggregateResponse: StringBuilder ->
+      task.add("")
+      val finalMessages = baseMessages.dropLast(1) + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
       val response = respond(api, finalMessages)
       onResponse(response, currentMessage) // Pass the substituted message content
-      task.add(renderResponse(response, task))
+      task.complete(renderResponse(response, task))
       aggregateResponse.append(response).append("\n\n") // Append response for aggregation
     } else {
-      // Recursive step: Expansion found
-      val expression = match.groupValues[1]
-      val options = expression.split('|')
-      val tabs = TabbedDisplay(task) // Create tabs for the current level of expansion
-      options.map { option ->
-        fixedConcurrencyProcessor.submit {
-          // Create a new sub-task for this option, nested under the current task's tabs
-          val subTask = newTask(false, false).apply { tabs[option] = placeholder }
-          // Replace the *first* occurrence of the pattern with the current option
-          val nextMessage = currentMessage.replaceFirst(match.value, option)
-          // Recurse with the modified message and the new sub-task
-          processMsgRecursive(api, nextMessage, subTask, baseMessages, aggregateResponse, fixedConcurrencyProcessor)
-        }
-      }.toTypedArray().forEach { it.get() }
+      val tabs = TabbedDisplay(task)
+      match.groupValues[1].split('|').flatMap { option ->
+        processMsgRecursive(
+          api = api,
+          currentMessage = currentMessage.replaceFirst(match.value, option),
+          task = newTask(false, false).apply { tabs[option] = placeholder },
+          baseMessages = baseMessages,
+        )
+      }
     }
   }
-  
   
   protected open fun respond(
     api: ChatClient,
