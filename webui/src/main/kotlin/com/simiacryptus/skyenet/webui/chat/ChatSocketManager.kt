@@ -49,6 +49,7 @@ open class ChatSocketManager(
       ApiModel.ChatMessage(ApiModel.Role.assistant, initialAssistantPrompt.toContentList())
     list
   }
+  val ui = ApplicationInterface(this)
   
   @Synchronized
   override fun onRun(userMessage: String, socket: ChatSocket) {
@@ -60,7 +61,6 @@ open class ChatSocketManager(
     task.echo(renderResponse(expandedUserMessage, task))
     messages += ApiModel.ChatMessage(ApiModel.Role.user, expandedUserMessage.toContentList())
     try {
-      val ui = ApplicationInterface(this)
       Retryable(ui, task) { it: StringBuilder ->
         val task = ui.newTask(false)
         pool.submit {
@@ -100,18 +100,23 @@ open class ChatSocketManager(
           response
         ), api = api
       )
-      response + answer.obj.topics.let { topics ->
-        if (topics?.isNotEmpty() == true) {
-          // Add identified topics to the aggregate list
-          topics.forEach { (topicType, entities) ->
-            aggregateTopics.computeIfAbsent(topicType) { ConcurrentHashMap.newKeySet() }.addAll(entities)
+      response + try {
+        answer.obj.topics.let { topics ->
+          if (topics?.isNotEmpty() == true) {
+            // Add identified topics to the aggregate list
+            topics.forEach { (topicType, entities) ->
+              aggregateTopics.computeIfAbsent(topicType) { ConcurrentHashMap.newKeySet() }.addAll(entities)
+            }
+            val joinToString = topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
+            task.complete(joinToString.renderMarkdown())
+            "\n\n" + joinToString
+          } else {
+            ""
           }
-          val joinToString = topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
-          task.complete(joinToString.renderMarkdown())
-          "\n\n" + joinToString
-        } else {
-          ""
         }
+      } catch (e: Exception) {
+        log.error("Error in topic extraction", e)
+        ""
       }
     } catch (e : Exception) {
       task.error(null, e)
@@ -156,7 +161,6 @@ open class ChatSocketManager(
       task.add("")
       val finalMessages = baseMessages.dropLast(1) + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
       val response = respond(api, finalMessages)
-      // Pass the substituted message content
       task.complete(renderResponse(response, task))
       aggregateResponse.append(response).append("\n\n") // Append response for aggregation
     } else {
@@ -165,9 +169,11 @@ open class ChatSocketManager(
         processMsgRecursive(
           api = api,
           currentMessage = currentMessage.replaceFirst(match.value, option),
-          task = newTask(false, false).apply { tabs[option] = placeholder },
+          task = ui.newTask(false).apply { tabs[option] = placeholder },
           baseMessages = baseMessages,
         )
+      }.apply {
+        tabs.update()
       }
     }
   }

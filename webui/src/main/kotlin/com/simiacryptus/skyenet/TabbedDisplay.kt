@@ -22,7 +22,7 @@ open class TabbedDisplay(
   <div class="${(additionalClasses.split(" ").toSet() + setOf("tabs-container")).filter { it.isNotEmpty() }.joinToString(" ")}" id="$tabId">
   ${renderTabButtons()}
   ${
-      if (!closable) "" else tabs.toTypedArray().withIndex().joinToString("\n")
+      tabs.toTypedArray().withIndex().joinToString("\n")
       { (idx, t) -> renderContentTab(t, idx) }
     }
   </div>
