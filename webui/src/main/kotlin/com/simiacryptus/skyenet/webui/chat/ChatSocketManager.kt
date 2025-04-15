@@ -18,22 +18,24 @@ import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.SocketManagerBase
 import com.simiacryptus.skyenet.webui.session.getChildClient
+import kotlinx.collections.immutable.toImmutableList
 import java.util.concurrent.ConcurrentHashMap
 
 open class ChatSocketManager(
   session: Session,
-  val model: ChatModel,
-  val parsingModel: ChatModel,
-  val userInterfacePrompt: String,
+  var model: ChatModel,
+  var parsingModel: ChatModel,
+  open val userInterfacePrompt: String,
   open val initialAssistantPrompt: String = "",
   open val systemPrompt: String,
   val api: ChatClient,
-  val temperature: Double = 0.3,
+  var temperature: Double = 0.3,
   applicationClass: Class<out ApplicationServer>,
   val storage: StorageInterface?,
+  open val fastTopicParsing : Boolean = true,
 ) : SocketManagerBase(session, storage, owner = null, applicationClass = applicationClass) {
   // Store all identified topics across conversations
-  protected val aggregateTopics = ConcurrentHashMap<String, MutableSet<String>>()
+  protected val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
   
   init {
     if (userInterfacePrompt.isNotBlank()) {
@@ -81,34 +83,35 @@ open class ChatSocketManager(
   
   protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
     val fixedConcurrencyProcessor = FixedConcurrencyProcessor(this@ChatSocketManager.pool, 4)
-    processMsgRecursive(api, userMessage, task, messages.toList()).map { function1 ->
+    processMsgRecursive(api, userMessage, task, chatMessages()).map { function1 ->
       fixedConcurrencyProcessor.submit {
         function1(this)
       }
     }.forEach { it.get() }
   }.let { response ->
     try {
-      val answer = ParsedActor(
+      val topicsParsedActor = ParsedActor(
         resultClass = Topics::class.java,
         prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
         model = model,
         temperature = temperature,
         name = "Topics",
         parsingModel = parsingModel,
-      ).answer(
-        listOf(
-          response
-        ), api = api
       )
+      val answer = if(fastTopicParsing) {
+        topicsParsedActor.getParser(api).apply(response)
+      } else {
+        topicsParsedActor.answer(listOf(response), api).obj
+      }
       response + try {
-        answer.obj.topics.let { topics ->
+        answer.topics.let { topics ->
           if (topics?.isNotEmpty() == true) {
             // Add identified topics to the aggregate list
             topics.forEach { (topicType, entities) ->
-              aggregateTopics.computeIfAbsent(topicType) { ConcurrentHashMap.newKeySet() }.addAll(entities)
+              aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }.addAll(entities)
             }
             val joinToString = topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
-            task.complete(joinToString.renderMarkdown())
+            task.complete(joinToString.renderMarkdown(), additionalClasses = "topics")
             "\n\n" + joinToString
           } else {
             ""
@@ -125,7 +128,11 @@ open class ChatSocketManager(
     }
   }
   
-  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:[|,][^|,}{]+)+)}""")
+  protected open fun chatMessages() = messages.let {
+    listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it.toImmutableList().drop(1)
+  }.toList()
+  
+  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:[|,][^|}{]+)+)}""")
   
   data class Topics(
     val topics: Map<String, List<String>>? = emptyMap()
@@ -136,7 +143,7 @@ open class ChatSocketManager(
    * Looks for @topic syntax and replaces with expansion options
    */
   protected open fun applyTopicAutoexpansion(userMessage: String): String {
-    val topicReferencePattern = Regex("""\{([^}|,]+)}""")
+    val topicReferencePattern = Regex("""\{([^}|]+)}""")
     return topicReferencePattern.replace(userMessage) { matchResult ->
       val topicType = matchResult.groupValues[1]
       val entities = aggregateTopics[topicType]

@@ -55,19 +55,23 @@ enum class FetchMethod {
   Selenium {
     override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = object : FetchStrategy {
       override fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String {
-        if (task.selenium == null) {
-          task.selenium = Selenium2S3(
-            pool = pool, cookies = null, driver = planSettings.driver()
-          )
-        }
-        try {
-          task.selenium?.navigate(url)
-          return task.selenium?.getPageSource() ?: ""
-        } finally {
-          task.selenium?.let {
-            it.quit()
-            task.selenium = null
+        return try {
+          if (task.selenium == null) {
+            task.selenium = Selenium2S3(
+              pool = pool, cookies = null, driver = planSettings.driver()
+            )
           }
+          try {
+            task.selenium?.navigate(url)
+            task.selenium?.getPageSource() ?: ""
+          } finally {
+            task.selenium?.let {
+              it.quit()
+              task.selenium = null
+            }
+          }
+        } catch (e: Exception) {
+          HttpClient.createStrategy(task).fetch(url, webSearchDir, index, pool, planSettings)
         }
       }
     }
