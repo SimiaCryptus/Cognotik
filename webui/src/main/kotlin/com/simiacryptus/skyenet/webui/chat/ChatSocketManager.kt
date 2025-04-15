@@ -7,7 +7,6 @@ import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.skyenet.Retryable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
-import com.simiacryptus.skyenet.apps.parse.ParsingModel
 import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
@@ -25,7 +24,7 @@ open class ChatSocketManager(
   session: Session,
   var model: ChatModel,
   var parsingModel: ChatModel,
-  open val userInterfacePrompt: String,
+  val userInterfacePrompt: String,
   open val initialAssistantPrompt: String = "",
   open val systemPrompt: String,
   val api: ChatClient,
@@ -34,8 +33,8 @@ open class ChatSocketManager(
   val storage: StorageInterface?,
   open val fastTopicParsing : Boolean = true,
 ) : SocketManagerBase(session, storage, owner = null, applicationClass = applicationClass) {
-  // Store all identified topics across conversations
-  protected val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
+  
+  private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
   
   init {
     if (userInterfacePrompt.isNotBlank()) {
@@ -132,7 +131,7 @@ open class ChatSocketManager(
     listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it.toImmutableList().drop(1)
   }.toList()
   
-  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:[|,][^|}{]+)+)}""")
+  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:[|,][^|\n,}{]+)+)}""")
   
   data class Topics(
     val topics: Map<String, List<String>>? = emptyMap()
@@ -167,7 +166,14 @@ open class ChatSocketManager(
     return if (match == null) listOf { aggregateResponse: StringBuilder ->
       task.add("")
       val finalMessages = baseMessages.dropLast(1) + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
-      val response = respond(api, finalMessages)
+      val chatResponse = api.chat(
+        ApiModel.ChatRequest(
+          messages = finalMessages,
+          temperature = temperature,
+          model = model.modelName,
+        ), model
+      )
+      val response = (chatResponse.choices.first().message?.content.orEmpty())
       task.complete(renderResponse(response, task))
       aggregateResponse.append(response).append("\n\n") // Append response for aggregation
     } else {
@@ -183,19 +189,6 @@ open class ChatSocketManager(
         tabs.update()
       }
     }
-  }
-  
-  protected open fun respond(
-    api: ChatClient,
-    chatMessages: List<ApiModel.ChatMessage>
-  ): String {
-    return (api.chat(
-      ApiModel.ChatRequest(
-        messages = chatMessages,
-        temperature = temperature,
-        model = model.modelName,
-      ), model
-    ).choices.first().message?.content.orEmpty())
   }
   
   open fun renderResponse(response: String, task: SessionTask) =
