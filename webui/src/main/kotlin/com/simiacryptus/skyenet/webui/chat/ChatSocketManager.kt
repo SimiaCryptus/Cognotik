@@ -79,6 +79,11 @@ open class ChatSocketManager(
     }
   }
   
+  // Pattern for parallel expansion: {option1|option2}
+  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:[|,][^|\n,}{]+)+)}""")
+  
+  // Pattern for ordered sequence expansion: <item1;item2;item3>
+  private val sequenceExpansionPattern = Regex("""<([^;><\n]+(?:;[^;><\n]+)+)>""")
   
   protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
     val fixedConcurrencyProcessor = FixedConcurrencyProcessor(this@ChatSocketManager.pool, 4)
@@ -131,8 +136,6 @@ open class ChatSocketManager(
     listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it.toImmutableList().drop(1)
   }.toList()
   
-  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:[|,][^|\n,}{]+)+)}""")
-  
   data class Topics(
     val topics: Map<String, List<String>>? = emptyMap()
   )
@@ -160,33 +163,62 @@ open class ChatSocketManager(
     api: ChatClient,
     currentMessage: String,
     task: SessionTask,
-    baseMessages: List<ApiModel.ChatMessage>, // Pass the history without the current user turn
+    baseMessages: List<ApiModel.ChatMessage>,
   ): List<(StringBuilder) -> Unit> {
-    val match = expansionExpressionPattern.find(currentMessage)
-    return if (match == null) listOf { aggregateResponse: StringBuilder ->
-      task.add("")
-      val finalMessages = baseMessages.dropLast(1) + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
-      val chatResponse = api.chat(
-        ApiModel.ChatRequest(
-          messages = finalMessages,
-          temperature = temperature,
-          model = model.modelName,
-        ), model
-      )
-      val response = (chatResponse.choices.first().message?.content.orEmpty())
-      task.complete(renderResponse(response, task))
-      aggregateResponse.append(response).append("\n\n") // Append response for aggregation
+    // 1. Handle sequence expansion <a;b;c> with higher precedence
+    val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
+    if (sequenceMatch != null) {
+      val items = sequenceMatch.groupValues[1].split(';')
+      // For ordered expansion, we want to process each item in sequence, passing the response of the previous as input to the next
+      // We'll accumulate responses in a StringBuilder and pass them along
+      return listOf { aggregateResponse: StringBuilder ->
+        var input = currentMessage
+        var prevResponse: String? = null
+        val sequenceTab = TabbedDisplay(task, closable = false)
+        for ((i, item) in items.withIndex()) {
+          val replaced = input.replaceFirst(sequenceMatch.value, item)
+          val subTask = ui.newTask(false).apply { sequenceTab[item] = placeholder }
+          val subResponses = processMsgRecursive(api, replaced, subTask, baseMessages)
+          val subAggregate = StringBuilder()
+          subResponses.forEach { it(subAggregate) }
+          prevResponse = subAggregate.toString()
+          // For the next iteration, append the previous response so that subsequent items
+          // receive the cumulative output as part of the prompt.
+          input = replaced + "\n" + (prevResponse ?: "")
+          aggregateResponse.append("[$item]\n").append(prevResponse).append("\n")
+        }
+        sequenceTab.update()
+      }
     } else {
-      val tabs = TabbedDisplay(task, closable = false)
-      match.groupValues[1].split('|',',').flatMap { option ->
-        processMsgRecursive(
-          api = api,
-          currentMessage = currentMessage.replaceFirst(match.value, option),
-          task = ui.newTask(false).apply { tabs[option] = placeholder },
-          baseMessages = baseMessages,
-        )
-      }.apply {
-        tabs.update()
+      // 2. Handle parallel expansion {a|b|c}
+      val match = expansionExpressionPattern.find(currentMessage)
+      if (match != null) {
+        val tabs = TabbedDisplay(task, closable = false)
+        return match.groupValues[1].split('|', ',').flatMap { option ->
+          processMsgRecursive(
+            api = api,
+            currentMessage = currentMessage.replaceFirst(match.value, option),
+            task = ui.newTask(false).apply { tabs[option] = placeholder },
+            baseMessages = baseMessages,
+          )
+        }.apply {
+          tabs.update()
+        }
+      } else {
+        return listOf { aggregateResponse: StringBuilder ->
+          task.add("")
+          val finalMessages = baseMessages.dropLast(1) + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
+          val chatResponse = api.chat(
+            ApiModel.ChatRequest(
+              messages = finalMessages,
+              temperature = temperature,
+              model = model.modelName,
+            ), model
+          )
+          val response = (chatResponse.choices.first().message?.content.orEmpty())
+          task.complete(renderResponse(response, task))
+          aggregateResponse.append(response).append("\n\n") // Append response for aggregation
+        }
       }
     }
   }
