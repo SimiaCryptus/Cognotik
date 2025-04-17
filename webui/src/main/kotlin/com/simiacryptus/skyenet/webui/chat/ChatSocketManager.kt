@@ -19,6 +19,7 @@ import com.simiacryptus.skyenet.webui.session.SocketManagerBase
 import com.simiacryptus.skyenet.webui.session.getChildClient
 import kotlinx.collections.immutable.toImmutableList
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 open class ChatSocketManager(
   session: Session,
@@ -35,6 +36,7 @@ open class ChatSocketManager(
 ) : SocketManagerBase(session, storage, owner = null, applicationClass = applicationClass) {
   
   private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
+  private val messagesLock = Any()
   
   init {
     if (userInterfacePrompt.isNotBlank()) {
@@ -52,7 +54,6 @@ open class ChatSocketManager(
   }
   val ui = ApplicationInterface(this)
   
-  @Synchronized
   override fun onRun(userMessage: String, socket: ChatSocket) {
     // Apply topic-based autoexpansion to user message
     val expandedUserMessage = applyTopicAutoexpansion(userMessage)
@@ -60,15 +61,26 @@ open class ChatSocketManager(
     val task = newTask()
     val api = api.getChildClient(task)
     task.echo(renderResponse(expandedUserMessage, task))
-    messages += ApiModel.ChatMessage(ApiModel.Role.user, expandedUserMessage.toContentList())
+    
+    synchronized(messagesLock) {
+      messages += ApiModel.ChatMessage(ApiModel.Role.user, expandedUserMessage.toContentList())
+    }
+    
     try {
       Retryable(ui, task) { it: StringBuilder ->
         val task = ui.newTask(false)
         pool.submit {
           task.add("")
           val responseString = respond(api, task, expandedUserMessage)
-          messages.dropLastWhile { it.role == ApiModel.Role.assistant } // Clear previous assistant messages to avoid duplication if retrying
-          messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
+          
+          synchronized(messagesLock) {
+            // Remove last assistant message if it exists (for retries)
+            if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
+              messages.removeAt(messages.size - 1)
+            }
+            messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
+          }
+          
           task.complete()
         }
         task.placeholder
@@ -86,33 +98,20 @@ open class ChatSocketManager(
   private val sequenceExpansionPattern = Regex("""<([^;><\n]+(?:;[^;><\n]+)+)>""")
   
   protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
-    val fixedConcurrencyProcessor = FixedConcurrencyProcessor(this@ChatSocketManager.pool, 4)
-    processMsgRecursive(api, userMessage, task, chatMessages()).map { function1 ->
-      fixedConcurrencyProcessor.submit {
-        function1(this)
-      }
-    }.forEach { it.get() }
+    val currentChatMessages = chatMessages()
+    runAll(processMsgRecursive(api, userMessage, task, currentChatMessages), this)
   }.let { response ->
     try {
-      val topicsParsedActor = ParsedActor(
-        resultClass = Topics::class.java,
-        prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
-        model = model,
-        temperature = temperature,
-        name = "Topics",
-        parsingModel = parsingModel,
-      )
-      val answer = if(fastTopicParsing) {
-        topicsParsedActor.getParser(api).apply(response)
-      } else {
-        topicsParsedActor.answer(listOf(response), api).obj
-      }
-      response + try {
+      val answer = extractTopics(api, response)
+      val topicsText = try {
         answer.topics.let { topics ->
           if (topics?.isNotEmpty() == true) {
             // Add identified topics to the aggregate list
             topics.forEach { (topicType, entities) ->
-              aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }.addAll(entities)
+              val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
+              synchronized(topicList) {
+                topicList.addAll(entities)
+              }
             }
             val joinToString = topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
             task.complete(joinToString.renderMarkdown(), additionalClasses = "topics")
@@ -125,6 +124,7 @@ open class ChatSocketManager(
         log.error("Error in topic extraction", e)
         ""
       }
+      response + topicsText
     } catch (e : Exception) {
       task.error(null, e)
       log.error("Error in topic extraction", e)
@@ -132,8 +132,40 @@ open class ChatSocketManager(
     }
   }
   
+  
+  /**
+   * Executes a list of functions, each appending to the target StringBuilder, potentially in parallel.
+   */
+  private fun runAll(function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
+    val fixedConcurrencyProcessor = FixedConcurrencyProcessor(this@ChatSocketManager.pool, 4)
+    function1s.map { function1 ->
+      fixedConcurrencyProcessor.submit {
+        function1(target)
+      }
+    }.forEach { it.get() }
+  }
+  
+  private fun extractTopics(api: ChatClient, response: String): Topics {
+    val topicsParsedActor = ParsedActor(
+      resultClass = Topics::class.java,
+      prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
+      model = model,
+      temperature = temperature,
+      name = "Topics",
+      parsingModel = parsingModel,
+    )
+    return if (fastTopicParsing) {
+      topicsParsedActor.getParser(api).apply(response)
+    } else {
+      topicsParsedActor.answer(listOf(response), api).obj
+    }
+  }
+  
+  
   protected open fun chatMessages() = messages.let {
-    listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it.toImmutableList().drop(1)
+    synchronized(messagesLock) {
+      listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it.toImmutableList().drop(1)
+    }
   }.toList()
   
   data class Topics(
@@ -148,7 +180,7 @@ open class ChatSocketManager(
     val topicReferencePattern = Regex("""\{([^}|]+)}""")
     return topicReferencePattern.replace(userMessage) { matchResult ->
       val topicType = matchResult.groupValues[1]
-      val entities = aggregateTopics[topicType]
+      val entities = aggregateTopics[topicType]?.toList() // Create a copy to avoid concurrent modification
       if (entities != null && entities.isNotEmpty()) {
         // Create an expansion expression with all entities of this type
         "{${entities.joinToString("|")}}"
@@ -165,63 +197,107 @@ open class ChatSocketManager(
     task: SessionTask,
     baseMessages: List<ApiModel.ChatMessage>,
   ): List<(StringBuilder) -> Unit> {
-    // 1. Handle sequence expansion <a;b;c> with higher precedence
     val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
     if (sequenceMatch != null) {
-      val items = sequenceMatch.groupValues[1].split(';')
-      // For ordered expansion, we want to process each item in sequence, passing the response of the previous as input to the next
-      // We'll accumulate responses in a StringBuilder and pass them along
-      return listOf { aggregateResponse: StringBuilder ->
-        var input = currentMessage
-        var prevResponse: String? = null
-        val sequenceTab = TabbedDisplay(task, closable = false)
-        for ((i, item) in items.withIndex()) {
-          val replaced = input.replaceFirst(sequenceMatch.value, item)
-          val subTask = ui.newTask(false).apply { sequenceTab[item] = placeholder }
-          val subResponses = processMsgRecursive(api, replaced, subTask, baseMessages)
-          val subAggregate = StringBuilder()
-          subResponses.forEach { it(subAggregate) }
-          prevResponse = subAggregate.toString()
-          // For the next iteration, append the previous response so that subsequent items
-          // receive the cumulative output as part of the prompt.
-          input = replaced + "\n" + (prevResponse ?: "")
-          aggregateResponse.append("[$item]\n").append(prevResponse).append("\n")
-        }
-        sequenceTab.update()
-      }
+      return expandSequences(api, currentMessage, task, baseMessages, sequenceMatch)
     } else {
       // 2. Handle parallel expansion {a|b|c}
       val match = expansionExpressionPattern.find(currentMessage)
       if (match != null) {
-        val tabs = TabbedDisplay(task, closable = false)
-        return match.groupValues[1].split('|', ',').flatMap { option ->
-          processMsgRecursive(
-            api = api,
-            currentMessage = currentMessage.replaceFirst(match.value, option),
-            task = ui.newTask(false).apply { tabs[option] = placeholder },
-            baseMessages = baseMessages,
-          )
-        }.apply {
-          tabs.update()
-        }
+        return expandAlternatives(api, currentMessage, task, baseMessages, match, this::processMsgRecursive)
       } else {
         return listOf { aggregateResponse: StringBuilder ->
           task.add("")
-          val finalMessages = baseMessages.dropLast(1) + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
-          val chatResponse = api.chat(
-            ApiModel.ChatRequest(
-              messages = finalMessages,
-              temperature = temperature,
-              model = model.modelName,
-            ), model
-          )
-          val response = (chatResponse.choices.first().message?.content.orEmpty())
+          // Base case: no more expansions to process
+          val finalMessages = baseMessages + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
+          val responseRef = AtomicReference<String>()
+          try {
+            val chatResponse = api.chat(
+              ApiModel.ChatRequest(
+                messages = finalMessages,
+                temperature = temperature,
+                model = model.modelName,
+              ), model
+            )
+            responseRef.set(chatResponse.choices.first().message?.content.orEmpty())
+          } catch (e: Exception) {
+            log.error("Error in API call", e)
+            responseRef.set("Error: ${e.message}")
+          }
+          
+          val response = responseRef.get() ?: "No response received"
           task.complete(renderResponse(response, task))
           aggregateResponse.append(response).append("\n\n") // Append response for aggregation
         }
       }
     }
   }
+  
+  /**
+   * Expands alternative expressions in the format {option1|option2|option3}
+   * Each option is processed in parallel
+   */
+  private fun expandAlternatives(
+    api: ChatClient,
+    currentMessage: String,
+    task: SessionTask,
+    baseMessages: List<ApiModel.ChatMessage>,
+    match: MatchResult,
+    recursiveFn: (ChatClient, String, SessionTask, List<ApiModel.ChatMessage>) -> List<(StringBuilder) -> Unit>
+  ): List<(StringBuilder) -> Unit> {
+    val tabs = TabbedDisplay(task, closable = false)
+    return match.groupValues[1].split('|', ',').flatMap { option ->
+      recursiveFn(
+        api,
+        currentMessage.replaceFirst(match.value, option),
+        ui.newTask(false).apply { tabs[option] = placeholder },
+        baseMessages,
+      )
+    }.apply {
+      tabs.update()
+    }
+  }
+  
+  /**
+   * Expands sequence expressions in the format <item1;item2;item3>
+   * Each item is processed sequentially, with the output of each step feeding into the next.
+   * Returns a single function that encapsulates the entire sequential process.
+   */
+  private fun expandSequences(
+    api: ChatClient,
+    currentMessage: String,
+    task: SessionTask,
+    baseMessages: List<ApiModel.ChatMessage>,
+    sequenceMatch: MatchResult
+  ) = listOf { finalAggregate: StringBuilder ->
+      // Return a single function that performs the sequential execution when called
+      val items = sequenceMatch.groupValues[1].split(';')
+      val aggregatedResponse = StringBuilder()
+      val tabs = TabbedDisplay(task, closable = false)
+      val messages = baseMessages.dropLast(1).toMutableList()
+      for (item in items) {
+        val itemTask = ui.newTask(false).apply { tabs[item] = placeholder }
+        // Determine the sub-tasks for the current item
+        val replaceFirst = currentMessage.replaceFirst(sequenceMatch.value, item)
+        val subTaskFunctions = processMsgRecursive(
+          api = api,
+          currentMessage = replaceFirst,
+          task = itemTask,
+          // Pass the accumulated messages from previous steps
+          baseMessages = messages
+        )
+        // Execute the sub-tasks (potentially in parallel if they contain alternatives)
+        // and collect their results into subAggregate
+        val subAggregate = StringBuilder()
+        runAll(subTaskFunctions, subAggregate) // Use runAll to handle potential parallelism within the item
+        // Format and append the result of this step
+        aggregatedResponse.append("[").append(item).append("]\n").append(subAggregate.toString()).append("\n")
+        // Add the response of this step to the cumulative history for the next step
+        messages.add(ApiModel.ChatMessage(ApiModel.Role.user, replaceFirst.toContentList()))
+        messages.add(ApiModel.ChatMessage(ApiModel.Role.assistant, subAggregate.toString().toContentList()))
+      }
+      tabs.update()
+    }
   
   open fun renderResponse(response: String, task: SessionTask) =
     """<div>${MarkdownUtil.renderMarkdown(response)}</div>"""
