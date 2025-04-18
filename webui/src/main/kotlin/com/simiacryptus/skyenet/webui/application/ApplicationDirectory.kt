@@ -95,11 +95,7 @@ abstract class ApplicationDirectory(
         *(webAppContexts())
       )
       log.info("Server started successfully on port $port")
-      try {
-        Desktop.getDesktop().browse(URI("$domainName/"))
-      } catch (e: Throwable) {
-        // Ignore
-      }
+      browse()
       server.join()
     } catch (e: Throwable) {
       e.printStackTrace()
@@ -111,7 +107,15 @@ abstract class ApplicationDirectory(
       exitProcess(0)
     }
   }
-
+  
+  protected open fun browse() {
+    try {
+      Desktop.getDesktop().browse(URI("$domainName/"))
+    } catch (e: Throwable) {
+      // Ignore
+    }
+  }
+  
   open fun webAppContexts() = listOfNotNull(
     newWebAppContext("/logout", logoutServlet),
     newWebAppContext("/proxy", proxyHttpServlet),

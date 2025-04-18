@@ -32,7 +32,7 @@ class LoggingInterceptor(
       vararg loggers: Logger,
       fn: () -> T,
     ): T {
-      // Save the original logger level and appender list
+      // Save the original log level and appender list
       val originalLevels = loggers.map { it.level }
       val originalAppenders = loggers.map { it.iteratorForAppenders().asSequence().toList() }
 
@@ -46,7 +46,7 @@ class LoggingInterceptor(
       try {
         return fn()
       } finally {
-        // Restore the original logger level and appender list
+        // Restore the original log level and appender list
         loggers.zip(originalLevels.zip(originalAppenders)).forEach { (jsEngineLogger, t) ->
           val (originalLevel, originalAppender) = t
           jsEngineLogger.level = originalLevel
