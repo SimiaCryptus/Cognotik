@@ -72,7 +72,7 @@ class SoftwareGraphGenerationTask(
       model = taskSettings.model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
-      describer = planSettings.describer(),
+      describer = describer,
     )
   }
 

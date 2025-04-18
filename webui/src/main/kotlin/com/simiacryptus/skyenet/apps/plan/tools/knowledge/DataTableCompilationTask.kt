@@ -133,7 +133,7 @@ class DataTableCompilationTask(
       model = taskSettings.model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
-      describer = planSettings.describer(),
+      describer = agent.describer,
     ).answer(
       listOf(
         fileContentString
@@ -177,7 +177,7 @@ class DataTableCompilationTask(
       model = taskSettings.model ?: planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
-      describer = planSettings.describer(),
+      describer = agent.describer,
     ).answer(
       listOf(
         fileContentString,
@@ -216,7 +216,7 @@ class DataTableCompilationTask(
         model = taskSettings.model ?: planSettings.defaultModel,
         parsingModel = planSettings.parsingModel,
         temperature = planSettings.temperature,
-        describer = planSettings.describer(),
+        describer = agent.describer,
       ).answer(
         listOf(
           "Source Files:\n" + row.sourceFiles.mapNotNull { fileName ->

@@ -5,6 +5,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.apps.plan.*
@@ -20,11 +21,6 @@ import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.toJson
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
@@ -221,7 +217,7 @@ class CrawlerAgentTask(
                       taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
                       else -> "Analyze the content and provide insights."
                     }
-                    val analysis: ParsedResponse<ParsedPage> = transformContent(content, analysisGoal, api, planSettings)
+                    val analysis: ParsedResponse<ParsedPage> = transformContent(content, analysisGoal, api, planSettings, agent.describer)
                     
                     if (analysis.obj.page_type == PageType.Error) {
                       appendLine("*Error processing this result: ${analysis.obj.page_information?.let { JsonUtil.toJson(it) }}*")
@@ -449,11 +445,17 @@ class CrawlerAgentTask(
     }
   }
   
-  private fun transformContent(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): ParsedResponse<ParsedPage> {
+  private fun transformContent(
+    content: String,
+    analysisGoal: String,
+    api: API,
+    planSettings: PlanSettings,
+    describer: TypeDescriber
+  ): ParsedResponse<ParsedPage> {
     // Check if content is too large and needs to be split
     val maxChunkSize = 50000
     if (content.length <= maxChunkSize) {
-      return processContentChunk(content, analysisGoal, api, planSettings)
+      return pageParsedResponse(planSettings, analysisGoal, content, api, describer)
     }
     // Split content into manageable chunks
     log.info("Content size (${content.length}) exceeds limit, splitting into chunks")
@@ -462,20 +464,21 @@ class CrawlerAgentTask(
     val chunkResults = chunks.mapIndexed { index, chunk ->
       log.info("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
       val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
-      processContentChunk(chunk, chunkGoal, api, planSettings)
+      pageParsedResponse(planSettings, chunkGoal, chunk, api, describer)
     }
     if (chunkResults.size == 1) {
       return chunkResults[0]
     }
     val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n") { it.text }
-    return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, api)
+    return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, api, describer)
   }
   
   private fun pageParsedResponse(
     planSettings: PlanSettings,
     analysisGoal: String,
     content: String,
-    api: API
+    api: API,
+    describer: TypeDescriber
   ): ParsedResponse<ParsedPage> {
     val summaryPrompt = listOf(
       "Below are analyses of different parts of a web page related to this goal: $analysisGoal",
@@ -489,7 +492,7 @@ class CrawlerAgentTask(
       prompt = summaryPrompt,
       resultClass = ParsedPage::class.java,
       model = taskSettings.model!!,
-      describer = planSettings.describer(),
+      describer = describer,
       parsingModel = planSettings.parsingModel,
     ).answer(listOf(summaryPrompt), api)
   }
@@ -528,10 +531,6 @@ class CrawlerAgentTask(
     }
     // If no good break point, just use the max size
     return minOf(maxSize, text.length)
-  }
-  
-  private fun processContentChunk(content: String, analysisGoal: String, api: API, planSettings: PlanSettings): ParsedResponse<ParsedPage> {
-    return pageParsedResponse(planSettings, analysisGoal, content, api)
   }
   
   companion object {

@@ -47,7 +47,7 @@ class SoftwareGraphPlanningTask(
             }
         )
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
-        val response = planSettings.planningActor().answer(
+        val response = planSettings.planningActor(agent.describer).answer(
             (messages + listOf(
                 "Software Graph `${taskConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
                 "Instruction: ${taskConfig.instruction}"

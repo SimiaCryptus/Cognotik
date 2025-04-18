@@ -1,6 +1,7 @@
 package com.simiacryptus.skyenet.apps.plan.cognitive
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.User
@@ -37,7 +38,8 @@ interface CognitiveModeStrategy {
     api2: OpenAIClient,
     planSettings: PlanSettings,
     session: Session,
-    user: User?
+    user: User?,
+    describer: TypeDescriber
   ): CognitiveMode
   
 }

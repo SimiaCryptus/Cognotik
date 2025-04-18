@@ -4,6 +4,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
 import com.simiacryptus.skyenet.apps.plan.*
@@ -37,7 +38,8 @@ open class AutoPlanMode(
   private val api2: OpenAIClient,
   private val maxTaskHistoryChars: Int = planSettings.maxTaskHistoryChars,
   private val maxTasksPerIteration: Int = planSettings.maxTasksPerIteration,
-  private val maxIterations: Int = planSettings.maxIterations
+  private val maxIterations: Int = planSettings.maxIterations,
+  val describer: TypeDescriber
 ) : CognitiveMode {
   private val log = LoggerFactory.getLogger(AutoPlanMode::class.java)
 
@@ -272,7 +274,7 @@ open class AutoPlanMode(
     thinkingStatus: ThinkingStatus,
     task: SessionTask
   ): List<TaskConfigBase>? {
-    val describer = planSettings.describer()
+    val describer = coordinator.describer
     
     val parsedActor = ParsedActor(
       name = "TaskChooser",
@@ -400,7 +402,7 @@ open class AutoPlanMode(
   private fun initThinking(
     planSettings: PlanSettings,
     userMessage: String,
-    api: ChatClient
+    api: ChatClient,
   ): ThinkingStatus {
     return ParsedActor(
       name = "ThinkingStatusInitializer",
@@ -442,14 +444,14 @@ open class AutoPlanMode(
       model = planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
-      describer = planSettings.describer()
+      describer = describer
     ).answer(listOf(userMessage) + contextData(), api).obj
   }
 
   private fun updateThinking(
     api: ChatClient,
     thinkingStatus: ThinkingStatus,
-    completedTasks: List<ExecutionRecord>
+    completedTasks: List<ExecutionRecord>,
   ): ThinkingStatus = ParsedActor(
     name = "UpdateQuestionsActor",
     resultClass = ThinkingStatus::class.java,
@@ -512,7 +514,7 @@ open class AutoPlanMode(
     model = planSettings.defaultModel,
     parsingModel = planSettings.parsingModel,
     temperature = planSettings.temperature,
-    describer = planSettings.describer()
+    describer = describer
   ).answer(listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus)}") +
       contextData() +
       completedTasks.flatMap { record ->
@@ -680,7 +682,8 @@ open class AutoPlanMode(
       api2: OpenAIClient,
       planSettings: PlanSettings,
       session: Session,
-      user: User?
-    ) = AutoPlanMode(ui, api, planSettings, session, user, api2)
+      user: User?,
+      describer: TypeDescriber
+    ) = AutoPlanMode(ui, api, planSettings, session, user, api2, describer = describer)
   }
 }

@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.general
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
@@ -34,7 +35,8 @@ open class UnifiedPlanApp(
   showMenubar: Boolean = true,
   val api: API? = null,
   val api2: OpenAIClient,
-  val cognitiveStrategy: CognitiveModeStrategy
+  val cognitiveStrategy: CognitiveModeStrategy,
+  val describer: TypeDescriber,
 ) : ApplicationServer(
   applicationName = applicationName,
   path = path,
@@ -83,7 +85,8 @@ open class UnifiedPlanApp(
           api2 = api2,
           planSettings = settings,
           session = session,
-          user = user
+          user = user,
+          describer = describer
         ).apply { initialize() }
       }
 
@@ -146,7 +149,8 @@ open class UnifiedPlanApp(
           api2 = api2,
           planSettings = settings,
           session = session,
-          user = user
+          user = user,
+          describer = describer
         ).apply { initialize() }
       }
       // Handle the expanded message with the cognitive mode

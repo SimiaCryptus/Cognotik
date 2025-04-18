@@ -4,6 +4,8 @@ package com.simiacryptus.skyenet.apps.plan
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.skyenet.apps.plan.PlanUtil.filterPlan
@@ -35,7 +37,21 @@ class PlanCoordinator(
   val planSettings: PlanSettings,
   val root: Path
 ) {
-
+  
+  var describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
+    "com.simiacryptus", "aicoder.actions"
+  ) {
+    override val includeMethods: Boolean get() = false
+    
+    override fun getEnumValues(clazz: Class<*>): List<String> {
+      return if (clazz == TaskType::class.java) {
+        planSettings.taskSettings.filter { it.value.enabled }.map { it.key }
+      } else {
+        super.getEnumValues(clazz)
+      }
+    }
+  }
+  
   val pool: ExecutorService by lazy { ApplicationServices.clientManager.getPool(session, user) }
 
   val files: Array<File> by lazy {

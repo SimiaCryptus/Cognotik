@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.plan.cognitive
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.Retryable
 import com.simiacryptus.skyenet.TabbedDisplay
 import com.simiacryptus.skyenet.apps.plan.PlanCoordinator
@@ -28,7 +29,8 @@ open class SingleTaskMode(
   override val planSettings: PlanSettings,
   override val session: Session,
   override val user: User?,
-  private val api2: com.simiacryptus.jopenai.OpenAIClient
+  private val api2: OpenAIClient,
+  val describer: TypeDescriber
 ) : CognitiveMode {
   private val log = LoggerFactory.getLogger(SingleTaskMode::class.java)
 
@@ -68,7 +70,6 @@ open class SingleTaskMode(
 
     try {
       val taskType = TaskType.getAvailableTaskTypes(planSettings).first()
-      val describer = planSettings.describer()
 
       val prompt =
         "Given the following input, choose ONE task to execute. Do not create a full plan, just select the most appropriate task types for the given input.\nAvailable task types:\n" +
@@ -147,7 +148,8 @@ open class SingleTaskMode(
       api2: OpenAIClient,
       planSettings: PlanSettings,
       session: Session,
-      user: User?
-    ) = SingleTaskMode(ui, api, planSettings, session, user, api2)
+      user: User?,
+      describer: TypeDescriber
+    ) = SingleTaskMode(ui, api, planSettings, session, user, api2, describer)
   }
 }

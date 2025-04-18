@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.plan.cognitive
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.apps.plan.PlanCoordinator
 import com.simiacryptus.skyenet.apps.plan.PlanCoordinator.Companion.initialPlan
 import com.simiacryptus.skyenet.apps.plan.PlanSettings
@@ -22,7 +23,8 @@ open class PlanAheadMode(
   override val planSettings: PlanSettings,
   override val session: Session,
   override val user: User?,
-  private val api2: com.simiacryptus.jopenai.OpenAIClient
+  private val api2: OpenAIClient,
+  val describer: TypeDescriber
 ) : CognitiveMode {
   private val log = LoggerFactory.getLogger(PlanAheadMode::class.java)
 
@@ -60,7 +62,8 @@ open class PlanAheadMode(
         ui = coordinator.ui,
         planSettings = coordinator.planSettings,
         api = api,
-        contextFn = { contextData() }
+        contextFn = { contextData() },
+        describer = describer
       )
 
       coordinator.executePlan(plan.plan, task, userMessage = userMessage, api = api, api2 = api2)
@@ -77,7 +80,8 @@ open class PlanAheadMode(
       api2: OpenAIClient,
       planSettings: PlanSettings,
       session: Session,
-      user: User?
-    ) = PlanAheadMode(ui, api, planSettings, session, user, api2)
+      user: User?,
+      describer: TypeDescriber
+    ) = PlanAheadMode(ui, api, planSettings, session, user, api2, describer)
   }
 }

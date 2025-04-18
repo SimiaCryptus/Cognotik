@@ -4,6 +4,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.skyenet.Discussable
@@ -61,9 +62,9 @@ class PlanningTask(
     fun toInput(s: String) = (messages + listOf(s)).filter { it.isNotBlank() }
 
     val subPlan = if (!planSettings.autoFix) {
-      createSubPlanDiscussable(newTask, userMessage, ::toInput, api, agent.ui, planSettings).call().obj
+      createSubPlanDiscussable(newTask, userMessage, ::toInput, api, agent.ui, planSettings, agent.describer).call().obj
     } else {
-      val design = planSettings.planningActor().answer(
+      val design = planSettings.planningActor(agent.describer).answer(
         toInput("Expand ${taskConfig?.task_description ?: ""}"),
         api = api
       )
@@ -86,12 +87,13 @@ class PlanningTask(
     toInput: (String) -> List<String>,
     api: API,
     ui: ApplicationInterface,
-    planSettings: PlanSettings
+    planSettings: PlanSettings,
+    describer: TypeDescriber
   ) = Discussable(
     task = task,
     userMessage = { "Expand ${taskConfig?.task_description ?: ""}" },
     heading = "",
-    initialResponse = { it: String -> planSettings.planningActor().answer(toInput(it), api = api) },
+    initialResponse = { it: String -> planSettings.planningActor(describer).answer(toInput(it), api = api) },
     outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
       PlanUtil.render(
         withPrompt = TaskBreakdownWithPrompt(
@@ -104,7 +106,7 @@ class PlanningTask(
     },
     ui = ui,
     reviseResponse = { usermessages: List<Pair<String, ApiModel.Role>> ->
-      planSettings.planningActor().respond(
+      planSettings.planningActor(describer).respond(
         messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
           .toTypedArray<ApiModel.ChatMessage>(),
         input = toInput("Expand ${taskConfig?.task_description ?: ""}\n${JsonUtil.toJson(this)}"),

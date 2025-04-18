@@ -2,6 +2,7 @@ package com.simiacryptus.skyenet.apps.plan
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.skyenet.Discussable
 import com.simiacryptus.skyenet.apps.general.renderMarkdown
@@ -25,6 +26,7 @@ open class Planner {
     planSettings: PlanSettings,
     api: API,
     contextFn: () -> List<String> = { emptyList() },
+    describer: TypeDescriber
   ): TaskBreakdownWithPrompt {
     val api = (api as ChatClient).getChildClient(task)
     val toInput = inputFn(codeFiles, files, root)
@@ -38,7 +40,8 @@ open class Planner {
           newPlan(
             api,
             planSettings,
-            toInput(userMessage) + contextFn()
+            toInput(userMessage) + contextFn(),
+            describer
           )
         },
         outputFn = {
@@ -62,7 +65,9 @@ open class Planner {
           newPlan(
             api,
             planSettings,
-            userMessages.map { it.first })
+            userMessages.map { it.first },
+            describer
+          )
         },
       ).call().let {
         TaskBreakdownWithPrompt(
@@ -75,7 +80,8 @@ open class Planner {
       newPlan(
         api,
         planSettings,
-        toInput(userMessage) + contextFn()
+        toInput(userMessage) + contextFn(),
+        describer
       ).let {
         TaskBreakdownWithPrompt(
           prompt = userMessage,
@@ -89,9 +95,10 @@ open class Planner {
   open fun newPlan(
     api: API,
     planSettings: PlanSettings,
-    inStrings: List<String>
+    inStrings: List<String>,
+    describer: TypeDescriber
   ): ParsedResponse<Map<String, TaskConfigBase>> {
-    val planningActor = planSettings.planningActor()
+    val planningActor = planSettings.planningActor(describer)
     return planningActor.respond(
       messages = planningActor.chatMessages(inStrings),
       input = inStrings,

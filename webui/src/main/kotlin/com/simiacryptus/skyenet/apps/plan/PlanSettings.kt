@@ -1,6 +1,6 @@
 package com.simiacryptus.skyenet.apps.plan
 
-import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.skyenet.apps.plan.PlanUtil.isWindows
 import com.simiacryptus.skyenet.apps.plan.TaskType.Companion.getAvailableTaskTypes
@@ -77,8 +77,8 @@ open class PlanSettings(
     maxTasksPerIteration = this.maxTasksPerIteration,
     maxIterations = this.maxIterations,
   )
-
-  fun planningActor(): ParsedActor<TaskBreakdownResult> {
+  
+  fun planningActor(describer: TypeDescriber): ParsedActor<TaskBreakdownResult> {
     val planTaskSettings = this.getTaskSettings(TaskType.TaskPlanningTask)
     // Note: the platform automatically reads and provides the necessary JSON software graph.
     // The prompt below should focus purely on breaking down the user instruction without re-framing the JSON data.
@@ -96,7 +96,6 @@ open class PlanSettings(
     } + """
                       (Remember: the JSON file content is already loaded by the platform.)
                       """.trimIndent() + (if (planTaskSettings.enabled) "Do not start your plan with a plan to plan!\n" else "")
-    val describer = describer()
     val parserPrompt =
       ("\nTask Subtype Schema:\n\n" + getAvailableTaskTypes(this).joinToString("\n\n") { taskType ->
           "\n${taskType.name}:\n  ${
@@ -128,21 +127,22 @@ open class PlanSettings(
       parserPrompt = parserPrompt
     )
   }
-
-  open fun describer() = object : AbbrevWhitelistYamlDescriber(
-    "com.simiacryptus", "aicoder.actions"
-  ) {
-    override val includeMethods: Boolean get() = false
-
-    override fun getEnumValues(clazz: Class<*>): List<String> {
-      return if (clazz == TaskType::class.java) {
-        taskSettings.filter { it.value.enabled }.map { it.key }
-      } else {
-        super.getEnumValues(clazz)
+  
+  /*
+    open fun describer() = object : AbbrevWhitelistYamlDescriber(
+      "com.simiacryptus", "aicoder.actions"
+    ) {
+      override val includeMethods: Boolean get() = false
+  
+      override fun getEnumValues(clazz: Class<*>): List<String> {
+        return if (clazz == TaskType::class.java) {
+          taskSettings.filter { it.value.enabled }.map { it.key }
+        } else {
+          super.getEnumValues(clazz)
+        }
       }
     }
-  }
-  
+    */
   fun driver(): RemoteWebDriver {
     return chromeDriver()
   }

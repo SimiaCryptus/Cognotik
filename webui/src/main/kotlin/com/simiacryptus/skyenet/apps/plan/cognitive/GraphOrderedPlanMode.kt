@@ -3,6 +3,7 @@ package com.simiacryptus.skyenet.apps.graph
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.skyenet.apps.plan.*
 import com.simiacryptus.skyenet.apps.plan.cognitive.CognitiveMode
 import com.simiacryptus.skyenet.apps.plan.cognitive.CognitiveModeStrategy
@@ -29,7 +30,8 @@ open class GraphOrderedPlanMode(
   override val session: Session,
   override val user: User?,
   private val api2: OpenAIClient,
-  private val graphFile: String
+  private val graphFile: String,
+  val describer: TypeDescriber,
 ) : CognitiveMode {
   private val log = LoggerFactory.getLogger(GraphOrderedPlanMode::class.java)
 
@@ -272,7 +274,7 @@ open class GraphOrderedPlanMode(
     }
     while (true) {
       try {
-        return planSettings.planningActor().answer(
+        return planSettings.planningActor(describer).answer(
           contextData() +
           listOf(
             "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
@@ -334,9 +336,10 @@ open class GraphOrderedPlanMode(
       api2: OpenAIClient,
       planSettings: PlanSettings,
       session: Session,
-      user: User?
+      user: User?,
+      describer: TypeDescriber
     ): CognitiveMode {
-      return GraphOrderedPlanMode(ui, api, planSettings, session, user, api2, graphFile)
+      return GraphOrderedPlanMode(ui, api, planSettings, session, user, api2, graphFile, describer)
     }
   }
 }
