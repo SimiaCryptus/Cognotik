@@ -2,12 +2,14 @@ package com.simiacryptus.skyenet.core.text
 
 import org.slf4j.LoggerFactory
 
-class FullTextSearcher(private val text: String) {
+class FullTextSearcher(
+  val text: String,
+  val suffixes: SuffixArray = SuffixArray(text),
+) {
   companion object {
     val log = LoggerFactory.getLogger(FullTextSearcher::class.java)
   }
   
-  private val suffixes by lazy { SuffixArray(text).suffixArray }
   
   /**
    * Returns true if [pattern] occurs at least once in the text.
@@ -27,7 +29,7 @@ class FullTextSearcher(private val text: String) {
     // extract matching suffix‐start indices and return them in ascending numeric order
     // slice out the matching range from the lex‐sorted suffix array,
     // then re‐sort numerically to satisfy "ascending order" in the API docs/tests
-    val result = suffixes.slice(first..last).sorted()
+    val result = suffixes.suffixArray.slice(first..last).sorted()
     log.debug("Found {} occurrences in {}ms", result.size, System.currentTimeMillis() - startTime)
     if (log.isTraceEnabled && result.isNotEmpty()) {
       log.trace("Occurrences at positions: {}", result)
@@ -54,7 +56,7 @@ class FullTextSearcher(private val text: String) {
     log.trace("Finding first occurrence of pattern with length {}", pattern.length)
     val startTime = System.currentTimeMillis()
     var low = 0
-    var high = suffixes.lastIndex
+    var high = suffixes.suffixArray.lastIndex
     var result = -1
     var iterations = 0
     while (low <= high) {
@@ -79,7 +81,7 @@ class FullTextSearcher(private val text: String) {
     log.trace("Finding last occurrence of pattern with length {}", pattern.length)
     val startTime = System.currentTimeMillis()
     var low = 0
-    var high = suffixes.lastIndex
+    var high = suffixes.suffixArray.lastIndex
     var result = -1
     var iterations = 0
     while (low <= high) {
@@ -106,9 +108,9 @@ class FullTextSearcher(private val text: String) {
    */
   private fun compareSuffixAt(idx: Int, pattern: String): Int {
     if (log.isTraceEnabled) {
-      log.trace("Comparing suffix at index {} (position {}) with pattern", idx, suffixes[idx])
+      log.trace("Comparing suffix at index {} (position {}) with pattern", idx, suffixes.suffixArray[idx])
     }
-    val start = suffixes[idx]
+    val start = suffixes.suffixArray[idx]
     val textLen = text.length
     val minLen = minOf(textLen - start, pattern.length)
     for (i in 0 until minLen) {

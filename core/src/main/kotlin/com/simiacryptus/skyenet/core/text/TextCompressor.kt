@@ -27,10 +27,13 @@ class TextCompressor(private val minLength: Int = 20) {
       return text
     }
     
-    val searcher = FullTextSearcher(text)
-    log.debug("FullTextSearcher initialized in {}ms", System.currentTimeMillis() - startTime)
+    // Build & reuse one suffix-array for both our LCP scan and the FullTextSearcher
+    val suffixArray = SuffixArray(text)
+    log.debug("Suffix array created in {}ms", System.currentTimeMillis() - startTime)
+    val searcher = FullTextSearcher(text, suffixArray)
+    log.debug("FullTextSearcher initialized (reusing suffix array) in {}ms", System.currentTimeMillis() - startTime)
     val candidateStartTime = System.currentTimeMillis()
-    val candidates = findRepeatingSubsequences(text, searcher, minOccurrences)
+    val candidates = findRepeatingSubsequences(text, searcher, minOccurrences, suffixArray)
     log.debug(
       "Found {} candidate subsequences in {}ms",
       candidates.size, System.currentTimeMillis() - candidateStartTime
@@ -71,60 +74,41 @@ class TextCompressor(private val minLength: Int = 20) {
   private fun findRepeatingSubsequences(
     text: String,
     searcher: FullTextSearcher,
-    minOccurrences: Int
+    minOccurrences: Int,
+    suffixArray: SuffixArray
   ): List<Pair<String, List<Int>>> {
     log.debug("Finding repeating subsequences with minLength={}, minOccurrences={}", minLength, minOccurrences)
     val startTime = System.currentTimeMillis()
-    val suffixArray = SuffixArray(text)
     val suffixes = suffixArray.getArray()
-    log.debug(
-      "Suffix array created with {} entries in {}ms",
-      suffixes.size, System.currentTimeMillis() - startTime
-    )
+    // pull in the precomputed LCP
+    val lcp = suffixArray.lcpArray
     val candidates = mutableListOf<Pair<String, List<Int>>>()
     
     // Use the suffix array to identify common prefixes
     var comparisonCount = 0
     var candidatesFound = 0
+    
+    
     for (i in 0 until suffixes.size - 1) {
-      var j = i + 1
-      while (j < suffixes.size) {
-        val pos1 = suffixes[i]
-        val pos2 = suffixes[j]
-        comparisonCount++
+      val pos1 = suffixes[i]
+      // use LCP for adjacent suffixes in the sorted array
+      comparisonCount++
+      val commonLength = lcp[i]
+      
+      // If common prefix is long enough, check if it occurs frequently
+      if (commonLength >= minLength) {
+        val pattern = text.substring(pos1, pos1 + commonLength)
+        val occurrences = searcher.findAll(pattern)
         
-        // Find the length of the common prefix
-        var commonLength = 0
-        while (pos1 + commonLength < text.length &&
-          pos2 + commonLength < text.length &&
-          text[pos1 + commonLength] == text[pos2 + commonLength]
-        ) {
-          commonLength++
+        if (occurrences.size >= minOccurrences) {
+          candidatesFound++
+          log.trace(
+            "Found candidate: '{}' (length={}, occurrences={})",
+            pattern.take(20) + (if (pattern.length > 20) "..." else ""),
+            pattern.length, occurrences.size
+          )
+          candidates.add(pattern to occurrences)
         }
-        
-        // If common prefix is long enough, check if it occurs frequently
-        if (commonLength >= minLength) {
-          val pattern = text.substring(pos1, pos1 + commonLength)
-          val occurrences = searcher.findAll(pattern)
-          
-          if (occurrences.size >= minOccurrences) {
-            candidatesFound++
-            log.trace(
-              "Found candidate: '{}' (length={}, occurrences={})",
-              pattern.take(20) + (if (pattern.length > 20) "..." else ""),
-              pattern.length, occurrences.size
-            )
-            candidates.add(pattern to occurrences)
-          }
-        }
-        
-        j++
-      }
-      if (i % 1000 == 0 && i > 0) {
-        log.trace(
-          "Processed {} of {} suffixes, found {} candidates so far",
-          i, suffixes.size, candidates.size
-        )
       }
     }
     log.debug(

@@ -15,6 +15,9 @@ class SuffixArray(private val text: String) {
   // Underlying array of suffix start positions
   val suffixArray: IntArray = IntArray(text.length) { it }
   
+  /** LCP[i] = longest common prefix of suffixes at suffixArray[i] and suffixArray[i+1] */
+  val lcpArray: IntArray by lazy { buildLCP() }
+  
   init {
     log.debug("Initializing SuffixArray with text of length {}", text.length)
     
@@ -44,6 +47,33 @@ class SuffixArray(private val text: String) {
         log.trace("  {}: {} (starting at index {})", i, suffixPreview, suffixStart)
       }
     }
+  }
+  
+  /**
+   * Build the LCP array in O(n) using Kasai’s algorithm.
+   */
+  private fun buildLCP(): IntArray {
+    val n = text.length
+    val lcp = IntArray(maxOf(0, n - 1))
+    val rank = IntArray(n)
+    // rank[sa[i]] = i
+    for (i in 0 until n) rank[suffixArray[i]] = i
+    var h = 0
+    for (i in 0 until n) {
+      val r = rank[i]
+      if (r == n - 1) {
+        h = 0
+        continue
+      }
+      val j = suffixArray[r + 1]
+      // Compare the two suffixes starting at i and j
+      while (i + h < n && j + h < n && text[i + h] == text[j + h]) {
+        h++
+      }
+      lcp[r] = h
+      if (h > 0) h--
+    }
+    return lcp
   }
   
   /**
