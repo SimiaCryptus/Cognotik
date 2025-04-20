@@ -30,10 +30,10 @@ class UserSettingsServlet : HttpServlet() {
             }
           }.toMap(),
           apiBase = APIProvider.values().map {
-            it to when (it.base) {
-              null -> settings.apiBase[it]!!
-              "" -> settings.apiBase[it]!!
-              else -> it.base
+            it to when (settings.apiBase[it]) {
+              null -> it.base
+              "" -> it.base
+              else -> settings.apiBase[it]
             }!!
           }.toMap(),
         )

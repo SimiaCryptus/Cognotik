@@ -54,9 +54,7 @@ abstract class ApplicationDirectory(
   open val logoutServlet: HttpServlet = LogoutServlet()
   open val usageServlet: HttpServlet = UsageServlet()
   open val proxyHttpServlet: HttpServlet = ProxyHttpServlet()
-  open val apiKeyServlet: HttpServlet = ApiKeyServlet()
   open val welcomeServlet: HttpServlet = WelcomeServlet(this)
-  open val chessServlet: HttpServlet = WelcomeServlet(this)
 
   open fun authenticatedWebsite(): OAuthBase? = OAuthGoogle(
     redirectUri = "$domainName/oauth2callback",
@@ -119,7 +117,6 @@ abstract class ApplicationDirectory(
   open fun webAppContexts() = listOfNotNull(
     newWebAppContext("/logout", logoutServlet),
     newWebAppContext("/proxy", proxyHttpServlet),
-    //                    toolServlet?.let { newWebAppContext("/tools", it) },
     newWebAppContext("/userInfo", userInfoServlet).let {
       authenticatedWebsite()?.configure(it, true) ?: it
     },
@@ -129,16 +126,7 @@ abstract class ApplicationDirectory(
     newWebAppContext("/usage", usageServlet).let {
       authenticatedWebsite()?.configure(it, true) ?: it
     },
-    newWebAppContext("/apiKeys", apiKeyServlet).let {
-      authenticatedWebsite()?.configure(it, true) ?: it
-    },
     newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).let {
-      authenticatedWebsite()?.configure(it, false) ?: it
-    },
-    newWebAppContext("/api", welcomeServlet).let {
-      authenticatedWebsite()?.configure(it, false) ?: it
-    },
-    newWebAppContext("/chess", ResourceCollection(*allResources("chess").map(::newResource).toTypedArray()), "chess", chessServlet).let {
       authenticatedWebsite()?.configure(it, false) ?: it
     },
   ).toTypedArray() + childWebApps.map {
@@ -210,11 +198,9 @@ abstract class ApplicationDirectory(
     context.baseResource = baseResource
     log.debug("New WebAppContext created for path: $path")
     context.contextPath = path
-//        context.resourceBase = resourceBase
     context.welcomeFiles = arrayOf("index.html")
     if (indexServlet != null) {
       context.addServlet(ServletHolder("$path/index", indexServlet), "/")
-//            context.addServlet(ServletHolder("$path/index", indexServlet), "/*")
       context.addServlet(ServletHolder("$path/index", indexServlet), "/index.html")
     }
     return context
