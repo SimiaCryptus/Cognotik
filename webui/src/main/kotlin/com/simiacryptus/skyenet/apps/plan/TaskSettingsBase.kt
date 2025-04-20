@@ -11,7 +11,7 @@ import com.simiacryptus.jopenai.models.ChatModel
 @JsonTypeIdResolver(TaskSettingsBase.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")
 open class TaskSettingsBase(
-  val task_type: String,
+  val task_type: String? = null,
   var enabled: Boolean = false,
   var model: ChatModel? = null
 ) {

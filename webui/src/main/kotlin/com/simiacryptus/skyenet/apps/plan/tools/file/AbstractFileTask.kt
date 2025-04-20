@@ -16,7 +16,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
 ) : AbstractTask<T>(planSettings, planTask) {
 
   open class FileTaskConfigBase(
-    task_type: String,
+    task_type: String? = null,
     task_description: String? = null,
     @Description("REQUIRED: The files to be generated as output for the task (relative paths)") val files: List<String>? = null,
     @Description("Additional files used to inform the change, including relevant files created by previous tasks") val related_files: List<String>? = null,

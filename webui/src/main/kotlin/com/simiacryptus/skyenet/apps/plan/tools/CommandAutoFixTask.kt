@@ -22,7 +22,7 @@ class CommandAutoFixTask(
   planTask: CommandAutoFixTaskConfigData?
 ) : AbstractTask<CommandAutoFixTask.CommandAutoFixTaskConfigData>(planSettings, planTask) {
   class CommandAutoFixTaskSettings(
-    task_type: String,
+    task_type: String? = null,
     enabled: Boolean = false,
     model: ChatModel? = null,
     @Description("List of command executables that can be used for auto-fixing")
