@@ -48,7 +48,7 @@ abstract class ApplicationDirectory(
   private fun domainName(isServer: Boolean) =
     if (isServer) "https://$publicName" else "http://$localName:$port"
 
-  open val welcomeResources = ResourceCollection(allResources("welcome").map(::newResource))
+  open val welcomeResources = ResourceCollection(*allResources("welcome").map(::newResource).toTypedArray())
   open val userInfoServlet: HttpServlet = UserInfoServlet()
   open val userSettingsServlet: HttpServlet = UserSettingsServlet()
   open val logoutServlet: HttpServlet = LogoutServlet()
@@ -138,7 +138,7 @@ abstract class ApplicationDirectory(
     newWebAppContext("/api", welcomeServlet).let {
       authenticatedWebsite()?.configure(it, false) ?: it
     },
-    newWebAppContext("/chess", ResourceCollection(allResources("chess").map(::newResource)), "chess", chessServlet).let {
+    newWebAppContext("/chess", ResourceCollection(*allResources("chess").map(::newResource).toTypedArray()), "chess", chessServlet).let {
       authenticatedWebsite()?.configure(it, false) ?: it
     },
   ).toTypedArray() + childWebApps.map {

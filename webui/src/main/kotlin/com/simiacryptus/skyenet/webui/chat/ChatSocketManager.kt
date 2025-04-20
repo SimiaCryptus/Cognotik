@@ -13,7 +13,6 @@ import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.util.FixedConcurrencyProcessor
 import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.SocketManagerBase
 import com.simiacryptus.skyenet.webui.session.getChildClient
@@ -28,9 +27,9 @@ open class ChatSocketManager(
   val userInterfacePrompt: String,
   open val initialAssistantPrompt: String = "",
   open val systemPrompt: String,
-  val api: ChatClient,
+  var api: ChatClient,
   var temperature: Double = 0.3,
-  applicationClass: Class<out ApplicationServer>,
+  applicationClass: Class<out ChatServer>,
   val storage: StorageInterface?,
   open val fastTopicParsing: Boolean = true,
 ) : SocketManagerBase(session, storage, owner = null, applicationClass = applicationClass) {
@@ -70,18 +69,22 @@ open class ChatSocketManager(
       Retryable(ui, task) { it: StringBuilder ->
         val task = ui.newTask(false)
         pool.submit {
-          task.add("")
-          val responseString = respond(api, task, expandedUserMessage)
-          
-          synchronized(messagesLock) {
-            // Remove last assistant message if it exists (for retries)
-            if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
-              messages.removeAt(messages.size - 1)
+          try {
+            task.add("")
+            val responseString = respond(api, task, expandedUserMessage)
+            
+            synchronized(messagesLock) {
+              // Remove last assistant message if it exists (for retries)
+              if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
+                messages.removeAt(messages.size - 1)
+              }
+              messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
             }
-            messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
+            
+            task.complete()
+          } catch (e: Throwable) {
+            log.warn("Exception occurred while processing chat message", e)
           }
-          
-          task.complete()
         }
         task.placeholder
       }
@@ -92,18 +95,19 @@ open class ChatSocketManager(
   }
   
   // Pattern for parallel expansion: {option1|option2}
-  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:[|,][^|\n,}{]+)+)}""")
+  private val expansionExpressionPattern = Regex("""\{([^|\n,/\\;}{]+(?:\|[^|\n,/\\;}{]+)+)}""")
   
   // Pattern for ordered sequence expansion: <item1;item2;item3>
-  private val sequenceExpansionPattern = Regex("""<([^;><\n]+(?:;[^;><\n]+)+)>""")
+  private val sequenceExpansionPattern = Regex("""<([^;><\n,/\\]+(?:;[^;><\n,/\\]+)+)>""")
   
-  // Pattern for range expansion: [start..end:step]
-  private val rangeExpansionPattern = Regex("""\[(\d+)\.{2,3}(\d+)(?::(\d+))?]""")
+  // Pattern for range expansion: [[start..end:step]]
+  private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""")
   
   
   protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
     val currentChatMessages = chatMessages()
-    runAll(processMsgRecursive(api, userMessage, task, currentChatMessages), this)
+    val function1List = processMsgRecursive(api, userMessage, task, currentChatMessages)
+    runAll(function1List, this)
   }.let { response ->
     try {
       val answer = extractTopics(api, response)
@@ -358,3 +362,4 @@ open class ChatSocketManager(
     private val log = org.slf4j.LoggerFactory.getLogger(ChatSocketManager::class.java)
   }
 }
+

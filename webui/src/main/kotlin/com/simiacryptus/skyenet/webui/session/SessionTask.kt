@@ -237,6 +237,6 @@ fun ChatClient.getChildClient(task: SessionTask): ChatClient = this.getChildClie
       buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
     }
     logStreams += buffered
-    task.verbose("API log: <pre>$this</pre>")
+    task.verbose("API log: <pre>${absolutePath}</pre>")
   }
 }

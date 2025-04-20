@@ -16,7 +16,7 @@ import org.eclipse.jetty.websocket.server.JettyWebSocketServlet
 import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory
 import java.time.Duration
 
-abstract class ChatServer(private val resourceBase: String) {
+abstract class ChatServer(private val resourceBase: String = "application") {
 
   abstract val applicationName: String
   open val dataStorage: StorageInterface? = null
