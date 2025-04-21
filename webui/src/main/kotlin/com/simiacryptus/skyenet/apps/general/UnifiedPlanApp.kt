@@ -55,6 +55,7 @@ open class UnifiedPlanApp(
   override fun <T : Any> initSettings(session: Session): T = planSettings as T
 
   override fun newSession(user: User?, session: Session): SocketManager {
+    planSettings.workingDir?.toFile()?.apply {}
     val socketManager = super.newSession(user, session)
     return socketManager
   }
@@ -186,3 +187,5 @@ open class UnifiedPlanApp(
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
   }
 }
+
+private fun String.toFile() = File(this)

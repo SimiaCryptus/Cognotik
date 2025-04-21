@@ -24,7 +24,38 @@ open class ChatSocketManager(
   session: Session,
   var model: ChatModel,
   var parsingModel: ChatModel,
-  val userInterfacePrompt: String,
+  val userInterfacePrompt: String = """
+    ## Special Expansion Syntaxes
+
+    You can use the following syntaxes in your messages to automatically expand your queries:
+
+    * **Parallel Expansion:**
+      Use `{option1|option2|option3}` to run the same prompt with each option in parallel.
+      Example:
+      `Tell me a joke about {cats|dogs|birds}`
+      This will generate a joke about cats, a joke about dogs, and a joke about birds.
+
+    * **Sequence Expansion:**
+      Use `<step1;step2;step3>` to run a sequence of prompts, where the output of each feeds into the next.
+      Example:
+      `Summarize this text, then <translate to French;translate to German>`
+      This will summarize, then translate the summary to French, then to German.
+
+    * **Range Expansion:**
+      Use `[[start..end:step]]` to iterate over a range of numbers.
+      Example:
+      `Count from [[1..5]]`
+      This will run the prompt for 1, 2, 3, 4, and 5.
+
+    * **Topic Reference Expansion:**
+      Use `{topicType}` to refer to previously identified topics.
+      Example:
+      `Tell me about {Person}`
+      If "Person" topics have been identified, this will expand to include all of them.
+
+    ---
+    You can combine these syntaxes for more complex expansions.
+  """.trimIndent(),
   open val initialAssistantPrompt: String = "",
   open val systemPrompt: String,
   var api: ChatClient,
@@ -39,7 +70,7 @@ open class ChatSocketManager(
   
   init {
     if (userInterfacePrompt.isNotBlank()) {
-      send("""aaa,<div class="initial-prompt">${MarkdownUtil.renderMarkdown(userInterfacePrompt)}</div>""")
+      newTask(false, true).complete(userInterfacePrompt.renderMarkdown)
     }
   }
   
