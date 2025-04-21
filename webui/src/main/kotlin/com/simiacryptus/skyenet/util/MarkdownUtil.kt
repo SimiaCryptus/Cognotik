@@ -55,15 +55,15 @@ object MarkdownUtil {
     matches.forEach { match ->
       val mermaidCode = match.groups[1]!!.value
       // HTML Decode mermaidCode
-      val fixedMermaidCode = fixupMermaidCode(mermaidCode)
+      val fixedMermaidCode = fixupMermaidCode(mermaidCode.htmlDecode())
       var mermaidDiagramHTML = """<pre class="mermaid">$fixedMermaidCode</pre>"""
       try {
         if (true) {
           val svg = renderMermaidToSVG(fixedMermaidCode)
           if (null != ui) {
-            val newTask = ui.newTask(false)
-            newTask.complete(svg)
-            mermaidDiagramHTML = newTask.placeholder
+            val graphTask = ui.newTask(false)
+            mermaidDiagramHTML = graphTask.placeholder
+            graphTask.complete(svg)
           } else {
             mermaidDiagramHTML = svg
           }
@@ -86,7 +86,7 @@ object MarkdownUtil {
     return htmlContent
   }
 
-  var MMDC_CMD: List<String> = listOf("mmdc")
+  var MMDC_CMD: List<String> = listOf(System.getProperty("mmdc", "mmdc"))
   private fun renderMermaidToSVG(mermaidCode: String): String {
     // mmdc -i input.mmd -o output.svg
     val tempInputFile = Files.createTempFile("mermaid", ".mmd").toFile()
@@ -115,7 +115,7 @@ object MarkdownUtil {
     if (errorOutput.isNotEmpty()) {
       log.error("Mermaid CLI Error: $errorOutput")
     }
-    if (svgContent.isNullOrBlank()) {
+    if (svgContent.isBlank()) {
       throw RuntimeException("Mermaid CLI failed to generate SVG")
     }
     return svgContent
@@ -129,8 +129,6 @@ object MarkdownUtil {
   fun fixupMermaidCode(code: String): String {
     val stringBuilder = StringBuilder()
     var index = 0
-
-
     var currentState = State.DEFAULT
     var labelStart = -1
     val keywords = listOf("graph", "subgraph", "end", "classDef", "class", "click", "style")
@@ -211,4 +209,8 @@ object MarkdownUtil {
   }
 
   private val log = org.slf4j.LoggerFactory.getLogger(MarkdownUtil::class.java)
+}
+
+private fun String.htmlDecode(): String {
+  return StringEscapeUtils.unescapeHtml4(this)
 }
