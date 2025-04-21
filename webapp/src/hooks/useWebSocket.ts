@@ -85,10 +85,30 @@ export const useWebSocket = (sessionId: string) => {
             }
         };
 
-        const handleError = (err: Error) => {
+
+            
+            
+        const handleError = (err: any) => {
             if (isCleanedUp) return;
 
-            setError(err);
+            // Always store error as serializable object
+            if (err instanceof Error) {
+                setError({
+                    message: err.message,
+                    name: err.name,
+                    stack: err.stack
+                });
+            } else if (typeof err === 'string') {
+                setError({ cause: undefined, name: '', stack: '', message: err });
+            } else if (err && typeof err === 'object' && 'message' in err) {
+                setError({
+                    message: err.message,
+                    name: err.name,
+                    stack: err.stack
+                });
+            } else {
+                setError({ cause: undefined, name: '', stack: '', message: String(err) });
+            }
             if (connectionStatus.current.attempts >= 10) {
                 console.error(
                     `[WebSocket] Maximum reconnection attempts reached (${connectionStatus.current.attempts})`
@@ -97,7 +117,7 @@ export const useWebSocket = (sessionId: string) => {
             }
             console.error(
                 `[WebSocket] Connection error (attempt ${connectionStatus.current.attempts}):`,
-                err.message
+                err && err.message ? err.message : err
             );
             
             // Calculate delay using exponential backoff and retry

@@ -261,17 +261,21 @@ export function resetTabState() {
     isMutating = false;
 }
 
+
 export const updateTabs = debounce(() => {
     if (isMutating) {
         return;
     }
-
+    // Remove any .tab-content[data-cached] elements before updating tabs
+    document.querySelectorAll('.tab-content[data-cached]').forEach(tab => {
+        tab.remove();
+    });
 
     try {
+        isMutating = true;
         const currentStates = getAllTabStates();
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));
-        isMutating = true;
         const visibleTabs = new Set<string>();
         tabsContainers.forEach(container => {
             if (processed.has(container.id)) return;
@@ -290,7 +294,7 @@ export const updateTabs = debounce(() => {
                     const firstTabId = firstButton.getAttribute('data-for-tab');
                     if (firstTabId) setActiveTab(firstButton, container);
                 } else {
-                    console.warn(`No active tab found for container ${container.id}`);
+                    // console.warn(`No active tab found for container ${container.id}`);
                 }
             }
         });
@@ -319,8 +323,7 @@ export const updateTabs = debounce(() => {
         isMutating = false;
     }
 }, 250);
-                // Wrap updateTabs in requestAnimationFrame to batch DOM updates
-                requestAnimationFrame(() => updateTabs());
+// Do NOT call updateTabs() immediately here! It causes infinite loops and breaks tab system.
 
 
 function setupTabContainer(container: Element) {

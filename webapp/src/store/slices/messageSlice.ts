@@ -1,10 +1,8 @@
-import {createSlice, PayloadAction} from '@reduxjs/toolkit';
-import {Message, MessageState, MessageUpdate} from '../../types/messages';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Message, MessageState, MessageUpdate } from '../../types/messages';
 import DOMPurify from 'dompurify';
-import {debounce, getAllTabStates, restoreTabStates, updateTabs} from '../../utils/tabHandling';
-import Prism from "prismjs";
-import mermaid from "mermaid";
-
+import { debounce, getAllTabStates, restoreTabStates, updateTabs } from '../../utils/tabHandling';
+import Prism from 'prismjs';
 
 const initialState: MessageState = {
     messages: [],
@@ -25,16 +23,10 @@ const sanitizeHtmlContent = (content: string): string => {
     });
 };
 
-const debouncedUpdate = debounce(() => {
+export const debouncedUpdate = debounce(() => {
     restoreTabStates(getAllTabStates());
     updateTabs();
     Prism.highlightAll();
-    try {
-        mermaid.init(undefined, document.querySelectorAll('.mermaid:not(.mermaid-processed)'));
-        document.querySelectorAll('.mermaid').forEach(el => el.classList.add('mermaid-processed'));
-    } catch (error) {
-        console.error('Failed to render mermaid diagram:', error);
-    }
 }, 100);
 
 const messageSlice = createSlice({

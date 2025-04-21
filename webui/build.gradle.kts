@@ -42,7 +42,17 @@ dependencies {
   compileOnly("org.eclipse.jdt:org.eclipse.jdt.core:3.36.0")
   compileOnly("org.graalvm.js:js:$graal_version")
   compileOnly("org.graalvm.js:js-language:$graal_version")
-
+  
+  testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")
+  testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version = "0.3.8")
+  testImplementation(kotlin("stdlib"))
+  testImplementation(kotlin("scripting-jsr223"))
+  testImplementation(kotlin("scripting-jvm"))
+  testImplementation(kotlin("scripting-jvm-host"))
+  testImplementation(kotlin("script-runtime"))
+  testImplementation(kotlin("scripting-compiler-embeddable"))
+  testImplementation(kotlin("compiler-embeddable"))
+  
   implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13") {
     exclude(group = "org.slf4j")
   }

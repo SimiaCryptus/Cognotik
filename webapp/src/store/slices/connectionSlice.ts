@@ -1,9 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+// Instead of storing the Error object directly, store a serializable error shape
+interface SerializableError {
+  message: string;
+  name?: string;
+  stack?: string;
+}
+
 interface ConnectionState {
   isConnected: boolean;
   isReconnecting: boolean;
-  error: Error | null;
+  error: SerializableError | null;
   readyState: number | null;
 }
 
@@ -28,8 +35,25 @@ const connectionSlice = createSlice({
     setReconnectingStatus(state, action: PayloadAction<boolean>) {
       state.isReconnecting = action.payload;
     },
-    setConnectionError(state, action: PayloadAction<Error | null>) {
-      state.error = action.payload;
+    // Accept either Error, string, or null, but store as serializable object
+    setConnectionError(
+      state,
+      action: PayloadAction<Error | SerializableError | string | null>
+    ) {
+      if (!action.payload) {
+        state.error = null;
+      } else if (typeof action.payload === 'string') {
+        state.error = { message: action.payload };
+      } else if (action.payload instanceof Error) {
+        state.error = {
+          message: action.payload.message,
+          name: action.payload.name,
+          stack: action.payload.stack
+        };
+      } else {
+        // Already serializable error shape
+        state.error = action.payload;
+      }
     },
     setReadyState(state, action: PayloadAction<number | null>) {
       state.readyState = action.payload;

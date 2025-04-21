@@ -53,9 +53,9 @@ object MarkdownUtil {
     val matches = mermaidRegex.findAll(html)
     var htmlContent = html
     matches.forEach { match ->
-      val mermaidCode = match.groups[1]!!.value
-      // HTML Decode mermaidCode
-      val fixedMermaidCode = fixupMermaidCode(mermaidCode.htmlDecode())
+      var mermaidCode = match.groups[1]!!.value
+      //mermaidCode = mermaidCode.htmlDecode()
+      val fixedMermaidCode = fixupMermaidCode(mermaidCode)
       var mermaidDiagramHTML = """<pre class="mermaid">$fixedMermaidCode</pre>"""
       try {
         if (true) {
