@@ -1,0 +1,11 @@
+build
+configuration-cache/
+buildOutputCleanup/
+.gradle/
+*.log*
+reports/
+openai.key
+*.key
+openai.key.json
+.kotlin
+.idea
