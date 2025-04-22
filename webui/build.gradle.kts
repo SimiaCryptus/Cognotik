@@ -25,9 +25,13 @@ repositories {
   }
 }
 
+java {
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
+}
+
 kotlin {
-  jvmToolchain(11)
-//    jvmToolchain(17)
+  jvmToolchain(21)
 }
 
 val kotlin_version = "2.0.20"
@@ -52,8 +56,8 @@ dependencies {
   testImplementation(kotlin("script-runtime"))
   testImplementation(kotlin("scripting-compiler-embeddable"))
   testImplementation(kotlin("compiler-embeddable"))
-  
-  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13") {
+
+  implementation(project(":jo-penai")) {
     exclude(group = "org.slf4j")
   }
 

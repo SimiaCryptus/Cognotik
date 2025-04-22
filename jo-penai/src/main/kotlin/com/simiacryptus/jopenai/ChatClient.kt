@@ -43,7 +43,8 @@ open class ChatClient(
     workPool: ExecutorService = HttpClientManager.workPool,
     var reasoningEffort: ReasoningEffort = ReasoningEffort.Low,
     var textCompressor: TextCompressor? = TextCompressor(
-        minLength = 128, minOccurrences = 3
+        minLength = 256,
+        minOccurrences = 5
     ),
 ) : HttpClientManager(
     logLevel = logLevel, logStreams = logStreams, scheduledPool = scheduledPool, workPool = workPool

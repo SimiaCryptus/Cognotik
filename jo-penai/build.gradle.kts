@@ -9,14 +9,18 @@ version = properties("libraryVersion")
 plugins {
     java
     `java-library`
-    `maven-publish`
     id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    `maven-publish`
     id("signing")
-    id("jacoco")
 }
 
 repositories {
-    mavenCentral()
+    mavenCentral {
+        metadataSources {
+            mavenPom()
+            artifact()
+        }
+    }
 }
 
 tasks {
@@ -32,10 +36,6 @@ tasks {
         }
     }
 
-    wrapper {
-        gradleVersion = properties("gradleVersion")
-    }
-
     test {
         useJUnitPlatform()
         systemProperty("surefire.useManifestOnlyJar", "false")
@@ -43,24 +43,18 @@ tasks {
             events(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
         }
-        finalizedBy(jacocoTestReport)
-    }
-
-    jacocoTestReport {
-        reports {
-            xml.required.set(true)
-            html.required.set(true)
-        }
     }
 }
 
 java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
     withJavadocJar()
     withSourcesJar()
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(21)
 }
 
 val logback_version = "1.5.13"

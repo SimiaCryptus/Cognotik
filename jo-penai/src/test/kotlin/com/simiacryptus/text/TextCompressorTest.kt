@@ -71,7 +71,7 @@ class TextCompressorTest {
     log.debug("Input content: '{}'", text)
     
     // With minOccurrences = 3, only the second phrase should be abbreviated
-    val compressedWithMin3 = compressor.compress(text, minOccurrences = 3)
+    val compressedWithMin3 = compressor.compress(text)
     log.debug("Compressed text with minOccurrences=3: '{}'", compressedWithMin3)
     
     // The first repeated phrase should remain intact (only 2 occurrences)

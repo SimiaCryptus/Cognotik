@@ -22,8 +22,13 @@ repositories {
   }
 }
 
+java {
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
+}
+
 kotlin {
-  jvmToolchain(11)
+  jvmToolchain(21)
 }
 
 val kotlin_version = "2.0.20"

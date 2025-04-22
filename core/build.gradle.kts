@@ -8,7 +8,7 @@ version = properties("libraryVersion")
 plugins {
   java
   `java-library`
-  id("org.jetbrains.kotlin.jvm") version "2.0.20"
+  kotlin("jvm") version "2.0.20"
   `maven-publish`
   id("signing")
 }
@@ -22,8 +22,13 @@ repositories {
   }
 }
 
+java {
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
+}
+
 kotlin {
-  jvmToolchain(11)
+  jvmToolchain(21)
 }
 
 val junit_version = "5.10.1"
@@ -33,8 +38,8 @@ val hsqldb_version = "2.7.2"
 
 dependencies {
 
-  implementation(group = "com.simiacryptus", name = "jo-penai", version = "1.1.13")
   implementation(group = "org.hsqldb", name = "hsqldb", version = hsqldb_version)
+  implementation(project(":jo-penai"))
   implementation(project(":antlr"))
   implementation("org.antlr:antlr4-runtime:4.13.2")
 //  antlr("org.antlr:antlr4:4.13.2")

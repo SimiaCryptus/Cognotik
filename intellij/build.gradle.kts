@@ -1,6 +1,5 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 fun properties(key: String) = providers.gradleProperty(key).getOrElse("")
@@ -14,7 +13,6 @@ plugins {
   id("org.jetbrains.dokka") version "2.0.0-Beta"
 }
 
-
 group = "com.simiacryptus"
 version = properties("pluginVersion")
 
@@ -27,7 +25,7 @@ repositories {
 
 val jetty_version = "11.0.24"
 val slf4j_version = "2.0.16"
-val skyenet_version = "1.2.22"
+val skyenet_version = "1.2.23"
 val remoterobot_version = "0.11.23"
 val jackson_version = "2.17.2"
 val aws_sdk_version = "2.25.60"
@@ -49,8 +47,8 @@ dependencies {
   implementation("com.vladsch.flexmark:flexmark:0.64.8")
   implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
   implementation("org.apache.httpcomponents.client5:httpclient5:$httpclient5_version")
-  
-  implementation("com.simiacryptus:jo-penai:1.1.13") {
+
+  implementation("com.simiacryptus.skyenet:jo-penai:$skyenet_version") {
     exclude(group = "org.jetbrains.kotlin")
   }
   implementation("com.simiacryptus.skyenet:core:$skyenet_version") {
@@ -89,21 +87,12 @@ dependencies {
     ext = "zip"
   )
 
-  intellijPlatform {
-    create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
 
-    bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
-    plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
 
-    instrumentationTools()
-    pluginVerifier()
-    zipSigner()
-    testFramework(TestFrameworkType.Platform)
-  }
 }
 
 kotlin {
-  jvmToolchain(17)
+  jvmToolchain(21)
 }
 
 tasks {
@@ -144,27 +133,39 @@ tasks {
 
 }
 
-// Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
-intellijPlatform {
-  pluginConfiguration {
-    version = providers.gradleProperty("pluginVersion")
 
-    // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
-    description = providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
+// Configure IntelliJ Plugin
+intellij {
+  version.set(properties("platformVersion"))
+  type.set("IC") // Use IntelliJ IDEA Community Edition
+  
+  // Plugin Dependencies
+  plugins.set(listOf(
+    "java"
+  ))
+}
+
+// Set the JVM compatibility versions
+tasks {
+  patchPluginXml {
+    sinceBuild.set(properties("pluginSinceBuild"))
+    untilBuild.set(properties("pluginUntilBuild"))
+    
+    // Extract from README.md file
+    pluginDescription.set(providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
       val start = "<!-- Plugin description -->"
       val end = "<!-- Plugin description end -->"
-
+      
       with(it.lines()) {
         if (!containsAll(listOf(start, end))) {
           throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
         }
         subList(indexOf(start) + 1, indexOf(end)).joinToString("\n").let(::markdownToHTML)
       }
-    }
-
-    val changelog = project.changelog // local variable for configuration cache compatibility
-    // Get the latest available change notes from the changelog file
-    changeNotes = providers.gradleProperty("pluginVersion").map { pluginVersion ->
+    })
+    
+    val changelog = project.changelog
+    changeNotes.set(providers.gradleProperty("pluginVersion").map { pluginVersion ->
       with(changelog) {
         renderItem(
           (getOrNull(pluginVersion) ?: getUnreleased())
@@ -173,67 +174,22 @@ intellijPlatform {
           Changelog.OutputType.HTML,
         )
       }
-    }
-
-    ideaVersion {
-      sinceBuild = providers.gradleProperty("pluginSinceBuild")
-      untilBuild = providers.gradleProperty("pluginUntilBuild")
-    }
+    })
   }
-
-  signing {
-    certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
-    privateKey = providers.environmentVariable("PRIVATE_KEY")
-    password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
-  }
-
-  publishing {
-    // Include VCS plugin
-    token = providers.environmentVariable("PUBLISH_TOKEN")
-    channels = providers.gradleProperty("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
-  }
-  pluginVerification {
-    ides {
-      recommended()
-    }
-  }
-}
-repositories {
-  mavenCentral()
-  intellijPlatform {
-    defaultRepositories()
-  }
-}
-
-changelog {
-  groups.empty()
-  repositoryUrl = providers.gradleProperty("pluginRepositoryUrl")
-}
-
-tasks {
-  publishPlugin {
-    dependsOn(patchChangelog)
-  }
-}
-
-intellijPlatformTesting {
+  
   runIde {
-    register("runIdeForUiTests") {
-      task {
-        jvmArgumentProviders += CommandLineArgumentProvider {
-          listOf(
-            "-Drobot-server.port=8082",
-            "-Dide.mac.message.dialogs.as.sheets=false",
-            "-Djb.privacy.policy.text=<!--999.999-->",
-            "-Djb.consents.confirmation.enabled=false",
-            "-Dorg.gradle.configuration-cache=false"
-          )
-        }
-      }
-
-      plugins {
-        robotServerPlugin()
-      }
-    }
+    maxHeapSize = "8g"
+  }
+  
+  signPlugin {
+    certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
+    privateKey.set(System.getenv("PRIVATE_KEY"))
+    password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+  }
+  
+  publishPlugin {
+    dependsOn("patchChangelog")
+    token.set(System.getenv("PUBLISH_TOKEN"))
+    channels.set(properties("pluginVersion").split('-').drop(1).take(1).map { it.substringBefore('.').ifEmpty { "default" } })
   }
 }

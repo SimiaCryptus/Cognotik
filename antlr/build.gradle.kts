@@ -25,6 +25,6 @@ tasks {
         outputDirectory = file("build/generated-src/antlr/main")
     }
     withType<JavaCompile> {
-        options.release.set(11)
+        options.release.set(21)
     }
 }
