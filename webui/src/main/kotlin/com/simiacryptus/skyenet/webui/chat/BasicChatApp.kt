@@ -34,6 +34,6 @@ class BasicChatApp(
     temperature = 0.0,
     applicationClass = this::class.java,
     storage = DataStorage(root),
-    fastTopicParsing = true
+    fastTopicParsing = true,
   )
 }

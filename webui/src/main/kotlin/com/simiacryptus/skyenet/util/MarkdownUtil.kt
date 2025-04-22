@@ -69,7 +69,7 @@ object MarkdownUtil {
           }
         }
       } catch (e: Exception) {
-        log.warn("Failed to render Mermaid diagram", e)
+        log.warn("Failed to render Mermaid diagram: " + e.message)
       }
       val replacement = if (tabs) """
         <div class="tabs-container" id="""".trimIndent() + UUID.randomUUID() + """">

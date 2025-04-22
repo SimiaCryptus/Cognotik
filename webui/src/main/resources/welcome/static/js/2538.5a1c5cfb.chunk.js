@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkskyenet_ui=self.webpackChunkskyenet_ui||[]).push([[2538],{2538:(e,s,k)=>{k.d(s,{createPieServices:()=>u.f});var u=k(5628);k(6660)}}]);

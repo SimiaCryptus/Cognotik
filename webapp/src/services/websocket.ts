@@ -326,18 +326,10 @@ export class WebSocketService implements WebSocketLike {
     }
 
     private getWebSocketPath(): string {
-        const path = window.location.pathname;
-        // Simplify path handling to use the base path
-        let wsPath = '/';
-        // If we're in a subdirectory, use that as the base path
-        if (path !== '/' && path.length > 0) {
-            // Extract the first path segment
-            const match = path.match(/^\/([^/]+)/);
-            if (match && match[1]) {
-                wsPath = `/${match[1]}/`;
-            }
-        }
-        return wsPath;
+        // Use window.location.pathname as the base, ensuring trailing slash
+        let basePath = window.location.pathname;
+        if (!basePath.endsWith('/')) basePath += '/';
+        return basePath;
     }
 
     private setupEventHandlers(): () => void {

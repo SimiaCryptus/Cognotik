@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkskyenet_ui=self.webpackChunkskyenet_ui||[]).push([[2301],{2301:(e,s,k)=>{k.d(s,{createInfoServices:()=>u.v});var u=k(4628);k(6660)}}]);

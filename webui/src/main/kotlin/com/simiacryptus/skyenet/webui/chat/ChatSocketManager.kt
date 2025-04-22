@@ -11,7 +11,6 @@ import com.simiacryptus.skyenet.core.actors.ParsedActor
 import com.simiacryptus.skyenet.core.platform.Session
 import com.simiacryptus.skyenet.core.platform.model.StorageInterface
 import com.simiacryptus.skyenet.core.util.FixedConcurrencyProcessor
-import com.simiacryptus.skyenet.util.MarkdownUtil
 import com.simiacryptus.skyenet.webui.application.ApplicationInterface
 import com.simiacryptus.skyenet.webui.session.SessionTask
 import com.simiacryptus.skyenet.webui.session.SocketManagerBase
@@ -63,6 +62,7 @@ open class ChatSocketManager(
   applicationClass: Class<out ChatServer>,
   val storage: StorageInterface?,
   open val fastTopicParsing: Boolean = true,
+  val retriable: Boolean = true,
 ) : SocketManagerBase(session, storage, owner = null, applicationClass = applicationClass) {
   
   private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
@@ -70,7 +70,8 @@ open class ChatSocketManager(
   
   init {
     if (userInterfacePrompt.isNotBlank()) {
-      newTask(false, true).complete(userInterfacePrompt.renderMarkdown)
+      val task = newTask(false, true)
+      task.complete(userInterfacePrompt.renderMarkdown)
     }
   }
   
@@ -97,27 +98,43 @@ open class ChatSocketManager(
     }
     
     try {
-      Retryable(ui, task) { it: StringBuilder ->
-        val task = ui.newTask(false)
-        pool.submit {
-          try {
-            task.add("")
-            val responseString = respond(api, task, expandedUserMessage)
-            
-            synchronized(messagesLock) {
-              // Remove last assistant message if it exists (for retries)
-              if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
-                messages.removeAt(messages.size - 1)
-              }
-              messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
-            }
-            
-            task.complete()
-          } catch (e: Throwable) {
-            log.warn("Exception occurred while processing chat message", e)
+      if(!retriable) {
+        task.add("")
+        val responseString = respond(api, task, expandedUserMessage)
+        
+        synchronized(messagesLock) {
+          // Remove last assistant message if it exists (for retries)
+          if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
+            messages.removeAt(messages.size - 1)
           }
+          messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
         }
-        task.placeholder
+        
+        task.complete()
+      } else {
+        Retryable(ui, task) { it: StringBuilder ->
+          val task = ui.newTask(false)
+          pool.submit {
+            try {
+              task.add("")
+              val responseString = respond(api, task, expandedUserMessage)
+              
+              synchronized(messagesLock) {
+                // Remove last assistant message if it exists (for retries)
+                if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
+                  messages.removeAt(messages.size - 1)
+                }
+                messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
+              }
+              
+              task.complete()
+            } catch (e: Throwable) {
+              log.warn("Exception occurred while processing chat message", e)
+            }
+          }
+          task.placeholder
+        }
+        
       }
     } catch (e: Exception) {
       log.info("Error in chat", e)
@@ -387,7 +404,7 @@ open class ChatSocketManager(
   }
   
   open fun renderResponse(response: String, task: SessionTask) =
-    """<div>${MarkdownUtil.renderMarkdown(response)}</div>"""
+    """<div>${response.renderMarkdown()}</div>"""
   
   companion object {
     private val log = org.slf4j.LoggerFactory.getLogger(ChatSocketManager::class.java)

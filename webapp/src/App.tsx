@@ -64,6 +64,8 @@ Prism.manual = true;
 const AppContent: React.FC = () => {
     if (!isArchive) {
         console.info(`${LOG_PREFIX} Initializing application v${APP_VERSION}`);
+    } else {
+        console.info(`${LOG_PREFIX} Initializing application v${APP_VERSION} in archive mode`);
     }
     const appConfig = useSelector((state: RootState) => state.config);
     const dispatch = useDispatch();

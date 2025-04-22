@@ -7,7 +7,17 @@ const LOG_PREFIX = '[AppConfig]';
 // Add archive detection and export
 export const isArchive = document.documentElement.hasAttribute('data-archive');
 
-const BASE_API_URL = process.env.REACT_APP_API_URL || (window.location.origin + window.location.pathname);
+// Compute base API URL so that it works for subpaths (non-root deploys)
+function getBaseApiUrl() {
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+  // Remove trailing slash from pathname if present
+  let basePath = window.location.pathname.replace(/\/$/, '');
+  // If basePath is just '', set to '/'
+  if (!basePath) basePath = '/';
+  return window.location.origin + basePath + (basePath.endsWith('/') ? '' : '/');
+}
+
+const BASE_API_URL = getBaseApiUrl();
 
 let loadConfigPromise: Promise<any> | null = null;
 const STORAGE_KEYS = {

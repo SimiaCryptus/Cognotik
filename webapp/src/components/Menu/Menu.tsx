@@ -229,81 +229,6 @@ const DropdownItem = styled.a`
         color: white;
     }
 `;
-const DropLink = styled.a`
-    color: ${({theme}) => theme.colors.text.primary};
-    padding: ${({theme}) => theme.sizing.spacing.sm};
-    cursor: pointer;
-    border-radius: ${({theme}) => theme.sizing.borderRadius.sm};
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    font-weight: ${({theme}) => theme.typography.fontWeight.medium};
-    min-width: 140px;
-    font-size: ${({theme}) => theme.typography.fontSize.sm};
-    letter-spacing: 0.5px;
-    text-transform: capitalize;
-    background: ${({theme}) => `${theme.colors.surface}90`};
-    border: 0px solid ${({theme}) => `${theme.colors.border}40`};
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    /* Match button styling */
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    border: none;
-    gap: ${({theme}) => theme.sizing.spacing.sm};
-
-    &:hover {
-        background: ${({theme}) => `linear-gradient(
-            135deg,
-            ${theme.colors.primary},
-            ${theme.colors.secondary}
-        )`};
-        color: ${({theme}) => theme.colors.background};
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px ${({theme}) => `${theme.colors.primary}40`},
-        0 0 0 1px ${({theme}) => `${theme.colors.primary}40`};
-
-        &::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(
-                    circle,
-                    rgba(255, 255, 255, 0.2) 0%,
-                    transparent 70%
-            );
-            transform: rotate(45deg);
-            animation: shimmer 2s linear infinite;
-        }
-
-        &:after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
-            pointer-events: none;
-        }
-    }
-
-    &:active {
-        transform: translateY(0);
-    }
-
-    &:disabled {
-        cursor: not-allowed;
-    }
-`;
-
 export const Menu: React.FC = () => {
     useSelector((state: RootState) => state.config.websocket);
     const showMenubar = useSelector((state: RootState) => state.config.showMenubar);
@@ -354,12 +279,18 @@ export const Menu: React.FC = () => {
                     </DropButton>
                     <DropdownContent>
                         <DropdownItem onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
+{/*
                         <DropdownItem onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
+*/}
                         <DropdownItem onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
                         <DropdownItem onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
+{/*
                         <DropdownItem onClick={() => handleMenuClick('share')}>Share</DropdownItem>
+*/}
                         <DropdownItem onClick={() => handleMenuClick('cancel')}>Cancel</DropdownItem>
+{/*
                         <DropdownItem onClick={() => handleMenuClick('delete')}>Delete</DropdownItem>
+*/}
                         <DropdownItem onClick={handleVerboseToggle}>
                             {verboseMode ? 'Hide Verbose' : 'Show Verbose'}
                         </DropdownItem>
@@ -367,6 +298,7 @@ export const Menu: React.FC = () => {
                 </Dropdown>
 
                 <ThemeMenu/>
+{/*
 
                 <Dropdown>
                     <DropButton>About</DropButton>
@@ -375,6 +307,7 @@ export const Menu: React.FC = () => {
                         <DropdownItem onClick={() => handleMenuClick('/tos.html')}>Terms of Service</DropdownItem>
                     </DropdownContent>
                 </Dropdown>
+*/}
 
                 {isDevelopment && (
                     <Dropdown>
