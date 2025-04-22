@@ -56,7 +56,7 @@ const getArchivedMessages = () => {
 };
 
 const APP_VERSION = '1.0.0'; 
-const LOG_PREFIX = '[SkyeNet]';
+const LOG_PREFIX = '[Cognotik]';
 Prism.manual = true;
 
 

@@ -1,8 +1,8 @@
-# SkyeNet WebUI Module Documentation
+# Cognotik WebUI Module Documentation
 
 ## Overview
 
-The WebUI module provides a web-based interface for the SkyeNet platform, implementing:
+The WebUI module provides a web-based interface for the Cognotik platform, implementing:
 
 1. Application Server Framework
 2. Chat System

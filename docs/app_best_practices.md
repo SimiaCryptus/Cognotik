@@ -1,6 +1,6 @@
 Here's a best practices document for developing apps in this project:
 
-# Best Practices for SkyeNet Apps
+# Best Practices for Cognotik Apps
 
 ## Application Architecture
 

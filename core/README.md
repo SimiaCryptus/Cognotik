@@ -1,6 +1,6 @@
-# SkyeNet Core Module
+# Cognotik Core Module
 
-Welcome to the **SkyeNet Core Module**! This module serves as the backbone of the SkyeNet system, providing essential functionalities for audio processing, AI-driven interactions, data management, and more. Leveraging OpenAI's cutting-edge models, SkyeNet Core facilitates seamless integration of advanced AI capabilities into applications.
+Welcome to the **Cognotik Core Module**! This module serves as the backbone of the Cognotik system, providing essential functionalities for audio processing, AI-driven interactions, data management, and more. Leveraging OpenAI's cutting-edge models, Cognotik Core facilitates seamless integration of advanced AI capabilities into applications.
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ Welcome to the **SkyeNet Core Module**! This module serves as the backbone of th
 
 ## Introduction
 
-The **SkyeNet Core Module** is designed to facilitate a wide range of AI-driven functionalities within the SkyeNet ecosystem. It offers interfaces for audio input, command recognition, image generation, code execution, text-to-speech conversion, and comprehensive data management. By abstracting complex processes and providing modular components, SkyeNet Core enables developers to build sophisticated applications with ease.
+The **Cognotik Core Module** is designed to facilitate a wide range of AI-driven functionalities within the Cognotik ecosystem. It offers interfaces for audio input, command recognition, image generation, code execution, text-to-speech conversion, and comprehensive data management. By abstracting complex processes and providing modular components, Cognotik Core enables developers to build sophisticated applications with ease.
 
 ## Features
 
@@ -42,7 +42,7 @@ The **SkyeNet Core Module** is designed to facilitate a wide range of AI-driven 
 
 ## Architecture Overview
 
-The SkyeNet Core Module is structured into several interconnected components, each responsible for specific functionalities. The architecture emphasizes modularity, scalability, and ease of maintenance.
+The Cognotik Core Module is structured into several interconnected components, each responsible for specific functionalities. The architecture emphasizes modularity, scalability, and ease of maintenance.
 
 ![Architecture Diagram](https://example.com/architecture-diagram.png)  <!-- Replace with actual diagram URL -->
 
@@ -114,7 +114,7 @@ Handles the creation and management of API clients required for interacting with
 
 ### Prerequisites
 
-Before integrating the SkyeNet Core Module into your project, ensure you have the following prerequisites:
+Before integrating the Cognotik Core Module into your project, ensure you have the following prerequisites:
 
 - **Java Development Kit (JDK)**: Version 11 or higher.
 - **Kotlin**: Latest stable version.
@@ -208,7 +208,7 @@ Configuration can be done via properties files, environment variables, or direct
 
 ## Usage
 
-The SkyeNet Core Module provides various actors and utilities to perform AI-driven tasks. Below are some usage examples to get you started.
+The Cognotik Core Module provides various actors and utilities to perform AI-driven tasks. Below are some usage examples to get you started.
 
 ### Examples
 
@@ -350,7 +350,7 @@ fun textToSpeechExample() {
 
 ## Testing
 
-The SkyeNet Core Module includes comprehensive test suites to ensure reliability and correctness.
+The Cognotik Core Module includes comprehensive test suites to ensure reliability and correctness.
 
 ### Running Tests
 
@@ -387,7 +387,7 @@ The module covers various aspects, including:
 
 ## Contributing
 
-Contributions are welcome! To contribute to the SkyeNet Core Module:
+Contributions are welcome! To contribute to the Cognotik Core Module:
 
 1. **Fork the Repository**
 

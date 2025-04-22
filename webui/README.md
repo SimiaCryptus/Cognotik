@@ -146,8 +146,8 @@ Ensure that the following are installed on your development environment:
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/yourusername/SkyeNet-DiffPatchUtility.git
-   cd SkyeNet-DiffPatchUtility
+   git clone https://github.com/yourusername/Cognotik-DiffPatchUtility.git
+   cd Cognotik-DiffPatchUtility
    ```
 
 2. **Build the Project**
@@ -374,11 +374,11 @@ Ensure that the following are installed on your development environment:
 
 ### Contributing
 
-We welcome contributions to enhance the **SkyeNet Diff & Patch Utility Module**. To contribute:
+We welcome contributions to enhance the **Cognotik Diff & Patch Utility Module**. To contribute:
 
 1. **Fork the Repository**
 
-   Click the "Fork" button on the [GitHub repository](https://github.com/yourusername/SkyeNet-DiffPatchUtility) to create a personal copy.
+   Click the "Fork" button on the [GitHub repository](https://github.com/yourusername/Cognotik-DiffPatchUtility) to create a personal copy.
 
 2. **Create a Feature Branch**
 

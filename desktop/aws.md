@@ -38,7 +38,7 @@ echo "[$(date)] Deployment complete."
 declare -A REPOS
 REPOS=(
   ["/home/ec2-user/jo-penai"]="main"
-  ["/home/ec2-user/SkyeNet"]="main"
+  ["/home/ec2-user/Cognotik"]="main"
   ["/home/ec2-user/SkyenetApps"]="main"
 )
 S3_BUCKET="share.simiacrypt.us"

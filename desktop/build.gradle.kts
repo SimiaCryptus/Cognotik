@@ -428,7 +428,7 @@ tasks.register("packageDmg", JPackageTask::class) {
         "--name", "SkyenetApps",
         "--app-version", "${project.version}",
         "--copyright", "Copyright © 2024 SimiaCryptus",
-        "--description", "Skyenet Applications Suite"
+        "--description", "Cognotik Applications Suite"
       )
     }
     installContextMenuAction("mac")
@@ -501,7 +501,7 @@ tasks.register("packageDeb", JPackageTask::class) {
         "--name", "SkyenetApps",
         "--app-version", "${project.version}",
         "--copyright", "Copyright © 2024 SimiaCryptus",
-        "--description", "Skyenet Applications Suite",
+        "--description", "Cognotik Applications Suite",
         "--linux-menu-group", "Utilities",
         "--resource-dir", layout.buildDirectory.dir("jpackage/resources").get().asFile.path,
         "--linux-deb-maintainer", "support@simiacryptus.com",

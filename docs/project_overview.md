@@ -1,8 +1,8 @@
-# SkyeNet Project Overview
+# Cognotik Project Overview
 
 ## Project Purpose and Goals
 
-SkyeNet is a modular JVM-based application framework designed to provide:
+Cognotik is a modular JVM-based application framework designed to provide:
 
 1. A flexible platform for building AI-assisted applications
 2. Multi-language support through integrated interpreters

@@ -238,7 +238,7 @@
 
 ### Added
 
-- Prototype integration with the "Skyenet" AI tool
+- Prototype integration with the "Cognotik" AI tool
 
 ### Improved
 

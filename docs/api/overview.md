@@ -1,8 +1,8 @@
-# SkyeNet API Documentation
+# Cognotik API Documentation
 
 ## Overview
 
-The SkyeNet platform provides a comprehensive set of APIs for building AI-powered applications. The API architecture consists of:
+The Cognotik platform provides a comprehensive set of APIs for building AI-powered applications. The API architecture consists of:
 
 - RESTful HTTP endpoints for system management
 - WebSocket-based real-time communication

@@ -1,8 +1,8 @@
-# SkyeNet Core Module Documentation
+# Cognotik Core Module Documentation
 
 ## Overview
 
-The core module provides the fundamental building blocks for the SkyeNet platform, including:
+The core module provides the fundamental building blocks for the Cognotik platform, including:
 
 1. Actor System for AI-driven interactions
 2. Platform Services for system configuration and management

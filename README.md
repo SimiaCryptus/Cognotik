@@ -1,17 +1,17 @@
-# SkyeNet Project
+# Cognotik Project
 
-Welcome to **SkyeNet**, a comprehensive system designed to provide advanced AI-driven functionalities, including code diffing, patching, real-time communication, and more. This project is divided into two primary modules:
+Welcome to **Cognotik**, a comprehensive system designed to provide advanced AI-driven functionalities, including code diffing, patching, real-time communication, and more. This project is divided into two primary modules:
 
 1. **Web UI Module (`webui`)**: Handles the user interface, real-time communication, and interactive features.
 2. **Core Module (`core`)**: Serves as the backbone, managing AI interactions, data processing, and essential services.
 
-This README provides a detailed overview for developers looking to understand, develop, and contribute to the SkyeNet project.
+This README provides a detailed overview for developers looking to understand, develop, and contribute to the Cognotik project.
 
 ---
 
 ## Table of Contents
 
-- [SkyeNet Project](#skyenet-project)
+- [Cognotik Project](#skyenet-project)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Modules Overview](#modules-overview)
@@ -45,27 +45,27 @@ This README provides a detailed overview for developers looking to understand, d
 
 ## Introduction
 
-**SkyeNet** is an advanced system that integrates AI-driven functionalities to assist developers and users in various tasks such as code comparison, patch management, real-time communication, and more. Leveraging OpenAI's cutting-edge models, SkyeNet ensures seamless integration of AI capabilities into applications, enhancing productivity and efficiency.
+**Cognotik** is an advanced system that integrates AI-driven functionalities to assist developers and users in various tasks such as code comparison, patch management, real-time communication, and more. Leveraging OpenAI's cutting-edge models, Cognotik ensures seamless integration of AI capabilities into applications, enhancing productivity and efficiency.
 
 ---
 
 ## Modules Overview
 
-SkyeNet is organized into two main modules, each responsible for distinct functionalities:
+Cognotik is organized into two main modules, each responsible for distinct functionalities:
 
 ### Web UI Module (`webui`)
 
-The Web UI Module provides an interactive and user-friendly interface for users to engage with SkyeNet's functionalities. It handles tasks such as rendering diffs, managing sessions, integrating AI features, and ensuring secure and efficient communication between clients and the server.
+The Web UI Module provides an interactive and user-friendly interface for users to engage with Cognotik's functionalities. It handles tasks such as rendering diffs, managing sessions, integrating AI features, and ensuring secure and efficient communication between clients and the server.
 
 ### Core Module (`core`)
 
-The Core Module serves as the backbone of SkyeNet, managing AI-driven interactions, data processing, authentication, authorization, and integration with external services like AWS and OpenAI. It ensures that all core functionalities operate seamlessly and efficiently.
+The Core Module serves as the backbone of Cognotik, managing AI-driven interactions, data processing, authentication, authorization, and integration with external services like AWS and OpenAI. It ensures that all core functionalities operate seamlessly and efficiently.
 
 ---
 
 ## Architecture
 
-SkyeNet follows a modular and layered architecture, ensuring separation of concerns, scalability, and ease of maintenance. This architecture facilitates independent development, testing, and deployment of each module.
+Cognotik follows a modular and layered architecture, ensuring separation of concerns, scalability, and ease of maintenance. This architecture facilitates independent development, testing, and deployment of each module.
 
 ### High-Level Architecture
 
@@ -211,8 +211,8 @@ Ensure the following are installed on your development environment:
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/SkyeNet.git
-cd SkyeNet
+git clone https://github.com/yourusername/Cognotik.git
+cd Cognotik
 ```
 
 #### 2. Build the Project
@@ -474,11 +474,11 @@ Reports are available in the `build/reports/jacoco/test/html` directory.
 
 ### Contributing
 
-We welcome contributions to enhance the **SkyeNet** project. To contribute:
+We welcome contributions to enhance the **Cognotik** project. To contribute:
 
 1. **Fork the Repository**
 
-   Click the "Fork" button on the [GitHub repository](https://github.com/yourusername/SkyeNet) to create a personal copy.
+   Click the "Fork" button on the [GitHub repository](https://github.com/yourusername/Cognotik) to create a personal copy.
 
 2. **Create a Feature Branch**
 
@@ -513,13 +513,13 @@ We welcome contributions to enhance the **SkyeNet** project. To contribute:
 
 If you encounter any issues or have suggestions for improvements:
 
-- Open an issue on the [GitHub repository](https://github.com/yourusername/SkyeNet/issues).
+- Open an issue on the [GitHub repository](https://github.com/yourusername/Cognotik/issues).
 
 ---
 
 ## Security
 
-Security is a primary concern within the SkyeNet project, addressed through:
+Security is a primary concern within the Cognotik project, addressed through:
 
 - **OAuth Authentication**: Secure user authentication via Google OAuth.
 - **CORS Policies**: Restrict resource access based on origin, methods, and headers.
@@ -552,7 +552,7 @@ Ensure that sensitive information (e.g., API keys) is not logged to prevent secu
 
 ## Extending and Customization
 
-SkyeNet's modular design allows for easy extension and customization.
+Cognotik's modular design allows for easy extension and customization.
 
 ### Adding New Actors
 

@@ -1,8 +1,8 @@
-# SkyeNet Frontend Documentation
+# Cognotik Frontend Documentation
 
 ## Overview
 
-The SkyeNet frontend is a React-based application that provides a real-time chat interface with advanced features like theming, WebSocket communication, and modular component architecture.
+The Cognotik frontend is a React-based application that provides a real-time chat interface with advanced features like theming, WebSocket communication, and modular component architecture.
 
 ## Component Hierarchy
 

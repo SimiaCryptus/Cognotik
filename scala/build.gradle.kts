@@ -88,9 +88,9 @@ publishing {
         }
       }
       pom {
-        name.set("SkyeNet Scala Interpreter")
+        name.set("Cognotik Scala Interpreter")
         description.set("A very helpful puppy")
-        url.set("https://github.com/SimiaCryptus/SkyeNet")
+        url.set("https://github.com/SimiaCryptus/Cognotik")
         licenses {
           license {
             name.set("The Apache License, Version 2.0")
@@ -105,9 +105,9 @@ publishing {
           }
         }
         scm {
-          connection.set("scm:git:git://git@github.com/SimiaCryptus/SkyeNet.git")
-          developerConnection.set("scm:git:ssh://git@github.com/SimiaCryptus/SkyeNet.git")
-          url.set("https://github.com/SimiaCryptus/SkyeNet")
+          connection.set("scm:git:git://git@github.com/SimiaCryptus/Cognotik.git")
+          developerConnection.set("scm:git:ssh://git@github.com/SimiaCryptus/Cognotik.git")
+          url.set("https://github.com/SimiaCryptus/Cognotik")
         }
       }
     }

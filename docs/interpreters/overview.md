@@ -1,8 +1,8 @@
-# SkyeNet Language Interpreters Documentation
+# Cognotik Language Interpreters Documentation
 
 ## Overview
 
-The SkyeNet platform supports multiple programming language interpreters through a unified interface. Currently supported languages include:
+The Cognotik platform supports multiple programming language interpreters through a unified interface. Currently supported languages include:
 - Kotlin
 - Groovy
 - Scala

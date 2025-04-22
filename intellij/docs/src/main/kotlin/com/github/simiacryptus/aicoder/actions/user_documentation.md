@@ -1914,7 +1914,7 @@ using AI assistance through a web interface.
 - Runs in background thread to prevent UI freezing
 - Creates a unique session ID for each use
 - Integrates with the project's AppServer instance
-- Uses SkyeNet's OutlineApp framework for AI processing
+- Uses Cognotik's OutlineApp framework for AI processing
 
 ### Requirements
 
@@ -2064,7 +2064,7 @@ The server uses metadata storage configured through ApplicationServices for pers
 
 ### Dependencies
 
-- Requires SkyeNet WebUI framework
+- Requires Cognotik WebUI framework
 - Uses ApplicationServices for configuration and storage
 - Depends on Session and User management components
 
