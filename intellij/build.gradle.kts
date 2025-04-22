@@ -7,10 +7,8 @@ fun properties(key: String) = providers.gradleProperty(key).getOrElse("")
 plugins {
   id("java")
   kotlin("jvm") version "2.0.20"
-  id("org.jetbrains.intellij.platform") version "2.4.0"
+  id("org.jetbrains.intellij.platform") version "2.5.0"
   id("org.jetbrains.changelog") version "2.2.1"
-  id("org.jetbrains.qodana") version "2024.2.3"
-  id("org.jetbrains.dokka") version "2.0.0-Beta"
 }
 
 group = "com.simiacryptus"
@@ -92,7 +90,7 @@ dependencies {
 }
 
 kotlin {
-  jvmToolchain(21)
+  jvmToolchain(17)
 }
 
 tasks {
