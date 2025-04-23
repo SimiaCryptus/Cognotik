@@ -1,21 +1,21 @@
 package com.simiacryptus.diff
 
+import com.simiacryptus.cognotik.AgentPatterns.displayMapInTabs
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.core.actors.SimpleActor
+import com.simiacryptus.cognotik.core.util.DiffApplicationResult
+import com.simiacryptus.cognotik.core.util.FileSelectionUtils.Companion.isGitignore
+import com.simiacryptus.cognotik.core.util.GrammarValidator
+import com.simiacryptus.cognotik.core.util.IterativePatchUtil
+import com.simiacryptus.cognotik.core.util.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.core.util.SimpleDiffApplier
+import com.simiacryptus.cognotik.set
+import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
-import com.simiacryptus.skyenet.apps.general.renderMarkdown
-import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.util.DiffApplicationResult
-import com.simiacryptus.skyenet.core.util.FileSelectionUtils.Companion.isGitignore
-import com.simiacryptus.skyenet.core.util.GrammarValidator
-import com.simiacryptus.skyenet.core.util.IterativePatchUtil
-import com.simiacryptus.skyenet.core.util.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
-import com.simiacryptus.skyenet.set
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.session.SocketManagerBase
 import org.apache.commons.text.similarity.LevenshteinDistance
 import java.io.File
 import java.nio.file.Path
@@ -232,7 +232,7 @@ open class AddApplyFileDiffLinks {
     val markdownHeaderPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
     // ...and file header banners, e.g.:
     // ─────────────────────────────────────────────
-    // File: src/main/kotlin/com/simiacryptus/skyenet/apps/general/PatchApp.kt
+      // File: src/main/kotlin/com/simiacryptus/cognotik/apps/general/PatchApp.kt
     // ─────────────────────────────────────────────
     val fileHeaderPattern = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
     val headers = mutableListOf<Pair<IntRange, String>>()

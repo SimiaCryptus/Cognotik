@@ -8,14 +8,14 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.FormBuilder
 import com.simiacryptus.aicoder.config.AppSettingsState
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.User
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.*
 import com.simiacryptus.jopenai.models.OpenAIModel
 import com.simiacryptus.jopenai.models.TextModel
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.User
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.JsonUtil.toJson
 import org.apache.hc.core5.http.HttpRequest

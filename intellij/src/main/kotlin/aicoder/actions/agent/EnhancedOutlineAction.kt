@@ -9,7 +9,7 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.skyenet.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.Session
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 
@@ -34,7 +34,7 @@ class EnhancedOutlineAction : BaseAction() {
           "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
         // Convert settings from EnhancedOutlineConfigDialog into EnhancedSettings used by EnhancedOutlineApp.
-        val enhancedSettings = com.simiacryptus.skyenet.apps.general.EnhancedSettings(
+          val enhancedSettings = com.simiacryptus.cognotik.apps.general.EnhancedSettings(
           parsingModel = settings.parsingModel,
           temperature = settings.temperature,
           minTokensForExpansion = settings.minTokensForExpansion,
@@ -42,7 +42,7 @@ class EnhancedOutlineAction : BaseAction() {
           writeFinalEssay = settings.writeFinalEssay,
           budget = settings.budget,
           phaseConfigs = settings.phases.map { phase ->
-            com.simiacryptus.skyenet.apps.general.PhaseConfig(
+              com.simiacryptus.cognotik.apps.general.PhaseConfig(
               extract = phase.extract,
               expansionQuestion = phase.question,
               model = phase.model
@@ -50,7 +50,7 @@ class EnhancedOutlineAction : BaseAction() {
           }
         )
         // Instantiate and register the EnhancedOutlineApp.
-        val enhancedApp = com.simiacryptus.skyenet.apps.general.EnhancedOutlineApp(
+          val enhancedApp = com.simiacryptus.cognotik.apps.general.EnhancedOutlineApp(
           applicationName = "Enhanced Outline Tool",
           domainName = "enhanced_outline",
           settings = enhancedSettings,

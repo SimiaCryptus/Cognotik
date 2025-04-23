@@ -3,7 +3,7 @@
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.aicoder.util.IdeaChatClient
-import com.simiacryptus.skyenet.core.platform.model.UsageInterface
+import com.simiacryptus.cognotik.core.platform.model.UsageInterface
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
 import java.awt.Component

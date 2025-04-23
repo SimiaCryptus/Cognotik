@@ -76,7 +76,7 @@
       "no-debugger": "warn"
     }
   },
-  "name": "skyenet-ui",
+  "name": "cognotik-ui",
   "private": true,
   "scripts": {
     "start": "cross-env NODE_ENV='development' react-scripts start",

@@ -1122,7 +1122,7 @@ The class will throw a RuntimeException if the language model returns an empty o
 ### Dependencies
 
 - Requires jopenai library for API communication
-- Depends on skyenet-core and skyenet-webui components
+- Depends on cognotik-core and cognotik-webui components
 - Needs a properly configured LargeOutputActor instance
 
 This documentation provides an overview of the EnhancedChatSocketManager class and its key functionality for developers integrating chat capabilities with

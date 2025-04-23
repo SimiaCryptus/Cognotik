@@ -17,10 +17,10 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.aicoder.util.IdeaChatClient
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionEvent

@@ -14,13 +14,13 @@ import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.ComputerLanguage
 import com.simiacryptus.aicoder.util.UITools
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.chat.ChatSocketManager
-import com.simiacryptus.skyenet.webui.session.SessionTask
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 
@@ -106,7 +106,7 @@ class LineFilterChatAction : BaseAction() {
     ) {
       override fun canWrite(user: User?): Boolean = true
       override fun renderResponse(response: String, task: SessionTask): String {
-        return com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown(response.split("\n").joinToString("\n") {
+          return com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown(response.split("\n").joinToString("\n") {
           when {
             // Is numeric, use line if in range
             it.toIntOrNull()?.let { i -> lines.indices.contains(i) } == true -> lines[it.toInt()]

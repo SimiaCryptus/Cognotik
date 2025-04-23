@@ -7,15 +7,15 @@ plugins {
     `maven-publish`
     id("signing")
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    kotlin("jvm") version "2.0.20"
+    kotlin("jvm") version "2.1.20"
     war
     id("org.beryx.runtime") version "1.13.0"
     application
 }
-// Configure Java toolchain to ensure Java 21 is used
+// Configure Java toolchain to ensure Java 17 is used
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -25,14 +25,14 @@ repositories {
 }
 
 application {
-    mainClass.set("com.simiacryptus.skyenet.DaemonClient")
+    mainClass.set("com.simiacryptus.cognotik.DaemonClient")
 }
 // Create a task to run the server directly (for development)
 tasks.register<JavaExec>("runServer") {
     group = "application"
     description = "Run the AppServer directly (not as daemon)"
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("com.simiacryptus.skyenet.AppServer")
+    mainClass.set("com.simiacryptus.cognotik.AppServer")
     args = listOf("server")
 }
 // Create a task to stop the server
@@ -40,7 +40,7 @@ tasks.register<JavaExec>("stopServer") {
     group = "application"
     description = "Stop the running server"
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("com.simiacryptus.skyenet.DaemonClient")
+    mainClass.set("com.simiacryptus.cognotik.DaemonClient")
     args = listOf("--stop")
 }
 
@@ -87,12 +87,11 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 val jetty_version = "11.0.24"
-val skyenet_version = "1.2.23"
 val scala_version = "2.13.9"
 val jackson_version = "2.17.2"
 val jupiter_version = "5.10.1"
@@ -107,12 +106,11 @@ dependencies {
 
     implementation("org.apache.commons:commons-text:1.11.0")
 
-    implementation(group = "com.simiacryptus.skyenet", name = "jo-penai", version = skyenet_version)
-    implementation(group = "com.simiacryptus.skyenet", name = "core", version = skyenet_version)
-    implementation(group = "com.simiacryptus.skyenet", name = "groovy", version = skyenet_version)
-    implementation(group = "com.simiacryptus.skyenet", name = "kotlin", version = skyenet_version)
-    implementation(group = "com.simiacryptus.skyenet", name = "scala", version = skyenet_version)
-    implementation(group = "com.simiacryptus.skyenet", name = "webui", version = skyenet_version)
+    implementation(project(":jo-penai"))
+    implementation(project(":core"))
+    implementation(project(":groovy"))
+    implementation(project(":kotlin"))
+    implementation(project(":webui"))
 
     implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
     implementation("org.jsoup:jsoup:1.19.1")
@@ -185,11 +183,11 @@ tasks.war {
     from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isZip64 = true
-    /*JDK 21*/
+    /*JDK 17*/
 
     manifest {
         attributes(
-            "Main-Class" to "com.simiacryptus.skyenet.DaemonClient"
+            "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
         )
     }
 }
@@ -201,7 +199,7 @@ tasks.withType<ShadowJar> {
     
     manifest {
         attributes(
-            "Main-Class" to "com.simiacryptus.skyenet.DaemonClient"
+            "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
         )
     }
 }
@@ -209,8 +207,8 @@ tasks.withType<ShadowJar> {
 // Platform-specific packaging using jpackage: Only use supported types for each OS
 // Helper to install context menu actions for folders
 fun installContextMenuAction(os: String) {
-    val appName = "SkyenetApps"
-    val appDisplayName = "Open with SkyenetApps"
+    val appName = "Cognotik"
+    val appDisplayName = "Open with Cognotik"
     val scriptPath = layout.buildDirectory.dir("jpackage/scripts").get().asFile
     scriptPath.mkdirs()
     when {
@@ -227,10 +225,10 @@ fun installContextMenuAction(os: String) {
 
             [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}\command]
             @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"%1\""
-              [HKEY_CLASSES_ROOT\Directory\shell\Stop SkyenetApps Server]
-              @="Stop SkyenetApps Server"
+              [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server]
+              @="Stop Cognotik Server"
               "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
-              [HKEY_CLASSES_ROOT\Directory\shell\Stop SkyenetApps Server\command]
+              [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server\command]
               @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"--stop\""
         """.trimIndent()
             )
@@ -239,7 +237,7 @@ fun installContextMenuAction(os: String) {
 
         os.contains("mac") -> {
             // Write a .plist file for a Finder Quick Action (Service)
-            val plistFile = scriptPath.resolve("SkyenetApps.workflow/Contents/info.plist")
+            val plistFile = scriptPath.resolve("Cognotik.workflow/Contents/info.plist")
             plistFile.parentFile.mkdirs()
             plistFile.writeText(
                 """
@@ -248,7 +246,7 @@ fun installContextMenuAction(os: String) {
             <plist version="1.0">
             <dict>
               <key>CFBundleIdentifier</key>
-              <string>com.simiacryptus.skyenetapps.workflow</string>
+              <string>com.simiacryptus.cognotik.workflow</string>
               <key>CFBundleName</key>
               <string>$appDisplayName</string>
               <key>NSServices</key>
@@ -272,7 +270,7 @@ fun installContextMenuAction(os: String) {
         """.trimIndent()
             )
             // Write a shell script to launch the app with the folder path
-            val script = scriptPath.resolve("SkyenetApps.workflow/Contents/document.wflow")
+            val script = scriptPath.resolve("Cognotik.workflow/Contents/document.wflow")
             script.writeText(
                 """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -310,16 +308,16 @@ fun installContextMenuAction(os: String) {
             <plist version="1.0">
             <dict>
               <key>CFBundleIdentifier</key>
-              <string>com.simiacryptus.skyenetapps.stop.workflow</string>
+              <string>com.simiacryptus.cognotik.stop.workflow</string>
               <key>CFBundleName</key>
-              <string>Stop SkyenetApps Server</string>
+              <string>Stop Cognotik Server</string>
               <key>NSServices</key>
               <array>
                 <dict>
                   <key>NSMenuItem</key>
                   <dict>
                     <key>default</key>
-                    <string>Stop SkyenetApps Server</string>
+                    <string>Stop Cognotik Server</string>
                   </dict>
                   <key>NSMessage</key>
                   <string>runWorkflowAsService</string>
@@ -363,37 +361,37 @@ fun installContextMenuAction(os: String) {
 
         os.contains("linux") -> {
             // Write a .desktop file for Nautilus/Thunar context menu
-            val desktopFile = scriptPath.resolve("skyenetapps-folder-action.desktop")
+            val desktopFile = scriptPath.resolve("cognotik-folder-action.desktop")
             desktopFile.writeText(
                 """
           [Desktop Entry]
           Type=Application
           Name=$appDisplayName
-          Comment=Open folders with SkyenetApps
-      Icon=/opt/skyenetapps/lib/icon.png
-          Exec=/opt/skyenetapps/bin/SkyenetApps "%f"
+          Comment=Open folders with Cognotik
+      Icon=/opt/cognotik/lib/icon.png
+          Exec=/opt/cognotik/bin/Cognotik "%f"
           MimeType=inode/directory;
           Categories=Development;Utility;TextEditor;
           Terminal=false
           StartupNotify=true
           Actions=OpenFolder;
           [Desktop Action OpenFolder]
-          Name=Open Folder with SkyenetApps
-          Exec=/opt/skyenetapps/bin/SkyenetApps "%f"
+          Name=Open Folder with Cognotik
+          Exec=/opt/cognotik/bin/Cognotik "%f"
         """.trimIndent()
             )
             // Also create a main application desktop file
             val mainDesktopFile =
-                layout.buildDirectory.dir("jpackage/resources").get().asFile.resolve("skyenetapps.desktop")
+                layout.buildDirectory.dir("jpackage/resources").get().asFile.resolve("cognotik.desktop")
             mainDesktopFile.parentFile.mkdirs()
             mainDesktopFile.writeText(
                 """
           [Desktop Entry]
           Type=Application
-          Name=SkyenetApps
+          Name=Cognotik
           Comment=AI-powered application suite
-          Icon=/opt/skyenetapps/lib/icon.png
-          Exec=/opt/skyenetapps/bin/SkyenetApps %f
+          Icon=/opt/cognotik/lib/icon.png
+          Exec=/opt/cognotik/bin/Cognotik %f
           Categories=Development;Utility;TextEditor;
           MimeType=inode/directory;text/plain;
           Terminal=false
@@ -423,9 +421,9 @@ tasks.register("packageDmg", JPackageTask::class) {
                 "--type", "dmg",
                 "--input", layout.buildDirectory.dir("libs").get().asFile.path,
                 "--main-jar", "${project.name}-${project.version}-all.jar",
-                "--main-class", "com.simiacryptus.skyenet.DaemonClient",
+                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
-                "--name", "SkyenetApps",
+                "--name", "Cognotik",
                 "--app-version", "${project.version}",
                 "--copyright", "Copyright © 2024 SimiaCryptus",
                 "--description", "Cognotik Applications Suite"
@@ -459,8 +457,8 @@ tasks.register("packageDeb", JPackageTask::class) {
       mkdir -p /usr/share/applications
       
       # Copy desktop files from resources to applications directory
-      cp "${resourcesDir.absolutePath}/skyenetapps.desktop" /usr/share/applications/skyenetapps.desktop
-      cp "${resourcesDir.absolutePath}/skyenetapps-folder-action.desktop" /usr/share/applications/skyenetapps-folder-action.desktop
+      cp "${resourcesDir.absolutePath}/cognotik.desktop" /usr/share/applications/cognotik.desktop
+      cp "${resourcesDir.absolutePath}/cognotik-folder-action.desktop" /usr/share/applications/cognotik-folder-action.desktop
       
       # Update desktop database
       update-desktop-database /usr/share/applications || true
@@ -475,13 +473,13 @@ tasks.register("packageDeb", JPackageTask::class) {
             """
       #!/bin/sh
       set -e
-      # Stop the running SkyenetApps server if any
-      if [ -x "/opt/skyenetapps/bin/SkyenetApps" ]; then
-        "/opt/skyenetapps/bin/SkyenetApps" --stop || true
+      # Stop the running Cognotik server if any
+      if [ -x "/opt/cognotik/bin/Cognotik" ]; then
+        "/opt/cognotik/bin/Cognotik" --stop || true
       fi
       # Remove desktop files
-      rm -f /usr/share/applications/skyenetapps.desktop
-      rm -f /usr/share/applications/skyenetapps-folder-action.desktop
+      rm -f /usr/share/applications/cognotik.desktop
+      rm -f /usr/share/applications/cognotik-folder-action.desktop
       # Update desktop database
       update-desktop-database /usr/share/applications || true
       exit 0
@@ -496,9 +494,9 @@ tasks.register("packageDeb", JPackageTask::class) {
                 "--type", "deb",
                 "--input", layout.buildDirectory.dir("libs").get().asFile.path,
                 "--main-jar", shadowJarName,
-                "--main-class", "com.simiacryptus.skyenet.DaemonClient",
+                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
-                "--name", "SkyenetApps",
+                "--name", "Cognotik",
                 "--app-version", "${project.version}",
                 "--copyright", "Copyright © 2024 SimiaCryptus",
                 "--description", "Cognotik Applications Suite",
@@ -508,7 +506,7 @@ tasks.register("packageDeb", JPackageTask::class) {
                 "--linux-shortcut",
                 "--linux-app-category", "Development;Utility",
                 "--icon", layout.projectDirectory.file("src/main/resources/icon.png").asFile.path,
-                "--linux-package-name", "skyenetapps"
+                "--linux-package-name", "cognotik"
             )
         }
         installContextMenuAction("linux")
@@ -527,45 +525,45 @@ tasks.register("prepareLinuxDesktopFile") {
 
 
         // Create the context menu desktop file
-        val contextMenuDesktopFile = File(resourcesDir, "skyenetapps-folder-action.desktop")
+        val contextMenuDesktopFile = File(resourcesDir, "cognotik-folder-action.desktop")
         contextMenuDesktopFile.writeText(
             """
       [Desktop Entry]
       Type=Application
-      Name=Open with SkyenetApps
-      Comment=Open folders with SkyenetApps
-      Icon=/opt/skyenetapps/lib/icon.png
-      Exec=/opt/skyenetapps/bin/SkyenetApps %f
+      Name=Open with Cognotik
+      Comment=Open folders with Cognotik
+      Icon=/opt/cognotik/lib/icon.png
+      Exec=/opt/cognotik/bin/Cognotik %f
       MimeType=inode/directory;text/plain;
       Categories=Development;Utility;TextEditor;
       Terminal=false
       StartupNotify=true
       Actions=OpenFolder;
       [Desktop Action OpenFolder]
-      Name=Open Folder with SkyenetApps
-      Exec=/opt/skyenetapps/bin/SkyenetApps %f
+      Name=Open Folder with Cognotik
+      Exec=/opt/cognotik/bin/Cognotik %f
       """.trimIndent()
         )
 
         // Create the main application desktop file
-        val mainDesktopFile = File(resourcesDir, "skyenetapps.desktop")
+        val mainDesktopFile = File(resourcesDir, "cognotik.desktop")
         mainDesktopFile.writeText(
             """
       [Desktop Entry]
       Type=Application
-      Name=SkyenetApps
+      Name=Cognotik
       Comment=AI-powered application suite
-      Icon=/opt/skyenetapps/lib/icon.png
-      Exec=/opt/skyenetapps/bin/SkyenetApps %f
+      Icon=/opt/cognotik/lib/icon.png
+      Exec=/opt/cognotik/bin/Cognotik %f
       Categories=Development;Utility;TextEditor;
       MimeType=inode/directory;text/plain;
       Terminal=false
       StartupNotify=true
       Actions=StopServer;
       [Desktop Action StopServer]
-      Name=Stop SkyenetApps Server
-      Exec=/opt/skyenetapps/bin/SkyenetApps --stop
-      Icon=/opt/skyenetapps/lib/icon.png
+      Name=Stop Cognotik Server
+      Exec=/opt/cognotik/bin/Cognotik --stop
+      Icon=/opt/cognotik/lib/icon.png
       """.trimIndent()
         )
 
@@ -579,8 +577,8 @@ tasks.register("prepareLinuxDesktopFile") {
       mkdir -p /usr/share/applications
       
       # Copy desktop files from resources
-      cp "${resourcesDir.absolutePath}/skyenetapps.desktop" /usr/share/applications/skyenetapps.desktop
-      cp "${resourcesDir.absolutePath}/skyenetapps-folder-action.desktop" /usr/share/applications/skyenetapps-folder-action.desktop
+      cp "${resourcesDir.absolutePath}/cognotik.desktop" /usr/share/applications/cognotik.desktop
+      cp "${resourcesDir.absolutePath}/cognotik-folder-action.desktop" /usr/share/applications/cognotik-folder-action.desktop
       
       # Update desktop database
       update-desktop-database /usr/share/applications || true
@@ -595,13 +593,13 @@ tasks.register("prepareLinuxDesktopFile") {
             """
       #!/bin/sh
       set -e
-      # Stop the running SkyenetApps server if any
-      if [ -x "/opt/skyenetapps/bin/SkyenetApps" ]; then
-        "/opt/skyenetapps/bin/SkyenetApps" --stop || true
+      # Stop the running Cognotik server if any
+      if [ -x "/opt/cognotik/bin/Cognotik" ]; then
+        "/opt/cognotik/bin/Cognotik" --stop || true
       fi
       # Remove desktop files
-      rm -f /usr/share/applications/skyenetapps.desktop
-      rm -f /usr/share/applications/skyenetapps-folder-action.desktop
+      rm -f /usr/share/applications/cognotik.desktop
+      rm -f /usr/share/applications/cognotik-folder-action.desktop
       # Update desktop database
       update-desktop-database /usr/share/applications || true
       exit 0
@@ -659,7 +657,7 @@ tasks.named("jpackage") {
         val os = System.getProperty("os.name").lowercase()
         if (os.contains("linux")) {
             // Check if the app-image exists, otherwise skip to avoid RPM error
-            val appImageDir = layout.buildDirectory.dir("jpackage/SkyenetApps").get().asFile
+            val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
             if (!appImageDir.exists()) {
                 logger.warn("Skipping jpackage task: App image directory does not exist: $appImageDir")
                 throw org.gradle.api.tasks.StopExecutionException("App image directory does not exist: $appImageDir")

@@ -16,7 +16,7 @@ import com.intellij.psi.PsiRecursiveElementVisitor
 import com.simiacryptus.aicoder.util.ComputerLanguage
 import com.simiacryptus.aicoder.util.LanguageUtils
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.skyenet.core.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.indent
 
 abstract class SelectionAction<T : Any>(
   private val requiresSelection: Boolean = true

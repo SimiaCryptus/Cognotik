@@ -14,3 +14,7 @@ settings.gradle.kts
 *.parsed.json
 package-lock.json
 .kotlin/
+tmp/
+user-sessions/
+metadata.properties
+metadata.script

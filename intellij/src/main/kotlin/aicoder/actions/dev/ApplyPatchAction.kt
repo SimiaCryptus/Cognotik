@@ -12,7 +12,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.*
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.skyenet.core.util.IterativePatchUtil
+import com.simiacryptus.cognotik.core.util.IterativePatchUtil
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 

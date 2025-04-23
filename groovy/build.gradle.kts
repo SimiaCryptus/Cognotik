@@ -8,7 +8,7 @@ version = properties("libraryVersion")
 plugins {
   java
   `java-library`
-  id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    id("org.jetbrains.kotlin.jvm") version "2.1.20"
   `maven-publish`
   id("signing")
 }
@@ -23,15 +23,15 @@ repositories {
 }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 kotlin {
-  jvmToolchain(21)
+    jvmToolchain(17)
 }
 
-val kotlin_version = "2.0.20"
+val kotlin_version = "2.1.20"
 dependencies {
   implementation(project(":core"))
 

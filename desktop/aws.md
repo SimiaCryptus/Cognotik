@@ -3,7 +3,7 @@
 ```shell
 #!/bin/bash
 # Configuration
-APP_DIR="/opt/skyenet"
+APP_DIR="/opt/cognotik"
 APP_USER="ec2-user"
 S3_BUCKET="share.simiacrypt.us"
 DB_URL="jdbc:postgresql://apps-simiacrypt-us.cluster-ckhbwauobdwe.us-east-1.rds.amazonaws.com:5432/"
@@ -26,7 +26,7 @@ cd ${APP_DIR}
 echo "[$(date)] Starting application server..."
 sudo -u ${APP_USER} nohup java --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
  "-Ddb.url=${DB_URL}" \
- -cp ${APP_DIR}/SkyenetApps-1.0.0.war com.simiacryptus.skyenet.AppServer --server > ${LOG_FILE} 2>&1 &
+ -cp ${APP_DIR}/SkyenetApps-1.0.0.war com.simiacryptus.cognotik.AppServer --server > ${LOG_FILE} 2>&1 &
 echo "[$(date)] Deployment complete."
 ```
 

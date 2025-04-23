@@ -13,18 +13,18 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.IdeaChatClient
 import com.simiacryptus.aicoder.util.IntelliJPsiValidator
+import com.simiacryptus.cognotik.core.OutputInterceptor
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.platform.AwsPlatform
+import com.simiacryptus.cognotik.core.platform.ClientManager
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig.isLocked
+import com.simiacryptus.cognotik.core.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.core.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.core.util.SimpleDiffApplier
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.skyenet.core.OutputInterceptor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.AwsPlatform
-import com.simiacryptus.skyenet.core.platform.ClientManager
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig
-import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig.isLocked
-import com.simiacryptus.skyenet.core.platform.model.AuthenticationInterface
-import com.simiacryptus.skyenet.core.platform.model.AuthorizationInterface
-import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
 import com.simiacryptus.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -172,7 +172,7 @@ class PluginStartupActivity : ProjectActivity {
 
   private fun init(project: Project) {
     if (isInitialized.getAndSet(true)) return
-    ApplicationServicesConfig.dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".skyenet")
+      ApplicationServicesConfig.dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
     if(AppSettingsState.instance.interceptOutput) {
       OutputInterceptor.setupInterceptor()
     }

@@ -1,6 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.net.URI
 
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
@@ -9,7 +8,7 @@ version = properties("libraryVersion")
 plugins {
     java
     `java-library`
-    id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    id("org.jetbrains.kotlin.jvm") version "2.1.20"
     `maven-publish`
     id("signing")
 }
@@ -47,14 +46,14 @@ tasks {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withJavadocJar()
     withSourcesJar()
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 val logback_version = "1.5.13"
@@ -71,9 +70,6 @@ val aws_version = "2.25.60"
 
 dependencies {
 
-//    compileOnly("software.amazon.awssdk:bedrock:2.25.7")
-//    compileOnly("software.amazon.awssdk:bedrockagent:2.25.7")
-//    compileOnly("software.amazon.awssdk:bedrockagentruntime:2.25.7")
     implementation("software.amazon.awssdk:bedrockruntime:$aws_version")
     implementation("software.amazon.awssdk:auth:$aws_version")
 
@@ -118,72 +114,7 @@ dependencies {
 
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            artifactId = "jo-penai"
-            from(components["java"])
-            versionMapping {
-                usage("java-api") {
-                    fromResolutionOf("runtimeClasspath")
-                }
-                usage("java-runtime") {
-                    fromResolutionResult()
-                }
-            }
-            pom {
-                name.set("Jo Penai")
-                description.set("A Java client for OpenAI's API")
-                url.set("https://github.com/SimiaCryptus/JoPenai")
-                licenses {
-                    license {
-                        name.set("The Apache License, Version 2.0")
-                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("acharneski")
-                        name.set("Andrew Charneski")
-                        email.set("acharneski@gmail.com")
-                    }
-                }
-                scm {
-                    connection.set("scm:git:git://git@github.com/SimiaCryptus/JoPenai.git")
-                    developerConnection.set("scm:git:ssh://git@github.com/SimiaCryptus/JoPenai.git")
-                    url.set("https://github.com/SimiaCryptus/JoPenai")
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-            val snapshotsRepoUrl = "https://oss.sonatype.org/mask/repositories/snapshots"
-            url = URI(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
-            credentials {
-                username = System.getenv("OSSRH_USERNAME") ?: System.getProperty("ossrhUsername")
-                        ?: properties("ossrhUsername")
-                password = System.getenv("OSSRH_PASSWORD") ?: System.getProperty("ossrhPassword")
-                        ?: properties("ossrhPassword")
-            }
-        }
-    }
-    if (System.getenv("GPG_PRIVATE_KEY") != null && System.getenv("GPG_PASSPHRASE") != null) afterEvaluate {
-        signing {
-            sign(publications["mavenJava"])
-        }
-    }
-}
 
-if (System.getenv("GPG_PRIVATE_KEY") != null && System.getenv("GPG_PASSPHRASE") != null) {
-    apply<SigningPlugin>()
-
-    configure<SigningExtension> {
-        useInMemoryPgpKeys(System.getenv("GPG_PRIVATE_KEY"), System.getenv("GPG_PASSPHRASE"))
-        sign(configurations.archives.get())
-    }
-}
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.compilerOptions {
     apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_8)

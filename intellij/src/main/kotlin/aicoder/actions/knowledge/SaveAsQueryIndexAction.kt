@@ -9,8 +9,8 @@ import com.intellij.openapi.progress.Task
 import com.simiacryptus.aicoder.util.IdeaOpenAIClient
 import com.simiacryptus.aicoder.util.UITools
 import com.simiacryptus.aicoder.util.findRecursively
-import com.simiacryptus.skyenet.apps.parse.DocumentRecord.Companion.saveAsBinary
-import com.simiacryptus.skyenet.apps.parse.ProgressState
+import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.saveAsBinary
+import com.simiacryptus.cognotik.apps.parse.ProgressState
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 

@@ -7,8 +7,8 @@ import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.skyenet.apps.parse.DocumentParserApp
-import com.simiacryptus.skyenet.apps.parse.ParsingModelType
+import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
+import com.simiacryptus.cognotik.apps.parse.ParsingModelType
 import javax.swing.JComponent
 
 class DocumentDataExtractorConfigDialog(

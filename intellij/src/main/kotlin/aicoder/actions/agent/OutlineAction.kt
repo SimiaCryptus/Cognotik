@@ -9,10 +9,10 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.IdeaOpenAIClient
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.skyenet.apps.general.OutlineApp
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.webui.application.AppInfoData
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.apps.general.OutlineApp
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 

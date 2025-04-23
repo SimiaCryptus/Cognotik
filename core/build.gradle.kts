@@ -8,7 +8,7 @@ version = properties("libraryVersion")
 plugins {
   java
   `java-library`
-  kotlin("jvm") version "2.0.20"
+    kotlin("jvm") version "2.1.20"
   `maven-publish`
   id("signing")
 }
@@ -23,12 +23,12 @@ repositories {
 }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 kotlin {
-  jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 val junit_version = "5.10.1"
@@ -39,8 +39,12 @@ val hsqldb_version = "2.7.2"
 dependencies {
 
   implementation(group = "org.hsqldb", name = "hsqldb", version = hsqldb_version)
-  implementation(project(":jo-penai"))
-  implementation(project(":antlr"))
+    implementation(project(":jo-penai")) {
+        exclude(group = "org.jetbrains.kotlin")
+    }
+    implementation(project(":antlr")) {
+        exclude(group = "org.jetbrains.kotlin")
+    }
   implementation("org.antlr:antlr4-runtime:4.13.2")
 //  antlr("org.antlr:antlr4:4.13.2")
 

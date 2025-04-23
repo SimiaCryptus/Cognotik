@@ -9,11 +9,11 @@ version = properties("libraryVersion")
 plugins {
   java
   `java-library`
-  id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    id("org.jetbrains.kotlin.jvm") version "2.1.20"
   `maven-publish`
   id("signing")
-  id("io.freefair.sass-base") version "8.10.2"
-  id("io.freefair.sass-java") version "8.10.2"
+    id("io.freefair.sass-base") version "8.13"
+    id("io.freefair.sass-java") version "8.13"
 }
 
 repositories {
@@ -26,15 +26,15 @@ repositories {
 }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 kotlin {
-  jvmToolchain(21)
+    jvmToolchain(17)
 }
 
-val kotlin_version = "2.0.20"
+val kotlin_version = "2.1.20"
 val jetty_version = "11.0.24"
 val jackson_version = "2.17.2"
 val graal_version = "24.1.1"
@@ -58,11 +58,13 @@ dependencies {
   testImplementation(kotlin("compiler-embeddable"))
 
   implementation(project(":jo-penai")) {
+      exclude(group = "org.jetbrains.kotlin")
     exclude(group = "org.slf4j")
   }
 
   implementation(project(":core"))
   implementation(project(":kotlin"))
+    implementation(project(":groovy"))
   implementation("org.apache.pdfbox:pdfbox:3.0.3")
 
   implementation("org.seleniumhq.selenium:selenium-java:4.27.0") {
@@ -100,10 +102,6 @@ dependencies {
 
   compileOnly(kotlin("stdlib"))
   testImplementation(kotlin("stdlib"))
-
-  testImplementation(project(":groovy"))
-  testImplementation(project(":kotlin"))
-  testImplementation(project(":scala"))
 
   implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5", version = "5.3.1") {
     exclude(group = "org.slf4j", module = "slf4j-api")

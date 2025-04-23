@@ -10,7 +10,7 @@ plugins {
   `java-library`
   `scala`
   `maven-publish`
-  id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    id("org.jetbrains.kotlin.jvm") version "2.1.20"
   id("signing")
 }
 
@@ -25,7 +25,7 @@ repositories {
 
 java {
   toolchain {
-    languageVersion.set(JavaLanguageVersion.of(21))
+      languageVersion.set(JavaLanguageVersion.of(17))
   }
 }
 

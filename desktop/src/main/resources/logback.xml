@@ -23,10 +23,10 @@
 
     <!-- Time-based Rolling File Appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/skyenet.log</file>
+        <file>logs/cognotik.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover, keep 30 days -->
-            <fileNamePattern>logs/skyenet.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/cognotik.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>

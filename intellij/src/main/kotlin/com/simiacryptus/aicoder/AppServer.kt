@@ -3,8 +3,8 @@ package com.simiacryptus.aicoder
 import aicoder.actions.SessionProxyServer
 import com.intellij.openapi.project.Project
 import com.simiacryptus.aicoder.config.AppSettingsState
-import com.simiacryptus.skyenet.webui.chat.ChatServer
-import com.simiacryptus.skyenet.webui.servlet.CorsFilter
+import com.simiacryptus.cognotik.webui.chat.ChatServer
+import com.simiacryptus.cognotik.webui.servlet.CorsFilter
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection

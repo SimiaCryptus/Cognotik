@@ -9,14 +9,14 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
 import com.simiacryptus.aicoder.util.findRecursively
-import com.simiacryptus.skyenet.apps.parse.DocumentRecord
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.util.TensorflowProjector
-import com.simiacryptus.skyenet.webui.application.AppInfoData
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.application.ApplicationSocketManager
-import com.simiacryptus.skyenet.webui.session.SocketManager
+import com.simiacryptus.cognotik.apps.parse.DocumentRecord
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.util.TensorflowProjector
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 

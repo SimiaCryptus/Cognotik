@@ -1,5 +1,5 @@
 clear
-sudo dpkg -r skyenetapps
+sudo dpkg -r Cognotik
 ./gradlew clean packageLinux
-sudo dpkg -i build/jpackage/skyenetapps_1.0.0_amd64.deb
-/opt/skyenetapps/bin/SkyenetApps `pwd`
+sudo dpkg -i build/jpackage/cognotik_*.deb
+/opt/cognotik/bin/Cognotik `pwd`

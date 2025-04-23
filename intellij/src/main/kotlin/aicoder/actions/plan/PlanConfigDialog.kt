@@ -13,11 +13,11 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.config.AppSettingsState.SavedPlanConfig
+import com.simiacryptus.cognotik.apps.plan.PlanSettings
+import com.simiacryptus.cognotik.apps.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.apps.plan.TaskType
+import com.simiacryptus.cognotik.apps.plan.tools.CommandAutoFixTask
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.skyenet.apps.plan.PlanSettings
-import com.simiacryptus.skyenet.apps.plan.TaskSettingsBase
-import com.simiacryptus.skyenet.apps.plan.TaskType
-import com.simiacryptus.skyenet.apps.plan.tools.CommandAutoFixTask
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
 import java.awt.CardLayout
@@ -39,7 +39,7 @@ class PlanConfigDialog(
   private val maxIterationsField = JBTextField("100")
   
   // New UI elements for graph file input when "Graph" mode is selected.
-  private val graphFileTextField = JTextField(com.simiacryptus.skyenet.apps.graph.GraphOrderedPlanMode.graphFile, 20)
+  private val graphFileTextField = JTextField(com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile, 20)
   private val selectGraphFileButton = JButton("Select File")
   private val graphFilePanel = JPanel().apply {
     layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -428,22 +428,22 @@ class PlanConfigDialog(
         val selectedFile = chooser.selectedFile
         graphFileTextField.text = selectedFile.absolutePath
         // Update the graph file used by GraphOrderedPlanMode.
-        com.simiacryptus.skyenet.apps.graph.GraphOrderedPlanMode.graphFile = selectedFile.absolutePath
+          com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile = selectedFile.absolutePath
       }
     }
     
     // Keep the text field in sync with the GraphOrderedPlanMode property.
     graphFileTextField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
       override fun insertUpdate(e: javax.swing.event.DocumentEvent?) {
-        com.simiacryptus.skyenet.apps.graph.GraphOrderedPlanMode.graphFile = graphFileTextField.text
+          com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile = graphFileTextField.text
       }
       
       override fun removeUpdate(e: javax.swing.event.DocumentEvent?) {
-        com.simiacryptus.skyenet.apps.graph.GraphOrderedPlanMode.graphFile = graphFileTextField.text
+          com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile = graphFileTextField.text
       }
       
       override fun changedUpdate(e: javax.swing.event.DocumentEvent?) {
-        com.simiacryptus.skyenet.apps.graph.GraphOrderedPlanMode.graphFile = graphFileTextField.text
+          com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile = graphFileTextField.text
       }
     })
     

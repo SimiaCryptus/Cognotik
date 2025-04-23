@@ -1,12 +1,12 @@
 package com.simiacryptus.aicoder.util
 
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.StorageInterface
+import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.StorageInterface
-import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.chat.ChatSocketManager
 
 open class CodeChatSocketManager(
   session: Session,

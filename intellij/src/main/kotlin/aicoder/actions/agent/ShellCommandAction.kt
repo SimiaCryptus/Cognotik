@@ -9,17 +9,17 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
+import com.simiacryptus.cognotik.apps.code.CodingAgent
+import com.simiacryptus.cognotik.core.actors.CodingActor
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.chatModel
-import com.simiacryptus.skyenet.apps.code.CodingAgent
-import com.simiacryptus.skyenet.core.actors.CodingActor
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.interpreter.ProcessInterpreter
-import com.simiacryptus.skyenet.webui.application.AppInfoData
-import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.session.SessionTask
 import java.text.SimpleDateFormat
 
 class ShellCommandAction : BaseAction() {

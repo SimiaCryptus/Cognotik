@@ -1,13 +1,13 @@
 package aicoder.actions
 
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.skyenet.core.platform.model.User
-import com.simiacryptus.skyenet.webui.application.AppInfoData
-import com.simiacryptus.skyenet.webui.application.ApplicationServer
-import com.simiacryptus.skyenet.webui.chat.ChatServer
-import com.simiacryptus.skyenet.webui.session.SocketManager
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.chat.ChatServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 class SessionProxyServer : ApplicationServer(
   applicationName = "AI Coding Assistant",

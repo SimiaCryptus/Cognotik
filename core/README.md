@@ -130,7 +130,7 @@ Before integrating the Cognotik Core Module into your project, ensure you have t
 
    ```groovy
    dependencies {
-       implementation 'com.simiacryptus:skyenet-core:1.0.0' // Replace with actual group and version
+       implementation 'com.simiacryptus:cognotik-core:1.0.0' // Replace with actual group and version
        implementation 'org.apache.commons:commons-text:1.9'
        implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.3'
        // Add other necessary dependencies
@@ -143,7 +143,7 @@ Before integrating the Cognotik Core Module into your project, ensure you have t
    <dependencies>
        <dependency>
            <groupId>com.simiacryptus</groupId>
-           <artifactId>skyenet-core</artifactId>
+           <artifactId>cognotik-core</artifactId>
            <version>1.0.0</version> <!-- Replace with actual version -->
        </dependency>
        <dependency>
@@ -165,11 +165,11 @@ Before integrating the Cognotik Core Module into your project, ensure you have t
    Before using the core functionalities, initialize the `ApplicationServices` to set up essential components like authentication, authorization, and data storage.
 
    ```kotlin
-   import com.simiacryptus.skyenet.core.platform.ApplicationServices
-   import com.simiacryptus.skyenet.core.platform.file.AuthenticationManager
-   import com.simiacryptus.skyenet.core.platform.file.AuthorizationManager
-   import com.simiacryptus.skyenet.core.platform.file.DataStorage
-   import com.simiacryptus.skyenet.core.platform.file.MetadataStorage
+   import com.simiacryptus.cognotik.core.platform.ApplicationServices
+   import com.simiacryptus.cognotik.core.platform.file.AuthenticationManager
+   import com.simiacryptus.cognotik.core.platform.file.AuthorizationManager
+   import com.simiacryptus.cognotik.core.platform.file.DataStorage
+   import com.simiacryptus.cognotik.core.platform.file.MetadataStorage
 
    fun initializeApplicationServices() {
        ApplicationServices.isLocked = false // Set to true to prevent further modifications after setup
@@ -187,7 +187,7 @@ Before integrating the Cognotik Core Module into your project, ensure you have t
    If your application requires cloud functionalities like file storage or encryption:
 
    ```kotlin
-   import com.simiacryptus.skyenet.core.platform.AwsPlatform
+   import com.simiacryptus.cognotik.core.platform.AwsPlatform
 
    fun configureCloudIntegration() {
        ApplicationServices.cloud = AwsPlatform.get()
@@ -218,8 +218,8 @@ Use `SimpleActor` to handle straightforward chat interactions.
 
 ```kotlin
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.SimpleActor
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 
 fun simpleChatExample() {
     val simpleActor = SimpleActor(
@@ -245,10 +245,10 @@ Leverage `CodingActor` to convert natural language instructions into executable 
 
 ```kotlin
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.CodingActor
-import com.simiacryptus.skyenet.interpreter.Interpreter
-import com.simiacryptus.skyenet.interpreter.PythonInterpreter
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.CodingActor
+import com.simiacryptus.cognotik.interpreter.Interpreter
+import com.simiacryptus.cognotik.interpreter.PythonInterpreter
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 
 fun codeGenerationExample() {
     val codingActor = CodingActor(
@@ -286,8 +286,8 @@ Use `ImageActor` to create images based on textual descriptions.
 
 ```kotlin
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.ImageActor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.ImageActor
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 
 fun imageGenerationExample() {
     val imageActor = ImageActor(
@@ -319,8 +319,8 @@ Convert AI-generated text into an audio file using `TextToSpeechActor`.
 ```kotlin
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.TextToSpeechActor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.TextToSpeechActor
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 
 fun textToSpeechExample() {
     val ttsActor = TextToSpeechActor(
@@ -423,7 +423,7 @@ Contributions are welcome! To contribute to the Cognotik Core Module:
 
 If you encounter any issues or have suggestions for improvements:
 
-- Open an issue on the [GitHub repository](https://github.com/your-repo/skyenet-core/issues).
+- Open an issue on the [GitHub repository](https://github.com/your-repo/cognotik-core/issues).
 
 ## License
 
@@ -431,4 +431,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-*For further assistance or inquiries, please contact the development team at [dev@skyenet.com](mailto:dev@skyenet.com).*
+*For further assistance or inquiries, please contact the development team
+at [dev@cognotik.com](mailto:dev@cognotik.com).*

@@ -1,11 +1,11 @@
 package com.simiacryptus.aicoder.util
 
 import com.simiacryptus.aicoder.config.AppSettingsState
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.OpenAIModel
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.LoggerFactory
 import java.io.File

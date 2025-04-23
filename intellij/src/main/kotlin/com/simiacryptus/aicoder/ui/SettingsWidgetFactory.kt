@@ -15,10 +15,10 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.config.UsageTable
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
-import com.simiacryptus.skyenet.core.platform.Session
-import com.simiacryptus.skyenet.core.platform.model.ApplicationServicesConfig.dataStorageRoot
 import icons.MyIcons
 import java.awt.*
 import java.awt.datatransfer.StringSelection

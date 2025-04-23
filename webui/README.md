@@ -456,8 +456,8 @@ Logging is implemented using **SLF4J** for standardized log management. Logs pro
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-repo/skyenet-webui-chat.git
-   cd skyenet-webui-chat
+   git clone https://github.com/your-repo/cognotik-webui-chat.git
+   cd cognotik-webui-chat
    ```
 
 2. **Build the Project**
@@ -588,7 +588,7 @@ Contributions are welcome! To contribute:
 1. **Fork the Repository**
 
    ```bash
-   git clone https://github.com/your-repo/skyenet-webui-chat.git
+   git clone https://github.com/your-repo/cognotik-webui-chat.git
    ```
 
 2. **Create a Feature Branch**

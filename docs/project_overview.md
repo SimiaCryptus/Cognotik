@@ -71,7 +71,8 @@ Each language module provides:
 - Maven publication configuration
 
 ### Key Dependencies
-- Kotlin 2.0.20
+
+- Kotlin 2.1.20
 - Jetty 11.0.24
 - Jackson 2.17.2
 - Various testing frameworks (JUnit 5)

@@ -11,7 +11,7 @@ This README provides a detailed overview for developers looking to understand, d
 
 ## Table of Contents
 
-- [Cognotik Project](#skyenet-project)
+- [Cognotik Project](#cognotik-project)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Modules Overview](#modules-overview)
@@ -306,8 +306,8 @@ Update the `TensorflowProjector.kt` with appropriate storage paths and cloud con
 
 ```kotlin
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.SimpleActor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.SimpleActor
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 
 fun simpleChatExample() {
     val simpleActor = SimpleActor(
@@ -331,9 +331,9 @@ fun simpleChatExample() {
 
 ```kotlin
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.CodingActor
-import com.simiacryptus.skyenet.interpreter.PythonInterpreter
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.CodingActor
+import com.simiacryptus.cognotik.interpreter.PythonInterpreter
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 
 fun codeGenerationExample() {
     val codingActor = CodingActor(
@@ -360,8 +360,8 @@ fun codeGenerationExample() {
 
 ```kotlin
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.ImageActor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.ImageActor
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 import javax.imageio.ImageIO
 import java.io.File
 
@@ -392,8 +392,8 @@ fun imageGenerationExample() {
 
 ```kotlin
 import com.simiacryptus.jopenai.models.OpenAIModels
-import com.simiacryptus.skyenet.core.actors.TextToSpeechActor
-import com.simiacryptus.skyenet.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.actors.TextToSpeechActor
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 import java.io.File
 
 fun textToSpeechExample() {

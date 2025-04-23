@@ -11,12 +11,12 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.config.Name
 import com.simiacryptus.aicoder.util.UITools
+import com.simiacryptus.cognotik.core.util.getModuleRootForFile
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.skyenet.core.util.getModuleRootForFile
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout

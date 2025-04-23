@@ -1,13 +1,13 @@
 package com.simiacryptus.diff
 
-import com.simiacryptus.skyenet.AgentPatterns.displayMapInTabs
-import com.simiacryptus.skyenet.core.util.IterativePatchUtil
-import com.simiacryptus.skyenet.core.util.SimpleDiffApplier
-import com.simiacryptus.skyenet.set
-import com.simiacryptus.skyenet.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.skyenet.webui.application.ApplicationInterface
-import com.simiacryptus.skyenet.webui.session.SessionTask
-import com.simiacryptus.skyenet.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.AgentPatterns.displayMapInTabs
+import com.simiacryptus.cognotik.core.util.IterativePatchUtil
+import com.simiacryptus.cognotik.core.util.SimpleDiffApplier
+import com.simiacryptus.cognotik.set
+import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 
 class AddApplyDiffLinks {
   companion object {

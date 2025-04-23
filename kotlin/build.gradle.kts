@@ -8,7 +8,7 @@ version = properties("libraryVersion")
 plugins {
   java
   `java-library`
-  id("org.jetbrains.kotlin.jvm") version "2.0.20"
+    id("org.jetbrains.kotlin.jvm") version "2.1.20"
   `maven-publish`
   id("signing")
 }
@@ -23,13 +23,12 @@ repositories {
 }
 
 kotlin {
-  jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 dependencies {
 
   implementation(project(":core"))
-
   //compileOnly(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")// https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 

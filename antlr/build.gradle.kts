@@ -4,6 +4,10 @@ plugins {
     antlr
 }
 
+fun properties(key: String) = project.findProperty(key).toString()
+group = properties("libraryGroup")
+version = properties("libraryVersion")
+
 repositories {
     mavenCentral()
 }
@@ -25,6 +29,6 @@ tasks {
         outputDirectory = file("build/generated-src/antlr/main")
     }
     withType<JavaCompile> {
-        options.release.set(21)
+        options.release.set(17)
     }
 }
