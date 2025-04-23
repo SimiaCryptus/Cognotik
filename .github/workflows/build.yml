@@ -1,19 +1,407 @@
 name: Build
 on:
+  push:
+    branches: [ main ]
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: .
+
 jobs:
   build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+    outputs:
+      version: ${{ steps.properties.outputs.version }}
+      changelog: ${{ steps.properties.outputs.changelog }}
+      pluginVerifierHomeDir: ${{ steps.properties.outputs.pluginVerifierHomeDir }}
+    steps:
+
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
+      - name: Configure Git
+        run: |
+          git config --global init.defaultBranch main
+          git --version
+          echo "Git configuration:"
+          git config --list
+
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x intellij/gradlew
+
+      - name: Print Gradle version
+        working-directory: intellij
+        run: ./gradlew --version
+
+      - name: Export Properties
+        working-directory: intellij
+        id: properties
+        shell: bash
+        run: |
+          echo "Starting properties export..."
+          PROPERTIES="$(./gradlew properties --console=plain -q)"
+          VERSION="$(echo "$PROPERTIES" | grep "^version:" | cut -f2- -d ' ')"
+          CHANGELOG="$(./gradlew getChangelog --unreleased --no-header --console=plain -q)"
+          echo "Detected version: $VERSION"
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "pluginVerifierHomeDir=~/.pluginVerifier" >> $GITHUB_OUTPUT
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "Properties export completed"
+
+      - name: Build plugin
+        working-directory: intellij
+        run: |
+          echo "Starting plugin build..."
+          ./gradlew buildPlugin --info
+          echo "Plugin build completed"
+
+      - name: Prepare Plugin Artifact
+        working-directory: intellij
+        id: artifact
+        shell: bash
+        run: |
+          echo "Preparing plugin artifact..."
+          cd ${{ github.workspace }}/intellij/build/distributions
+          FILENAME=`ls *.zip`
+          echo "Found artifact: $FILENAME"
+          echo "filename=${FILENAME:0:-4}" >> $GITHUB_OUTPUT
+          echo "Artifact preparation completed"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          working-directory: intellij
+          name: ${{ steps.artifact.outputs.filename }}
+          path: intellij/build/distributions/*
+
+      - name: List uploaded artifacts
+        run: |
+          echo "Uploaded artifacts in distributions directory:"
+          ls -la intellij/build/distributions/
+
+  build-windows-installer:
+    name: Build Windows Installer
+    runs-on: windows-latest
+    needs: [ build ]
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+      - name: Install WiX Toolset
+        run: |
+          choco install wixtoolset -y
+      - name: Ensure App Image Directory Exists
+        shell: pwsh
+        run: |
+          if (-Not (Test-Path "build\\jpackage\\SkyenetApps")) {
+              New-Item -ItemType Directory -Force -Path "build\\jpackage\\SkyenetApps"
+          }
+      - name: Update SkyenetApps Version
+        shell: pwsh
+        run: |
+          $version = "${{ needs.build.outputs.version }}"
+          Write-Output "Setting SkyenetApps version to: $version"
+          $gradlePropertiesPath = "SkyenetApps/gradle.properties"
+          $content = Get-Content $gradlePropertiesPath -Raw
+          $updatedContent = $content -replace "libraryVersion\s*=\s*[0-9.]+", "libraryVersion = $version"
+          Set-Content -Path $gradlePropertiesPath -Value $updatedContent
+          Write-Output "Updated gradle.properties with new version"
+      - name: Make Gradle wrapper executable
+        working-directory: SkyenetApps
+        run: |
+          # Ensure the wrapper is executable on Windows
+          chmod +x ./gradlew.bat
+      - name: Build Windows MSI Installer
+        working-directory: SkyenetApps
+        run: ./gradlew.bat jpackage
+      - name: List MSI artifacts
+        working-directory: SkyenetApps
+        run: |
+          echo "MSI artifacts in jpackage directory:"
+          if (Test-Path "build/jpackage") {
+            Get-ChildItem -Path build/jpackage -Recurse -Filter *.msi | ForEach-Object { $_.FullName }
+          } else {
+            Write-Output "build/jpackage directory not found."
+          }
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyenet-windows-installer
+          path: SkyenetApps/build/jpackage/*.msi
+
+
+  test:
+    name: Test
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+    steps:
+
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
+      - name: Configure Git
+        run: |
+          git config --global init.defaultBranch main
+          git --version
+          echo "Git configuration:"
+          git config --list
+
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x intellij/gradlew
+
+      - name: Print Gradle version
+        working-directory: intellij
+        run: ./gradlew --version
+
+      - name: Run Tests
+        working-directory: intellij
+        run: |
+          echo "Starting test execution..."
+          ./gradlew check --info
+          echo "Test execution completed"
+
+      - name: Collect Tests Result
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-result
+          path: intellij/build/reports/tests
+
+  verify:
+    name: Verify plugin
+    needs: [ build ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
+
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@main
         with:
+          tool-cache: false
+
+      - name: Configure Git
+        run: |
+          git config --global init.defaultBranch main
+          git --version
+          echo "Git configuration:"
+          git config --list
+
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Gradle Wrapper Validation
+        uses: gradle/actions/wrapper-validation@v3
+        with:
+          working-directory: intellij
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
           java-version: 17
-          distribution: 'temurin'
-      - name: Grant execute permissions for gradlew
+
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: Set Gradle options
-        run: echo "GRADLE_OPTS='-Xmx4g'" >> $GITHUB_ENV
-      - name: Build and test
-        run: ./gradlew build
+
+      - name: Print Gradle version
+        working-directory: intellij
+        run: ./gradlew --version
+
+      - name: Setup Plugin Verifier IDEs Cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ needs.build.outputs.pluginVerifierHomeDir }}/ides
+          key: plugin-verifier-${{ hashFiles('intellij/build/listProductsReleases.txt') }}
+
+      - name: Run Plugin Verification tasks
+        working-directory: intellij
+        run: ./gradlew verifyPlugin
+
+      - name: Collect Plugin Verifier Result
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pluginVerifier-result
+          path: intellij/build/reports/pluginVerifier
+
+  releaseDraft:
+    name: Release draft
+    if: github.event_name != 'pull_request'
+    needs: [ build, test, verify, build-windows-installer ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
+      - name: Configure Git
+        run: |
+          git config --global init.defaultBranch main
+          git --version
+          echo "Git configuration:"
+          git config --list
+
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Gradle Wrapper Validation
+        uses: gradle/actions/wrapper-validation@v3
+        with:
+          working-directory: intellij
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Print Gradle version
+        working-directory: intellij
+        run: ./gradlew --version
+
+      - name: Remove Old Release Drafts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/{owner}/{repo}/releases \
+            --jq '.[] | select(.draft == true) | .id' \
+            | xargs -I '{}' gh api -X DELETE repos/{owner}/{repo}/releases/{}
+
+      - name: Create Release Draft
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ needs.build.outputs.version }}" \
+            --draft \
+            --title "v${{ needs.build.outputs.version }}" \
+            --notes "${{ needs.build.outputs.changelog }}"
+          RELEASE_URL=$(gh release view "v${{ needs.build.outputs.version }}" --json url -q .url)
+          echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.filename }}
+          path: ./artifact
+      - name: Download Windows Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: skyenet-windows-installer
+          path: ./windows-installer
+
+
+      - name: Upload Plugin Release Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading plugin asset..."
+          gh release upload "v${{ needs.build.outputs.version }}" \
+            "./artifact/intellij-${{ needs.build.outputs.version }}/intellij-${{ needs.build.outputs.version }}.zip"
+
+      - name: Upload Windows Installer Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading Windows installer asset..."
+          MSI_FILE=$(find ./windows-installer -name "*.msi" -type f)
+          if [ -z "$MSI_FILE" ]; then
+            echo "Error: No MSI file found in windows-installer directory"
+            ls -la ./windows-installer
+            exit 1
+          fi
+          echo "Found MSI file: $MSI_FILE"
+          gh release upload "v${{ needs.build.outputs.version }}" \
+            "$MSI_FILE"

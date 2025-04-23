@@ -1,0 +1,76 @@
+name: Release
+on:
+  release:
+    types: [prereleased, released]
+
+jobs:
+  release:
+    name: Publish Plugin
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          large-packages: true
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Dump runner context
+        env:
+          RUNNER_CONTEXT: ${{ toJSON(runner) }}
+        run: echo "$RUNNER_CONTEXT"
+      - name: Configure Git
+        run: |
+          git config --global init.defaultBranch main
+          git --version
+          echo "Git configuration:"
+          git config --list
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Gradle Wrapper Validation
+        uses: gradle/actions/wrapper-validation@v3
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Print Gradle version
+        working-directory: intellij
+        run: ../gradlew --version
+
+      - name: Publish Plugin
+        working-directory: intellij
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: ../gradlew build publishPlugin -x test
+
+      - name: Upload Release Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view ${{ github.event.release.tag_name }} || gh release create ${{ github.event.release.tag_name }} --title "Release ${{ github.event.release.tag_name }}" --draft
+          cd ${{ github.workspace }}/intellij/build/distributions
+          for file in *; do
+            gh release upload ${{ github.event.release.tag_name }} "$file"
+          done
