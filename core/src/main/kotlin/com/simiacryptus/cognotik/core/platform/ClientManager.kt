@@ -69,21 +69,13 @@ open class ClientManager {
     session: Session,
     user: User?,
   ): ChatClient? {
-    log.debug("Creating client for session: {}, user: {}", session, user)
+    log.debug("Creating chat client for session: {}, user: {}", session, user)
     val sessionDir = dataStorageFactory(dataStorageRoot).getDataDir(user, session).apply { mkdirs() }
     if (user != null) {
       val userSettings = userSettingsManager.getUserSettings(user)
       val userApi =
         if (userSettings.apiKeys.isNotEmpty()) {
-          ChatClient(
-            key = userSettings.apiKeys,
-            apiBase = userSettings.apiBase,
-            workPool = getPool(session, user),
-          ).apply {
-            this.session = session
-            this.user = user
-            logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
-          }
+          getChatClient(session, user)
         } else null
       if (userApi != null) return userApi
     }
@@ -109,7 +101,7 @@ open class ClientManager {
     session: Session,
     user: User?,
   ): OpenAIClient? {
-    log.debug("Creating client for session: {}, user: {}", session, user)
+    log.debug("Creating ai client for session: {}, user: {}", session, user)
     val sessionDir = dataStorageFactory(dataStorageRoot).getDataDir(user, session).apply { mkdirs() }
     if (user != null) {
       val userSettings = userSettingsManager.getUserSettings(user)

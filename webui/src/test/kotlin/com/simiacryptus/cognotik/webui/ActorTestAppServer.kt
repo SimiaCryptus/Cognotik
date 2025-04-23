@@ -39,7 +39,7 @@ object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.Applicat
     val model = OpenAIModels.GPT4oMini
     val parsingModel = OpenAIModels.GPT4oMini
     listOf(
-      ChildWebApp("/chat", BasicChatApp(File("."), ChatClient(), model, parsingModel)),
+      ChildWebApp("/chat", BasicChatApp(File("."), model, parsingModel)),
       ChildWebApp(
         "/test_simple",
         SimpleActorTestApp(

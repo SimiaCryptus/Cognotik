@@ -4,6 +4,8 @@ import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.TabbedDisplay
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.core.platform.ClientManager
 import com.simiacryptus.cognotik.core.platform.Session
 import com.simiacryptus.cognotik.core.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -27,7 +29,6 @@ import kotlin.math.min
 open class DocumentParserApp(
   applicationName: String = "Document Extractor",
   path: String = "/pdfExtractor",
-  val api: API = ChatClient(),
   val parsingModel: ParsingModel<DocumentData>,
   val reader: (File) -> DocumentReader = {
     when {
@@ -65,6 +66,7 @@ open class DocumentParserApp(
           settings = settings,
           pagesPerBatch = settings.pagesPerBatch,
           progressBar = progressBar,
+          api = ApplicationServices.clientManager.getChatClient(session, user),
         )
       }
     }
@@ -81,6 +83,7 @@ open class DocumentParserApp(
         maxPages = settings.maxPages.coerceAtMost(Int.MAX_VALUE),
         settings = settings,
         pagesPerBatch = settings.pagesPerBatch,
+        api = ApplicationServices.clientManager.getChatClient(session, user),
       )
     }
   }
@@ -92,6 +95,7 @@ open class DocumentParserApp(
     maxPages: Int,
     settings: Settings,
     pagesPerBatch: Int,
+    api: ChatClient,
     progressBar: ProgressState? = null
   ) {
     try {
@@ -101,7 +105,7 @@ open class DocumentParserApp(
       }
 
       task.header("Knowledge Extractor", 2)
-      val api = (api as ChatClient).getChildClient(task)
+      val api = api.getChildClient(task)
       // Create output directory
       val outputDir = root.resolve("output").apply<File> { mkdirs() }
       if (!outputDir.exists()) {

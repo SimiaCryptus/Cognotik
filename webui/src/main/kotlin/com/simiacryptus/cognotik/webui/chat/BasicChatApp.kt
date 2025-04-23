@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.chat
 
+import com.simiacryptus.cognotik.core.platform.ApplicationServices
 import com.simiacryptus.cognotik.core.platform.Session
 import com.simiacryptus.cognotik.core.platform.file.DataStorage
 import com.simiacryptus.cognotik.core.platform.model.User
@@ -10,7 +11,6 @@ import java.io.File
 
 class BasicChatApp(
   root: File,
-  val api: ChatClient,
   val model: ChatModel,
   val parsingModel: ChatModel,
   applicationName: String = "Chat"
@@ -30,7 +30,7 @@ class BasicChatApp(
     parsingModel = parsingModel,
     initialAssistantPrompt = "",
     systemPrompt = "",
-    api = api,
+    api = ApplicationServices.clientManager.getChatClient(session, user),
     temperature = 0.0,
     applicationClass = this::class.java,
     storage = DataStorage(root),
