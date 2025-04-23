@@ -107,7 +107,6 @@ class DocumentDataExtractorAction : BaseAction(
         val app = object : DocumentParserApp(
           applicationName = "Document Extractor",
           path = this@DocumentDataExtractorAction.path,
-          api = this@DocumentDataExtractorAction.api,
           fileInputs = processableFiles.map { it.toNioPath() },
           parsingModel = parsingModel as ParsingModel<DocumentData>,
           fastMode = settings.fastMode,
