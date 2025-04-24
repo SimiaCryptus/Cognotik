@@ -21,8 +21,9 @@ import javax.swing.table.DefaultTableModel
 class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
   override fun apply() {
     super.apply()
-    addUserSuppliedModels(settingsInstance.userSuppliedModels
-      ?.map { fromJson(it, UserSuppliedModel::class.java) } ?: emptyList())
+    addUserSuppliedModels(
+      settingsInstance.userSuppliedModels
+        ?.map { fromJson(it, UserSuppliedModel::class.java) } ?: emptyList())
     if (settingsInstance.apiLog) {
       val file = File(AppSettingsState.instance.pluginHome, "openai.log")
       if (AppSettingsState.auxiliaryLog?.absolutePath?.lowercase() != file.absolutePath.lowercase()) {
@@ -35,9 +36,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       IdeaChatClient.instance.logStreams.retainAll { it.close(); false }
     }
   }
-  
+
   private val password = JPasswordField()
-  
+
   override fun build(component: AppSettingsComponent): JComponent {
     val tabbedPane = com.intellij.ui.components.JBTabbedPane()
     try {
@@ -66,7 +67,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
           })
           add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(JLabel("Password:"))
-            add(password) 
+            add(password)
             add(JLabel("Configuration:"))
             add(JButton("Export Config").apply {
               addActionListener {
@@ -88,34 +89,24 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     try {
       tabbedPane.addTab("Keys", JPanel(BorderLayout()).apply {
         add(JPanel(BorderLayout()).apply {
-          layout = BoxLayout(this, BoxLayout.Y_AXIS)
           add(JPanel(BorderLayout()).apply {
             add(JLabel("API Configurations:"), BorderLayout.NORTH)
             add(component.apis, BorderLayout.CENTER)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("GitHub Token:"))
-            add(component.githubToken)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Google API Key:"))
-            add(component.googleApiKey)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Google Search Engine ID:"))
-            add(component.googleSearchEngineId)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("AWS Profile:"))
-            add(component.awsProfile)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("AWS Region:"))
-            add(component.awsRegion)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("AWS Bucket:"))
-            add(component.awsBucket)
+          }, BorderLayout.CENTER)
+          add(JPanel(BorderLayout()).apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+              add(JLabel("AWS Profile:"))
+              add(component.awsProfile)
+            })
+            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+              add(JLabel("AWS Region:"))
+              add(component.awsRegion)
+            })
+            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+              add(JLabel("AWS Bucket:"))
+              add(component.awsBucket)
+            })
           })
         })
       })
@@ -146,20 +137,13 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             add(component.diffLoggingEnabled)
           })
           add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Edit API Requests:"))
-            add(component.editRequests)
+            add(JLabel("Suppress Errors:"))
+            add(component.suppressErrors)
           })
           add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            // Removed sections that reference non-existing components
-            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-              add(JLabel("Ignore Errors:"))
-              add(component.suppressErrors)
-            })
-          }, BorderLayout.NORTH)
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            //add(JLabel("Show Welcome Screen:"))
+            add(JLabel("Show Welcome Screen:"))
             add(component.showWelcomeScreen)
-          })
+          }, BorderLayout.NORTH)
           add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(JLabel("Server Port:"))
             add(component.listeningPort)
@@ -176,14 +160,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
           add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(JLabel("Shell Command:"))
             add(component.shellCommand)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Enable Legacy Actions:"))
-            add(component.enableLegacyActions)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Human Language:"))
-            add(component.humanLanguage)
           })
         }, BorderLayout.NORTH)
       } catch (e: Exception) {
@@ -224,26 +200,18 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       }
     })
 
-/*
-    tabbedPane.addTab("Usage", JPanel(BorderLayout()).apply {
-      try {
-        add(component.usage, BorderLayout.CENTER)
-      } catch (e: Exception) {
-        log.warn("Error building Usage", e)
-      }
-    })
-*/
 
     return tabbedPane
   }
+
   private fun showExportConfigDialog() {
     val dialog = JDialog(null as Frame?, "Export Configuration", true)
     dialog.layout = BorderLayout()
-    
-   // Encrypt keys before converting to JSON
-   val encryptedSettings = AppSettingsState.instance.copy()
-   encryptedSettings.apiKeys?.replaceAll { k, v -> EncryptionUtil.encrypt(v, password.text) ?: v }
-   val configJson = JsonUtil.toJson(encryptedSettings)
+
+    // Encrypt keys before converting to JSON
+    val encryptedSettings = AppSettingsState.instance.copy()
+    encryptedSettings.apiKeys?.replaceAll { k, v -> EncryptionUtil.encrypt(v, password.text) ?: v }
+    val configJson = JsonUtil.toJson(encryptedSettings)
 
     val textArea = JTextArea(configJson).apply {
       lineWrap = true
@@ -295,6 +263,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     dialog.setLocationRelativeTo(null)
     dialog.isVisible = true
   }
+
   private fun showImportConfigDialog() {
     val dialog = JDialog(null as Frame?, "Import Configuration", true)
     dialog.layout = BorderLayout()
@@ -332,7 +301,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         val importedSettings = fromJson<AppSettingsState>(textArea.text, AppSettingsState::class.java)
         // Confirm before applying
         val confirm = JOptionPane.showConfirmDialog(
-          dialog, 
+          dialog,
           "Are you sure you want to apply this configuration? This will overwrite your current settings.",
           "Confirm Import",
           JOptionPane.YES_NO_OPTION,
@@ -349,10 +318,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
           importedSettings.apiBase?.forEach { (provider, base) ->
             AppSettingsState.instance.apiBase?.put(provider, base)
           }
-          
+
           // Update UI to reflect imported settings
           write(AppSettingsState.instance, component!!)
-          
+
           JOptionPane.showMessageDialog(
             dialog,
             "Configuration applied successfully. Please restart the IDE for all changes to take effect.",
@@ -384,13 +353,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
   override fun write(settings: AppSettingsState, component: AppSettingsComponent) {
     try {
       component.diffLoggingEnabled.isSelected = settings.diffLoggingEnabled
-      component.githubToken.text = settings.githubToken ?: ""
-      component.googleApiKey.text = settings.googleApiKey ?: ""
-      component.googleSearchEngineId.text = settings.googleSearchEngineId ?: ""
       component.awsProfile.text = settings.awsProfile ?: ""
       component.awsRegion.text = settings.awsRegion ?: ""
       component.awsBucket.text = settings.awsBucket ?: ""
-      component.humanLanguage.text = settings.humanLanguage
       component.listeningPort.text = settings.listeningPort.toString()
       component.listeningEndpoint.text = settings.listeningEndpoint
       component.suppressErrors.isSelected = settings.suppressErrors
@@ -399,26 +364,24 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       component.smartModel.selectedItem = settings.smartModel
       component.apiLog.isSelected = settings.apiLog
       component.devActions.isSelected = settings.devActions
-      component.editRequests.isSelected = settings.editRequests
       component.mainImageModel.selectedItem = settings.mainImageModel
       component.storeMetadata.text = settings.storeMetadata ?: ""
       component.temperature.text = settings.temperature.toString()
       component.pluginHome.text = settings.pluginHome.absolutePath
       component.shellCommand.text = settings.shellCommand
       component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
-      component.enableLegacyActions.isSelected = settings.enableLegacyActions
       component.setExecutables(settings.executables ?: emptySet())
       component.setUserSuppliedModels(settings.userSuppliedModels?.map { fromJson(it, UserSuppliedModel::class.java) } ?: emptyList())
       val model = component.apis.model as DefaultTableModel
       model.rowCount = 0 // Clear existing rows
       model.rowCount = 0 // Clear existing rows
       val apiKeys = settings.apiKeys
-      if(null == apiKeys) {
+      if (null == apiKeys) {
         log.warn("API keys are null")
         return
       }
       val apiBase = settings.apiBase
-      if(null == apiBase) {
+      if (null == apiBase) {
         log.warn("API base is null")
         return
       }
@@ -445,15 +408,11 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
   override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
     try {
       settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
-      settings.githubToken = component.githubToken.text.takeIf { it.isNotBlank() }
-      settings.googleApiKey = component.googleApiKey.text.takeIf { it.isNotBlank() }
-      settings.googleSearchEngineId = component.googleSearchEngineId.text.takeIf { it.isNotBlank() }
       settings.awsProfile = component.awsProfile.text.takeIf { it.isNotBlank() }
       settings.awsRegion = component.awsRegion.text.takeIf { it.isNotBlank() }
       settings.awsBucket = component.awsBucket.text.takeIf { it.isNotBlank() }
       settings.executables?.clear()
       settings.executables?.plusAssign(component.getExecutables().toMutableSet())
-      settings.humanLanguage = component.humanLanguage.text
       settings.listeningPort = component.listeningPort.text.safeInt()
       settings.listeningEndpoint = component.listeningEndpoint.text
       settings.suppressErrors = component.suppressErrors.isSelected
@@ -461,14 +420,12 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       settings.smartModel = component.smartModel.selectedItem as String
       settings.apiLog = component.apiLog.isSelected
       settings.devActions = component.devActions.isSelected
-      settings.editRequests = component.editRequests.isSelected
       settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
       settings.temperature = component.temperature.text.safeDouble()
       settings.storeMetadata = component.storeMetadata.text.takeIf { it.isNotBlank() }
       settings.mainImageModel = (component.mainImageModel.selectedItem as String)
       settings.pluginHome = File(component.pluginHome.text)
       settings.shellCommand = component.shellCommand.text
-      settings.enableLegacyActions = component.enableLegacyActions.isSelected
 
       val tableModel = component.apis.model as DefaultTableModel
       log.debug("Reading API keys from table model: $tableModel with row count: ${tableModel.rowCount}")
@@ -478,7 +435,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         val base = tableModel.getValueAt(row, 2) as String
         log.info("Row $row: provider=$provider, key=$key, base=$base")
         if (key.isNotBlank()) {
-         settings.apiKeys?.set(provider, key) ?: log.warn("API keys are blank")
+          settings.apiKeys?.set(provider, key) ?: log.warn("API keys are blank")
           settings.apiBase?.set(provider, base) ?: log.warn("API base is blank")
         } else {
           log.info("Removing API key for provider: $provider")

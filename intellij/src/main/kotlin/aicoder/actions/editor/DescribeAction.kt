@@ -80,7 +80,7 @@ class DescribeAction : SelectionAction<String>() {
       val description = proxy.describeCode(
         IndentedText.fromString(state.selectedText).textBlock.toString().trim(),
         state.language?.name ?: state.editor?.virtualFile?.extension ?: "",
-        AppSettingsState.instance.humanLanguage
+        ""
       ).text ?: throw IllegalStateException("Failed to generate description")
       val wrapping = com.simiacryptus.aicoder.util.StringUtil.lineWrapping(description.trim(), 120)
       val numberOfLines = wrapping.trim().split("\n").reversed().dropWhile { it.isEmpty() }.size

@@ -75,7 +75,7 @@ open class CustomEditAction : SelectionAction<String>(requiresSelection = true) 
       progress.isIndeterminate = true
       progress.text = "Applying edit: $config"
       val settings = AppSettingsState.instance
-      val outputHumanLanguage = settings.humanLanguage
+      val outputHumanLanguage = ""
       settings.getRecentCommands("customEdits").addInstructionToHistory(config)
       val result = proxy.editCode(
         state.selectedText ?: "",

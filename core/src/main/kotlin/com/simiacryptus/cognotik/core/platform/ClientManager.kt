@@ -75,7 +75,15 @@ open class ClientManager {
       val userSettings = userSettingsManager.getUserSettings(user)
       val userApi =
         if (userSettings.apiKeys.isNotEmpty()) {
-          getChatClient(session, user)
+          ChatClient(
+            key = userSettings.apiKeys,
+            apiBase = userSettings.apiBase,
+            workPool = getPool(session, user),
+          ).apply {
+            this.session = session
+            this.user = user
+            logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
+          }
         } else null
       if (userApi != null) return userApi
     }

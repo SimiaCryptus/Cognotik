@@ -217,21 +217,20 @@ fun installContextMenuAction(os: String) {
             val regFile = scriptPath.resolve("add_skyenetapps_context_menu.reg")
             regFile.writeText(
                 """
-            Windows Registry Editor Version 5.00
-
-            [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}]
-            @="${appDisplayName}"
-            "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
-
-            [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}\command]
-            @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"%1\""
-              [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server]
-              @="Stop Cognotik Server"
-              "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
-              [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server\command]
-              @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"--stop\""
-        """.trimIndent()
-            )
+                Windows Registry Editor Version 5.00
+                
+                [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}]
+                @="${appDisplayName}"
+                "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
+                
+                [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}\command]
+                @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"%1\""
+                [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server]
+                @="Stop Cognotik Server"
+                "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
+                [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server\command]
+                @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"--stop\""
+            """.trimIndent())
             println("Wrote context menu .reg file to: $regFile")
         }
 
@@ -430,6 +429,58 @@ tasks.register("packageDmg", JPackageTask::class) {
             )
         }
         installContextMenuAction("mac")
+    }
+}
+tasks.register("packageMsi", JPackageTask::class) {
+    group = "distribution"
+    description = "Creates a .msi package for Windows"
+    onlyIf { System.getProperty("os.name").lowercase().contains("windows") }
+    dependsOn("shadowJar")
+    doLast {
+        // Get the actual shadow jar file name
+        val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
+        val shadowJarName = shadowJarFile.name
+        // Create a temporary directory for the input files
+        val inputDir = layout.buildDirectory.dir("jpackage/input").get().asFile
+        if (!inputDir.exists()) {
+            inputDir.mkdirs()
+        }
+        // Copy the shadow jar to the input directory
+        copy {
+            from(shadowJarFile)
+            into(inputDir)
+        }
+        // Create a resource directory for the icon
+        val resourceDir = layout.buildDirectory.dir("jpackage/resources").get().asFile
+        if (!resourceDir.exists()) {
+            resourceDir.mkdirs()
+        }
+        // Copy the icon to the resource directory
+        copy {
+            from(layout.projectDirectory.file("src/main/resources/icon.ico"))
+            into(resourceDir)
+        }
+        execOperations.exec {
+            commandLine(
+                "jpackage",
+                "--type", "msi",
+                "--input", inputDir.path,
+                "--main-jar", shadowJarName,
+                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
+                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
+                "--name", "Cognotik",
+                "--app-version", project.version.toString().replace("-", "."),
+                "--copyright", "Copyright © 2024 SimiaCryptus",
+                "--description", "Cognotik Applications Suite",
+                "--win-dir-chooser",
+                "--win-menu",
+                "--win-shortcut",
+                "--icon", File(resourceDir, "icon.ico").path,
+                "--resource-dir", resourceDir.path,
+                "--vendor", "SimiaCryptus"
+            )
+        }
+        installContextMenuAction("windows")
     }
 }
 
@@ -648,20 +699,34 @@ tasks.register("updateVersionFromEnv") {
 }
 // Make sure the version is updated before packaging
 tasks.named("jpackage") {
+    dependsOn("jpackageImage")
     dependsOn("updateVersionFromEnv")
+}
+// Force jpackageImage to run when needed
+tasks.named("jpackageImage") {
+    outputs.upToDateWhen { 
+        val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
+        appImageDir.exists()
+    }
 }
 
 // Workaround: Disable the beryx jpackage task if running on Linux and not building RPMs
 tasks.named("jpackage") {
+    dependsOn("jpackageImage")
     doFirst {
-        val os = System.getProperty("os.name").lowercase()
-        if (os.contains("linux")) {
-            // Check if the app-image exists, otherwise skip to avoid RPM error
-            val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
-            if (!appImageDir.exists()) {
-                logger.warn("Skipping jpackage task: App image directory does not exist: $appImageDir")
-                throw org.gradle.api.tasks.StopExecutionException("App image directory does not exist: $appImageDir")
-            }
+        // Check if the app-image exists for any OS, not just Linux
+        val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
+        if (!appImageDir.exists()) {
+            // Just log a warning, but don't try to modify the task - it will be run by the dependsOn above
+            logger.warn("App image directory does not exist: $appImageDir")
+            throw GradleException("App image directory not found. Please run the jpackageImage task first.")
         }
+    }
+}
+// Configure jpackageImage task to ensure it creates the app image
+tasks.named("jpackageImage") {
+    outputs.upToDateWhen { 
+        val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
+        appImageDir.exists()
     }
 }

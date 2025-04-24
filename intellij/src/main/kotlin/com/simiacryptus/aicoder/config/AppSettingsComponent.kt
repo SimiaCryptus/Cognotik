@@ -37,27 +37,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
   val diffLoggingEnabled = JBCheckBox()
 
   @Suppress("unused")
-  @Name("GitHub Token")
-  val githubToken = JBTextField().apply {
-    toolTipText = "GitHub Personal Access Token"
-    columns = 30
-  }
-
-  @Suppress("unused")
-  @Name("Google API Key")
-  val googleApiKey = JBTextField().apply {
-    toolTipText = "Google API Key"
-    columns = 30
-  }
-
-  @Suppress("unused")
-  @Name("Google Search Engine ID")
-  val googleSearchEngineId = JBTextField().apply {
-    toolTipText = "Google Search Engine ID"
-    columns = 30
-  }
-
-  @Suppress("unused")
   @Name("AWS Profile")
   val awsProfile = JBTextField().apply {
     toolTipText = "AWS Profile"
@@ -147,10 +126,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     // Enable multiple selection for the list
     executablesList.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
   }
-
-  @Suppress("unused")
-  @Name("Human Language")
-  val humanLanguage = JBTextField()
 
   @Suppress("unused")
   @Name("Listening Port")
@@ -257,10 +232,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
   val showWelcomeScreen = JBCheckBox("Show Welcome Screen", true)
 
   @Suppress("unused")
-  @Name("Enable Legacy Actions")
-  val enableLegacyActions = JBCheckBox()
-
-  @Suppress("unused")
   @Name("Temperature")
   val temperature = JBTextField()
 
@@ -320,9 +291,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
   init {
     // Initialize new fields
     diffLoggingEnabled.isSelected = AppSettingsState.instance.diffLoggingEnabled
-    githubToken.text = AppSettingsState.instance.githubToken ?: ""
-    googleApiKey.text = AppSettingsState.instance.googleApiKey ?: ""
-    googleSearchEngineId.text = AppSettingsState.instance.googleSearchEngineId ?: ""
     awsProfile.text = AppSettingsState.instance.awsProfile ?: ""
     awsRegion.text = AppSettingsState.instance.awsRegion ?: ""
     awsBucket.text = AppSettingsState.instance.awsBucket ?: ""

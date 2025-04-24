@@ -162,7 +162,7 @@ open class HttpClientManager(
     ): T {
         var lastException: Throwable? = null
         var i = 0
-        while (i++ < retryCount) {
+        while (i++ <= retryCount) {
             val sleepPeriod = sleepScale * 2.0.pow(i.toDouble()).toLong()
             try {
                 return fn()
@@ -218,7 +218,11 @@ open class HttpClientManager(
         }
     }
 
-    fun <T> withReliability(requestTimeoutSeconds: Long = (5 * 60), retryCount: Int = 3, fn: () -> T): T =
+    fun <T> withReliability(
+        requestTimeoutSeconds: Long = (5 * 60),
+        retryCount: Int = 0,
+        fn: () -> T
+    ): T =
         withExpBackoffRetry(retryCount) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), fn) }
 
     fun <T> withPerformanceLogging(fn: () -> T): T {

@@ -24,36 +24,35 @@ open class ChatSocketManager(
   var model: ChatModel,
   var parsingModel: ChatModel,
   val userInterfacePrompt: String = """
-    ## Special Expansion Syntaxes
-
-    You can use the following syntaxes in your messages to automatically expand your queries:
-
-    * **Parallel Expansion:**
-      Use `{option1|option2|option3}` to run the same prompt with each option in parallel.
-      Example:
-      `Tell me a joke about {cats|dogs|birds}`
-      This will generate a joke about cats, a joke about dogs, and a joke about birds.
-
-    * **Sequence Expansion:**
-      Use `<step1;step2;step3>` to run a sequence of prompts, where the output of each feeds into the next.
-      Example:
-      `Summarize this text, then <translate to French;translate to German>`
-      This will summarize, then translate the summary to French, then to German.
-
-    * **Range Expansion:**
-      Use `[[start..end:step]]` to iterate over a range of numbers.
-      Example:
-      `Count from [[1..5]]`
-      This will run the prompt for 1, 2, 3, 4, and 5.
-
-    * **Topic Reference Expansion:**
-      Use `{topicType}` to refer to previously identified topics.
-      Example:
-      `Tell me about {Person}`
-      If "Person" topics have been identified, this will expand to include all of them.
-
-    ---
-    You can combine these syntaxes for more complex expansions.
+    <div class="expandable-guide">
+      <div id="expandableHeader" class="expandable-header" 
+           onclick="document.getElementById('expandableContent').style.display = document.getElementById('expandableContent').style.display === 'none' ? 'block' : 'none'; 
+                   document.getElementById('expandIcon').innerHTML = document.getElementById('expandableContent').style.display === 'none' ? '▼' : '▲';">
+        <strong>Query Expansion Syntax Guide</strong>
+        <span id="expandIcon" class="expand-icon">▼</span>
+      </div>
+      <div id="expandableContent" class="expandable-content">
+        <p>You can use the following syntaxes in your messages to automatically expand your queries:</p>
+        
+        <h4 class="expandable-section-title">Parallel Expansion</h4>
+        <p class="expandable-description">Use <code>{option1|option2|option3}</code> to run the same prompt with each option in parallel.</p>
+        <p class="expandable-example"><em>Example:</em> <code>Tell me a joke about {cats|dogs|birds}</code></p>
+        
+        <h4 class="expandable-section-title">Sequence Expansion</h4>
+        <p class="expandable-description">Use <code>&lt;step1;step2;step3&gt;</code> to run a sequence of prompts, where the output of each feeds into the next.</p>
+        <p class="expandable-example"><em>Example:</em> <code>Summarize this text, then &lt;translate to French;translate to German&gt;</code></p>
+        
+        <h4 class="expandable-section-title">Range Expansion</h4>
+        <p class="expandable-description">Use <code>[[start..end:step]]</code> to iterate over a range of numbers.</p>
+        <p class="expandable-example"><em>Example:</em> <code>Count from [[1..5]]</code></p>
+        
+        <h4 class="expandable-section-title">Topic Reference Expansion</h4>
+        <p class="expandable-description">Use <code>{topicType}</code> to refer to previously identified topics.</p>
+        <p class="expandable-example"><em>Example:</em> <code>Tell me about {Person}</code></p>
+        
+        <p class="expandable-footer">You can combine these syntaxes for more complex expansions.</p>
+      </div>
+    </div>
   """.trimIndent(),
   open val initialAssistantPrompt: String = "",
   open val systemPrompt: String,
@@ -71,7 +70,7 @@ open class ChatSocketManager(
   init {
     if (userInterfacePrompt.isNotBlank()) {
       val task = newTask(false, true)
-      task.complete(userInterfacePrompt.renderMarkdown)
+      task.complete(userInterfacePrompt.renderMarkdown())
     }
   }
   
@@ -150,8 +149,7 @@ open class ChatSocketManager(
   
   // Pattern for range expansion: [[start..end:step]]
   private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""")
-  
-  
+
   protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
     val currentChatMessages = chatMessages()
     val function1List = processMsgRecursive(api, userMessage, task, currentChatMessages)
@@ -410,4 +408,3 @@ open class ChatSocketManager(
     private val log = org.slf4j.LoggerFactory.getLogger(ChatSocketManager::class.java)
   }
 }
-

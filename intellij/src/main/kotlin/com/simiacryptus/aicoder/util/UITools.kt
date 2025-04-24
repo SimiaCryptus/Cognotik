@@ -97,12 +97,11 @@ object UITools {
     project: Project?,
     title: String?,
     canBeCancelled: Boolean = true,
-    suppressProgress: Boolean = true,
     task: (ProgressIndicator) -> Unit,
   ) {
     thread(name = title ?: "runAsync") {
       try {
-        if (project == null || suppressProgress == AppSettingsState.instance.editRequests) {
+        if (project == null) {
           AppSettingsState.instance.apiKeys?.values?.firstOrNull() ?: ""
           task(AbstractProgressIndicatorBase())
         } else {
@@ -680,10 +679,9 @@ object UITools {
     project: Project?,
     title: String?,
     canBeCancelled: Boolean = true,
-    suppressProgress: Boolean = true,
     task: (ProgressIndicator) -> T,
   ): T {
-    return if (project == null || suppressProgress == AppSettingsState.instance.editRequests) {
+    return if (project == null) {
       AppSettingsState.instance.apiKeys?.values?.firstOrNull() ?: ""
       task(AbstractProgressIndicatorBase())
     } else {

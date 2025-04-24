@@ -116,28 +116,13 @@ open class IdeaChatClient(
       return response
     } else {
       try {
-        if (!AppSettingsState.instance.editRequests) {
-          val response = super.chat(chatRequest, model)
-          if (null != response.usage) {
-            UITools.logAction(
-              "Chat Response: ${toJson(response.usage!!)}"
-            )
-          }
-          return response
+        val response = super.chat(chatRequest, model)
+        if (null != response.usage) {
+          UITools.logAction(
+            "Chat Response: ${toJson(response.usage!!)}"
+          )
         }
-        return withJsonDialog(chatRequest, { chatRequest ->
-          UITools.run(
-            lastEvent.project, "OpenAI Request", true, suppressProgress = false
-          ) {
-            val response = super.chat(chatRequest, model)
-            if (null != response.usage) {
-              UITools.logAction(
-                "Chat Response: ${toJson(response.usage!!)}".trim()
-              )
-            }
-            response
-          }
-        }, "Edit Chat Request")
+        return response
       } finally {
         isInRequest.set(false)
       }

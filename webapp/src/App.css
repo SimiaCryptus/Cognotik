@@ -278,3 +278,53 @@
 .error-container {
     color: var(--error-color, #dc3545);
 }
+
+/* Query Expansion Syntax Guide Styles */
+.expandable-guide {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.expandable-header {
+    background-color: #f5f5f5;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.expand-icon {
+    font-size: 12px;
+}
+
+.expandable-content {
+    padding: 15px;
+    display: none;
+}
+
+.expandable-section-title {
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.expandable-section-title:first-of-type {
+    margin-top: 10px;
+}
+
+.expandable-description {
+    margin-top: 0;
+}
+
+.expandable-example {
+    margin-top: 5px;
+    color: #666;
+}
+
+.expandable-footer {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}

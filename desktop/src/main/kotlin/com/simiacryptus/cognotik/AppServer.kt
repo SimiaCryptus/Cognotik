@@ -246,7 +246,7 @@ open class AppServer(
       workingDir = "."
     )
     listOf(
-      ChildWebApp("/chat", BasicChatApp(".".toFile(), ChatClient(), model, parsingModel)),
+      ChildWebApp("/chat", BasicChatApp(".".toFile(), model, parsingModel)),
       ChildWebApp(
         "/singleTask", UnifiedPlanApp(
           applicationName = "Task-Runner",

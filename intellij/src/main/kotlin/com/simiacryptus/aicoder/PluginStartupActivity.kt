@@ -13,7 +13,6 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.IdeaChatClient
 import com.simiacryptus.aicoder.util.IntelliJPsiValidator
-import com.simiacryptus.cognotik.core.OutputInterceptor
 import com.simiacryptus.cognotik.core.platform.ApplicationServices
 import com.simiacryptus.cognotik.core.platform.AwsPlatform
 import com.simiacryptus.cognotik.core.platform.ClientManager
@@ -49,7 +48,7 @@ class PluginStartupActivity : ProjectActivity {
     try {
       // Configure diff logging based on settings
       com.simiacryptus.diff.AddApplyFileDiffLinks.loggingEnabled = AppSettingsState.instance.diffLoggingEnabled
-      
+
       //ApplicationServicesConfig.dataStorageRoot = ApplicationServicesConfig.dataStorageRoot.resolve("intellij")
       val currentThread = Thread.currentThread()
       val prevClassLoader = currentThread.contextClassLoader
@@ -58,8 +57,11 @@ class PluginStartupActivity : ProjectActivity {
         init(project)
         // Add user-supplied models to ChatModel
         addUserSuppliedModels(AppSettingsState.instance.userSuppliedModels?.mapNotNull {
-          try { fromJson(it, AppSettingsState.UserSuppliedModel::class.java) }
-          catch (e: Exception) { null }
+          try {
+            fromJson(it, AppSettingsState.UserSuppliedModel::class.java)
+          } catch (e: Exception) {
+            null
+          }
         } ?: emptyList())
       } catch (e: Exception) {
         log.error("Error during plugin startup", e)
@@ -172,10 +174,7 @@ class PluginStartupActivity : ProjectActivity {
 
   private fun init(project: Project) {
     if (isInitialized.getAndSet(true)) return
-      ApplicationServicesConfig.dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
-    if(AppSettingsState.instance.interceptOutput) {
-      OutputInterceptor.setupInterceptor()
-    }
+    ApplicationServicesConfig.dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
     SimpleDiffApplier.validatorProviders.add(0) { filename ->
       val extension = filename?.split('.')?.lastOrNull()
       if (IntelliJPsiValidator.isLanguageSupported(extension)) {
@@ -244,7 +243,7 @@ class PluginStartupActivity : ProjectActivity {
         log.error("Error setting log level for $name", e)
       }
     }
-    
+
     private fun setLogDebug(name: String) {
       try {
         LoggerFactory.getLogger(name).apply {
@@ -258,7 +257,7 @@ class PluginStartupActivity : ProjectActivity {
         log.error("Error setting log level for $name", e)
       }
     }
-    
+
     private fun setLogWarn(name: String) {
       try {
         LoggerFactory.getLogger(name).apply {

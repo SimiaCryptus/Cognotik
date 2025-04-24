@@ -259,14 +259,17 @@ open class ChatClient(
                     }
                     
                     apiProvider == APIProvider.Google -> {
-                        val geminiChatRequest = toGeminiChatRequest(chatRequest.copy(messages = chatRequest.messages.map {
-                            it.copy(
+                        val geminiChatRequest = toGeminiChatRequest(
+                            chatRequest
+                            .copy(messages = chatRequest.messages.map {
+                                it.copy(
                                 role = when (it.role) {
                                     Role.system -> Role.user
                                     else -> it.role
                                 }
                             )
-                        }), model)
+                            }), model
+                        )
                         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(geminiChatRequest)
                         fromGemini(
                             post(
@@ -387,7 +390,7 @@ open class ChatClient(
         return GenerateContentRequest(
             contents = collectRoleSequences(chatRequest.messages.filter {
                 when (it.role) {
-                    //        Role.system -> false
+//                    Role.system -> false
                     else -> true
                 }
             }.map {
@@ -402,7 +405,7 @@ open class ChatClient(
                             text = it.text
                         )
                     })
-            }).map { collectTextParts(it) }, generationConfig = GenerationConfig(temperature = 0.3f)
+            }).map { collectTextParts(it) }, generationConfig = GenerationConfig(temperature = chatRequest.temperature.toFloat())
         )
     }
     
