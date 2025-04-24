@@ -279,7 +279,7 @@ open class ChatSocketManager(
             model = model.modelName,
           ), model
         )
-        responseRef.set(chatResponse.choices.first().message?.content.orEmpty())
+        responseRef.set(chatResponse.choices.firstOrNull()?.message?.content.orEmpty())
       } catch (e: Exception) {
         log.error("Error in API call", e)
         responseRef.set("Error: ${e.message}")

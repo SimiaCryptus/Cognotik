@@ -56,15 +56,6 @@ object GoogleModels {
         inputTokenPricePerK = 0.00005, // Pricing not provided, using a placeholder (likely cheaper than Flash)
         outputTokenPricePerK = 0.0002  // Pricing not provided, using a placeholder (likely cheaper than Flash)
     )
-    val GeminiPro_20 = ChatModel(
-        name = "GeminiPro_20",
-        modelName = "models/gemini-2.0-pro",
-        maxTotalTokens = 2097152,
-        maxOutTokens = 8192,
-        provider = APIProvider.Google,
-        inputTokenPricePerK = 0.00025, // Pricing not provided, using a placeholder
-        outputTokenPricePerK = 0.0005  // Pricing not provided, using a placeholder
-    )
     val GeminiFlash_20_Thinking_Experimental_01_21 = ChatModel(
         name = "GeminiFlash_20_Thinking_Experimental_01_21",
         modelName = "models/gemini-2.0-flash-thinking-exp-01-21",
@@ -90,7 +81,6 @@ object GoogleModels {
         "GeminiPro" to GeminiPro_10,
         "GeminiFlash_20" to GeminiFlash_20,
         "GeminiFlash_20_Lite" to GeminiFlash_20_Lite,
-        "GeminiPro_20" to GeminiPro_20,
         "GeminiFlash_20_Thinking_Experimental_01_21" to GeminiFlash_20_Thinking_Experimental_01_21,
         "GeminiPro_25_Experimental_03_25" to GeminiPro_25_Experimental_03_25,
     )
