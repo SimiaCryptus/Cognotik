@@ -38,12 +38,14 @@ dependencies {
 
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
-      // Exclude transitive dependencies that might conflict with IntelliJ
-      exclude(group = "org.slf4j")
+        // Exclude transitive dependencies that might conflict with IntelliJ
+        exclude(group = "org.slf4j")
+        exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":core")) {
         exclude(group = "org.jetbrains.kotlin")
-      exclude(group = "org.slf4j")
+        exclude(group = "org.slf4j")
+        exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":webui")) {
         exclude(group = "org.jetbrains.kotlin")

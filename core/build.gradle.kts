@@ -37,7 +37,7 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.gson)
     implementation(libs.httpclient5)
-    implementation("org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2")
+    //implementation(libs.jetty.servlet.api)
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
@@ -50,34 +50,24 @@ dependencies {
     testImplementation(kotlin("stdlib"))
     testImplementation(kotlin("script-runtime"))
 
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    compileOnly(platform("org.junit:junit-bom:5.10.2"))
-    compileOnly("org.junit.jupiter:junit-jupiter-api")
-    compileOnly("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    compileOnly(platform(libs.junit.bom))
+    compileOnly(libs.junit.jupiter.api)
+    compileOnly(libs.junit.jupiter.engine)
 
-    compileOnly(platform("software.amazon.awssdk:bom:2.21.29"))
+    compileOnly(platform(libs.aws.bom))
     compileOnly(libs.aws.sdk)
     compileOnly(libs.logback.classic)
     compileOnly(libs.logback.core)
 
-    testImplementation(platform("software.amazon.awssdk:bom:2.21.29"))
+    testImplementation(platform(libs.aws.bom))
     testImplementation(libs.aws.sdk)
     testImplementation(libs.logback.classic)
     testImplementation(libs.logback.core)
     testImplementation(libs.mockito)
 
-}
-
-val javadocJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("javadoc")
-    from(tasks.javadoc)
-}
-
-val sourcesJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.get().allSource)
 }
 
 publishing {
@@ -86,8 +76,6 @@ publishing {
         create<MavenPublication>("mavenJava") {
             artifactId = "core"
             from(components["java"])
-            artifact(sourcesJar.get())
-            artifact(javadocJar.get())
             versionMapping {
                 usage("java-api") {
                     fromResolutionOf("runtimeClasspath")

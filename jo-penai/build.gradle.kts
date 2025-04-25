@@ -60,24 +60,13 @@ dependencies {
     testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 }
-val javadocJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("javadoc")
-    from(tasks.javadoc)
-}
 
-
-val sourcesJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.get().allSource)
-}
 
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             artifactId = "jo-penai"
             from(components["java"])
-            artifact(sourcesJar.get())
-            artifact(javadocJar.get())
             versionMapping {
                 usage("java-api") {
                     fromResolutionOf("runtimeClasspath")

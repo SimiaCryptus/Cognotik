@@ -1,6 +1,10 @@
 [versions]
+# Define JVM and Java versions for consistency
+jvm = "17"
+java = "17"
+
 # libraries
-jetty = "11.0.24"
+jetty = "11.0.25"
 slf4j = "2.0.16"
 logback = "1.5.16"
 jackson = "2.17.2"
@@ -14,7 +18,7 @@ gson = "2.10.1"
 hsqldb = "2.7.2"
 antlr = "4.13.2"
 asm = "9.6"
-kotlinx-coroutines = "1.8.0-RC"
+kotlinx-coroutines = "1.8.0"
 mockito = "5.7.0"
 flexmark = "0.64.8"
 h2 = "2.2.224"
@@ -27,6 +31,10 @@ kover = "0.9.1"
 qodana = "2024.3.4"
 shadow = "8.1.1"
 beryx-runtime = "1.13.0"
+# Add new libraries for testing and quality
+junit-jupiter = "5.10.2"
+assertj = "3.25.3"
+spotbugs = "4.8.3"
 
 [libraries]
 jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
@@ -63,6 +71,13 @@ h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 scala-library = { group = "org.scala-lang", name = "scala-library", version.ref = "scala" }
 scala-compiler = { group = "org.scala-lang", name = "scala-compiler", version.ref = "scala" }
 scala-reflect = { group = "org.scala-lang", name = "scala-reflect", version.ref = "scala" }
+# Add JUnit BOM for consistent test dependencies
+junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-jupiter" }
+junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
+junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
+junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
+assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
+aws-bom = { group = "software.amazon.awssdk", name = "bom", version.ref = "aws" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
@@ -72,3 +87,5 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 beryx-runtime = { id = "org.beryx.runtime", version.ref = "beryx-runtime" }
+spotbugs = { id = "com.github.spotbugs", version = "6.0.8" }
+versions = { id = "com.github.ben-manes.versions", version = "0.51.0" }

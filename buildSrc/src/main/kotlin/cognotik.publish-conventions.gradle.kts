@@ -3,23 +3,15 @@ plugins {
   signing
 }
 fun properties(key: String) = project.findProperty(key).toString()
-//val javadocJar by tasks.registering(Jar::class) {
-//    archiveClassifier.set("javadoc")
-//    from(tasks.javadoc)
-//}
-//val sourcesJar by tasks.registering(Jar::class) {
-//    archiveClassifier.set("sources")
-//    from(sourceSets.main.get().allSource)
-//}
+
 publishing {
   publications {
     create<MavenPublication>("mavenJava") {
       from(components["java"])
-//            artifact(sourcesJar.get())
-//            artifact(javadocJar.get())
+      // Sources and javadoc jars are now created by the java plugin configuration
       pom {
         name.set(project.name)
-        description.set("Cognotik ${project.name.capitalize()} Module")
+        description.set("Cognotik ${project.name.replaceFirstChar { it.uppercase() }} Module")
         url.set("https://github.com/SimiaCryptus/Cognotik")
         licenses {
           license {
@@ -44,21 +36,20 @@ publishing {
   }
   repositories {
     maven {
-      val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-      val snapshotsRepoUrl = "https://oss.sonatype.org/mask/repositories/snapshots"
+      val releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+      val snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
       url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
       credentials {
-        username = System.getenv("OSSRH_USERNAME") ?: System.getProperty("ossrhUsername")
-            ?: properties("ossrhUsername")
-        password = System.getenv("OSSRH_PASSWORD") ?: System.getProperty("ossrhPassword")
-            ?: properties("ossrhPassword")
+        // Use providers for lazy evaluation and better error handling
+        username = providers.environmentVariable("OSSRH_USERNAME")
+            .orElse(providers.systemProperty("ossrhUsername"))
+            .orElse(properties("ossrhUsername"))
+            .get()
+        password = providers.environmentVariable("OSSRH_PASSWORD")
+            .orElse(providers.systemProperty("ossrhPassword"))
+            .orElse(properties("ossrhPassword"))
+            .get()
       }
     }
-  }
-}
-if (System.getenv("GPG_PRIVATE_KEY") != null && System.getenv("GPG_PASSPHRASE") != null) {
-  signing {
-    useInMemoryPgpKeys(System.getenv("GPG_PRIVATE_KEY"), System.getenv("GPG_PASSPHRASE"))
-    sign(publishing.publications["mavenJava"])
   }
 }

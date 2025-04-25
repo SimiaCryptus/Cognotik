@@ -24,6 +24,8 @@ tasks.register<JavaExec>("runServer") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.simiacryptus.cognotik.AppServer")
     args = listOf("server")
+    // Set JVM arguments for better performance
+    jvmArgs = listOf("-Xmx2g", "-XX:+UseG1GC")
 }
 // Create a task to stop the server
 tasks.register<JavaExec>("stopServer") {
@@ -760,9 +762,42 @@ tasks.named("jpackage") {
     dependsOn("jpackageImage")
     dependsOn("updateVersionFromEnv")
 }
+// Add a task to clean up jpackage output
+tasks.register("cleanJpackage") {
+    group = "build"
+    description = "Cleans jpackage output directories"
+    doLast {
+        delete(layout.buildDirectory.dir("jpackage"))
+    }
+}
+// Make the clean task depend on cleanJpackage
+tasks.named("clean") {
+    dependsOn("cleanJpackage")
+}
+// Add a task to verify the runtime environment
+tasks.register("verifyRuntimeEnvironment") {
+    group = "verification"
+    description = "Verifies the runtime environment for packaging"
+    doLast {
+        val javaHome = System.getProperty("java.home")
+        val javaVersion = System.getProperty("java.version")
+        println("Java Home: $javaHome")
+        println("Java Version: $javaVersion")
+        // Check if jpackage is available
+        try {
+            @Suppress("DEPRECATION")
+            exec {
+                commandLine("jpackage", "--version")
+                standardOutput = System.out
+            }
+        } catch (e: Exception) {
+            logger.warn("jpackage command not found. Make sure you're using JDK 14+ with jpackage.")
+        }
+    }
+}
 // Force jpackageImage to run when needed
 tasks.named("jpackageImage") {
-    outputs.upToDateWhen { 
+    outputs.upToDateWhen {
         val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
         appImageDir.exists()
     }

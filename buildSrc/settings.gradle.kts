@@ -2,7 +2,8 @@
 
 dependencyResolutionManagement {
     versionCatalogs {
-        create("libs") {
+        // Use register instead of create to avoid conflicts
+        register("libs") {
             from(files("../gradle/libs.versions.toml"))
         }
     }

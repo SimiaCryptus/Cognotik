@@ -56,25 +56,12 @@ tasks {
   }
 }
 
-
-val javadocJar by tasks.registering(Jar::class) {
-  archiveClassifier.set("javadoc")
-  from(tasks.javadoc)
-}
-
-val sourcesJar by tasks.registering(Jar::class) {
-  archiveClassifier.set("sources")
-  from(sourceSets.main.get().allSource)
-}
-
 publishing {
 
   publications {
     create<MavenPublication>("mavenJava") {
       artifactId = "groovy"
       from(components["java"])
-      artifact(sourcesJar.get())
-      artifact(javadocJar.get())
       versionMapping {
         usage("java-api") {
           fromResolutionOf("runtimeClasspath")
