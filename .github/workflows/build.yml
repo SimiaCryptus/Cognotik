@@ -10,7 +10,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: .
+  # No working-directory specified to run from root
 
 jobs:
   build:
@@ -53,21 +53,19 @@ jobs:
           echo "JAVA_HOME=$JAVA_HOME"
 
       - name: Make Gradle wrapper executable
-        run: chmod +x intellij/gradlew
+        run: chmod +x ./gradlew
 
       - name: Print Gradle version
-        working-directory: intellij
         run: ./gradlew --version
 
       - name: Export Properties
-        working-directory: intellij
         id: properties
         shell: bash
         run: |
           echo "Starting properties export..."
-          PROPERTIES="$(./gradlew properties --console=plain -q)"
+          PROPERTIES="$(./gradlew :intellij:properties --console=plain -q)"
           VERSION="$(echo "$PROPERTIES" | grep "^version:" | cut -f2- -d ' ')"
-          CHANGELOG="$(./gradlew getChangelog --unreleased --no-header --console=plain -q)"
+          CHANGELOG="$(./gradlew :intellij:getChangelog --unreleased --no-header --console=plain -q)"
           echo "Detected version: $VERSION"
           
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -79,14 +77,12 @@ jobs:
           echo "Properties export completed"
 
       - name: Build plugin
-        working-directory: intellij
         run: |
           echo "Starting plugin build..."
-          ./gradlew buildPlugin --info
+          ./gradlew :intellij:buildPlugin --info
           echo "Plugin build completed"
 
       - name: Prepare Plugin Artifact
-        working-directory: intellij
         id: artifact
         shell: bash
         run: |
@@ -100,7 +96,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          working-directory: intellij
           name: ${{ steps.artifact.outputs.filename }}
           path: intellij/build/distributions/*
 
@@ -209,17 +204,15 @@ jobs:
           echo "JAVA_HOME=$JAVA_HOME"
 
       - name: Make Gradle wrapper executable
-        run: chmod +x intellij/gradlew
+        run: chmod +x ./gradlew
 
       - name: Print Gradle version
-        working-directory: intellij
         run: ./gradlew --version
 
       - name: Run Tests
-        working-directory: intellij
         run: |
           echo "Starting test execution..."
-          ./gradlew check --info
+          ./gradlew :intellij:check --info
           echo "Test execution completed"
 
       - name: Collect Tests Result
@@ -254,8 +247,6 @@ jobs:
 
       - name: Gradle Wrapper Validation
         uses: gradle/actions/wrapper-validation@v3
-        with:
-          working-directory: intellij
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -277,7 +268,6 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Print Gradle version
-        working-directory: intellij
         run: ./gradlew --version
 
       - name: Setup Plugin Verifier IDEs Cache
@@ -287,8 +277,7 @@ jobs:
           key: plugin-verifier-${{ hashFiles('intellij/build/listProductsReleases.txt') }}
 
       - name: Run Plugin Verification tasks
-        working-directory: intellij
-        run: ./gradlew verifyPlugin
+        run: ./gradlew :intellij:verifyPlugin
 
       - name: Collect Plugin Verifier Result
         if: ${{ always() }}
@@ -325,8 +314,6 @@ jobs:
 
       - name: Gradle Wrapper Validation
         uses: gradle/actions/wrapper-validation@v3
-        with:
-          working-directory: intellij
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -348,7 +335,6 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Print Gradle version
-        working-directory: intellij
         run: ./gradlew --version
 
       - name: Remove Old Release Drafts

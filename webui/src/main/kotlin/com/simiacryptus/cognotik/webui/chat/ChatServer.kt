@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.servlet.DefaultServlet

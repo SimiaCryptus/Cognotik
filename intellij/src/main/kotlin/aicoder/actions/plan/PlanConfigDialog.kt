@@ -13,10 +13,10 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.config.AppSettingsState.SavedPlanConfig
-import com.simiacryptus.cognotik.apps.plan.PlanSettings
-import com.simiacryptus.cognotik.apps.plan.TaskSettingsBase
-import com.simiacryptus.cognotik.apps.plan.TaskType
-import com.simiacryptus.cognotik.apps.plan.tools.CommandAutoFixTask
+import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson

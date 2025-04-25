@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet

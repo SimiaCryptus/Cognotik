@@ -1,0 +1,69 @@
+[versions]
+# libraries
+junit = "4.13.2"
+opentest4j = "1.3.0"
+jetty = "11.0.24"
+slf4j = "2.0.16"
+logback = "1.5.16"
+jackson = "2.17.2"
+aws = "2.27.23"
+kotlin = "2.1.20"
+commons-text = "1.11.0"
+commons-io = "2.15.0"
+httpclient5 = "5.3.1"
+guava = "32.1.3-jre"
+gson = "2.10.1"
+hsqldb = "2.7.2"
+antlr = "4.13.2"
+asm = "9.6"
+kotlinx-coroutines = "1.8.0-RC"
+mockito = "5.7.0"
+
+# plugins
+changelog = "2.2.1"
+intelliJPlatform = "2.5.0"
+kover = "0.9.1"
+qodana = "2024.3.4"
+shadow = "8.1.1"
+beryx-runtime = "1.13.0"
+
+[libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+opentest4j = { group = "org.opentest4j", name = "opentest4j", version.ref = "opentest4j" }
+jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
+jetty-webapp = { group = "org.eclipse.jetty", name = "jetty-webapp", version.ref = "jetty" }
+jetty-websocket-servlet = { group = "org.eclipse.jetty.websocket", name = "websocket-servlet", version.ref = "jetty" }
+jetty-websocket-server = { group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version.ref = "jetty" }
+jetty-websocket-client = { group = "org.eclipse.jetty.websocket", name = "websocket-jetty-client", version.ref = "jetty" }
+jetty-servlet = { group = "org.eclipse.jetty", name = "jetty-servlet", version.ref = "jetty" }
+jetty-annotations = { group = "org.eclipse.jetty", name = "jetty-annotations", version.ref = "jetty" }
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
+jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+aws-sdk = { group = "software.amazon.awssdk", name = "aws-sdk-java", version.ref = "aws" }
+aws-bedrock = { group = "software.amazon.awssdk", name = "bedrock", version.ref = "aws" }
+aws-bedrockruntime = { group = "software.amazon.awssdk", name = "bedrockruntime", version.ref = "aws" }
+aws-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "aws" }
+aws-kms = { group = "software.amazon.awssdk", name = "kms", version.ref = "aws" }
+commons-text = { group = "org.apache.commons", name = "commons-text", version.ref = "commons-text" }
+commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
+httpclient5 = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version.ref = "httpclient5" }
+guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+hsqldb = { group = "org.hsqldb", name = "hsqldb", version.ref = "hsqldb" }
+antlr-runtime = { group = "org.antlr", name = "antlr4-runtime", version.ref = "antlr" }
+asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
+kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+mockito = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+
+[plugins]
+changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
+intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intelliJPlatform" }
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+beryx-runtime = { id = "org.beryx.runtime", version.ref = "beryx-runtime" }

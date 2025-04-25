@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcognotik_ui=self.webpackChunkcognotik_ui||[]).push([[914],{914:(e,c,i)=>{i.d(c,{createPieServices:()=>k.f});var k=i(7789);i(1584)}}]);

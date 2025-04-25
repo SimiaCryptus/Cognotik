@@ -1,19 +1,19 @@
 package aicoder.actions.agent
 
 import com.simiacryptus.aicoder.config.AppSettingsState
-import com.simiacryptus.cognotik.Discussable
-import com.simiacryptus.cognotik.TabbedDisplay
+import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.core.actors.SimpleActor
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.diff.AddApplyFileDiffLinks
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel

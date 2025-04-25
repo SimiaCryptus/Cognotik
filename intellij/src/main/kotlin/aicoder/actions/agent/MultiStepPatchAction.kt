@@ -11,25 +11,20 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.cognotik.AgentPatterns
-import com.simiacryptus.cognotik.Discussable
-import com.simiacryptus.cognotik.Retryable
-import com.simiacryptus.cognotik.TabbedDisplay
-import com.simiacryptus.cognotik.core.actors.ParsedActor
-import com.simiacryptus.cognotik.core.actors.ParsedResponse
-import com.simiacryptus.cognotik.core.actors.SimpleActor
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.file.DataStorage
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.core.util.commonRoot
+import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedResponse
+import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.diff.AddApplyFileDiffLinks
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.describe.Description
@@ -46,6 +41,9 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 
 class MultiStepPatchAction : BaseAction() {
   override fun getActionUpdateThread() = ActionUpdateThread.BGT

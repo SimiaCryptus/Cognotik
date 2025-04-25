@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.test
 
-import com.simiacryptus.cognotik.core.actors.SimpleActor
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer

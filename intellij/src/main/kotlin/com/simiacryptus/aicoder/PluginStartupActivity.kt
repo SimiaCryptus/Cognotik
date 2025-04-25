@@ -13,16 +13,16 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.IdeaChatClient
 import com.simiacryptus.aicoder.util.IntelliJPsiValidator
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.AwsPlatform
-import com.simiacryptus.cognotik.core.platform.ClientManager
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig.isLocked
-import com.simiacryptus.cognotik.core.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.core.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.SimpleDiffApplier
+import com.simiacryptus.cognotik.diff.SimpleDiffApplier
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.AwsPlatform
+import com.simiacryptus.cognotik.platform.ClientManager
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +47,8 @@ class PluginStartupActivity : ProjectActivity {
 
     try {
       // Configure diff logging based on settings
-      com.simiacryptus.diff.AddApplyFileDiffLinks.loggingEnabled = AppSettingsState.instance.diffLoggingEnabled
+        com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled =
+            AppSettingsState.instance.diffLoggingEnabled
 
       //ApplicationServicesConfig.dataStorageRoot = ApplicationServicesConfig.dataStorageRoot.resolve("intellij")
       val currentThread = Thread.currentThread()

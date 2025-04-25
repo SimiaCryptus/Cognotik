@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.file.DataStorage
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ChatModel
 import java.io.File
 

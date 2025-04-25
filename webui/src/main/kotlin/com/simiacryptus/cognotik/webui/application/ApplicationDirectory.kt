@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.application
 
 
-import com.simiacryptus.cognotik.core.OutputInterceptor
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig.isLocked
+import com.simiacryptus.cognotik.OutputInterceptor
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.jopenai.util.ClientUtil

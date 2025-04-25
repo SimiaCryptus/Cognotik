@@ -1,14 +1,13 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.google.common.util.concurrent.Futures
-import com.simiacryptus.cognotik.TabbedDisplay
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.ClientManager
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager

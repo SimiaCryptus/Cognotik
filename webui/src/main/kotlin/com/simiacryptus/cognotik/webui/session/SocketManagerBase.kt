@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.clientManager
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.core.platform.model.AuthorizationInterface.OperationType
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices.clientManager
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import org.slf4j.LoggerFactory

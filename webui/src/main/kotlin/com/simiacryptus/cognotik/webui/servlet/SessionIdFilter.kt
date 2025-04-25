@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.*
 import jakarta.servlet.http.HttpServletRequest

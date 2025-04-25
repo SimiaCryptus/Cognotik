@@ -1,8 +1,8 @@
 package com.simiacryptus.aicoder.util
 
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.jopenai.ChatClient

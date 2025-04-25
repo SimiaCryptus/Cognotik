@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
+import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet

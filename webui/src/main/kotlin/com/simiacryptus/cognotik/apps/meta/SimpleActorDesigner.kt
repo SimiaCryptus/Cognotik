@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.meta
 
+import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.meta.FlowStepDesigner.Companion.fixups
-import com.simiacryptus.cognotik.core.actors.CodingActor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.jopenai.models.ChatModel
 import kotlin.reflect.KClass
@@ -25,7 +25,7 @@ class SimpleActorDesigner(
         For context, here is the constructor signature for SimpleActor class:
         ```kotlin
         import com.simiacryptus.jopenai.models.ChatModels
-        import com.simiacryptus.cognotik.core.actors.SimpleActor
+        import com.simiacryptus.cognotik.actors.SimpleActor
         import org.intellij.lang.annotations.Language
         import com.simiacryptus.jopenai.models.ChatModels
 
@@ -39,7 +39,7 @@ class SimpleActorDesigner(
 
         In this code example an example actor is defined with a prompt and a name:
         ```kotlin
-        import com.simiacryptus.cognotik.core.actors.SimpleActor
+        import com.simiacryptus.cognotik.actors.SimpleActor
         import com.simiacryptus.cognotik.heart.KotlinInterpreter
         import org.intellij.lang.annotations.Language
 

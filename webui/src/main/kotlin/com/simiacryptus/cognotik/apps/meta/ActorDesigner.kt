@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.meta
 
-import com.simiacryptus.cognotik.core.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.models.ChatModel
 
 class ActorDesigner(

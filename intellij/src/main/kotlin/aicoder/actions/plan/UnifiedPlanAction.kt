@@ -12,16 +12,16 @@ import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
-import com.simiacryptus.cognotik.apps.plan.PlanSettings
-import com.simiacryptus.cognotik.apps.plan.PlanUtil.isWindows
-import com.simiacryptus.cognotik.apps.plan.TaskSettingsBase
-import com.simiacryptus.cognotik.apps.plan.TaskType
-import com.simiacryptus.cognotik.apps.plan.cognitive.*
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.file.DataStorage
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils.Companion.filteredWalk
-import com.simiacryptus.cognotik.core.util.getModuleRootForFile
+import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
+import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.cognitive.*
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
+import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -29,7 +29,6 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.chatModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -46,17 +45,14 @@ class UnifiedPlanAction : BaseAction() {
     val root: String = UITools.getRoot(e)
     val dialog = PlanConfigDialog(
       e.project, PlanSettings(
-        env = mapOf(),
-        workingDir = root,
+        defaultModel = AppSettingsState.instance.smartModel.chatModel(),
+        parsingModel = AppSettingsState.instance.fastModel.chatModel(),
         shellCmd = listOf(
           if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
         ),
-        defaultModel = AppSettingsState.instance.smartModel.chatModel(),
-        parsingModel = AppSettingsState.instance.fastModel.chatModel(),
         temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
-        githubToken = AppSettingsState.instance.apiKeys?.get(APIProvider.Github.name),
-        googleApiKey = AppSettingsState.instance.apiKeys?.get(APIProvider.GoogleSearch.name),
-        googleSearchEngineId = AppSettingsState.instance.apiBase?.get(APIProvider.GoogleSearch.name),
+        env = mapOf(),
+        workingDir = root,
       ),
       singleTaskMode = false, // Initially false, will be updated based on selection
       apiBudget = DEFAULT_API_BUDGET // Default API budget

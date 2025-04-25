@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.cloud
-import com.simiacryptus.cognotik.core.util.Selenium
+import com.simiacryptus.cognotik.platform.ApplicationServices.cloud
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.apache.hc.client5.http.cookie.BasicCookieStore

@@ -6,9 +6,8 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 plugins {
-  java
+    id("cognotik.common-conventions")
   `java-library`
-    id("org.jetbrains.kotlin.jvm") version "2.1.20"
   `maven-publish`
   id("signing")
 }
@@ -22,15 +21,11 @@ repositories {
   }
 }
 
-kotlin {
-    jvmToolchain(17)
-}
 
 dependencies {
 
   implementation(project(":core"))
-  //compileOnly(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")// https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation(libs.kotlinx.coroutines)
 
 
   implementation(kotlin("stdlib"))
@@ -41,15 +36,15 @@ dependencies {
   implementation(kotlin("scripting-compiler-embeddable"))
   implementation(kotlin("compiler-embeddable"))
 
-  implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
+    implementation(libs.commons.io)
 
   testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
   testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
 
-  implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
-  testImplementation(group = "ch.qos.logback", name = "logback-classic", version = "1.5.13")
-  testImplementation(group = "ch.qos.logback", name = "logback-core", version = "1.5.13")
-  testImplementation("org.ow2.asm:asm:9.6")
+    implementation(libs.slf4j.api)
+    testImplementation(libs.logback.classic)
+    testImplementation(libs.logback.core)
+    testImplementation(libs.asm)
 
 
 }

@@ -17,3 +17,5 @@ tmp/
 user-sessions/
 metadata.properties
 metadata.script
+.websearch/
+.intellijPlatform/

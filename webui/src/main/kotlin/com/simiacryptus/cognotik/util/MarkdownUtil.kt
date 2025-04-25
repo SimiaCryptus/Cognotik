@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.AgentPatterns.displayMapInTabs
+import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer

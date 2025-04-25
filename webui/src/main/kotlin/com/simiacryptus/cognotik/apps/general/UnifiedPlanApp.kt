@@ -1,13 +1,13 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.TabbedDisplay
-import com.simiacryptus.cognotik.apps.plan.PlanSettings
-import com.simiacryptus.cognotik.apps.plan.cognitive.CognitiveMode
-import com.simiacryptus.cognotik.apps.plan.cognitive.CognitiveModeStrategy
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager

@@ -2,27 +2,17 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
-    java
+    id("cognotik.common-conventions")
     `java-library`
     `maven-publish`
     id("signing")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-    kotlin("jvm") version "2.1.20"
+    alias(libs.plugins.shadow)
     war
-    id("org.beryx.runtime") version "1.13.0"
+    alias(libs.plugins.beryx.runtime)
     application
 }
-// Configure Java toolchain to ensure Java 17 is used
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
 
 
-repositories {
-  mavenCentral()
-}
 
 application {
     mainClass.set("com.simiacryptus.cognotik.DaemonClient")
@@ -91,11 +81,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-val jetty_version = "11.0.24"
-val scala_version = "2.13.9"
-val jackson_version = "2.17.2"
-val jupiter_version = "5.10.1"
-val logback_version = "1.5.13"
 dependencies {
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
     implementation("org.apache.xmlgraphics:batik-codec:1.14")
@@ -104,7 +89,7 @@ dependencies {
     implementation("org.openjfx:javafx-graphics:17")
     implementation("org.openjfx:javafx-base:17")
 
-    implementation("org.apache.commons:commons-text:1.11.0")
+    implementation(libs.commons.text)
 
     implementation(project(":jo-penai"))
     implementation(project(":core"))
@@ -112,22 +97,22 @@ dependencies {
     implementation(project(":kotlin"))
     implementation(project(":webui"))
 
-    implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
+    implementation(libs.aws.sdk)
     implementation("org.jsoup:jsoup:1.19.1")
 
-    implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
-    implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
-    implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.annotations)
+    implementation(libs.jackson.kotlin)
 
-    implementation(group = "com.google.guava", name = "guava", version = "32.1.3-jre")
-    implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
-    implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
-    implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
+    implementation(libs.guava)
+    implementation(libs.jetty.server)
+    implementation(libs.jetty.webapp)
+    implementation(libs.jetty.websocket.server)
     implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version = "5.2.3")
-    implementation(group = "com.google.code.gson", name = "gson", version = "2.10.1")
+    implementation(libs.gson)
     implementation(group = "com.h2database", name = "h2", version = "2.2.224")
 
-    implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")
+    implementation(libs.kotlinx.coroutines)
     implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version = "0.3.8")
     implementation(kotlin("stdlib"))
     implementation(kotlin("scripting-jsr223"))
@@ -137,23 +122,23 @@ dependencies {
     implementation(kotlin("scripting-compiler-embeddable"))
     implementation(kotlin("compiler-embeddable"))
 
-    implementation(group = "org.scala-lang", name = "scala-library", version = scala_version)
-    implementation(group = "org.scala-lang", name = "scala-compiler", version = scala_version)
-    implementation(group = "org.scala-lang", name = "scala-reflect", version = scala_version)
+    implementation(group = "org.scala-lang", name = "scala-library", version = "2.13.9")
+    implementation(group = "org.scala-lang", name = "scala-compiler", version = "2.13.9")
+    implementation(group = "org.scala-lang", name = "scala-reflect", version = "2.13.9")
 
-    implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
+    implementation(libs.commons.io)
     implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
     implementation(platform("software.amazon.awssdk:bom:2.27.23"))
-    implementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.21.29")
+    implementation(libs.aws.sdk)
     implementation(group = "software.amazon.awssdk", name = "sso", version = "2.21.29")
 
-    implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
-    implementation(group = "ch.qos.logback", name = "logback-classic", version = logback_version)
-    implementation(group = "ch.qos.logback", name = "logback-core", version = logback_version)
+    implementation(libs.slf4j.api)
+    implementation(libs.logback.classic)
+    implementation(libs.logback.core)
 
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = jupiter_version)
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = jupiter_version)
-    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = jupiter_version)
+    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
+    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = "5.10.1")
+    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
 }
 
 tasks {

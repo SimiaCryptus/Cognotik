@@ -14,8 +14,8 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.config.Name
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils.Companion.isLLMIncludableFile
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isLLMIncludableFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.awt.BorderLayout

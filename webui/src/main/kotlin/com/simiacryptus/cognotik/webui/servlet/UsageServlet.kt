@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.OpenAIModel

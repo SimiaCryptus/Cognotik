@@ -6,9 +6,8 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 plugins {
-  java
+    id("cognotik.common-conventions")
   `java-library`
-    id("org.jetbrains.kotlin.jvm") version "2.1.20"
   `maven-publish`
   id("signing")
 }
@@ -22,27 +21,18 @@ repositories {
   }
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
 
-kotlin {
-    jvmToolchain(17)
-}
 
-val kotlin_version = "2.1.20"
 dependencies {
   implementation(project(":core"))
 
   implementation(group = "org.apache.groovy", name = "groovy-all", version = "4.0.11")
 
-  compileOnly(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")
-  compileOnly(group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version = kotlin_version)
-  compileOnly(group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version = kotlin_version)
+    compileOnly(libs.kotlinx.coroutines)
+    compileOnly(kotlin("stdlib"))
 
-  implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
-  implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
+    implementation(libs.slf4j.api)
+    implementation(libs.commons.io)
 
   testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
   testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
@@ -51,16 +41,6 @@ dependencies {
 
 tasks {
 
-  compileKotlin {
-    compilerOptions {
-      javaParameters.set(true)
-    }
-  }
-  compileTestKotlin {
-    compilerOptions {
-      javaParameters.set(true)
-    }
-  }
   test {
     useJUnitPlatform()
     systemProperty("surefire.useManifestOnlyJar", "false")

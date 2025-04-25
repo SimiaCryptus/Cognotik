@@ -111,18 +111,6 @@
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift D"/>
                 <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift D"/>
             </action>
-            <action class="aicoder.actions.legacy.RenameVariablesAction"
-                    text="🏷️ Rename _Variables"
-                    description="Rename variables">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt R"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt R"/>
-            </action>
-            <action class="aicoder.actions.legacy.ReplaceWithSuggestionsAction"
-                    text="💡 Replace with Suggestions"
-                    description="Suggest replacements for selected text based on context.">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt R"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt R"/>
-            </action>
             <action class="aicoder.actions.dev.LineFilterChatAction"
                     text="🔍 Filter Lines"
                     description="Filter lines">
@@ -132,34 +120,6 @@
                     description="Print PSI Tree">
                 <keyboard-shortcut keymap="$default" first-keystroke="control alt A"/>
                 <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt A"/>
-            </action>
-            <action class="aicoder.actions.legacy.AppendTextWithChatAction"
-                    text="📝 Append Text via Chat"
-                    description="Append text to your current selection using AI-driven chat suggestions.">
-            </action>
-            <action class="aicoder.actions.legacy.InsertImplementationAction"
-                    text="⚙️ Insert _Implementation"
-                    description="Insert implementation">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt I"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt I"/>
-            </action>
-            <action class="aicoder.actions.legacy.CommentsAction"
-                    text="💭 Add Code _Comments"
-                    description="Add code comments">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt C"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt C"/>
-            </action>
-            <action class="aicoder.actions.legacy.DocAction"
-                    text="📚 Add D_oc Comments"
-                    description="Add code comments">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt D"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt D"/>
-            </action>
-            <action class="aicoder.actions.legacy.ImplementStubAction"
-                    text="🔧 _Implement Stub"
-                    description="Implement stub">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt S"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt S"/>
             </action>
         </group>
         <group id="com.simiacryptus.aicoder.ui.ProjectMenu"

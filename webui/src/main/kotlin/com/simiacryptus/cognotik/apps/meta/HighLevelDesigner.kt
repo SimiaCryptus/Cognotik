@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.meta
 
-import com.simiacryptus.cognotik.core.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.jopenai.models.ChatModel
 
 class HighLevelDesigner(

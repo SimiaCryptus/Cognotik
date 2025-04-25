@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.set
+import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
 
 data class ProgressState(

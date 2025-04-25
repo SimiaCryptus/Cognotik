@@ -1,22 +1,22 @@
 package com.simiacryptus.cognotik.apps.meta
 
-import com.simiacryptus.cognotik.Discussable
-import com.simiacryptus.cognotik.Retryable
+import com.simiacryptus.cognotik.actors.CodingActor
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.camelCase
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.imports
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.pascalCase
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.sortCode
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.stripImports
+import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.apps.meta.MetaAgentActors.Companion.notIn
-import com.simiacryptus.cognotik.core.actors.CodingActor
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.camelCase
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.imports
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.pascalCase
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.sortCode
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.stripImports
-import com.simiacryptus.cognotik.core.actors.ParsedResponse
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -162,16 +162,16 @@ open class MetaAgentAgent(
   val standardImports = """
     import com.simiacryptus.jopenai.API
     import com.simiacryptus.jopenai.models.ChatModels
-    import com.simiacryptus.cognotik.core.actors.BaseActor
-    import com.simiacryptus.cognotik.core.actors.ActorSystem
-    import com.simiacryptus.cognotik.core.actors.CodingActor
-    import com.simiacryptus.cognotik.core.actors.ParsedActor
-    import com.simiacryptus.cognotik.core.actors.ImageActor
-    import com.simiacryptus.cognotik.core.platform.file.DataStorage
-    import com.simiacryptus.cognotik.core.platform.Session
-    import com.simiacryptus.cognotik.core.platform.StorageInterface
-    import com.simiacryptus.cognotik.core.actors.PoolSystem
-    import com.simiacryptus.cognotik.core.platform.User
+    import com.simiacryptus.cognotik.actors.BaseActor
+    import com.simiacryptus.cognotik.actors.ActorSystem
+    import com.simiacryptus.cognotik.actors.CodingActor
+    import com.simiacryptus.cognotik.actors.ParsedActor
+    import com.simiacryptus.cognotik.actors.ImageActor
+    import com.simiacryptus.cognotik.platform.file.DataStorage
+    import com.simiacryptus.cognotik.platform.Session
+    import com.simiacryptus.cognotik.platform.StorageInterface
+    import com.simiacryptus.cognotik.actors.PoolSystem
+    import com.simiacryptus.cognotik.platform.User
     import com.simiacryptus.cognotik.webui.application.ApplicationServer
     import com.simiacryptus.cognotik.webui.session.*
     import com.simiacryptus.cognotik.webui.application.ApplicationInterface

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory.ChildWebApp
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput

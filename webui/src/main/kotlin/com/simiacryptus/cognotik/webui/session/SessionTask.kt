@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.core.actors.CodingActor
-import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.actors.CodingActor
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.jopenai.ChatClient

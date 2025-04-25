@@ -17,7 +17,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
-import com.simiacryptus.cognotik.apps.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.models.OpenAIModels

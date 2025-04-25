@@ -3,9 +3,9 @@ package com.simiacryptus.aicoder.config
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.aicoder.PluginStartupActivity.Companion.addUserSuppliedModels
 import com.simiacryptus.aicoder.config.AppSettingsState.UserSuppliedModel
+import com.simiacryptus.aicoder.util.EncryptionUtil
 import com.simiacryptus.aicoder.util.IdeaChatClient
 import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.util.EncryptionUtil
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.toJson
@@ -89,10 +89,11 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     try {
       tabbedPane.addTab("Keys", JPanel(BorderLayout()).apply {
         add(JPanel(BorderLayout()).apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
           add(JPanel(BorderLayout()).apply {
             add(JLabel("API Configurations:"), BorderLayout.NORTH)
             add(component.apis, BorderLayout.CENTER)
-          }, BorderLayout.CENTER)
+          })
           add(JPanel(BorderLayout()).apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
@@ -152,14 +153,14 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             add(JLabel("Server Endpoint:"))
             add(component.listeningEndpoint)
           })
+            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                add(JLabel("Shell Command:"))
+                add(component.shellCommand)
+            })
           add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(JLabel("Plugin Home:"))
             add(component.pluginHome)
             add(component.choosePluginHome)
-          })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Shell Command:"))
-            add(component.shellCommand)
           })
         }, BorderLayout.NORTH)
       } catch (e: Exception) {

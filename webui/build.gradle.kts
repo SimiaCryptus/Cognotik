@@ -7,13 +7,12 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 plugins {
-  java
+  id("cognotik.common-conventions")
   `java-library`
-    id("org.jetbrains.kotlin.jvm") version "2.1.20"
   `maven-publish`
   id("signing")
-    id("io.freefair.sass-base") version "8.13"
-    id("io.freefair.sass-java") version "8.13"
+  id("io.freefair.sass-base") version "8.13"
+  id("io.freefair.sass-java") version "8.13"
 }
 
 repositories {
@@ -25,29 +24,19 @@ repositories {
   }
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
 
-kotlin {
-    jvmToolchain(17)
-}
 
-val kotlin_version = "2.1.20"
-val jetty_version = "11.0.24"
-val jackson_version = "2.17.2"
 val graal_version = "24.1.1"
 
 dependencies {
-  compileOnly("org.jetbrains.kotlin:kotlin-compiler:$kotlin_version")
-  compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin_version")
-  compileOnly("org.jetbrains.kotlin:kotlin-scripting-compiler:$kotlin_version")
+  compileOnly("org.jetbrains.kotlin:kotlin-compiler:${libs.versions.kotlin.get()}")
+  compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
+  compileOnly("org.jetbrains.kotlin:kotlin-scripting-compiler:${libs.versions.kotlin.get()}")
   compileOnly("org.eclipse.jdt:org.eclipse.jdt.core:3.36.0")
   compileOnly("org.graalvm.js:js:$graal_version")
   compileOnly("org.graalvm.js:js-language:$graal_version")
-  
-  testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")
+
+  testImplementation(libs.kotlinx.coroutines)
   testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version = "0.3.8")
   testImplementation(kotlin("stdlib"))
   testImplementation(kotlin("scripting-jsr223"))
@@ -64,7 +53,7 @@ dependencies {
 
   implementation(project(":core"))
   implementation(project(":kotlin"))
-    implementation(project(":groovy"))
+  implementation(project(":groovy"))
   implementation("org.apache.pdfbox:pdfbox:3.0.3")
 
   implementation("org.seleniumhq.selenium:selenium-java:4.27.0") {
@@ -76,8 +65,8 @@ dependencies {
   implementation("com.google.zxing:core:3.5.3")
   implementation("com.google.zxing:javase:3.5.3")
 
-  compileOnly(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
-  testImplementation(group = "software.amazon.awssdk", name = "aws-sdk-java", version = "2.27.23")
+  compileOnly(libs.aws.sdk)
+  testImplementation(libs.aws.sdk)
 
   compileOnly("org.openapitools:openapi-generator:7.3.0") {
     exclude(group = "org.slf4j")
@@ -87,33 +76,33 @@ dependencies {
   }
   testRuntimeOnly("org.openapitools:openapi-generator-cli:7.3.0")
 
-  implementation(group = "org.eclipse.jetty", name = "jetty-server", version = jetty_version)
-  implementation(group = "org.eclipse.jetty", name = "jetty-servlet", version = jetty_version)
-  implementation(group = "org.eclipse.jetty", name = "jetty-annotations", version = jetty_version)
-  implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-server", version = jetty_version)
-  implementation(group = "org.eclipse.jetty.websocket", name = "websocket-jetty-client", version = jetty_version)
-  implementation(group = "org.eclipse.jetty.websocket", name = "websocket-servlet", version = jetty_version)
-  implementation(group = "org.eclipse.jetty", name = "jetty-webapp", version = jetty_version)
+  implementation(libs.jetty.server)
+  implementation(libs.jetty.servlet)
+  implementation(libs.jetty.annotations)
+  implementation(libs.jetty.websocket.server)
+  implementation(libs.jetty.websocket.client)
+  implementation("org.eclipse.jetty.websocket:websocket-servlet:${libs.versions.jetty.get()}")
+  implementation(libs.jetty.webapp)
 
   implementation(group = "com.vladsch.flexmark", name = "flexmark", version = "0.64.8")
   implementation(group = "com.vladsch.flexmark", name = "flexmark-ext-tables", version = "0.64.8")
 
-  compileOnly(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.8.0-RC")
+  compileOnly(libs.kotlinx.coroutines)
 
   compileOnly(kotlin("stdlib"))
   testImplementation(kotlin("stdlib"))
 
-  implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5", version = "5.3.1") {
+  implementation(libs.httpclient5) {
     exclude(group = "org.slf4j", module = "slf4j-api")
   }
 
-  implementation(group = "com.fasterxml.jackson.core", name = "jackson-core", version = jackson_version)
-  implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
-  implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
-  implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
+  implementation("com.fasterxml.jackson.core:jackson-core:${libs.versions.jackson.get()}")
+  implementation(libs.jackson.databind)
+  implementation(libs.jackson.annotations)
+  implementation(libs.jackson.kotlin)
 
 
-  implementation(group = "com.google.guava", name = "guava", version = "32.1.3-jre")
+  implementation(libs.guava)
 
   implementation("com.google.api-client:google-api-client:2.2.0")
   implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
@@ -121,21 +110,17 @@ dependencies {
   implementation("com.google.http-client:google-http-client-gson:1.43.3")
 
 
-//    implementation(group = "com.google.apis", name = "google-api-services-customsearch", version = "v1-rev20230702-2.0.0")
-//  compileOnly(group = "com.google.api-client", name = "google-api-client", version = "1.35.2")
-//  compileOnly(group = "com.google.oauth-client", name = "google-oauth-client-jetty", version = "1.34.1")
-//  compileOnly(group = "com.google.apis", name = "google-api-services-oauth2", version = "v2-rev157-1.25.0")
 
-  implementation(group = "commons-io", name = "commons-io", version = "2.15.0")
+  implementation(libs.commons.io)
   implementation(group = "commons-codec", name = "commons-codec", version = "1.16.0")
 
-  implementation(group = "org.slf4j", name = "slf4j-api", version = "2.0.16")
-  runtimeOnly(group = "ch.qos.logback", name = "logback-classic", version = "1.5.13")
-  runtimeOnly(group = "ch.qos.logback", name = "logback-core", version = "1.5.13")
+  implementation(libs.slf4j.api)
+  runtimeOnly(libs.logback.classic)
+  runtimeOnly(libs.logback.core)
 
   testImplementation(kotlin("script-runtime"))
-  testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
-  testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
+  testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
 }
 
 sass {
@@ -148,16 +133,6 @@ sass {
 
 
 tasks {
-  compileKotlin {
-    compilerOptions {
-      javaParameters.set(true)
-    }
-  }
-  compileTestKotlin {
-    compilerOptions {
-      javaParameters.set(true)
-    }
-  }
   test {
     useJUnitPlatform()
     systemProperty("surefire.useManifestOnlyJar", "false")

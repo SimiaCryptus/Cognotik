@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.meta
 
+import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.meta.FlowStepDesigner.Companion.fixups
-import com.simiacryptus.cognotik.core.actors.CodingActor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
 import com.simiacryptus.jopenai.models.ChatModel
@@ -41,7 +41,7 @@ class ParsedActorDesigner(
     import com.simiacryptus.jopenai.describe.Description
     import com.simiacryptus.jopenai.models.ChatModels
     import com.simiacryptus.jopenai.proxy.ValidatedObject
-    import com.simiacryptus.cognotik.core.actors.ParsedActor
+    import com.simiacryptus.cognotik.actors.ParsedActor
     import java.util.function.Function
     
     data class ExampleResult(

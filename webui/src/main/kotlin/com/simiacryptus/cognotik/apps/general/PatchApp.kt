@@ -1,18 +1,15 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.AgentPatterns
-import com.simiacryptus.cognotik.Retryable
-import com.simiacryptus.cognotik.TabbedDisplay
-import com.simiacryptus.cognotik.core.actors.ParsedActor
-import com.simiacryptus.cognotik.core.actors.ParsedResponse
-import com.simiacryptus.cognotik.core.actors.SimpleActor
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils.Companion.filteredWalk
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils.Companion.isGitignore
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils.Companion.isLLMIncludableFile
-import com.simiacryptus.cognotik.core.util.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.set
+import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedResponse
+import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
+import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isGitignore
+import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isLLMIncludableFile
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -20,7 +17,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.diff.AddApplyFileDiffLinks
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ChatModel

@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.cloud
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices.cloud
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ApiModel.EmbeddingRequest

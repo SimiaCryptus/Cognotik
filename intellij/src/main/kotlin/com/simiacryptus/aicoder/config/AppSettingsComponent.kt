@@ -17,7 +17,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.aicoder.util.IdeaChatClient
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
@@ -229,7 +229,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
 
   @Suppress("unused")
   @Name("Show Welcome Screen")
-  val showWelcomeScreen = JBCheckBox("Show Welcome Screen", true)
+  val showWelcomeScreen = JBCheckBox()
 
   @Suppress("unused")
   @Name("Temperature")

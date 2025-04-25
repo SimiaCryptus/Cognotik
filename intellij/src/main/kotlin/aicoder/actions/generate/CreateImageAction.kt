@@ -14,9 +14,9 @@ import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.config.AppSettingsState.Companion.imageModel
 import com.simiacryptus.aicoder.util.IdeaOpenAIClient
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.cognotik.core.actors.ImageActor
-import com.simiacryptus.cognotik.core.actors.ImageResponse
-import com.simiacryptus.cognotik.core.util.getModuleRootForFile
+import com.simiacryptus.cognotik.actors.ImageActor
+import com.simiacryptus.cognotik.actors.ImageResponse
+import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.jopenai.models.chatModel
 import org.slf4j.LoggerFactory
 import java.awt.GridBagConstraints

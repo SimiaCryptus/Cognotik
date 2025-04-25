@@ -1,14 +1,14 @@
 package com.simiacryptus.cognotik.webui.application
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.authorizationManager
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.dataStorageFactory
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.core.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.core.platform.model.AuthorizationInterface.OperationType
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.dataStorageFactory
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager

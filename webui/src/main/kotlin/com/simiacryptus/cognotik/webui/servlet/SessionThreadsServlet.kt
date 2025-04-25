@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.core.platform.ApplicationServices.clientManager
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.util.RecordingThreadFactory
+import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.clientManager
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.RecordingThreadFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest

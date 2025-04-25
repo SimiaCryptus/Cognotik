@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.kotlin
 
-import com.simiacryptus.cognotik.core.actors.CodingActor
+import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineBase
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineFactoryBase

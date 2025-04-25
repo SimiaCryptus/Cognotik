@@ -6,9 +6,9 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.oauth2.Oauth2
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet

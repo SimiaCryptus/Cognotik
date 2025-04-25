@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.meta
 
+import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.meta.FlowStepDesigner.Companion.fixups
-import com.simiacryptus.cognotik.core.actors.CodingActor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.jopenai.models.ChatModel
 import kotlin.reflect.KClass
@@ -21,7 +21,7 @@ class CodingActorDesigner(
     
     For context, here is the constructor signature for CodingActor class:
     ```kotlin
-    package com.simiacryptus.cognotik.core.actors
+    package com.simiacryptus.cognotik.actors
     
     import com.simiacryptus.jopenai.models.OpenAIModels
     import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
@@ -46,7 +46,7 @@ class CodingActorDesigner(
     
     In this code example an example actor is defined with a prompt, name, and a standard configuration:
     ```kotlin
-    import com.simiacryptus.cognotik.core.actors.CodingActor
+    import com.simiacryptus.cognotik.actors.CodingActor
     import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
     
     fun exampleCodingActor() = CodingActor(

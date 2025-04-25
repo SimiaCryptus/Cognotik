@@ -1,7 +1,7 @@
 package com.simiacryptus.aicoder.util
 
 import com.simiacryptus.aicoder.config.AppSettingsState
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel

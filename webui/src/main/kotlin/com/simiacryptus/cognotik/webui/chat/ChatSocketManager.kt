@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.Retryable
-import com.simiacryptus.cognotik.TabbedDisplay
+import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.core.actors.ParsedActor
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
-import com.simiacryptus.cognotik.core.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase

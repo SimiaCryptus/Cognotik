@@ -1,14 +1,14 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.TabbedDisplay
+import com.simiacryptus.cognotik.actors.LargeOutputActor
+import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.general.OutlineManager.NodeList
-import com.simiacryptus.cognotik.core.actors.LargeOutputActor
-import com.simiacryptus.cognotik.core.actors.ParsedActor
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.StorageInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.StorageInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.TensorflowProjector
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer

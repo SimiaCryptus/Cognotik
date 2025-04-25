@@ -6,82 +6,80 @@
 
 <!-- Plugin description -->
 
-## 🌟 **Empowering Developers with Open Source AI Tools**
+# AI Coder - Your Intelligent Coding Companion
 
-AI Coding Assistant is an open source IntelliJ plugin designed by developers, for developers. Unlike closed-source
-automated coding agents, our mission is to empower you with transparent, customizable, and extensible generative and
-agentic tools. Seamlessly integrated into your IDE, AI Coding Assistant enhances your workflow, boosts productivity, and
-unlocks your creativity.
+![AI Coder Logo](https://simiacryptus.github.io/intellij_plugins/aicoder/icon.png)
 
----
+## Transform Your Development Experience
 
-## 🚀 **Why Choose AI Coding Assistant?**
+**AI Coder** is a powerful IntelliJ-based plugin that brings the capabilities of advanced AI models directly into your
+development workflow. Whether you're building new features, refactoring legacy code, or trying to understand complex
+systems, AI Coder acts as your intelligent pair programmer to accelerate your productivity.
 
-- **🔓 Fully Open Source**: Transparent, community-driven, and Apache 2.0 licensed. No black-box solutions—just open,
-  auditable code.
-- **🤖 Generative & Agentic Tools**: Leverage advanced language models and specialized AI agents to automate tasks,
-  generate code, and streamline your development process.
-- **🌐 Multi-Provider & Multi-Model Support**: Integrate seamlessly with multiple LLM providers and models, giving you
-  complete freedom and flexibility.
-- **🎛️ Intuitive & Customizable**: Easily configure your experience with a user-friendly toolbar, customizable settings,
-  and token usage monitoring.
-- **📊 Comprehensive Project & Knowledge Management**: Intelligent tools for documentation, task management, and data
-  extraction—all within your favorite IDE.
+## Key Features
 
----
+### 🚀 Smart Code Operations
 
-## 🛠️ **Key Features**
+- **Smart Paste & Fast Paste**: Intelligently format code from any source to match your project's style
+- **Custom Code Transformations**: Refactor, optimize, or enhance selected code with natural language instructions
+- **Code Generation**: Create new files and components from simple descriptions
+- **Automated Documentation**: Generate comprehensive documentation for your code with a single click
 
-- **💬 Interactive AI Chats**: Engage in intelligent code discussions, analysis, and modifications directly within
-  IntelliJ.
-- **🔧 Smart Code Editing**: Effortlessly refactor, document, and optimize your codebase with AI-powered suggestions.
-- **📋 Advanced Paste & Conversion**: Automatically convert and adapt code snippets with Smart Paste and Fast Paste
-  features.
-- **🤖 Specialized AI Agents**: Automate shell commands, web development tasks, and more with customizable AI agents.
-- **🔄 Version Control Integration**: Analyze and interact intelligently with Git commits and diffs directly from your
-  IDE.
+### 💬 Contextual AI Chat
 
----
+- **Code Chat**: Discuss your code with AI that understands the full context of your files
+- **Multi-File Chat**: Get insights across multiple files for system-wide understanding
+- **Diff Chat**: Receive suggested changes as diffs that can be applied directly
+- **Git Integration**: Chat about specific commits or working copy changes
 
-## ⚙️ **Easy Installation & Setup**
+### 🔄 Intelligent Workflows
 
-Getting started is quick and simple:
+- **Multi-Step Patch (Auto Dev)**: Break complex changes into manageable steps with detailed plans
+- **Test Result Autofix**: Automatically fix failing tests with AI-generated solutions
+- **Problem Analysis**: Get explanations and fixes for compiler errors and warnings
+- **Mass Patch**: Apply consistent changes across multiple files simultaneously
 
-1. **Install** the plugin from the JetBrains Marketplace or build it from source.
-2. **Configure** your API tokens securely within IntelliJ’s settings panel.
-3. **Customize** your AI experience through intuitive settings and UI.
-4. **Start coding smarter!**
+### 📝 Knowledge Tools
 
----
+- **Markdown Enhancement**: Extend lists, implement code blocks, and more in your documentation
+- **Document Data Extraction**: Extract structured data from various document formats
+- **Searchable Knowledge Index**: Create queryable indexes from your project documentation
+- **Interactive Knowledge Visualization**: Explore document relationships in 3D space
 
-## 🎯 **Advanced Execution Patterns**
+## Designed for Developers
 
-- **Simple Directive Execution**: Quickly execute single, straightforward tasks.
-- **Multi-Modal Interaction**: Seamlessly combine chat, editing, and automation to tackle complex coding challenges.
-- **Objective-Based Cyclic Execution** *(Coming Soon)*: Iteratively achieve multi-stage coding goals.
-- **Event-Driven Triggers** *(Coming Soon)*: Automate responses to specific coding events.
+AI Coder integrates seamlessly with your development environment, providing contextual assistance exactly when you need
+it. The plugin respects your workflow, offering suggestions without interruption and giving you full control over any
+changes.
 
----
+### Supported Languages
 
-## 🤝 **Join Our Open Source Community**
+AI Coder works with all languages supported by IntelliJ-based IDEs, including:
 
-AI Coding Assistant thrives on community collaboration. We warmly welcome contributions, feature requests, and feedback
-from developers like you. Fork our repository, submit pull requests, or open issues on GitHub—let's build the future of
-AI-powered coding together!
+- Java, Kotlin, Scala
+- Python, JavaScript, TypeScript
+- C#, C++, Go
+- Ruby, PHP, Swift
+- HTML, CSS, SQL
+- And many more!
 
----
+### Privacy & Security
 
-## 📜 **License & Transparency**
+- Your code stays private - all interactions use your own API keys
+- Configure which models to use for different operations
+- Full control over what context is sent to AI services
+- Detailed usage tracking to monitor API consumption
 
-AI Coding Assistant is proudly open source under the Apache 2.0 License. We are not affiliated with OpenAI, JetBrains,
-or any other corporation. The plugin is provided free of charge, as-is, with no warranty or guarantee.
+## Getting Started
 
----
+1. Install the plugin from the JetBrains Marketplace
+2. Configure your API keys in the settings
+3. Right-click in your editor to access AI Coder features
+4. Use keyboard shortcuts for quick access to common actions
 
-## 🌟 **Ready to Code Smarter?**
+## Take Your Coding to the Next Level
 
-Experience the power of open source generative and agentic AI tools today. Install AI Coding Assistant and revolutionize
-your development workflow—transparent, customizable, and built for developers by developers.
+Join thousands of developers who have transformed their productivity with AI Coder. Download now and experience the
+future of software development today!
 
-🚀 **AI Coding Assistant: Open Source AI Tools for Developers Who Love to Code.** 🌟
 <!-- Plugin description end -->

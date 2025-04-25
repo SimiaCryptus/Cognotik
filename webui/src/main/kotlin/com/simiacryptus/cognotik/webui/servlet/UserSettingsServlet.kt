@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.model.UserSettingsInterface.UserSettings
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.util.JsonUtil

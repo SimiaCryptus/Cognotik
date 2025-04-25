@@ -15,8 +15,8 @@ import com.simiacryptus.cognotik.apps.parse.DocumentParsingModel
 import com.simiacryptus.cognotik.apps.parse.ParsingModel
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ParsingModelType
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.models.chatModel

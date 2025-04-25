@@ -1,19 +1,18 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
-import com.simiacryptus.cognotik.apps.plan.PlanSettings
-import com.simiacryptus.cognotik.apps.plan.cognitive.AutoPlanMode
-import com.simiacryptus.cognotik.apps.plan.cognitive.PlanAheadMode
-import com.simiacryptus.cognotik.apps.plan.cognitive.SingleTaskMode
-import com.simiacryptus.cognotik.core.platform.ApplicationServices
-import com.simiacryptus.cognotik.core.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.core.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.core.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.core.platform.model.User
+import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
+import com.simiacryptus.cognotik.plan.cognitive.PlanAheadMode
+import com.simiacryptus.cognotik.plan.cognitive.SingleTaskMode
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.models.OpenAIModels
@@ -241,9 +240,9 @@ open class AppServer(
     val model = OpenAIModels.GPT4o
     val parsingModel = OpenAIModels.GPT4oMini
     val planSettings = PlanSettings(
-      defaultModel = model,
-      parsingModel = parsingModel,
-      workingDir = "."
+        defaultModel = model,
+        parsingModel = parsingModel,
+        workingDir = "."
     )
     listOf(
       ChildWebApp("/chat", BasicChatApp(".".toFile(), model, parsingModel)),

@@ -1,7 +1,7 @@
-package com.simiacryptus.cognotik.core.util
+package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.core.util.RuleTreeBuilder.escape
-import com.simiacryptus.cognotik.core.util.RuleTreeBuilder.safeSubstring
+import com.simiacryptus.cognotik.util.RuleTreeBuilder.escape
+import com.simiacryptus.cognotik.util.RuleTreeBuilder.safeSubstring
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

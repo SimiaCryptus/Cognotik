@@ -6,11 +6,6 @@
      "src": "logo.svg",
       "sizes": "64x64 32x32 24x24 16x16",
      "type": "image/svg+xml"
-    },
-    {
-      "src": "logo256.png",
-      "type": "image/png",
-     "sizes": "256x256"
     }
   ],
   "start_url": ".",

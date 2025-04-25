@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.meta
 
+import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.meta.FlowStepDesigner.Companion.fixups
-import com.simiacryptus.cognotik.core.actors.CodingActor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.jopenai.models.ChatModel
 import kotlin.reflect.KClass
@@ -23,7 +23,7 @@ class ImageActorDesigner(
     ```kotlin
     import com.simiacryptus.jopenai.models.ChatModels
     import com.simiacryptus.jopenai.models.ImageModels
-    import com.simiacryptus.cognotik.core.actors.ImageActor
+    import com.simiacryptus.cognotik.actors.ImageActor
     
     class ImageActor(
         prompt: String = "Transform the user request into an image generation prompt that the user will like",
@@ -38,7 +38,7 @@ class ImageActorDesigner(
     
     In this code example an example actor is defined with a prompt and a name:
     ```kotlin
-    import com.simiacryptus.cognotik.core.actors.ImageActor
+    import com.simiacryptus.cognotik.actors.ImageActor
     
     fun exampleSimpleActor() = ImageActor(
         prompt = ""${'"'}

@@ -11,15 +11,11 @@ version = properties("libraryVersion")
 repositories {
     mavenCentral()
 }
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
 
 
 dependencies {
-    implementation("org.antlr:antlr4-runtime:4.13.2")
-    antlr("org.antlr:antlr4:4.13.2")
+    implementation(libs.antlr.runtime)
+    antlr("org.antlr:antlr4:${libs.versions.antlr.get()}")
 }
 
 tasks {

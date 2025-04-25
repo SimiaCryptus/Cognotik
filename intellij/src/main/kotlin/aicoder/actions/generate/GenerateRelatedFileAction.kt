@@ -11,7 +11,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.config.Name
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.cognotik.core.util.getModuleRootForFile
+import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.Role

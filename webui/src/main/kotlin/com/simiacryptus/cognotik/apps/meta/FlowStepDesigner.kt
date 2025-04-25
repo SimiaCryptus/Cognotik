@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.meta
 
-import com.simiacryptus.cognotik.core.actors.CodingActor
+import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.jopenai.models.ChatModel
 import org.slf4j.LoggerFactory
@@ -27,7 +27,7 @@ class FlowStepDesigner(
     Simple actors contain a system directive, and simply return the chat model's response to the user query.
     Simple actors answer queries consisting of a list of strings representing a conversation thread, and respond with a string.
     ```kotlin
-    val actor : com.simiacryptus.cognotik.core.actors.SimpleActor
+    val actor : com.simiacryptus.cognotik.actors.SimpleActor
     val answer : String = actor.answer(listOf("This is an example question"), api = api)
     log.info("Answer: " + answer)
     ```
@@ -36,8 +36,8 @@ class FlowStepDesigner(
     This natural-language response is then parsed into a typed object, which can be used in the application logic.
     Parsed actors answer queries consisting of a list of strings representing a conversation thread, and responds with an object containing text and a parsed object.
     ```kotlin
-    val actor : com.simiacryptus.cognotik.core.actors.ParsedActor<T>
-    val answer : com.simiacryptus.cognotik.core.actors.ParsedResponse<T> = actor.answer(listOf("This is some example data"), api = api)
+    val actor : com.simiacryptus.cognotik.actors.ParsedActor<T>
+    val answer : com.simiacryptus.cognotik.actors.ParsedResponse<T> = actor.answer(listOf("This is some example data"), api = api)
     log.info("Natural Language Answer: " + answer.text)
     log.info("Parsed Answer: " + com.simiacryptus.jopenai.util.JsonUtil.toJson(answer.obj))
     ```
@@ -45,10 +45,10 @@ class FlowStepDesigner(
     Coding actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
     Coding actors answer queries expressed using CodeRequest, and responds with an object that defines a code block and an execution method.
     ```kotlin
-    val actor : com.simiacryptus.cognotik.core.actors.CodingActor
-    val answer : com.simiacryptus.cognotik.core.actors.CodingActor.CodeResult = actor.answer(listOf("Do an example task"), api = api)
+    val actor : com.simiacryptus.cognotik.actors.CodingActor
+    val answer : com.simiacryptus.cognotik.actors.CodingActor.CodeResult = actor.answer(listOf("Do an example task"), api = api)
     log.info("Implemented Code: " + answer.code)
-    val executionResult : com.simiacryptus.cognotik.core.actors.CodingActor.ExecutionResult = answer.result
+    val executionResult : com.simiacryptus.cognotik.actors.CodingActor.ExecutionResult = answer.result
     log.info("Execution Log: " + executionResult.resultOutput)
     log.info("Execution Result: " + executionResult.resultValue)
     ```
@@ -56,8 +56,8 @@ class FlowStepDesigner(
     Image actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
     Image actors answer queries consisting of a list of strings representing a conversation thread, and respond with an image.
     ```kotlin
-    val actor : com.simiacryptus.cognotik.core.actors.ImageActor
-    val answer : com.simiacryptus.cognotik.core.actors.ImageResponse = actor.answer(listOf("Draw an example image"), api = api)
+    val actor : com.simiacryptus.cognotik.actors.ImageActor
+    val answer : com.simiacryptus.cognotik.actors.ImageResponse = actor.answer(listOf("Draw an example image"), api = api)
     log.info("Image description: " + answer.text)
     val image : BufferedImage = answer.image
     ```

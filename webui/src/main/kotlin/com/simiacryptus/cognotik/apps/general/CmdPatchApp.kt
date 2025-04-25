@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.apps.general
 
 
-import com.simiacryptus.cognotik.TabbedDisplay
-import com.simiacryptus.cognotik.core.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils
-import com.simiacryptus.cognotik.set
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
