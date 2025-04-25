@@ -398,7 +398,7 @@ open class AppServer(
 
 private fun String.toFile(): File = File(this)
 
-private fun String?.urlEncode(): String {
+fun String?.urlEncode(): String {
   return this?.let {
     java.net.URLEncoder.encode(it, "UTF-8")
       .replace("+", "%20") // Replace '+' with '%20' for spaces

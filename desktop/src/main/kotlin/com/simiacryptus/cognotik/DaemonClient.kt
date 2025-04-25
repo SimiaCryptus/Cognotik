@@ -75,7 +75,7 @@ object DaemonClient {
                 arrayOf(sessionDir)
             }
             log.info("Dispatching command: ${commandArgs.joinToString(" ")}")
-            dispatchCommand(host, port + SOCKET_PORT_OFFSET, commandArgs)
+            dispatchCommand(host, port + SOCKET_PORT_OFFSET, (commandArgs.take(1).map { File(it).absolutePath } + commandArgs.drop(1)).toTypedArray())
         }
     }
 
@@ -83,7 +83,7 @@ object DaemonClient {
      * Creates a random session directory under ~/.cognotik
      * @return The path to the created directory
      */
-    private fun createRandomSessionDir(): String {
+    fun createRandomSessionDir(): String {
         val userHome = System.getProperty("user.home")
         val baseDir = File(userHome, SESSION_DIR_BASE)
         if (!baseDir.exists()) {

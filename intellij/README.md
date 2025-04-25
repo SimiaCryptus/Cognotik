@@ -3,12 +3,16 @@
 [![Build](https://github.com/SimiaCryptus/intellij-aicoder/workflows/Build/badge.svg)](https://github.com/SimiaCryptus/intellij-aicoder/actions)
 [![Version](https://img.shields.io/jetbrains/plugin/v/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <!-- Plugin description -->
 
 # AI Coder - Your Intelligent Coding Companion
 
 ![AI Coder Logo](https://simiacryptus.github.io/intellij_plugins/aicoder/icon.png)
+## Open Source & BYOK Model
+**AI Coder** is open source software licensed under Apache 2.0. It follows a "Bring Your Own Key" (BYOK) model - you provide your own API keys for the AI services you want to use, giving you full control over your data and costs.
+
 
 ## Transform Your Development Experience
 

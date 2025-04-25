@@ -5,6 +5,12 @@
 The Cognotik Application Server is a modular platform for hosting AI-powered applications. It provides a daemon-based
 architecture that allows applications to run in the background and be accessed via a web interface. The server includes
 system tray integration, socket-based communication for remote control, and various AI-powered applications.
+## Open Source & API Key Requirements
+The Cognotik Application Server is open source software licensed under Apache 2.0. It uses a "Bring Your Own Key" (BYOK) model for AI services:
+- You must provide your own API keys for AI providers (OpenAI, Anthropic, etc.)
+- All API usage is billed directly to your accounts with these providers
+- No data is shared with third parties without your explicit configuration
+- The application includes tools to help you monitor your API usage
 
 ## Core Components
 
@@ -152,6 +158,13 @@ Communication between components:
 
 The server uses sensible defaults but can be configured via command-line options. It automatically finds available ports
 if the default ports are in use.
+### API Key Configuration
+You'll need to configure your API keys before using the AI features:
+1. Launch the application
+2. Access the settings via the system tray menu or web interface
+3. Enter your API keys for the services you want to use (OpenAI, Anthropic, etc.)
+4. Save your configuration
+Your API keys are stored locally and are only used to authenticate with the respective services.
 
 ## Troubleshooting
 

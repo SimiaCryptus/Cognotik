@@ -25,13 +25,11 @@ open class ChatSocketManager(
   var parsingModel: ChatModel,
   val userInterfacePrompt: String = """
     <div class="expandable-guide">
-      <div id="expandableHeader" class="expandable-header" 
-           onclick="document.getElementById('expandableContent').style.display = document.getElementById('expandableContent').style.display === 'none' ? 'block' : 'none'; 
-                   document.getElementById('expandIcon').innerHTML = document.getElementById('expandableContent').style.display === 'none' ? '▼' : '▲';">
+      <div class="expandable-header">
         <strong>Query Expansion Syntax Guide</strong>
-        <span id="expandIcon" class="expand-icon">▼</span>
+        <span class="expand-icon">▼</span>
       </div>
-      <div id="expandableContent" class="expandable-content">
+      <div class="expandable-content">
         <p>You can use the following syntaxes in your messages to automatically expand your queries:</p>
         
         <h4 class="expandable-section-title">Parallel Expansion</h4>
@@ -70,7 +68,7 @@ open class ChatSocketManager(
   init {
     if (userInterfacePrompt.isNotBlank()) {
       val task = newTask(false, true)
-      task.complete(userInterfacePrompt.renderMarkdown())
+      task.complete(userInterfacePrompt)
     }
   }
   

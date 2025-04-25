@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 
+
+
 // Configure console styling
 const logStyles = {
     startup: 'color: #4CAF50; font-weight: bold',

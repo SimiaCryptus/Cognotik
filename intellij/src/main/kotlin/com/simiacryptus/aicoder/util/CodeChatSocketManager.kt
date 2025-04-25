@@ -1,5 +1,6 @@
 package com.simiacryptus.aicoder.util
 
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -21,7 +22,7 @@ open class CodeChatSocketManager(
   session = session,
   model = model,
   parsingModel = parsingModel,
-  userInterfacePrompt = "# `$filename`\n\n```$language\n$codeSelection\n```",
+  userInterfacePrompt = "# `$filename`\n\n```$language\n$codeSelection\n```".renderMarkdown(),
   systemPrompt = "\nYou are a helpful AI that helps people with coding.\n\nYou will be answering questions about the following code located in `$filename`:\n\n```$language\n$codeSelection\n```\n\nResponses may use markdown formatting, including code blocks.",
   api = api,
   applicationClass = ApplicationServer::class.java,

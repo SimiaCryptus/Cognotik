@@ -298,11 +298,23 @@
 
 .expand-icon {
     font-size: 12px;
+    transition: transform 0.3s ease;
 }
 
 .expandable-content {
+    max-height: 0;
+    padding: 0 15px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.expandable-content.expanded {
+    max-height: 1000px; /* Large enough to contain content */
     padding: 15px;
-    display: none;
+}
+
+.expand-icon.expanded {
+    transform: rotate(180deg);
 }
 
 .expandable-section-title {

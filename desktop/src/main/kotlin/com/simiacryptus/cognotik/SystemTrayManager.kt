@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik
 
+import com.simiacryptus.cognotik.DaemonClient.createRandomSessionDir
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory.ChildWebApp
 import org.apache.batik.transcoder.TranscoderInput
@@ -64,7 +65,8 @@ class SystemTrayManager(
                 val tray = SystemTray.getSystemTray()
                 val image = loadSvgImage()
                 val popup = PopupMenu()
-                // Add Applications submenu
+
+                /*// Add Applications submenu
                 if (apps.isNotEmpty()) {
                     popup.addSeparator()
                     apps.forEach { app ->
@@ -75,8 +77,8 @@ class SystemTrayManager(
                         popup.add(item)
                     }
                 }
-                
-                popup.addSeparator()
+                popup.addSeparator()*/
+
                 val exitItem = MenuItem("Exit")
                 exitItem.addActionListener {
                     confirm("Exit?") {
@@ -119,9 +121,11 @@ class SystemTrayManager(
     }
 
 
-    private fun openInBrowser(path: String = "") {
+    private fun openInBrowser() {
         try {
-            val url = "http://${if (host == "0.0.0.0") "localhost" else host}:$port$path"
+            val sessionDir = createRandomSessionDir()
+            val domainName = "http://${if (host == "0.0.0.0") "localhost" else host}:$port"
+            val url = "$domainName/#${sessionDir.urlEncode()}"
             Desktop.getDesktop().browse(URI(url))
             log.info("Opened browser to $url")
         } catch (e: Exception) {

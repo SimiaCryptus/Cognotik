@@ -261,18 +261,33 @@ export function resetTabState() {
     isMutating = false;
 }
 
+export function initNewCollapsibleElements() {
+    document.querySelectorAll('.expandable-header:not([data-initialized])').forEach(header => {
+        header.setAttribute('data-initialized', 'true');
+        header.addEventListener('click', (event) => {
+            const clickedHeader = event.currentTarget as HTMLElement;
+            const content = clickedHeader.nextElementSibling!;
+            const icon = clickedHeader.querySelector('.expand-icon');
+            content.classList.toggle('expanded');
+            if (icon) {
+                icon.classList.toggle('expanded');
+                icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
+            }
+        });
+    });
+}
 
 export const updateTabs = debounce(() => {
     if (isMutating) {
         return;
     }
-    // Remove any .tab-content[data-cached] elements before updating tabs
-    document.querySelectorAll('.tab-content[data-cached]').forEach(tab => {
-        tab.remove();
-    });
-
+    isMutating = true;
     try {
-        isMutating = true;
+        // Remove any .tab-content[data-cached] elements before updating tabs
+        document.querySelectorAll('.tab-content[data-cached]').forEach(tab => {
+            tab.remove();
+        });
+        initNewCollapsibleElements()
         const currentStates = getAllTabStates();
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));
