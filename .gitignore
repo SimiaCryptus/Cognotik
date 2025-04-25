@@ -19,3 +19,4 @@ metadata.properties
 metadata.script
 .websearch/
 .intellijPlatform/
+node_modules/

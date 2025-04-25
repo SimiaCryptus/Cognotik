@@ -6,17 +6,47 @@ allprojects {
     repositories {
         mavenCentral()
     }
+    // Apply common configurations to all projects
+    apply {
+        plugin("idea")
+    }
+    // Set consistent encoding for all Java compilation
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
+    }
 }
+// Configure the root project
+//tasks.register("clean") {
+//    delete(rootProject.buildDir)
+//}
 
 
 tasks {
   wrapper {
     gradleVersion = properties("gradleVersion")
+      distributionType = Wrapper.DistributionType.ALL
   }
 }
-// Configure parallel execution
-tasks.withType<Test>().configureEach {
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
+
+// Configure parallel execution for all test tasks
+allprojects {
+    tasks.withType<Test>().configureEach {
+        maxParallelForks = (Runtime.getRuntime().availableProcessors() - 1).takeIf { it > 0 } ?: 1
+
+        // Add standard JVM args for all tests
+        jvmArgs(
+            "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
+            "--add-opens", "java.base/java.util=ALL-UNNAMED",
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+        )
+        // Improve test output
+        testLogging {
+            events("passed", "skipped", "failed")
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+        }
+    }
 }
 
 
@@ -39,7 +69,10 @@ tasks.register("analyzeModuleDependencies") {
                 .filter { it.name == "implementation" || it.name == "api" }
                 .flatMap { it.dependencies }
                 .filterIsInstance<org.gradle.api.internal.artifacts.dependencies.ProjectDependencyInternal>()
-                .map { it.dependencyProject }
+                .map {
+                    @Suppress("DEPRECATION")
+                    it.dependencyProject
+                }
                 .toSet()
             projectDependencies[project] = dependencies
         }
@@ -76,4 +109,10 @@ tasks.register("optimizeDependencies") {
             println("$dep has multiple versions: ${versions.joinToString()}")
         }
     }
+}
+// Add a task to check for dependency updates across all modules
+tasks.register("checkAllDependencyUpdates") {
+    group = "verification"
+    description = "Checks for dependency updates in all modules"
+    dependsOn(subprojects.map { "${it.path}:dependencyUpdates" })
 }

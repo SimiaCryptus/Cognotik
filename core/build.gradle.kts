@@ -20,9 +20,6 @@ repositories {
     }
 }
 
-
-
-
 dependencies {
 
     implementation(libs.hsqldb)
@@ -53,10 +50,12 @@ dependencies {
     testImplementation(kotlin("stdlib"))
     testImplementation(kotlin("script-runtime"))
 
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
-    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
-    compileOnly(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
-    compileOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    compileOnly(platform("org.junit:junit-bom:5.10.2"))
+    compileOnly("org.junit.jupiter:junit-jupiter-api")
+    compileOnly("org.junit.jupiter:junit-jupiter-engine")
 
     compileOnly(platform("software.amazon.awssdk:bom:2.21.29"))
     compileOnly(libs.aws.sdk)
@@ -98,8 +97,8 @@ publishing {
                 }
             }
             pom {
-                name.set("Cognotik Core Components")
-                description.set("A very helpful puppy")
+                name.set("Cognotik Core")
+                description.set("Cognotik Agentic Toolkit")
                 url.set("https://github.com/SimiaCryptus/Cognotik")
                 licenses {
                     license {

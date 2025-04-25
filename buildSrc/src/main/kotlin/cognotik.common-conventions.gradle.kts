@@ -35,3 +35,17 @@ tasks.withType<Test> {
         "--add-opens", "java.base/java.lang=ALL-UNNAMED"
     )
 }
+// Add common configurations for all projects
+tasks.withType<JavaCompile> {
+  options.encoding = "UTF-8"
+  options.compilerArgs.add("-parameters")
+}
+// Add common configurations for Javadoc
+tasks.withType<Javadoc> {
+  options {
+    (this as StandardJavadocDocletOptions).apply {
+      addStringOption("Xdoclint:none", "-quiet")
+      addBooleanOption("html5", true)
+    }
+  }
+}

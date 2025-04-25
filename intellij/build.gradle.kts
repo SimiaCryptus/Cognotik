@@ -38,12 +38,16 @@ dependencies {
 
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
+      // Exclude transitive dependencies that might conflict with IntelliJ
+      exclude(group = "org.slf4j")
     }
     implementation(project(":core")) {
         exclude(group = "org.jetbrains.kotlin")
+      exclude(group = "org.slf4j")
     }
     implementation(project(":webui")) {
         exclude(group = "org.jetbrains.kotlin")
+      exclude(group = "org.slf4j")
     }
 
     implementation(libs.jackson.databind)

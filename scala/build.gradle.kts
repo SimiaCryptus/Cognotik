@@ -27,9 +27,9 @@ val scala_version = "2.13.12"
 dependencies {
 
   implementation(project(":core"))
-  implementation(group = "org.scala-lang", name = "scala-library", version = scala_version)
-  implementation(group = "org.scala-lang", name = "scala-compiler", version = scala_version)
-  implementation(group = "org.scala-lang", name = "scala-reflect", version = scala_version)
+  implementation(libs.scala.library)
+  implementation(libs.scala.compiler)
+  implementation(libs.scala.reflect)
     implementation(libs.slf4j.api)
 
     testImplementation(group = "org.slf4j", name = "slf4j-simple", version = libs.versions.slf4j.get())

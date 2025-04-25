@@ -40,24 +40,94 @@ runtime {
     options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
     modules.set(
         listOf(
-            "java.base", "java.desktop", "java.logging", "java.naming", "java.net.http", "java.sql", "jdk.crypto.ec"
+            "java.base",
+            "java.desktop",
+            "java.logging",
+            "java.naming",
+            "java.net.http",
+            "java.sql",
+            "jdk.crypto.ec",
+            "jdk.jfr",
+            "jdk.management",
+            "java.base",
+            "java.desktop",
+            "java.logging",
+            "java.naming",
+            "java.net.http",
+            "java.sql",
+            "jdk.crypto.ec",
+            "jdk.jfr",
+            "jdk.management"
         )
     )
     // Set jpackage type to 'deb' on Linux to avoid 'rpm' errors
     jpackage {
+        // Set application metadata
+        appVersion = project.version.toString()
+//        vendor = "SimiaCryptus"
+//        copyright = "Copyright © 2024 SimiaCryptus"
+        // Set application metadata
+        appVersion = project.version.toString()
+
         val os = System.getProperty("os.name").lowercase()
         // Only set one type per OS, and avoid setting both --type app-image and --type deb/rpm
         if (os.contains("linux")) {
             imageOptions.clear()
             imageOptions.addAll(listOf("--type", "deb"))
+            // Add Linux-specific options
+            installerOptions.addAll(
+                listOf(
+                    "--linux-menu-group", "Development",
+                    "--linux-shortcut"
+                )
+            )
+            // Add Linux-specific options
+            installerOptions.addAll(
+                listOf(
+                    "--linux-menu-group", "Development",
+                    "--linux-shortcut"
+                )
+            )
         }
         if (os.contains("mac")) {
             imageOptions.clear()
             imageOptions.addAll(listOf("--type", "dmg"))
+            // Add macOS-specific options
+            installerOptions.addAll(
+                listOf(
+                    "--mac-package-identifier", "com.simiacryptus.cognotik",
+                    "--mac-package-name", "Cognotik"
+                )
+            )
+            // Add macOS-specific options
+            installerOptions.addAll(
+                listOf(
+                    "--mac-package-identifier", "com.simiacryptus.cognotik",
+                    "--mac-package-name", "Cognotik"
+                )
+            )
         }
         if (os.contains("windows")) {
             imageOptions.clear()
             imageOptions.addAll(listOf("--type", "msi"))
+            // Add Windows-specific options
+            installerOptions.addAll(
+                listOf(
+                    "--win-dir-chooser",
+                    "--win-menu",
+                    "--win-shortcut",
+                    "--win-per-user-install"
+                )
+            )
+            // Add Windows-specific options
+            installerOptions.addAll(
+                listOf(
+                    "--win-dir-chooser",
+                    "--win-menu",
+                    "--win-shortcut",
+                    "--win-per-user-install"
+                )
+            )
         }
     }
 }
@@ -181,7 +251,10 @@ tasks.withType<ShadowJar> {
     archiveClassifier.set("all")
     mergeServiceFiles()
     isZip64 = true
-    
+    // Exclude duplicate SLF4J bindings
+    exclude("org/slf4j/impl/**")
+
+
     manifest {
         attributes(
             "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
@@ -410,7 +483,7 @@ tasks.register("packageDmg", JPackageTask::class) {
                 "--name", "Cognotik",
                 "--app-version", "${project.version}",
                 "--copyright", "Copyright © 2024 SimiaCryptus",
-                "--description", "Cognotik Applications Suite"
+                "--description", "Cognotik Agentic Toolkit",
             )
         }
         installContextMenuAction("mac")
@@ -442,7 +515,7 @@ tasks.register("packageMsi", JPackageTask::class) {
         }
         // Copy the icon to the resource directory
         copy {
-            from(layout.projectDirectory.file("src/main/resources/icon.ico"))
+            from(layout.projectDirectory.file("src/main/resources/toolbarIcon_128x128.ico"))
             into(resourceDir)
         }
         execOperations.exec {
@@ -456,11 +529,11 @@ tasks.register("packageMsi", JPackageTask::class) {
                 "--name", "Cognotik",
                 "--app-version", project.version.toString().replace("-", "."),
                 "--copyright", "Copyright © 2024 SimiaCryptus",
-                "--description", "Cognotik Applications Suite",
+                "--description", "Cognotik Agentic Toolkit",
                 "--win-dir-chooser",
                 "--win-menu",
                 "--win-shortcut",
-                "--icon", File(resourceDir, "icon.ico").path,
+                "--icon", File(resourceDir, "toolbarIcon_128x128.ico").path,
                 "--resource-dir", resourceDir.path,
                 "--vendor", "SimiaCryptus"
             )
@@ -535,7 +608,7 @@ tasks.register("packageDeb", JPackageTask::class) {
                 "--name", "Cognotik",
                 "--app-version", "${project.version}",
                 "--copyright", "Copyright © 2024 SimiaCryptus",
-                "--description", "Cognotik Applications Suite",
+                "--description", "Cognotik Agentic Toolkit",
                 "--linux-menu-group", "Utilities",
                 "--resource-dir", layout.buildDirectory.dir("jpackage/resources").get().asFile.path,
                 "--linux-deb-maintainer", "support@simiacryptus.com",

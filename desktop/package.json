@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "sharp": "^0.34.1",
+    "to-ico": "^1.1.5"
+  }
+}
