@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+# Create desktop files directory if it doesn't exist
+mkdir -p /usr/share/applications
+
+# Copy desktop files from resources
+cp "{{resourcesDir}}/cognotik.desktop" /usr/share/applications/cognotik.desktop
+cp "{{resourcesDir}}/cognotik-folder-action.desktop" /usr/share/applications/cognotik-folder-action.desktop
+
+# Update desktop database
+update-desktop-database /usr/share/applications || true
+exit 0

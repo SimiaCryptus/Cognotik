@@ -1,0 +1,18 @@
+$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("$env:PUBLIC\Desktop\Setup Cognotik Context Menu.lnk")
+$Shortcut.TargetPath = "$env:ProgramFiles\Cognotik\Setup_Context_Menu.bat"
+$Shortcut.IconLocation = "$env:ProgramFiles\Cognotik\Cognotik.exe,0"
+$Shortcut.Description = "Setup Cognotik Context Menu Integration"
+$Shortcut.WorkingDirectory = "$env:ProgramFiles\Cognotik"
+$Shortcut.Save()
+# Also create a shortcut in the Start Menu
+$startMenuPath = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Cognotik"
+if (-not (Test-Path $startMenuPath)) {
+    New-Item -Path $startMenuPath -ItemType Directory -Force
+}
+$Shortcut = $WshShell.CreateShortcut("$startMenuPath\Setup Cognotik Context Menu.lnk")
+$Shortcut.TargetPath = "$env:ProgramFiles\Cognotik\Setup_Context_Menu.bat"
+$Shortcut.IconLocation = "$env:ProgramFiles\Cognotik\Cognotik.exe,0"
+$Shortcut.Description = "Setup Cognotik Context Menu Integration"
+$Shortcut.WorkingDirectory = "$env:ProgramFiles\Cognotik"
+$Shortcut.Save()

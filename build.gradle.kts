@@ -3,41 +3,20 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 allprojects {
-//  repositories {
-//    mavenCentral()
-//    intellijPlatform {
-//      defaultRepositories()
-//    }
-//  }
-//  // Apply common configurations to all projects
-//  apply {
-//    plugin("idea")
-//  }
-  // Set consistent encoding for all Java compilation
   tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
   }
-  // Add dependency constraints to enforce consistent versions
   configurations.all {
     resolutionStrategy {
-      // Force consistent versions for commonly used libraries
       force(
         "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}",
         "org.jetbrains.kotlin:kotlin-reflect:${libs.versions.kotlin.get()}",
         "org.slf4j:slf4j-api:${libs.versions.slf4j.get()}"
       )
-      // Prevent transitive dependency conflicts
-      // Using failOnVersionConflict can be too strict and break builds
-      // Instead, use preferProjectModules to prefer project dependencies
       preferProjectModules()
     }
   }
 }
-// Configure the root project
-//tasks.register("clean") {
-//    delete(rootProject.buildDir)
-//}
-
 
 tasks {
   wrapper {
@@ -46,21 +25,15 @@ tasks {
   }
 }
 
-// Configure parallel execution for all test tasks
 allprojects {
   tasks.withType<Test>().configureEach {
-    // Use half of available processors for parallel test execution, but at least 1
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
-    // Set heap size for tests
     maxHeapSize = "2g"
-
-    // Add standard JVM args for all tests
     jvmArgs(
       "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
       "--add-opens", "java.base/java.util=ALL-UNNAMED",
       "--add-opens", "java.base/java.lang=ALL-UNNAMED"
     )
-    // Improve test output
     testLogging {
       events("passed", "skipped", "failed")
       showExceptions = true
@@ -70,16 +43,16 @@ allprojects {
   }
 }
 
-
 repositories {
   gradlePluginPortal()
   mavenCentral()
 }
+
 plugins {
   kotlin("jvm") version "2.1.20"
   id("com.github.ben-manes.versions") version "0.50.0"
 }
-// Add dependency analysis
+
 tasks.register("analyzeModuleDependencies") {
   group = "verification"
   description = "Analyzes dependencies between modules"
@@ -103,7 +76,7 @@ tasks.register("analyzeModuleDependencies") {
     }
   }
 }
-// Add dependency analysis and optimization
+
 tasks.register("optimizeDependencies") {
   group = "verification"
   description = "Analyzes and optimizes dependencies"
@@ -131,7 +104,7 @@ tasks.register("optimizeDependencies") {
     }
   }
 }
-// Add a task to check for dependency updates across all modules
+
 tasks.register("checkAllDependencyUpdates") {
   group = "verification"
   description = "Checks for dependency updates in all modules"

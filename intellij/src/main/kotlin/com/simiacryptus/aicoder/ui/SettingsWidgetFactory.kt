@@ -305,9 +305,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
     private fun createHeader(): JPanel {
       val appname = JPanel(FlowLayout(FlowLayout.LEFT, 10, 10))
-      appname.add(JLabel("AI Coding Assistant"), FlowLayout.LEFT)
+      appname.add(JLabel("Cognotik"), FlowLayout.LEFT)
       appname.add(JLabel(MyIcons.icon), FlowLayout.LEFT)
-
+      return appname
+/*
       val header = JPanel(BorderLayout())
       header.add(appname, BorderLayout.WEST)
       header.add(JLabel(String.format("<html><a href=\"\">%s</a></html>", getMessage("header.rateUs"))).apply {
@@ -319,6 +320,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         })
       }, BorderLayout.EAST)
       return header
+*/
     }
 
     private fun setSelectedModel(tree: JTree, modelName: String) {

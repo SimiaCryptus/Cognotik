@@ -1,8 +1,4 @@
 [versions]
-# Define JVM and Java versions for consistency
-jvm = "17"
-java = "17"
-
 # libraries
 jetty = "11.0.25"
 slf4j = "2.0.16"
@@ -30,11 +26,7 @@ intelliJPlatform = "2.5.0"
 kover = "0.9.1"
 qodana = "2024.3.4"
 shadow = "8.1.1"
-beryx-runtime = "1.13.0"
-# Add new libraries for testing and quality
 junit-jupiter = "5.10.2"
-assertj = "3.25.3"
-spotbugs = "4.8.3"
 
 [libraries]
 jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
@@ -75,8 +67,6 @@ scala-reflect = { group = "org.scala-lang", name = "scala-reflect", version.ref 
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-jupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
-junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
-assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 aws-bom = { group = "software.amazon.awssdk", name = "bom", version.ref = "aws" }
 
 [plugins]
@@ -86,6 +76,3 @@ kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
-beryx-runtime = { id = "org.beryx.runtime", version.ref = "beryx-runtime" }
-spotbugs = { id = "com.github.spotbugs", version = "6.0.8" }
-versions = { id = "com.github.ben-manes.versions", version = "0.51.0" }

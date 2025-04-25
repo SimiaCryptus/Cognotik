@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>actions</key>
+  <array>
+    <dict>
+      <key>action</key>
+      <string>com.apple.cocoa.application.run.shellscript</string>
+      <key>parameters</key>
+      <dict>
+        <key>inputMethod</key>
+        <string>arguments</string>
+        <key>script</key>
+        <string>open -a "{{appName}}" --args --stop</string>
+      </dict>
+    </dict>
+  </array>
+  <key>workflowTypeIdentifier</key>
+  <string>com.apple.Automator.services</string>
+</dict>
+</plist>

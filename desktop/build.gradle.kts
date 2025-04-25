@@ -8,132 +8,12 @@ plugins {
     id("signing")
     alias(libs.plugins.shadow)
     war
-    alias(libs.plugins.beryx.runtime)
     application
 }
-
-
 
 application {
     mainClass.set("com.simiacryptus.cognotik.DaemonClient")
 }
-// Create a task to run the server directly (for development)
-tasks.register<JavaExec>("runServer") {
-    group = "application"
-    description = "Run the AppServer directly (not as daemon)"
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("com.simiacryptus.cognotik.AppServer")
-    args = listOf("server")
-    // Set JVM arguments for better performance
-    jvmArgs = listOf("-Xmx2g", "-XX:+UseG1GC")
-}
-// Create a task to stop the server
-tasks.register<JavaExec>("stopServer") {
-    group = "application"
-    description = "Stop the running server"
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("com.simiacryptus.cognotik.DaemonClient")
-    args = listOf("--stop")
-}
-
-
-// Set jpackage type to 'deb' on Linux to avoid 'rpm' errors
-runtime {
-    options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
-    modules.set(
-        listOf(
-            "java.base",
-            "java.desktop",
-            "java.logging",
-            "java.naming",
-            "java.net.http",
-            "java.sql",
-            "jdk.crypto.ec",
-            "jdk.jfr",
-            "jdk.management",
-            "java.base",
-            "java.desktop",
-            "java.logging",
-            "java.naming",
-            "java.net.http",
-            "java.sql",
-            "jdk.crypto.ec",
-            "jdk.jfr",
-            "jdk.management"
-        )
-    )
-    // Set jpackage type to 'deb' on Linux to avoid 'rpm' errors
-    jpackage {
-        // Set application metadata
-        appVersion = project.version.toString()
-//        vendor = "SimiaCryptus"
-//        copyright = "Copyright © 2024 SimiaCryptus"
-        // Set application metadata
-        appVersion = project.version.toString()
-
-        val os = System.getProperty("os.name").lowercase()
-        // Only set one type per OS, and avoid setting both --type app-image and --type deb/rpm
-        if (os.contains("linux")) {
-            imageOptions.clear()
-            imageOptions.addAll(listOf("--type", "deb"))
-            // Add Linux-specific options
-            installerOptions.addAll(
-                listOf(
-                    "--linux-menu-group", "Development",
-                    "--linux-shortcut"
-                )
-            )
-            // Add Linux-specific options
-            installerOptions.addAll(
-                listOf(
-                    "--linux-menu-group", "Development",
-                    "--linux-shortcut"
-                )
-            )
-        }
-        if (os.contains("mac")) {
-            imageOptions.clear()
-            imageOptions.addAll(listOf("--type", "dmg"))
-            // Add macOS-specific options
-            installerOptions.addAll(
-                listOf(
-                    "--mac-package-identifier", "com.simiacryptus.cognotik",
-                    "--mac-package-name", "Cognotik"
-                )
-            )
-            // Add macOS-specific options
-            installerOptions.addAll(
-                listOf(
-                    "--mac-package-identifier", "com.simiacryptus.cognotik",
-                    "--mac-package-name", "Cognotik"
-                )
-            )
-        }
-        if (os.contains("windows")) {
-            imageOptions.clear()
-            imageOptions.addAll(listOf("--type", "msi"))
-            // Add Windows-specific options
-            installerOptions.addAll(
-                listOf(
-                    "--win-dir-chooser",
-                    "--win-menu",
-                    "--win-shortcut",
-                    "--win-per-user-install"
-                )
-            )
-            // Add Windows-specific options
-            installerOptions.addAll(
-                listOf(
-                    "--win-dir-chooser",
-                    "--win-menu",
-                    "--win-shortcut",
-                    "--win-per-user-install"
-                )
-            )
-        }
-    }
-}
-
 
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
@@ -231,6 +111,8 @@ tasks {
             "--add-opens",
             "java.base/sun.nio.ch=ALL-UNNAMED"
         )
+        // Fix for JUnit test assertion
+        systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     }
 }
 
@@ -240,8 +122,6 @@ tasks.war {
     from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     isZip64 = true
-    /*JDK 17*/
-
     manifest {
         attributes(
             "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
@@ -253,10 +133,7 @@ tasks.withType<ShadowJar> {
     archiveClassifier.set("all")
     mergeServiceFiles()
     isZip64 = true
-    // Exclude duplicate SLF4J bindings
     exclude("org/slf4j/impl/**")
-
-
     manifest {
         attributes(
             "Main-Class" to "com.simiacryptus.cognotik.DaemonClient"
@@ -264,8 +141,6 @@ tasks.withType<ShadowJar> {
     }
 }
 
-// Platform-specific packaging using jpackage: Only use supported types for each OS
-// Helper to install context menu actions for folders
 fun installContextMenuAction(os: String) {
     val appName = "Cognotik"
     val appDisplayName = "Open with Cognotik"
@@ -275,144 +150,54 @@ fun installContextMenuAction(os: String) {
         os.contains("windows") -> {
             // Write a .reg file to add context menu for folders
             val regFile = scriptPath.resolve("add_skyenetapps_context_menu.reg")
-            regFile.writeText(
-                """
-                Windows Registry Editor Version 5.00
-                
-                [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}]
-                @="${appDisplayName}"
-                "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
-                
-                [HKEY_CLASSES_ROOT\Directory\shell\${appDisplayName}\command]
-                @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"%1\""
-                [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server]
-                @="Stop Cognotik Server"
-                "Icon"="\"%ProgramFiles%\\$appName\\$appName.exe\""
-                [HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server\command]
-                @="\"%ProgramFiles%\\$appName\\$appName.exe\" \"--stop\""
-            """.trimIndent())
+            val templateFile = layout.projectDirectory.file("src/packaging/windows/context_menu.reg.template").asFile
+            val templateContent = templateFile.readText()
+            val regContent = templateContent
+                .replace("{{appDisplayName}}", appDisplayName)
+                .replace("{{appName}}", appName)
+            regFile.writeText(regContent)
             println("Wrote context menu .reg file to: $regFile")
+            // Create a batch file to apply the registry entries
+            val batchFile = scriptPath.resolve("install_context_menu.bat")
+            batchFile.writeText("""
+                @echo off
+                echo Installing context menu entries...
+                regedit /s "%~dp0add_skyenetapps_context_menu.reg"
+                echo Context menu entries installed.
+                exit /b 0
+            """.trimIndent())
+            println("Wrote batch file to apply registry entries: $batchFile")
         }
 
         os.contains("mac") -> {
             // Write a .plist file for a Finder Quick Action (Service)
             val plistFile = scriptPath.resolve("Cognotik.workflow/Contents/info.plist")
             plistFile.parentFile.mkdirs()
-            plistFile.writeText(
-                """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-              <key>CFBundleIdentifier</key>
-              <string>com.simiacryptus.cognotik.workflow</string>
-              <key>CFBundleName</key>
-              <string>$appDisplayName</string>
-              <key>NSServices</key>
-              <array>
-                <dict>
-                  <key>NSMenuItem</key>
-                  <dict>
-                    <key>default</key>
-                    <string>$appDisplayName</string>
-                  </dict>
-                  <key>NSMessage</key>
-                  <string>runWorkflowAsService</string>
-                  <key>NSSendFileTypes</key>
-                  <array>
-                    <string>public.folder</string>
-                  </array>
-                </dict>
-              </array>
-            </dict>
-            </plist>
-        """.trimIndent()
-            )
+            val plistTemplateFile = layout.projectDirectory.file("src/packaging/macos/info.plist.template").asFile
+            val plistContent = plistTemplateFile.readText()
+                .replace("{{appDisplayName}}", appDisplayName)
+            plistFile.writeText(plistContent)
+            
             // Write a shell script to launch the app with the folder path
             val script = scriptPath.resolve("Cognotik.workflow/Contents/document.wflow")
-            script.writeText(
-                """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-              <key>actions</key>
-              <array>
-                <dict>
-                  <key>action</key>
-                  <string>com.apple.cocoa.application.run.shellscript</string>
-                  <key>parameters</key>
-                  <dict>
-                    <key>inputMethod</key>
-                    <string>arguments</string>
-                    <key>script</key>
-                    <string>open -a "$appName" "$1"</string>
-                  </dict>
-                </dict>
-              </array>
-              <key>workflowTypeIdentifier</key>
-              <string>com.apple.Automator.services</string>
-            </dict>
-            </plist>
-        """.trimIndent()
-            )
+            val wflowTemplateFile = layout.projectDirectory.file("src/packaging/macos/document.wflow.template").asFile
+            val wflowContent = wflowTemplateFile.readText()
+                .replace("{{appName}}", appName)
+            script.writeText(wflowContent)
+            
             // Add a separate Quick Action for stopping the server
             val stopScriptDir = scriptPath.resolve("StopSkyenetApps.workflow/Contents")
             stopScriptDir.mkdirs()
             val stopPlistFile = stopScriptDir.resolve("info.plist")
-            stopPlistFile.writeText(
-                """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-              <key>CFBundleIdentifier</key>
-              <string>com.simiacryptus.cognotik.stop.workflow</string>
-              <key>CFBundleName</key>
-              <string>Stop Cognotik Server</string>
-              <key>NSServices</key>
-              <array>
-                <dict>
-                  <key>NSMenuItem</key>
-                  <dict>
-                    <key>default</key>
-                    <string>Stop Cognotik Server</string>
-                  </dict>
-                  <key>NSMessage</key>
-                  <string>runWorkflowAsService</string>
-                </dict>
-              </array>
-            </dict>
-            </plist>
-        """.trimIndent()
-            )
+            val stopPlistTemplateFile = layout.projectDirectory.file("src/packaging/macos/stop_info.plist.template").asFile
+            stopPlistFile.writeText(stopPlistTemplateFile.readText())
+            
             val stopScript = stopScriptDir.resolve("document.wflow")
-            stopScript.writeText(
-                """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-              <key>actions</key>
-              <array>
-                <dict>
-                  <key>action</key>
-                  <string>com.apple.cocoa.application.run.shellscript</string>
-                  <key>parameters</key>
-                  <dict>
-                    <key>inputMethod</key>
-                    <string>arguments</string>
-                    <key>script</key>
-                    <string>open -a "$appName" --args --stop</string>
-                  </dict>
-                </dict>
-              </array>
-              <key>workflowTypeIdentifier</key>
-              <string>com.apple.Automator.services</string>
-            </dict>
-            </plist>
-        """.trimIndent()
-            )
+            val stopWflowTemplateFile = layout.projectDirectory.file("src/packaging/macos/stop_document.wflow.template").asFile
+            val stopWflowContent = stopWflowTemplateFile.readText()
+                .replace("{{appName}}", appName)
+            stopScript.writeText(stopWflowContent)
+            
             println("Wrote stop server Quick Action to: ${stopScript.parentFile}")
             println("Wrote context menu Quick Action to: ${script.parentFile}")
         }
@@ -421,49 +206,24 @@ fun installContextMenuAction(os: String) {
         os.contains("linux") -> {
             // Write a .desktop file for Nautilus/Thunar context menu
             val desktopFile = scriptPath.resolve("cognotik-folder-action.desktop")
-            desktopFile.writeText(
-                """
-          [Desktop Entry]
-          Type=Application
-          Name=$appDisplayName
-          Comment=Open folders with Cognotik
-      Icon=/opt/cognotik/lib/icon.png
-          Exec=/opt/cognotik/bin/Cognotik "%f"
-          MimeType=inode/directory;
-          Categories=Development;Utility;TextEditor;
-          Terminal=false
-          StartupNotify=true
-          Actions=OpenFolder;
-          [Desktop Action OpenFolder]
-          Name=Open Folder with Cognotik
-          Exec=/opt/cognotik/bin/Cognotik "%f"
-        """.trimIndent()
-            )
+            val desktopTemplateFile = layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
+            val desktopContent = desktopTemplateFile.readText()
+                .replace("{{appDisplayName}}", appDisplayName)
+            desktopFile.writeText(desktopContent)
+            
             // Also create a main application desktop file
             val mainDesktopFile =
                 layout.buildDirectory.dir("jpackage/resources").get().asFile.resolve("cognotik.desktop")
             mainDesktopFile.parentFile.mkdirs()
-            mainDesktopFile.writeText(
-                """
-          [Desktop Entry]
-          Type=Application
-          Name=Cognotik
-          Comment=AI-powered application suite
-          Icon=/opt/cognotik/lib/icon.png
-          Exec=/opt/cognotik/bin/Cognotik %f
-          Categories=Development;Utility;TextEditor;
-          MimeType=inode/directory;text/plain;
-          Terminal=false
-          StartupNotify=true
-        """.trimIndent()
-            )
+            val mainDesktopTemplateFile = layout.projectDirectory.file("src/packaging/linux/main.desktop.template").asFile
+            mainDesktopFile.writeText(mainDesktopTemplateFile.readText())
+            
             println("Created main application .desktop file to: $mainDesktopFile")
             println("Created context menu .desktop file to: $desktopFile")
         }
     }
 }
 
-// Use ExecOperations for exec, to avoid deprecation
 abstract class JPackageTask : DefaultTask() {
     @get:Inject
     abstract val execOperations: org.gradle.process.ExecOperations
@@ -491,35 +251,48 @@ tasks.register("packageDmg", JPackageTask::class) {
         installContextMenuAction("mac")
     }
 }
+
 tasks.register("packageMsi", JPackageTask::class) {
     group = "distribution"
     description = "Creates a .msi package for Windows"
     onlyIf { System.getProperty("os.name").lowercase().contains("windows") }
     dependsOn("shadowJar")
     doLast {
-        // Get the actual shadow jar file name
         val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
         val shadowJarName = shadowJarFile.name
-        // Create a temporary directory for the input files
         val inputDir = layout.buildDirectory.dir("jpackage/input").get().asFile
         if (!inputDir.exists()) {
             inputDir.mkdirs()
         }
-        // Copy the shadow jar to the input directory
         copy {
             from(shadowJarFile)
             into(inputDir)
         }
-        // Create a resource directory for the icon
         val resourceDir = layout.buildDirectory.dir("jpackage/resources").get().asFile
         if (!resourceDir.exists()) {
             resourceDir.mkdirs()
         }
-        // Copy the icon to the resource directory
         copy {
             from(layout.projectDirectory.file("src/main/resources/toolbarIcon_128x128.ico"))
             into(resourceDir)
         }
+        // Install context menu actions and copy files to resource dir
+        installContextMenuAction("windows")
+        // Copy the registry file and batch script to the resource directory
+        copy {
+            from(layout.buildDirectory.dir("jpackage/scripts").get().asFile) {
+                include("add_skyenetapps_context_menu.reg")
+                include("install_context_menu.bat")
+            }
+            into(resourceDir)
+        }
+        // Create a more user-friendly installer script with instructions
+        val userInstallerScript = File(resourceDir, "Setup_Context_Menu.bat")
+        userInstallerScript.writeText(layout.projectDirectory.file("src/packaging/windows/Setup_Context_Menu.bat.template").asFile.readText())
+        // Create a desktop shortcut to the installer script
+        val shortcutScript = File(resourceDir, "create_installer_shortcut.ps1")
+        shortcutScript.writeText(layout.projectDirectory.file("src/packaging/windows/create_installer_shortcut.ps1.template").asFile.readText())
+        
         execOperations.exec {
             commandLine(
                 "jpackage",
@@ -537,10 +310,14 @@ tasks.register("packageMsi", JPackageTask::class) {
                 "--win-shortcut",
                 "--icon", File(resourceDir, "toolbarIcon_128x128.ico").path,
                 "--resource-dir", resourceDir.path,
+                "--win-shortcut-prompt",
+                "--win-help-url", "https://github.com/SimiaCryptus/Cognotik",
+                "--win-update-url", "https://github.com/SimiaCryptus/Cognotik/releases",
+                "--file-associations", layout.projectDirectory.file("src/packaging/windows/file-associations.properties").asFile.path,
+                "--install-dir", "Cognotik",
                 "--vendor", "SimiaCryptus"
             )
         }
-        installContextMenuAction("windows")
     }
 }
 
@@ -558,47 +335,6 @@ tasks.register("packageDeb", JPackageTask::class) {
         // Get the actual shadow jar file name
         val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
         val shadowJarName = shadowJarFile.name
-        // Create a post-install script to install the desktop files
-        val postinstFile = File(resourcesDir, "postinst")
-        postinstFile.writeText(
-            """
-      #!/bin/sh
-      set -e
-      # Create desktop files directory if it doesn't exist
-      mkdir -p /usr/share/applications
-      
-      # Copy desktop files from resources to applications directory
-      cp "${resourcesDir.absolutePath}/cognotik.desktop" /usr/share/applications/cognotik.desktop
-      cp "${resourcesDir.absolutePath}/cognotik-folder-action.desktop" /usr/share/applications/cognotik-folder-action.desktop
-      
-      # Update desktop database
-      update-desktop-database /usr/share/applications || true
-      exit 0
-      """.trimIndent()
-        )
-        postinstFile.setExecutable(true)
-
-        // Create a pre-remove script to stop the app and clean up desktop files
-        val prermFile = File(resourcesDir, "prerm")
-        prermFile.writeText(
-            """
-      #!/bin/sh
-      set -e
-      # Stop the running Cognotik server if any
-      if [ -x "/opt/cognotik/bin/Cognotik" ]; then
-        "/opt/cognotik/bin/Cognotik" --stop || true
-      fi
-      # Remove desktop files
-      rm -f /usr/share/applications/cognotik.desktop
-      rm -f /usr/share/applications/cognotik-folder-action.desktop
-      # Update desktop database
-      update-desktop-database /usr/share/applications || true
-      exit 0
-      """.trimIndent()
-        )
-        prermFile.setExecutable(true)
-
-
         execOperations.exec {
             commandLine(
                 "jpackage",
@@ -634,88 +370,31 @@ tasks.register("prepareLinuxDesktopFile") {
             resourcesDir.mkdirs()
         }
 
-
         // Create the context menu desktop file
         val contextMenuDesktopFile = File(resourcesDir, "cognotik-folder-action.desktop")
-        contextMenuDesktopFile.writeText(
-            """
-      [Desktop Entry]
-      Type=Application
-      Name=Open with Cognotik
-      Comment=Open folders with Cognotik
-      Icon=/opt/cognotik/lib/icon.png
-      Exec=/opt/cognotik/bin/Cognotik %f
-      MimeType=inode/directory;text/plain;
-      Categories=Development;Utility;TextEditor;
-      Terminal=false
-      StartupNotify=true
-      Actions=OpenFolder;
-      [Desktop Action OpenFolder]
-      Name=Open Folder with Cognotik
-      Exec=/opt/cognotik/bin/Cognotik %f
-      """.trimIndent()
-        )
+        val contextMenuTemplateFile = layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
+        val contextMenuContent = contextMenuTemplateFile.readText()
+            .replace("{{appDisplayName}}", "Open with Cognotik")
+        contextMenuDesktopFile.writeText(contextMenuContent)
 
         // Create the main application desktop file
         val mainDesktopFile = File(resourcesDir, "cognotik.desktop")
-        mainDesktopFile.writeText(
-            """
-      [Desktop Entry]
-      Type=Application
-      Name=Cognotik
-      Comment=AI-powered application suite
-      Icon=/opt/cognotik/lib/icon.png
-      Exec=/opt/cognotik/bin/Cognotik %f
-      Categories=Development;Utility;TextEditor;
-      MimeType=inode/directory;text/plain;
-      Terminal=false
-      StartupNotify=true
-      Actions=StopServer;
-      [Desktop Action StopServer]
-      Name=Stop Cognotik Server
-      Exec=/opt/cognotik/bin/Cognotik --stop
-      Icon=/opt/cognotik/lib/icon.png
-      """.trimIndent()
-        )
+        val mainDesktopTemplateFile = layout.projectDirectory.file("src/packaging/linux/main.desktop.template").asFile
+        mainDesktopFile.writeText(mainDesktopTemplateFile.readText())
 
         // Create a shell script to copy the desktop files to the correct location
         val installScript = File(resourcesDir, "postinst")
-        installScript.writeText(
-            """
-      #!/bin/sh
-      set -e
-      # Create desktop files directory if it doesn't exist
-      mkdir -p /usr/share/applications
-      
-      # Copy desktop files from resources
-      cp "${resourcesDir.absolutePath}/cognotik.desktop" /usr/share/applications/cognotik.desktop
-      cp "${resourcesDir.absolutePath}/cognotik-folder-action.desktop" /usr/share/applications/cognotik-folder-action.desktop
-      
-      # Update desktop database
-      update-desktop-database /usr/share/applications || true
-      exit 0
-      """.trimIndent()
-        )
+
+        val postinstTemplateFile = layout.projectDirectory.file("src/packaging/linux/postinst.template").asFile
+        val postinstContent = postinstTemplateFile.readText()
+            .replace("{{resourcesDir}}", resourcesDir.absolutePath)
+        installScript.writeText(postinstContent)
         installScript.setExecutable(true)
 
         // Create a shell script to remove the desktop files and stop the app
         val uninstallScript = File(resourcesDir, "prerm")
-        uninstallScript.writeText(
-            """
-      #!/bin/sh
-      set -e
-      # Stop the running Cognotik server if any
-      if [ -x "/opt/cognotik/bin/Cognotik" ]; then
-        "/opt/cognotik/bin/Cognotik" --stop || true
-      fi
-      # Remove desktop files
-      rm -f /usr/share/applications/cognotik.desktop
-      rm -f /usr/share/applications/cognotik-folder-action.desktop
-      # Update desktop database
-      update-desktop-database /usr/share/applications || true
-      exit 0
-      """.trimIndent()
-        )
+        val prermTemplateFile = layout.projectDirectory.file("src/packaging/linux/prerm.template").asFile
+        uninstallScript.writeText(prermTemplateFile.readText())
         uninstallScript.setExecutable(true)
 
         println("Created desktop files in jpackage resources directory:")
@@ -742,37 +421,17 @@ tasks.register("packageLinux") {
     dependsOn("clean", "shadowJar", "packageDeb")
 }
 
-// Only depend on "package" if not running the beryx jpackage task, to avoid double packaging
 tasks.named("build") {
     dependsOn(tasks.war)
     dependsOn(tasks.shadowJar)
-    // Remove dependsOn("package") to avoid running both beryx jpackage and custom package tasks
-    // dependsOn(tasks.named("package"))
 }
-// Add a task to update version from environment variable if present
+
 tasks.register("updateVersionFromEnv") {
-    val envVersion = System.getenv("SKYENET_VERSION")
+    val envVersion = System.getenv("COGNOTIK_VERSION")
     if (envVersion != null && envVersion.isNotEmpty()) {
         println("Updating version from environment variable: $envVersion")
         project.version = envVersion
     }
-}
-// Make sure the version is updated before packaging
-tasks.named("jpackage") {
-    dependsOn("jpackageImage")
-    dependsOn("updateVersionFromEnv")
-}
-// Add a task to clean up jpackage output
-tasks.register("cleanJpackage") {
-    group = "build"
-    description = "Cleans jpackage output directories"
-    doLast {
-        delete(layout.buildDirectory.dir("jpackage"))
-    }
-}
-// Make the clean task depend on cleanJpackage
-tasks.named("clean") {
-    dependsOn("cleanJpackage")
 }
 // Add a task to verify the runtime environment
 tasks.register("verifyRuntimeEnvironment") {
@@ -793,33 +452,5 @@ tasks.register("verifyRuntimeEnvironment") {
         } catch (e: Exception) {
             logger.warn("jpackage command not found. Make sure you're using JDK 14+ with jpackage.")
         }
-    }
-}
-// Force jpackageImage to run when needed
-tasks.named("jpackageImage") {
-    outputs.upToDateWhen {
-        val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
-        appImageDir.exists()
-    }
-}
-
-// Workaround: Disable the beryx jpackage task if running on Linux and not building RPMs
-tasks.named("jpackage") {
-    dependsOn("jpackageImage")
-    doFirst {
-        // Check if the app-image exists for any OS, not just Linux
-        val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
-        if (!appImageDir.exists()) {
-            // Just log a warning, but don't try to modify the task - it will be run by the dependsOn above
-            logger.warn("App image directory does not exist: $appImageDir")
-            throw GradleException("App image directory not found. Please run the jpackageImage task first.")
-        }
-    }
-}
-// Configure jpackageImage task to ensure it creates the app image
-tasks.named("jpackageImage") {
-    outputs.upToDateWhen { 
-        val appImageDir = layout.buildDirectory.dir("jpackage/Cognotik").get().asFile
-        appImageDir.exists()
     }
 }
