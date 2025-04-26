@@ -39,15 +39,14 @@ open class ChatClient(
     protected val apiBase: Map<APIProvider, String> = APIProvider.values().associate { it to (it.base ?: "") },
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService = HttpClientManager.scheduledPool,
-    workPool: ExecutorService = HttpClientManager.workPool,
+    val workPool: ExecutorService,
     var reasoningEffort: ReasoningEffort = ReasoningEffort.Low,
     var textCompressor: TextCompressor? = TextCompressor(
         minLength = 256,
         minOccurrences = 5
     ),
 ) : HttpClientManager(
-    logLevel = logLevel, logStreams = logStreams, scheduledPool = scheduledPool, workPool = workPool
+    logLevel = logLevel, logStreams = logStreams, workPool = workPool
 ) {
 
     enum class ReasoningEffort {
@@ -61,7 +60,7 @@ open class ChatClient(
     private inner class ChildClient(
         key: Map<APIProvider, String> = this@ChatClient.key, apiBase: Map<APIProvider, String> = this@ChatClient.apiBase
     ) : ChatClient(
-        key = key, apiBase = apiBase, logLevel = Level.INFO
+        key = key, apiBase = apiBase, logLevel = Level.INFO, workPool = this@ChatClient.workPool,
     ) {
         init {
             session = this@ChatClient.session

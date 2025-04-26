@@ -9,12 +9,14 @@ import com.simiacryptus.jopenai.models.OpenAIModel
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.concurrent.Executors
 
 class IdeaOpenAIClient : OpenAIClient(
     key = AppSettingsState.instance.apiKeys?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
         ?.associate { it.key to it.value } ?: mapOf(),
     apiBase = AppSettingsState.instance.apiBase?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
         ?.associate { it.key to it.value } ?: mapOf(),
+    workPool = Executors.newCachedThreadPool(),
 ) {
 
     init {

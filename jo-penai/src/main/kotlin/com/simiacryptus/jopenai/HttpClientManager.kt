@@ -4,11 +4,13 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.jopenai.exceptions.*
+import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager
 import org.apache.hc.core5.http.HttpHeaders
+import org.apache.hc.core5.http.io.SocketConfig
 import org.apache.hc.core5.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -24,8 +26,7 @@ import kotlin.math.pow
 open class HttpClientManager(
     private val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    private val scheduledPool: ListeningScheduledExecutorService = Companion.scheduledPool,
-    private val workPool: ExecutorService = Companion.workPool,
+    private val workPool: ExecutorService,
 ) : API() {
 
     companion object {
@@ -39,23 +40,26 @@ open class HttpClientManager(
                 )
             )
 
-        val workPool: ExecutorService =
-            ThreadPoolExecutor(
-                16,
-                128,
-                500,
-                TimeUnit.MILLISECONDS,
-                LinkedBlockingQueue(),
-                ThreadFactoryBuilder().setNameFormat("API Thread %d").build()
-            )
-
-        private const val DEFAULT_USER_AGENT = "JOpenAI/1.0"
+        private const val DEFAULT_USER_AGENT = "Cognotik/1.0"
         val client by lazy { createHttpClient(DEFAULT_USER_AGENT) }
         fun createHttpClient(userAgent: String = DEFAULT_USER_AGENT): CloseableHttpClient = HttpClientBuilder.create()
             .setRetryStrategy(DefaultHttpRequestRetryStrategy(0, Timeout.ofSeconds(1)))
             .setConnectionManager(with(PoolingHttpClientConnectionManager()) {
-                defaultMaxPerRoute = 100
-                maxTotal = 100
+                defaultSocketConfig = with(SocketConfig.custom()) {
+                    setSoTimeout(Timeout.ofSeconds(600))
+                    setSoReuseAddress(true)
+                    setSoLinger(Timeout.ofSeconds(10))
+                    setDefaultConnectionConfig(ConnectionConfig.custom().apply {
+                        setConnectTimeout(Timeout.ofSeconds(600))
+                        setSocketTimeout(Timeout.ofSeconds(600))
+                        setSoKeepAlive(true)
+                        setTimeToLive(Timeout.ofSeconds(600))
+                    }.build())
+                    setSoKeepAlive(true)
+                    build()
+                }
+                defaultMaxPerRoute = 16
+                maxTotal = 16
                 this
             })
             .setUserAgent(userAgent)

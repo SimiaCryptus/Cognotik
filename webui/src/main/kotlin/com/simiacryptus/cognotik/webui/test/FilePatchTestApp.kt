@@ -14,7 +14,7 @@ import java.nio.file.Files
 
 open class FilePatchTestApp(
     applicationName: String = "FilePatchTestApp",
-    val api: API = OpenAIClient()
+    val api: API
 ) : ApplicationServer(
     applicationName = applicationName,
     path = "/codingActorTest",

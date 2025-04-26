@@ -24,6 +24,7 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.OpenAIModels
 import org.eclipse.jetty.webapp.WebAppContext
 import java.io.File
+import java.util.concurrent.Executors
 
 
 object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.ApplicationDirectory(port = 8082) {
@@ -60,7 +61,7 @@ object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.Applicat
                 )
             ),
             ChildWebApp("/images", ImageActorTestApp(ImageActor(textModel = model).apply {
-                openAI = OpenAIClient()
+                openAI = OpenAIClient(workPool = Executors.newCachedThreadPool())
             })),
 //      ChildWebApp(
 //        "/test_coding_scala",
@@ -86,7 +87,7 @@ object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.Applicat
                     )
                 )
             ),
-            ChildWebApp("/test_file_patch", FilePatchTestApp()),
+            ChildWebApp("/test_file_patch", FilePatchTestApp(api = OpenAIClient(workPool = Executors.newCachedThreadPool()))),
             ChildWebApp("/stressTest", StressTestApp()),
             ChildWebApp(
                 "/pdfExtractor", DocumentParserApp(

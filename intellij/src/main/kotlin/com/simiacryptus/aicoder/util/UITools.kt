@@ -750,7 +750,8 @@ object UITools {
                                 OpenAIClient(
                                     key = mapOf(
                                         APIProvider.OpenAI to apiKey
-                                    )
+                                    ),
+                                    workPool = Executors.newCachedThreadPool(),
                                 ).listModels()
                                 JOptionPane.showMessageDialog(
                                     null,

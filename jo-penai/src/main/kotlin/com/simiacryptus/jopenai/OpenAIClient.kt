@@ -38,12 +38,10 @@ open class OpenAIClient(
     protected val apiBase: Map<APIProvider, String> = APIProvider.values().associate { it to (it.base ?: "") },
     logLevel: Level = Level.TRACE,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService = Companion.scheduledPool,
-    workPool: ExecutorService = Companion.workPool
+    workPool: ExecutorService
 ) : HttpClientManager(
     logLevel = logLevel,
     logStreams = logStreams,
-    scheduledPool = scheduledPool,
     workPool = workPool
 ) {
     private val log: Logger = LoggerFactory.getLogger(OpenAIClient::class.java).apply {
