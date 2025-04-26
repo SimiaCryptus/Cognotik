@@ -47,7 +47,17 @@ function cacheTabContent(container: Element, content: Element): void {
     const tabId = content.getAttribute('data-tab');
     if (containerId && tabId) {
         const key = getCacheKey(containerId, tabId);
-        tabContentCache.set(key, content as HTMLElement);
+        // Clone the node before caching to avoid reference issues
+        const contentClone = content.cloneNode(true) as HTMLElement;
+        tabContentCache.set(key, contentClone);
+        if (VERBOSE_LOGGING) {
+            console.debug('[TabSystem] Cached tab content', {
+                containerId,
+                tabId,
+                cacheKey: key,
+                contentSize: contentClone.outerHTML.length
+            });
+        }
     }
 }
 
@@ -126,7 +136,9 @@ export function setActiveTab(button: Element, container: Element) {
     if (!existingContent) {
         const cachedContent = restoreCachedContent(container, forTab);
         if (cachedContent) {
-            container.appendChild(cachedContent);
+            // Clone the node to avoid issues with it being removed from another location
+            const clonedContent = cachedContent.cloneNode(true) as HTMLElement;
+            container.appendChild(clonedContent);
         }
     }
     // Find the specific tabs group containing this button
@@ -193,9 +205,11 @@ export function setActiveTab(button: Element, container: Element) {
                 `;
                 content.classList.remove('visible');
                 // Cache and remove inactive content if it's not marked to keep mounted
-                if (!content.hasAttribute('data-keep-mounted')) {
+                if (!content.hasAttribute('data-keep-mounted') && contentTabId !== forTab) {
                     content.setAttribute('data-cached', 'true');
                     cacheTabContent(container, content);
+                    // Don't remove the content if we're in the process of switching to it
+                    // This prevents the last tab from disappearing
                     content.remove();
                 }
                 if (VERBOSE_LOGGING) {
@@ -233,6 +247,18 @@ function restoreTabState(container: Element) {
                 const firstButton = container.querySelector('.tabs .tab-button') as HTMLElement;
                 if (firstButton) {
                     setActiveTab(firstButton, container);
+                }
+            }
+            // Verify that the active tab content exists after restoration
+            const activeTabContent = container.querySelector(`.tab-content[data-tab="${savedTab}"]`);
+            if (!activeTabContent) {
+                console.warn(`[TabSystem] Active tab content missing after restore: ${savedTab} in container ${containerId}`);
+                // Try to restore from cache again
+                const cachedContent = restoreCachedContent(container, savedTab);
+                if (cachedContent) {
+                    const clonedContent = cachedContent.cloneNode(true) as HTMLElement;
+                    container.appendChild(clonedContent);
+                    console.info(`[TabSystem] Successfully restored missing tab content from cache: ${savedTab}`);
                 }
             }
         } else {
@@ -345,12 +371,15 @@ export const updateTabs = debounce(() => {
                 const container = tab.closest('.tabs-container');
                 const containerId = container?.id;
                 const cacheKey = containerId && tabId ? getCacheKey(containerId, tabId) : null;
-                if (tabId && cacheKey && !visibleTabs.has(cacheKey) &&
+                // Don't remove content that's currently visible or has data-keep-mounted
+                if (tabId && cacheKey && !visibleTabs.has(cacheKey) && !tab.classList.contains('active') &&
                     !tab.hasAttribute('data-keep-mounted') && !tab.hasAttribute('data-cached')) {
                     if (container) {
                         setupTabContainer(container);
                         cacheTabContent(container, tab);
                     }
+                    // Mark as cached before removing
+                    tab.setAttribute('data-cached', 'true');
                     tab.remove();
                 }
             });
