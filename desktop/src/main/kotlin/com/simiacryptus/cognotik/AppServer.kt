@@ -248,11 +248,11 @@ open class AppServer(
       ChildWebApp("/chat", BasicChatApp(".".toFile(), model, parsingModel)),
       ChildWebApp(
         "/taskChat", UnifiedPlanApp(
+          path = "/taskChat",
           applicationName = "Task-Runner",
           planSettings = planSettings,
           model = model,
           parsingModel = parsingModel,
-          domainName = publicName,
           api2 = api2,
           cognitiveStrategy = TaskChatMode,
           describer = describer
@@ -260,11 +260,11 @@ open class AppServer(
       ),
       ChildWebApp(
         "/autoPlan", UnifiedPlanApp(
+          path = "/autoPlan",
           applicationName = "Auto-Plan",
           planSettings = planSettings,
           model = model,
           parsingModel = parsingModel,
-          domainName = publicName,
           api2 = api2,
           cognitiveStrategy = AutoPlanMode,
           describer = describer
@@ -272,11 +272,11 @@ open class AppServer(
       ),
       ChildWebApp(
         "/planAhead", UnifiedPlanApp(
+          path = "/planAhead",
           applicationName = "Plan-Ahead",
           planSettings = planSettings,
           model = model,
           parsingModel = parsingModel,
-          domainName = publicName,
           api2 = api2,
           cognitiveStrategy = PlanAheadMode,
           describer = describer

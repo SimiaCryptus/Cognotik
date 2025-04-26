@@ -26,12 +26,11 @@ import java.util.concurrent.Executors
  * This allows for switching between different planning and execution strategies.
  */
 open class UnifiedPlanApp(
+  path: String,
   applicationName: String = "Unified Planning App",
-  path: String = "/unifiedPlan",
   val planSettings: PlanSettings,
   val model: ChatModel,
   val parsingModel: ChatModel,
-  val domainName: String = "localhost",
   showMenubar: Boolean = true,
   val api: API? = null,
   val api2: OpenAIClient,
@@ -49,7 +48,7 @@ open class UnifiedPlanApp(
   private val expansionPool = Executors.newFixedThreadPool(4)
 
   override val stickyInput = true
-  override val singleInput = true
+  override val singleInput = cognitiveStrategy.singleInput
 
   @Suppress("UNCHECKED_CAST")
   override fun <T : Any> initSettings(session: Session): T = planSettings as T

@@ -33,6 +33,8 @@ interface CognitiveMode {
 }
 
 interface CognitiveModeStrategy {
+  val singleInput: Boolean
+
   fun getCognitiveMode(
     ui: ApplicationInterface,
     api: API,

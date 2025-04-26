@@ -676,6 +676,7 @@ open class AutoPlanMode(
   )
 
   companion object : CognitiveModeStrategy {
+    override val singleInput: Boolean = true
     override fun getCognitiveMode(
       ui: ApplicationInterface,
       api: API,

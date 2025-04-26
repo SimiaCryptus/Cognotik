@@ -237,6 +237,8 @@ open class TaskChatMode(
   }
 
   companion object : CognitiveModeStrategy {
+
+    override val singleInput: Boolean = false
     override fun getCognitiveMode(
       ui: ApplicationInterface,
       api: API,

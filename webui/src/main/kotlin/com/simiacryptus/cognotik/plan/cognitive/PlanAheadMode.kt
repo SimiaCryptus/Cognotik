@@ -74,6 +74,7 @@ open class PlanAheadMode(
   }
 
   companion object : CognitiveModeStrategy {
+    override val singleInput: Boolean = true
     override fun getCognitiveMode(
       ui: ApplicationInterface,
       api: API,
