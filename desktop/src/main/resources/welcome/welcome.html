@@ -13,12 +13,23 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f9f9f9;
         }
 
         h1 {
             color: #2c3e50;
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
+        }
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
         }
 
         a {
@@ -65,12 +76,17 @@
             margin-bottom: 20px;
             padding: 10px 0;
             border-bottom: 1px solid #ddd;
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .wizard-step {
             display: flex;
             align-items: center;
             margin-right: 15px;
+            transition: all 0.3s ease;
         }
 
         .step-number {
@@ -84,6 +100,7 @@
             color: #555;
             margin-right: 10px;
             font-weight: bold;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .active .step-number {
@@ -98,6 +115,11 @@
 
         .wizard-content {
             display: none;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
         }
 
         .wizard-content.active {
@@ -126,9 +148,12 @@
             top: 0;
             right: 0;
             display: flex;
-            padding: 10px;
+            align-items: center;
             z-index: 100;
             gap: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .menu-button {
@@ -138,6 +163,7 @@
             border-radius: 4px;
             padding: 8px 15px;
             cursor: pointer;
+            transition: background-color 0.2s ease;
         }
 
         .menu-button:hover {
@@ -198,6 +224,9 @@
             padding: 10px 20px;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
 
 
@@ -208,6 +237,8 @@
 
         .button:hover {
             background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         .button:disabled {
             background-color: #bdc3c7;
@@ -244,10 +275,12 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             margin-bottom: 5px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
         .task-toggle:hover {
             background-color: #f5f5f5;
+            transform: translateX(2px);
         }
 
         .tooltip {
@@ -334,6 +367,16 @@
             .button {
                 margin-bottom: 10px;
             }
+            .logo-container {
+                margin-right: 5px;
+            }
+            .logo {
+                width: 30px;
+                height: 30px;
+            }
+            .menu-bar {
+                padding: 5px;
+            }
 
             .button {
                 margin-bottom: 10px;
@@ -342,7 +385,18 @@
 
         /* Accessibility improvements */
         .button:focus, input:focus, select:focus {
-            outline: 2px solid #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.5);
+        }
+        /* Footer styling */
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .footer-logo {
+            vertical-align: middle;
         }
 
         /* Dark mode support */
@@ -352,9 +406,13 @@
                 color: #f0f0f0;
             }
 
-            .card, .modal-content {
+            .card, .modal-content, .wizard-content, .wizard-nav {
                 background-color: #2a2a2a;
                 color: #f0f0f0;
+            }
+            .menu-bar {
+                background-color: rgba(42, 42, 42, 0.9);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             }
 
             .close {
@@ -406,6 +464,11 @@
 <body>
 
 <div class="menu-bar">
+    <div class="logo-container">
+        <img src="logo.svg" alt="Cognotik Logo" class="logo">
+        <span style="font: bold">Cognotik</span>
+    </div>
+    <div style="width: inherit;"></div>
     <button id="open-basic-chat" class="menu-button">Basic Chat</button>
     <button id="api-settings-btn" class="menu-button">Configure API Keys</button>
 </div>
@@ -595,7 +658,10 @@
 </div>
 
 <footer style="margin-top: 40px; text-align: center; font-size: 0.8em; color: #7f8c8d;">
-    <p>Cognotik &copy; 2025 SimiaCryptus Software</p>
+    <div class="footer-content">
+        <img src="logo.svg" alt="Cognotik Logo" class="footer-logo" width="24" height="24">
+        <p>Cognotik &copy; 2025 SimiaCryptus Software</p>
+    </div>
 </footer>
 <script>
 
