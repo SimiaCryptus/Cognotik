@@ -253,7 +253,9 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     );
 
     useTheme();
-    console.log('MessageList', 'Rendering component', {hasPropMessages: !!propMessages});
+    if (DEBUG_LOGGING) {
+        console.debug('[MessageList] Rendering component', {hasPropMessages: !!propMessages});
+    }
 
     React.useEffect(() => {
         debouncedUpdateTabs();

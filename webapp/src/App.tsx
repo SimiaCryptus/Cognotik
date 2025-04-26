@@ -45,6 +45,8 @@ import 'prismjs/plugins/normalize-whitespace/prism-normalize-whitespace';
 import QRCode from 'qrcode-generator';
 import {addMessage} from "./store/slices/messageSlice";
 import {Message} from './types/messages';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import ErrorFallback from './components/ErrorBoundary/ErrorFallback';
 
 
 // Add function to extract archived messages
@@ -157,7 +159,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
     return (
         <Provider store={store}>
-            <AppContent/>
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+                <AppContent/>
+            </ErrorBoundary>
         </Provider>
     );
 };
