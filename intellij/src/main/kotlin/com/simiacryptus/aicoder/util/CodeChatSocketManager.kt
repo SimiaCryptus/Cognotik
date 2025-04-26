@@ -27,6 +27,7 @@ open class CodeChatSocketManager(
   api = api,
   applicationClass = ApplicationServer::class.java,
   storage = storage,
+  budget = 2.0,
 ) {
   override fun canWrite(user: User?): Boolean = true
 }

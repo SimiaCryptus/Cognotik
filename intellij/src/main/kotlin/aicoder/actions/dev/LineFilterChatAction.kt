@@ -103,6 +103,7 @@ class LineFilterChatAction : BaseAction() {
       api = api,
       applicationClass = ApplicationServer::class.java,
       storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+      budget = 2.0,
     ) {
       override fun canWrite(user: User?): Boolean = true
       override fun renderResponse(response: String, task: SessionTask): String {

@@ -130,6 +130,7 @@ class MultiCodeChatAction : BaseAction() {
     api = api,
     applicationClass = ApplicationServer::class.java,
     storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+    budget = 2.0,
   ) {
     
     

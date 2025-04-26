@@ -123,6 +123,7 @@ open class MultiDiffChatAction(
     api = api,
     applicationClass = ApplicationServer::class.java,
     storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+    budget = 2.0,
   ) {
     override val systemPrompt: String
       get() = """

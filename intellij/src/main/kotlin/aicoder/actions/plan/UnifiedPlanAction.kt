@@ -66,6 +66,8 @@ class UnifiedPlanAction : BaseAction() {
         // Convert the selection string to the appropriate CognitiveModeStrategy.
         val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
           "Plan Ahead" -> object : CognitiveModeStrategy {
+            override val singleInput: Boolean = true
+
             override fun getCognitiveMode(
               ui: ApplicationInterface,
               api: API,
@@ -87,6 +89,7 @@ class UnifiedPlanAction : BaseAction() {
             }
           }
           "Single Task" -> object : CognitiveModeStrategy {
+            override val singleInput: Boolean = false
             override fun getCognitiveMode(
               ui: ApplicationInterface,
               api: API,
@@ -108,6 +111,7 @@ class UnifiedPlanAction : BaseAction() {
             }
           }
           "Graph" -> object : CognitiveModeStrategy {
+            override val singleInput: Boolean = true
             override fun getCognitiveMode(
               ui: ApplicationInterface,
               api: API,
@@ -129,6 +133,7 @@ class UnifiedPlanAction : BaseAction() {
             }
           }
           "Auto Plan" -> object : CognitiveModeStrategy {
+            override val singleInput: Boolean = true
             override fun getCognitiveMode(
               ui: ApplicationInterface,
               api: API,
