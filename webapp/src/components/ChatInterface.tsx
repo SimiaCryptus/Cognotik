@@ -131,7 +131,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 id: `${id}-${timestamp}`,
                 content: content,
                 version: parseInt(version, 10) || timestamp,
-                type: id.startsWith('u') ? 'user' as MessageType : 'assistant' as MessageType,
+                type: id.startsWith('u') ? 'user' : id.startsWith('s') ? 'system' : 'assistant' as MessageType,
                 timestamp,
                 isHtml: false,
                 rawHtml: null,

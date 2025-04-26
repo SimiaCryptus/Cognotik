@@ -10,7 +10,6 @@ export const useWebSocket = (sessionId: string) => {
     const RECONNECT_BASE_DELAY = 1000;
     const CONNECTION_TIMEOUT = 5000;
     const connectionStatus = useRef({attempts: 0, lastAttempt: 0});
-    const RECONNECT_DELAY = 1000; // 1 second delay between attempts
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const [isReconnecting, setIsReconnecting] = useState(false);
@@ -31,7 +30,7 @@ export const useWebSocket = (sessionId: string) => {
 
             clearTimeout(connectionTimeout);
             const now = Date.now();
-            if (now - connectionStatus.current.lastAttempt < RECONNECT_DELAY) {
+            if (now - connectionStatus.current.lastAttempt < RECONNECT_BASE_DELAY) {
                 return;
             }
             connectionStatus.current.lastAttempt = now;

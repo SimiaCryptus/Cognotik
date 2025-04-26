@@ -293,10 +293,12 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
 
         if (message.trim()) {
             setIsSubmitting(true);
-            log('Sending message', {
-                messageLength: message.length,
-                message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
-            });
+            if (DEBUG) {
+                log('Sending message', {
+                    messageLength: message.length,
+                    message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
+                });
+            }
             Promise.resolve(onSendMessage(message)).finally(() => {
                 setMessage('');
                 setIsSubmitting(false);
@@ -306,7 +308,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         } else {
             log('Empty message submission prevented');
         }
-    }, [message, onSendMessage, isSubmitting, isWebSocketConnected]);
+    }, [message, onSendMessage, isSubmitting, isWebSocketConnected, DEBUG]);
 
     const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newMessage = e.target.value;

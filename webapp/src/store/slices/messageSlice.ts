@@ -53,7 +53,7 @@ const messageSlice = createSlice({
                 return;
             }
             const existingVersion = state.messageVersions[messageId];
-            state.messageVersions[messageId] = messageVersion;
+            state.messageVersions[messageId] = messageVersion || Date.now();
             if (existingVersion) {
                 // Update the message in place instead of removing and re-adding
                 const existingIndex = state.messages.findIndex(msg => msg.id === messageId);

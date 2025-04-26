@@ -175,7 +175,10 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             const filteredMessages = processMessages(messages);
             return filteredMessages.map((message) => {
                 // Handle case where message.content might be undefined
-                let content = message.content ? expandMessageReferences(message.content, messages) : '';
+                let content = message.content || '';
+                if (content && message.id && !message.id.startsWith('z')) {
+                    content = expandMessageReferences(content, messages);
+                }
                 // Handle verbose content using DOM manipulation
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = content;

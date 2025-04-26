@@ -269,7 +269,7 @@ export class WebSocketService implements WebSocketLike {
             this.queueMessage(message); // Queue message to be sent after reconnection
             return;
         }
-        console.info('[WebSocket] Connection lost - initiating reconnect before sending message');
+        console.warn('[WebSocket] Connection lost - initiating reconnect before sending message');
         const onConnect = (connected: boolean) => {
             if (connected) {
                 console.log('[WebSocket] Reconnected successfully, sending queued message');
