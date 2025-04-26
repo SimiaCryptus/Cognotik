@@ -8,10 +8,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-  # No working-directory specified to run from root
-
 jobs:
   build:
     name: Build

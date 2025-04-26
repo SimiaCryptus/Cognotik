@@ -41,6 +41,9 @@ import 'prismjs/plugins/normalize-whitespace/prism-normalize-whitespace';
 import QRCode from 'qrcode-generator';
 import { addMessage } from './store/slices/messageSlice';
 import { Message } from './types/messages';
+const APP_VERSION = '1.0.0'; 
+const LOG_PREFIX = '[Cognotik]';
+Prism.manual = true;
 
 
 // Add function to extract archived messages
@@ -49,19 +52,16 @@ const getArchivedMessages = () => {
     try {
         const messagesEl = document.getElementById('archived-messages');
         if (!messagesEl || !messagesEl.textContent) {
-            console.warn(`${LOG_PREFIX} No archived messages found in DOM`);
+            console.warn(`[Cognotik] No archived messages found in DOM`);
             return [];
         }
         return JSON.parse(messagesEl.textContent || '[]');
     } catch (err) {
-        console.error(`${LOG_PREFIX} Critical: Failed to parse archived messages:`, err);
+        console.error(`[Cognotik] Critical: Failed to parse archived messages:`, err);
         return [];
     }
 };
 
-const APP_VERSION = '1.0.0'; 
-const LOG_PREFIX = '[Cognotik]';
-Prism.manual = true;
 
 
 // Create a separate component for the app content

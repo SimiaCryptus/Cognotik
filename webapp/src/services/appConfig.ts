@@ -5,7 +5,14 @@ import { ThemeName } from '../types';
 
 const LOG_PREFIX = '[AppConfig]';
 // Add archive detection and export
-export const isArchive = window.location.search.includes('archive=true');
+// Check for archive mode in both URL and localStorage for persistence
+export const isArchive = window.location.search.includes('archive=true') || 
+                         localStorage.getItem('archive_mode') === 'true';
+
+// Store archive mode in localStorage if it's in the URL
+if (window.location.search.includes('archive=true')) {
+  localStorage.setItem('archive_mode', 'true');
+}
 
 console.log(`${LOG_PREFIX} Running in ${isArchive ? 'archive' : 'live'} mode`);
 

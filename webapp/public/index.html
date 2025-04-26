@@ -30,13 +30,16 @@
     </script>
     <!-- Add a fallback in case React fails to render -->
     <script>
-      setTimeout(function() {
-        var root = document.getElementById('root');
-        if (root && (!root.children || root.children.length === 0)) {
-          console.error('React app failed to render after timeout');
-          root.innerHTML = '<div style="padding: 20px; text-align: center;"><h2>Application Error</h2><p>The application failed to load properly. Please try refreshing the page.</p></div>';
-        }
-      }, 5000);
+      // Increase timeout and add more detailed error handling
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var root = document.getElementById('root');
+          if (root && (!root.children || root.children.length === 0)) {
+            console.error('React app failed to render after timeout');
+            root.innerHTML = '<div style="padding: 20px; text-align: center;"><h2>Application Error</h2><p>The application failed to load properly. Please try refreshing the page or check the console for errors.</p></div>';
+          }
+        }, 10000); // Increased timeout to 10 seconds
+      });
     </script>
   </body>
 </html>
