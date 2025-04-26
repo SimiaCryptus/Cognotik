@@ -114,7 +114,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 return;
             }
 
-            const [id, version, content] = data.data.split(',');
+            // Fix message parsing to properly handle commas in content
+            const firstCommaIndex = data.data.indexOf(',');
+            const secondCommaIndex = firstCommaIndex > -1 ? data.data.indexOf(',', firstCommaIndex + 1) : -1;
+            
+            if (firstCommaIndex === -1 || secondCommaIndex === -1) {
+                console.error(`${LOG_PREFIX} Invalid message format received:`, data.data);
+                return;
+            }
+            
+            const id = data.data.substring(0, firstCommaIndex);
+            const version = data.data.substring(firstCommaIndex + 1, secondCommaIndex);
+            const content = data.data.substring(secondCommaIndex + 1);
             const timestamp = Date.now();
             const messageObject = {
                 id: `${id}-${timestamp}`,

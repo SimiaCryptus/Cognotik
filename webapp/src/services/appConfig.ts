@@ -4,12 +4,13 @@ import {setAppInfo} from '../store/slices/configSlice';
 import {ThemeName} from '../types';
 
 const LOG_PREFIX = '[AppConfig]';
-// Add archive detection and export
-export const isArchive = document.documentElement.hasAttribute('data-archive');
 
 const BASE_API_URL = process.env.REACT_APP_API_URL || (window.location.origin + window.location.pathname);
 
 let loadConfigPromise: Promise<any> | null = null;
+// Flag to determine if the application is running in archive mode
+export const isArchive = window.location.pathname.includes('/archive/');
+
 const STORAGE_KEYS = {
     THEME: 'theme',
 } as const;

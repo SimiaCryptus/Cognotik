@@ -16,7 +16,6 @@ export const useWebSocket = (sessionId: string) => {
     const [isReconnecting, setIsReconnecting] = useState(false);
     const dispatch = useDispatch();
     const connectionAttemptRef = useRef(0);
-    const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 
     useEffect(() => {
         let connectionTimeout: NodeJS.Timeout;

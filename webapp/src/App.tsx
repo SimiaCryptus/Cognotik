@@ -1,7 +1,7 @@
 import React from 'react';
 import {Provider, useDispatch, useSelector} from 'react-redux';
 import {RootState, store} from './store';
-import {isArchive} from './services/appConfig';
+import {isArchive} from './utils/constants';
 import './App.css';
 import websocket from './services/websocket';
 import {setConnectionError, setConnectionStatus} from './store/slices/connectionSlice';

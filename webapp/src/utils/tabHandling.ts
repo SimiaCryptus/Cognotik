@@ -229,6 +229,11 @@ function restoreTabState(container: Element) {
                 diagnostics.restoreSuccess++;
             } else {
                 diagnostics.restoreFail++;
+                // Fallback: look for any tab button within a .tabs group
+                const firstButton = container.querySelector('.tabs .tab-button') as HTMLElement;
+                if (firstButton) {
+                    setActiveTab(firstButton, container);
+                }
             }
         } else {
             diagnostics.restoreFail++;

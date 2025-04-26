@@ -27,7 +27,6 @@ export class WebSocketService implements WebSocketLike {
     private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
     private readonly HEARTBEAT_TIMEOUT = 5000; // 5 seconds
     private readonly CONNECTION_TIMEOUT = 10000; // 10 seconds
-    private readonly MAX_RECONNECT_ATTEMPTS = 5;
     private readonly BASE_RECONNECT_DELAY = 1000; // 1 second
     private readonly MAX_RECONNECT_DELAY = 30000; // 30 seconds
     // Connection state tracking

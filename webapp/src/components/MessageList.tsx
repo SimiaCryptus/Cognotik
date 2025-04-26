@@ -174,7 +174,8 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     const finalMessages = React.useMemo(() => {
             const filteredMessages = processMessages(messages);
             return filteredMessages.map((message) => {
-                let content = expandMessageReferences(message.content, messages);
+                // Handle case where message.content might be undefined
+                let content = message.content ? expandMessageReferences(message.content, messages) : '';
                 // Handle verbose content using DOM manipulation
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = content;

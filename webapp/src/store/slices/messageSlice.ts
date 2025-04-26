@@ -60,7 +60,10 @@ const messageSlice = createSlice({
                 if (existingIndex !== -1) {
                     if (action.payload.isHtml && action.payload.rawHtml && !action.payload.sanitized) {
                         debouncedUpdate();
-                        action.payload.content = sanitizeHtmlContent(action.payload.rawHtml);
+                        // Check if rawHtml is a string before sanitizing
+                        action.payload.content = typeof action.payload.rawHtml === 'string' 
+                            ? sanitizeHtmlContent(action.payload.rawHtml)
+                            : '';
                         action.payload.sanitized = true;
                         // console.debug(` HTML content sanitized for message ${action.payload.id}`);
                     }
