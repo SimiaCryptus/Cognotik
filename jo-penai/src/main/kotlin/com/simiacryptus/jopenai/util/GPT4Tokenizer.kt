@@ -2,12 +2,12 @@ package com.simiacryptus.jopenai.util
 
 import com.simiacryptus.jopenai.util.GPT4CodecData.bpeRegex
 import com.simiacryptus.util.JsonUtil
+import org.slf4j.LoggerFactory
 import java.nio.charset.Charset
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
-import org.slf4j.LoggerFactory
 
 @Suppress("unused")
 @OptIn(ExperimentalStdlibApi::class)
@@ -309,7 +309,7 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
 
     fun estimateTokenCount(input: String): Int {
 //        log.debug("Estimating token count for input")
-        if(input.length >= 0){
+        if (input.length >= 0) {
             return input.length / 3
         }
         var count: Int = 0

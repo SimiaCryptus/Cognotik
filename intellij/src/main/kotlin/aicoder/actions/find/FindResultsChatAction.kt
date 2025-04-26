@@ -193,7 +193,8 @@ class FindResultsChatAction(
 
             Retryable(ui = ui, task = task) { content ->
                 val task = ui.newTask(false)
-                task.add("<div>" + renderMarkdown(
+                task.add(
+                    "<div>" + renderMarkdown(
                         SimpleActor(
                             prompt = """
                              You are a helpful AI that helps people understand code.

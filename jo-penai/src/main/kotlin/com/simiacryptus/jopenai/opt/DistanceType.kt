@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.opt
+
 import org.slf4j.LoggerFactory
 
 import kotlin.math.abs
@@ -31,6 +32,7 @@ enum class DistanceType {
             return 1 - dotProduct / (contentMagnitude * promptMagnitude)
         }
     };
+
     companion object {
         private val log = LoggerFactory.getLogger(DistanceType::class.java)
     }

@@ -2,11 +2,13 @@ Homepage: Folder action launchpad
 
 # Initialize session
 
-The application will open `$domainName/#${folder.urlEncode()}` when invoked on a folder of interest. 
+The application will open `$domainName/#${folder.urlEncode()}` when invoked on a folder of interest.
 (This folder should be used for the workingDir setting below)
 
 ## Tab 1 - PlanTask settings
+
 Saved with POST to `http://localhost:7681/singleTask/settings`
+
 ```
 sessionId: U-20250420-92wb
 action: save
@@ -97,8 +99,10 @@ settings: {
 }
 ```
 
-## Tab 2 - settings 
+## Tab 2 - settings
+
 POST to `http://localhost:7681/userSettings/`
+
 ```json
 action: save
 settings: {

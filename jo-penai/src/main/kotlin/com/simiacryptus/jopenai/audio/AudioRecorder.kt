@@ -66,7 +66,8 @@ open class AudioRecorder(
         val mixerInfo = AudioSystem.getMixerInfo()
         val micLine = (selectedMicLine ?: "Microphone").let { selectedMicLine ->
             mixerInfo.firstOrNull { it.toString().contains(selectedMicLine, true) }
-        } ?: throw IllegalStateException("No microphone line found; available lines: ${mixerInfo.joinToString { it.name }}, selected: $selectedMicLine")
+        }
+            ?: throw IllegalStateException("No microphone line found; available lines: ${mixerInfo.joinToString { it.name }}, selected: $selectedMicLine")
         try {
             val targetLineInfo = AudioSystem.getMixer(micLine).lineInfo
             log.info(" Audio Mixer Target Line: $targetLineInfo (${targetLineInfo.javaClass.canonicalName})")

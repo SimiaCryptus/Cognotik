@@ -4,22 +4,22 @@ import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
 
 data class ProgressState(
-  var progress: Double = 0.0,
-  var max: Double = 0.0,
-  val onUpdate: MutableList<(ProgressState) -> Unit> = mutableListOf(),
+    var progress: Double = 0.0,
+    var max: Double = 0.0,
+    val onUpdate: MutableList<(ProgressState) -> Unit> = mutableListOf(),
 ) {
-  fun add(progress: Double, max: Double) {
-    this.progress += progress
-    this.max += max
-    onUpdate.forEach { it(this) }
-  }
+    fun add(progress: Double, max: Double) {
+        this.progress += progress
+        this.max += max
+        onUpdate.forEach { it(this) }
+    }
 
-  companion object {
-    fun progressBar(
-      task: SessionTask,
-    ): ProgressState {
-      val stringBuilder = task.add(
-        """
+    companion object {
+        fun progressBar(
+            task: SessionTask,
+        ): ProgressState {
+            val stringBuilder = task.add(
+                """
                     <style>
                     .progress {
                         width: 100%;
@@ -38,12 +38,12 @@ data class ProgressState(
                       <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 """
-      )!!
-      return ProgressState(0.0, 0.0).apply {
-        onUpdate += {
-          val progress = it.progress / it.max
-          stringBuilder.set(
-            """
+            )!!
+            return ProgressState(0.0, 0.0).apply {
+                onUpdate += {
+                    val progress = it.progress / it.max
+                    stringBuilder.set(
+                        """
                     <style>
                     .progress {
                         width: 100%;
@@ -62,10 +62,10 @@ data class ProgressState(
                       <div class="progress-bar" role="progressbar" style="width: ${progress * 100}%" aria-valuenow="${progress * 100}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 """.trimIndent()
-          )
-          task.update()
+                    )
+                    task.update()
+                }
+            }
         }
-      }
     }
-  }
 }

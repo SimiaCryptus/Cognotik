@@ -41,6 +41,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
             }
             return newGraph
         }
+
         /*Used to create a patch that converts this graph to the other graph*/
         operator fun minus(other: CloudGraph): CloudGraph {
             val newGraph = CloudGraph()
@@ -57,6 +58,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
             return newGraph
         }
     }
+
     class CloudGraphDeserializer : JsonDeserializer<CloudGraph>() {
         override fun deserialize(p: JsonParser, ctxt: DeserializationContext): CloudGraph {
             val mapper = p.codec as ObjectMapper
@@ -65,9 +67,11 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
                 node.has("nodes") -> {
                     mapper.treeToValue(node["nodes"], Array<NodeBase>::class.java).toMutableSet()
                 }
+
                 node.isObject -> {
                     mapper.treeToValue(node, Array<NodeBase>::class.java).toMutableSet()
                 }
+
                 else -> {
                     throw IllegalArgumentException("Invalid CloudGraph format")
                 }
@@ -75,6 +79,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
             return CloudGraph(nodes)
         }
     }
+
     companion object {
         @JvmStatic
         fun values() = listOf(
@@ -196,6 +201,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
         @Description("Backup retention period in days")
         var backupRetentionDays: Int = 7
     ) : NodeBase
+
     data class DnsResourceNode(
         override val id: String,
         @Description("Domain name")
@@ -207,6 +213,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
         @Description("Time-to-live in seconds")
         var ttl: Int = 300
     ) : NodeBase
+
     data class LoadBalancerResourceNode(
         override val id: String,
         @Description("Load balancer type (e.g. Application, Network)")
@@ -218,6 +225,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
         @Description("SSL certificate ARN")
         var sslCertArn: String = ""
     ) : NodeBase
+
     data class QueueResourceNode(
         override val id: String,
         @Description("Queue type (e.g. Standard, FIFO)")
@@ -229,6 +237,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
         @Description("Delivery delay in seconds")
         var deliveryDelay: Int = 0
     ) : NodeBase
+
     data class InstanceResourceNode(
         override val id: String,
         @Description("Instance type/size")
@@ -240,6 +249,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
         @Description("Network security groups")
         val securityGroups: MutableList<String> = mutableListOf()
     ) : NodeBase
+
     data class InstanceGroupResourceNode(
         override val id: String,
         @Description("Minimum instance count")
@@ -268,6 +278,7 @@ operator fun CloudNodeType.NodeBase.minus(other: CloudNodeType.NodeBase) = when 
             backupRetentionDays = if (this.backupRetentionDays == other.backupRetentionDays) 7 else this.backupRetentionDays
         )
     }
+
     this is CloudNodeType.LoadBalancerResourceNode && other is CloudNodeType.LoadBalancerResourceNode -> {
         this.copy(
             lbType = if (this.lbType == other.lbType) "" else this.lbType,
@@ -279,6 +290,7 @@ operator fun CloudNodeType.NodeBase.minus(other: CloudNodeType.NodeBase) = when 
     // Add similar cases for other node types
     else -> throw IllegalArgumentException("Unsupported node type for diffing")
 }
+
 operator fun CloudNodeType.NodeBase.plus(other: CloudNodeType.NodeBase) = when {
     this.javaClass != other.javaClass -> throw IllegalArgumentException("Cannot merge nodes of different types")
     this is CloudNodeType.StorageResourceNode && other is CloudNodeType.StorageResourceNode -> {
@@ -290,6 +302,7 @@ operator fun CloudNodeType.NodeBase.plus(other: CloudNodeType.NodeBase) = when {
             backupRetentionDays = if (other.backupRetentionDays != 7) other.backupRetentionDays else this.backupRetentionDays
         )
     }
+
     this is CloudNodeType.LoadBalancerResourceNode && other is CloudNodeType.LoadBalancerResourceNode -> {
         this.copy(
             lbType = other.lbType.ifEmpty { this.lbType },

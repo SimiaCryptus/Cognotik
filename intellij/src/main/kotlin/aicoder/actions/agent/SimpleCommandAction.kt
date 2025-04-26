@@ -144,7 +144,7 @@ class SimpleCommandAction : BaseAction() {
             }
         }
     }
-  // Add proper resource cleanup
+    // Add proper resource cleanup
 
     private fun openBrowserWithDelay(uri: java.net.URI) {
         Thread({

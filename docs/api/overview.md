@@ -2,7 +2,8 @@
 
 ## Overview
 
-The Cognotik platform provides a comprehensive set of APIs for building AI-powered applications. The API architecture consists of:
+The Cognotik platform provides a comprehensive set of APIs for building AI-powered applications. The API architecture
+consists of:
 
 - RESTful HTTP endpoints for system management
 - WebSocket-based real-time communication
@@ -29,6 +30,7 @@ interface AuthenticationInterface {
 ```
 
 Key features:
+
 - Cookie-based session management
 - User identity verification
 - Session persistence
@@ -60,6 +62,7 @@ interface AuthorizationInterface {
 ```
 
 Features:
+
 - Fine-grained operation control
 - Role-based access control
 - Application-specific permissions
@@ -104,30 +107,30 @@ data class UserSettings(
 
 ### Application Management
 
-| Endpoint | Method | Description |
-|----------|---------|-------------|
-| `/appInfo` | GET | Retrieve application configuration |
-| `/userInfo` | GET | Get current user information |
-| `/usage` | GET | Get API usage statistics |
-| `/settings` | GET/POST | Manage application settings |
+| Endpoint    | Method   | Description                        |
+|-------------|----------|------------------------------------|
+| `/appInfo`  | GET      | Retrieve application configuration |
+| `/userInfo` | GET      | Get current user information       |
+| `/usage`    | GET      | Get API usage statistics           |
+| `/settings` | GET/POST | Manage application settings        |
 
 ### Session Management
 
-| Endpoint | Method | Description |
-|----------|---------|-------------|
-| `/sessions` | GET | List available sessions |
-| `/fileIndex/*` | GET | Access session files |
-| `/fileZip` | GET | Download session archives |
-| `/delete` | POST | Delete sessions |
-| `/cancel` | POST | Cancel running operations |
+| Endpoint       | Method | Description               |
+|----------------|--------|---------------------------|
+| `/sessions`    | GET    | List available sessions   |
+| `/fileIndex/*` | GET    | Access session files      |
+| `/fileZip`     | GET    | Download session archives |
+| `/delete`      | POST   | Delete sessions           |
+| `/cancel`      | POST   | Cancel running operations |
 
 ### User Management
 
-| Endpoint | Method | Description |
-|----------|---------|-------------|
-| `/logout` | POST | End user session |
+| Endpoint        | Method   | Description             |
+|-----------------|----------|-------------------------|
+| `/logout`       | POST     | End user session        |
 | `/userSettings` | GET/POST | Manage user preferences |
-| `/apiKeys` | GET/POST | Manage API credentials |
+| `/apiKeys`      | GET/POST | Manage API credentials  |
 
 ## WebSocket Protocol
 
@@ -172,6 +175,7 @@ interface StorageInterface {
 ```
 
 Features:
+
 - Message persistence
 - File storage
 - Session management
@@ -192,6 +196,7 @@ interface CloudPlatformInterface {
 ```
 
 Features:
+
 - File upload/download
 - Content sharing
 - Encryption/decryption
@@ -202,6 +207,7 @@ Features:
 ### Application Implementation
 
 1. Extend `ApplicationServer`:
+
 ```kotlin
 class CustomApplication : ApplicationServer(
   applicationName = "Custom App",
@@ -221,6 +227,7 @@ class CustomApplication : ApplicationServer(
 ```
 
 2. Configure WebSocket handling:
+
 ```kotlin
 override fun newSession(user: User?, session: Session): SocketManager {
   return object : ApplicationSocketManager(
@@ -239,23 +246,24 @@ override fun newSession(user: User?, session: Session): SocketManager {
 ### Security Best Practices
 
 1. Authentication:
-   - Always verify user tokens
-   - Implement session timeouts
-   - Use secure cookie settings
+    - Always verify user tokens
+    - Implement session timeouts
+    - Use secure cookie settings
 
 2. Authorization:
-   - Check permissions for all operations
-   - Implement least privilege access
-   - Validate resource ownership
+    - Check permissions for all operations
+    - Implement least privilege access
+    - Validate resource ownership
 
 3. Data Security:
-   - Encrypt sensitive data
-   - Sanitize user input
-   - Implement rate limiting
+    - Encrypt sensitive data
+    - Sanitize user input
+    - Implement rate limiting
 
 ### Error Handling
 
 1. Use standard error responses:
+
 ```kotlin
 data class ErrorResponse(
   val error: String,
@@ -265,6 +273,7 @@ data class ErrorResponse(
 ```
 
 2. Implement proper error status codes:
+
 - 400: Bad Request
 - 401: Unauthorized
 - 403: Forbidden
@@ -272,6 +281,7 @@ data class ErrorResponse(
 - 500: Internal Server Error
 
 3. Log errors appropriately:
+
 ```kotlin
 try {
   // Operation
@@ -284,23 +294,24 @@ try {
 ### Performance Considerations
 
 1. Message Processing:
-   - Implement message queuing
-   - Use async processing for long operations
-   - Implement timeout handling
+    - Implement message queuing
+    - Use async processing for long operations
+    - Implement timeout handling
 
 2. Resource Management:
-   - Implement connection pooling
-   - Cache frequently accessed data
-   - Clean up unused resources
+    - Implement connection pooling
+    - Cache frequently accessed data
+    - Clean up unused resources
 
 3. Scaling:
-   - Design for horizontal scaling
-   - Implement proper session management
-   - Use distributed storage when needed
+    - Design for horizontal scaling
+    - Implement proper session management
+    - Use distributed storage when needed
 
 ## Testing Guidelines
 
 1. Unit Tests:
+
 ```kotlin
 @Test
 fun testAuthentication() {
@@ -312,6 +323,7 @@ fun testAuthentication() {
 ```
 
 2. Integration Tests:
+
 ```kotlin
 @Test
 fun testWebSocket() {
@@ -324,6 +336,7 @@ fun testWebSocket() {
 ```
 
 3. Load Tests:
+
 ```kotlin
 @Test
 fun testConcurrentConnections() {

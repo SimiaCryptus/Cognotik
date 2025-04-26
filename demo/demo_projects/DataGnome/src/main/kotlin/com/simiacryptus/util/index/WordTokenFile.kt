@@ -45,7 +45,7 @@ class WordTokenFile(
 
     override fun charToTokenIndex(position: XChars) = XTokens(
         StringIterator().asSequence()
-        .runningFold(XChars(0)) { a, b -> a + b.length }.takeWhile { it <= position }.count().toLong()
+            .runningFold(XChars(0)) { a, b -> a + b.length }.takeWhile { it <= position }.count().toLong()
     )
 
     override fun readString(position: XTokens, n: XChars, skip: XChars): String {

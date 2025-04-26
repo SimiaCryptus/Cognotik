@@ -11,30 +11,30 @@ import jakarta.servlet.http.HttpServletResponse
 import java.text.SimpleDateFormat
 
 class SessionListServlet(
-  private val dataStorage: StorageInterface,
-  private val prefix: String,
-  private val applicationServer: ApplicationServer
+    private val dataStorage: StorageInterface,
+    private val prefix: String,
+    private val applicationServer: ApplicationServer
 ) : HttpServlet() {
-  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
-    val user = authenticationManager.getUser(req.getCookie())
-    val sessions = dataStorage.listSessions(user, req.contextPath)
-    val sessionRows = sessions.joinToString("") { session ->
-      val sessionName = dataStorage.getSessionName(user, session)
-      val sessionTime = dataStorage.getSessionTime(user, session) ?: return@joinToString ""
-      val sessionTimeStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(sessionTime)
-      """
+    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        resp.contentType = "text/html"
+        resp.status = HttpServletResponse.SC_OK
+        val user = authenticationManager.getUser(req.getCookie())
+        val sessions = dataStorage.listSessions(user, req.contextPath)
+        val sessionRows = sessions.joinToString("") { session ->
+            val sessionName = dataStorage.getSessionName(user, session)
+            val sessionTime = dataStorage.getSessionTime(user, session) ?: return@joinToString ""
+            val sessionTimeStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(sessionTime)
+            """
             <tr class="session-row" onclick="window.location.href='$prefix#$session'">                
                     <td><a href="$prefix#$session" class="session-link">$sessionName</a></td>
                     <td><a href="$prefix#$session" class="session-link">$sessionTimeStr</a></td>
             </tr>
             """.trimIndent()
-    }
-    val title = """Sessions"""
-    //language=HTML
-    resp.writer.write(
-      """
+        }
+        val title = """Sessions"""
+        //language=HTML
+        resp.writer.write(
+            """
             <html>
             <head>
             <title>$title</title>
@@ -61,7 +61,7 @@ class SessionListServlet(
             </body>
             </html>
             """.trimIndent()
-    )
-  }
+        )
+    }
 
 }

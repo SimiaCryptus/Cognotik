@@ -43,11 +43,13 @@ import kotlin.io.path.relativeTo
 
 class CodeChangeAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
-    
+
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (FileSelectionUtils.expandFileList(
-            *PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.map { it.toFile }?.toTypedArray<File>() ?: arrayOf()
-        ).isEmpty()) return false
+                *PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.map { it.toFile }?.toTypedArray<File>()
+                    ?: arrayOf()
+            ).isEmpty()
+        ) return false
         return super.isEnabled(event)
     }
 
@@ -70,10 +72,11 @@ class CodeChangeAction : BaseAction() {
         try {
             val root = getRoot(event) ?: throw RuntimeException("No file or folder selected")
             val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)
-            val initialFiles = FileSelectionUtils.expandFileList(*virtualFiles?.map { it.toFile }?.toTypedArray() ?: arrayOf()).map {
-                it.toPath().relativeTo(root)
-            }.toSet()
-            
+            val initialFiles =
+                FileSelectionUtils.expandFileList(*virtualFiles?.map { it.toFile }?.toTypedArray() ?: arrayOf()).map {
+                    it.toPath().relativeTo(root)
+                }.toSet()
+
             val session = Session.newGlobalID()
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
@@ -167,7 +170,7 @@ class CodeChangeAction : BaseAction() {
                 task.add("Analyzing files...")
 
                 val api = (api as ChatClient).getChildClient(task)
-                
+
                 // First stage: Analyze files with fast model
                 val fileAnalyzer = ParsedActor(
                     resultClass = FileAnalysis::class.java,
@@ -192,7 +195,7 @@ class CodeChangeAction : BaseAction() {
 
                 // Second stage: Process selected files with smart model
                 val relevantPaths = ((initialAnalysis.obj.filesToModify ?: emptyList()) +
-                    (initialAnalysis.obj.contextFiles ?: emptyList())).mapNotNull { filePath ->
+                        (initialAnalysis.obj.contextFiles ?: emptyList())).mapNotNull { filePath ->
                     allFiles.find { it.toString().endsWith(filePath) }
                 }.toSet()
 

@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.models
 
 object AnthropicModels {
-    
+
     val Claude35Sonnet = ChatModel(
         name = "Claude35Sonnet",
         modelName = "claude-3-5-sonnet-latest",

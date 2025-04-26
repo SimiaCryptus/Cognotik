@@ -60,10 +60,10 @@ export const Modal: React.FC = () => {
 
     useEffect(() => {
         // Only log state changes
-        const logMessage = modalOpen 
+        const logMessage = modalOpen
             ? `Opening modal - Type: ${modalType}, Content length: ${modalContent?.length || 0}`
             : `Closing modal - Type: ${modalType}`;
-            
+
         if (modalOpen) {
             console.info(`${LOG_PREFIX} ${logMessage}`);
         } else {

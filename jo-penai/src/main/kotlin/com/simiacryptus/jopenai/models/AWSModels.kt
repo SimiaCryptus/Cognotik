@@ -1,8 +1,10 @@
 package com.simiacryptus.jopenai.models
+
 import org.slf4j.LoggerFactory
 
 object AWSModels {
     private val log = LoggerFactory.getLogger(AWSModels::class.java)
+
     init {
         log.info("Initializing AWSModels with predefined chat models.")
     }
@@ -31,7 +33,7 @@ object AWSModels {
         inputTokenPricePerK = 0.00195,
         outputTokenPricePerK = 0.00256
     )
-    
+
     val Mistral7bInstructV02 = ChatModel(
         name = "Mistral7bInstructV02",
         modelName = "mistral.mistral-7b-instruct-v0:2",

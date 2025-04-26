@@ -33,9 +33,9 @@ class SoftwareGraphModificationTask(
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
-  
-  
-  override fun promptSegment() = """
+
+
+    override fun promptSegment() = """
      SoftwareGraphModificationTask - Load, modify and save software graph representations
        ** Specify the input graph file path
        ** Specify the output graph file path (optional, defaults to input file)
@@ -51,10 +51,10 @@ class SoftwareGraphModificationTask(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
-      val graphModificationActor = ParsedActor(
-        name = "SoftwareGraphModification",
-        resultClass = SoftwareNodeType.SoftwareGraph::class.java,
-        prompt = """
+        val graphModificationActor = ParsedActor(
+            name = "SoftwareGraphModification",
+            resultClass = SoftwareNodeType.SoftwareGraph::class.java,
+            prompt = """
             Analyze the provided software graph and generate modifications based on the given goal.
             Return only the delta changes that should be applied to the graph.
             
@@ -68,33 +68,36 @@ class SoftwareGraphModificationTask(
             
             Node Types:
             """.trimIndent() + SoftwareNodeType.values().joinToString("\n") {
-          "* " + it.name + ": " + it.description?.prependIndent("  ") +
-              "\n    " + agent.describer.describe(rawType = it.nodeClass).lineSequence()
-            .map {
-              when {
-                it.isBlank() -> {
-                  when {
-                    it.length < "  ".length -> "  "
-                    else -> it
-                  }
-                }
-                
-                else -> "  " + it
-              }
-            }
-            .joinToString("\n")
-        },
-        model = taskSettings.model ?: planSettings.defaultModel,
-        parsingModel = planSettings.parsingModel,
-        temperature = planSettings.temperature,
-        describer = agent.describer,
-      )
-      
-      // Load the input graph
+                "* " + it.name + ": " + it.description?.prependIndent("  ") +
+                        "\n    " + agent.describer.describe(rawType = it.nodeClass).lineSequence()
+                    .map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "  ".length -> "  "
+                                    else -> it
+                                }
+                            }
+
+                            else -> "  " + it
+                        }
+                    }
+                    .joinToString("\n")
+            },
+            model = taskSettings.model ?: planSettings.defaultModel,
+            parsingModel = planSettings.parsingModel,
+            temperature = planSettings.temperature,
+            describer = agent.describer,
+        )
+
+        // Load the input graph
         val inputFile = (planSettings.workingDir?.let { File(it) } ?: File("."))
             .resolve(taskConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
-        val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(inputFile.readText(), SoftwareNodeType.SoftwareGraph::class.java)
+        val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
+            inputFile.readText(),
+            SoftwareNodeType.SoftwareGraph::class.java
+        )
 
         // Generate the modification delta
         val response = graphModificationActor.answer(

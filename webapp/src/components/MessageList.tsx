@@ -37,10 +37,10 @@ const extractMessageAction = (target: HTMLElement): { messageId: string | undefi
 
 const handleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    const { messageId, action } = extractMessageAction(target);
+    const {messageId, action} = extractMessageAction(target);
     if (messageId && action) {
         if (DEBUG_LOGGING) {
-            console.debug('[MessageList] Action clicked:', { messageId, action });
+            console.debug('[MessageList] Action clicked:', {messageId, action});
         }
         e.preventDefault();
         e.stopPropagation();
@@ -100,35 +100,35 @@ export const expandMessageReferences = (
     processedRefs: Set<string> = new Set<string>()
 ): string => {
 
-  if (!content) return '';
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = content;
-  // Use an iterative approach with a queue to avoid recursion
-  const queue: HTMLElement[] = [tempDiv];
-  while (queue.length > 0) {
-    const currentNode = queue.shift();
-    if (!currentNode) continue;
-    const messageID = currentNode.getAttribute("message-id");
-    if (messageID && !processedRefs.has(messageID) && messageID.startsWith('z')) {
-      processedRefs.add(messageID);
-      const referencedMessage = messages.find(m => m.id === messageID);
-      if (referencedMessage) {
-        // Replace the inner content with the referenced message content
-        currentNode.innerHTML = referencedMessage.content;
-      } else {
-        if (DEBUG_LOGGING) {
-          console.warn('[MessageList] Referenced message not found:', messageID);
+    if (!content) return '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    // Use an iterative approach with a queue to avoid recursion
+    const queue: HTMLElement[] = [tempDiv];
+    while (queue.length > 0) {
+        const currentNode = queue.shift();
+        if (!currentNode) continue;
+        const messageID = currentNode.getAttribute("message-id");
+        if (messageID && !processedRefs.has(messageID) && messageID.startsWith('z')) {
+            processedRefs.add(messageID);
+            const referencedMessage = messages.find(m => m.id === messageID);
+            if (referencedMessage) {
+                // Replace the inner content with the referenced message content
+                currentNode.innerHTML = referencedMessage.content;
+            } else {
+                if (DEBUG_LOGGING) {
+                    console.warn('[MessageList] Referenced message not found:', messageID);
+                }
+            }
         }
-      }
+        // Add all children for further processing (they might contain nested refs)
+        Array.from(currentNode.children).forEach(child => {
+            if (child instanceof HTMLElement) {
+                queue.push(child);
+            }
+        });
     }
-    // Add all children for further processing (they might contain nested refs)
-    Array.from(currentNode.children).forEach(child => {
-      if (child instanceof HTMLElement) {
-        queue.push(child);
-      }
-    });
-  }
-  return tempDiv.innerHTML;
+    return tempDiv.innerHTML;
 };
 
 const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
@@ -197,7 +197,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     useEffect(() => {
         let mounted = true;
         let observer: IntersectionObserver | null = null;
-        
+
         if (messageListRef.current) {
             // Use intersection observer for visible elements only
             observer = new IntersectionObserver((entries) => {
@@ -205,13 +205,13 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const element = entry.target;
-            if (element.tagName === 'CODE') {
-                // Batch highlighting via requestIdleCallback and ensure one reflow per batch
-                requestIdleCallback(() => {
-                    if (!mounted) return;
-                    Prism.highlightElement(element);
-                });
-            }
+                        if (element.tagName === 'CODE') {
+                            // Batch highlighting via requestIdleCallback and ensure one reflow per batch
+                            requestIdleCallback(() => {
+                                if (!mounted) return;
+                                Prism.highlightElement(element);
+                            });
+                        }
                         if (observer) {
                             observer.unobserve(element);
                         }
@@ -264,7 +264,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         >
             {messages.length === 0 && (
                 <div className="message-list-loading">
-                    <Spinner size="large" aria-label="Loading messages..." />
+                    <Spinner size="large" aria-label="Loading messages..."/>
                 </div>
             )}
             {finalMessages.map((message) => {

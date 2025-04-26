@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.util
+
 import org.apache.commons.text.similarity.LevenshteinDistance
 import org.slf4j.LoggerFactory
 import kotlin.math.floor
@@ -11,6 +12,7 @@ import kotlin.math.max
  */
 object PythonPatchUtil {
     private enum class LineType { CONTEXT, ADD, DELETE }
+
     // Represents a single line in the source or patch text.
     // Note: Removed bracket metrics as they are not relevant for Python/YAML.
     private data class LineRecord(
@@ -22,12 +24,15 @@ object PythonPatchUtil {
         var type: LineType = LineType.CONTEXT
     ) {
         override fun toString(): String {
-            return "${index.toString().padStart(5, ' ')}: ${when(type) {
-                LineType.CONTEXT -> " "
-                LineType.ADD -> "+"
-                LineType.DELETE -> "-"
-            }} $line"
+            return "${index.toString().padStart(5, ' ')}: ${
+                when (type) {
+                    LineType.CONTEXT -> " "
+                    LineType.ADD -> "+"
+                    LineType.DELETE -> "-"
+                }
+            } $line"
         }
+
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is LineRecord) return false
@@ -35,12 +40,14 @@ object PythonPatchUtil {
             if (line != other.line) return false
             return true
         }
+
         override fun hashCode(): Int {
             var result = index
             result = 31 * result + (line?.hashCode() ?: 0)
             return result
         }
     }
+
     /**
      * Generate a patch from oldCode to newCode.
      */
@@ -67,6 +74,7 @@ object PythonPatchUtil {
         log.info("Patch generation completed")
         return patch.toString().trimEnd()
     }
+
     /**
      * Applies a patch to the given source text.
      */
@@ -83,6 +91,7 @@ object PythonPatchUtil {
         log.info("Patch application completed")
         return patchedText
     }
+
     private fun annihilateNoopLinePairs(diff: MutableList<LineRecord>) {
         log.debug("Starting annihilation of no-op line pairs")
         val toRemove = mutableListOf<Pair<Int, Int>>()
@@ -108,6 +117,7 @@ object PythonPatchUtil {
             .forEach { diff.removeAt(it) }
         log.debug("Removed ${toRemove.size} no-op line pairs")
     }
+
     private fun markMovedLines(newLines: List<LineRecord>) {
         log.debug("Starting to mark moved lines (python/yaml)")
         var newLine = newLines.firstOrNull()
@@ -159,6 +169,7 @@ object PythonPatchUtil {
         }
         log.debug("Finished marking moved lines")
     }
+
     private fun newToPatch(newLines: List<LineRecord>): MutableList<LineRecord> {
         val diff = mutableListOf<LineRecord>()
         log.debug("Starting diff generation for python/yaml")
@@ -170,6 +181,7 @@ object PythonPatchUtil {
                     diff.add(LineRecord(newLine.index, newLine.line, type = LineType.ADD))
                     log.debug("Added ADD line: ${newLine.line}")
                 }
+
                 else -> {
                     var priorSourceLine = sourceLine.previousLine
                     val lineBuffer = mutableListOf<LineRecord>()
@@ -189,6 +201,7 @@ object PythonPatchUtil {
         log.debug("Generated diff with ${diff.size} lines")
         return diff
     }
+
     private fun truncateContext(diff: MutableList<LineRecord>): MutableList<LineRecord> {
         val contextSize = 3 // Number of context lines before and after changes.
         log.debug("Truncating context with size $contextSize")
@@ -210,6 +223,7 @@ object PythonPatchUtil {
                     contextBuffer.clear()
                     truncatedDiff.add(line)
                 }
+
                 else -> {
                     contextBuffer.add(line)
                 }
@@ -226,6 +240,7 @@ object PythonPatchUtil {
         log.debug("Truncated diff size: ${truncatedDiff.size}")
         return truncatedDiff
     }
+
     /**
      * Normalizes a line for Python/YAML by preserving leading whitespace (indentation)
      * and removing any trailing whitespace.
@@ -233,7 +248,12 @@ object PythonPatchUtil {
     private fun normalizeLine(line: String): String {
         return line.replace(Regex("\\s+$"), "")
     }
-    private fun link(sourceLines: List<LineRecord>, patchLines: List<LineRecord>, levenshteinDistance: LevenshteinDistance?) {
+
+    private fun link(
+        sourceLines: List<LineRecord>,
+        patchLines: List<LineRecord>,
+        levenshteinDistance: LevenshteinDistance?
+    ) {
         log.info("Step 1: Linking unique matching lines")
         linkUniqueMatchingLines(sourceLines, patchLines)
         log.info("Step 2: Linking adjacent matching lines")
@@ -241,7 +261,13 @@ object PythonPatchUtil {
         log.info("Step 3: Performing subsequence linking")
         subsequenceLinking(sourceLines, patchLines, levenshteinDistance = levenshteinDistance)
     }
-    private fun subsequenceLinking(sourceLines: List<LineRecord>, patchLines: List<LineRecord>, depth: Int = 0, levenshteinDistance: LevenshteinDistance?) {
+
+    private fun subsequenceLinking(
+        sourceLines: List<LineRecord>,
+        patchLines: List<LineRecord>,
+        depth: Int = 0,
+        levenshteinDistance: LevenshteinDistance?
+    ) {
         log.debug("Subsequence linking at depth $depth")
         if (depth > 10 || sourceLines.isEmpty() || patchLines.isEmpty()) {
             return
@@ -258,6 +284,7 @@ object PythonPatchUtil {
             log.debug("Matched $matchedLines lines in subsequence linking at depth $depth")
         }
     }
+
     private fun generatePatchedText(sourceLines: List<LineRecord>, patchLines: List<LineRecord>): List<String> {
         log.debug("Starting to generate patched text for python/yaml")
         val patchedText = mutableListOf<String>()
@@ -274,6 +301,7 @@ object PythonPatchUtil {
                     checkAfterForInserts(patchLine, usedPatchLines, patchedText)
                     lastMatchedPatchIndex = patchLine.index
                 }
+
                 codeLine.matchingLine != null -> {
                     val patchLine = codeLine.matchingLine!!
                     log.debug("Patching line: $codeLine <-> $patchLine")
@@ -287,6 +315,7 @@ object PythonPatchUtil {
                     checkAfterForInserts(patchLine, usedPatchLines, patchedText)
                     lastMatchedPatchIndex = patchLine.index
                 }
+
                 else -> {
                     log.debug("Added unmatched source line: $codeLine")
                     patchedText.add(codeLine.line ?: "")
@@ -303,7 +332,12 @@ object PythonPatchUtil {
         log.debug("Generated patched text with ${patchedText.size} lines")
         return patchedText
     }
-    private fun checkBeforeForInserts(patchLine: LineRecord, usedPatchLines: MutableSet<LineRecord>, patchedText: MutableList<String>): LineRecord? {
+
+    private fun checkBeforeForInserts(
+        patchLine: LineRecord,
+        usedPatchLines: MutableSet<LineRecord>,
+        patchedText: MutableList<String>
+    ): LineRecord? {
         val buffer = mutableListOf<String>()
         var prevPatchLine = patchLine.previousLine
         while (prevPatchLine != null) {
@@ -318,7 +352,12 @@ object PythonPatchUtil {
         patchedText.addAll(buffer.reversed())
         return prevPatchLine
     }
-    private fun checkAfterForInserts(patchLine: LineRecord, usedPatchLines: MutableSet<LineRecord>, patchedText: MutableList<String>): LineRecord {
+
+    private fun checkAfterForInserts(
+        patchLine: LineRecord,
+        usedPatchLines: MutableSet<LineRecord>,
+        patchedText: MutableList<String>
+    ): LineRecord {
         var nextPatchLine = patchLine.nextLine
         while (nextPatchLine != null) {
             while (nextPatchLine != null && (normalizeLine(nextPatchLine.line ?: "").isEmpty() ||
@@ -336,6 +375,7 @@ object PythonPatchUtil {
         }
         return nextPatchLine ?: patchLine
     }
+
     private fun linkUniqueMatchingLines(sourceLines: List<LineRecord>, patchLines: List<LineRecord>): Int {
         log.debug("Starting to link unique matching lines. Source lines: ${sourceLines.size}, Patch lines: ${patchLines.size}")
         val sourceLineMap = sourceLines.groupBy { normalizeLine(it.line!!) }
@@ -357,6 +397,7 @@ object PythonPatchUtil {
         log.debug("Finished linking unique matching lines. Matched $matchedCount lines")
         return matched.sumOf { sourceLineMap[it]!!.size }
     }
+
     private fun linkAdjacentMatchingLines(sourceLines: List<LineRecord>, levenshtein: LevenshteinDistance?): Int {
         log.debug("Starting to link adjacent matching lines. Source lines: ${sourceLines.size}")
         var foundMatch = true
@@ -380,7 +421,10 @@ object PythonPatchUtil {
                     }
                 }
                 var patchNext = patchLine.nextLine
-                while (patchNext?.nextLine != null && (patchNext.type == LineType.ADD || normalizeLine(patchNext.line ?: "").isEmpty())) {
+                while (patchNext?.nextLine != null && (patchNext.type == LineType.ADD || normalizeLine(
+                        patchNext.line ?: ""
+                    ).isEmpty())
+                ) {
                     require(patchNext !== patchNext.nextLine)
                     patchNext = patchNext.nextLine!!
                 }
@@ -410,13 +454,20 @@ object PythonPatchUtil {
         skipEmpty: Boolean,
     ): LineRecord? {
         var prev = previousLine
-        while (prev != null && (skipAdd && prev.type == LineType.ADD || skipEmpty && normalizeLine(prev.line ?: "").isEmpty())) {
+        while (prev != null && (skipAdd && prev.type == LineType.ADD || skipEmpty && normalizeLine(
+                prev.line ?: ""
+            ).isEmpty())
+        ) {
             prev = prev.previousLine
         }
         return prev
     }
 
-    private fun isMatch(sourcePrev: LineRecord, patchPrev: LineRecord, levenshteinDistance: LevenshteinDistance?): Boolean {
+    private fun isMatch(
+        sourcePrev: LineRecord,
+        patchPrev: LineRecord,
+        levenshteinDistance: LevenshteinDistance?
+    ): Boolean {
         val normalizedSource = normalizeLine(sourcePrev.line!!)
         val normalizedPatch = normalizeLine(patchPrev.line!!)
         if (normalizedSource == normalizedPatch) return true
@@ -428,12 +479,14 @@ object PythonPatchUtil {
         }
         return false
     }
+
     private fun parseLines(text: String): List<LineRecord> {
         log.debug("Starting to parse lines for python/yaml")
         val lines = setLinks(text.lines().mapIndexed { index, line -> LineRecord(index, line) })
         log.debug("Finished parsing ${lines.size} lines")
         return lines
     }
+
     private fun setLinks(list: List<LineRecord>): List<LineRecord> {
         log.debug("Starting to set links for ${list.size} lines")
         for (i in list.indices) {
@@ -443,6 +496,7 @@ object PythonPatchUtil {
         log.debug("Finished setting links for ${list.size} lines")
         return list
     }
+
     private fun parsePatchLines(text: String, sourceLines: List<LineRecord>): List<LineRecord> {
         log.debug("Starting to parse patch lines for python/yaml")
         val patchLines = setLinks(text.lines().mapIndexed { index, line ->
@@ -452,7 +506,12 @@ object PythonPatchUtil {
                     val trimmed = line.trimStart()
                     when {
                         trimmed.startsWith("+++") || trimmed.startsWith("---") || trimmed.startsWith("@@") -> null
-                        sourceLines.any { patchLine -> normalizeLine(patchLine.line ?: "") == normalizeLine(line) } -> line
+                        sourceLines.any { patchLine ->
+                            normalizeLine(
+                                patchLine.line ?: ""
+                            ) == normalizeLine(line)
+                        } -> line
+
                         trimmed.startsWith("+") -> trimmed.substring(1)
                         trimmed.startsWith("-") -> trimmed.substring(1)
                         else -> line
@@ -469,6 +528,7 @@ object PythonPatchUtil {
         log.debug("Finished parsing ${patchLines.size} patch lines")
         return patchLines
     }
+
     private fun fixPatchLineOrder(patchLines: MutableList<LineRecord>) {
         log.debug("Starting to fix patch line order for python/yaml")
         var swapped: Boolean
@@ -499,6 +559,7 @@ object PythonPatchUtil {
         } while (swapped)
         log.debug("Finished fixing patch line order for python/yaml")
     }
+
     private val log = LoggerFactory.getLogger(PythonPatchUtil::class.java)
     val patchFormatPrompt = """
       Response should use one or more code patches in diff format within ```diff code blocks.

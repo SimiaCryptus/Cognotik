@@ -10,9 +10,11 @@
 # AI Coder - Your Intelligent Coding Companion
 
 ![AI Coder Logo](https://simiacryptus.github.io/intellij_plugins/aicoder/icon.png)
-## Open Source & BYOK Model
-**AI Coder** is open source software licensed under Apache 2.0. It follows a "Bring Your Own Key" (BYOK) model - you provide your own API keys for the AI services you want to use, giving you full control over your data and costs.
 
+## Open Source & BYOK Model
+
+**AI Coder** is open source software licensed under Apache 2.0. It follows a "Bring Your Own Key" (BYOK) model - you
+provide your own API keys for the AI services you want to use, giving you full control over your data and costs.
 
 ## Transform Your Development Experience
 

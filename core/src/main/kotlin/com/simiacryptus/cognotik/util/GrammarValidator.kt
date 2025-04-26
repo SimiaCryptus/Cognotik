@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.util
- 
- interface GrammarValidator {
+
+interface GrammarValidator {
     fun validateGrammar(code: String): List<ValidationError>
     data class ValidationError(
         val message: String,
@@ -8,7 +8,8 @@ package com.simiacryptus.cognotik.util
         val column: Int? = null,
         val severity: Severity = Severity.ERROR
     )
+
     enum class Severity {
         ERROR, WARNING
     }
- }
+}

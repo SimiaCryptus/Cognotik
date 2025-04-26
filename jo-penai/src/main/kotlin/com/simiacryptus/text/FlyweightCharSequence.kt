@@ -8,35 +8,35 @@ package com.simiacryptus.text
  * @param size   the number of characters in this sequence
  */
 class FlyweightCharSequence(
-  private val source: String,
-  private val offset: Int = 0,
-  private val size: Int = source.length - offset
+    private val source: String,
+    private val offset: Int = 0,
+    private val size: Int = source.length - offset
 ) : CharSequence {
-  init {
-    require(offset >= 0 && size >= 0 && offset + size <= source.length) {
-      "Invalid offset ($offset) or size ($size) for source length ${source.length}"
+    init {
+        require(offset >= 0 && size >= 0 && offset + size <= source.length) {
+            "Invalid offset ($offset) or size ($size) for source length ${source.length}"
+        }
     }
-  }
-  
-  override val length: Int
-    get() = size
-  
-  override fun get(index: Int): Char {
-    if (index < 0 || index >= size) {
-      throw IndexOutOfBoundsException("Index: $index, Length: $size")
+
+    override val length: Int
+        get() = size
+
+    override fun get(index: Int): Char {
+        if (index < 0 || index >= size) {
+            throw IndexOutOfBoundsException("Index: $index, Length: $size")
+        }
+        return source[offset + index]
     }
-    return source[offset + index]
-  }
-  
-  override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
-    if (startIndex < 0 || endIndex < startIndex || endIndex > size) {
-      throw IndexOutOfBoundsException(
-        "startIndex: $startIndex, endIndex: $endIndex, Length: $size"
-      )
+
+    override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
+        if (startIndex < 0 || endIndex < startIndex || endIndex > size) {
+            throw IndexOutOfBoundsException(
+                "startIndex: $startIndex, endIndex: $endIndex, Length: $size"
+            )
+        }
+        return FlyweightCharSequence(source, offset + startIndex, endIndex - startIndex)
     }
-    return FlyweightCharSequence(source, offset + startIndex, endIndex - startIndex)
-  }
-  
-  override fun toString(): String =
-    source.substring(offset, offset + size)
+
+    override fun toString(): String =
+        source.substring(offset, offset + size)
 }

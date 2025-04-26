@@ -257,7 +257,7 @@ export const Menu: React.FC = () => {
             <ToolbarLeft>
                 <DropButton as="a" href="/" onClick={() => console.debug('[Menu] Home navigation')}
                             data-testid="home-button"
-                             id="home-button">
+                            id="home-button">
                     <FontAwesomeIcon icon={faHome}/> Home
                 </DropButton>
 
@@ -279,16 +279,16 @@ export const Menu: React.FC = () => {
                     </DropButton>
                     <DropdownContent>
                         <DropdownItem onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
-{/*
+                        {/*
                         <DropdownItem onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
 */}
                         <DropdownItem onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
                         <DropdownItem onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
-{/*
+                        {/*
                         <DropdownItem onClick={() => handleMenuClick('share')}>Share</DropdownItem>
 */}
                         <DropdownItem onClick={() => handleMenuClick('cancel')}>Cancel</DropdownItem>
-{/*
+                        {/*
                         <DropdownItem onClick={() => handleMenuClick('delete')}>Delete</DropdownItem>
 */}
                         <DropdownItem onClick={handleVerboseToggle}>
@@ -298,7 +298,7 @@ export const Menu: React.FC = () => {
                 </Dropdown>
 
                 <ThemeMenu/>
-{/*
+                {/*
 
                 <Dropdown>
                     <DropButton>About</DropButton>

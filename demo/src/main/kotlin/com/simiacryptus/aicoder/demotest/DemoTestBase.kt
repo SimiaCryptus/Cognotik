@@ -139,21 +139,21 @@ abstract class DemoTestBase(
             try {
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
                     .firstOrNull()?.apply {
-                    click()
-                    keyboard {
-                        escape()
-                        sleep(500)
+                        click()
+                        keyboard {
+                            escape()
+                            sleep(500)
+                        }
                     }
-                }
 
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
                     .firstOrNull()?.apply {
-                    click()
-                    keyboard {
-                        enter()
-                        sleep(500)
+                        click()
+                        keyboard {
+                            enter()
+                            sleep(500)
+                        }
                     }
-                }
 
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@text='Cancel']")).firstOrNull()
                     ?.click()

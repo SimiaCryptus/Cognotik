@@ -14,69 +14,73 @@ import java.util.concurrent.*
  * @param user The user associated with this executor service, if any.
  */
 class ImmediateExecutorService(
-  private val session: Session,
-  private val user: User?
+    private val session: Session,
+    private val user: User?
 ) : ExecutorService {
-  val threadFactory = RecordingThreadFactory(session, user)
-  private val executor = ThreadPoolExecutor(
-    0, // Core pool size of 0 means no threads are kept alive when idle
-    Integer.MAX_VALUE, // Maximum pool size
-    60L, TimeUnit.SECONDS, // Thread keep-alive time when idle
-    SynchronousQueue<Runnable>(), // Queue for tasks
-    threadFactory // Thread factory
-  )
-  
-  override fun execute(command: Runnable) {
-    executor.execute(command)
-  }
+    val threadFactory = RecordingThreadFactory(session, user)
+    private val executor = ThreadPoolExecutor(
+        0, // Core pool size of 0 means no threads are kept alive when idle
+        Integer.MAX_VALUE, // Maximum pool size
+        60L, TimeUnit.SECONDS, // Thread keep-alive time when idle
+        SynchronousQueue<Runnable>(), // Queue for tasks
+        threadFactory // Thread factory
+    )
 
-  override fun shutdown() {
-    executor.shutdown()
-  }
+    override fun execute(command: Runnable) {
+        executor.execute(command)
+    }
 
-  override fun shutdownNow(): MutableList<Runnable> {
-    threadFactory.threads.filter { it.isAlive }.forEach { it.interrupt() }
-    return executor.shutdownNow()
-  }
+    override fun shutdown() {
+        executor.shutdown()
+    }
 
-  override fun isShutdown(): Boolean {
-    return executor.isShutdown
-  }
+    override fun shutdownNow(): MutableList<Runnable> {
+        threadFactory.threads.filter { it.isAlive }.forEach { it.interrupt() }
+        return executor.shutdownNow()
+    }
 
-  override fun isTerminated(): Boolean {
-    return executor.isTerminated
-  }
+    override fun isShutdown(): Boolean {
+        return executor.isShutdown
+    }
 
-  override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
-    return executor.awaitTermination(timeout, unit)
-  }
+    override fun isTerminated(): Boolean {
+        return executor.isTerminated
+    }
 
-  override fun <T : Any?> submit(task: Callable<T>): Future<T> {
-    return executor.submit(task)
-  }
+    override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
+        return executor.awaitTermination(timeout, unit)
+    }
 
-  override fun <T : Any?> submit(task: Runnable, result: T): Future<T> {
-    return executor.submit(task, result)
-  }
+    override fun <T : Any?> submit(task: Callable<T>): Future<T> {
+        return executor.submit(task)
+    }
 
-  override fun submit(task: Runnable): Future<*> {
-    return executor.submit(task)
-  }
+    override fun <T : Any?> submit(task: Runnable, result: T): Future<T> {
+        return executor.submit(task, result)
+    }
 
-  override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>): MutableList<Future<T>> {
-    return executor.invokeAll(tasks)
-  }
+    override fun submit(task: Runnable): Future<*> {
+        return executor.submit(task)
+    }
 
-  override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>, timeout: Long, unit: TimeUnit): MutableList<Future<T>> {
-    return executor.invokeAll(tasks, timeout, unit)
-  }
+    override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>): MutableList<Future<T>> {
+        return executor.invokeAll(tasks)
+    }
 
-  override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>): T {
-    return executor.invokeAny(tasks)
-  }
+    override fun <T : Any?> invokeAll(
+        tasks: MutableCollection<out Callable<T>>,
+        timeout: Long,
+        unit: TimeUnit
+    ): MutableList<Future<T>> {
+        return executor.invokeAll(tasks, timeout, unit)
+    }
 
-  override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>, timeout: Long, unit: TimeUnit): T {
-    return executor.invokeAny(tasks, timeout, unit)
-  }
+    override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>): T {
+        return executor.invokeAny(tasks)
+    }
+
+    override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>, timeout: Long, unit: TimeUnit): T {
+        return executor.invokeAny(tasks, timeout, unit)
+    }
 
 }

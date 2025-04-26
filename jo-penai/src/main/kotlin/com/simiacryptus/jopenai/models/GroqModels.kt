@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.models
+
 import org.slf4j.LoggerFactory
 
 object GroqModels {
@@ -8,7 +9,7 @@ object GroqModels {
         name = "Llama33_70bVersatile",
         modelName = "llama-3.3-70b-versatile",
         maxTotalTokens = 128000,
-        maxOutTokens = 32768, 
+        maxOutTokens = 32768,
         provider = APIProvider.Groq,
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.79
@@ -33,7 +34,7 @@ object GroqModels {
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.99
     )
-    
+
     val Llama31_8bInstant = ChatModel(
         name = "Llama31_8bInstant",
         modelName = "llama-3.1-8b-instant",
@@ -43,7 +44,7 @@ object GroqModels {
         inputTokenPricePerK = 0.05,
         outputTokenPricePerK = 0.08
     )
-    
+
     val Llama32_1bPreview = ChatModel(
         name = "Llama32_1bPreview",
         modelName = "llama-3.2-1b-preview",
@@ -53,7 +54,7 @@ object GroqModels {
         inputTokenPricePerK = 0.04,
         outputTokenPricePerK = 0.04
     )
-    
+
     val Llama32_3bPreview = ChatModel(
         name = "Llama32_3bPreview",
         modelName = "llama-3.2-3b-preview",
@@ -63,7 +64,7 @@ object GroqModels {
         inputTokenPricePerK = 0.06,
         outputTokenPricePerK = 0.06
     )
-    
+
     val LlamaGuard38b = ChatModel(
         name = "LlamaGuard38b",
         modelName = "llama-guard-3-8b",
@@ -73,7 +74,7 @@ object GroqModels {
         inputTokenPricePerK = 0.20,
         outputTokenPricePerK = 0.20
     )
-    
+
     val Llama370b8192 = ChatModel(
         name = "Llama370b8192",
         modelName = "llama3-70b-8192",
@@ -83,7 +84,7 @@ object GroqModels {
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.79
     )
-    
+
     val Llama38b8192 = ChatModel(
         name = "Llama38b8192",
         modelName = "llama3-8b-8192",
@@ -93,7 +94,7 @@ object GroqModels {
         inputTokenPricePerK = 0.05,
         outputTokenPricePerK = 0.08
     )
-    
+
     val Qwen25_32b = ChatModel(
         name = "Qwen25_32b",
         modelName = "qwen-2.5-32b",
@@ -130,7 +131,7 @@ object GroqModels {
         inputTokenPricePerK = 0.25,
         outputTokenPricePerK = 0.25
     )
-    
+
     val DeepseekQwen32b = ChatModel(
         name = "DeepseekQwen32b",
         modelName = "deepseek-r1-distill-qwen-32b",
@@ -140,7 +141,7 @@ object GroqModels {
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
-    
+
     val DeepseekLlama70b = ChatModel(
         name = "DeepseekLlama70b",
         modelName = "deepseek-r1-distill-llama-70b",
@@ -150,7 +151,7 @@ object GroqModels {
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.79
     )
-    
+
     val Llama32_11bVision = ChatModel(
         name = "Llama32_11bVision",
         modelName = "llama-3.2-11b-vision-preview",
@@ -160,7 +161,7 @@ object GroqModels {
         inputTokenPricePerK = 0.10,
         outputTokenPricePerK = 0.10
     )
-    
+
     val Llama32_90bVision = ChatModel(
         name = "Llama32_90bVision",
         modelName = "llama-3.2-90b-vision-preview",

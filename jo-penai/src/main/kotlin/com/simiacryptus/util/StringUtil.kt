@@ -1,4 +1,5 @@
 package com.simiacryptus.util
+
 import org.slf4j.LoggerFactory
 
 import java.nio.charset.Charset
@@ -77,7 +78,8 @@ object StringUtil {
     @JvmStatic
     fun getWhitespaceSuffix(vararg lines: CharSequence): String {
         log.debug("getWhitespaceSuffix called with {} lines", lines.size)
-        return reverse(Arrays.stream(lines)
+        return reverse(
+            Arrays.stream(lines)
             .map { obj: CharSequence? -> reverse(obj!!) }
             .map { l: CharSequence ->
                 toString(
@@ -128,7 +130,12 @@ object StringUtil {
      */
     @JvmStatic
     fun getPrefixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence {
-        log.debug("getPrefixForContext called with text of length: {}, idealLength: {}, delimiters: {}", text.length, idealLength, Arrays.toString(delimiters))
+        log.debug(
+            "getPrefixForContext called with text of length: {}, idealLength: {}, delimiters: {}",
+            text.length,
+            idealLength,
+            Arrays.toString(delimiters)
+        )
         return getSuffixForContext(text.reversed(), idealLength, *delimiters).reversed()
     }
 
@@ -159,7 +166,12 @@ object StringUtil {
      */
     @JvmStatic
     fun getSuffixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence {
-        log.debug("getSuffixForContext called with text of length: {}, idealLength: {}, delimiters: {}", text.length, idealLength, Arrays.toString(delimiters))
+        log.debug(
+            "getSuffixForContext called with text of length: {}, idealLength: {}, delimiters: {}",
+            text.length,
+            idealLength,
+            Arrays.toString(delimiters)
+        )
         // Create a list of candidates by splitting the text by each of the delimiters
         val candidates = Stream.of(*delimiters).flatMap { d: CharSequence? ->
             // Create a string builder to store the split strings

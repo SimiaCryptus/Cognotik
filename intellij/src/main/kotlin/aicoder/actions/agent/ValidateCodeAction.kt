@@ -28,7 +28,7 @@ class ValidateCodeAction : BaseAction() {
             UITools.runAsync(event.project, "Initializing Code Validation", true) { progress ->
                 progress.isIndeterminate = true
                 progress.text = "Setting up validation..."
-                
+
                 val files = UITools.getSelectedFiles(event)
                 val folders = UITools.getSelectedFolders(event)
                 if (files.isEmpty() && folders.isEmpty()) {
@@ -36,17 +36,17 @@ class ValidateCodeAction : BaseAction() {
                     return@runAsync
                 }
 
-                val root = folders.firstOrNull()?.toFile?.toPath() 
+                val root = folders.firstOrNull()?.toFile?.toPath()
                     ?: files.firstOrNull()?.parent?.toFile?.toPath()
                     ?: event.project?.basePath?.let { java.io.File(it).toPath() }
                     ?: throw IllegalStateException("Could not determine project root")
 
                 val settings = PatchApp.Settings(
-                  commands = listOf(),
-                  autoFix = true,
-                  maxRetries = 1,
-                  exitCodeOption = "nonzero",
-                  includeLineNumbers = false
+                    commands = listOf(),
+                    autoFix = true,
+                    maxRetries = 1,
+                    exitCodeOption = "nonzero",
+                    includeLineNumbers = false
                 )
 
                 val session = Session.newGlobalID()
@@ -93,8 +93,8 @@ class ValidateCodeAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (event.project == null) return false
-        val hasSelection = UITools.getSelectedFiles(event).isNotEmpty() || 
-                          UITools.getSelectedFolders(event).isNotEmpty()
+        val hasSelection = UITools.getSelectedFiles(event).isNotEmpty() ||
+                UITools.getSelectedFolders(event).isNotEmpty()
         return hasSelection
     }
 

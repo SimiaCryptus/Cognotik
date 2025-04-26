@@ -86,7 +86,6 @@
 }
 
 
-
 /* Improve button states */
 .cmd-button {
     position: relative;
@@ -152,7 +151,6 @@
         animation: App-logo-spin infinite 20s linear;
     }
 }
-
 
 
 .tab-content {
@@ -221,7 +219,6 @@
     justify-content: center;
     padding: 2rem;
 }
-
 
 
 /* Loading state with text */

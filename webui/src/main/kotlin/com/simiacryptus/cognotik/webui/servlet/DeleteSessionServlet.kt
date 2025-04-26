@@ -11,16 +11,16 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
 class DeleteSessionServlet(
-  private val server: ApplicationServer,
+    private val server: ApplicationServer,
 ) : HttpServlet() {
-  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
-    if (req.parameterMap.containsKey("sessionId")) {
-      val session = Session(req.getParameter("sessionId"))
-      //language=HTML
-      resp.writer.write(
-        """
+    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        resp.contentType = "text/html"
+        resp.status = HttpServletResponse.SC_OK
+        if (req.parameterMap.containsKey("sessionId")) {
+            val session = Session(req.getParameter("sessionId"))
+            //language=HTML
+            resp.writer.write(
+                """
         <html>
         <head>
             <title>Delete Session</title>
@@ -35,31 +35,31 @@ class DeleteSessionServlet(
         </body>
         </html>
         """.trimIndent()
-      )
-    } else {
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.writer.write("Session ID is required")
+            )
+        } else {
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.writer.write("Session ID is required")
+        }
     }
-  }
 
-  override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-    require(req.getParameter("confirm").lowercase() == "confirm") { "Confirmation text is required" }
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
-    if (!req.parameterMap.containsKey("sessionId")) {
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-      resp.writer.write("Session ID is required")
-    } else {
-      val session = Session(req.getParameter("sessionId"))
-      val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
-      require(authorizationManager.isAuthorized(javaClass, user, OperationType.Delete))
-      { "User $user is not authorized to delete sessions" }
-      if (session.isGlobal()) {
-        require(authorizationManager.isAuthorized(javaClass, user, OperationType.Public))
-        { "User $user is not authorized to delete global sessions" }
-      }
-      server.dataStorage.deleteSession(user, session)
-      resp.sendRedirect("/")
+    override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
+        require(req.getParameter("confirm").lowercase() == "confirm") { "Confirmation text is required" }
+        resp.contentType = "text/html"
+        resp.status = HttpServletResponse.SC_OK
+        if (!req.parameterMap.containsKey("sessionId")) {
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+            resp.writer.write("Session ID is required")
+        } else {
+            val session = Session(req.getParameter("sessionId"))
+            val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
+            require(authorizationManager.isAuthorized(javaClass, user, OperationType.Delete))
+            { "User $user is not authorized to delete sessions" }
+            if (session.isGlobal()) {
+                require(authorizationManager.isAuthorized(javaClass, user, OperationType.Public))
+                { "User $user is not authorized to delete global sessions" }
+            }
+            server.dataStorage.deleteSession(user, session)
+            resp.sendRedirect("/")
+        }
     }
-  }
 }

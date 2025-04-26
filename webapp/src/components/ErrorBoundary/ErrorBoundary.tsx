@@ -29,16 +29,16 @@ class ErrorBoundary extends Component<Props, State> {
             error: {
                 message: error.message,
                 // Only include first 3 stack frames to avoid noise
-            stack: error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available'
+                stack: error.stack ? error.stack.split('\n').slice(0, 3).join('\n') : 'No stack trace available'
             },
             // Only include relevant component stack frames
-        componentStack: errorInfo.componentStack 
-            ? errorInfo.componentStack
-                .split('\n')
-                .filter(line => line.trim())
-                .slice(0, 3)
-                .join('\n')
-            : 'No component stack available',
+            componentStack: errorInfo.componentStack
+                ? errorInfo.componentStack
+                    .split('\n')
+                    .filter(line => line.trim())
+                    .slice(0, 3)
+                    .join('\n')
+                : 'No component stack available',
             // Add environment context
             environment: process.env.NODE_ENV,
             userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'SSR'

@@ -1,8 +1,8 @@
 package com.simiacryptus.jopenai.describe
-import org.slf4j.LoggerFactory
 
 import com.simiacryptus.jopenai.describe.DescriptorUtil.componentType
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
+import org.slf4j.LoggerFactory
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 

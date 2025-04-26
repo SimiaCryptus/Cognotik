@@ -49,7 +49,7 @@ dependencies {
     }
     implementation(project(":webui")) {
         exclude(group = "org.jetbrains.kotlin")
-      exclude(group = "org.slf4j")
+        exclude(group = "org.slf4j")
     }
 
     implementation(libs.jackson.databind)

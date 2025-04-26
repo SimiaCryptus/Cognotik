@@ -4,12 +4,12 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.jopenai.models.ChatModel
 
 class HighLevelDesigner(
-  model: ChatModel,
-  temperature: Double
+    model: ChatModel,
+    temperature: Double
 ) : SimpleActor(
-  model = model,
-  temperature = temperature,
-  prompt = """
+    model = model,
+    temperature = temperature,
+    prompt = """
         You are an expert high-level software architect specializing in AI-based automated assistants.
         Your task is to gather requirements and create a detailed design based on the user's idea.
         Follow these steps:

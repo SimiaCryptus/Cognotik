@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.DaemonClient.createRandomSessionDir
-import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory.ChildWebApp
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
@@ -38,6 +37,7 @@ class SystemTrayManager(
                     override fun createImage(w: Int, h: Int): BufferedImage {
                         return BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
                     }
+
                     override fun writeImage(img: BufferedImage, output: TranscoderOutput?) {
                         this.image = img
                     }
@@ -133,6 +133,7 @@ class SystemTrayManager(
             showError("Failed to open browser")
         }
     }
+
     private fun showError(message: String) {
         val now = System.currentTimeMillis()
         if (now - lastErrorTime > ERROR_COOLDOWN && message != lastErrorMessage) {

@@ -43,14 +43,14 @@ open class ChatModel(
         val values: MutableMap<String, ChatModel?> by lazy { defaultValues().toMutableMap() }
 
         fun defaultValues() = OpenAIModels.values +
-            PerplexityModels.values +
-            MistralModels.values +
-            GroqModels.values +
-            ModelsLabModels.values +
-            AWSModels.values +
-            AnthropicModels.values +
-            DeepSeekModels.values +
-            GoogleModels.values
+                PerplexityModels.values +
+                MistralModels.values +
+                GroqModels.values +
+                ModelsLabModels.values +
+                AWSModels.values +
+                AnthropicModels.values +
+                DeepSeekModels.values +
+                GoogleModels.values
     }
 }
 

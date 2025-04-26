@@ -45,15 +45,15 @@ open class ChatProxy<T : Any>(
                           Outputs are based on inputs, with any missing information filled randomly
                           You will respond to the following method
                           """.trimIndent() + prompt.apiYaml
-                        ).trim().toContentList()
+                                ).trim().toContentList()
                     )
                 ) + exampleMessages +
-                listOf(
-                    ChatMessage(
-                        ApiModel.Role.user,
-                        argsToString(prompt.argList).toContentList()
-                    )
-                )
+                        listOf(
+                            ChatMessage(
+                                ApiModel.Role.user,
+                                argsToString(prompt.argList).toContentList()
+                            )
+                        )
             )
         )
         request = request.copy(model = model.modelName)

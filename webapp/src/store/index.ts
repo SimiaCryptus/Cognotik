@@ -1,4 +1,4 @@
-import { configureStore, Middleware } from '@reduxjs/toolkit';
+import {configureStore, Middleware} from '@reduxjs/toolkit';
 import configReducer from './slices/configSlice';
 import messageReducer from './slices/messageSlice';
 import uiReducer from './slices/uiSlice';

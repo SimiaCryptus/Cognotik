@@ -3,22 +3,18 @@ package com.simiacryptus.jopenai
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import com.simiacryptus.jopenai.exceptions.AIServiceException
-import com.simiacryptus.jopenai.exceptions.InvalidModelException
-import com.simiacryptus.jopenai.exceptions.ModelMaxException
-import com.simiacryptus.jopenai.exceptions.QuotaException
-import com.simiacryptus.jopenai.exceptions.RateLimitException
+import com.simiacryptus.jopenai.exceptions.*
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager
 import org.apache.hc.core5.http.HttpHeaders
 import org.apache.hc.core5.util.Timeout
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
-import org.slf4j.Logger
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.*
@@ -104,6 +100,7 @@ open class HttpClientManager(
         }
 
     }
+
     protected fun captureCallerStack(): String {
         // Skip the frames in withPool and this utility
         var stack = Throwable().stackTrace
@@ -114,14 +111,16 @@ open class HttpClientManager(
         }
         return stack
     }
+
     val stackCalls: MutableMap<Thread, String> = ConcurrentHashMap()
-    
+
     private fun <T> withPool(fn: () -> T): T {
         val callerStack = captureCallerStack()  // capture caller stack before switching threads
         val future = workPool.submit(Callable {
             stackCalls[Thread.currentThread()] = callerStack
             return@Callable fn()
         })
+
         fun handleException(future: Future<*>, e: Throwable, callerStack: String): Nothing {
             future.cancel(true)
             when (e) {
@@ -129,18 +128,22 @@ open class HttpClientManager(
                     log(Level.INFO, "InterruptedException in withPool. Caller stack:\n$callerStack")
                     throw e
                 }
+
                 is ExecutionException -> {
                     log(Level.WARN, "ExecutionException in withPool. Caller stack:\n$callerStack")
                     handleException(future, e.cause ?: throw e, callerStack)
                 }
+
                 is CancellationException -> {
                     log(Level.INFO, "CancellationException in withPool. Caller stack:\n$callerStack")
                     throw e
                 }
+
                 is TimeoutException -> {
                     log(Level.WARN, "TimeoutException in withPool. Caller stack:\n$callerStack")
                     throw e
                 }
+
                 else -> {
                     log(Level.WARN, "Exception in withPool. Caller stack:\n$callerStack\n${e.message}")
                     throw e
@@ -153,8 +156,8 @@ open class HttpClientManager(
             handleException(future, e, callerStack)
         }
     }
-    
-    
+
+
     private fun <T> withExpBackoffRetry(
         retryCount: Int,
         sleepScale: Long = TimeUnit.SECONDS.toMillis(5),
@@ -172,7 +175,7 @@ open class HttpClientManager(
                 this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount): " + exception.message)
                 Thread.sleep(sleepPeriod)
                 lastException = exception
-            } 
+            }
         }
         throw lastException!!
     }
@@ -229,7 +232,7 @@ open class HttpClientManager(
         val start = Date()
         try {
             return fn()
-        } finally { 
+        } finally {
             log(Level.DEBUG, "Request completed in ${Date().time - start.time}ms")
         }
     }

@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.exceptions
+
 class RateLimitException(
     private val org: String?,
     private val limit: Int,

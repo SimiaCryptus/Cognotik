@@ -1,5 +1,5 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
-import {Message, MessageState, MessageUpdate} from '../../types/messages';
+import {Message, MessageState} from '../../types/messages';
 import DOMPurify from 'dompurify';
 import {debounce, getAllTabStates, restoreTabStates, updateTabs} from '../../utils/tabHandling';
 import Prism from "prismjs";

@@ -15,21 +15,21 @@ import com.simiacryptus.util.DynamicEnumSerializer
 @JsonDeserialize(using = TaskTypeDeserializer::class)
 @JsonSerialize(using = TaskTypeSerializer::class)
 class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
-  name: String,
-  val taskDataClass: Class<out T>,
-  val taskSettingsClass: Class<out U>,
-  val description: String? = null,
-  val tooltipHtml: String? = null,
+    name: String,
+    val taskDataClass: Class<out T>,
+    val taskSettingsClass: Class<out U>,
+    val description: String? = null,
+    val tooltipHtml: String? = null,
 ) : DynamicEnum<TaskType<*, *>>(name) {
-  
-  
-  companion object {
-    val SoftwareGraphPlanningTask = TaskType(
-      "SoftwareGraphPlanningTask",
-        com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphPlanningTask.GraphBasedPlanningTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Generate and execute task plans based on software graph structure",
-      """
+
+
+    companion object {
+        val SoftwareGraphPlanningTask = TaskType(
+            "SoftwareGraphPlanningTask",
+            com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphPlanningTask.GraphBasedPlanningTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Generate and execute task plans based on software graph structure",
+            """
       Creates task plans using software graph context.
       <ul>
         <li>Analyzes software graph structure</li>
@@ -39,13 +39,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
         <li>Provides planning rationale</li>
       </ul>
       """
-    )
-    val DataTableCompilationTask = TaskType(
-      "DataTableCompilationTask",
-        com.simiacryptus.cognotik.plan.tools.knowledge.DataTableCompilationTask.DataTableCompilationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Compile structured data tables from multiple files",
-      """
+        )
+        val DataTableCompilationTask = TaskType(
+            "DataTableCompilationTask",
+            com.simiacryptus.cognotik.plan.tools.knowledge.DataTableCompilationTask.DataTableCompilationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Compile structured data tables from multiple files",
+            """
           Extracts and compiles structured data from multiple files into a unified table.
           <ul>
             <li>Identifies rows and columns based on custom instructions</li>
@@ -56,13 +56,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Handles large datasets with progress tracking</li>
           </ul>
           """
-    )
-    val SoftwareGraphModificationTask = TaskType(
-      "SoftwareGraphModificationTask",
-        com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Modify an existing software graph representation",
-      """
+        )
+        val SoftwareGraphModificationTask = TaskType(
+            "SoftwareGraphModificationTask",
+            com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Modify an existing software graph representation",
+            """
            Loads, modifies and saves software graph representations.
            <ul>
              <li>Loads existing graph from JSON file</li>
@@ -72,13 +72,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
              <li>Saves modified graph</li>
            </ul>
            """
-    )
-    val SoftwareGraphGenerationTask = TaskType(
-      "SoftwareGraphGenerationTask",
-        com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Generate a SoftwareGraph representation of the codebase",
-      """
+        )
+        val SoftwareGraphGenerationTask = TaskType(
+            "SoftwareGraphGenerationTask",
+            com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Generate a SoftwareGraph representation of the codebase",
+            """
                   Generates a comprehensive SoftwareGraph representation of the codebase.
                   <ul>
                     <li>Analyzes code structure and relationships</li>
@@ -89,16 +89,17 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                     <li>Saves graph in JSON format</li>
                   </ul>
                 """
-    )
-    
-    private val taskConstructors = mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
-    
-    val TaskPlanningTask = TaskType(
-      "TaskPlanningTask",
-      PlanningTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Break down and coordinate complex development tasks with dependency management",
-      """
+        )
+
+        private val taskConstructors =
+            mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
+
+        val TaskPlanningTask = TaskType(
+            "TaskPlanningTask",
+            PlanningTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Break down and coordinate complex development tasks with dependency management",
+            """
                       Orchestrates complex development tasks by breaking them down into manageable subtasks.
                       <ul>
                         <li>Analyzes project requirements and constraints to create optimal task sequences</li>
@@ -110,13 +111,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Identifies critical paths and potential bottlenecks</li>
                       </ul>
                     """
-    )
-    val InquiryTask = TaskType(
-      "InquiryTask",
-      InquiryTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Analyze code and provide detailed explanations of implementation patterns",
-      """
+        )
+        val InquiryTask = TaskType(
+            "InquiryTask",
+            InquiryTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Analyze code and provide detailed explanations of implementation patterns",
+            """
                       Provides detailed answers and insights about code implementation by analyzing specified files.
                       <ul>
                         <li>Answers detailed questions about code functionality and implementation</li>
@@ -128,13 +129,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Explains trade-offs and rationale behind implementation choices</li>
                       </ul>
                     """
-    )
-    val FileSearchTask = TaskType(
-      "FileSearchTask",
-        com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Search project files using patterns with contextual results",
-      """
+        )
+        val FileSearchTask = TaskType(
+            "FileSearchTask",
+            com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search project files using patterns with contextual results",
+            """
                       Performs pattern-based searches across project files with context.
                       <ul>
                         <li>Supports both substring and regex search patterns</li>
@@ -144,13 +145,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Provides organized, readable output format</li>
                       </ul>
                     """
-    )
-    val EmbeddingSearchTask = TaskType(
-      "EmbeddingSearchTask",
-        com.simiacryptus.cognotik.plan.tools.knowledge.EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Perform semantic search using AI embeddings",
-      """
+        )
+        val EmbeddingSearchTask = TaskType(
+            "EmbeddingSearchTask",
+            com.simiacryptus.cognotik.plan.tools.knowledge.EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Perform semantic search using AI embeddings",
+            """
                       Performs semantic search using AI embeddings across indexed content.
                       <ul>
                         <li>Uses OpenAI embeddings for semantic matching</li>
@@ -160,13 +161,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Returns ranked results with context</li>
                       </ul>
                     """
-    )
-    val FileModificationTask = TaskType(
-      "FileModificationTask",
-      FileModificationTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Create new files or modify existing code with AI-powered assistance",
-      """
+        )
+        val FileModificationTask = TaskType(
+            "FileModificationTask",
+            FileModificationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Create new files or modify existing code with AI-powered assistance",
+            """
                       Creates or modifies source files with AI assistance while maintaining code quality.
                       <ul>
                         <li>Shows proposed changes in diff format for easy review</li>
@@ -179,13 +180,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                         <li>Preserves existing code formatting and structure</li>
                       </ul>
                     """
-    )
-    val RunShellCommandTask = TaskType(
-      "RunShellCommandTask",
-      RunShellCommandTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Execute shell commands safely",
-      """
+        )
+        val RunShellCommandTask = TaskType(
+            "RunShellCommandTask",
+            RunShellCommandTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Execute shell commands safely",
+            """
           Executes shell commands in a controlled environment.
           <ul>
             <li>Safe command execution handling</li>
@@ -195,13 +196,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Interactive result review</li>
           </ul>
         """
-    )
-    val CommandAutoFixTask = TaskType(
-      "CommandAutoFixTask",
-      CommandAutoFixTaskConfigData::class.java,
-        com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
-      "Run a command and automatically fix any issues that arise",
-      """
+        )
+        val CommandAutoFixTask = TaskType(
+            "CommandAutoFixTask",
+            CommandAutoFixTaskConfigData::class.java,
+            com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
+            "Run a command and automatically fix any issues that arise",
+            """
           Executes a command and automatically fixes any issues that arise.
           <ul>
             <li>Specify commands and working directories</li>
@@ -210,14 +211,14 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Output diff formatting</li>
           </ul>
         """
-    )
-    
-    val ForeachTask = TaskType(
-      "ForeachTask",
-      ForeachTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Execute subtasks for each item in a list",
-      """
+        )
+
+        val ForeachTask = TaskType(
+            "ForeachTask",
+            ForeachTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Execute subtasks for each item in a list",
+            """
           Executes a set of subtasks for each item in a given list.
           <ul>
             <li>Handles sequential item processing</li>
@@ -227,13 +228,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Configurable subtask definitions</li>
           </ul>
         """
-    )
-    val GitHubSearchTask = TaskType(
-      "GitHubSearchTask",
-        com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask.GitHubSearchTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Search GitHub repositories, code, issues and users",
-      """
+        )
+        val GitHubSearchTask = TaskType(
+            "GitHubSearchTask",
+            com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask.GitHubSearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search GitHub repositories, code, issues and users",
+            """
           Performs comprehensive searches across GitHub's content.
           <ul>
             <li>Searches repositories, code, and issues</li>
@@ -243,13 +244,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Handles API rate limiting</li>
           </ul>
         """
-    )
-    val KnowledgeIndexingTask = TaskType(
-      "KnowledgeIndexingTask",
-        com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Index content for semantic search capabilities",
-      """
+        )
+        val KnowledgeIndexingTask = TaskType(
+            "KnowledgeIndexingTask",
+            com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Index content for semantic search capabilities",
+            """
           Indexes documents and code for semantic search capabilities.
           <ul>
             <li>Processes both documentation and source code</li>
@@ -259,13 +260,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Progress tracking and reporting</li>
           </ul>
         """
-    )
-    val SeleniumSessionTask = TaskType(
-      "SeleniumSessionTask",
-        com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Automate browser interactions with Selenium",
-      """
+        )
+        val SeleniumSessionTask = TaskType(
+            "SeleniumSessionTask",
+            com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Automate browser interactions with Selenium",
+            """
           Automates browser interactions using Selenium WebDriver.
           <ul>
             <li>Headless Chrome browser automation</li>
@@ -275,13 +276,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Detailed execution results</li>
           </ul>
         """
-    )
-    val CommandSessionTask = TaskType(
-      "CommandSessionTask",
-        com.simiacryptus.cognotik.plan.tools.CommandSessionTask.CommandSessionTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Manage interactive command-line sessions",
-      """
+        )
+        val CommandSessionTask = TaskType(
+            "CommandSessionTask",
+            com.simiacryptus.cognotik.plan.tools.CommandSessionTask.CommandSessionTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Manage interactive command-line sessions",
+            """
           Manages interactive command-line sessions with state persistence.
           <ul>
             <li>Creates and maintains command sessions</li>
@@ -291,13 +292,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Comprehensive output capture</li>
           </ul>
         """
-    )
-    val WebSearchTask = TaskType(
-      "CrawlerAgentTask",
-        com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
-      TaskSettingsBase::class.java,
-      "Search Google, fetch top results, and analyze content",
-      """
+        )
+        val WebSearchTask = TaskType(
+            "CrawlerAgentTask",
+            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search Google, fetch top results, and analyze content",
+            """
           Searches Google for specified queries and analyzes the top results.
           <ul>
             <li>Performs Google searches</li>
@@ -306,148 +307,152 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Generates detailed analysis reports</li>
           </ul>
         """
-    )
-    
-    init {
-        registerConstructor(SoftwareGraphPlanningTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphPlanningTask(
-                settings,
-                task
-            )
+        )
+
+        init {
+            registerConstructor(SoftwareGraphPlanningTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphPlanningTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(SoftwareGraphModificationTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphModificationTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(SoftwareGraphGenerationTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphGenerationTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(DataTableCompilationTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.knowledge.DataTableCompilationTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(CommandAutoFixTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(InquiryTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.file.InquiryTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(FileSearchTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.file.FileSearchTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(WebSearchTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(EmbeddingSearchTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.knowledge.EmbeddingSearchTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(FileModificationTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.file.FileModificationTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(RunShellCommandTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.RunShellCommandTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(ForeachTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.plan.ForeachTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(TaskPlanningTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.plan.PlanningTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(GitHubSearchTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(KnowledgeIndexingTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(SeleniumSessionTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(CommandSessionTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.CommandSessionTask(
+                    settings,
+                    task
+                )
+            }
         }
-        registerConstructor(SoftwareGraphModificationTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphModificationTask(
-                settings,
-                task
-            )
+
+        fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(
+            taskType: TaskType<T, U>, constructor: (PlanSettings, T?) -> AbstractTask<T>
+        ) {
+            taskConstructors[taskType] = { settings: PlanSettings, task: TaskConfigBase? ->
+                constructor(settings, task as T?)
+            }
+            register(taskType)
         }
-        registerConstructor(SoftwareGraphGenerationTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.graph.SoftwareGraphGenerationTask(
-                settings,
-                task
-            )
+
+        fun values() = values(TaskType::class.java)
+        fun getImpl(
+            planSettings: PlanSettings, planTask: TaskConfigBase?, strict: Boolean = true
+        ) = getImpl(
+            planSettings = planSettings,
+            taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
+            planTask = planTask,
+            strict = strict)
+
+        fun getImpl(
+            planSettings: PlanSettings,
+            taskType: TaskType<*, *>,
+            planTask: TaskConfigBase? = null,
+            strict: Boolean = true
+        ): AbstractTask<out TaskConfigBase> {
+            if (strict && !planSettings.getTaskSettings(taskType).enabled) {
+                throw DisabledTaskException(taskType)
+            }
+            val constructor =
+                taskConstructors[taskType] ?: throw RuntimeException("Unknown task type: ${taskType.name}")
+            return constructor(planSettings, planTask)
         }
-        registerConstructor(DataTableCompilationTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.knowledge.DataTableCompilationTask(
-                settings,
-                task
-            )
+
+        fun getAvailableTaskTypes(planSettings: PlanSettings) = values().filter {
+            planSettings.getTaskSettings(it).enabled
         }
-        registerConstructor(CommandAutoFixTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(InquiryTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.file.InquiryTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(FileSearchTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.file.FileSearchTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(WebSearchTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(EmbeddingSearchTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.knowledge.EmbeddingSearchTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(FileModificationTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.file.FileModificationTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(RunShellCommandTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.RunShellCommandTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(ForeachTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.plan.ForeachTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(TaskPlanningTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.plan.PlanningTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(GitHubSearchTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(KnowledgeIndexingTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(SeleniumSessionTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask(
-                settings,
-                task
-            )
-        }
-        registerConstructor(CommandSessionTask) { settings, task ->
-            com.simiacryptus.cognotik.plan.tools.CommandSessionTask(
-                settings,
-                task
-            )
-        }
+
+        fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)
+        private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
     }
-    
-    fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(
-      taskType: TaskType<T, U>, constructor: (PlanSettings, T?) -> AbstractTask<T>
-    ) {
-      taskConstructors[taskType] = { settings: PlanSettings, task: TaskConfigBase? ->
-        constructor(settings, task as T?)
-      }
-      register(taskType)
-    }
-    
-    fun values() = values(TaskType::class.java)
-    fun getImpl(
-      planSettings: PlanSettings, planTask: TaskConfigBase?, strict: Boolean = true
-    ) = getImpl(
-      planSettings = planSettings,
-      taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
-      planTask = planTask,
-      strict = strict)
-    
-    fun getImpl(
-      planSettings: PlanSettings, taskType: TaskType<*, *>, planTask: TaskConfigBase? = null, strict: Boolean = true
-    ): AbstractTask<out TaskConfigBase> {
-      if (strict && !planSettings.getTaskSettings(taskType).enabled) {
-        throw DisabledTaskException(taskType)
-      }
-      val constructor = taskConstructors[taskType] ?: throw RuntimeException("Unknown task type: ${taskType.name}")
-      return constructor(planSettings, planTask)
-    }
-    
-    fun getAvailableTaskTypes(planSettings: PlanSettings) = values().filter {
-      planSettings.getTaskSettings(it).enabled
-    }
-    
-    fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)
-    private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
-  }
 }
 
 class TaskTypeSerializer : DynamicEnumSerializer<TaskType<*, *>>(TaskType::class.java)

@@ -30,6 +30,7 @@ open class TrainedSilenceDiscriminator(
             }
         }
     }
+
     protected open fun newPercentile() = PercentileTool(10000)
     protected open fun PercentileTool.getCurrentRMSThreshold() = findEntropyThreshold5(0.0)
     inner class Statistics {
@@ -56,11 +57,11 @@ open class TrainedSilenceDiscriminator(
 
         fun isEmpty() =
             rmsPercentileTool.isEmpty() ||
-            iec61672PercentileTool.isEmpty() ||
-            spectralEntropyPercentileTool.isEmpty() ||
-            spectralCentroidPercentileTool.isEmpty() ||
-            spectralFlatnessPercentileTool.isEmpty() ||
-            frequencyBandTools.any { it.isEmpty() }
+                    iec61672PercentileTool.isEmpty() ||
+                    spectralEntropyPercentileTool.isEmpty() ||
+                    spectralCentroidPercentileTool.isEmpty() ||
+                    spectralFlatnessPercentileTool.isEmpty() ||
+                    frequencyBandTools.any { it.isEmpty() }
     }
 
     private val silence = Statistics()
@@ -73,7 +74,7 @@ open class TrainedSilenceDiscriminator(
                 if (silence.rmsPercentileTool.memory.size > 1 && speech.rmsPercentileTool.memory.size > 1) {
                     logKL()
                 }
-                if(value == null) {
+                if (value == null) {
                     // TODO: Calculate a more sophisticated discriminator
                 }
             }

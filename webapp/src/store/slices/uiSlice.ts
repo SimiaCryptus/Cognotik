@@ -63,7 +63,7 @@ const logStateChange = (action: string, payload: any = null, prevState: any = nu
         return;
     }
     if (prevState !== null && JSON.stringify(payload) !== JSON.stringify(prevState)) {
-        console.debug(`[UI Slice] ${action}:`, 
+        console.debug(`[UI Slice] ${action}:`,
             `${prevState} → ${payload}`
         );
     }

@@ -6,10 +6,10 @@
         </encoder>
     </appender>
 
-    <log name="com.simiacryptus" level="info" />
+    <log name="com.simiacryptus" level="info"/>
     <log name="com.simiacryptus.cognotik.util.Selenium2S3" level="debug"/>
 
     <root level="info">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

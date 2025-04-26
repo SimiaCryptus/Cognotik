@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.exceptions
+
 import java.io.IOException
 
 

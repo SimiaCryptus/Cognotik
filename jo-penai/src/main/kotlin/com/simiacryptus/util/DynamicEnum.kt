@@ -1,5 +1,4 @@
 package com.simiacryptus.util
-import org.slf4j.LoggerFactory
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -7,6 +6,7 @@ import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import org.slf4j.LoggerFactory
 
 open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
     companion object {
@@ -66,11 +66,13 @@ abstract class DynamicEnumDeserializer<T : DynamicEnum<T>>(
                     log.error("Unknown enum constant: {}", node.asText())
                     throw JsonMappingException(p, "Unknown enum constant: " + node.asText())
                 }
+
             is ObjectNode -> DynamicEnum.getRegistry(clazz).toMap()[node.get("name")?.asText()]
                 ?: run {
                     log.error("Unknown enum constant: {}", node.toPrettyString())
                     throw JsonMappingException(p, "Unknown enum constant: " + node.toPrettyString())
                 }
+
             else -> throw JsonMappingException(p, "Unexpected JSON value type: ${node.nodeType}")
         } as T
     }

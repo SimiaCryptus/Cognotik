@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.exceptions
+
 class ModelMaxException(
     private val modelMax: Int,
     val request: Int,

@@ -8,14 +8,14 @@ import com.simiacryptus.jopenai.models.ChatModel
 import kotlin.reflect.KClass
 
 class ParsedActorDesigner(
-  interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
-  symbols: Map<String, Any> = mapOf(),
-  model: ChatModel,
-  temperature: Double = 0.3,
+    interpreterClass: KClass<out Interpreter> = KotlinInterpreter::class,
+    symbols: Map<String, Any> = mapOf(),
+    model: ChatModel,
+    temperature: Double = 0.3,
 ) : CodingActor(
-  interpreterClass = interpreterClass,
-  symbols = symbols,
-  details = """
+    interpreterClass = interpreterClass,
+    symbols = symbols,
+    details = """
     Your task is to design a system that uses gpt "actors" to form a "community" of actors interacting to solve problems.
     Your task is to implement a "parsed" actor that takes part in a larger system.
     "Parsed" actors use a 2-stage system; first, queries are responded in the same manner as simple actors. A second pass uses GPT3.5_Turbo to parse the text response into a predefined kotlin data class
@@ -67,12 +67,12 @@ class ParsedActorDesigner(
     DO NOT subclass the ParsedActor class. Use the constructor directly within the function.
     
     """.trimIndent(),
-  model = model,
-  temperature = temperature,
-  fallbackModel = model,
+    model = model,
+    temperature = temperature,
+    fallbackModel = model,
 ) {
-  init {
-    evalFormat = false
-    codeInterceptor = { fixups(it) }
-  }
+    init {
+        evalFormat = false
+        codeInterceptor = { fixups(it) }
+    }
 }

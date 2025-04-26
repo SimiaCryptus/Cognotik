@@ -42,21 +42,21 @@ tasks.withType<Test> {
 }
 // Add common configurations for all projects
 tasks.withType<JavaCompile> {
-  options.encoding = "UTF-8"
-  options.compilerArgs.add("-parameters")
-  // Enable incremental compilation for faster builds
+    options.encoding = "UTF-8"
+    options.compilerArgs.add("-parameters")
+    // Enable incremental compilation for faster builds
 //  options.incremental = true
 }
 // Add common configurations for Javadoc
 tasks.withType<Javadoc> {
-  options {
-    (this as StandardJavadocDocletOptions).apply {
-      addStringOption("Xdoclint:none", "-quiet")
-      addBooleanOption("html5", true)
-      // Add links to JDK and common library Javadocs
-      links("https://docs.oracle.com/en/java/javase/17/docs/api/")
+    options {
+        (this as StandardJavadocDocletOptions).apply {
+            addStringOption("Xdoclint:none", "-quiet")
+            addBooleanOption("html5", true)
+            // Add links to JDK and common library Javadocs
+            links("https://docs.oracle.com/en/java/javase/17/docs/api/")
+        }
     }
-  }
 }
 // Add dependency analysis task
 tasks.register("analyzeDependencies") {

@@ -5,6 +5,7 @@ Here's a comprehensive best practices guide for developing new task types in thi
 ## 1. Task Structure and Inheritance
 
 ### Base Classes
+
 - Extend either `AbstractTask` or one of its specialized subclasses like `AbstractFileTask` or `AbstractAnalysisTask`
 - Use `AbstractFileTask` for tasks that primarily work with files
 - Use `AbstractAnalysisTask` for tasks that analyze code/content and provide recommendations
@@ -19,6 +20,7 @@ class NewTask(
 ```
 
 ### Configuration Classes
+
 - Create a nested `ConfigData` class extending appropriate base config class
 - Use descriptive `@Description` annotations for all configuration fields
 - Group related configuration parameters logically
@@ -46,6 +48,7 @@ class NewTaskConfigData(
 ## 2. Task Registration
 
 ### TaskType Registration
+
 - Add new task type to `TaskType` companion object
 - Provide clear description and detailed tooltipHtml
 - Register constructor in initialization block
@@ -75,6 +78,7 @@ init {
 ## 3. Implementation Best Practices
 
 ### Prompt Design
+
 - Provide clear, detailed prompts for AI interactions
 - Include examples and formatting requirements
 - Specify input/output expectations
@@ -96,6 +100,7 @@ override val actorPrompt = """
 ```
 
 ### Error Handling
+
 - Validate configuration in a dedicated method
 - Use descriptive error messages
 - Handle edge cases gracefully
@@ -110,6 +115,7 @@ protected fun validateConfig() {
 ```
 
 ### Resource Management
+
 - Clean up resources in finally blocks
 - Use appropriate timeouts
 - Handle concurrent operations safely
@@ -118,6 +124,7 @@ protected fun validateConfig() {
 ## 4. Output Formatting
 
 ### Consistent Formatting
+
 - Use markdown for structured output
 - Include clear section headers
 - Format code blocks appropriately
@@ -140,12 +147,14 @@ private fun formatResults(results: List<Result>): String = buildString {
 ## 5. Integration Considerations
 
 ### Dependencies
+
 - Clearly specify task dependencies
 - Handle dependency results appropriately
 - Consider parallel execution possibilities
 - Document integration requirements
 
 ### State Management
+
 - Update task state appropriately
 - Handle interruptions gracefully
 - Preserve important state information
@@ -154,12 +163,14 @@ private fun formatResults(results: List<Result>): String = buildString {
 ## 6. Documentation
 
 ### Code Documentation
+
 - Document public APIs thoroughly
 - Explain complex logic
 - Document configuration parameters
 - Include usage examples
 
 ### User Documentation
+
 - Provide clear promptSegment
 - Document configuration options
 - Include example use cases
@@ -191,4 +202,5 @@ override fun promptSegment() = """
 - Review and optimize performance
 - Handle deprecated features gracefully
 
-Following these best practices will help ensure new tasks are reliable, maintainable, and integrate well with the existing system.
+Following these best practices will help ensure new tasks are reliable, maintainable, and integrate well with the
+existing system.

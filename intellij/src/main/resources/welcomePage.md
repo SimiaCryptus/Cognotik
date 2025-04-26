@@ -14,7 +14,8 @@ Congratulations on installing the AI Coding Assistant! Let's get you set up and 
 
 ### Step 1: Obtain API Keys
 
-To unlock the full potential of AI Coding Assistant, you'll need API keys from one or more supported Language Model APIs.
+To unlock the full potential of AI Coding Assistant, you'll need API keys from one or more supported Language Model
+APIs.
 Here are links to popular providers where you can register and obtain your keys:
 
 - [OpenAI](https://platform.openai.com/)

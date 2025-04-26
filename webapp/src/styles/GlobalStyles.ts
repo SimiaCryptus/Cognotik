@@ -81,7 +81,10 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Raleway:wght@600;700;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap');
-    ${() => { logStyleChange('Fonts', 'font-load', 'Web fonts loaded'); return ''; }}
+    ${() => {
+    logStyleChange('Fonts', 'font-load', 'Web fonts loaded');
+    return '';
+}}
 
     /* Override Prism.js theme colors to match current theme */
     .token.comment,
@@ -665,9 +668,9 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         &.theme-transition-complete:after {
             opacity: 1;
             ${() => {
-                logStyleChange('body', 'theme-transition', 'completed');
-                return '';
-            }}
+    logStyleChange('body', 'theme-transition', 'completed');
+    return '';
+}}
         }
     }
 

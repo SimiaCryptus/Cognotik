@@ -17,7 +17,7 @@ const logStateChange = (actionName: string, prevState: UserInfo, newState: UserI
     } else if (actionName === 'updatePreferences') {
         // Log only if critical preferences are changed
         const criticalPrefs = ['theme', 'notifications', 'privacy'];
-         const criticalChanges = Object.keys(newState.preferences ?? {})
+        const criticalChanges = Object.keys(newState.preferences ?? {})
             .filter(key => criticalPrefs.includes(key))
             .reduce((acc, key) => ({
                 ...acc, [key]: newState.preferences?.[key]

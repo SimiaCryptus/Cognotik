@@ -13,55 +13,55 @@ import org.slf4j.LoggerFactory
 import java.io.File
 
 object ApplicationServices {
-  private val log = LoggerFactory.getLogger(ApplicationServices::class.java)
-  
-  var authorizationManager: AuthorizationInterface = AuthorizationManager()
-    set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
-  var userSettingsManager: UserSettingsInterface = UserSettingsManager()
-    private set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
-  var authenticationManager: AuthenticationInterface = AuthenticationManager()
-    set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
-  
-  private val storageCache = mutableMapOf<File, StorageInterface>()
-  var dataStorageFactory: (File) -> StorageInterface = { file ->
-    storageCache.getOrPut(file) { DataStorage(file) }
-  }
-    private set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
+    private val log = LoggerFactory.getLogger(ApplicationServices::class.java)
 
-  private val metadataStorageCache = mutableMapOf<File, MetadataStorageInterface>()
-  var metadataStorageFactory: (File) -> MetadataStorageInterface = { file ->
-    metadataStorageCache.getOrPut(file) { HSQLMetadataStorage(file) }
-  }
-    private set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
+    var authorizationManager: AuthorizationInterface = AuthorizationManager()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+    var userSettingsManager: UserSettingsInterface = UserSettingsManager()
+        private set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+    var authenticationManager: AuthenticationInterface = AuthenticationManager()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+
+    private val storageCache = mutableMapOf<File, StorageInterface>()
+    var dataStorageFactory: (File) -> StorageInterface = { file ->
+        storageCache.getOrPut(file) { DataStorage(file) }
     }
-  var clientManager: ClientManager = ClientManager()
-    set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
+        private set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+
+    private val metadataStorageCache = mutableMapOf<File, MetadataStorageInterface>()
+    var metadataStorageFactory: (File) -> MetadataStorageInterface = { file ->
+        metadataStorageCache.getOrPut(file) { HSQLMetadataStorage(file) }
     }
-  var cloud: CloudPlatformInterface? = AwsPlatform.get()
-    set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
-  var usageManager: UsageInterface = HSQLUsageManager(File(dataStorageRoot, "usage"))
-    private set(value) {
-      require(!isLocked) { "ApplicationServices is locked" }
-      field = value
-    }
-  
+        private set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+    var clientManager: ClientManager = ClientManager()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+    var cloud: CloudPlatformInterface? = AwsPlatform.get()
+        set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+    var usageManager: UsageInterface = HSQLUsageManager(File(dataStorageRoot, "usage"))
+        private set(value) {
+            require(!isLocked) { "ApplicationServices is locked" }
+            field = value
+        }
+
 }

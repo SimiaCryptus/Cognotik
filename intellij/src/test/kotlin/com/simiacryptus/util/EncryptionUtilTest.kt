@@ -10,7 +10,7 @@ class EncryptionUtilTest {
     fun testEncryptAndDecrypt() {
         val key = "mysecretkey12345"
         var originalText = "Hello, World!"
-        for( i in 0..10) {
+        for (i in 0..10) {
             val encryptedText = EncryptionUtil.encrypt(originalText, key)
             assertNotNull(encryptedText, "Encryption should not return null")
             val decryptedText = EncryptionUtil.decrypt(encryptedText, key)

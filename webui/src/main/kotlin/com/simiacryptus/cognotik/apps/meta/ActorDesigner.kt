@@ -4,25 +4,25 @@ import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.models.ChatModel
 
 class ActorDesigner(
-  model: ChatModel,
-  parsingModel : ChatModel,
+    model: ChatModel,
+    parsingModel: ChatModel,
     temperature: Double
 ) : ParsedActor<AgentActorDesign>(
-  resultClass = AgentActorDesign::class.java,
-  exampleInstance = AgentActorDesign(
-    actors = listOf(
-      ActorDesign(
-        name = "Actor 1",
-        description = "Actor 1 description",
-        type = "Simple",
-        resultClass = "String",
-      )
-    )
-  ),
-  model = model,
-  temperature = temperature,
-  parsingModel = parsingModel,
-  prompt = """
+    resultClass = AgentActorDesign::class.java,
+    exampleInstance = AgentActorDesign(
+        actors = listOf(
+            ActorDesign(
+                name = "Actor 1",
+                description = "Actor 1 description",
+                type = "Simple",
+                resultClass = "String",
+            )
+        )
+    ),
+    model = model,
+    temperature = temperature,
+    parsingModel = parsingModel,
+    prompt = """
         You are an AI actor designer.
         
         Your task is to expand on a high-level design with requirements for each actor.

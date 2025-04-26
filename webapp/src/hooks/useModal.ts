@@ -60,7 +60,7 @@ export const useModal = () => {
             }
         })
             .then(response => {
-                if (!response.ok) { 
+                if (!response.ok) {
                     logger.error('Modal fetch failed', {
                         status: response.status, endpoint
                     });

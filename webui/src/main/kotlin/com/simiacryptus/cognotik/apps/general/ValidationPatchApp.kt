@@ -114,20 +114,20 @@ class ValidationPatchApp(
         )
 
     }
-    
+
     private fun getFiles(virtualFiles: Array<out File>?): Set<Path> {
         val codeFiles = mutableSetOf<Path>()
         codeFiles.addAll(
-          FileSelectionUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
+            FileSelectionUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
                 .map { it.toPath() }
         )
         return codeFiles
     }
-    
+
     override fun codeFiles(): Set<Path> = getFiles(files)
         .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
         .map { root.toPath().relativize(it) ?: it }.toSet()
-    
+
     override fun projectSummary(): String = codeFiles()
         .asSequence()
         .filter { root.toPath().resolve(it).toFile().exists() }
@@ -137,7 +137,7 @@ class ValidationPatchApp(
             "* ${path} - ${root.toPath().resolve(path).toFile().length() ?: "?"} bytes"
         }
 
-    override fun searchFiles(searchStrings: List<String>): Set<Path> = 
+    override fun searchFiles(searchStrings: List<String>): Set<Path> =
         searchStrings.flatMap { searchString ->
             getFiles(files)
                 .filter { it.toFile().readText().contains(searchString, ignoreCase = true) }

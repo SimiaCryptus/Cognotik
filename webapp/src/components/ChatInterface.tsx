@@ -2,14 +2,14 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import styled from 'styled-components';
 import {fetchAppConfig} from '../services/appConfig';
-import {isArchive, APP_NAME} from '../utils/constants';
+import {isArchive} from '../utils/constants';
 import {logger} from '../utils/logger';
 import {useWebSocket} from '../hooks/useWebSocket';
 import {addMessage} from '../store/slices/messageSlice';
 import MessageList from './MessageList';
 import InputArea from './InputArea';
 import Spinner from './common/Spinner';
-import {Message, MessageType} from '../types/messages'; 
+import {Message, MessageType} from '../types/messages';
 import {WebSocketService} from '../services/websocket';
 import {RootState} from '../store';
 
@@ -38,14 +38,14 @@ const ChatContainer = styled.div`
     }
 `;
 
- const ChatInterface: React.FC<ChatInterfaceProps> = ({
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                                          sessionId: propSessionId,
                                                          websocket,
                                                          isConnected,
                                                      }) => {
     const DEBUG = process.env.NODE_ENV === 'development';
     const debugLog = (message: string, data?: any) => {
-    logger.debug(`${LOG_PREFIX} ${message}`, data);
+        logger.debug(`${LOG_PREFIX} ${message}`, data);
     };
     const [messages, setMessages] = useState<Message[]>([]);
     const [sessionId] = useState(() => propSessionId || window.location.hash.slice(1) || 'new');
@@ -149,7 +149,7 @@ const ChatContainer = styled.div`
             <MessageList/>
             {!isConnected && (
                 <div className="connection-status">
-                    <Spinner size="small" aria-label="Connecting..." />
+                    <Spinner size="small" aria-label="Connecting..."/>
                     <span>Connecting...</span>
                 </div>
             )}
@@ -157,7 +157,7 @@ const ChatContainer = styled.div`
     ) : (
         <ChatContainer data-testid="chat-container" id="chat-container">
             <MessageList/>
-            <InputArea onSendMessage={handleSendMessage} isWebSocketConnected={ws.isConnected} />
+            <InputArea onSendMessage={handleSendMessage} isWebSocketConnected={ws.isConnected}/>
         </ChatContainer>
     );
 };

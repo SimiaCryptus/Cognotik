@@ -1,12 +1,13 @@
 package com.simiacryptus.jopenai.models
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
 
 

@@ -5,6 +5,7 @@ A modern, feature-rich chat web application built with React, TypeScript, and We
 ## Features
 
 ### Core Functionality
+
 - Real-time chat messaging using WebSocket connections
 - Support for HTML and Markdown message formatting
 - Message history and threading
@@ -14,6 +15,7 @@ A modern, feature-rich chat web application built with React, TypeScript, and We
 - QR code generation
 
 ### UI/UX
+
 - Multiple theme support with smooth transitions
 - Responsive design with mobile optimization
 - Accessible components following ARIA guidelines
@@ -23,19 +25,21 @@ A modern, feature-rich chat web application built with React, TypeScript, and We
 - Archive mode for offline viewing
 
 ### Themes
+
 - 8 built-in themes:
-  - Main (Light)
-  - Night (Dark)
-  - Forest
-  - Pony
-  - Alien
-  - Sunset
-  - Ocean
-  - Cyberpunk
+    - Main (Light)
+    - Night (Dark)
+    - Forest
+    - Pony
+    - Alien
+    - Sunset
+    - Ocean
+    - Cyberpunk
 - Theme persistence in localStorage
 - Auto theme switching support
 
 ### Technical Features
+
 - TypeScript for type safety
 - Redux state management with slices
 - Styled Components for CSS-in-JS
@@ -64,29 +68,34 @@ webapp/
 ## Key Components
 
 ### Chat Interface
+
 - `ChatInterface.tsx`: Main chat container component
 - `MessageList.tsx`: Renders chat messages with formatting
 - `InputArea.tsx`: Message input with Markdown editor
 
 ### Theme System
+
 - `ThemeProvider.tsx`: Theme context and switching
 - `ThemeMenu.tsx`: Theme selection UI
 - `themes.ts`: Theme definitions and utilities
 
 ### State Management
+
 - Redux store with slices for:
-  - Messages
-  - UI state
-  - Configuration
-  - User data
+    - Messages
+    - UI state
+    - Configuration
+    - User data
 
 ## Setup & Development
 
 ### Prerequisites
+
 - Node.js 14+
 - npm or yarn
 
 ### Installation
+
 ```bash
 # Install dependencies
 npm install
@@ -102,6 +111,7 @@ npm run build
 ```
 
 ### Environment Variables
+
 - `REACT_APP_API_URL`: Backend API URL (optional)
 - `NODE_ENV`: Environment mode ('development' or 'production')
 
@@ -170,7 +180,8 @@ You may also see any lint errors in the console.
 ### `npm test`
 
 Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more
+information.
 
 ### `npm run build`
 
@@ -186,25 +197,31 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 **Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will
+remove the single build dependency from
 your project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control
-over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right
+into your project so you have full control
+over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can
+tweak them. At this point you're on your
 own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature.
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you
+shouldn't feel obligated to use this feature.
 However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
 ## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+You can learn more in
+the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
 
 ### Code Splitting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+This section has moved
+here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
 ### Analyzing the Bundle Size
 
@@ -223,7 +240,8 @@ here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](
 
 ### Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+This section has moved
+here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
 ### `npm run build` fails to minify
 

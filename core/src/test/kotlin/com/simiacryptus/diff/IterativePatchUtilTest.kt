@@ -273,7 +273,7 @@ class IterativePatchUtilTest {
     
             // Similar changes for black pawns
         """.trimIndent()
-      val patch = """
+        val patch = """
          export class StandardChessModel implements GameModel {
              // ... other methods ...
         
@@ -285,7 +285,7 @@ class IterativePatchUtilTest {
              // ... other methods ...
          }
         """.trimIndent()
-      val expected = """
+        val expected = """
             export class StandardChessModel implements GameModel {
                 geometry: BoardGeometry;
                 state: GameState;
@@ -321,8 +321,8 @@ class IterativePatchUtilTest {
     
             // Similar changes for black pawns
         """.trimIndent()
-      val result = IterativePatchUtil.applyPatch(source, patch)
-      Assertions.assertEquals(normalize(expected), normalize(result))
+        val result = IterativePatchUtil.applyPatch(source, patch)
+        Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
 

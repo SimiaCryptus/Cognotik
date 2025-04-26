@@ -389,4 +389,5 @@ fun truncate(output: String, kb: Int = 32): String {
 }
 ```
 
-Following these best practices will help ensure your apps are reliable, maintainable, and provide a good user experience.
+Following these best practices will help ensure your apps are reliable, maintainable, and provide a good user
+experience.

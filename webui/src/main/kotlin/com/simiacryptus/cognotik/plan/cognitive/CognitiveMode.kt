@@ -15,34 +15,36 @@ import com.simiacryptus.jopenai.describe.TypeDescriber
  * thought updates.
  */
 interface CognitiveMode {
-  val ui: ApplicationInterface
-  val api: API
-  val planSettings: PlanSettings
-  val session: Session
-  val user: User?
-  /**
-   * Initialize the internal cognitive state.
-   */
-  fun initialize()
-  /**
-   * Handle a user message and trigger the appropriate planning or execution.
-   */
-  fun handleUserMessage(userMessage: String, task: SessionTask)
-  
-  fun contextData(): List<String>
+    val ui: ApplicationInterface
+    val api: API
+    val planSettings: PlanSettings
+    val session: Session
+    val user: User?
+
+    /**
+     * Initialize the internal cognitive state.
+     */
+    fun initialize()
+
+    /**
+     * Handle a user message and trigger the appropriate planning or execution.
+     */
+    fun handleUserMessage(userMessage: String, task: SessionTask)
+
+    fun contextData(): List<String>
 }
 
 interface CognitiveModeStrategy {
-  val singleInput: Boolean
+    val singleInput: Boolean
 
-  fun getCognitiveMode(
-    ui: ApplicationInterface,
-    api: API,
-    api2: OpenAIClient,
-    planSettings: PlanSettings,
-    session: Session,
-    user: User?,
-    describer: TypeDescriber
-  ): CognitiveMode
-  
+    fun getCognitiveMode(
+        ui: ApplicationInterface,
+        api: API,
+        api2: OpenAIClient,
+        planSettings: PlanSettings,
+        session: Session,
+        user: User?,
+        describer: TypeDescriber
+    ): CognitiveMode
+
 }

@@ -75,7 +75,10 @@ object DaemonClient {
                 arrayOf(sessionDir)
             }
             log.info("Dispatching command: ${commandArgs.joinToString(" ")}")
-            dispatchCommand(host, port + SOCKET_PORT_OFFSET, (commandArgs.take(1).map { File(it).absolutePath } + commandArgs.drop(1)).toTypedArray())
+            dispatchCommand(
+                host,
+                port + SOCKET_PORT_OFFSET,
+                (commandArgs.take(1).map { File(it).absolutePath } + commandArgs.drop(1)).toTypedArray())
         }
     }
 

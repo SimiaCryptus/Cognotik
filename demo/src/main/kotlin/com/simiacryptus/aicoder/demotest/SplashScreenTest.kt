@@ -1,6 +1,6 @@
 package com.simiacryptus.aicoder.demotest
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.awt.event.KeyAdapter

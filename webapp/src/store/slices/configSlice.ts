@@ -4,8 +4,8 @@ import {ThemeName} from '../../types/theme';
 
 // Helper function to validate theme name
 const isValidTheme = (theme: string | null): theme is ThemeName => {
-    return theme === 'default' || theme === 'main' || theme === 'night' || 
-        theme === 'forest' || theme === 'pony' || theme === 'alien' || 
+    return theme === 'default' || theme === 'main' || theme === 'night' ||
+        theme === 'forest' || theme === 'pony' || theme === 'alien' ||
         theme === 'sunset' || theme === 'ocean' || theme === 'cyberpunk';
 };
 // Load theme from localStorage with type safety

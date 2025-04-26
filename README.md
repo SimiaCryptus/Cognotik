@@ -12,8 +12,13 @@
 Cognotik is a comprehensive AI-powered development platform that combines intelligent planning, code generation, and
 interactive interfaces to streamline software development workflows. The platform consists of multiple integrated
 components that work together to provide a complete solution for AI-assisted development.
+
 ## Open Source & Bring Your Own Key
-Cognotik is 100% open source software, released under the Apache 2.0 license. The platform follows a "Bring Your Own Key" (BYOK) model, meaning you provide your own API keys for AI services (OpenAI, Anthropic, etc.). This gives you complete control over:
+
+Cognotik is 100% open source software, released under the Apache 2.0 license. The platform follows a "Bring Your Own
+Key" (BYOK) model, meaning you provide your own API keys for AI services (OpenAI, Anthropic, etc.). This gives you
+complete control over:
+
 - Which AI providers and models you use
 - Your data privacy and security
 - Your usage costs and billing
@@ -263,7 +268,8 @@ Use the platform's knowledge tools to:
 
 ## License
 
-This project is licensed under the Apache 2.0 License - see the LICENSE file for details. As open source software, you are free to use, modify, and distribute the code according to the terms of the license.
+This project is licensed under the Apache 2.0 License - see the LICENSE file for details. As open source software, you
+are free to use, modify, and distribute the code according to the terms of the license.
 
 ## API Keys and Usage
 

@@ -2,12 +2,15 @@
 
 ## Overview
 
-The Cognotik platform supports multiple programming language interpreters through a unified interface. Currently supported languages include:
+The Cognotik platform supports multiple programming language interpreters through a unified interface. Currently
+supported languages include:
+
 - Kotlin
 - Groovy
 - Scala
 
-Each interpreter implements the common `Interpreter` interface while providing language-specific features and optimizations.
+Each interpreter implements the common `Interpreter` interface while providing language-specific features and
+optimizations.
 
 ## Architecture
 
@@ -40,6 +43,7 @@ interface Interpreter {
 The Kotlin interpreter uses the JSR-223 scripting API with custom configuration.
 
 #### Key Features
+
 - Full Kotlin language support
 - Classpath management
 - Coroutine support
@@ -60,6 +64,7 @@ class KotlinInterpreter(val defs: Map<String, Any>) : Interpreter {
 ```
 
 #### Usage Example
+
 ```kotlin
 val interpreter = KotlinInterpreter(mapOf(
     "helper" to HelperClass(),
@@ -78,6 +83,7 @@ interpreter.run("""
 The Groovy interpreter provides dynamic scripting capabilities using GroovyShell.
 
 #### Key Features
+
 - Dynamic typing support
 - Simplified syntax
 - Java interoperability
@@ -99,6 +105,7 @@ class GroovyInterpreter(private val defs: Map<String, Object>) : Interpreter {
 ```
 
 #### Usage Example
+
 ```kotlin
 val interpreter = GroovyInterpreter(mapOf(
     "service" to ServiceClass(),
@@ -117,6 +124,7 @@ interpreter.run("""
 The Scala interpreter uses the Scala reflection API for advanced type management.
 
 #### Key Features
+
 - Strong type system
 - Advanced pattern matching
 - Type inference
@@ -136,6 +144,7 @@ class ScalaLocalInterpreter(javaDefs: java.util.Map[String, Object]) extends Int
 ```
 
 #### Usage Example
+
 ```scala
 val interpreter = new ScalaLocalInterpreter(Map(
     "processor" -> DataProcessor,
@@ -211,28 +220,29 @@ try {
 ## Best Practices
 
 1. **Code Validation**
-   - Always validate code before execution
-   - Implement proper security checks
-   - Handle compilation errors gracefully
+    - Always validate code before execution
+    - Implement proper security checks
+    - Handle compilation errors gracefully
 
 2. **Resource Management**
-   - Clean up resources after execution
-   - Manage memory usage
-   - Handle long-running scripts
+    - Clean up resources after execution
+    - Manage memory usage
+    - Handle long-running scripts
 
 3. **Error Handling**
-   - Provide detailed error messages
-   - Include source code context
-   - Map errors to original source
+    - Provide detailed error messages
+    - Include source code context
+    - Map errors to original source
 
 4. **Security**
-   - Sandbox execution environment
-   - Limit available APIs
-   - Validate input code
+    - Sandbox execution environment
+    - Limit available APIs
+    - Validate input code
 
 ## Configuration
 
 ### Kotlin Interpreter
+
 ```kotlin
 KotlinInterpreter(
     defs = mapOf(...),
@@ -241,6 +251,7 @@ KotlinInterpreter(
 ```
 
 ### Groovy Interpreter
+
 ```kotlin
 GroovyInterpreter(
     defs = mapOf(...),
@@ -249,6 +260,7 @@ GroovyInterpreter(
 ```
 
 ### Scala Interpreter
+
 ```scala
 ScalaLocalInterpreter(
     javaDefs = javaMap,
@@ -259,33 +271,33 @@ ScalaLocalInterpreter(
 ## Limitations
 
 1. **Kotlin Interpreter**
-   - Limited reflection capabilities
-   - Classpath management complexity
-   - Compilation overhead
+    - Limited reflection capabilities
+    - Classpath management complexity
+    - Compilation overhead
 
 2. **Groovy Interpreter**
-   - Performance overhead for dynamic features
-   - Type safety trade-offs
-   - Memory usage for dynamic typing
+    - Performance overhead for dynamic features
+    - Type safety trade-offs
+    - Memory usage for dynamic typing
 
 3. **Scala Interpreter**
-   - Startup time
-   - Memory footprint
-   - Complex type system integration
+    - Startup time
+    - Memory footprint
+    - Complex type system integration
 
 ## Future Improvements
 
 1. **Performance Optimization**
-   - Caching compiled code
-   - Optimizing startup time
-   - Reducing memory usage
+    - Caching compiled code
+    - Optimizing startup time
+    - Reducing memory usage
 
 2. **Feature Additions**
-   - Additional language support
-   - Enhanced debugging capabilities
-   - Improved error reporting
+    - Additional language support
+    - Enhanced debugging capabilities
+    - Improved error reporting
 
 3. **Integration Enhancements**
-   - Better IDE support
-   - Enhanced type inference
-   - Improved symbol management
+    - Better IDE support
+    - Enhanced type inference
+    - Improved symbol management

@@ -9,13 +9,15 @@ Cognotik is a modular JVM-based application framework designed to provide:
 3. Web-based user interface capabilities
 4. Extensible architecture for various deployment scenarios
 
-The project aims to be "a very helpful puppy" as noted in its component descriptions, suggesting an assistant-like functionality with a friendly interface.
+The project aims to be "a very helpful puppy" as noted in its component descriptions, suggesting an assistant-like
+functionality with a friendly interface.
 
 ## High-Level Architecture
 
 The project follows a modular architecture with these main components:
 
 ### Core Module
+
 - Foundation layer containing platform services
 - Actors system implementation
 - Authentication and authorization framework
@@ -23,12 +25,14 @@ The project follows a modular architecture with these main components:
 - Common utility classes
 
 ### Language Interpreters
+
 - Kotlin interpreter module
 - Groovy interpreter module
 - Scala interpreter module
 - Extensible language support architecture
 
 ### Web Interface
+
 - Jetty-based web server
 - WebSocket implementation
 - Session management
@@ -37,34 +41,39 @@ The project follows a modular architecture with these main components:
 ## Main Components and Relationships
 
 ### 1. Core Platform (core)
+
 - Central dependency for all other modules
 - Provides base interfaces and implementations
 - Handles platform services and core functionality
 - Dependencies include:
-  - jo-penai for AI integration
-  - Jackson for JSON processing
-  - HSQLDB for data storage
-  - Apache HTTP components for networking
+    - jo-penai for AI integration
+    - Jackson for JSON processing
+    - HSQLDB for data storage
+    - Apache HTTP components for networking
 
 ### 2. Language Support
+
 Each language module provides:
+
 - Language-specific interpreter implementation
 - Integration with the core platform
 - Script execution capabilities
 - Runtime environment management
 
 ### 3. Web Interface (webui)
+
 - Complete web application stack
 - Integrates with all interpreter modules
 - Provides:
-  - HTTP/WebSocket server
-  - Frontend asset serving
-  - Session management
-  - API endpoints
+    - HTTP/WebSocket server
+    - Frontend asset serving
+    - Session management
+    - API endpoints
 
 ## Build and Dependency Structure
 
 ### Build System
+
 - Uses Gradle with Kotlin DSL
 - Java 11 minimum requirement
 - Modular project structure
@@ -82,6 +91,7 @@ Each language module provides:
 ## Module Organization
 
 ### 1. Core Module
+
 ```groovy
 core/
   - Platform services
@@ -91,6 +101,7 @@ core/
 ```
 
 ### 2. Language Modules
+
 ```groovy
 kotlin/
   - Kotlin interpreter
@@ -107,6 +118,7 @@ scala/
 ```
 
 ### 3. Web Interface
+
 ```groovy
 webui/
   - Web server implementation
@@ -119,12 +131,14 @@ webui/
 ## Development and Deployment
 
 ### Build Configuration
+
 - Supports both SNAPSHOT and release builds
 - Maven Central publication ready
 - GPG signing for releases
 - Comprehensive test coverage
 
 ### Deployment Options
+
 - Maven artifact deployment
 - Web application deployment
 - Modular deployment options
@@ -132,18 +146,19 @@ webui/
 ## Future Considerations
 
 1. Module Extension
-   - Additional language support
-   - New platform services
-   - Enhanced AI capabilities
+    - Additional language support
+    - New platform services
+    - Enhanced AI capabilities
 
 2. Integration Points
-   - Cloud service integration
-   - Additional storage backends
-   - External service connectors
+    - Cloud service integration
+    - Additional storage backends
+    - External service connectors
 
 3. Security
-   - OAuth integration
-   - Enhanced authorization
-   - Security hardening
+    - OAuth integration
+    - Enhanced authorization
+    - Security hardening
 
-This project provides a robust foundation for building AI-assisted applications with multiple language support and web-based interfaces, while maintaining extensibility and modularity.
+This project provides a robust foundation for building AI-assisted applications with multiple language support and
+web-based interfaces, while maintaining extensibility and modularity.

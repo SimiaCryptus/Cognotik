@@ -47,7 +47,7 @@
                     description="Create and expand outlines using AI assistance">
             </action>
             <action class="aicoder.actions.agent.EnhancedOutlineAction"
-                    id="EnhancedOutlineAction" 
+                    id="EnhancedOutlineAction"
                     text="📝 Enhanced Outline Tool"
                     description="Create and expand outlines with customizable phases using AI assistance">
             </action>

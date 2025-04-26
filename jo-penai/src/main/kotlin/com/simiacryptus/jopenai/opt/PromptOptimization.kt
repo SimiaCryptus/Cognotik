@@ -124,13 +124,13 @@ open class PromptOptimization(
                 log.warn("Failed to mutate {}", selected, e)
             }
         }
-        throw RuntimeException("Failed to mutate $selected after multiple retries", )
+        throw RuntimeException("Failed to mutate $selected after multiple retries")
     }
 
     open fun getMutationDirective(): String {
-    val fate = mutationTypes.values.sum() * Math.random()
+        val fate = mutationTypes.values.sum() * Math.random()
         var cumulative = 0.0
-    for ((key, value) in mutationTypes) {
+        for ((key, value) in mutationTypes) {
             cumulative += value
             if (fate < cumulative) {
                 return key

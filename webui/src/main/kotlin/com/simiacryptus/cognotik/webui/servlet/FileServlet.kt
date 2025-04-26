@@ -18,168 +18,168 @@ import java.nio.file.StandardOpenOption
 
 abstract class FileServlet : HttpServlet() {
 
-  abstract fun getDir(
-    req: HttpServletRequest,
-  ): File
+    abstract fun getDir(
+        req: HttpServletRequest,
+    ): File
 
-  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    log.info("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
-    val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
-    val dir = getDir(req)
-    log.info("Serving directory: ${dir.absolutePath}")
-    val file = getFile(dir, pathSegments, req)
-    log.info("Resolved file path: ${file.absolutePath}")
+    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        log.info("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
+        val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
+        val dir = getDir(req)
+        log.info("Serving directory: ${dir.absolutePath}")
+        val file = getFile(dir, pathSegments, req)
+        log.info("Resolved file path: ${file.absolutePath}")
 
-    when {
-      !file.exists() -> {
-        log.warn("File not found: ${file.absolutePath}")
-        resp.status = HttpServletResponse.SC_NOT_FOUND
-        resp.writer.write("File not found")
-      }
+        when {
+            !file.exists() -> {
+                log.warn("File not found: ${file.absolutePath}")
+                resp.status = HttpServletResponse.SC_NOT_FOUND
+                resp.writer.write("File not found")
+            }
 
-      file.isFile -> {
-        log.info("File found: ${file.absolutePath}")
-        var channel = channelCache.get(file)
-        while (!channel.isOpen) {
-          log.warn("FileChannel is not open, refreshing cache for file: ${file.absolutePath}")
-          channelCache.refresh(file)
-          channel = channelCache.get(file)
+            file.isFile -> {
+                log.info("File found: ${file.absolutePath}")
+                var channel = channelCache.get(file)
+                while (!channel.isOpen) {
+                    log.warn("FileChannel is not open, refreshing cache for file: ${file.absolutePath}")
+                    channelCache.refresh(file)
+                    channel = channelCache.get(file)
+                }
+                try {
+                    if (channel.size() > 1024 * 1024 * 1) {
+                        log.info("File is large, using writeLarge method for file: ${file.absolutePath}")
+                        writeLarge(channel, resp, file, req)
+                    } else {
+                        log.info("File is small, using writeSmall method for file: ${file.absolutePath}")
+                        writeSmall(channel, resp, file, req)
+                    }
+                } finally {
+                    //channelCache.put(file, channel)
+                }
+            }
+
+            req.pathInfo?.endsWith("/") == false -> {
+                log.info("Redirecting to directory path: ${req.requestURI + "/"}")
+                resp.sendRedirect(req.requestURI + "/")
+            }
+
+            else -> {
+                log.info("Listing directory contents for: ${file.absolutePath}")
+                resp.contentType = "text/html"
+                resp.status = HttpServletResponse.SC_OK
+                val files = file.listFiles()
+                    ?.filter { it.isFile }
+//          ?.filter { !it.name.startsWith(".") }
+                    ?.sortedBy { it.name }
+                    ?.joinToString("<br/>\n") {
+                        """<a class="file-item" href="${it.name}">${it.name}</a>"""
+                    } ?: ""
+                val folders = file.listFiles()
+                    ?.filter { !it.isFile }
+//          ?.filter { !it.name.startsWith(".") }
+                    ?.sortedBy { it.name }
+                    ?.joinToString("<br/>\n") {
+                        """<a class="folder-item" href="${it.name}/">${it.name}</a>"""
+                    } ?: ""
+                resp.writer.write(
+                    directoryHTML(
+                        getZipLink(req, pathSegments.drop(1).joinToString("/")),
+                        folders,
+                        files
+                    )
+                )
+            }
         }
-        try {
-          if (channel.size() > 1024 * 1024 * 1) {
-            log.info("File is large, using writeLarge method for file: ${file.absolutePath}")
-            writeLarge(channel, resp, file, req)
-          } else {
-            log.info("File is small, using writeSmall method for file: ${file.absolutePath}")
-            writeSmall(channel, resp, file, req)
-          }
-        } finally {
-          //channelCache.put(file, channel)
-        }
-      }
+    }
 
-      req.pathInfo?.endsWith("/") == false -> {
-        log.info("Redirecting to directory path: ${req.requestURI + "/"}")
-        resp.sendRedirect(req.requestURI + "/")
-      }
+    open fun getFile(dir: File, pathSegments: List<String>, req: HttpServletRequest) =
+        File(dir, pathSegments.drop(1).joinToString("/"))
 
-      else -> {
-        log.info("Listing directory contents for: ${file.absolutePath}")
-        resp.contentType = "text/html"
+    private fun writeSmall(channel: FileChannel, resp: HttpServletResponse, file: File, req: HttpServletRequest) {
+        log.info("Writing small file: ${file.absolutePath}")
+        resp.contentType = getMimeType(file.name)
         resp.status = HttpServletResponse.SC_OK
-        val files = file.listFiles()
-          ?.filter { it.isFile }
-//          ?.filter { !it.name.startsWith(".") }
-          ?.sortedBy { it.name }
-          ?.joinToString("<br/>\n") {
-            """<a class="file-item" href="${it.name}">${it.name}</a>"""
-          } ?: ""
-        val folders = file.listFiles()
-          ?.filter { !it.isFile }
-//          ?.filter { !it.name.startsWith(".") }
-          ?.sortedBy { it.name }
-          ?.joinToString("<br/>\n") {
-            """<a class="folder-item" href="${it.name}/">${it.name}</a>"""
-          } ?: ""
-        resp.writer.write(
-          directoryHTML(
-            getZipLink(req, pathSegments.drop(1).joinToString("/")),
-            folders,
-            files
-          )
-        )
-      }
-    }
-  }
+        val async = req.startAsync()
+        resp.outputStream.apply {
+            setWriteListener(object : WriteListener {
+                val buffer = ByteArray(16 * 1024)
+                val byteBuffer = ByteBuffer.wrap(buffer)
+                override fun onWritePossible() {
+                    while (isReady) {
+                        byteBuffer.clear()
+                        val readBytes = channel.read(byteBuffer)
+                        if (readBytes == -1) {
+                            log.info("Completed writing small file: ${file.absolutePath}")
+                            async.complete()
+                            channelCache.put(file, channel)
+                            return
+                        }
+                        write(buffer, 0, readBytes)
+                    }
+                }
 
-  open fun getFile(dir: File, pathSegments: List<String>, req: HttpServletRequest) =
-    File(dir, pathSegments.drop(1).joinToString("/"))
-
-  private fun writeSmall(channel: FileChannel, resp: HttpServletResponse, file: File, req: HttpServletRequest) {
-    log.info("Writing small file: ${file.absolutePath}")
-    resp.contentType = getMimeType(file.name)
-    resp.status = HttpServletResponse.SC_OK
-    val async = req.startAsync()
-    resp.outputStream.apply {
-      setWriteListener(object : WriteListener {
-        val buffer = ByteArray(16 * 1024)
-        val byteBuffer = ByteBuffer.wrap(buffer)
-        override fun onWritePossible() {
-          while (isReady) {
-            byteBuffer.clear()
-            val readBytes = channel.read(byteBuffer)
-            if (readBytes == -1) {
-              log.info("Completed writing small file: ${file.absolutePath}")
-              async.complete()
-              channelCache.put(file, channel)
-              return
-            }
-            write(buffer, 0, readBytes)
-          }
+                override fun onError(throwable: Throwable) {
+                    log.error("Error writing small file: ${file.absolutePath}", throwable)
+                    channelCache.put(file, channel)
+                }
+            })
         }
-
-        override fun onError(throwable: Throwable) {
-          log.error("Error writing small file: ${file.absolutePath}", throwable)
-          channelCache.put(file, channel)
-        }
-      })
     }
-  }
 
-  private fun writeLarge(
-    channel: FileChannel,
-    resp: HttpServletResponse,
-    file: File,
-    req: HttpServletRequest
-  ) {
-    log.info("Writing large file: ${file.absolutePath}")
-    val mappedByteBuffer: MappedByteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
-    resp.contentType = getMimeType(file.name)
-    resp.status = HttpServletResponse.SC_OK
-    val async = req.startAsync()
-    resp.outputStream.apply {
-      setWriteListener(object : WriteListener {
-        val buffer = ByteArray(256 * 1024)
-        override fun onWritePossible() {
-          while (isReady) {
-            val start = mappedByteBuffer.position()
-            val attemptedReadSize = buffer.size.coerceAtMost(mappedByteBuffer.remaining())
-            mappedByteBuffer.get(buffer, 0, attemptedReadSize)
-            val end = mappedByteBuffer.position()
-            val readBytes = end - start
-            if (readBytes == 0) {
-              log.info("Completed writing large file: ${file.absolutePath}")
-              async.complete()
-              channelCache.put(file, channel)
-              return
-            }
-            write(buffer, 0, readBytes)
-          }
+    private fun writeLarge(
+        channel: FileChannel,
+        resp: HttpServletResponse,
+        file: File,
+        req: HttpServletRequest
+    ) {
+        log.info("Writing large file: ${file.absolutePath}")
+        val mappedByteBuffer: MappedByteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
+        resp.contentType = getMimeType(file.name)
+        resp.status = HttpServletResponse.SC_OK
+        val async = req.startAsync()
+        resp.outputStream.apply {
+            setWriteListener(object : WriteListener {
+                val buffer = ByteArray(256 * 1024)
+                override fun onWritePossible() {
+                    while (isReady) {
+                        val start = mappedByteBuffer.position()
+                        val attemptedReadSize = buffer.size.coerceAtMost(mappedByteBuffer.remaining())
+                        mappedByteBuffer.get(buffer, 0, attemptedReadSize)
+                        val end = mappedByteBuffer.position()
+                        val readBytes = end - start
+                        if (readBytes == 0) {
+                            log.info("Completed writing large file: ${file.absolutePath}")
+                            async.complete()
+                            channelCache.put(file, channel)
+                            return
+                        }
+                        write(buffer, 0, readBytes)
+                    }
+                }
+
+                override fun onError(throwable: Throwable) {
+                    log.error("Error writing large file: ${file.absolutePath}", throwable)
+                    channelCache.put(file, channel)
+                }
+            })
         }
+    }
 
-        override fun onError(throwable: Throwable) {
-          log.error("Error writing large file: ${file.absolutePath}", throwable)
-          channelCache.put(file, channel)
+    private fun getMimeType(fileName: String): String {
+        return when {
+            fileName.endsWith(".js") -> "application/javascript"
+            fileName.endsWith(".mjs") -> "application/javascript"
+            else -> MimeTypes.getDefaultMimeByExtension(fileName) ?: "application/octet-stream"
         }
-      })
     }
-  }
-
-  private fun getMimeType(fileName: String): String {
-    return when {
-      fileName.endsWith(".js") -> "application/javascript"
-      fileName.endsWith(".mjs") -> "application/javascript"
-      else -> MimeTypes.getDefaultMimeByExtension(fileName) ?: "application/octet-stream"
-    }
-  }
 
 
-  open fun getZipLink(
-    req: HttpServletRequest,
-    filePath: String
-  ): String = ""
+    open fun getZipLink(
+        req: HttpServletRequest,
+        filePath: String
+    ): String = ""
 
-  private fun directoryHTML(zipLink: String, folders: String, files: String) = """
+    private fun directoryHTML(zipLink: String, folders: String, files: String) = """
                                 |<html>
                                 |<head>
                                 |<title>Files</title>
@@ -254,51 +254,51 @@ abstract class FileServlet : HttpServlet() {
                                 |</html>
                                 """
 
-  companion object {
-    val log = LoggerFactory.getLogger(FileServlet::class.java)
-    fun parsePath(path: String): List<String> {
-      val pathSegments = path.split("/").filter { it.isNotBlank() }
-      pathSegments.forEach {
-        when {
-          it == ".." -> throw IllegalArgumentException("Invalid path")
-          it.any {
-            when {
-              it == ':' -> true
-              it == '/' -> true
-              it == '~' -> true
-              it == '\\' -> true
-              it.code < 32 -> true
-              it.code > 126 -> true
-              else -> false
+    companion object {
+        val log = LoggerFactory.getLogger(FileServlet::class.java)
+        fun parsePath(path: String): List<String> {
+            val pathSegments = path.split("/").filter { it.isNotBlank() }
+            pathSegments.forEach {
+                when {
+                    it == ".." -> throw IllegalArgumentException("Invalid path")
+                    it.any {
+                        when {
+                            it == ':' -> true
+                            it == '/' -> true
+                            it == '~' -> true
+                            it == '\\' -> true
+                            it.code < 32 -> true
+                            it.code > 126 -> true
+                            else -> false
+                        }
+                    } -> throw IllegalArgumentException("Invalid path")
+                }
             }
-          } -> throw IllegalArgumentException("Invalid path")
+            return pathSegments
         }
-      }
-      return pathSegments
-    }
 
-    val channelCache: LoadingCache<File, FileChannel> = CacheBuilder
-      .newBuilder().maximumSize(100)
-      .expireAfterAccess(10, java.util.concurrent.TimeUnit.SECONDS)
-      .removalListener(RemovalListener<File, FileChannel> { notification ->
-        log.info("Closing FileChannel for file: ${notification.key}")
-        try {
-          val channel = notification.value
-          if (channel == null) {
-            log.error("FileChannel is null for file: ${notification.key}")
-          } else {
-            channel.close()
-            log.info("Successfully closed FileChannel for file: ${notification.key}")
-          }
-        } catch (e: Throwable) {
-          log.error("Error closing FileChannel for file: ${notification.key}", e)
-        }
-      }).build(object : CacheLoader<File, FileChannel>() {
-        override fun load(key: File): FileChannel {
-          log.info("Opening FileChannel for file: ${key.absolutePath}")
-          return FileChannel.open(key.toPath(), StandardOpenOption.READ)
-        }
-      })
-  }
+        val channelCache: LoadingCache<File, FileChannel> = CacheBuilder
+            .newBuilder().maximumSize(100)
+            .expireAfterAccess(10, java.util.concurrent.TimeUnit.SECONDS)
+            .removalListener(RemovalListener<File, FileChannel> { notification ->
+                log.info("Closing FileChannel for file: ${notification.key}")
+                try {
+                    val channel = notification.value
+                    if (channel == null) {
+                        log.error("FileChannel is null for file: ${notification.key}")
+                    } else {
+                        channel.close()
+                        log.info("Successfully closed FileChannel for file: ${notification.key}")
+                    }
+                } catch (e: Throwable) {
+                    log.error("Error closing FileChannel for file: ${notification.key}", e)
+                }
+            }).build(object : CacheLoader<File, FileChannel>() {
+                override fun load(key: File): FileChannel {
+                    log.info("Opening FileChannel for file: ${key.absolutePath}")
+                    return FileChannel.open(key.toPath(), StandardOpenOption.READ)
+                }
+            })
+    }
 
 }

@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.models
+
 import org.slf4j.LoggerFactory
 
 @Suppress("unused")

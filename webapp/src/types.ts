@@ -1,6 +1,6 @@
 // Define theme names
 // Re-export ThemeName from theme.ts to maintain single source of truth
-export type { ThemeName } from './types/theme';
+export type {ThemeName} from './types/theme';
 
 export interface ConsoleStyle {
     // Add specific styles for critical logs

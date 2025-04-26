@@ -18,63 +18,63 @@ import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 
 class GenericChatAction : BaseAction() {
-  override fun getActionUpdateThread() = ActionUpdateThread.BGT
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
-  private val systemPrompt = ""
-  private val userInterfacePrompt = ""
-  
-  override fun handle(e: AnActionEvent) {
-    val project = e.project ?: return
+    private val systemPrompt = ""
+    private val userInterfacePrompt = ""
 
-    try {
-      UITools.runAsync(project, "Initializing Chat", true) { progress ->
-        progress.isIndeterminate = true
-        progress.text = "Setting up chat session..."
+    override fun handle(e: AnActionEvent) {
+        val project = e.project ?: return
 
-        val session = Session.newGlobalID()
-        aicoder.actions.SessionProxyServer.metadataStorage.setSessionName(
-          null,
-          session,
-          "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-        )
-        aicoder.actions.SessionProxyServer.agents[session] = ChatSocketManager(
-          session = session,
-          model = AppSettingsState.instance.smartModel.chatModel(),
-          parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-          initialAssistantPrompt = "",
-          systemPrompt = systemPrompt,
-          api = api,
-          applicationClass = ApplicationServer::class.java,
-          storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
-          budget = 2.0
-        )
-        ApplicationServer.appInfoMap[session] = AppInfoData(
-          applicationName = "Code Chat",
-          singleInput = false,
-          stickyInput = true,
-          loadImages = false,
-          showMenubar = false
-        )
-        val server = AppServer.getServer(project)
+        try {
+            UITools.runAsync(project, "Initializing Chat", true) { progress ->
+                progress.isIndeterminate = true
+                progress.text = "Setting up chat session..."
 
-        val uri = server.server.uri.resolve("/#$session")
-        ApplicationManager.getApplication().executeOnPooledThread {
-          try {
-            BaseAction.log.info("Opening browser to $uri")
-            browse(uri)
-          } catch (e: Throwable) {
-            UITools.error(log, "Failed to open browser", e)
-          }
+                val session = Session.newGlobalID()
+                aicoder.actions.SessionProxyServer.metadataStorage.setSessionName(
+                    null,
+                    session,
+                    "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+                )
+                aicoder.actions.SessionProxyServer.agents[session] = ChatSocketManager(
+                    session = session,
+                    model = AppSettingsState.instance.smartModel.chatModel(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                    initialAssistantPrompt = "",
+                    systemPrompt = systemPrompt,
+                    api = api,
+                    applicationClass = ApplicationServer::class.java,
+                    storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+                    budget = 2.0
+                )
+                ApplicationServer.appInfoMap[session] = AppInfoData(
+                    applicationName = "Code Chat",
+                    singleInput = false,
+                    stickyInput = true,
+                    loadImages = false,
+                    showMenubar = false
+                )
+                val server = AppServer.getServer(project)
+
+                val uri = server.server.uri.resolve("/#$session")
+                ApplicationManager.getApplication().executeOnPooledThread {
+                    try {
+                        BaseAction.log.info("Opening browser to $uri")
+                        browse(uri)
+                    } catch (e: Throwable) {
+                        UITools.error(log, "Failed to open browser", e)
+                    }
+                }
+            }
+        } catch (e: Throwable) {
+            log.warn("Error opening browser", e)
         }
-      }
-    } catch (e: Throwable) {
-      log.warn("Error opening browser", e)
     }
-  }
 
-  override fun isEnabled(event: AnActionEvent) = true
+    override fun isEnabled(event: AnActionEvent) = true
 
-  companion object {
-    private val log = LoggerFactory.getLogger(GenericChatAction::class.java)
-  }
+    companion object {
+        private val log = LoggerFactory.getLogger(GenericChatAction::class.java)
+    }
 }

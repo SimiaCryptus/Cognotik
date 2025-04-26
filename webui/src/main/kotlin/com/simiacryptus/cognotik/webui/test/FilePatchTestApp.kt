@@ -13,29 +13,29 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 
 open class FilePatchTestApp(
-  applicationName: String = "FilePatchTestApp",
-  val api: API = OpenAIClient()
+    applicationName: String = "FilePatchTestApp",
+    val api: API = OpenAIClient()
 ) : ApplicationServer(
-  applicationName = applicationName,
-  path = "/codingActorTest",
+    applicationName = applicationName,
+    path = "/codingActorTest",
 ) {
-  override fun newSession(user: User?, session: Session): SocketManager {
-    val socketManager = super.newSession(user, session)
-    val ui = (socketManager as ApplicationSocketManager).applicationInterface
-    val task = ui.newTask(true)
+    override fun newSession(user: User?, session: Session): SocketManager {
+        val socketManager = super.newSession(user, session)
+        val ui = (socketManager as ApplicationSocketManager).applicationInterface
+        val task = ui.newTask(true)
 
-    val source = """
+        val source = """
       fun main(args: Array<String>) {
           println(${'"'}""
               Hello, World!  
           ${'"'}"")
       }
       """.trimIndent()
-    val sourceFile = Files.createTempFile("source", ".txt").toFile()
-    sourceFile.writeText(source)
-    sourceFile.deleteOnExit()
+        val sourceFile = Files.createTempFile("source", ".txt").toFile()
+        sourceFile.writeText(source)
+        sourceFile.deleteOnExit()
 
-    val patch = """
+        val patch = """
       # ${sourceFile.name}
       
       ```diff
@@ -43,20 +43,20 @@ open class FilePatchTestApp(
       +Goodbye, World!
       ```
       """.trimIndent()
-    val newPatch = AddApplyFileDiffLinks.instrumentFileDiffs(
-      socketManager,
-      root = sourceFile.toPath().parent,
-      response = patch,
-      ui = ui,
-      api = api
-    )
-    task.complete(renderMarkdown(newPatch, ui = ui))
+        val newPatch = AddApplyFileDiffLinks.instrumentFileDiffs(
+            socketManager,
+            root = sourceFile.toPath().parent,
+            response = patch,
+            ui = ui,
+            api = api
+        )
+        task.complete(renderMarkdown(newPatch, ui = ui))
 
-    return socketManager
-  }
+        return socketManager
+    }
 
-  companion object {
-    private val log = LoggerFactory.getLogger(FilePatchTestApp::class.java)
-  }
+    companion object {
+        private val log = LoggerFactory.getLogger(FilePatchTestApp::class.java)
+    }
 
 }

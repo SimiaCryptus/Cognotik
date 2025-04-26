@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.models
-import org.slf4j.LoggerFactory
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
+import org.slf4j.LoggerFactory
 
 open class EmbeddingModels(
     modelName: String,
@@ -19,6 +19,7 @@ open class EmbeddingModels(
             "Small" to Small,
             "Large" to Large
         )
+
         init {
             log.info("Initializing EmbeddingModels with predefined models: AdaEmbedding, Small, Large")
         }

@@ -172,7 +172,8 @@ open class OpenAIClient(
                 onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
             }
             val completionResult =
-                StringUtil.stripPrefix(response.firstChoice.orElse("").toString().trim { it <= ' ' },
+                StringUtil.stripPrefix(
+                    response.firstChoice.orElse("").toString().trim { it <= ' ' },
                     request.prompt.trim { it <= ' ' })
             log(
                 msg = String.format(
@@ -197,34 +198,35 @@ open class OpenAIClient(
         }
     }
 
-    open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String = withReliability {
-        withPerformanceLogging {
-            val url = "${apiBase[defaultApiProvider]}/audio/transcriptions"
-            val request = HttpPost(url)
-            request.addHeader("Accept", "application/json")
-            authorize(request, defaultApiProvider)
-            val entity = MultipartEntityBuilder.create()
-            entity.setMode(HttpMultipartMode.EXTENDED)
-            entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
-            entity.addTextBody("model", audioModel.modelName)
-            entity.addTextBody("response_format", "json")
-            if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
-            request.entity = entity.build()
-            val response = post(request)
-            log.info("Transcription response received")
-            val jsonObject = Gson().fromJson(response, JsonObject::class.java)
-            if (jsonObject.has("error")) {
-                val errorObject = jsonObject.getAsJsonObject("error")
-                throw RuntimeException(IOException(errorObject["message"].asString))
-            }
-            try {
-                val result = JsonUtil.objectMapper().readValue(response, TranscriptionResult::class.java)
-                result.text ?: ""
-            } catch (e: Exception) {
-                jsonObject.get("text").asString ?: ""
+    open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
+        withReliability {
+            withPerformanceLogging {
+                val url = "${apiBase[defaultApiProvider]}/audio/transcriptions"
+                val request = HttpPost(url)
+                request.addHeader("Accept", "application/json")
+                authorize(request, defaultApiProvider)
+                val entity = MultipartEntityBuilder.create()
+                entity.setMode(HttpMultipartMode.EXTENDED)
+                entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
+                entity.addTextBody("model", audioModel.modelName)
+                entity.addTextBody("response_format", "json")
+                if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
+                request.entity = entity.build()
+                val response = post(request)
+                log.info("Transcription response received")
+                val jsonObject = Gson().fromJson(response, JsonObject::class.java)
+                if (jsonObject.has("error")) {
+                    val errorObject = jsonObject.getAsJsonObject("error")
+                    throw RuntimeException(IOException(errorObject["message"].asString))
+                }
+                try {
+                    val result = JsonUtil.objectMapper().readValue(response, TranscriptionResult::class.java)
+                    result.text ?: ""
+                } catch (e: Exception) {
+                    jsonObject.get("text").asString ?: ""
+                }
             }
         }
-    }
 
     open fun createSpeech(request: ApiModel.SpeechRequest): ByteArray? = withReliability {
         withPerformanceLogging {
@@ -332,7 +334,8 @@ open class OpenAIClient(
             if (moderationResult["flagged"].asBoolean) {
                 val categoriesObj = moderationResult["categories"].asJsonObject
                 throw RuntimeException(
-                    ModerationException("Moderation flagged this request due to " + categoriesObj.keySet()
+                    ModerationException(
+                        "Moderation flagged this request due to " + categoriesObj.keySet()
                         .stream().filter { c: String? ->
                             categoriesObj[c].asBoolean
                         }.reduce { a: String, b: String -> "$a, $b" }.orElse("???")

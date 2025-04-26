@@ -28,122 +28,125 @@ import java.io.File
 
 object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.ApplicationDirectory(port = 8082) {
 
-  data class TestJokeDataStructure(
-    val setup: String? = null,
-    val punchline: String? = null,
-    val type: String? = null,
-  )
+    data class TestJokeDataStructure(
+        val setup: String? = null,
+        val punchline: String? = null,
+        val type: String? = null,
+    )
 
-  override val childWebApps by lazy {
-    val model = OpenAIModels.GPT4oMini
-    val parsingModel = OpenAIModels.GPT4oMini
-    listOf(
-      ChildWebApp("/chat", BasicChatApp(File("."), model, parsingModel)),
-      ChildWebApp(
-        "/test_simple",
-        SimpleActorTestApp(
-          SimpleActor(
-            "Translate the user's request into pig latin.",
-            "PigLatin",
-            model = model
-          )
-        )
-      ),
-      ChildWebApp(
-        "/test_parsed_joke", ParsedActorTestApp(
-          ParsedActor(
-            resultClass = TestJokeDataStructure::class.java,
-            prompt = "Tell me a joke",
-            parsingModel = model,
-            model = model,
-          )
-        )
-      ),
-      ChildWebApp("/images", ImageActorTestApp(ImageActor(textModel = model).apply {
-        openAI = OpenAIClient()
-      })),
+    override val childWebApps by lazy {
+        val model = OpenAIModels.GPT4oMini
+        val parsingModel = OpenAIModels.GPT4oMini
+        listOf(
+            ChildWebApp("/chat", BasicChatApp(File("."), model, parsingModel)),
+            ChildWebApp(
+                "/test_simple",
+                SimpleActorTestApp(
+                    SimpleActor(
+                        "Translate the user's request into pig latin.",
+                        "PigLatin",
+                        model = model
+                    )
+                )
+            ),
+            ChildWebApp(
+                "/test_parsed_joke", ParsedActorTestApp(
+                    ParsedActor(
+                        resultClass = TestJokeDataStructure::class.java,
+                        prompt = "Tell me a joke",
+                        parsingModel = model,
+                        model = model,
+                    )
+                )
+            ),
+            ChildWebApp("/images", ImageActorTestApp(ImageActor(textModel = model).apply {
+                openAI = OpenAIClient()
+            })),
 //      ChildWebApp(
 //        "/test_coding_scala",
 //        CodingActorTestApp(CodingActor(ScalaLocalInterpreter::class, model = OpenAIModels.GPT4oMini))
 //      ),
-      ChildWebApp(
-        "/test_coding_kotlin",
-        CodingActorTestApp(
-          CodingActor(
-            KotlinInterpreter::class,
-            model = model,
-            fallbackModel = model,
-          )
+            ChildWebApp(
+                "/test_coding_kotlin",
+                CodingActorTestApp(
+                    CodingActor(
+                        KotlinInterpreter::class,
+                        model = model,
+                        fallbackModel = model,
+                    )
+                )
+            ),
+            ChildWebApp(
+                "/test_coding_groovy",
+                CodingActorTestApp(
+                    CodingActor(
+                        GroovyInterpreter::class,
+                        model = model,
+                        fallbackModel = model,
+                    )
+                )
+            ),
+            ChildWebApp("/test_file_patch", FilePatchTestApp()),
+            ChildWebApp("/stressTest", StressTestApp()),
+            ChildWebApp(
+                "/pdfExtractor", DocumentParserApp(
+                    parsingModel = DocumentParsingModel(OpenAIModels.GPT4o, 0.1) as ParsingModel<DocumentData>
+                )
+            ),
         )
-      ),
-      ChildWebApp(
-        "/test_coding_groovy",
-        CodingActorTestApp(
-          CodingActor(
-            GroovyInterpreter::class,
-            model = model,
-            fallbackModel = model,
-          )
+    }
+
+    //    override val toolServlet: ToolServlet? get() = null
+    val log = org.slf4j.LoggerFactory.getLogger(ActorTestAppServer::class.java)
+
+    @JvmStatic
+    fun main(args: Array<String>) {
+        val mockUser = User(
+            "1",
+            "user@mock.test",
+            "Test User",
+            ""
         )
-      ),
-      ChildWebApp("/test_file_patch", FilePatchTestApp()),
-      ChildWebApp("/stressTest", StressTestApp()),
-      ChildWebApp("/pdfExtractor", DocumentParserApp(parsingModel = DocumentParsingModel(OpenAIModels.GPT4o, 0.1) as ParsingModel<DocumentData>
-      )),
-    )
-  }
-
-  //    override val toolServlet: ToolServlet? get() = null
-  val log = org.slf4j.LoggerFactory.getLogger(ActorTestAppServer::class.java)
-
-  @JvmStatic
-  fun main(args: Array<String>) {
-    val mockUser = User(
-      "1",
-      "user@mock.test",
-      "Test User",
-      ""
-    )
-    ApplicationServices.authenticationManager = object : AuthenticationInterface {
-      override fun getUser(accessToken: String?) = mockUser
-      override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-      override fun logout(accessToken: String, user: User) {}
+        ApplicationServices.authenticationManager = object : AuthenticationInterface {
+            override fun getUser(accessToken: String?) = mockUser
+            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+            override fun logout(accessToken: String, user: User) {}
+        }
+        ApplicationServices.authorizationManager = object : AuthorizationInterface {
+            override fun isAuthorized(
+                applicationClass: Class<*>?,
+                user: User?,
+                operationType: AuthorizationInterface.OperationType
+            ): Boolean = true
+        }
+        super._main(*args)
     }
-    ApplicationServices.authorizationManager = object : AuthorizationInterface {
-      override fun isAuthorized(
-        applicationClass: Class<*>?,
-        user: User?,
-        operationType: AuthorizationInterface.OperationType
-      ): Boolean = true
-    }
-    super._main(*args)
-  }
 
-  override fun authenticatedWebsite() = object : OAuthBase("") {
-    override fun configure(context: WebAppContext, addFilter: Boolean) = context
-  }
+    override fun authenticatedWebsite() = object : OAuthBase("") {
+        override fun configure(context: WebAppContext, addFilter: Boolean) = context
+    }
 
-  override fun setupPlatform() {
-    super.setupPlatform()
-    val mockUser = User(
-      "1",
-      "user@mock.test",
-      "Test User",
-      ""
-    )
-    ApplicationServices.authenticationManager = object : AuthenticationInterface {
-      override fun getUser(accessToken: String?) = mockUser
-      override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-      override fun logout(accessToken: String, user: User) {}
+    override fun setupPlatform() {
+        super.setupPlatform()
+        val mockUser = User(
+            "1",
+            "user@mock.test",
+            "Test User",
+            ""
+        )
+        ApplicationServices.authenticationManager = object : AuthenticationInterface {
+            override fun getUser(accessToken: String?) = mockUser
+            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+            override fun logout(accessToken: String, user: User) {}
+        }
+        ApplicationServices.authorizationManager = object : AuthorizationManager() {
+            override fun isAuthorized(
+                applicationClass: Class<*>?,
+                user: User?,
+                operationType: AuthorizationInterface.OperationType
+            ): Boolean = true
+        }
     }
-    ApplicationServices.authorizationManager = object : AuthorizationManager() {
-      override fun isAuthorized(
-        applicationClass: Class<*>?,
-        user: User?,
-        operationType: AuthorizationInterface.OperationType
-      ): Boolean = true
-    }
-  }
 
 }
 

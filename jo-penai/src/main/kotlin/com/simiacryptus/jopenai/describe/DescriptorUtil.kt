@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.describe
+
 import org.slf4j.LoggerFactory
 
 import java.lang.reflect.ParameterizedType

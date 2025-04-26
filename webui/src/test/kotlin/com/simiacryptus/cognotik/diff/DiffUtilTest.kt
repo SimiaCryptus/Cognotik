@@ -5,67 +5,67 @@ import org.junit.jupiter.api.Test
 
 class DiffUtilTest {
 
-  /*
-    @Test
-    fun testNoChanges() {
-      val original = listOf("line1", "line2", "line3")
-      val modified = listOf("line1", "line2", "line3")
-      val diffResults = DiffUtil.generateDiff(original, modified)
-      val formattedDiff = DiffUtil.formatDiff(diffResults)
-      assertEquals("", formattedDiff, "There should be no diff for identical inputs.")
-    }
-  */
+    /*
+      @Test
+      fun testNoChanges() {
+        val original = listOf("line1", "line2", "line3")
+        val modified = listOf("line1", "line2", "line3")
+        val diffResults = DiffUtil.generateDiff(original, modified)
+        val formattedDiff = DiffUtil.formatDiff(diffResults)
+        assertEquals("", formattedDiff, "There should be no diff for identical inputs.")
+      }
+    */
 
-  @Test
-  fun testMixedChanges() {
-    val original = listOf("line1", "line2", "line4")
-    val modified = listOf("line1", "line3", "line4")
-    val diffResults = DiffUtil.generateDiff(original, modified)
-    val formattedDiff = DiffUtil.formatDiff(diffResults)
-    val expectedDiff = """
+    @Test
+    fun testMixedChanges() {
+        val original = listOf("line1", "line2", "line4")
+        val modified = listOf("line1", "line3", "line4")
+        val diffResults = DiffUtil.generateDiff(original, modified)
+        val formattedDiff = DiffUtil.formatDiff(diffResults)
+        val expectedDiff = """
               line1
             - line2
             + line3
               line4
         """.trimIndent()
-    Assertions.assertEquals(expectedDiff, formattedDiff, "The diff should correctly represent mixed changes.")
-  }
+        Assertions.assertEquals(expectedDiff, formattedDiff, "The diff should correctly represent mixed changes.")
+    }
 
-  @Test
-  fun testStartWithChange() {
-    val original = listOf("line1", "line2")
-    val modified = listOf("changed_line1", "line2")
-    val diffResults = DiffUtil.generateDiff(original, modified)
-    val formattedDiff = DiffUtil.formatDiff(diffResults)
-    val expectedDiff = """
+    @Test
+    fun testStartWithChange() {
+        val original = listOf("line1", "line2")
+        val modified = listOf("changed_line1", "line2")
+        val diffResults = DiffUtil.generateDiff(original, modified)
+        val formattedDiff = DiffUtil.formatDiff(diffResults)
+        val expectedDiff = """
              - line1
              + changed_line1
                line2
          """.trimIndent()
-    Assertions.assertEquals(
-      expectedDiff,
-      formattedDiff,
-      "The diff should correctly represent changes at the start."
-    )
-  }
+        Assertions.assertEquals(
+            expectedDiff,
+            formattedDiff,
+            "The diff should correctly represent changes at the start."
+        )
+    }
 
-  @Test
-  fun testEndWithChange() {
-    val original = listOf("line1", "line2")
-    val modified = listOf("line1", "changed_line2")
-    val diffResults = DiffUtil.generateDiff(original, modified)
-    val formattedDiff = DiffUtil.formatDiff(diffResults)
-    val expectedDiff = """
+    @Test
+    fun testEndWithChange() {
+        val original = listOf("line1", "line2")
+        val modified = listOf("line1", "changed_line2")
+        val diffResults = DiffUtil.generateDiff(original, modified)
+        val formattedDiff = DiffUtil.formatDiff(diffResults)
+        val expectedDiff = """
                line1
              - line2
              + changed_line2
          """.trimIndent()
-    Assertions.assertEquals(expectedDiff, formattedDiff, "The diff should correctly represent changes at the end.")
-  }
+        Assertions.assertEquals(expectedDiff, formattedDiff, "The diff should correctly represent changes at the end.")
+    }
 
-  @Test
-  fun testVerifyLLMPatch() {
-    val originalCode = """
+    @Test
+    fun testVerifyLLMPatch() {
+        val originalCode = """
       <!DOCTYPE html>
       <html lang="en">
       <head>
@@ -91,7 +91,7 @@ class DiffUtilTest {
       </body>
       </html>
     """.trimIndent()
-    val llmPatch = """
+        val llmPatch = """
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -120,13 +120,13 @@ class DiffUtilTest {
         </body>
         </html>
     """.trimIndent()
-    val reconstructed = ApxPatchUtil.patch(originalCode, llmPatch)
+        val reconstructed = ApxPatchUtil.patch(originalCode, llmPatch)
 
-    val patchLines = DiffUtil.generateDiff(originalCode.lines(), reconstructed.lines())
+        val patchLines = DiffUtil.generateDiff(originalCode.lines(), reconstructed.lines())
 //    println("\n\nPatched:\n\n")
 //    patchLines.forEach { println(it) }
 
-    println("\n\nEcho Patch:\n\n")
-    DiffUtil.formatDiff(patchLines).lines().forEach { println(it) }
-  }
+        println("\n\nEcho Patch:\n\n")
+        DiffUtil.formatDiff(patchLines).lines().forEach { println(it) }
+    }
 }

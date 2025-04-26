@@ -7,13 +7,13 @@ import com.simiacryptus.jopenai.models.ChatModel
 import kotlin.reflect.KClass
 
 class CodingActorDesigner(
-  interpreterClass: KClass<out Interpreter>,
-  symbols: Map<String, Any>,
-  model: ChatModel,
-  temperature: Double
+    interpreterClass: KClass<out Interpreter>,
+    symbols: Map<String, Any>,
+    model: ChatModel,
+    temperature: Double
 ) : CodingActor(
-  interpreterClass, symbols,
-  details = """
+    interpreterClass, symbols,
+    details = """
     
     Your task is to design a system that uses gpt "actors" to form a "community" of actors interacting to solve problems.
     Your task is to implement a "script" or "coding" actor that takes part in a larger system.
@@ -67,12 +67,12 @@ class CodingActorDesigner(
     DO NOT subclass the CodingActor class. Use the constructor directly within the function.
     
     """.trimIndent().trim(),
-  model = model,
-  temperature = temperature,
-  fallbackModel = model,
+    model = model,
+    temperature = temperature,
+    fallbackModel = model,
 ) {
-  init {
-    evalFormat = false
-    codeInterceptor = { fixups(it) }
-  }
+    init {
+        evalFormat = false
+        codeInterceptor = { fixups(it) }
+    }
 }

@@ -159,13 +159,15 @@ fun installContextMenuAction(os: String) {
             println("Wrote context menu .reg file to: $regFile")
             // Create a batch file to apply the registry entries
             val batchFile = scriptPath.resolve("install_context_menu.bat")
-            batchFile.writeText("""
+            batchFile.writeText(
+                """
                 @echo off
                 echo Installing context menu entries...
                 regedit /s "%~dp0add_skyenetapps_context_menu.reg"
                 echo Context menu entries installed.
                 exit /b 0
-            """.trimIndent())
+            """.trimIndent()
+            )
             println("Wrote batch file to apply registry entries: $batchFile")
         }
 
@@ -177,27 +179,29 @@ fun installContextMenuAction(os: String) {
             val plistContent = plistTemplateFile.readText()
                 .replace("{{appDisplayName}}", appDisplayName)
             plistFile.writeText(plistContent)
-            
+
             // Write a shell script to launch the app with the folder path
             val script = scriptPath.resolve("Cognotik.workflow/Contents/document.wflow")
             val wflowTemplateFile = layout.projectDirectory.file("src/packaging/macos/document.wflow.template").asFile
             val wflowContent = wflowTemplateFile.readText()
                 .replace("{{appName}}", appName)
             script.writeText(wflowContent)
-            
+
             // Add a separate Quick Action for stopping the server
             val stopScriptDir = scriptPath.resolve("StopSkyenetApps.workflow/Contents")
             stopScriptDir.mkdirs()
             val stopPlistFile = stopScriptDir.resolve("info.plist")
-            val stopPlistTemplateFile = layout.projectDirectory.file("src/packaging/macos/stop_info.plist.template").asFile
+            val stopPlistTemplateFile =
+                layout.projectDirectory.file("src/packaging/macos/stop_info.plist.template").asFile
             stopPlistFile.writeText(stopPlistTemplateFile.readText())
-            
+
             val stopScript = stopScriptDir.resolve("document.wflow")
-            val stopWflowTemplateFile = layout.projectDirectory.file("src/packaging/macos/stop_document.wflow.template").asFile
+            val stopWflowTemplateFile =
+                layout.projectDirectory.file("src/packaging/macos/stop_document.wflow.template").asFile
             val stopWflowContent = stopWflowTemplateFile.readText()
                 .replace("{{appName}}", appName)
             stopScript.writeText(stopWflowContent)
-            
+
             println("Wrote stop server Quick Action to: ${stopScript.parentFile}")
             println("Wrote context menu Quick Action to: ${script.parentFile}")
         }
@@ -206,18 +210,20 @@ fun installContextMenuAction(os: String) {
         os.contains("linux") -> {
             // Write a .desktop file for Nautilus/Thunar context menu
             val desktopFile = scriptPath.resolve("cognotik-folder-action.desktop")
-            val desktopTemplateFile = layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
+            val desktopTemplateFile =
+                layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
             val desktopContent = desktopTemplateFile.readText()
                 .replace("{{appDisplayName}}", appDisplayName)
             desktopFile.writeText(desktopContent)
-            
+
             // Also create a main application desktop file
             val mainDesktopFile =
                 layout.buildDirectory.dir("jpackage/resources").get().asFile.resolve("cognotik.desktop")
             mainDesktopFile.parentFile.mkdirs()
-            val mainDesktopTemplateFile = layout.projectDirectory.file("src/packaging/linux/main.desktop.template").asFile
+            val mainDesktopTemplateFile =
+                layout.projectDirectory.file("src/packaging/linux/main.desktop.template").asFile
             mainDesktopFile.writeText(mainDesktopTemplateFile.readText())
-            
+
             println("Created main application .desktop file to: $mainDesktopFile")
             println("Created context menu .desktop file to: $desktopFile")
         }
@@ -292,30 +298,46 @@ tasks.register("packageMsi", JPackageTask::class) {
         // Create a desktop shortcut to the installer script
         val shortcutScript = File(resourceDir, "create_installer_shortcut.ps1")
         shortcutScript.writeText(layout.projectDirectory.file("src/packaging/windows/create_installer_shortcut.ps1.template").asFile.readText())
-        
+
         execOperations.exec {
             commandLine(
                 "jpackage",
-                "--type", "msi",
-                "--input", inputDir.path,
-                "--main-jar", shadowJarName,
-                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
-                "--name", "Cognotik",
-                "--app-version", project.version.toString().replace("-", "."),
-                "--copyright", "Copyright © 2024 SimiaCryptus",
-                "--description", "Cognotik Agentic Toolkit",
+                "--type",
+                "msi",
+                "--input",
+                inputDir.path,
+                "--main-jar",
+                shadowJarName,
+                "--main-class",
+                "com.simiacryptus.cognotik.DaemonClient",
+                "--dest",
+                layout.buildDirectory.dir("jpackage").get().asFile.path,
+                "--name",
+                "Cognotik",
+                "--app-version",
+                project.version.toString().replace("-", "."),
+                "--copyright",
+                "Copyright © 2024 SimiaCryptus",
+                "--description",
+                "Cognotik Agentic Toolkit",
                 "--win-dir-chooser",
                 "--win-menu",
                 "--win-shortcut",
-                "--icon", File(resourceDir, "toolbarIcon_128x128.ico").path,
-                "--resource-dir", resourceDir.path,
+                "--icon",
+                File(resourceDir, "toolbarIcon_128x128.ico").path,
+                "--resource-dir",
+                resourceDir.path,
                 "--win-shortcut-prompt",
-                "--win-help-url", "https://github.com/SimiaCryptus/Cognotik",
-                "--win-update-url", "https://github.com/SimiaCryptus/Cognotik/releases",
-                "--file-associations", layout.projectDirectory.file("src/packaging/windows/file-associations.properties").asFile.path,
-                "--install-dir", "Cognotik",
-                "--vendor", "SimiaCryptus"
+                "--win-help-url",
+                "https://github.com/SimiaCryptus/Cognotik",
+                "--win-update-url",
+                "https://github.com/SimiaCryptus/Cognotik/releases",
+                "--file-associations",
+                layout.projectDirectory.file("src/packaging/windows/file-associations.properties").asFile.path,
+                "--install-dir",
+                "Cognotik",
+                "--vendor",
+                "SimiaCryptus"
             )
         }
     }
@@ -372,7 +394,8 @@ tasks.register("prepareLinuxDesktopFile") {
 
         // Create the context menu desktop file
         val contextMenuDesktopFile = File(resourcesDir, "cognotik-folder-action.desktop")
-        val contextMenuTemplateFile = layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
+        val contextMenuTemplateFile =
+            layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
         val contextMenuContent = contextMenuTemplateFile.readText()
             .replace("{{appDisplayName}}", "Open with Cognotik")
         contextMenuDesktopFile.writeText(contextMenuContent)

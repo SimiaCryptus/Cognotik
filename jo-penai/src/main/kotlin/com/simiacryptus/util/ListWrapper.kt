@@ -3,11 +3,11 @@ package com.simiacryptus.util
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.*
-import org.slf4j.LoggerFactory
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.slf4j.LoggerFactory
 
 @JsonDeserialize(using = ListWrapper.ListWrapperDeserializer::class)
 @JsonSerialize(using = ListWrapper.ListWrapperSerializer::class)

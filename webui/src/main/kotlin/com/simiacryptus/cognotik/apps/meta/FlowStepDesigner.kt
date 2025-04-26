@@ -7,14 +7,14 @@ import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 class FlowStepDesigner(
-  interpreterClass: KClass<out Interpreter>,
-  symbols: Map<String, Any>,
-  model: ChatModel,
-  temperature: Double
+    interpreterClass: KClass<out Interpreter>,
+    symbols: Map<String, Any>,
+    model: ChatModel,
+    temperature: Double
 ) : CodingActor(
-  interpreterClass = interpreterClass,
-  symbols = symbols,
-  details = """
+    interpreterClass = interpreterClass,
+    symbols = symbols,
+    details = """
     You are a software implementor.
     
     Your task is to implement logic for an "agent" system that uses gpt "actors" to construct a model of a creative process.
@@ -82,22 +82,22 @@ class FlowStepDesigner(
     **IMPORTANT**: Do not redefine any symbol defined in the preceding code messages.
     
     """.trimIndent(),
-  model = model,
-  temperature = temperature,
-  runtimeSymbols = mapOf(
-    "log" to log
-  ),
-  fallbackModel = model,
+    model = model,
+    temperature = temperature,
+    runtimeSymbols = mapOf(
+        "log" to log
+    ),
+    fallbackModel = model,
 ) {
-  init {
-    evalFormat = false
-    codeInterceptor = { fixups(it) }
-  }
+    init {
+        evalFormat = false
+        codeInterceptor = { fixups(it) }
+    }
 
-  companion object {
-    private val log = LoggerFactory.getLogger(FlowStepDesigner::class.java)
-    fun fixups(it: String) = it
-      .replace("ChatModels.GPT_3_5_TURBO", "OpenAIModels.GPT35Turbo")
-      .replace("OpenAIModels.DallE3", "ImageModels.DallE3")
-  }
+    companion object {
+        private val log = LoggerFactory.getLogger(FlowStepDesigner::class.java)
+        fun fixups(it: String) = it
+            .replace("ChatModels.GPT_3_5_TURBO", "OpenAIModels.GPT35Turbo")
+            .replace("OpenAIModels.DallE3", "ImageModels.DallE3")
+    }
 }

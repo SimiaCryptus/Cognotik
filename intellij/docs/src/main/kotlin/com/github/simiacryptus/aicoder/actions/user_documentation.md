@@ -6,7 +6,8 @@ Here's the user documentation for the ApplyPatchAction class:
 
 ### Overview
 
-The Apply Patch action allows you to apply patch content to one or more selected files in your project. This is useful when you want to make changes to files
+The Apply Patch action allows you to apply patch content to one or more selected files in your project. This is useful
+when you want to make changes to files
 using patch format rather than direct edits.
 
 ### Usage
@@ -57,11 +58,13 @@ A simple action that opens a specific web page in the user's default browser.
 
 ### Overview
 
-`OpenWebPageAction` is an IntelliJ IDEA plugin action that opens the SimiaCryptus applications website (http://apps.simiacrypt.us/) when triggered.
+`OpenWebPageAction` is an IntelliJ IDEA plugin action that opens the SimiaCryptus applications
+website (http://apps.simiacrypt.us/) when triggered.
 
 ### Usage
 
-This action can be triggered from anywhere within the IDE where actions are available (menus, toolbars, etc.). When activated, it will:
+This action can be triggered from anywhere within the IDE where actions are available (menus, toolbars, etc.). When
+activated, it will:
 
 1. Open the user's default web browser
 2. Navigate to http://apps.simiacrypt.us/
@@ -94,7 +97,8 @@ Here's the user documentation for the CustomEditAction class:
 
 ## Custom Edit Action
 
-The Custom Edit Action allows you to perform AI-powered custom edits on selected code in your IDE. This action provides a flexible way to modify code using
+The Custom Edit Action allows you to perform AI-powered custom edits on selected code in your IDE. This action provides
+a flexible way to modify code using
 natural language instructions.
 
 ### Features
@@ -156,7 +160,8 @@ Here's the user documentation for the DescribeAction class:
 
 ### Overview
 
-The DescribeAction is an IntelliJ IDEA plugin action that generates natural language descriptions of selected code snippets. It helps developers understand code
+The DescribeAction is an IntelliJ IDEA plugin action that generates natural language descriptions of selected code
+snippets. It helps developers understand code
 by providing human-readable explanations of what the code does.
 
 ### Features
@@ -208,14 +213,16 @@ public int factorial(int n) {
 
 ### Notes
 
-- The description format (line vs. block comments) is automatically chosen based on the length of the generated description
+- The description format (line vs. block comments) is automatically chosen based on the length of the generated
+  description
 - Single-line descriptions use line comments
 - Multi-line descriptions use block comments
 - If the programming language is not recognized, the description will be inserted without comment formatting
 
 ### Error Handling
 
-If an error occurs during description generation, an error message will be logged and the exception will be propagated to the user interface.
+If an error occurs during description generation, an error message will be logged and the exception will be propagated
+to the user interface.
 
 # code\PasteAction.kt
 
@@ -225,7 +232,8 @@ Here's the user documentation for the PasteAction code:
 
 ### Overview
 
-The Smart Paste functionality provides enhanced clipboard paste operations that automatically detect and convert content between different formats and
+The Smart Paste functionality provides enhanced clipboard paste operations that automatically detect and convert content
+between different formats and
 programming languages. There are two variants available:
 
 - **Smart Paste**: Uses a more sophisticated AI model for higher quality conversions
@@ -286,7 +294,8 @@ The action will automatically:
 - Maximum content size limits prevent processing extremely large content
 - Malformed HTML will be automatically repaired when possible
 
-The paste actions aim to provide seamless conversion of clipboard content while maintaining code quality and formatting standards of the target file.
+The paste actions aim to provide seamless conversion of clipboard content while maintaining code quality and formatting
+standards of the target file.
 
 # code\RecentCodeEditsAction.kt
 
@@ -294,7 +303,8 @@ Here's the user documentation for the RecentCodeEditsAction class:
 
 ## Recent Code Edits Action
 
-The Recent Code Edits action provides quick access to your most recently used custom code edit commands through a dropdown menu in the IDE.
+The Recent Code Edits action provides quick access to your most recently used custom code edit commands through a
+dropdown menu in the IDE.
 
 ### Features
 
@@ -332,7 +342,8 @@ The Recent Code Edits action provides quick access to your most recently used cu
 - AppSettingsState - Stores command history
 - UITools - Handles selection state
 
-This action helps improve productivity by providing quick access to your frequently used custom edit commands without having to retype them.
+This action helps improve productivity by providing quick access to your frequently used custom edit commands without
+having to retype them.
 
 # code\RedoLast.kt
 
@@ -342,7 +353,8 @@ Here's the user documentation for the RedoLast action:
 
 ### Overview
 
-The RedoLast action allows you to repeat the most recent AI Coder operation that was performed in your editor. This is useful when you want to apply the same
+The RedoLast action allows you to repeat the most recent AI Coder operation that was performed in your editor. This is
+useful when you want to apply the same
 AI-powered modification again without having to reconfigure the action.
 
 ### Usage
@@ -394,12 +406,14 @@ Here's the user documentation for the LineFilterChatAction:
 
 ## Line Filter Chat Action
 
-The Line Filter Chat Action provides an interactive way to discuss and analyze code with an AI assistant, with special support for referencing specific lines of
+The Line Filter Chat Action provides an interactive way to discuss and analyze code with an AI assistant, with special
+support for referencing specific lines of
 code.
 
 ### Overview
 
-This action opens a chat interface where you can discuss code with an AI assistant. The assistant has access to the full context of your selected code or file,
+This action opens a chat interface where you can discuss code with an AI assistant. The assistant has access to the full
+context of your selected code or file,
 and can reference specific line numbers in its responses.
 
 ### Usage
@@ -419,11 +433,12 @@ A browser window will open with a chat interface where you can:
 
 ### Features
 
-- **Line Number References**: The AI can reference specific lines of code using line numbers, making discussions more precise
+- **Line Number References**: The AI can reference specific lines of code using line numbers, making discussions more
+  precise
 - **Code Context**: The AI has full context of your code file including:
-  - File name
-  - Programming language
-  - Complete code content
+    - File name
+    - Programming language
+    - Complete code content
 - **Markdown Support**: Responses are formatted in Markdown for better readability
 - **Persistent Sessions**: Chat sessions are saved and can be referenced later
 
@@ -457,8 +472,10 @@ Here's the user documentation for the PrintTreeAction class:
 
 ### Overview
 
-PrintTreeAction is a developer utility action in IntelliJ that allows you to print the PSI (Program Structure Interface) tree structure of the currently
-selected code or file. This is particularly useful for developers who need to understand or debug the internal representation of code within the IntelliJ
+PrintTreeAction is a developer utility action in IntelliJ that allows you to print the PSI (Program Structure Interface)
+tree structure of the currently
+selected code or file. This is particularly useful for developers who need to understand or debug the internal
+representation of code within the IntelliJ
 platform.
 
 ### Prerequisites
@@ -519,7 +536,8 @@ Here's the documentation for the BaseAction class:
 
 ## BaseAction Class Documentation
 
-`BaseAction` is an abstract base class that provides common functionality for IntelliJ IDEA plugin actions. It extends `AnAction` and includes utility methods
+`BaseAction` is an abstract base class that provides common functionality for IntelliJ IDEA plugin actions. It extends
+`AnAction` and includes utility methods
 for error handling and write operations.
 
 ### Properties
@@ -537,8 +555,8 @@ protected fun showError(project: Project?, message: String)
 Displays an error dialog to the user.
 
 - Parameters:
-  - `project`: The current project context (can be null)
-  - `message`: The error message to display
+    - `project`: The current project context (can be null)
+    - `message`: The error message to display
 
 #### showWarning
 
@@ -549,8 +567,8 @@ protected fun showWarning(project: Project?, message: String)
 Displays a warning dialog to the user.
 
 - Parameters:
-  - `project`: The current project context (can be null)
-  - `message`: The warning message to display
+    - `project`: The current project context (can be null)
+    - `message`: The warning message to display
 
 #### runWriteAction
 
@@ -561,8 +579,8 @@ protected fun runWriteAction(project: Project, action: () -> Unit)
 Executes code that modifies the project/documents within a write action context.
 
 - Parameters:
-  - `project`: The current project context
-  - `action`: Lambda containing the code to execute
+    - `project`: The current project context
+    - `action`: Lambda containing the code to execute
 
 ### Usage
 
@@ -589,7 +607,8 @@ class MyAction : BaseAction() {
 }
 ```
 
-The base class handles common boilerplate code and provides a consistent way to handle errors and document modifications across different actions.
+The base class handles common boilerplate code and provides a consistent way to handle errors and document modifications
+across different actions.
 
 # generic\CodeChatAction.kt
 
@@ -597,11 +616,13 @@ Here's the user documentation for the CodeChatAction class:
 
 ## Code Chat Action
 
-The Code Chat Action provides an interactive chat interface for discussing and working with code selections or entire files in your IDE.
+The Code Chat Action provides an interactive chat interface for discussing and working with code selections or entire
+files in your IDE.
 
 ### Overview
 
-This action opens a web-based chat interface that allows you to have an AI-assisted conversation about your code. It's useful for:
+This action opens a web-based chat interface that allows you to have an AI-assisted conversation about your code. It's
+useful for:
 
 - Getting explanations about code
 - Discussing potential improvements
@@ -655,7 +676,8 @@ Here's the user documentation for the CommandAutofixAction class:
 
 ## Command Autofix Action
 
-The Command Autofix Action is a tool that helps automatically fix issues reported by command-line tools and build processes. It executes a specified command and
+The Command Autofix Action is a tool that helps automatically fix issues reported by command-line tools and build
+processes. It executes a specified command and
 uses AI to analyze and fix any errors or issues that occur.
 
 ### Features
@@ -679,9 +701,9 @@ uses AI to analyze and fix any errors or issues that occur.
 - **Arguments**: Enter command-line arguments (e.g. "run build")
 - **Working Directory**: Set the directory where the command will execute
 - **Exit Code Options**:
-  - Patch nonzero exit code: Only fix when command fails
-  - Patch 0 exit code: Fix when command succeeds
-  - Patch any exit code: Always attempt fixes
+    - Patch nonzero exit code: Only fix when command fails
+    - Patch 0 exit code: Fix when command succeeds
+    - Patch any exit code: Always attempt fixes
 - **Additional Instructions**: Provide custom instructions for the AI
 - **Auto-apply fixes**: Automatically apply suggested fixes without confirmation
 
@@ -724,7 +746,8 @@ Here's the user documentation for the CreateFileFromDescriptionAction:
 
 ### Overview
 
-The Create File From Description action allows you to generate new files in your project using natural language descriptions. This feature leverages AI to
+The Create File From Description action allows you to generate new files in your project using natural language
+descriptions. This feature leverages AI to
 interpret your requirements and create appropriate file content.
 
 ### Usage
@@ -761,16 +784,17 @@ Create a Python utility class for handling file operations like read, write and 
 ### Notes
 
 - The generated file content can be modified after creation if needed
-- The action uses AI to interpret requirements, so being clear and specific in your description will yield better results
+- The action uses AI to interpret requirements, so being clear and specific in your description will yield better
+  results
 - File paths are automatically handled to ensure they are valid within your project structure
 
 ### Error Handling
 
 - If file generation fails, an error dialog will be shown with details
 - Common issues include:
-  - Empty/invalid descriptions
-  - Network/API connectivity problems
-  - Permission issues when writing files
+    - Empty/invalid descriptions
+    - Network/API connectivity problems
+    - Permission issues when writing files
 
 ### Tips
 
@@ -786,7 +810,8 @@ Here's the user documentation for the CreateImageAction class:
 
 ### Overview
 
-The Create Image Action is a feature that generates technical drawings or visual representations based on your code files. It uses AI to analyze your code and
+The Create Image Action is a feature that generates technical drawings or visual representations based on your code
+files. It uses AI to analyze your code and
 create relevant images that can help visualize the code structure, architecture, or concepts.
 
 ### Features
@@ -863,7 +888,8 @@ Here's the user documentation for the DiffChatAction class:
 
 ## DiffChat Action
 
-The DiffChat action provides an interactive chat interface for making code modifications using a diff-based format. It allows users to discuss and apply code
+The DiffChat action provides an interactive chat interface for making code modifications using a diff-based format. It
+allows users to discuss and apply code
 changes through a chat interface while maintaining precise control over the modifications.
 
 ### Features
@@ -892,9 +918,9 @@ changes through a chat interface while maintaining precise control over the modi
 3. **Applying Changes**
 
 - Changes will be suggested in a diff format showing:
-  - Lines to be removed (prefixed with `-`)
-  - Lines to be added (prefixed with `+`)
-  - Context lines around the changes
+    - Lines to be removed (prefixed with `-`)
+    - Lines to be added (prefixed with `+`)
+    - Context lines around the changes
 - Click the "Apply" link next to a diff block to apply those specific changes
 
 ### Example Interaction
@@ -1125,19 +1151,22 @@ The class will throw a RuntimeException if the language model returns an empty o
 - Depends on cognotik-core and cognotik-webui components
 - Needs a properly configured LargeOutputActor instance
 
-This documentation provides an overview of the EnhancedChatSocketManager class and its key functionality for developers integrating chat capabilities with
+This documentation provides an overview of the EnhancedChatSocketManager class and its key functionality for developers
+integrating chat capabilities with
 support for large outputs in their applications.
 
 # generic\GenerateDocumentationAction.kt
 
 ## GenerateDocumentationAction Documentation
 
-This class provides functionality to generate documentation for files in a project using AI assistance. Here's a comprehensive overview of its features and
+This class provides functionality to generate documentation for files in a project using AI assistance. Here's a
+comprehensive overview of its features and
 usage:
 
 ### Overview
 
-`GenerateDocumentationAction` is a Kotlin class that extends `FileContextAction` and provides an interface for generating documentation from source files using
+`GenerateDocumentationAction` is a Kotlin class that extends `FileContextAction` and provides an interface for
+generating documentation from source files using
 AI-powered content transformation.
 
 ### Key Features
@@ -1230,7 +1259,8 @@ AI-powered content transformation.
 - May have timeout limitations for very large files
 - Requires network connectivity for AI processing
 
-This documentation generator is particularly useful for maintaining up-to-date documentation for code bases and ensuring consistency across project
+This documentation generator is particularly useful for maintaining up-to-date documentation for code bases and ensuring
+consistency across project
 documentation.
 
 # generic\GenerateRelatedFileAction.kt
@@ -1239,7 +1269,8 @@ Here's the user documentation for the GenerateRelatedFileAction class:
 
 ## Generate Related File Action
 
-The Generate Related File action helps you automatically create related files (like test cases, implementations, or companion files) based on an existing source
+The Generate Related File action helps you automatically create related files (like test cases, implementations, or
+companion files) based on an existing source
 file using AI assistance.
 
 ### Usage
@@ -1248,7 +1279,8 @@ file using AI assistance.
 2. Right-click and select "Generate Related File" from the context menu (or use the assigned shortcut if configured)
 3. In the dialog that appears:
 
-- Enter your directive describing what kind of file you want to generate (e.g., "Create test cases", "Generate interface", etc.)
+- Enter your directive describing what kind of file you want to generate (e.g., "Create test cases", "Generate
+  interface", etc.)
 - Click OK to proceed
 
 ### Features
@@ -1293,7 +1325,8 @@ If you encounter issues:
 - Check the IDE's event log for any error messages
 - Make sure you have write permissions in the target directory
 
-The action will automatically handle file system refreshing and opening the new file in the editor once generation is complete.
+The action will automatically handle file system refreshing and opening the new file in the editor once generation is
+complete.
 
 # generic\GenericChatAction.kt
 
@@ -1301,7 +1334,8 @@ Here's the user documentation for the GenericChatAction class:
 
 ## Generic Chat Action
 
-The Generic Chat Action provides a simple way to initiate an AI-powered chat session within the IDE. This action opens a browser-based chat interface that
+The Generic Chat Action provides a simple way to initiate an AI-powered chat session within the IDE. This action opens a
+browser-based chat interface that
 allows you to have natural language conversations with an AI assistant.
 
 ### Features
@@ -1354,7 +1388,8 @@ If you encounter issues:
 - Each chat session is labeled with a timestamp for easy identification
 - The chat interface runs in your default web browser but communicates with the IDE
 
-This action is ideal for general-purpose AI assistance and code-related discussions without requiring specific code context.
+This action is ideal for general-purpose AI assistance and code-related discussions without requiring specific code
+context.
 
 # generic\LargeOutputChatAction.kt
 
@@ -1362,7 +1397,8 @@ Here's the user documentation for the LargeOutputChatAction class:
 
 ## Enhanced Code Chat Action
 
-The Enhanced Code Chat action provides an advanced chat interface optimized for handling large, complex coding discussions and explanations.
+The Enhanced Code Chat action provides an advanced chat interface optimized for handling large, complex coding
+discussions and explanations.
 
 ### Features
 
@@ -1416,7 +1452,8 @@ Here's the documentation for the MassPatchAction and MassPatchServer classes:
 
 ### Overview
 
-MassPatchAction is an IntelliJ IDEA plugin action that allows batch processing and modification of multiple files using AI-powered suggestions. It provides a
+MassPatchAction is an IntelliJ IDEA plugin action that allows batch processing and modification of multiple files using
+AI-powered suggestions. It provides a
 user interface for selecting files and specifying transformation instructions.
 
 ### Key Features
@@ -1436,10 +1473,10 @@ user interface for selecting files and specifying transformation instructions.
 #### User Interface
 
 - Dialog-based configuration with:
-  - File selection checklist
-  - Instruction input area
-  - Recent instructions dropdown
-  - Auto-apply toggle
+    - File selection checklist
+    - Instruction input area
+    - Recent instructions dropdown
+    - Auto-apply toggle
 
 ### Usage
 
@@ -1458,7 +1495,8 @@ user interface for selecting files and specifying transformation instructions.
 
 ### Overview
 
-MassPatchServer handles the backend processing for MassPatchAction, managing the AI interactions and file modifications through a web interface.
+MassPatchServer handles the backend processing for MassPatchAction, managing the AI interactions and file modifications
+through a web interface.
 
 ### Key Features
 
@@ -1614,8 +1652,10 @@ Here's the user documentation for the MultiCodeChatAction:
 
 ### Overview
 
-MultiCodeChatAction is a feature that enables interactive code discussions with an AI assistant across multiple files. It allows developers to select multiple
-files or folders and engage in a chat conversation about the code, with support for making code modifications through patches.
+MultiCodeChatAction is a feature that enables interactive code discussions with an AI assistant across multiple files.
+It allows developers to select multiple
+files or folders and engage in a chat conversation about the code, with support for making code modifications through
+patches.
 
 ### Features
 
@@ -1639,10 +1679,10 @@ files or folders and engage in a chat conversation about the code, with support 
 - The chat interface shows the selected code files at the start of the conversation
 - You can type messages and questions about the code in the input field
 - The AI assistant will respond with:
-  - Code explanations
-  - Suggestions for improvements
-  - Potential modifications
-  - Answers to your questions
+    - Code explanations
+    - Suggestions for improvements
+    - Potential modifications
+    - Answers to your questions
 
 #### 3. Code Modifications
 
@@ -1687,7 +1727,8 @@ Here's the user documentation for the MultiDiffChatAction class:
 
 ### Overview
 
-MultiDiffChatAction is an IntelliJ IDEA plugin action that enables AI-assisted code modifications across multiple files simultaneously. It provides an
+MultiDiffChatAction is an IntelliJ IDEA plugin action that enables AI-assisted code modifications across multiple files
+simultaneously. It provides an
 interactive chat interface where users can discuss code changes and apply suggested modifications through diff patches.
 
 ### Features
@@ -1782,7 +1823,8 @@ Here's the user documentation for the MultiStepPatchAction class:
 
 ## Multi-Step Patch Action
 
-The Multi-Step Patch Action is an advanced code modification tool that helps automate complex code changes across multiple files in your project. It breaks down
+The Multi-Step Patch Action is an advanced code modification tool that helps automate complex code changes across
+multiple files in your project. It breaks down
 user requests into discrete tasks and implements them systematically.
 
 ### Overview
@@ -1877,7 +1919,8 @@ Here's the user documentation for the OutlineAction class:
 
 ### Overview
 
-The OutlineAction class provides functionality to launch an AI-powered outline creation tool within the IDE. It allows users to generate and work with outlines
+The OutlineAction class provides functionality to launch an AI-powered outline creation tool within the IDE. It allows
+users to generate and work with outlines
 using AI assistance through a web interface.
 
 ### Features
@@ -1898,8 +1941,8 @@ using AI assistance through a web interface.
 
 - When activated, a configuration dialog will appear
 - Settings include:
-  - Expansion steps with associated AI models
-  - Temperature setting for AI response variation
+    - Expansion steps with associated AI models
+    - Temperature setting for AI response variation
 - Click OK to proceed or Cancel to abort
 
 3. **Working with the Tool**
@@ -1943,7 +1986,8 @@ Here's the user documentation for the OutlineConfigDialog class:
 
 ## Outline Configuration Dialog
 
-The Outline Configuration Dialog allows users to customize settings for the outline generation tool. This dialog provides controls for configuring the AI models
+The Outline Configuration Dialog allows users to customize settings for the outline generation tool. This dialog
+provides controls for configuring the AI models
 used in the outline generation process and global temperature settings.
 
 ### Main Components
@@ -1955,16 +1999,16 @@ This section displays and manages the sequence of AI models used for generating 
 - A list showing all configured generation steps
 - Each step displays the name of the AI model being used
 - Controls to add, remove and edit steps:
-  - **Add Step**: Opens a model selection dialog to add a new generation step
-  - **Remove Step**: Removes the currently selected step from the sequence
-  - **Edit Step**: Opens a model selection dialog to modify the selected step's model
+    - **Add Step**: Opens a model selection dialog to add a new generation step
+    - **Remove Step**: Removes the currently selected step from the sequence
+    - **Edit Step**: Opens a model selection dialog to modify the selected step's model
 
 #### Global Temperature
 
 - A slider control that adjusts the temperature value from 0-100
 - Temperature affects how creative/random the AI responses will be:
-  - Lower values (closer to 0) produce more focused, deterministic results
-  - Higher values (closer to 100) produce more varied, creative results
+    - Lower values (closer to 0) produce more focused, deterministic results
+    - Higher values (closer to 100) produce more varied, creative results
 
 ### Usage
 
@@ -2015,7 +2059,8 @@ Here's the user documentation for the SessionProxyServer class:
 
 ### Overview
 
-SessionProxyServer is a specialized implementation of ApplicationServer that acts as a proxy for managing AI coding assistant sessions. It provides a web-based
+SessionProxyServer is a specialized implementation of ApplicationServer that acts as a proxy for managing AI coding
+assistant sessions. It provides a web-based
 interface for interacting with AI coding tools and manages user sessions and chat functionality.
 
 ### Key Features
@@ -2074,7 +2119,8 @@ The server uses metadata storage configured through ApplicationServices for pers
 - Lazy initialization of metadata storage
 - Supports both chat-based and agent-based session handling
 
-This server is primarily used as an internal component of the AI Coding Assistant platform and is not typically interacted with directly by end users.
+This server is primarily used as an internal component of the AI Coding Assistant platform and is not typically
+interacted with directly by end users.
 
 # generic\ShellCommandAction.kt
 
@@ -2082,7 +2128,8 @@ Here's the user documentation for the ShellCommandAction class:
 
 ## Shell Command Action
 
-The Shell Command Action provides an interactive interface to execute shell commands in a selected directory through a web-based chat interface.
+The Shell Command Action provides an interactive interface to execute shell commands in a selected directory through a
+web-based chat interface.
 
 ### Features
 
@@ -2137,7 +2184,8 @@ The action uses several settings from AppSettingsState:
 - Commands are executed asynchronously to prevent UI freezing
 - The interface supports both single commands and command sequences
 
-This action is particularly useful for developers who need to execute shell commands within their project context while maintaining a clear record of commands
+This action is particularly useful for developers who need to execute shell commands within their project context while
+maintaining a clear record of commands
 and their outputs.
 
 # generic\SimpleCommandAction.kt
@@ -2148,7 +2196,8 @@ Here's the user documentation for the SimpleCommandAction class:
 
 ### Overview
 
-SimpleCommandAction is a powerful code assistance tool that allows users to interact with their codebase through natural language commands. It provides an
+SimpleCommandAction is a powerful code assistance tool that allows users to interact with their codebase through natural
+language commands. It provides an
 AI-powered interface for analyzing and modifying code across multiple files.
 
 ### Features
@@ -2246,7 +2295,8 @@ AI-powered interface for analyzing and modifying code across multiple files.
 - Maintains local code privacy
 - Supports configurable API settings
 
-This documentation provides a comprehensive overview of the SimpleCommandAction functionality. For specific use cases or additional details, please refer to the
+This documentation provides a comprehensive overview of the SimpleCommandAction functionality. For specific use cases or
+additional details, please refer to the
 inline code comments or contact support.
 
 # generic\WebDevelopmentAssistantAction.kt
@@ -2255,7 +2305,8 @@ Here's the user documentation for the WebDevelopmentAssistantAction class:
 
 ## Web Development Assistant
 
-The Web Development Assistant is an AI-powered tool that helps you create and manage web development projects. It provides an interactive interface to design
+The Web Development Assistant is an AI-powered tool that helps you create and manage web development projects. It
+provides an interactive interface to design
 and generate web applications with HTML, CSS, JavaScript, and image assets.
 
 ### Features
@@ -2283,10 +2334,10 @@ and generate web applications with HTML, CSS, JavaScript, and image assets.
 3. **File Generation**
 
 - The assistant will automatically generate the necessary files:
-  - HTML files for structure
-  - CSS files for styling
-  - JavaScript files for functionality
-  - Image assets (PNG/JPG) as needed
+    - HTML files for structure
+    - CSS files for styling
+    - JavaScript files for functionality
+    - Image assets (PNG/JPG) as needed
 - Each file will be created based on the project requirements and best practices
 
 4. **Code Review and Refinement**
@@ -2332,7 +2383,8 @@ and generate web applications with HTML, CSS, JavaScript, and image assets.
 - The assistant maintains proper file organization and structure
 - Changes can be undone through your normal version control system
 
-This tool is designed to streamline web development workflow while maintaining full control over the final implementation.
+This tool is designed to streamline web development workflow while maintaining full control over the final
+implementation.
 
 # git\ChatWithCommitAction.kt
 
@@ -2340,7 +2392,8 @@ Here's the user documentation for the ChatWithCommitAction class:
 
 ## Chat With Commit Action
 
-The Chat With Commit Action allows you to have an interactive chat discussion about changes made in a commit. This feature helps developers understand and
+The Chat With Commit Action allows you to have an interactive chat discussion about changes made in a commit. This
+feature helps developers understand and
 discuss code changes in a conversational interface.
 
 ### Features
@@ -2392,7 +2445,8 @@ discuss code changes in a conversational interface.
 - Large diffs may take a moment to process
 - Binary files are noted but their contents are not compared
 
-This action is particularly useful for code reviews, understanding historical changes, and discussing code modifications with team members or AI assistance.
+This action is particularly useful for code reviews, understanding historical changes, and discussing code modifications
+with team members or AI assistance.
 
 # git\ChatWithCommitDiffAction.kt
 
@@ -2402,8 +2456,10 @@ Here's the user documentation for the ChatWithCommitDiffAction:
 
 ### Overview
 
-The "Chat with Commit Diff" action allows developers to interactively discuss and analyze Git commit differences through a chat interface. This feature helps in
-understanding code changes between commits by presenting them in a readable diff format and enabling AI-assisted discussion about those changes.
+The "Chat with Commit Diff" action allows developers to interactively discuss and analyze Git commit differences through
+a chat interface. This feature helps in
+understanding code changes between commits by presenting them in a readable diff format and enabling AI-assisted
+discussion about those changes.
 
 ### Features
 
@@ -2424,8 +2480,8 @@ understanding code changes between commits by presenting them in a readable diff
 
 - The system will automatically generate a diff between the selected commit and the current state
 - Changes are displayed in a standard diff format:
-  - Lines starting with `+` indicate additions
-  - Lines starting with `-` indicate deletions
+    - Lines starting with `+` indicate additions
+    - Lines starting with `-` indicate deletions
 
 3. **Chat Interface**
 
@@ -2472,7 +2528,8 @@ Here's the user documentation for the ChatWithWorkingCopyDiffAction:
 
 ## Chat with Working Copy Changes
 
-The Chat with Working Copy Changes action allows you to have an interactive chat discussion about the uncommitted changes in your Git working directory.
+The Chat with Working Copy Changes action allows you to have an interactive chat discussion about the uncommitted
+changes in your Git working directory.
 
 ### Overview
 
@@ -2540,12 +2597,14 @@ Here's the user documentation for the ReplicateCommitAction class:
 
 ## Replicate Commit Action
 
-The Replicate Commit Action is a powerful feature that allows you to replicate and modify Git commits based on user requirements. This action helps developers
+The Replicate Commit Action is a powerful feature that allows you to replicate and modify Git commits based on user
+requirements. This action helps developers
 adapt existing code changes to new contexts or requirements.
 
 ### Overview
 
-This action analyzes selected Git changes and provides an AI-assisted interface to replicate and modify those changes according to specified requirements. It's
+This action analyzes selected Git changes and provides an AI-assisted interface to replicate and modify those changes
+according to specified requirements. It's
 particularly useful when you want to:
 
 - Apply similar changes across different parts of the codebase
@@ -2580,19 +2639,19 @@ particularly useful when you want to:
 
 - **Smart Change Analysis**: Automatically analyzes Git changes and related code context
 - **File Filtering**:
-  - Automatically filters binary files
-  - Handles file size limits (max 0.5MB per file)
-  - Respects .gitignore rules
+    - Automatically filters binary files
+    - Handles file size limits (max 0.5MB per file)
+    - Respects .gitignore rules
 
 - **Interactive UI**:
-  - Shows clear diff previews
-  - Provides clickable links to apply changes
-  - Displays both original and modified code
+    - Shows clear diff previews
+    - Provides clickable links to apply changes
+    - Displays both original and modified code
 
 - **Project Context Awareness**:
-  - Considers project structure
-  - Analyzes related files for better context
-  - Maintains code consistency
+    - Considers project structure
+    - Analyzes related files for better context
+    - Maintains code consistency
 
 ### Limitations
 
@@ -2638,7 +2697,8 @@ For issues or questions:
 - Verify file permissions and access rights
 - Contact support if problems persist
 
-This documentation provides a comprehensive overview of the ReplicateCommitAction functionality while remaining accessible to users with varying levels of
+This documentation provides a comprehensive overview of the ReplicateCommitAction functionality while remaining
+accessible to users with varying levels of
 technical expertise.
 
 # knowledge\CreateProjectorFromQueryIndexAction.kt
@@ -2647,12 +2707,15 @@ Here's the user documentation for the CreateProjectorFromQueryIndexAction:
 
 ## Create Projector from Query Index Action
 
-This action creates an interactive visualization of document embeddings using TensorFlow Projector from query index data files.
+This action creates an interactive visualization of document embeddings using TensorFlow Projector from query index data
+files.
 
 ### Overview
 
-The Create Projector from Query Index action allows you to visualize document embeddings stored in .index.data files using TensorFlow Projector's interactive 3D
-visualization interface. This is useful for exploring relationships between documents and understanding the semantic space of your document collection.
+The Create Projector from Query Index action allows you to visualize document embeddings stored in .index.data files
+using TensorFlow Projector's interactive 3D
+visualization interface. This is useful for exploring relationships between documents and understanding the semantic
+space of your document collection.
 
 ### Usage
 
@@ -2699,7 +2762,8 @@ The action will show error dialogs if:
 - Runs the visualization on a local web server
 - Preserves session metadata for future reference
 
-For more information about TensorFlow Projector and how to interpret the visualizations, please refer to the TensorFlow documentation.
+For more information about TensorFlow Projector and how to interpret the visualizations, please refer to the TensorFlow
+documentation.
 
 # knowledge\DocumentDataExtractorAction.kt
 
@@ -2707,17 +2771,18 @@ Here's the user documentation for the DocumentDataExtractorAction:
 
 ## Document Data Extractor
 
-The Document Data Extractor is a powerful tool that uses AI to extract structured data from various document types. It helps you analyze and parse information
+The Document Data Extractor is a powerful tool that uses AI to extract structured data from various document types. It
+helps you analyze and parse information
 from files like PDFs, text documents, HTML files, and markdown files.
 
 ### Features
 
 - Supports multiple file formats including:
-  - PDF (.pdf)
-  - Text files (.txt)
-  - HTML files (.html, .htm)
-  - Markdown files (.md)
-  - Other text-based formats
+    - PDF (.pdf)
+    - Text files (.txt)
+    - HTML files (.html, .htm)
+    - Markdown files (.md)
+    - Other text-based formats
 
 - Batch processing capabilities for multiple files and directories
 - Configurable parsing settings
@@ -2736,8 +2801,8 @@ from files like PDFs, text documents, HTML files, and markdown files.
 
 - When you run the action, a configuration dialog will appear
 - Adjust the parsing settings according to your needs:
-  - Fast Mode: Toggle for quicker but potentially less detailed processing
-  - Model Type: Select the appropriate parsing model for your documents
+    - Fast Mode: Toggle for quicker but potentially less detailed processing
+    - Model Type: Select the appropriate parsing model for your documents
 
 3. **View Results**
 
@@ -2775,7 +2840,8 @@ Here's the user documentation for the DocumentDataExtractorConfigDialog class:
 
 ## DocumentDataExtractorConfigDialog
 
-A configuration dialog for the Document Data Extractor feature that allows users to customize various settings for parsing and processing documents.
+A configuration dialog for the Document Data Extractor feature that allows users to customize various settings for
+parsing and processing documents.
 
 ### Overview
 
@@ -2828,7 +2894,8 @@ Invalid inputs will display error messages and prevent the dialog from being con
 3. Click OK to apply the settings or Cancel to discard changes
 4. Invalid settings will be highlighted and must be corrected before proceeding
 
-Note: All numeric fields must contain valid positive numbers. The dialog will not allow confirmation if any validation errors exist.
+Note: All numeric fields must contain valid positive numbers. The dialog will not allow confirmation if any validation
+errors exist.
 
 # knowledge\GoogleSearchAndDownloadAction.kt
 
@@ -2838,7 +2905,8 @@ Here's the user documentation for the GoogleSearchAndDownloadAction:
 
 ### Overview
 
-The Google Search and Download Action allows you to perform Google searches and automatically download the search results as HTML files to your project
+The Google Search and Download Action allows you to perform Google searches and automatically download the search
+results as HTML files to your project
 directory. This feature is particularly useful for research, reference gathering, and content collection tasks.
 
 ### Prerequisites
@@ -2914,7 +2982,8 @@ Here's the user documentation for the SaveAsQueryIndexAction:
 
 ### Overview
 
-The Save As Query Index Action is a utility that converts parsed JSON files into an indexed vector format for efficient querying. This action is particularly
+The Save As Query Index Action is a utility that converts parsed JSON files into an indexed vector format for efficient
+querying. This action is particularly
 useful for creating searchable knowledge bases from parsed documents.
 
 ### Features
@@ -2975,7 +3044,8 @@ Here's the user documentation for the AppendTextWithChatAction class:
 
 ## Append Text with AI
 
-The Append Text action uses AI to intelligently continue and expand your selected text. This feature helps you generate natural continuations of existing
+The Append Text action uses AI to intelligently continue and expand your selected text. This feature helps you generate
+natural continuations of existing
 content by leveraging ChatGPT's language capabilities.
 
 ### Usage
@@ -3003,9 +3073,9 @@ This action uses the following settings from your global AI Coder configuration:
 
 - The action is part of the legacy feature set and requires "Enable Legacy Actions" to be turned on in settings
 - Quality of continuation depends on:
-  - Length and clarity of selected text
-  - Context provided in the selection
-  - Model and temperature settings
+    - Length and clarity of selected text
+    - Context provided in the selection
+    - Model and temperature settings
 - If an error occurs during generation, your original selection will be preserved unchanged
 
 ### Example
@@ -3030,7 +3100,8 @@ Here's the user documentation for the CommentsAction class:
 
 ### Overview
 
-CommentsAction is a legacy action that adds explanatory comments to each line of selected code. It works with various programming languages and helps improve
+CommentsAction is a legacy action that adds explanatory comments to each line of selected code. It works with various
+programming languages and helps improve
 code readability by automatically generating inline comments.
 
 ### Features
@@ -3101,11 +3172,13 @@ Here's the user documentation for the DocAction class:
 
 ## DocAction - Documentation Generator
 
-The DocAction class is a code documentation generator that automatically creates documentation comments for selected code blocks in your IDE.
+The DocAction class is a code documentation generator that automatically creates documentation comments for selected
+code blocks in your IDE.
 
 ### Features
 
-- Generates documentation in the appropriate style for different programming languages (e.g., KDoc for Kotlin, JavaDoc for Java)
+- Generates documentation in the appropriate style for different programming languages (e.g., KDoc for Kotlin, JavaDoc
+  for Java)
 - Supports multiple human languages for documentation output
 - Intelligently detects code blocks and adjusts selection to cover complete elements
 - Uses AI to analyze code and generate meaningful documentation
@@ -3173,7 +3246,8 @@ Here's the user documentation for the ImplementStubAction class:
 
 ## Implement Stub Action
 
-The Implement Stub action helps developers automatically implement stub methods and classes using AI code generation. This feature saves time by generating
+The Implement Stub action helps developers automatically implement stub methods and classes using AI code generation.
+This feature saves time by generating
 meaningful implementations for method/class declarations.
 
 ### Usage
@@ -3249,7 +3323,8 @@ Here's the user documentation for the InsertImplementationAction class:
 
 ### Overview
 
-The Insert Implementation Action is a code generation feature that automatically implements code based on comments or selected text. It uses AI to generate
+The Insert Implementation Action is a code generation feature that automatically implements code based on comments or
+selected text. It uses AI to generate
 appropriate code implementations while considering the context of your codebase.
 
 ### Features
@@ -3335,7 +3410,8 @@ Here's the user documentation for the RenameVariablesAction:
 
 ### Overview
 
-The RenameVariablesAction is a code refactoring tool that helps improve code readability by suggesting better variable names using AI. It analyzes selected code
+The RenameVariablesAction is a code refactoring tool that helps improve code readability by suggesting better variable
+names using AI. It analyzes selected code
 and provides intelligent suggestions for renaming variables based on their context and usage.
 
 ### Features
@@ -3401,7 +3477,8 @@ Here's the user documentation for the ReplaceWithSuggestionsAction class:
 
 ## Replace With Suggestions Action
 
-The Replace With Suggestions action helps you replace selected text with AI-generated alternatives that fit the surrounding context.
+The Replace With Suggestions action helps you replace selected text with AI-generated alternatives that fit the
+surrounding context.
 
 ### Features
 
@@ -3445,7 +3522,8 @@ The action shows progress through several stages:
 - Needs text to be selected
 - Legacy actions must be enabled in settings
 
-The action is designed to help you quickly explore alternative phrasings while maintaining contextual relevance to your document.
+The action is designed to help you quickly explore alternative phrasings while maintaining contextual relevance to your
+document.
 
 # legacy\VoiceToTextAction.kt
 
@@ -3453,7 +3531,8 @@ Here's the user documentation for the VoiceToTextAction class:
 
 ## Voice-to-Text Action
 
-The Voice-to-Text action allows you to dictate text directly into the editor using your microphone. It provides real-time speech-to-text conversion and inserts
+The Voice-to-Text action allows you to dictate text directly into the editor using your microphone. It provides
+real-time speech-to-text conversion and inserts
 the transcribed text at the cursor position or selected text location.
 
 ### Features
@@ -3510,7 +3589,8 @@ Here's the user documentation for the MarkdownImplementActionGroup class:
 
 ## Markdown Code Block Implementation Action
 
-The Markdown Code Block Implementation Action is a feature that allows you to convert natural language descriptions into code blocks in various programming
+The Markdown Code Block Implementation Action is a feature that allows you to convert natural language descriptions into
+code blocks in various programming
 languages within Markdown files.
 
 ### Overview
@@ -3606,7 +3686,8 @@ Here's the user documentation for the MarkdownListAction:
 
 ## Markdown List Generator
 
-The Markdown List Generator is a tool that helps you extend existing markdown lists by automatically generating additional list items using AI.
+The Markdown List Generator is a tool that helps you extend existing markdown lists by automatically generating
+additional list items using AI.
 
 ### Features
 
@@ -3682,8 +3763,10 @@ Here's the user documentation for the AutoPlanChatAction class:
 
 ### Overview
 
-AutoPlanChatAction is an IntelliJ IDEA plugin action that provides an AI-powered planning and chat interface for software development tasks. It allows users to
-interact with an AI assistant that can help plan and execute development tasks while having full context of the project files.
+AutoPlanChatAction is an IntelliJ IDEA plugin action that provides an AI-powered planning and chat interface for
+software development tasks. It allows users to
+interact with an AI assistant that can help plan and execute development tasks while having full context of the project
+files.
 
 ### Features
 
@@ -3755,7 +3838,8 @@ Here's the user documentation for the PlanAheadAction class:
 
 ### Overview
 
-PlanAheadAction is an IntelliJ IDEA action that provides an AI-powered planning assistant for development tasks. It helps developers break down and plan
+PlanAheadAction is an IntelliJ IDEA action that provides an AI-powered planning assistant for development tasks. It
+helps developers break down and plan
 implementation work by integrating with language models and development tools.
 
 ### Features
@@ -3823,7 +3907,8 @@ Here's the user documentation for the PlanChatAction class:
 
 ### Overview
 
-PlanChatAction is an IntelliJ IDEA plugin action that provides an interactive chat interface for executing and planning commands in your development
+PlanChatAction is an IntelliJ IDEA plugin action that provides an interactive chat interface for executing and planning
+commands in your development
 environment. It supports both Windows (PowerShell) and Unix (Bash) environments.
 
 ### Features
@@ -3908,7 +3993,8 @@ Here's the user documentation for the PlanConfigDialog class:
 
 ### Overview
 
-The Plan Configuration Dialog provides a comprehensive interface for configuring AI-powered task planning and execution settings. It allows users to manage task
+The Plan Configuration Dialog provides a comprehensive interface for configuring AI-powered task planning and execution
+settings. It allows users to manage task
 configurations, set global parameters, and customize individual task behaviors.
 
 ### Main Features
@@ -3924,16 +4010,16 @@ configurations, set global parameters, and customize individual task behaviors.
 - **Auto-fix**: Toggle automatic application of suggested fixes without confirmation
 - **Allow Blocking**: Enable/disable UI blocking during task processing
 - **Temperature**: Adjust AI response creativity (0-1 scale)
-  - Lower values: More focused, deterministic responses
-  - Higher values: More creative, varied responses
+    - Lower values: More focused, deterministic responses
+    - Higher values: More creative, varied responses
 
 #### Task Configuration
 
 ##### Task List
 
 - Shows all available task types with visual indicators:
-  - **Bold**: Enabled tasks
-  - *Italic*: Disabled tasks
+    - **Bold**: Enabled tasks
+    - *Italic*: Disabled tasks
 - Hover over tasks to see detailed descriptions
 
 ##### Task Settings
@@ -3943,9 +4029,9 @@ Each task can be configured with:
 - **Enable/Disable**: Toggle task activation
 - **Model Selection**: Choose the AI model to use
 - **Command Settings** (for Command Auto-Fix tasks only):
-  - Enable/disable specific commands
-  - Add new commands
-  - Remove existing commands
+    - Enable/disable specific commands
+    - Add new commands
+    - Remove existing commands
 
 #### Available Task Types
 
@@ -4051,7 +4137,8 @@ The dialog provides validation and error checking for:
 - Validate web content sources
 - Monitor auto-fix behavior
 
-This dialog is a powerful tool for managing AI-powered development tasks. Take time to understand each setting's impact on your workflow for optimal results.
+This dialog is a powerful tool for managing AI-powered development tasks. Take time to understand each setting's impact
+on your workflow for optimal results.
 
 # plan\PrePlanAction.kt
 
@@ -4061,7 +4148,8 @@ Here's the user documentation for the PrePlanAction class:
 
 ### Overview
 
-PrePlanAction is a UI action that allows users to initiate pre-planned development tasks by providing task breakdown information in JSON format. It integrates
+PrePlanAction is a UI action that allows users to initiate pre-planned development tasks by providing task breakdown
+information in JSON format. It integrates
 with a planning system to help organize and execute development workflows.
 
 ### Features
@@ -4137,7 +4225,8 @@ Here's the user documentation for the SingleTaskAction class:
 
 ### Overview
 
-SingleTaskAction is an IntelliJ IDEA plugin action that provides a single-task interface for executing AI-assisted tasks in your project. It allows users to
+SingleTaskAction is an IntelliJ IDEA plugin action that provides a single-task interface for executing AI-assisted tasks
+in your project. It allows users to
 configure and run individual tasks with customized settings and context awareness.
 
 ### Features
@@ -4208,7 +4297,8 @@ configure and run individual tasks with customized settings and context awarenes
 - Browser launch failures are logged but non-blocking
 - File reading errors are handled gracefully
 
-This action is part of the AI Coder plugin suite and provides a streamlined interface for single-task AI-assisted development operations.
+This action is part of the AI Coder plugin suite and provides a streamlined interface for single-task AI-assisted
+development operations.
 
 # problems\AnalyzeProblemAction.kt
 
@@ -4216,7 +4306,8 @@ Here's the user documentation for the AnalyzeProblemAction class:
 
 ## Problem Analysis Action
 
-The Problem Analysis Action is a powerful tool that helps developers analyze and fix code problems identified in the IDE's problem view. It provides detailed
+The Problem Analysis Action is a powerful tool that helps developers analyze and fix code problems identified in the
+IDE's problem view. It provides detailed
 analysis and suggested fixes for code issues.
 
 ### Features
@@ -4295,7 +4386,8 @@ Here's the user documentation for the TestResultAutofixAction:
 
 ## Test Result Autofix Action
 
-The Test Result Autofix Action is an intelligent assistant that helps analyze test failures and suggests fixes automatically. It provides an interactive
+The Test Result Autofix Action is an intelligent assistant that helps analyze test failures and suggests fixes
+automatically. It provides an interactive
 interface to review test failures and apply suggested code changes.
 
 ### Features
@@ -4326,10 +4418,10 @@ Use this action when:
 
 - The action will open a browser window with the analysis
 - You'll see:
-  - Test failure details
-  - Identified errors
-  - Affected files
-  - Suggested fixes in diff format
+    - Test failure details
+    - Identified errors
+    - Affected files
+    - Suggested fixes in diff format
 
 3. **Apply Fixes**
 
@@ -4380,4 +4472,5 @@ Use this action when:
 - Large files (>0.5MB) are excluded from analysis
 - Requires an active internet connection
 
-This documentation provides a comprehensive overview of the TestResultAutofixAction functionality and how to use it effectively in your development workflow.
+This documentation provides a comprehensive overview of the TestResultAutofixAction functionality and how to use it
+effectively in your development workflow.

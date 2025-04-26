@@ -1,8 +1,8 @@
 package com.simiacryptus.jopenai.models
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 open class EditModels(
     modelName: String,
@@ -10,6 +10,7 @@ open class EditModels(
     private val tokenPricePerK: Double,
 ) : TextModel(modelName, maxTokens) {
     private val log: Logger = LoggerFactory.getLogger(EditModels::class.java)
+
     init {
         log.info("Initialized EditModels with modelName: $modelName, maxTokens: $maxTokens, tokenPricePerK: $tokenPricePerK")
     }
@@ -20,8 +21,10 @@ open class EditModels(
         fun values() = mapOf("DaVinciEdit" to DaVinciEdit)
 
         private val DaVinciEdit = EditModels("text-davinci-edit-001", 2049, 0.002)
+
         init {
-            LoggerFactory.getLogger(EditModels::class.java).info("Initialized DaVinciEdit model with maxTokens: 2049 and tokenPricePerK: 0.002")
+            LoggerFactory.getLogger(EditModels::class.java)
+                .info("Initialized DaVinciEdit model with maxTokens: 2049 and tokenPricePerK: 0.002")
         }
     }
 }

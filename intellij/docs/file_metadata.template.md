@@ -19,8 +19,10 @@
 
 ## Architecture
 
-- **Sequence or Flow Diagrams:** Using Mermaid syntax, include sequence or flow diagram(s) to illustrate important or complex logic. (if applicable)
-- **Class Diagrams:** If applicable, describe (do not create) class / component / architecture diagrams needed to illustrate the context of the code
+- **Sequence or Flow Diagrams:** Using Mermaid syntax, include sequence or flow diagram(s) to illustrate important or
+  complex logic. (if applicable)
+- **Class Diagrams:** If applicable, describe (do not create) class / component / architecture diagrams needed to
+  illustrate the context of the code
 
 ## Example Usage
 

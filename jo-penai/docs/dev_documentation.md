@@ -400,9 +400,11 @@ This table represents a concise summary of the chat models defined in the code, 
         * [Properties](#properties-5)
         * [Methods](#methods-7)
             * [`describe(Method, Class<*>, Int): String`](#describemethod-class-int-string)
-            * [`describe(Class<in Nothing>, Int, MutableSet<String>): String`](#describeclassin-nothing-int-mutablesetstring-string)
+            * [
+              `describe(Class<in Nothing>, Int, MutableSet<String>): String`](#describeclassin-nothing-int-mutablesetstring-string)
             * [`describe(Parameter, Int): String`](#describeparameter-int-string)
-            * [`toApiFunctionFormat(Type, Int, MutableSet<String>): String`](#toapifunctionformattype-int-mutablesetstring-string)
+            * [
+              `toApiFunctionFormat(Type, Int, MutableSet<String>): String`](#toapifunctionformattype-int-mutablesetstring-string)
         * [Private Methods](#private-methods-1)
             * [`describeKotlinClass(KClass<out Any>, Int): String`](#describekotlinclasskclassout-any-int-string)
             * [`describeJavaClass(Class<in Nothing>, Int): String`](#describejavaclassclassin-nothing-int-string)
@@ -492,7 +494,8 @@ This table represents a concise summary of the chat models defined in the code, 
         * [Methods Overview](#methods-overview)
             * [describe(Class<in Nothing>, Int, MutableSet<String>): String](#describeclassin-nothing-int-mutablesetstring-string-2)
             * [describe(Method, Class<*>, Int): String](#describemethod-class-int-string-2)
-            * [describe(KFunction<*>, KClass<*>, Int, Boolean, MutableSet<String>): String](#describekfunction-kclass-int-boolean-mutablesetstring-string)
+            * [describe(KFunction<*>,
+              KClass<*>, Int, Boolean, MutableSet<String>): String](#describekfunction-kclass-int-boolean-mutablesetstring-string)
         * [Configuration Properties](#configuration-properties-1)
         * [Utility Methods](#utility-methods-1)
         * [Extensibility](#extensibility-1)
@@ -748,24 +751,33 @@ This table represents a concise summary of the chat models defined in the code, 
             * [Parameters:](#parameters-15)
         * [Methods](#methods-20)
             * [`onUsage(model: OpenAIModel?, tokens: Usage)`](#onusagemodel-openaimodel-tokens-usage)
-            * [`post(url: String, json: String, apiProvider: APIProvider): String`](#posturl-string-json-string-apiprovider-apiprovider-string)
-            * [`authorize(request: HttpRequest, apiProvider: APIProvider)`](#authorizerequest-httprequest-apiprovider-apiprovider)
+            * [
+              `post(url: String, json: String, apiProvider: APIProvider): String`](#posturl-string-json-string-apiprovider-apiprovider-string)
+            * [
+              `authorize(request: HttpRequest, apiProvider: APIProvider)`](#authorizerequest-httprequest-apiprovider-apiprovider)
             * [`get(url: String?, apiProvider: APIProvider): String`](#geturl-string-apiprovider-apiprovider-string)
             * [`listEngines(): List<Engine>`](#listengines-listengine)
             * [`getEngineIds(): Array<CharSequence?>`](#getengineids-arraycharsequence)
-            * [`complete(request: CompletionRequest, model: OpenAITextModel): CompletionResponse`](#completerequest-completionrequest-model-openaitextmodel-completionresponse)
-            * [`transcription(wavAudio: ByteArray, prompt: String = ""): String`](#transcriptionwavaudio-bytearray-prompt-string---string)
+            * [
+              `complete(request: CompletionRequest, model: OpenAITextModel): CompletionResponse`](#completerequest-completionrequest-model-openaitextmodel-completionresponse)
+            * [
+              `transcription(wavAudio: ByteArray, prompt: String = ""): String`](#transcriptionwavaudio-bytearray-prompt-string---string)
             * [`createSpeech(request: SpeechRequest): ByteArray?`](#createspeechrequest-speechrequest-bytearray)
             * [
               `render(prompt: String = "", resolution: Int = 1024, count: Int = 1): List<BufferedImage>`](#renderprompt-string---resolution-int--1024-count-int--1-listbufferedimage)
-            * [`chat(chatRequest: ChatRequest, model: ChatModels): ChatResponse`](#chatchatrequest-chatrequest-model-chatmodels-chatresponse)
+            * [
+              `chat(chatRequest: ChatRequest, model: ChatModels): ChatResponse`](#chatchatrequest-chatrequest-model-chatmodels-chatresponse)
             * [`moderate(text: String)`](#moderatetext-string)
             * [`edit(editRequest: EditRequest): CompletionResponse`](#editeditrequest-editrequest-completionresponse)
             * [`listModels(): ModelListResponse`](#listmodels-modellistresponse)
-            * [`createEmbedding(request: EmbeddingRequest): EmbeddingResponse`](#createembeddingrequest-embeddingrequest-embeddingresponse)
-            * [`createImage(request: ImageGenerationRequest): ImageGenerationResponse`](#createimagerequest-imagegenerationrequest-imagegenerationresponse)
-            * [`createImageEdit(request: ImageEditRequest): ImageEditResponse`](#createimageeditrequest-imageeditrequest-imageeditresponse)
-            * [`createImageVariation(request: ImageVariationRequest): ImageVariationResponse`](#createimagevariationrequest-imagevariationrequest-imagevariationresponse)
+            * [
+              `createEmbedding(request: EmbeddingRequest): EmbeddingResponse`](#createembeddingrequest-embeddingrequest-embeddingresponse)
+            * [
+              `createImage(request: ImageGenerationRequest): ImageGenerationResponse`](#createimagerequest-imagegenerationrequest-imagegenerationresponse)
+            * [
+              `createImageEdit(request: ImageEditRequest): ImageEditResponse`](#createimageeditrequest-imageeditrequest-imageeditresponse)
+            * [
+              `createImageVariation(request: ImageVariationRequest): ImageVariationResponse`](#createimagevariationrequest-imagevariationrequest-imagevariationresponse)
         * [Companion Object](#companion-object-10)
         * [Usage Example](#usage-example-12)
 * [opt\PromptOptimization.kt](#optpromptoptimizationkt)
@@ -863,20 +875,27 @@ This table represents a concise summary of the chat models defined in the code, 
 * [util\StringUtil.kt](#utilstringutilkt)
     * [StringUtil Class Documentation](#stringutil-class-documentation)
         * [Methods](#methods-24)
-            * [`stripPrefix(text: CharSequence, prefix: CharSequence): CharSequence`](#stripprefixtext-charsequence-prefix-charsequence-charsequence)
+            * [
+              `stripPrefix(text: CharSequence, prefix: CharSequence): CharSequence`](#stripprefixtext-charsequence-prefix-charsequence-charsequence)
             * [`trimPrefix(text: CharSequence): CharSequence`](#trimprefixtext-charsequence-charsequence)
             * [`trimSuffix(text: CharSequence): String`](#trimsuffixtext-charsequence-string)
-            * [`stripSuffix(text: CharSequence, suffix: CharSequence): String`](#stripsuffixtext-charsequence-suffix-charsequence-string)
-            * [`lineWrapping(description: CharSequence, width: Int): String`](#linewrappingdescription-charsequence-width-int-string)
+            * [
+              `stripSuffix(text: CharSequence, suffix: CharSequence): String`](#stripsuffixtext-charsequence-suffix-charsequence-string)
+            * [
+              `lineWrapping(description: CharSequence, width: Int): String`](#linewrappingdescription-charsequence-width-int-string)
             * [`toString(ints: IntArray): CharSequence`](#tostringints-intarray-charsequence)
-            * [`getWhitespacePrefix(vararg lines: CharSequence): CharSequence`](#getwhitespaceprefixvararg-lines-charsequence-charsequence)
-            * [`getWhitespaceSuffix(vararg lines: CharSequence): String`](#getwhitespacesuffixvararg-lines-charsequence-string)
-            * [`trim(items: List<CharSequence>, max: Int, preserveHead: Boolean): List<CharSequence>`](#trimitems-listcharsequence-max-int-preservehead-boolean-listcharsequence)
+            * [
+              `getWhitespacePrefix(vararg lines: CharSequence): CharSequence`](#getwhitespaceprefixvararg-lines-charsequence-charsequence)
+            * [
+              `getWhitespaceSuffix(vararg lines: CharSequence): String`](#getwhitespacesuffixvararg-lines-charsequence-string)
+            * [
+              `trim(items: List<CharSequence>, max: Int, preserveHead: Boolean): List<CharSequence>`](#trimitems-listcharsequence-max-int-preservehead-boolean-listcharsequence)
             * [
               `getPrefixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence`](#getprefixforcontexttext-string-ideallength-int-vararg-delimiters-charsequence-charsequence)
             * [
               `getSuffixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence`](#getsuffixforcontexttext-string-ideallength-int-vararg-delimiters-charsequence-charsequence)
-            * [`restrictCharacterSet(text: String, charset: Charset): String`](#restrictcharactersettext-string-charset-charset-string)
+            * [
+              `restrictCharacterSet(text: String, charset: Charset): String`](#restrictcharactersettext-string-charset-charset-string)
         * [Usage Example](#usage-example-15)
 
 <!-- TOC -->
@@ -2165,8 +2184,9 @@ description based on its nature or namespace.
 
 #### Abstract Methods
 
-- `abstract fun describe(rawType: Class<in Nothing>, stackMax: Int = 10, describedTypes: MutableSet<String> = mutableSetOf()): String`:
-  Generates a description for a given class.
+-
+`abstract fun describe(rawType: Class<in Nothing>, stackMax: Int = 10, describedTypes: MutableSet<String> = mutableSetOf()): String`:
+Generates a description for a given class.
 - `abstract fun describe(self: Method, clazz: Class<*>? = null, stackMax: Int = 5): String`: Generates a description for
   a given method.
 
@@ -4473,7 +4493,8 @@ Allows initialization of `ChatProxy` with a map of parameters, providing a flexi
 ### Properties
 
 - `metrics`: Returns a map containing various metrics related to the input and output processing.
-- `totalInputLength`, `totalOutputLength`, `totalNonJsonPrefixLength`, `totalNonJsonSuffixLength`, `totalYamlLength`, `totalExamplesLength`:
+- `totalInputLength`, `totalOutputLength`, `totalNonJsonPrefixLength`, `totalNonJsonSuffixLength`, `totalYamlLength`,
+  `totalExamplesLength`:
   Atomic integers tracking various lengths and counts for performance and debugging purposes.
 
 ### Methods

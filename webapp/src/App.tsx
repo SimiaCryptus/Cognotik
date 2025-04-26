@@ -2,11 +2,9 @@ import React from 'react';
 import {Provider, useDispatch, useSelector} from 'react-redux';
 import {RootState, store} from './store';
 import {isArchive} from './services/appConfig';
-import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
-import ErrorFallback from './components/ErrorBoundary/ErrorFallback';
 import './App.css';
 import websocket from './services/websocket';
-import {setConnectionStatus, setConnectionError} from './store/slices/connectionSlice';
+import {setConnectionError, setConnectionStatus} from './store/slices/connectionSlice';
 import ChatInterface from './components/ChatInterface';
 import ThemeProvider from './themes/ThemeProvider';
 import {Menu} from "./components/Menu/Menu";
@@ -62,7 +60,7 @@ const getArchivedMessages = () => {
     }
 };
 
-const APP_VERSION = '1.0.0'; 
+const APP_VERSION = '1.0.0';
 const LOG_PREFIX = '[SkyeNet]';
 Prism.manual = true;
 
@@ -77,7 +75,7 @@ const AppContent: React.FC = () => {
     // Only load archived messages once on mount
     const [archivedMessagesLoaded, setArchivedMessagesLoaded] = React.useState(false);
     // Use the useWebSocket hook instead of direct websocket access
-    const { isConnected, error } = useSelector((state: RootState) => state.connection);
+    const {isConnected, error} = useSelector((state: RootState) => state.connection);
     // Update connection status in Redux store when websocket status changes
     React.useEffect(() => {
         const handleConnectionChange = (connected: boolean) => {
@@ -116,7 +114,7 @@ const AppContent: React.FC = () => {
             document.title = appConfig.applicationName;
         }
     }, [appConfig.applicationName]);
-    
+
     if (!isConnected) {
         console.warn(`${LOG_PREFIX} WebSocket disconnected - sessionId: ${sessionId}`);
     }
@@ -130,7 +128,7 @@ const AppContent: React.FC = () => {
     React.useEffect(() => {
         const cleanup = setupUIHandlers();
         return () => {
-            cleanup(); 
+            cleanup();
         };
     }, []);
 

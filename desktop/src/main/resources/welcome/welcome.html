@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <link href="/favicon.svg" rel="icon"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Cognotik</title>
     <style>
         body {
@@ -21,11 +21,13 @@
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
         }
+
         .logo-container {
             display: flex;
             align-items: center;
             margin-right: 15px;
         }
+
         .logo {
             width: 40px;
             height: 40px;
@@ -229,9 +231,6 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
 
-
-
-
             font-size: 16px;
         }
 
@@ -240,6 +239,7 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
+
         .button:disabled {
             background-color: #bdc3c7;
             cursor: not-allowed;
@@ -367,13 +367,16 @@
             .button {
                 margin-bottom: 10px;
             }
+
             .logo-container {
                 margin-right: 5px;
             }
+
             .logo {
                 width: 30px;
                 height: 30px;
             }
+
             .menu-bar {
                 padding: 5px;
             }
@@ -388,6 +391,7 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.5);
         }
+
         /* Footer styling */
         .footer-content {
             display: flex;
@@ -395,6 +399,7 @@
             justify-content: center;
             gap: 10px;
         }
+
         .footer-logo {
             vertical-align: middle;
         }
@@ -410,6 +415,7 @@
                 background-color: #2a2a2a;
                 color: #f0f0f0;
             }
+
             .menu-bar {
                 background-color: rgba(42, 42, 42, 0.9);
                 box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
@@ -465,15 +471,15 @@
 
 <div class="menu-bar">
     <div class="logo-container">
-        <img src="logo.svg" alt="Cognotik Logo" class="logo">
+        <img alt="Cognotik Logo" class="logo" src="logo.svg">
         <span style="font: bold">Cognotik</span>
     </div>
     <div style="width: inherit;"></div>
-    <button id="open-basic-chat" class="menu-button">Basic Chat</button>
-    <button id="api-settings-btn" class="menu-button">Configure API Keys</button>
+    <button class="menu-button" id="open-basic-chat">Basic Chat</button>
+    <button class="menu-button" id="api-settings-btn">Configure API Keys</button>
 </div>
 
-<div id="api-settings-modal" class="modal">
+<div class="modal" id="api-settings-modal">
     <div class="modal-content">
         <span class="close" id="close-api-modal">&times;</span>
         <h3>API Configuration</h3>
@@ -508,13 +514,13 @@
 </div>
 
 
-<div id="cognitive-mode" class="wizard-content active">
+<div class="wizard-content active" id="cognitive-mode">
     <h3>Step 1: Choose Cognitive Mode</h3>
     <p>Select how you want the AI to approach your tasks:</p>
     <div class="form-group">
         <div class="task-toggle">
             <div>
-                <input type="radio" id="single-task-mode" name="cognitive-mode" value="single-task" checked>
+                <input checked id="single-task-mode" name="cognitive-mode" type="radio" value="single-task">
                 <label for="single-task-mode">Chat</label>
                 <span class="tooltip">?
           <span class="tooltiptext">Execute individual tasks with AI assistance. Best for focused, specific tasks.</span>
@@ -523,7 +529,7 @@
         </div>
         <div class="task-toggle">
             <div>
-                <input type="radio" id="auto-plan-mode" name="cognitive-mode" value="auto-plan">
+                <input id="auto-plan-mode" name="cognitive-mode" type="radio" value="auto-plan">
                 <label for="auto-plan-mode">Autonomous</label>
                 <span class="tooltip">?
           <span class="tooltiptext">Let AI automatically plan and execute complex development tasks with minimal guidance.</span>
@@ -532,25 +538,26 @@
         </div>
         <div class="task-toggle">
             <div>
-                <input type="radio" id="plan-ahead-mode" name="cognitive-mode" value="plan-ahead">
+                <input id="plan-ahead-mode" name="cognitive-mode" type="radio" value="plan-ahead">
                 <label for="plan-ahead-mode">Plan Ahead</label>
                 <span class="tooltip">?
           <span class="tooltiptext">Work with AI to create detailed plans before execution, with more control over the process.</span>
         </span>
             </div>
         </div>
-        <div id="auto-plan-settings" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        <div id="auto-plan-settings"
+             style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
             <div class="form-group">
                 <label for="max-task-history">Max Task History Chars:</label>
-                <input type="number" id="max-task-history" value="20000" min="1000" max="100000">
+                <input id="max-task-history" max="100000" min="1000" type="number" value="20000">
             </div>
             <div class="form-group">
                 <label for="max-tasks-per-iteration">Max Tasks Per Iteration:</label>
-                <input type="number" id="max-tasks-per-iteration" value="3" min="1" max="10">
+                <input id="max-tasks-per-iteration" max="10" min="1" type="number" value="3">
             </div>
             <div class="form-group">
                 <label for="max-iterations">Max Iterations:</label>
-                <input type="number" id="max-iterations" value="100" min="1" max="1000">
+                <input id="max-iterations" max="1000" min="1" type="number" value="100">
             </div>
         </div>
     </div>
@@ -559,10 +566,10 @@
         <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
     </div>
 </div>
-<div id="task-selection" class="wizard-content">
+<div class="wizard-content" id="task-selection">
     <h3>Step 2: Select Tasks</h3>
     <p>Choose which tasks you want to enable:</p>
-    <div id="task-toggles" class="form-group">
+    <div class="form-group" id="task-toggles">
         <!-- Task toggles will be populated here -->
     </div>
     <div class="wizard-buttons">
@@ -570,7 +577,7 @@
         <button class="button" id="next-to-task-settings">Next: Configure Settings</button>
     </div>
 </div>
-<div id="task-settings" class="wizard-content">
+<div class="wizard-content" id="task-settings">
     <h3>Step 3: Configure Settings</h3>
     <p>Configure model and environment settings:</p>
 
@@ -594,19 +601,20 @@
 
     <div class="form-group">
         <label for="working-dir">Working Directory:</label>
-        <input type="text" id="working-dir" value=".">
+        <input id="working-dir" type="text" value=".">
     </div>
     <div class="form-group">
         <label for="temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
-        <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.2">
+        <input id="temperature" max="1" min="0" step="0.1" type="range" value="0.2">
         <span id="temperature-value">0.2</span>
     </div>
     <div class="form-group">
         <div class="task-toggle">
             <div>
-                <input type="checkbox" id="auto-fix" name="auto-fix">
+                <input id="auto-fix" name="auto-fix" type="checkbox">
                 <label for="auto-fix">Enable Auto Fix</label>
-                <span class="tooltip">?<span class="tooltiptext">Automatically attempt to fix errors in code execution.</span></span>
+                <span class="tooltip">?<span
+                        class="tooltiptext">Automatically attempt to fix errors in code execution.</span></span>
             </div>
 
 
@@ -614,7 +622,7 @@
                  style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
                 <div class="form-group">
                     <label for="graph-file">Graph File Path:</label>
-                    <input type="text" id="graph-file" placeholder="Enter path to graph file">
+                    <input id="graph-file" placeholder="Enter path to graph file" type="text">
                 </div>
             </div>
         </div>
@@ -626,7 +634,7 @@
     </div>
 </div>
 
-<div id="launch" class="wizard-content">
+<div class="wizard-content" id="launch">
     <h3>Step 4: Review & Launch</h3>
     <p>Review your configuration and launch your AI development session:</p>
 
@@ -652,14 +660,14 @@
 
 </div>
 
-<div id="loading" class="loading">
+<div class="loading" id="loading">
     <div class="spinner"></div>
     <p>Setting up your session...</p>
 </div>
 
 <footer style="margin-top: 40px; text-align: center; font-size: 0.8em; color: #7f8c8d;">
     <div class="footer-content">
-        <img src="logo.svg" alt="Cognotik Logo" class="footer-logo" width="24" height="24">
+        <img alt="Cognotik Logo" class="footer-logo" height="24" src="logo.svg" width="24">
         <p>Cognotik &copy; 2025 SimiaCryptus Software</p>
     </div>
 </footer>
@@ -875,11 +883,11 @@
         const modelSelect = document.getElementById('model-selection');
         const parsingModelSelect = document.getElementById('parsing-model');
         if (!modelSelect || !parsingModelSelect) return;
-        
+
         // Get saved model selections from taskSettings
         const savedDefaultModel = taskSettings.defaultModel;
         const savedParsingModel = taskSettings.parsingModel;
-        
+
         // Clear existing options
         modelSelect.innerHTML = '';
         parsingModelSelect.innerHTML = '';
@@ -930,7 +938,7 @@
             // Update taskSettings with the selected value
             taskSettings.defaultModel = modelSelect.value;
         }
-        
+
         if (savedParsingModel && Array.from(parsingModelSelect.options).some(opt => opt.value === savedParsingModel)) {
             parsingModelSelect.value = savedParsingModel;
         } else if (parsingModelSelect.options.length > 0) {
@@ -955,8 +963,8 @@
                         const settings = JSON.parse(textarea.textContent);
                         apiSettings = settings;
                         // Populate API key fields with asterisks if keys exist
-               if (apiSettings.apiKeys) {
-                   for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
+                        if (apiSettings.apiKeys) {
+                            for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
                                 const input = document.getElementById(`api-key-${provider}`);
                                 if (input && key) {
                                     input.value = '********'; // Mask the actual key
@@ -973,8 +981,8 @@
                             }
 
                         }
-                // Update model selections based on API keys
-                populateModelSelections();
+                        // Update model selections based on API keys
+                        populateModelSelections();
                     } catch (e) {
                         console.error('Error parsing API settings:', e);
                     }
@@ -1018,10 +1026,10 @@
         populateModelSelections();
         // Load saved settings from localStorage
         loadSavedSettings();
-    // Initialize taskSettings.taskSettings if it's not already populated
-    if (!taskSettings.taskSettings || Object.keys(taskSettings.taskSettings).length === 0) {
-        saveTaskSelection();
-    }
+        // Initialize taskSettings.taskSettings if it's not already populated
+        if (!taskSettings.taskSettings || Object.keys(taskSettings.taskSettings).length === 0) {
+            saveTaskSelection();
+        }
     });
 
     // If launch tab is selected, update summaries
@@ -1126,9 +1134,9 @@
         const temperatureValue = document.getElementById('temperature-value');
         temperatureSlider.addEventListener('input', function () {
             temperatureValue.textContent = this.value;
-        // Update taskSettings immediately and save to localStorage
-        taskSettings.temperature = parseFloat(this.value);
-        localStorage.setItem('temperature', this.value);
+            // Update taskSettings immediately and save to localStorage
+            taskSettings.temperature = parseFloat(this.value);
+            localStorage.setItem('temperature', this.value);
         });
 
         // Create toggles for each task type
@@ -1194,19 +1202,19 @@
         // Add event listeners for model selection changes
         const modelSelect = document.getElementById('model-selection');
         if (modelSelect) {
-            modelSelect.addEventListener('change', function() {
+            modelSelect.addEventListener('change', function () {
                 taskSettings.defaultModel = this.value;
                 localStorage.setItem('defaultModel', this.value);
             });
         }
         const parsingModelSelect = document.getElementById('parsing-model');
         if (parsingModelSelect) {
-            parsingModelSelect.addEventListener('change', function() {
+            parsingModelSelect.addEventListener('change', function () {
                 taskSettings.parsingModel = this.value;
                 localStorage.setItem('parsingModel', this.value);
             });
         }
-        
+
         // Task Settings
         // Cognitive Mode radio buttons
         document.querySelectorAll('input[name="cognitive-mode"]').forEach(radio => {
@@ -1354,14 +1362,14 @@
         const taskSettingsObj = {};
         taskTypes.forEach(task => {
             const checkbox = document.getElementById(`task-${task.id}`);
-        if (checkbox) {
-            taskSettingsObj[task.id] = {
-                enabled: checkbox.checked,
-                task_type: task.id
-            };
-            // Save task selection to localStorage
-            localStorage.setItem(`task-${task.id}`, checkbox.checked);
-        }
+            if (checkbox) {
+                taskSettingsObj[task.id] = {
+                    enabled: checkbox.checked,
+                    task_type: task.id
+                };
+                // Save task selection to localStorage
+                localStorage.setItem(`task-${task.id}`, checkbox.checked);
+            }
         });
         taskSettings.taskSettings = taskSettingsObj;
         // Save to session
@@ -1487,52 +1495,52 @@
         if (savedParsingModel) {
             taskSettings.parsingModel = savedParsingModel;
         }
-    // Load working directory
-    const savedWorkingDir = localStorage.getItem('workingDir');
-    if (savedWorkingDir) {
-        document.getElementById('working-dir').value = savedWorkingDir;
-        taskSettings.workingDir = savedWorkingDir;
-    }
-    
-    // Load temperature
-    if (localStorage.getItem('temperature')) {
-        const tempValue = localStorage.getItem('temperature');
-        document.getElementById('temperature').value = tempValue;
-        document.getElementById('temperature-value').textContent = tempValue;
-        taskSettings.temperature = parseFloat(tempValue);
-    }
-    
-    // Load autoFix setting
-    if (localStorage.getItem('autoFix') === 'true') {
-        document.getElementById('auto-fix').checked = true;
-        taskSettings.autoFix = true;
-    }
-    
-    // Load auto-plan settings
-    if (localStorage.getItem('maxTaskHistoryChars')) {
-        const maxHistory = localStorage.getItem('maxTaskHistoryChars');
-        document.getElementById('max-task-history').value = maxHistory;
-        taskSettings.maxTaskHistoryChars = parseInt(maxHistory);
-    }
-    
-    if (localStorage.getItem('maxTasksPerIteration')) {
-        const maxTasks = localStorage.getItem('maxTasksPerIteration');
-        document.getElementById('max-tasks-per-iteration').value = maxTasks;
-        taskSettings.maxTasksPerIteration = parseInt(maxTasks);
-    }
-    
-    if (localStorage.getItem('maxIterations')) {
-        const maxIter = localStorage.getItem('maxIterations');
-        document.getElementById('max-iterations').value = maxIter;
-        taskSettings.maxIterations = parseInt(maxIter);
-    }
-    
-    // Load graph file
-    if (localStorage.getItem('graphFile')) {
-        const graphFile = localStorage.getItem('graphFile');
-        document.getElementById('graph-file').value = graphFile;
-        taskSettings.graphFile = graphFile;
-    }
+        // Load working directory
+        const savedWorkingDir = localStorage.getItem('workingDir');
+        if (savedWorkingDir) {
+            document.getElementById('working-dir').value = savedWorkingDir;
+            taskSettings.workingDir = savedWorkingDir;
+        }
+
+        // Load temperature
+        if (localStorage.getItem('temperature')) {
+            const tempValue = localStorage.getItem('temperature');
+            document.getElementById('temperature').value = tempValue;
+            document.getElementById('temperature-value').textContent = tempValue;
+            taskSettings.temperature = parseFloat(tempValue);
+        }
+
+        // Load autoFix setting
+        if (localStorage.getItem('autoFix') === 'true') {
+            document.getElementById('auto-fix').checked = true;
+            taskSettings.autoFix = true;
+        }
+
+        // Load auto-plan settings
+        if (localStorage.getItem('maxTaskHistoryChars')) {
+            const maxHistory = localStorage.getItem('maxTaskHistoryChars');
+            document.getElementById('max-task-history').value = maxHistory;
+            taskSettings.maxTaskHistoryChars = parseInt(maxHistory);
+        }
+
+        if (localStorage.getItem('maxTasksPerIteration')) {
+            const maxTasks = localStorage.getItem('maxTasksPerIteration');
+            document.getElementById('max-tasks-per-iteration').value = maxTasks;
+            taskSettings.maxTasksPerIteration = parseInt(maxTasks);
+        }
+
+        if (localStorage.getItem('maxIterations')) {
+            const maxIter = localStorage.getItem('maxIterations');
+            document.getElementById('max-iterations').value = maxIter;
+            taskSettings.maxIterations = parseInt(maxIter);
+        }
+
+        // Load graph file
+        if (localStorage.getItem('graphFile')) {
+            const graphFile = localStorage.getItem('graphFile');
+            document.getElementById('graph-file').value = graphFile;
+            taskSettings.graphFile = graphFile;
+        }
         // Load task selections
         taskTypes.forEach(task => {
             const savedValue = localStorage.getItem(`task-${task.id}`);
@@ -1540,15 +1548,15 @@
                 const checkbox = document.getElementById(`task-${task.id}`);
                 if (checkbox) {
                     checkbox.checked = true;
-                // Initialize task settings object if needed
-                if (!taskSettings.taskSettings) {
-                    taskSettings.taskSettings = {};
-                }
-                // Add this task to the taskSettings
-                taskSettings.taskSettings[task.id] = {
-                    enabled: true,
-                    task_type: task.id
-                };
+                    // Initialize task settings object if needed
+                    if (!taskSettings.taskSettings) {
+                        taskSettings.taskSettings = {};
+                    }
+                    // Add this task to the taskSettings
+                    taskSettings.taskSettings[task.id] = {
+                        enabled: true,
+                        task_type: task.id
+                    };
                 }
             }
         });
@@ -1571,7 +1579,7 @@
             }
             apiSummary.appendChild(ul);
         }
-        
+
         if (!apiSummary.hasChildNodes()) {
             apiSummary.innerHTML = '<p class="warning">⚠️ No API keys configured. Please configure API keys before launching.</p>';
         }
@@ -1728,10 +1736,10 @@
             }
         }
         if (!hasEnabledTask) {
-        showNotification('Please enable at least one task before launching', 'error');
-        // Navigate to task selection step
-        navigateToStep('task-selection');
-        return false;
+            showNotification('Please enable at least one task before launching', 'error');
+            // Navigate to task selection step
+            navigateToStep('task-selection');
+            return false;
         }
         return true; // Return true if all validations pass
     }

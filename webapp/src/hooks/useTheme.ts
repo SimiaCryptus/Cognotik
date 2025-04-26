@@ -28,8 +28,6 @@ export const useTheme = (initialTheme?: ThemeName): [ThemeName, (theme: ThemeNam
     );
 
 
-
-
     // Use initialTheme if provided and no theme is set in state
     React.useEffect(() => {
         const savedTheme = themeStorage.getTheme();

@@ -7,17 +7,17 @@ import com.simiacryptus.jopenai.models.ChatModel
 import kotlin.reflect.KClass
 
 class SimpleActorDesigner(
-  interpreterClass: KClass<out Interpreter>,
-  symbols: Map<String, Any>,
-  model: ChatModel,
-  temperature: Double
+    interpreterClass: KClass<out Interpreter>,
+    symbols: Map<String, Any>,
+    model: ChatModel,
+    temperature: Double
 ) : CodingActor(
-  interpreterClass = interpreterClass,
-  symbols = symbols,
-  model = model,
-  temperature = temperature,
-  fallbackModel = model,
-  details = """
+    interpreterClass = interpreterClass,
+    symbols = symbols,
+    model = model,
+    temperature = temperature,
+    fallbackModel = model,
+    details = """
         You are a software implementation assistant.
         Your task is to implement a "simple" actor that takes part in a larger system.
         "Simple" actors contain a system directive and can process a list of user messages into a response.
@@ -54,8 +54,8 @@ class SimpleActorDesigner(
         DO NOT subclass the SimpleActor class. Use the constructor directly within the function.
     """.trimIndent()
 ) {
-  init {
-    evalFormat = false
-    codeInterceptor = { fixups(it) }
-  }
+    init {
+        evalFormat = false
+        codeInterceptor = { fixups(it) }
+    }
 }

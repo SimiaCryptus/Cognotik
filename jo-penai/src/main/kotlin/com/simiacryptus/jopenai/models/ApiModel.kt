@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.models
-import org.slf4j.LoggerFactory
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -248,6 +248,7 @@ interface ApiModel {
                 log.info("Creating png ContentPart")
                 return ContentPart(type = "image_url", image_url = "data:image/png;base64," + toBase64(img, "png"))
             }
+
             fun audio(data: String, format: String): ContentPart {
                 log.info("Creating audio ContentPart")
                 return ContentPart(type = "input_audio", input_audio = AudioInput(data, format))

@@ -12,19 +12,6 @@ export class WebSocketService implements WebSocketLike {
     public readonly CLOSED = 3;
     public readyState: number = WebSocket.CLOSED;
     public binaryType = 'blob';
-
-    public close(code?: number, reason?: string): void {
-        this.forcedClose = true;
-        if (this.ws) {
-            this.ws.close(code, reason);
-        }
-        this.clearTimers();
-        this.isReconnecting = false;
-        this.reconnectAttempts = 0;
-        this.connectionState = 'disconnected';
-        this.ws = null;
-    }
-
     public bufferedAmount = 0;
     public extensions = '';
     public protocol = '';
@@ -33,7 +20,7 @@ export class WebSocketService implements WebSocketLike {
     public onclose: ((this: WebSocket, ev: CloseEvent) => any) | null = null;
     public onerror: ((this: WebSocket, ev: Event) => any) | null = null;
     public onmessage: ((this: WebSocket, ev: MessageEvent) => any) | null = null;
-
+    public ws: WebSocket | null = null;
     // Add event emitter functionality
     private eventListeners: { [key: string]: ((...args: any[]) => void)[] } = {};
     // Constants for connection management
@@ -53,6 +40,36 @@ export class WebSocketService implements WebSocketLike {
         reconnect: null as NodeJS.Timeout | null,
         connection: null as NodeJS.Timeout | null
     };
+    private messageQueue: string[] = [];
+    private isProcessingQueue = false;
+    private readonly QUEUE_PROCESS_INTERVAL = 50; // ms
+    private readonly DEBUG = process.env.NODE_ENV === 'development';
+    private maxReconnectAttempts = 5;
+    private reconnectAttempts = 0;
+    private sessionId = '';
+    private messageHandlers: ((data: Message) => void)[] = [];
+    private connectionHandlers: ((connected: boolean) => void)[] = [];
+    private errorHandlers: ((error: Error) => void)[] = [];
+    private isReconnecting = false;
+    private connectionTimeout: NodeJS.Timeout | null = null;
+    private connectionStartTime = 0;
+    private messageBuffer: Message[] = [];
+    private bufferTimeout: NodeJS.Timeout | null = null;
+    private aggregateBuffer: Message[] = [];
+    private aggregateTimeout: NodeJS.Timeout | null = null;
+    private readonly AGGREGATE_INTERVAL = 100; // 100ms aggregation interval
+
+    public close(code?: number, reason?: string): void {
+        this.forcedClose = true;
+        if (this.ws) {
+            this.ws.close(code, reason);
+        }
+        this.clearTimers();
+        this.isReconnecting = false;
+        this.reconnectAttempts = 0;
+        this.connectionState = 'disconnected';
+        this.ws = null;
+    }
 
     public on(event: string, callback: (...args: any[]) => void): void {
         if (!this.eventListeners[event]) {
@@ -89,52 +106,6 @@ export class WebSocketService implements WebSocketLike {
             this.ws = null;
         }
     }
-
-    public ws: WebSocket | null = null;
-    private messageQueue: string[] = [];
-    private isProcessingQueue = false;
-    private readonly QUEUE_PROCESS_INTERVAL = 50; // ms
-    private readonly DEBUG = process.env.NODE_ENV === 'development';
-    private maxReconnectAttempts = 5;
-    private reconnectAttempts = 0;
-
-    private handleConnectionFailure(error: Error): void {
-        console.error('[WebSocket] Connection failure:', error);
-        this.connectionState = 'error';
-        this.errorHandlers.forEach(handler => handler(error));
-        if (!this.isReconnecting) {
-            this.attemptReconnect();
-        }
-    }
-
-    private emit(event: string, ...args: any[]): void {
-        if (!this.eventListeners[event]) return;
-        this.eventListeners[event].forEach(callback => callback(...args));
-    }
-
-    private clearTimers(): void {
-        Object.values(this.timers).forEach(timer => {
-            if (timer) clearTimeout(timer);
-        });
-        this.timers = {
-            heartbeat: null,
-            reconnect: null,
-            connection: null
-        };
-    }
-
-    private sessionId = '';
-    private messageHandlers: ((data: Message) => void)[] = [];
-    private connectionHandlers: ((connected: boolean) => void)[] = [];
-    private errorHandlers: ((error: Error) => void)[] = [];
-    private isReconnecting = false;
-    private connectionTimeout: NodeJS.Timeout | null = null;
-    private connectionStartTime = 0;
-    private messageBuffer: Message[] = [];
-    private bufferTimeout: NodeJS.Timeout | null = null;
-    private aggregateBuffer: Message[] = [];
-    private aggregateTimeout: NodeJS.Timeout | null = null;
-    private readonly AGGREGATE_INTERVAL = 100; // 100ms aggregation interval
 
     public getSessionId(): string {
         return this.sessionId;
@@ -229,6 +200,31 @@ export class WebSocketService implements WebSocketLike {
 
     addMessageHandler(handler: (data: any) => void): void {
         this.messageHandlers.push(handler);
+    }
+
+    private handleConnectionFailure(error: Error): void {
+        console.error('[WebSocket] Connection failure:', error);
+        this.connectionState = 'error';
+        this.errorHandlers.forEach(handler => handler(error));
+        if (!this.isReconnecting) {
+            this.attemptReconnect();
+        }
+    }
+
+    private emit(event: string, ...args: any[]): void {
+        if (!this.eventListeners[event]) return;
+        this.eventListeners[event].forEach(callback => callback(...args));
+    }
+
+    private clearTimers(): void {
+        Object.values(this.timers).forEach(timer => {
+            if (timer) clearTimeout(timer);
+        });
+        this.timers = {
+            heartbeat: null,
+            reconnect: null,
+            connection: null
+        };
     }
 
     private startHeartbeat(): void {
@@ -523,7 +519,7 @@ export class WebSocketService implements WebSocketLike {
             console.info(`[WebSocket] Reconnect attempt ${this.reconnectAttempts + 1}/${maxAttempts}`);
             this.emit('reconnecting', this.reconnectAttempts + 1);
             this.connectionHandlers.forEach(handler => handler(false));
-            if(null != this.timers.reconnect) {
+            if (null != this.timers.reconnect) {
                 clearTimeout(this.timers.reconnect);
             }
             this.timers.reconnect = setTimeout(() => {

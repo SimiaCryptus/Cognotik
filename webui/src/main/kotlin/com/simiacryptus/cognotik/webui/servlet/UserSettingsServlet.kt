@@ -12,35 +12,35 @@ import jakarta.servlet.http.HttpServletResponse
 private const val mask = "********"
 
 class UserSettingsServlet : HttpServlet() {
-  public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
-    val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-    if (null == userinfo) {
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-    } else {
-      try {
-        val settings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
-        val visibleSettings = settings.copy(
-          apiKeys = APIProvider.values().map {
-            it to when (settings.apiKeys[it]) {
-              null -> ""
-              "" -> ""
-              else -> mask
-            }
-          }.toMap(),
-          apiBase = APIProvider.values().map {
-            it to when (settings.apiBase[it]) {
-              null -> it.base
-              "" -> it.base
-              else -> settings.apiBase[it]
-            }!!
-          }.toMap(),
-        )
-        val json = JsonUtil.toJson(visibleSettings)
-        //language=HTML
-        resp.writer.write(
-          """
+    public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        resp.contentType = "text/html"
+        resp.status = HttpServletResponse.SC_OK
+        val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
+        if (null == userinfo) {
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+        } else {
+            try {
+                val settings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
+                val visibleSettings = settings.copy(
+                    apiKeys = APIProvider.values().map {
+                        it to when (settings.apiKeys[it]) {
+                            null -> ""
+                            "" -> ""
+                            else -> mask
+                        }
+                    }.toMap(),
+                    apiBase = APIProvider.values().map {
+                        it to when (settings.apiBase[it]) {
+                            null -> it.base
+                            "" -> it.base
+                            else -> settings.apiBase[it]
+                        }!!
+                    }.toMap(),
+                )
+                val json = JsonUtil.toJson(visibleSettings)
+                //language=HTML
+                resp.writer.write(
+                    """
               <html>
               <head>
                   <title>Settings</title>
@@ -55,12 +55,12 @@ class UserSettingsServlet : HttpServlet() {
               </body>
               </html>
               """.trimIndent()
-        )
-      } catch (e: Exception) {
-        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-        // HTML error page
-        resp.writer.write(
-          """
+                )
+            } catch (e: Exception) {
+                resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                // HTML error page
+                resp.writer.write(
+                    """
               <html>
               <head>
                   <title>Error</title>
@@ -72,39 +72,39 @@ class UserSettingsServlet : HttpServlet() {
               </body>
               </html>
           """.trimIndent()
-        )
-        resp
-      }
+                )
+                resp
+            }
+        }
     }
-  }
 
-  public override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-    val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-    if (null == userinfo) {
-      resp.status = HttpServletResponse.SC_BAD_REQUEST
-    } else {
-      val settings = JsonUtil.fromJson<UserSettings>(req.getParameter("settings"), UserSettings::class.java)
-      val prevSettings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
-      val reconstructedSettings = prevSettings.copy(
-        apiKeys = settings.apiKeys.mapValues {
-          when (it.value) {
-            "" -> ""
-            mask -> prevSettings.apiKeys[it.key]!!
-            else -> settings.apiKeys[it.key]!!
-          }
-        },
-        apiBase = settings.apiBase.mapValues {
-          when (it.value) {
-            null -> "https://api.openai.com/v1"
-            "" -> "https://api.openai.com/v1"
-            else -> settings.apiBase[it.key]!!
-          }
-        },
-      )
-      ApplicationServices.userSettingsManager.updateUserSettings(userinfo, reconstructedSettings)
-      resp.sendRedirect("/")
+    public override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
+        val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
+        if (null == userinfo) {
+            resp.status = HttpServletResponse.SC_BAD_REQUEST
+        } else {
+            val settings = JsonUtil.fromJson<UserSettings>(req.getParameter("settings"), UserSettings::class.java)
+            val prevSettings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
+            val reconstructedSettings = prevSettings.copy(
+                apiKeys = settings.apiKeys.mapValues {
+                    when (it.value) {
+                        "" -> ""
+                        mask -> prevSettings.apiKeys[it.key]!!
+                        else -> settings.apiKeys[it.key]!!
+                    }
+                },
+                apiBase = settings.apiBase.mapValues {
+                    when (it.value) {
+                        null -> "https://api.openai.com/v1"
+                        "" -> "https://api.openai.com/v1"
+                        else -> settings.apiBase[it.key]!!
+                    }
+                },
+            )
+            ApplicationServices.userSettingsManager.updateUserSettings(userinfo, reconstructedSettings)
+            resp.sendRedirect("/")
+        }
     }
-  }
 
-  companion object
+    companion object
 }

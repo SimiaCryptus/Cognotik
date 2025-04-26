@@ -1,7 +1,6 @@
 package com.simiacryptus.aicoder.dictation
 
 import com.simiacryptus.jopenai.audio.TranscriptionProcessor
-import com.intellij.util.ui.UIUtil
 import java.awt.*
 import javax.swing.*
 

@@ -1,11 +1,12 @@
 package com.simiacryptus.jopenai.models
+
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicReference
 
 @Suppress("unused")
 enum class AudioModels(
     override val modelName: String,
-    val type : AudioModelType,
+    val type: AudioModelType,
 ) : OpenAIModel {
     GPT4oTranscribe("gpt-4o-transcribe", AudioModelType.Transcription),
     GPT4oMiniTranscribe("gpt-4o-mini-transcribe", AudioModelType.Transcription),
@@ -22,7 +23,7 @@ enum class AudioModels(
         Transcription,
         TextToSpeech,
     }
-    
+
     fun pricing(length: Int): Double = when (this) {
         Whisper -> 0.006 * length // seconds
         TTS -> (15.0 / 1000000) * length // characters ($15 per 1M characters)
@@ -31,7 +32,8 @@ enum class AudioModels(
         GPT4oMiniTranscribe -> 0.003 * length // minutes ($0.003 per minute)
         GPT4oMiniTTS -> (0.60 / 1000000) * length // characters
     }
-    .also { log.info("Calculated price: {}", it) }
+        .also { log.info("Calculated price: {}", it) }
+
     companion object {
         @OptIn(ExperimentalStdlibApi::class)
         fun find(modelName: String?): AudioModels? {

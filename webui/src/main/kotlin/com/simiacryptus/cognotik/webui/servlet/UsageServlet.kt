@@ -10,34 +10,34 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 
 class UsageServlet : HttpServlet() {
-  public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    resp.contentType = "text/html"
-    resp.status = HttpServletResponse.SC_OK
+    public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        resp.contentType = "text/html"
+        resp.status = HttpServletResponse.SC_OK
 
-    if (req.parameterMap.containsKey("sessionId")) {
-      val session = Session(req.getParameter("sessionId"))
-      serve(resp, ApplicationServices.usageManager.getSessionUsageSummary(session))
-    } else {
-      val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-      if (null == userinfo) {
-        resp.status = HttpServletResponse.SC_BAD_REQUEST
-      } else {
-        val usage = ApplicationServices.usageManager.getUserUsageSummary(userinfo)
-        serve(resp, usage)
-      }
+        if (req.parameterMap.containsKey("sessionId")) {
+            val session = Session(req.getParameter("sessionId"))
+            serve(resp, ApplicationServices.usageManager.getSessionUsageSummary(session))
+        } else {
+            val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
+            if (null == userinfo) {
+                resp.status = HttpServletResponse.SC_BAD_REQUEST
+            } else {
+                val usage = ApplicationServices.usageManager.getUserUsageSummary(userinfo)
+                serve(resp, usage)
+            }
+        }
     }
-  }
 
-  private fun serve(
-    resp: HttpServletResponse,
-    usage: Map<OpenAIModel, ApiModel.Usage>
-  ) {
-    val totalPromptTokens = usage.values.sumOf { it.prompt_tokens }
-    val totalCompletionTokens = usage.values.sumOf { it.completion_tokens }
-    val totalCost = usage.entries.sumOf { (_, count) -> count.cost ?: 0.0 }
+    private fun serve(
+        resp: HttpServletResponse,
+        usage: Map<OpenAIModel, ApiModel.Usage>
+    ) {
+        val totalPromptTokens = usage.values.sumOf { it.prompt_tokens }
+        val totalCompletionTokens = usage.values.sumOf { it.completion_tokens }
+        val totalCost = usage.entries.sumOf { (_, count) -> count.cost ?: 0.0 }
 
-    resp.writer.write(
-      """
+        resp.writer.write(
+            """
             <html>
             <head>
                 <title>Usage</title>
@@ -58,8 +58,8 @@ class UsageServlet : HttpServlet() {
                     <th>Cost</th>
                 </tr>
                 ${
-        usage.entries.joinToString("\n") { (model, count) ->
-          """
+                usage.entries.joinToString("\n") { (model, count) ->
+                    """
                         <tr class="table-row">
                             <td class="model-cell">$model</td>
                             <td class="prompt-cell">${count.prompt_tokens}</td>
@@ -67,8 +67,8 @@ class UsageServlet : HttpServlet() {
                             <td class="cost-cell">${"%.4f".format(count.cost ?: 0.0)}</td>
                         </tr>
                         """.trimIndent()
-        }
-      }
+                }
+            }
             <tr class="table-row">
                 <td class="model-cell">Total</td>
                 <td class="prompt-cell">$totalPromptTokens</td>
@@ -79,8 +79,8 @@ class UsageServlet : HttpServlet() {
             </body>
             </html>
             """.trimIndent())
-  }
+    }
 
-  companion object
+    companion object
 }
 

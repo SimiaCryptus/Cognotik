@@ -16,8 +16,8 @@ class PercentileTool(
             var klDiv = 0.0
             val maxValue = kotlin.math.max(a.lastOrNull() ?: 0.0, b.lastOrNull() ?: 0.0)
             if (maxValue == 0.0) return 0.0
-            val aList = a.map { it/maxValue }.toMutableList()
-            val bList = b.map { it/maxValue }.toMutableList()
+            val aList = a.map { it / maxValue }.toMutableList()
+            val bList = b.map { it / maxValue }.toMutableList()
             while (aList.isNotEmpty() && bList.isNotEmpty()) {
                 val aV = aList.first()
                 val bV = bList.first()

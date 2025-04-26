@@ -103,6 +103,7 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                 DictationState.isRecording -> MyIcons.micActive
                 else -> MyIcons.micInactive
             }
+
             AudioState.TALKING -> when {
                 DictationState.isRecording -> MyIcons.micListening
                 else -> MyIcons.micActive

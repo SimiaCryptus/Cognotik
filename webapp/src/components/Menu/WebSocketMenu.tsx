@@ -72,7 +72,7 @@ const StatusContainer = styled.div`
     align-items: center;
     gap: 0.5rem;
 `;
- const StatusIndicator = styled.div<{ $status: 'connected' | 'disconnected' | 'connecting' | 'error' }>`
+const StatusIndicator = styled.div<{ $status: 'connected' | 'disconnected' | 'connecting' | 'error' }>`
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -181,7 +181,7 @@ export const WebSocketMenu: React.FC = () => {
             timeout: 5000
         });
     };
-    
+
     const handleReconnect = () => {
         setConnectionStatus('connecting');
         WebSocketService.reconnect();
@@ -205,7 +205,7 @@ export const WebSocketMenu: React.FC = () => {
         <MenuContainer>
             <h3>WebSocket Configuration</h3>
             <StatusContainer>
- <StatusIndicator $status={connectionStatus}/>
+                <StatusIndicator $status={connectionStatus}/>
                 <StatusText>
                     {connectionStatus === 'connected' && 'Connected'}
                     {connectionStatus === 'disconnected' && 'Disconnected'}
@@ -273,7 +273,7 @@ export const WebSocketMenu: React.FC = () => {
             </form>
             {connectionStatus === 'connected' && (
                 <ConnectionDetails>
-            Connected to: {`${config.protocol}//${config.url}:${config.port}`}
+                    Connected to: {`${config.protocol}//${config.url}:${config.port}`}
                 </ConnectionDetails>
             )}
             {connectionStatus === 'connecting' && (

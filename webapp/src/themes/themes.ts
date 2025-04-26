@@ -1,5 +1,5 @@
 // Import and re-export ThemeName type
-import type {BaseTheme, ThemeColors, ThemeName} from '../types/theme';
+import type {BaseTheme, ThemeName} from '../types/theme';
 
 export type {ThemeName};
 
@@ -19,7 +19,6 @@ const themeLogger = {
         console.groupEnd();
     }
 };
-
 
 
 interface ThemeSizing {
@@ -351,7 +350,7 @@ export const themes = {
             info: '#48CAE4',
             primaryDark: '#0096C7',
             disabled: '#415A77',
-             hover: '#0077B6',
+            hover: '#0077B6',
             critical: '#FF6B6B', // Adding critical color
         },
         ...baseTheme,
@@ -374,7 +373,7 @@ export const themes = {
             info: '#00FFFF',
             primaryDark: '#CC00CC',
             disabled: '#4A4A4A',
-             hover: '#FF69B4',
+            hover: '#FF69B4',
             critical: '#FF0000', // Adding critical color
         },
         ...baseTheme,

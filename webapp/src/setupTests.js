@@ -11,7 +11,7 @@ const originalConsole = {
     debug: console.debug,
     info: console.info,
 };
- // Custom formatter for test output
+// Custom formatter for test output
 const formatTestOutput = (type, ...args) => {
     const timestamp = new Date().toISOString();
     return `[TEST ${type.toUpperCase()}][${timestamp}] ${args.join(' ')}`;
