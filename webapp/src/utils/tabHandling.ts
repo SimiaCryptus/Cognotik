@@ -360,7 +360,8 @@ export const updateTabs = debounce(() => {
         isMutating = false;
     }
 }, 250);
-// Do NOT call updateTabs() immediately here! It causes infinite loops and breaks tab system.
+                // Wrap updateTabs in requestAnimationFrame to batch DOM updates
+                requestAnimationFrame(() => updateTabs());
 
 
 function setupTabContainer(container: Element) {

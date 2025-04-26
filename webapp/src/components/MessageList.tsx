@@ -3,13 +3,13 @@ import {useSelector} from 'react-redux';
 import {useTheme} from '../hooks/useTheme';
 import {RootState} from '../store';
 import {isArchive} from '../services/appConfig';
-import WebSocketService from '../services/websocket';
+
+import {debounce, resetTabState, updateTabs} from '../utils/tabHandling';
+import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
-import {Message} from '../types/messages';
+import {Message} from "../types/messages";
 import Spinner from './common/Spinner';
 import './MessageList.css';
-import mermaid from 'mermaid';
-import {debouncedUpdate} from '../store/slices/messageSlice';
 
 const DEBUG_LOGGING = process.env.NODE_ENV === 'development';
 const CONTAINER_ID = 'message-list-' + Math.random().toString(36).substr(2, 9);
@@ -237,37 +237,24 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
       mounted = false;
     };
   }, [messages, verboseMode]);
-
-  useTheme();
-
-
-  console.log('[MessageList]: Rendering component');
-
-  // --- Mermaid and Tabs Effect ---
-  React.useLayoutEffect(() => {
-    // Always update tabs after DOM update
-    debouncedUpdate();
-    if (!messageListRef.current) {
-      console.error(`[MessageList ${CONTAINER_ID}] Critical: messageListRef is null`);
-      return;
-    }
+    const debouncedUpdateTabs = React.useCallback(
+        debounce(() => {
     try {
-      // Always re-render all mermaid blocks, not just unprocessed ones, to avoid disappearing diagrams
-      const mermaidBlocks = messageListRef.current.querySelectorAll('.mermaid');
-      if (mermaidBlocks.length > 0) {
-        console.info("[MessageList] Rendering mermaid diagrams");
-        mermaid.initialize({ startOnLoad: true });
-        mermaidBlocks.forEach((el) => {
-          el.classList.add('mermaid-processed');
-          el.classList.remove('mermaid');
-        });
-        console.info("[MessageList] Mermaid diagrams rendered successfully");
-      }
+                updateTabs();
     } catch (error) {
-      console.error(`[MessageList ${CONTAINER_ID}] Failed to render mermaid diagram`, error);
+                console.error(`[MessageList ${CONTAINER_ID}] Failed to update tabs`, error);
+                resetTabState();
     }
-    // Use only dependencies that affect DOM: finalMessages, verboseMode, theme, etc.
-  }, [finalMessages, verboseMode, currentTheme]);
+        }, 250),
+        []
+    );
+
+    useTheme();
+    console.log('MessageList', 'Rendering component', {hasPropMessages: !!propMessages});
+
+    React.useEffect(() => {
+        debouncedUpdateTabs();
+    }, [finalMessages]);
 
   return (
       <div
