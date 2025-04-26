@@ -261,6 +261,32 @@ export function resetTabState() {
     isMutating = false;
 }
 
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCollapsibleElements();
+});
+
+// Initialize all collapsible elements on the page
+export function initCollapsibleElements() {
+    document.querySelectorAll('.expandable-header').forEach(header => {
+        header.addEventListener('click', (event) => {
+            const clickedHeader = event.currentTarget as HTMLElement;
+            const content = clickedHeader.nextElementSibling!;
+            const icon = clickedHeader.querySelector('.expand-icon')!;
+
+            // Toggle expanded state
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+
+            // Update icon text
+            if (icon) {
+                icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
+            }
+        });
+    });
+}
+
+// For dynamically added collapsible elements
 export function initNewCollapsibleElements() {
     document.querySelectorAll('.expandable-header:not([data-initialized])').forEach(header => {
         header.setAttribute('data-initialized', 'true');

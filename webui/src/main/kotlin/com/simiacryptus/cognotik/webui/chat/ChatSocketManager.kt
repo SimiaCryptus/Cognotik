@@ -42,7 +42,7 @@ open class ChatSocketManager(
         
         <h4 class="expandable-section-title">Range Expansion</h4>
         <p class="expandable-description">Use <code>[[start..end:step]]</code> to iterate over a range of numbers.</p>
-        <p class="expandable-example"><em>Example:</em> <code>Count from [[1..5]]</code></p>
+        <p class="expandable-example"><em>Example:</em> <code>Project an alternate history where Rome never fell. Tell what happened in [[1000..1500:100]]</code></p>
         
         <h4 class="expandable-section-title">Topic Reference Expansion</h4>
         <p class="expandable-description">Use <code>{topicType}</code> to refer to previously identified topics.</p>

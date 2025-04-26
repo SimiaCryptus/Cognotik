@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
 import com.simiacryptus.cognotik.plan.cognitive.PlanAheadMode
-import com.simiacryptus.cognotik.plan.cognitive.SingleTaskMode
+import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -247,14 +247,14 @@ open class AppServer(
     listOf(
       ChildWebApp("/chat", BasicChatApp(".".toFile(), model, parsingModel)),
       ChildWebApp(
-        "/singleTask", UnifiedPlanApp(
+        "/taskChat", UnifiedPlanApp(
           applicationName = "Task-Runner",
           planSettings = planSettings,
           model = model,
           parsingModel = parsingModel,
           domainName = publicName,
           api2 = api2,
-          cognitiveStrategy = SingleTaskMode,
+          cognitiveStrategy = TaskChatMode,
           describer = describer
         )
       ),

@@ -95,7 +95,7 @@ class UnifiedPlanAction : BaseAction() {
               session: Session,
               user: User?,
               describer: TypeDescriber
-            ) = object : SingleTaskMode(ui, api, planSettings, session, user, api2, describer) {
+            ) = object : TaskChatMode(ui, api, planSettings, session, user, api2, describer) {
               override fun contextData(): List<String> {
                 return listOf(
                   buildString {

@@ -16,14 +16,17 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
+import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
- * A cognitive mode that executes a single task based on user input.
+ * A cognitive mode that executes tasks based on user input while maintaining conversation history.
  */
-open class SingleTaskMode(
+open class TaskChatMode(
   override val ui: ApplicationInterface,
   override val api: API,
   override val planSettings: PlanSettings,
@@ -32,19 +35,49 @@ open class SingleTaskMode(
   private val api2: OpenAIClient,
   val describer: TypeDescriber
 ) : CognitiveMode {
-  private val log = LoggerFactory.getLogger(SingleTaskMode::class.java)
+  private val log = LoggerFactory.getLogger(TaskChatMode::class.java)
+  // Message history for the conversation
+  private val messagesLock = Any()
+  private val messages = ConcurrentLinkedQueue<ApiModel.ChatMessage>()
+  // Buffer for queued messages while processing
+  private val messageBuffer = ConcurrentLinkedQueue<String>()
+  // Flag to track if we're currently processing a task
+  private var isProcessing = false
+  // System prompt for task selection
+  private val systemPrompt = "Given the following input, choose ONE task to execute. " +
+      "Do not create a full plan, just select the most appropriate task types for the given input."
 
   override fun initialize() {
     // Validate that only one task type is enabled
     val enabledTasks = TaskType.getAvailableTaskTypes(planSettings)
     require(enabledTasks.size == 1) {
-      "SingleTaskMode requires exactly one enabled task type. Found ${enabledTasks.size}: ${enabledTasks.map { it.name }}"
+      "TaskChatMode requires exactly one enabled task type. Found ${enabledTasks.size}: ${enabledTasks.map { it.name }}"
     }
-    log.debug("SingleTaskMode initialized with task type: ${enabledTasks.first().name}")
+    log.debug("TaskChatMode initialized with task type: ${enabledTasks.first().name}")
+    
+    // Initialize conversation with system message
+    synchronized(messagesLock) {
+      messages.add(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList()))
+    }
   }
 
   override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
+    // If already processing a message, add to buffer and return
+    synchronized(messagesLock) {
+      if (isProcessing) {
+        log.debug("Already processing a task, adding message to buffer: ${userMessage}")
+        messageBuffer.add(userMessage)
+        return
+      }
+      isProcessing = true
+    }
+    
+    // Add user message to conversation history
+    synchronized(messagesLock) {
+      messages.add(ApiModel.ChatMessage(ApiModel.Role.user, userMessage.toContentList()))
+    }
+    
     Retryable(ui, task) {
       val subtask = ui.newTask(false)
       ui.socketManager?.pool?.submit {
@@ -59,6 +92,7 @@ open class SingleTaskMode(
     val apiClient = (api as ChatClient).getChildClient(task)
     apiClient.budget = planSettings.budget
 
+    
     val coordinator = PlanCoordinator(
       user = user,
       session = session,
@@ -68,19 +102,22 @@ open class SingleTaskMode(
       planSettings = planSettings
     )
 
+    
     try {
       val taskType = TaskType.getAvailableTaskTypes(planSettings).first()
 
-      val prompt =
-        "Given the following input, choose ONE task to execute. Do not create a full plan, just select the most appropriate task types for the given input.\nAvailable task types:\n" +
-            TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n") {
-              "* ${TaskType.getImpl(coordinator.planSettings, it).promptSegment()}"
+      
+      // Build the task selection prompt
+      val taskSelectionPrompt =
+        "Available task types:\n" +
+            TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n") { taskType ->
+              "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment()}"
             } + "\nChoose the most suitable task types and provide details of how they should be executed."
 
       val actor = ParsedActor(
         name = "SingleTaskChooser",
         resultClass = taskType.taskDataClass,
-        prompt = prompt,
+        prompt = taskSelectionPrompt,
         model = coordinator.planSettings.defaultModel,
         parsingModel = coordinator.planSettings.parsingModel,
         temperature = coordinator.planSettings.temperature,
@@ -105,11 +142,14 @@ open class SingleTaskMode(
           }
       )
 
-      val input = listOf(userMessage) + contextData() +
+      
+      // Prepare input with conversation context
+      val input = getConversationContext() +
           listOf(
             "Please choose the next single task to execute based on the current status.\nIf there are no tasks to execute, return {}."
           )
 
+      
       val taskConfig = actor.answer(input, apiClient).obj
       task.add(renderMarkdown("Executing ${taskType.name}:\n```json\n${JsonUtil.toJson(taskConfig)}\n```"))
 
@@ -132,14 +172,69 @@ open class SingleTaskMode(
         tabs["Output"] = placeholder
         complete(renderMarkdown("Task completed. Result:\n${result}"))
       }
+      // Add assistant response to conversation history
+      val assistantResponse = "Task executed: ${taskType.name}\n${result}"
+      synchronized(messagesLock) {
+        messages.add(ApiModel.ChatMessage(ApiModel.Role.assistant, assistantResponse.toContentList()))
+      }
+      // Complete the task
       task.complete()
+      // Process any buffered messages
+      processBufferedMessages()
     } catch (e: Exception) {
       log.error("Error executing task", e)
       task.error(null, e)
+      // Reset processing flag even if there was an error
+      synchronized(messagesLock) {
+        isProcessing = false
+      }
+    }
+  }
+  /**
+   * Process any messages that were buffered while a task was running
+   */
+  private fun processBufferedMessages() {
+    synchronized(messagesLock) {
+      if (messageBuffer.isNotEmpty()) {
+        // Concatenate all buffered messages
+        val combinedMessage = messageBuffer.joinToString("\n\n")
+        log.debug("Processing buffered messages: ${messageBuffer.size} messages")
+        // Clear the buffer
+        messageBuffer.clear()
+        // Reset processing flag to allow the new task to start
+        isProcessing = false
+        // Process the combined message
+        val newTask = ui.newTask(false)
+        ui.socketManager?.pool?.submit {
+          handleUserMessage(combinedMessage, newTask)
+        }
+      } else {
+        // No buffered messages, just reset the flag
+        isProcessing = false
+      }
     }
   }
   
-  override fun contextData() = emptyList<String>()
+  
+  /**
+   * Gets the current conversation context as a list of messages
+   */
+  private fun getConversationContext(): List<String> {
+    val contextMessages = synchronized(messagesLock) {
+      messages.toList()
+    }
+    
+    return contextMessages.map { message ->
+      "${message.role?.name?.uppercase()}: ${message.content?.joinToString("") { it.text ?: "" } ?: ""}"
+    }
+  }
+  
+  /**
+   * Provides context data for the conversation
+   */
+  override fun contextData(): List<String> {
+    return getConversationContext()
+  }
 
   companion object : CognitiveModeStrategy {
     override fun getCognitiveMode(
@@ -150,6 +245,6 @@ open class SingleTaskMode(
       session: Session,
       user: User?,
       describer: TypeDescriber
-    ) = SingleTaskMode(ui, api, planSettings, session, user, api2, describer)
+    ) = TaskChatMode(ui, api, planSettings, session, user, api2, describer)
   }
 }
