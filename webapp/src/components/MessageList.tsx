@@ -135,7 +135,7 @@ export const expandMessageReferences = (
 const MessageList: React.FC<MessageListProps> = ({ messages: propMessages }) => {
   // Add archive mode class to container in archive mode
   const currentTheme = useSelector((state: RootState) => state.ui.theme);
-  const containerClassName = `message-list-container${isArchive ? ' archive-mode' : ''} theme-${currentTheme}`;
+  const containerClassName = `message-list-container${isArchive() ? ' archive-mode' : ''} theme-${currentTheme}`;
   // Apply theme class to container
   React.useEffect(() => {
     if (messageListRef.current) {

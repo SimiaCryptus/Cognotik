@@ -85,7 +85,8 @@
     "eject": "react-scripts eject",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix --max-warnings=0",
     "type-check": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate": "concurrently \"npm run lint\" \"npm run type-check\""
   },
   "version": "0.1.0"
 }
