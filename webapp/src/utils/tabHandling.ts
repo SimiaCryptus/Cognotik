@@ -309,10 +309,6 @@ export const updateTabs = debounce(() => {
     }
     isMutating = true;
     try {
-        // Remove any .tab-content[data-cached] elements before updating tabs
-        document.querySelectorAll('.tab-content[data-cached]').forEach(tab => {
-            tab.remove();
-        });
         initNewCollapsibleElements()
         const currentStates = getAllTabStates();
         const processed = new Set<string>();

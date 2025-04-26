@@ -1,18 +1,22 @@
 import React from 'react';
-import Prism from 'prismjs';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { RootState, store } from './store';
-import { setConnectionStatus } from './store/slices/connectionSlice';
+import {isArchive} from './services/appConfig';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import ErrorFallback from './components/ErrorBoundary/ErrorFallback';
 import './App.css';
 import websocket from './services/websocket';
-import { setConnectionError } from './store/slices/connectionSlice';
+import {setConnectionStatus, setConnectionError} from './store/slices/connectionSlice';
 import ChatInterface from './components/ChatInterface';
 import ThemeProvider from './themes/ThemeProvider';
-import { Menu } from './components/Menu/Menu';
-import { Modal } from './components/Modal/Modal';
+import {Menu} from "./components/Menu/Menu";
+import {Modal} from "./components/Modal/Modal";
 import { setupUIHandlers } from './utils/uiHandlers';
+// Import Prism core
+import Prism from 'prismjs';
+// Import base CSS
+// import 'prismjs/themes/prism.css';
+// Import commonly used languages
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-css';
 import 'prismjs/components/prism-markup';
@@ -26,6 +30,8 @@ import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-mermaid';
 import 'prismjs/components/prism-scala';
 import 'prismjs/components/prism-python';
+
+// Import essential plugins
 import 'prismjs/plugins/toolbar/prism-toolbar';
 import 'prismjs/plugins/toolbar/prism-toolbar.css';
 import 'prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard';
@@ -37,40 +43,33 @@ import 'prismjs/plugins/diff-highlight/prism-diff-highlight';
 import 'prismjs/plugins/diff-highlight/prism-diff-highlight.css';
 import 'prismjs/plugins/show-language/prism-show-language';
 import 'prismjs/plugins/normalize-whitespace/prism-normalize-whitespace';
+// import 'prismjs/plugins/autoloader/prism-autoloader';
 import QRCode from 'qrcode-generator';
-import { addMessage } from './store/slices/messageSlice';
+import {addMessage} from "./store/slices/messageSlice";
 import { Message } from './types/messages';
-const APP_VERSION = '1.0.0'; 
-const LOG_PREFIX = '[Cognotik]';
-Prism.manual = true;
 
 
 // Add function to extract archived messages
-const getArchivedMessages = (isArchiveMode: boolean) => {
-    if (!isArchiveMode) return null;
+const getArchivedMessages = () => {
+    if (!isArchive) return null;
     try {
         const messagesEl = document.getElementById('archived-messages');
-        if (!messagesEl || !messagesEl.textContent) {
-            console.warn(`[Cognotik] No archived messages found in DOM`);
-            return [];
-        }
+        if (!messagesEl) return null;
         return JSON.parse(messagesEl.textContent || '[]');
     } catch (err) {
-        console.error(`[Cognotik] Critical: Failed to parse archived messages:`, err);
-        return [];
+        console.error(`${LOG_PREFIX} Critical: Failed to parse archived messages:`, err);
+        return null;
     }
 };
-// Interface for App props
-interface AppProps {
-    isArchive?: boolean;
-}
 
+const APP_VERSION = '1.0.0';
+const LOG_PREFIX = '[SkyeNet]';
+Prism.manual = true;
 
 
 // Create a separate component for the app content
-const AppContent: React.FC<AppProps> = ({ isArchive }) => {
-    const isArchiveMode = isArchive || false;
-    if (!isArchiveMode) {
+const AppContent: React.FC = () => {
+    if (!isArchive) {
         console.info(`${LOG_PREFIX} Initializing application v${APP_VERSION}`);
     } else {
         console.info(`${LOG_PREFIX} Initializing application v${APP_VERSION} in archive mode`);
@@ -83,7 +82,7 @@ const AppContent: React.FC<AppProps> = ({ isArchive }) => {
     const { isConnected, error } = useSelector((state: RootState) => state.connection);
     // Update connection status in Redux store when websocket status changes
     React.useEffect(() => {
-        if (isArchiveMode) return; // Skip websocket setup in archive mode
+        if (isArchive) return; // Skip websocket setup in archive mode
         
         const handleConnectionChange = (connected: boolean) => {
             dispatch(setConnectionStatus(connected));
@@ -114,44 +113,34 @@ const AppContent: React.FC<AppProps> = ({ isArchive }) => {
             websocket.removeConnectionHandler(handleConnectionChange);
             websocket.removeErrorHandler(handleError);
         };
-    }, [dispatch, isArchiveMode]);
+    }, [dispatch]);
 
     // Load archived messages on mount if in archive mode
     React.useEffect(() => {
-        if (isArchiveMode && !archivedMessagesLoaded) {
-        const archivedMessages = getArchivedMessages(isArchiveMode);
+        if (isArchive && !archivedMessagesLoaded) {
+        const archivedMessages = getArchivedMessages();
             if (archivedMessages) {
                 archivedMessages.forEach((msg: Message) => dispatch(addMessage(msg)));
                 setArchivedMessagesLoaded(true);
             }
         }
-    }, [dispatch, archivedMessagesLoaded, isArchiveMode]);
+    }, [dispatch, archivedMessagesLoaded]);
 
-
-    
-    // Only get sessionId if not in archive mode
-    const sessionId = React.useMemo(() => {
-        if (isArchiveMode) return '';
-        return websocket.getSessionId();
-    }, [isArchiveMode]);
-
+    const sessionId = websocket.getSessionId();
     React.useEffect(() => {
         // Skip websocket setup if loading from archive
-        if (isArchiveMode) {
+        if (isArchive) {
             return;
         }
 
         if (appConfig.applicationName) {
             document.title = appConfig.applicationName;
         }
-    }, [appConfig.applicationName, isArchiveMode]);
+    }, [appConfig.applicationName]);
 
-    // Only log websocket disconnected if not in archive mode
-    React.useEffect(() => {
-        if (!isArchiveMode && !isConnected) {
+    if (!isConnected) {
             console.warn(`${LOG_PREFIX} WebSocket disconnected - sessionId: ${sessionId}`);
         }
-    }, [isConnected, sessionId, isArchiveMode]);
     // Log WebSocket errors for debugging
     React.useEffect(() => {
         if (error) {
@@ -174,18 +163,18 @@ const AppContent: React.FC<AppProps> = ({ isArchive }) => {
     }, []);
     // Add debug information to help diagnose rendering issues
     React.useEffect(() => {
-        console.log(`${LOG_PREFIX} Rendering AppContent component. isArchive:`, isArchiveMode);
+        console.log(`${LOG_PREFIX} Rendering AppContent component. isArchive:`, isArchive);
         console.log(`${LOG_PREFIX} Connection status:`, isConnected ? 'Connected' : 'Disconnected');
         // Check if the DOM is properly rendering
         const rootElement = document.getElementById('root');
         console.log(`${LOG_PREFIX} Root element:`, rootElement);
         console.log(`${LOG_PREFIX} Root element children:`, rootElement?.childNodes?.length);
-    }, [isArchiveMode, isConnected]);
+    }, [isConnected]);
 
 
     return (
         <ThemeProvider>
-            <div className="App">
+            <div className={`App`}>
                 <Menu/>
                 <ChatInterface
                     sessionId={sessionId}
@@ -198,13 +187,11 @@ const AppContent: React.FC<AppProps> = ({ isArchive }) => {
     );
 };
 // Create the main App component that provides the Redux store
-const App: React.FC<AppProps> = ({ isArchive }) => {
-    // Add console log to verify App component is rendering
-    console.log(`${LOG_PREFIX} Rendering App component`);
+const App: React.FC = () => {
     return (
         <ErrorBoundary FallbackComponent={ErrorFallback}>
             <Provider store={store}>
-                <AppContent isArchive={isArchive}/>
+                <AppContent/>
             </Provider>
         </ErrorBoundary>
     );

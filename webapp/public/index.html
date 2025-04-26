@@ -23,50 +23,5 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <!-- For archive mode -->
-    <!-- Make sure this element is properly formatted -->
-    <script id="archived-messages" type="application/json">
-      []
-    </script>
-    <!-- Add a fallback in case React fails to render -->
-    <script>
-      // Increase timeout and add more detailed error handling
-      window.addEventListener('load', function() {
-        // Check if we're in archive mode
-        function isArchiveMode() {
-          return window.location.search.includes('archive=true') || 
-                 localStorage.getItem('archive_mode') === 'true' ||
-                 document.documentElement.outerHTML.length > 60000;
-        }
-        
-        // Check if the app is already rendering
-        function isAppRendering() {
-          var root = document.getElementById('root');
-          return root && root.children && root.children.length > 0 && 
-                 root.innerHTML.includes('App');
-        }
-        // Skip the check if we're in archive mode
-        if (isArchiveMode()) {
-          console.log('Archive mode detected, skipping React render check');
-          return;
-        }
-        
-        // Initial check - app might already be rendered
-        if (isAppRendering()) {
-          console.log('React app already rendered successfully');
-          return;
-        }
-        
-        setTimeout(function() {
-          var root = document.getElementById('root');
-          if (!isAppRendering()) {
-            console.error('React app failed to render after timeout');
-            if (root) {
-              root.innerHTML = '<div style="padding: 20px; text-align: center;"><h2>Application Error</h2><p>The application failed to load properly. Please try refreshing the page or check the console for errors.</p><p><button onclick="window.location.reload()">Refresh Page</button></p></div>';
-            }
-          }
-        }, 10000); // Increased timeout to 10 seconds
-      });
-    </script>
   </body>
 </html>

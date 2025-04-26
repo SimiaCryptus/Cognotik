@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { addMessage } from '../store/slices/messageSlice';
 import WebSocketService from '../services/websocket';
 import { debounce } from '../utils/tabHandling';
-import { Message, MessageType } from '../types/messages';
+import {Message, MessageType} from "../types/messages";
 
 export const useWebSocket = (sessionId: string) => {
   const RECONNECT_MAX_DELAY = 60000; // Increased to 60 seconds
@@ -51,7 +51,7 @@ export const useWebSocket = (sessionId: string) => {
       setIsReconnecting(true);
       connectionStatus.current = ({
         attempts: attempts,
-        lastAttempt: Date.now(),
+                lastAttempt: Date.now()
       });
     };
 
@@ -61,6 +61,7 @@ export const useWebSocket = (sessionId: string) => {
     }
 
     const handleMessage = (message: Message) => {
+            // Ensure message has required fields
       if (!message?.id || !message?.version) {
         return;
       }
@@ -106,13 +107,13 @@ export const useWebSocket = (sessionId: string) => {
       }
       if (connectionStatus.current.attempts >= 10) {
         console.error(
-          `[WebSocket] Maximum reconnection attempts reached (${connectionStatus.current.attempts})`,
+                    `[WebSocket] Maximum reconnection attempts reached (${connectionStatus.current.attempts})`
         );
         return;
       }
       console.error(
         `[WebSocket] Connection error (attempt ${connectionStatus.current.attempts}):`,
-        err && err.message ? err.message : err,
+                err.message
       );
 
       // Calculate delay using exponential backoff and retry
@@ -149,6 +150,6 @@ export const useWebSocket = (sessionId: string) => {
     send: (message: string) => {
       return WebSocketService.send(message);
     },
-    isConnected,
+        isConnected
   };
 };

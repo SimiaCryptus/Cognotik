@@ -5,44 +5,9 @@ import { ThemeName } from '../types';
 
 const LOG_PREFIX = '[AppConfig]';
 // Add archive detection and export
-// Check for archive mode in both URL and localStorage for persistence
-export const isArchive = () => {
-  // Check for archive mode in URL, localStorage, or detect if the old index.js is running
-  // Disable the archive mode detection for now
-  const isArchiveMode = false && (window.location.search.includes('archive=true') ||
-         localStorage.getItem('archive_mode') === 'true' ||
-         // Check if the old index.js has already started in archive mode
-         (typeof window !== 'undefined' &&
-          window.console &&
-          document.documentElement.outerHTML.length > 60000));
-  // Log the detection result for debugging
-  console.log(`${LOG_PREFIX} Archive mode detection:`, {
-    fromURL: window.location.search.includes('archive=true'),
-    fromStorage: localStorage.getItem('archive_mode') === 'true',
-    fromDocSize: document.documentElement.outerHTML.length > 60000,
-    finalDecision: isArchiveMode
-  });
-  return isArchiveMode;
-};
+export const isArchive = document.documentElement.hasAttribute('data-archive');
 
-// Store archive mode in localStorage if it's in the URL
-if (window.location.search.includes('archive=true')) {
-  localStorage.setItem('archive_mode', 'true');
-}
-
-console.log(`${LOG_PREFIX} Running in ${isArchive() ? 'archive' : 'live'} mode`);
-
-// Compute base API URL so that it works for subpaths (non-root deploys)
-function getBaseApiUrl() {
-  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
-  // Remove trailing slash from pathname if present
-  let basePath = window.location.pathname.replace(/\/$/, '');
-  // If basePath is just '', set to '/'
-  if (!basePath) basePath = '/';
-  return window.location.origin + basePath + (basePath.endsWith('/') ? '' : '/');
-}
-
-const BASE_API_URL = getBaseApiUrl();
+const BASE_API_URL = process.env.REACT_APP_API_URL || (window.location.origin + window.location.pathname);
 
 let loadConfigPromise: Promise<any> | null = null;
 const STORAGE_KEYS = {
