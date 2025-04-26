@@ -50,17 +50,17 @@ class RunShellCommandTask(
         "language" to (planSettings.language ?: "bash"),
         "command" to (planSettings.shellCmd),
       ),
-      model = planSettings.getTaskSettings(TaskType.valueOf(planTask?.task_type!!)).model
+      model = planTask?.task_type?.let { planSettings.getTaskSettings(TaskType.valueOf(it)).model }
         ?: planSettings.defaultModel,
       temperature = planSettings.temperature,
-      fallbackModel = planSettings.getTaskSettings(TaskType.valueOf(planTask.task_type)).model ?: planSettings.defaultModel
+      fallbackModel = planTask?.task_type?.let { planSettings.getTaskSettings(TaskType.valueOf(it)).model } 
+        ?: planSettings.defaultModel
     )
   }
 
   override fun promptSegment() = """
-    RunShellCommandTask - Execute shell commands and provide the output
+    RunShellCommandTask - Execute ${planSettings.language ?: "bash"} shell commands and provide the output
       ** Specify the command to be executed, or describe the task to be performed
-      ** List input files/tasks to be examined when writing the command
       ** Optionally specify a working directory for the command execution
     """.trimIndent()
 
@@ -74,7 +74,7 @@ class RunShellCommandTask(
     planSettings: PlanSettings
   ) {
     val semaphore = Semaphore(0)
-    object : CodingAgent<ProcessInterpreter>(
+    val codingAgent = object : CodingAgent<ProcessInterpreter>(
       api = api,
       dataStorage = agent.dataStorage,
       session = agent.session,
@@ -119,13 +119,12 @@ class RunShellCommandTask(
           semaphore.release()
         }
       }
-    }.apply<CodingAgent<ProcessInterpreter>> {
-      start(
-        codeRequest(
-          messages.map { it to ApiModel.Role.user }
-        )
-      )
     }
+    codingAgent.start(
+      codingAgent.codeRequest(
+        messages.map { it to ApiModel.Role.user }
+      )
+    )
     try {
       semaphore.acquire()
     } catch (e: Throwable) {

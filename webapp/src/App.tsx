@@ -3,11 +3,12 @@ import Prism from 'prismjs';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { RootState, store } from './store';
 import { isArchive } from './services/appConfig';
+import { setConnectionStatus } from './store/slices/connectionSlice';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import ErrorFallback from './components/ErrorBoundary/ErrorFallback';
 import './App.css';
 import websocket from './services/websocket';
-import { setConnectionError, setConnectionStatus } from './store/slices/connectionSlice';
+import { setConnectionError } from './store/slices/connectionSlice';
 import ChatInterface from './components/ChatInterface';
 import ThemeProvider from './themes/ThemeProvider';
 import { Menu } from './components/Menu/Menu';
@@ -47,11 +48,14 @@ const getArchivedMessages = () => {
     if (!isArchive) return null;
     try {
         const messagesEl = document.getElementById('archived-messages');
-        if (!messagesEl) return null;
+        if (!messagesEl || !messagesEl.textContent) {
+            console.warn(`${LOG_PREFIX} No archived messages found in DOM`);
+            return [];
+        }
         return JSON.parse(messagesEl.textContent || '[]');
     } catch (err) {
         console.error(`${LOG_PREFIX} Critical: Failed to parse archived messages:`, err);
-        return null;
+        return [];
     }
 };
 
@@ -162,11 +166,23 @@ const AppContent: React.FC = () => {
         qr.make();
 
     }, []);
+    // Add debug information to help diagnose rendering issues
+    React.useEffect(() => {
+        console.log(`${LOG_PREFIX} Rendering AppContent component. isArchive:`, isArchive);
+        console.log(`${LOG_PREFIX} Connection status:`, isConnected ? 'Connected' : 'Disconnected');
+        // Check if the DOM is properly rendering
+        const rootElement = document.getElementById('root');
+        console.log(`${LOG_PREFIX} Root element:`, rootElement);
+        console.log(`${LOG_PREFIX} Root element children:`, rootElement?.childNodes?.length);
+    }, [isArchive, isConnected]);
 
 
     return (
         <ThemeProvider>
-            <div className={`App`}>
+            <div className="App">
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <h1>SimiaCryptus AI Assistant</h1>
+                </div>
                 <Menu/>
                 <ChatInterface
                     sessionId={sessionId}
@@ -180,6 +196,8 @@ const AppContent: React.FC = () => {
 };
 // Create the main App component that provides the Redux store
 const App: React.FC = () => {
+    // Add console log to verify App component is rendering
+    console.log(`${LOG_PREFIX} Rendering App component`);
     return (
         <ErrorBoundary FallbackComponent={ErrorFallback}>
             <Provider store={store}>

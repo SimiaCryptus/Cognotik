@@ -5,7 +5,9 @@ import { ThemeName } from '../types';
 
 const LOG_PREFIX = '[AppConfig]';
 // Add archive detection and export
-export const isArchive = document.documentElement.hasAttribute('data-archive');
+export const isArchive = window.location.search.includes('archive=true');
+
+console.log(`${LOG_PREFIX} Running in ${isArchive ? 'archive' : 'live'} mode`);
 
 // Compute base API URL so that it works for subpaths (non-root deploys)
 function getBaseApiUrl() {

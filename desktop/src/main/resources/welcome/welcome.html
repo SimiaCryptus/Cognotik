@@ -1357,7 +1357,7 @@
         if (checkbox) {
             taskSettingsObj[task.id] = {
                 enabled: checkbox.checked,
-                taskType: task.id
+                task_type: task.id
             };
             // Save task selection to localStorage
             localStorage.setItem(`task-${task.id}`, checkbox.checked);
@@ -1579,7 +1579,7 @@
                 // Add this task to the taskSettings
                 taskSettings.taskSettings[task.id] = {
                     enabled: true,
-                    taskType: task.id
+                    task_type: task.id
                 };
                 }
             }
