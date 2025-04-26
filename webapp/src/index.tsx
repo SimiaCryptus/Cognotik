@@ -1,6 +1,6 @@
 import {Provider} from 'react-redux';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 import App from './App';
 import {store} from './store';
 import './index.css';
@@ -17,20 +17,20 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 mermaid.initialize({startOnLoad: true});
 
-    try {
+try {
     root.render(
         <Provider store={store}>
             <App/>
         </Provider>
     );
     console.log('[App] Application started successfully ✅');
-    } catch (error) {
-        // Type guard to check if error is an Error object
-        const err = error as Error;
-        console.error('[App] Critical Error: Failed to render application:', {
-            error: err,
-            errorMessage: err.message,
-            errorStack: err.stack
-        });
+} catch (error) {
+    // Type guard to check if error is an Error object
+    const err = error as Error;
+    console.error('[App] Critical Error: Failed to render application:', {
+        error: err,
+        errorMessage: err.message,
+        errorStack: err.stack
+    });
     throw error;
 }

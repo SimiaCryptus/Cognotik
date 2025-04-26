@@ -307,12 +307,14 @@ export const updateTabs = debounce(() => {
     if (isMutating) {
         return;
     }
-    isMutating = true;
+
+
     try {
         initNewCollapsibleElements()
         const currentStates = getAllTabStates();
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));
+        isMutating = true;
         const visibleTabs = new Set<string>();
         tabsContainers.forEach(container => {
             if (processed.has(container.id)) return;
@@ -331,7 +333,7 @@ export const updateTabs = debounce(() => {
                     const firstTabId = firstButton.getAttribute('data-for-tab');
                     if (firstTabId) setActiveTab(firstButton, container);
                 } else {
-                    // console.warn(`No active tab found for container ${container.id}`);
+                    console.warn(`No active tab found for container ${container.id}`);
                 }
             }
         });

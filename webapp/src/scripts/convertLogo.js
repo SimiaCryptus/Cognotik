@@ -1,8 +1,8 @@
 const sharp = require('sharp');
 const path = require('path');
 
-const inputPath = path.join(__dirname, '../../public/favicon.svg');
-const outputPath = path.join(__dirname, '../../public/favicon256.png');
+const inputPath = path.join(__dirname, '../../public/logo.svg');
+const outputPath = path.join(__dirname, '../../public/logo256.png');
 
 sharp(inputPath)
   .resize(256, 256)

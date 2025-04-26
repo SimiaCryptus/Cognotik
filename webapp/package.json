@@ -76,7 +76,7 @@
       "no-debugger": "warn"
     }
   },
-  "name": "cognotik-ui",
+  "name": "skyenet-ui",
   "private": true,
   "scripts": {
     "start": "cross-env NODE_ENV='development' react-scripts start",
@@ -85,8 +85,7 @@
     "eject": "react-scripts eject",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix --max-warnings=0",
     "type-check": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
-    "validate": "concurrently \"npm run lint\" \"npm run type-check\""
+    "typecheck": "tsc --noEmit"
   },
   "version": "0.1.0"
 }

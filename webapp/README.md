@@ -1,201 +1,231 @@
-# Cognotik UI
+# Chat Web Application
 
-Cognotik UI is a React-based chat application interface with real-time messaging support via WebSocket. It features theming, modal dialogs, message rendering with Markdown and syntax highlighting, and a robust state management system using Redux Toolkit.
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Development](#development)
-- [Testing](#testing)
-- [Configuration](#configuration)
-- [Theming](#theming)
-- [Architecture](#architecture)
-- [Contributing](#contributing)
-- [License](#license)
-
----
+A modern, feature-rich chat web application built with React, TypeScript, and WebSocket communication.
 
 ## Features
 
-- Real-time chat interface with WebSocket connectivity.
-- Supports multiple themes with dynamic switching.
-- Modal dialogs for settings, sessions, and other UI elements.
-- Syntax highlighting for code blocks using Prism.js.
-- Markdown support with live preview.
-- Robust error handling with React Error Boundaries.
-- Tab system with state persistence.
-- Accessibility and keyboard shortcuts.
-- Archive mode for viewing saved chat logs.
-- Detailed logging and debugging support.
+### Core Functionality
+- Real-time chat messaging using WebSocket connections
+- Support for HTML and Markdown message formatting
+- Message history and threading
+- Reference message linking
+- Code syntax highlighting with Prism.js
+- Mermaid diagram support
+- QR code generation
 
----
+### UI/UX
+- Multiple theme support with smooth transitions
+- Responsive design with mobile optimization
+- Accessible components following ARIA guidelines
+- Rich text editor with Markdown toolbar
+- Message preview mode
+- Loading states and error handling
+- Archive mode for offline viewing
 
-## Installation
+### Themes
+- 8 built-in themes:
+  - Main (Light)
+  - Night (Dark)
+  - Forest
+  - Pony
+  - Alien
+  - Sunset
+  - Ocean
+  - Cyberpunk
+- Theme persistence in localStorage
+- Auto theme switching support
+
+### Technical Features
+- TypeScript for type safety
+- Redux state management with slices
+- Styled Components for CSS-in-JS
+- WebSocket connection management with auto-reconnect
+- Message queuing and batching
+- Performance optimizations
+- Comprehensive error handling
+- Detailed logging system
+- Unit test setup
+
+## Project Structure
+
+```
+webapp/
+├── src/
+│   ├── components/      # React components
+│   ├── hooks/          # Custom React hooks
+│   ├── services/       # Core services (WebSocket, config)
+│   ├── store/          # Redux store and slices
+│   ├── styles/         # Global styles
+│   ├── themes/         # Theme definitions
+│   ├── types/          # TypeScript type definitions
+│   └── utils/          # Utility functions
+```
+
+## Key Components
+
+### Chat Interface
+- `ChatInterface.tsx`: Main chat container component
+- `MessageList.tsx`: Renders chat messages with formatting
+- `InputArea.tsx`: Message input with Markdown editor
+
+### Theme System
+- `ThemeProvider.tsx`: Theme context and switching
+- `ThemeMenu.tsx`: Theme selection UI
+- `themes.ts`: Theme definitions and utilities
+
+### State Management
+- Redux store with slices for:
+  - Messages
+  - UI state
+  - Configuration
+  - User data
+
+## Setup & Development
 
 ### Prerequisites
-
-- Node.js (>= 16.x recommended)
+- Node.js 14+
 - npm or yarn
 
-### Steps
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/your-org/cognotik-ui.git
-   cd cognotik-ui
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. (Optional) Convert SVG logo to PNG:
-
-   ```bash
-   node scripts/convertLogo.js
-   ```
-
----
-
-## Usage
-
-### Development Server
-
-Start the development server with hot reloading:
-
+### Installation
 ```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm start
-# or
-yarn start
-```
 
-Open your browser and navigate to `http://localhost:3000`.
+# Run tests
+npm test
 
-### Production Build
-
-Build the optimized production bundle:
-
-```bash
+# Build for production
 npm run build
-# or
-yarn build
 ```
 
-Serve the contents of the `build` folder with your preferred static server.
+### Environment Variables
+- `REACT_APP_API_URL`: Backend API URL (optional)
+- `NODE_ENV`: Environment mode ('development' or 'production')
 
----
+## WebSocket Communication
 
-## Development
+The app uses a WebSocket connection for real-time messaging with features like:
 
-### Code Structure
+- Automatic reconnection with exponential backoff
+- Message queuing
+- Connection state management
+- Error handling
+- Message batching for performance
 
-- `src/`
-  - `components/`: React components including `ChatInterface`, `MessageList`, `InputArea`, `Menu`, `Modal`, etc.
-  - `hooks/`: Custom React hooks like `useWebSocket`, `useTheme`, and `useModal`.
-  - `store/`: Redux Toolkit slices and store configuration.
-  - `services/`: WebSocket service and app configuration utilities.
-  - `themes/`: Theme definitions and ThemeProvider.
-  - `utils/`: Utility functions for logging, UI handlers, and tab management.
-  - `styles/`: Global styles and Prism.js theme overrides.
-  - `types/`: TypeScript type definitions.
-  - `App.tsx`: Main application component.
-  - `index.tsx`: Entry point.
+## Styling
 
-### Key Libraries
+The project uses Styled Components with:
 
-- React 19
-- Redux Toolkit
-- styled-components
-- Prism.js (syntax highlighting)
-- mermaid (diagram rendering)
-- react-markdown + remark-gfm (Markdown rendering)
-- dompurify (HTML sanitization)
-- qrcode-generator (QR code generation)
-
----
+- Global styles
+- Theme-based styling
+- CSS variables
+- Responsive design
+- Smooth transitions
+- Accessibility features
 
 ## Testing
 
-Run unit and integration tests:
+- Jest test setup
+- React Testing Library
+- Console output formatting
+- Error boundary testing
 
-```bash
-npm test
-# or
-yarn test
-```
+## Browser Support
 
-Tests use React Testing Library and Jest. Custom console logging is configured for better test output.
-
----
-
-## Configuration
-
-### Environment Variables
-
-- `REACT_APP_API_URL`: Base URL for API requests (optional).
-
-### WebSocket Configuration
-
-- WebSocket settings can be configured via the WebSocket menu in development mode.
-- Default WebSocket URL and port are derived from the current window location.
-- Supports automatic reconnection with exponential backoff.
-
-### Theme Storage
-
-- Selected theme is persisted in `localStorage` under the key `theme`.
-- Verbose mode and other UI preferences are also persisted.
-
----
-
-## Theming
-
-- Multiple themes are available: `default`, `main`, `night`, `forest`, `pony`, `alien`, `sunset`, `ocean`, `cyberpunk`.
-- Themes control colors, typography, shadows, and transitions.
-- Theme switching is dynamic and updates CSS variables and Prism.js styles.
-- Keyboard shortcut support for theme modal (`Alt+T` or `Ctrl+T`).
-
----
-
-## Architecture
-
-- **State Management:** Redux Toolkit slices for UI, user, messages, connection, and configuration.
-- **WebSocket Service:** Singleton service managing connection, message queue, heartbeat, and reconnection logic.
-- **UI Components:** Modular React components with styled-components for styling.
-- **Error Handling:** React Error Boundary with fallback UI and structured logging.
-- **Performance:** Debounced and batched updates for tabs, messages, and syntax highlighting.
-- **Accessibility:** Keyboard navigation, ARIA attributes, and focus management.
-
----
+- Modern browsers (Chrome, Firefox, Safari, Edge)
+- Fallback handling for older browsers
+- Responsive design for mobile devices
 
 ## Contributing
 
-Contributions are welcome! Please open issues or pull requests on the GitHub repository.
-
----
-
-## License
-
-This project is licensed under the MIT License.
-
----
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests
+5. Submit a pull request
 
 ## Acknowledgments
 
-- [Prism.js](https://prismjs.com/)
-- [Mermaid](https://mermaid-js.github.io/)
-- [Redux Toolkit](https://redux-toolkit.js.org/)
-- [React](https://reactjs.org/)
-- [Styled Components](https://styled-components.com/)
+- React team for the core framework
+- Styled Components for the styling system
+- Redux team for state management
+- PrismJS for code highlighting
+- Mermaid for diagrams
 
----
+## Available Scripts
 
-For any questions or support, please contact the maintainers.
+In the project directory, you can run:
+
+### `npm start`
+
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
+
+### `npm test`
+
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+
+### `npm run build`
+
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
+
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
+
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+### `npm run eject`
+
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from
+your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control
+over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your
+own.
+
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature.
+However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+
+## Learn More
+
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+To learn React, check out the [React documentation](https://reactjs.org/).
+
+### Code Splitting
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+
+### Analyzing the Bundle Size
+
+This section has moved
+here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+
+### Making a Progressive Web App
+
+This section has moved
+here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+
+### Advanced Configuration
+
+This section has moved
+here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+
+### Deployment
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+
+### `npm run build` fails to minify
+
+This section has moved
+here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
