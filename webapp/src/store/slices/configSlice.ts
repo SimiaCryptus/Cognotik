@@ -108,29 +108,9 @@ const configSlice = createSlice({
                 }
             }
         },
-        resetConfig: () => {
-            return initialState;
-        },
-        setConnectionConfig: (state, action: PayloadAction<{
-            retryAttempts: number;
-            timeout: number;
-        }>) => {
-            console.log('[ConfigSlice] Updating connection config:', {
-                previous: {
-                    retryAttempts: state.websocket.retryAttempts,
-                    timeout: state.websocket.timeout
-                },
-                new: action.payload
-            });
-            state.websocket.retryAttempts = action.payload.retryAttempts;
-            state.websocket.timeout = action.payload.timeout;
-        },
         setTheme: (state, action: PayloadAction<ThemeName>) => {
             state.theme.current = action.payload;
             localStorage.setItem('theme', action.payload);
-        },
-        toggleAutoTheme: (state) => {
-            state.theme.autoSwitch = !state.theme.autoSwitch;
         },
         updateWebSocketConfig: (state, action: PayloadAction<Partial<WebSocketConfig>>) => {
             // Only allow WebSocket config updates in development mode
@@ -149,24 +129,6 @@ const configSlice = createSlice({
                     error
                 });
             }
-        },
-        updateConfig: (state: AppConfig, action: PayloadAction<Partial<AppConfig>>) => {
-            return {...state, ...action.payload};
-        },
-        toggleSingleInput: (state: AppConfig) => {
-            state.singleInput = !state.singleInput;
-        },
-        toggleStickyInput: (state: AppConfig) => {
-            state.stickyInput = !state.stickyInput;
-        },
-        toggleLoadImages: (state: AppConfig) => {
-            state.loadImages = !state.loadImages;
-        },
-        toggleMenubar: (state: AppConfig) => {
-            state.showMenubar = !state.showMenubar;
-        },
-        setApplicationName: (state: AppConfig, action: PayloadAction<string>) => {
-            state.applicationName = action.payload;
         },
     },
 });
@@ -191,12 +153,6 @@ function applyMenubarConfig(showMenubar: boolean) {
 }
 
 export const {
-    updateConfig,
-    toggleSingleInput,
-    toggleStickyInput,
-    toggleLoadImages,
-    toggleMenubar,
-    setApplicationName,
     updateWebSocketConfig,
     setAppInfo,
 } = configSlice.actions;

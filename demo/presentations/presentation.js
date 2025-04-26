@@ -4,7 +4,6 @@ let utterances = [];
 let currentUtteranceIndex = 0;
 const autoplayButton = document.getElementById('autoplayButton');
 const voiceSelect = document.getElementById('voiceSelect');
-const statusMessage = document.getElementById('statusMessage');
 const debugLog = [];
 
 function handleVideoElements(callback) {

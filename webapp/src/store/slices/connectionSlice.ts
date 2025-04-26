@@ -25,23 +25,15 @@ const connectionSlice = createSlice({
         state.error = null;
       }
     },
-    setReconnectingStatus(state, action: PayloadAction<boolean>) {
-      state.isReconnecting = action.payload;
-    },
     setConnectionError(state, action: PayloadAction<Error | null>) {
       state.error = action.payload;
     },
-    setReadyState(state, action: PayloadAction<number | null>) {
-      state.readyState = action.payload;
-    }
   }
 });
 
 export const {
   setConnectionStatus,
-  setReconnectingStatus,
   setConnectionError,
-  setReadyState
 } = connectionSlice.actions;
 
 export default connectionSlice.reducer;

@@ -30,7 +30,7 @@ const debouncedUpdate = debounce(() => {
     updateTabs();
     Prism.highlightAll();
     try {
-        mermaid.init(undefined, document.querySelectorAll('.mermaid:not(.mermaid-processed)'));
+        mermaid.run();
         document.querySelectorAll('.mermaid').forEach(el => el.classList.add('mermaid-processed'));
     } catch (error) {
         console.error('Failed to render mermaid diagram:', error);
@@ -80,59 +80,11 @@ const messageSlice = createSlice({
             }
             state.messages.push(action.payload);
         },
-        updateMessage: (state: MessageState, action: PayloadAction<MessageUpdate>) => {
-            const {id, updates} = action.payload;
-            const messageIndex = state.messages.findIndex((msg: Message) => msg.id === id);
-            if (messageIndex !== -1) {
-                state.messages[messageIndex] = {...state.messages[messageIndex], ...updates};
-            } else {
-                console.warn(`Failed to update message: ID ${id} not found`);
-            }
-        },
-        deleteMessage: (state: MessageState, action: PayloadAction<string>) => {
-            console.debug(` Deleting message: ${action.payload}`);
-            state.messages = state.messages.filter((msg: Message) => msg.id !== action.payload);
-            console.debug(` Messages updated after deletion, remaining: ${state.messages.length}`);
-        },
-        addToPendingMessages: (state: MessageState, action: PayloadAction<Message>) => {
-            state.pendingMessages.push(action.payload);
-        },
-        removePendingMessage: (state: MessageState, action: PayloadAction<string>) => {
-            state.pendingMessages = state.pendingMessages.filter((msg: Message) => msg.id !== action.payload);
-        },
-        addToMessageQueue: (state, action: PayloadAction<Message>) => {
-            state.messageQueue.push(action.payload);
-        },
-        clearMessageQueue: (state: MessageState) => {
-            state.messageQueue = [];
-        },
-        setProcessing: (state: MessageState, action: PayloadAction<boolean>) => {
-            console.debug(` Setting processing state to: ${action.payload}`);
-            state.isProcessing = action.payload;
-        },
-        clearMessages: (state: MessageState) => {
-            const totalCleared = state.messages.length + 
-                               state.pendingMessages.length + 
-                               state.messageQueue.length;
-            state.messages = [];
-            state.pendingMessages = [];
-            state.messageQueue = [];
-            state.isProcessing = false;
-            console.info(`Cleared ${totalCleared} total messages`);
-        },
     },
 });
 
 export const {
     addMessage,
-    updateMessage,
-    deleteMessage,
-    addToPendingMessages,
-    removePendingMessage,
-    addToMessageQueue,
-    clearMessageQueue,
-    setProcessing,
-    clearMessages,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

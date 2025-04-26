@@ -111,9 +111,6 @@ export const restoreTabStates = (states: Map<string, TabState>): void => {
 }
 
 
-
-
-
 export function setActiveTab(button: Element, container: Element) {
     const forTab = button.getAttribute('data-for-tab');
     if (!forTab) {
@@ -150,13 +147,13 @@ export function setActiveTab(button: Element, container: Element) {
             btn.classList.remove('active');
         }
     });
-        // Initialize nested tabs within the active tab content
-        const activeContent = container.querySelector(`.tab-content[data-tab="${forTab}"]`);
-        if (activeContent) {
-            activeContent.querySelectorAll('.tabs-container').forEach(nestedContainer => {
-                setupTabContainer(nestedContainer);
-            });
-        }
+    // Initialize nested tabs within the active tab content
+    const activeContent = container.querySelector(`.tab-content[data-tab="${forTab}"]`);
+    if (activeContent) {
+        activeContent.querySelectorAll('.tabs-container').forEach(nestedContainer => {
+            setupTabContainer(nestedContainer);
+        });
+    }
 
     // Find the closest tab content container to this tabs group
     const contentContainer = tabsGroup.closest('.tabs-container');
@@ -262,7 +259,7 @@ export function resetTabState() {
 }
 
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initCollapsibleElements();
 });
 
@@ -308,7 +305,6 @@ export const updateTabs = debounce(() => {
         return;
     }
 
-
     try {
         initNewCollapsibleElements()
         const currentStates = getAllTabStates();
@@ -325,7 +321,7 @@ export const updateTabs = debounce(() => {
                 container.querySelector('.tabs .tab-button.active')?.getAttribute('data-for-tab');
             if (activeTab) {
                 visibleTabs.add(getCacheKey(container.id, activeTab));
-                tabStates.set(container.id, { containerId: container.id, activeTab });
+                tabStates.set(container.id, {containerId: container.id, activeTab});
                 restoreTabState(container);
             } else {
                 const firstButton = container.querySelector('.tabs .tab-button');
@@ -357,14 +353,11 @@ export const updateTabs = debounce(() => {
         processed.clear();
     } catch (error) {
         errors.updateErrors++;
-        console.error(`Error during tab update:`, { error, totalErrors: errors.updateErrors });
+        console.error(`Error during tab update:`, {error, totalErrors: errors.updateErrors});
     } finally {
         isMutating = false;
     }
 }, 250);
-                // Wrap updateTabs in requestAnimationFrame to batch DOM updates
-                requestAnimationFrame(() => updateTabs());
-
 
 function setupTabContainer(container: Element) {
     try {

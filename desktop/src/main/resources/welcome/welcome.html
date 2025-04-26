@@ -1433,24 +1433,6 @@
         updateLaunchSummaries();
     }
 
-    // Reset task settings
-    function resetTaskSettings() {
-        document.getElementById('model-selection').value = 'GPT4o';
-        document.getElementById('parsing-model').value = 'GPT4oMini';
-        document.getElementById('working-dir').value = '.';
-        document.getElementById('temperature').value = '0.2';
-        document.getElementById('temperature-value').textContent = '0.2';
-        document.getElementById('auto-fix').checked = false;
-        // Clear localStorage for task settings
-        localStorage.removeItem('defaultModel');
-        localStorage.removeItem('parsingModel');
-        localStorage.removeItem('workingDir');
-        localStorage.removeItem('temperature');
-        localStorage.removeItem('autoFix');
-
-        showNotification('Task settings reset', 'warning');
-    }
-
     // Save cognitive mode
     function saveCognitiveMode() {
         const modeElements = document.getElementsByName('cognitive-mode');
@@ -1479,20 +1461,6 @@
 
         showNotification('Cognitive mode saved!');
         // No need to click any tab here as we're using the wizard navigation
-    }
-
-    // Reset cognitive mode
-    function resetCognitiveMode() {
-        document.getElementById('single-task-mode').checked = true;
-        cognitiveMode = 'single-task';
-        // Reset additional settings
-        document.getElementById('max-task-history').value = '20000';
-        document.getElementById('max-tasks-per-iteration').value = '3';
-        document.getElementById('max-iterations').value = '100';
-        // Hide all settings panels
-        document.getElementById('graph-settings').style.display = 'none';
-        document.getElementById('auto-plan-settings').style.display = 'none';
-        showNotification('Cognitive mode reset', 'warning');
     }
 
     // Load saved settings from localStorage
