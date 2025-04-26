@@ -20,3 +20,4 @@ metadata.script
 .websearch/
 .intellijPlatform/
 node_modules/
+metadata.*
