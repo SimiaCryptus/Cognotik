@@ -1,9 +1,8 @@
 import type {DefaultTheme} from 'styled-components';
 import {createGlobalStyle} from 'styled-components';
 
-// Enhanced logging function with timestamp
 const logStyleChange = (component: string, property: string, value: any) => {
-    // Exit if not in development environment
+
     if (process.env.NODE_ENV !== 'development') {
         return;
     }
@@ -15,13 +14,12 @@ const logStyleChange = (component: string, property: string, value: any) => {
         'style-init',
         'accessibility-violation'
     ];
-    // Only log critical style changes
+
     if (criticalEvents.some(event => property.includes(event))) {
         console.log(`[${timestamp}] GlobalStyles: ${component} - ${property}:`, value);
     }
 };
 
-// Add logging for initial style load
 logStyleChange('GlobalStyles', 'style-init', 'Styles initialized');
 
 export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
@@ -77,11 +75,10 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         --letter-spacing-wider: 0.08em;
     }
 
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Raleway:wght@600;700;800&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap');
-    ${() => { logStyleChange('Fonts', 'font-load', 'Web fonts loaded'); return ''; }}
+    ${() => {
+    logStyleChange('Fonts', 'font-load', 'Web fonts loaded');
+    return '';
+}}
 
     /* Override Prism.js theme colors to match current theme */
     .token.comment,
@@ -116,7 +113,6 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     .token.keyword {
         color: ${({theme}) => theme.colors.info};
     }
-
 
     /* Reset styles */
     * {
@@ -599,7 +595,6 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         padding: 0.2em 0.4em;
     }
 
-
     pre {
         border-radius: 12px !important;
         padding: 1.5em !important;
@@ -611,7 +606,6 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         line-height: 1.6 !important;
         border: 1px solid ${({theme}) => theme.colors.border + '30'};
     }
-
 
     .chat-input {
         background-color: ${({theme}: { theme: DefaultTheme }) => theme.colors.surface};
@@ -665,9 +659,9 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         &.theme-transition-complete:after {
             opacity: 1;
             ${() => {
-                logStyleChange('body', 'theme-transition', 'completed');
-                return '';
-            }}
+    logStyleChange('body', 'theme-transition', 'completed');
+    return '';
+}}
         }
     }
 
@@ -692,7 +686,6 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
         transform: translateY(0);
         box-shadow: ${({theme}) => theme.shadows.medium};
     }
-
 
     .verbose-wrapper {
         display: none;

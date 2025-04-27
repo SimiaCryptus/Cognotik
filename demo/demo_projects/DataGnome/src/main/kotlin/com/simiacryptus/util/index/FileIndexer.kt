@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 
-
 class FileIndexer(
     val data: TokenFile,
     val index: LongArrayMappedFile,
@@ -63,7 +62,7 @@ class FileIndexer(
             if (count > 1) {
                 var indices = (start until end).map { index.get(it) }.toLongArray()
                 if (count >= 1000) {
-                    // Sort and recurse for large blocks
+
                     val nextMap = populateByScan(
                         n = n, skip = skip, from = start, to = end,
                         indices = indices.asIterable().map { it.tokens })
@@ -72,7 +71,7 @@ class FileIndexer(
                         return@forEach
                     }
                 }
-                // Sort directly for small blocks
+
                 indices = indices.sortedBy {
                     data.readString(position = it.tokens, n = n, skip = skip)
                 }.toLongArray()
@@ -103,7 +102,6 @@ class FileIndexer(
         }
         return nGramCounts
     }
-
 
     fun close() {
         index.close()
@@ -163,5 +161,5 @@ fun FileIndexer(
     data: TokenFile,
     indexFile: File = File(data.file.parentFile, "${data.file.name}.index")
 ) = FileIndexer(data, LongArrayMappedFile(indexFile).apply {
-    //data.tokenCount.asLong.elements
+
 })

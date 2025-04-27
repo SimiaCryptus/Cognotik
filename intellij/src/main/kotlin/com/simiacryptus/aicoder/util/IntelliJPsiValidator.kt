@@ -6,28 +6,32 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.PsiFileFactory
 import com.intellij.testFramework.LightVirtualFile
-import com.simiacryptus.cognotik.core.util.GrammarValidator
+import com.simiacryptus.cognotik.util.GrammarValidator
 
-class IntelliJPsiValidator(private val project: Project, val extension: String, val filename: String) : GrammarValidator {
+class IntelliJPsiValidator(private val project: Project, val extension: String, val filename: String) :
+    GrammarValidator {
     override fun validateGrammar(code: String): List<GrammarValidator.ValidationError> {
         var errors: List<GrammarValidator.ValidationError>? = null
         WriteCommandAction.runWriteCommandAction(project) {
-             try {
+            try {
                 val fileType = FileTypeRegistry.getInstance().getFileTypeByExtension(extension)
                 val virtualFile = LightVirtualFile("dummy.$extension", fileType, code)
                 val psiFile = PsiFileFactory.getInstance(project).createFileFromText(virtualFile.name, fileType, code)
                 errors = collectErrors(psiFile)
             } catch (e: Exception) {
-                listOf(GrammarValidator.ValidationError(
-                    message = "Error validating ${SUPPORTED_LANGUAGES[extension.lowercase()]} grammar: ${e.message}",
-                    severity = GrammarValidator.Severity.ERROR
-                ))
+                listOf(
+                    GrammarValidator.ValidationError(
+                        message = "Error validating ${SUPPORTED_LANGUAGES[extension.lowercase()]} grammar: ${e.message}",
+                        severity = GrammarValidator.Severity.ERROR
+                    )
+                )
             }
         }
         return errors ?: emptyList()
     }
+
     companion object {
-        // Map of supported file extensions to their language names
+
         private val SUPPORTED_LANGUAGES = mapOf(
             "kt" to "Kotlin",
             "java" to "Java",
@@ -58,6 +62,7 @@ class IntelliJPsiValidator(private val project: Project, val extension: String, 
             "yml" to "YAML",
             "md" to "Markdown"
         )
+
         /**
          * Check if a language is supported
          */
@@ -66,21 +71,23 @@ class IntelliJPsiValidator(private val project: Project, val extension: String, 
         }
     }
 
-
     private fun collectErrors(psiFile: com.intellij.psi.PsiFile): List<GrammarValidator.ValidationError> {
         val errors = mutableListOf<GrammarValidator.ValidationError>()
         psiFile.accept(object : com.intellij.psi.PsiRecursiveElementVisitor() {
             override fun visitErrorElement(element: com.intellij.psi.PsiErrorElement) {
-                errors.add(GrammarValidator.ValidationError(
-                    message = element.errorDescription,
-                    line = element.lineNumber,
-                    column = element.startOffsetInParent,
-                    severity = GrammarValidator.Severity.ERROR
-                ))
+                errors.add(
+                    GrammarValidator.ValidationError(
+                        message = element.errorDescription,
+                        line = element.lineNumber,
+                        column = element.startOffsetInParent,
+                        severity = GrammarValidator.Severity.ERROR
+                    )
+                )
             }
         })
         return errors
     }
+
     private val PsiErrorElement.lineNumber: Int?
         get() = containingFile.viewProvider.document?.getLineNumber(textRange.startOffset)?.plus(1)
 }

@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.TabbedDisplay
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils
-import com.simiacryptus.cognotik.core.util.SimpleDiffApplier
+import com.simiacryptus.cognotik.diff.SimpleDiffApplier
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
@@ -23,7 +23,6 @@ class ValidationPatchApp(
     companion object {
         private val log = LoggerFactory.getLogger(ValidationPatchApp::class.java)
 
-        // Validation error messages
         private val validationMessages = mapOf(
             "curly" to "Unbalanced curly braces",
             "square" to "Unbalanced square brackets",
@@ -41,7 +40,7 @@ class ValidationPatchApp(
         tabs: TabbedDisplay
     ): OutputResult {
         val validationErrors = mutableListOf<ValidationError>()
-        // Use the provided tabs instance; avoid shadowing variable names.
+
         val filePaths = getFiles(files)
         filePaths.forEach { file ->
             val fileTask = ui.newTask(false).apply { tabs[file.toString()] = placeholder }
@@ -114,20 +113,21 @@ class ValidationPatchApp(
         )
 
     }
-    
+
     private fun getFiles(virtualFiles: Array<out File>?): Set<Path> {
         val codeFiles = mutableSetOf<Path>()
         codeFiles.addAll(
-          FileSelectionUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
+            FileSelectionUtils.expandFileList(*(virtualFiles?.toList()?.toTypedArray() ?: emptyArray()))
                 .map { it.toPath() }
         )
         return codeFiles
     }
-    
+
     override fun codeFiles(): Set<Path> = getFiles(files)
-        .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
+        .filter { it.toFile().length() < 1024 * 1024 / 2 }
+
         .map { root.toPath().relativize(it) ?: it }.toSet()
-    
+
     override fun projectSummary(): String = codeFiles()
         .asSequence()
         .filter { root.toPath().resolve(it).toFile().exists() }
@@ -137,7 +137,7 @@ class ValidationPatchApp(
             "* ${path} - ${root.toPath().resolve(path).toFile().length() ?: "?"} bytes"
         }
 
-    override fun searchFiles(searchStrings: List<String>): Set<Path> = 
+    override fun searchFiles(searchStrings: List<String>): Set<Path> =
         searchStrings.flatMap { searchString ->
             getFiles(files)
                 .filter { it.toFile().readText().contains(searchString, ignoreCase = true) }

@@ -1,5 +1,5 @@
-package com.simiacryptus.cognotik.core.platform.file
+package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.core.platform.test.UserSettingsTest
+import com.simiacryptus.cognotik.platform.test.UserSettingsTest
 
 class UserSettingsManagerTest : UserSettingsTest(UserSettingsManager())

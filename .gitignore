@@ -9,7 +9,6 @@ openai.key
 *.log
 *.log.*
 client_secret_google_oauth.json
-settings.gradle.kts
 *.data
 *.parsed.json
 package-lock.json
@@ -18,3 +17,7 @@ tmp/
 user-sessions/
 metadata.properties
 metadata.script
+.websearch/
+.intellijPlatform/
+node_modules/
+metadata.*

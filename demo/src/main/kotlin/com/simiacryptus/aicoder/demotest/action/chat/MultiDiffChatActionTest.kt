@@ -57,7 +57,6 @@ class MultiDiffChatActionTest : DemoTestBase(
         return "demo_projects/TestProject"
     }
 
-
     companion object {
         val log = LoggerFactory.getLogger(MultiDiffChatActionTest::class.java)
     }
@@ -156,7 +155,8 @@ class MultiDiffChatActionTest : DemoTestBase(
                     val request = "Analyze this class"
                     request.forEach { char ->
                         chatInput.sendKeys(char.toString())
-                        sleep(100) // Add a small delay between each character
+                        sleep(100)
+
                     }
                     sleep(1000)
 

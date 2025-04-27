@@ -18,7 +18,10 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.sound.sampled.*
+import javax.sound.sampled.AudioSystem
+import javax.sound.sampled.DataLine
+import javax.sound.sampled.Line
+import javax.sound.sampled.Mixer
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
 
@@ -119,7 +122,7 @@ open class ScreenRec(
                 val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
                 val outputFolder = recordingConfig.outputFolder
                 outputFolder.mkdirs()
-                // Set up audio format with explicit sample rate
+
                 val fileFormat = Format(
                     MediaTypeKey, MediaType.FILE,
                     FormatKeys.MimeTypeKey, recordingConfig.fileFormat,
@@ -144,7 +147,8 @@ open class ScreenRec(
                         Format(
                             MediaTypeKey, MediaType.AUDIO,
                             FormatKeys.EncodingKey, AudioFormatKeys.ENCODING_AVI_PCM,
-                            SampleRateKey, Rational.valueOf(44100.0), // Use standard sample rate
+                            SampleRateKey, Rational.valueOf(44100.0),
+
                             SampleSizeInBitsKey, recordingConfig.sampleSize,
                             ChannelsKey, recordingConfig.audioChannels,
                             AudioFormatKeys.FrameSizeKey, 2,
@@ -175,7 +179,7 @@ open class ScreenRec(
                             try {
                                 super.stop()
                             } catch (e: Exception) {
-                                //log.debug("Error stopping ScreenRecorder", e)
+
                             }
                         }
                     }
@@ -192,7 +196,7 @@ open class ScreenRec(
                     screenRecorder = recorder
                     screenRecordingStarted.set(true)
                     log.info("Screen recording started successfully")
-                    // Keep splash screen visible for 5 seconds after recording starts
+
                     waitWithSplashDisplayed()
                     hideSplashScreen()
                 } catch (e: Exception) {

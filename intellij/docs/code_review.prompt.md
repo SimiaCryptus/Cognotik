@@ -7,11 +7,15 @@
 ### Severity Levels:
 
 - 😊 **Minor:** Recommendations for improvement that don't necessarily impact the current functionality or performance.
-- 😐 **Moderate:** Issues that could potentially lead to bugs or hinder performance but don't currently disrupt the program's operation.
-- 😠 **Critical:** Significant issues that affect the program's functionality or performance and require immediate attention.
+- 😐 **Moderate:** Issues that could potentially lead to bugs or hinder performance but don't currently disrupt the
+  program's operation.
+- 😠 **Critical:** Significant issues that affect the program's functionality or performance and require immediate
+  attention.
 - 😊 **Minor:** Recommendations for improvement that don't necessarily impact the current functionality or performance.
-- 😐 **Moderate:** Issues that could potentially lead to bugs or hinder performance but don't currently disrupt the program's operation.
-- 😠 **Critical:** Significant issues that affect the program's functionality or performance and require immediate attention.
+- 😐 **Moderate:** Issues that could potentially lead to bugs or hinder performance but don't currently disrupt the
+  program's operation.
+- 😠 **Critical:** Significant issues that affect the program's functionality or performance and require immediate
+  attention.
 
 ### Note Types:
 

@@ -38,12 +38,10 @@ open class OpenAIClient(
     protected val apiBase: Map<APIProvider, String> = APIProvider.values().associate { it to (it.base ?: "") },
     logLevel: Level = Level.TRACE,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService = Companion.scheduledPool,
-    workPool: ExecutorService = Companion.workPool
+    workPool: ExecutorService
 ) : HttpClientManager(
     logLevel = logLevel,
     logStreams = logStreams,
-    scheduledPool = scheduledPool,
     workPool = workPool
 ) {
     private val log: Logger = LoggerFactory.getLogger(OpenAIClient::class.java).apply {
@@ -74,7 +72,7 @@ open class OpenAIClient(
     protected open fun authorize(request: HttpRequest, apiProvider: APIProvider) {
         when (apiProvider) {
             APIProvider.Google -> {
-//        request.addHeader("X-goog-api-key", "${key.get(apiProvider)}")
+
             }
 
             APIProvider.Anthropic -> {
@@ -172,7 +170,8 @@ open class OpenAIClient(
                 onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
             }
             val completionResult =
-                StringUtil.stripPrefix(response.firstChoice.orElse("").toString().trim { it <= ' ' },
+                StringUtil.stripPrefix(
+                    response.firstChoice.orElse("").toString().trim { it <= ' ' },
                     request.prompt.trim { it <= ' ' })
             log(
                 msg = String.format(
@@ -197,34 +196,35 @@ open class OpenAIClient(
         }
     }
 
-    open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String = withReliability {
-        withPerformanceLogging {
-            val url = "${apiBase[defaultApiProvider]}/audio/transcriptions"
-            val request = HttpPost(url)
-            request.addHeader("Accept", "application/json")
-            authorize(request, defaultApiProvider)
-            val entity = MultipartEntityBuilder.create()
-            entity.setMode(HttpMultipartMode.EXTENDED)
-            entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
-            entity.addTextBody("model", audioModel.modelName)
-            entity.addTextBody("response_format", "json")
-            if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
-            request.entity = entity.build()
-            val response = post(request)
-            log.info("Transcription response received")
-            val jsonObject = Gson().fromJson(response, JsonObject::class.java)
-            if (jsonObject.has("error")) {
-                val errorObject = jsonObject.getAsJsonObject("error")
-                throw RuntimeException(IOException(errorObject["message"].asString))
-            }
-            try {
-                val result = JsonUtil.objectMapper().readValue(response, TranscriptionResult::class.java)
-                result.text ?: ""
-            } catch (e: Exception) {
-                jsonObject.get("text").asString ?: ""
+    open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
+        withReliability {
+            withPerformanceLogging {
+                val url = "${apiBase[defaultApiProvider]}/audio/transcriptions"
+                val request = HttpPost(url)
+                request.addHeader("Accept", "application/json")
+                authorize(request, defaultApiProvider)
+                val entity = MultipartEntityBuilder.create()
+                entity.setMode(HttpMultipartMode.EXTENDED)
+                entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
+                entity.addTextBody("model", audioModel.modelName)
+                entity.addTextBody("response_format", "json")
+                if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
+                request.entity = entity.build()
+                val response = post(request)
+                log.info("Transcription response received")
+                val jsonObject = Gson().fromJson(response, JsonObject::class.java)
+                if (jsonObject.has("error")) {
+                    val errorObject = jsonObject.getAsJsonObject("error")
+                    throw RuntimeException(IOException(errorObject["message"].asString))
+                }
+                try {
+                    val result = JsonUtil.objectMapper().readValue(response, TranscriptionResult::class.java)
+                    result.text ?: ""
+                } catch (e: Exception) {
+                    jsonObject.get("text").asString ?: ""
+                }
             }
         }
-    }
 
     open fun createSpeech(request: ApiModel.SpeechRequest): ByteArray? = withReliability {
         withPerformanceLogging {
@@ -332,7 +332,8 @@ open class OpenAIClient(
             if (moderationResult["flagged"].asBoolean) {
                 val categoriesObj = moderationResult["categories"].asJsonObject
                 throw RuntimeException(
-                    ModerationException("Moderation flagged this request due to " + categoriesObj.keySet()
+                    ModerationException(
+                        "Moderation flagged this request due to " + categoriesObj.keySet()
                         .stream().filter { c: String? ->
                             categoriesObj[c].asBoolean
                         }.reduce { a: String, b: String -> "$a, $b" }.orElse("???")
@@ -557,7 +558,7 @@ open class OpenAIClient(
 
             val entityBuilder = MultipartEntityBuilder.create()
             entityBuilder.addPart("image", FileBody(request.image))
-            //request.model?.let { entityBuilder.addTextBody("model", it) }
+
             request.n?.let { entityBuilder.addTextBody("n", it.toString()) }
             request.responseFormat?.let { entityBuilder.addTextBody("response_format", it) }
             request.size?.let { entityBuilder.addTextBody("size", it) }

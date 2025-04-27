@@ -5,7 +5,6 @@
     transition: all 0.3s ease;
 }
 
-
 /* Dark mode improvements */
 /* Improve dark mode media query placement */
 @media (prefers-color-scheme: dark) {
@@ -85,8 +84,6 @@
     transition: all .5s cubic-bezier(0.1, 0, 0.5, 1);
 }
 
-
-
 /* Improve button states */
 .cmd-button {
     position: relative;
@@ -141,7 +138,6 @@
     justify-content: center;
 }
 
-
 .App-logo {
     height: 40vmin;
     pointer-events: none;
@@ -153,8 +149,6 @@
     }
 }
 
-
-
 .tab-content {
     flex: 1;
     overflow: visible;
@@ -162,19 +156,12 @@
     transition: opacity 0.3s ease-in-out;
     flex-direction: column;
     padding: 1rem;
-    animation: fadeIn 0.3s ease-in-out;
-    display: flex;
-    position: fixed;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
-    opacity: 0;
-    padding: 0;
-    margin: 0;
+    /* Hide inactive tabs cleanly */
+    display: none;
 }
 
 .tab-content.active {
+    /* Show active tabs */
     display: flex;
     opacity: 1;
     position: relative;
@@ -202,7 +189,6 @@
     }
 }
 
-
 .cmd-button:hover {
     background-color: var(--hover-color);
 }
@@ -221,8 +207,6 @@
     justify-content: center;
     padding: 2rem;
 }
-
-
 
 /* Loading state with text */
 .loading-container .loading-text {
@@ -277,4 +261,78 @@
 
 .error-container {
     color: var(--error-color, #dc3545);
+}
+
+/* Query Expansion Syntax Guide Styles */
+.expandable-guide {
+    border: 1px solid var(--theme-border);
+    border-radius: 5px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    background-color: var(--theme-background); /* Use theme background */
+    color: var(--theme-text); /* Use theme text */
+}
+
+.expandable-header {
+    background-color: var(--theme-surface); /* Use theme surface */
+    color: var(--theme-text); /* Use theme text */
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease, color 0.2s ease; /* Add transition */
+}
+.expandable-header:hover {
+    background-color: var(--theme-surface); /* Keep surface for subtle hover */
+    color: var(--theme-primary); /* Highlight text on hover */
+}
+
+.expand-icon {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+    color: var(--theme-text-secondary); /* Use secondary text color */
+}
+.expandable-header:hover .expand-icon {
+    color: var(--theme-primary); /* Match text highlight on hover */
+}
+
+.expandable-content {
+    max-height: 0;
+    padding: 0 15px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.expandable-content.expanded {
+    max-height: 1000px; /* Large enough to contain content */
+    padding: 15px;
+}
+
+.expand-icon.expanded {
+    transform: rotate(180deg);
+}
+
+.expandable-section-title {
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.expandable-section-title:first-of-type {
+    margin-top: 10px;
+}
+
+.expandable-description {
+    margin-top: 0;
+}
+
+.expandable-example {
+    margin-top: 5px;
+    color: var(--theme-text-secondary); /* Use secondary text color */
+}
+
+.expandable-footer {
+    margin-top: 15px;
+    border-top: 1px solid var(--theme-border); /* Use theme border */
+    padding-top: 10px;
 }

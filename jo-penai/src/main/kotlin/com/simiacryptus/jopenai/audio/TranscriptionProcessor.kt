@@ -24,6 +24,7 @@ open class TranscriptionProcessor(
             return "TranscriptionResult(text='$text', prompt='$prompt', processingTime=$processingTime)"
         }
     }
+
     private val log = LoggerFactory.getLogger(TranscriptionProcessor::class.java)
     fun run() {
         log.debug("TranscriptionProcessor started.")
@@ -34,7 +35,10 @@ open class TranscriptionProcessor(
             } else {
                 val startTime = System.currentTimeMillis()
                 val text = client.transcription(
-                    AudioPacket.convertRawToWav(AudioPacket.convertFloatsToRaw(recordAudio.samples), recordAudio.audioFormat)!!,
+                    AudioPacket.convertRawToWav(
+                        AudioPacket.convertFloatsToRaw(recordAudio.samples),
+                        recordAudio.audioFormat
+                    )!!,
                     prompt,
                     model
                 )
@@ -42,19 +46,21 @@ open class TranscriptionProcessor(
                 val transcriptionResult = TranscriptionResult(text, prompt, recordAudio, processingTime)
                 prompt = updatePrompt(text)
                 onTranscriptionUpdate(transcriptionResult)
-                if(verbose) log.debug("""Transcription details:
+                if (verbose) log.debug(
+                    """Transcription details:
                     |Text: ${transcriptionResult.text}
                     |Prompt: ${transcriptionResult.prompt}
                     |Processing time: ${transcriptionResult.processingTime}ms
                     |Audio duration: ${recordAudio.samples.size / recordAudio.audioFormat.sampleRate.toFloat()}s
-                    |""".trimMargin())
+                    |""".trimMargin()
+                )
             }
         }
         log.info("TranscriptionProcessor finished.")
     }
 
     protected open fun updatePrompt(text: String): String {
-        //return (prompt + text).split(" ").takeLast(32).joinToString(" ")
+
         return prompt
     }
 }

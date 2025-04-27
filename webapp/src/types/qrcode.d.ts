@@ -14,6 +14,7 @@ declare module "qrcode-generator" {
          */
 
         createImgTag(cellSize?: number, margin?: number): string;
+
         /** Creates a data URL containing the QR code
          * @param cellSize - Optional size of each QR code cell in pixels
          * @param margin - Optional margin around the QR code in pixels
@@ -21,6 +22,7 @@ declare module "qrcode-generator" {
          */
 
         createDataURL(cellSize?: number, margin?: number): string;
+
         /** Creates an SVG tag containing the QR code
          * @param cellSize - Optional size of each QR code cell in pixels
          * @param margin - Optional margin around the QR code in pixels
@@ -28,6 +30,7 @@ declare module "qrcode-generator" {
          */
 
         createSvgTag(cellSize?: number, margin?: number): string;
+
         /** Creates an ASCII art representation of the QR code
          * @param cellSize - Optional size of each cell in characters
          * @param margin - Optional margin around the QR code in characters
@@ -35,11 +38,13 @@ declare module "qrcode-generator" {
          */
 
         createASCII(cellSize?: number, margin?: number): string;
+
         /** Gets the number of modules (cells) per side in the QR code
          * @returns Module count
          */
 
         getModuleCount(): number;
+
         /** Checks if a module at the specified position is dark
          * @param row - Row index
          * @param col - Column index

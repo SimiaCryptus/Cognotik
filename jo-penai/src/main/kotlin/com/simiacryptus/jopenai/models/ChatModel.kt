@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.simiacryptus.jopenai.models.ApiModel.Usage
 import com.simiacryptus.jopenai.models.ChatModel.Companion.values
 
-
 @JsonDeserialize(using = ChatModelsDeserializer::class)
 @JsonSerialize(using = ChatModelsSerializer::class)
 open class ChatModel(
@@ -43,14 +42,14 @@ open class ChatModel(
         val values: MutableMap<String, ChatModel?> by lazy { defaultValues().toMutableMap() }
 
         fun defaultValues() = OpenAIModels.values +
-            PerplexityModels.values +
-            MistralModels.values +
-            GroqModels.values +
-            ModelsLabModels.values +
-            AWSModels.values +
-            AnthropicModels.values +
-            DeepSeekModels.values +
-            GoogleModels.values
+                PerplexityModels.values +
+                MistralModels.values +
+                GroqModels.values +
+                ModelsLabModels.values +
+                AWSModels.values +
+                AnthropicModels.values +
+                DeepSeekModels.values +
+                GoogleModels.values
     }
 }
 

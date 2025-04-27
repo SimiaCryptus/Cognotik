@@ -1,16 +1,22 @@
 @import 'normal';
 
-// Base colors for Alien Spaceship theme
-$base-deep-space-black: #0b0c10; // A deep black reminiscent of the void of space
-$base-galactic-blue: #1f2833; // A dark blue that evokes the cold, vast expanse of the galaxy
-$base-nebula-grey: #c5c6c7; // A soft grey inspired by the colors of a distant nebula
-$base-asteroid-gray: #4e4e50; // A muted gray reminiscent of the rocky surface of an asteroid
-$base-alien-green: #66fcf1; // A bright green for highlights, inspired by classic alien aesthetics
-$base-laser-red: #fc4445; // A striking red for important buttons or warnings, inspired by laser beams
-$base-space-dust: #ccc; // A light grey for background contrasts, reminiscent of cosmic dust
-$base-comet-tail: #45a29e; // A medium teal for borders and lines, inspired by the tail of a comet
+$base-deep-space-black: #0b0c10;
 
-// Derived colors for Alien Spaceship theme
+$base-galactic-blue: #1f2833;
+
+$base-nebula-grey: #c5c6c7;
+
+$base-asteroid-gray: #4e4e50;
+
+$base-alien-green: #66fcf1;
+
+$base-laser-red: #fc4445;
+
+$base-space-dust: #ccc;
+
+$base-comet-tail: #45a29e;
+
+
 $secondary-bg-color: $base-deep-space-black;
 $secondary-text-color: lighten($base-space-dust, 15%);
 $applist-header-bg: $base-galactic-blue;
@@ -52,7 +58,6 @@ $user-message-border: $base-comet-tail;
 $verbose-pre-bg: $base-asteroid-gray;
 $verbose-pre-border: $base-comet-tail;
 
-// Buttons
 $button-bg-color: $base-laser-red;
 $button-text-color: $base-deep-space-black;
 $button-hover-bg-color: darken($button-bg-color, 10%);
@@ -60,9 +65,7 @@ $button-hover-text-color: $button-text-color;
 $button-border-radius: $border-radius;
 $button-box-shadow: $box-shadow;
 
-// Forms remain the same
 
-// Messages and Modals
 $message-info-bg-color: lighten($base-nebula-grey, 20%);
 $message-info-text-color: $base-galactic-blue;
 $message-success-bg-color: lighten($base-alien-green, 20%);

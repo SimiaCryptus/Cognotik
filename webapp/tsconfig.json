@@ -1,39 +1,73 @@
 {
-   "compilerOptions": {
-     "target": "es6",
-     "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["node", "react", "react-dom", "styled-components"],
-     "typeRoots": ["./node_modules/@types", "./src/types"],
-     "allowJs": true,
-     "skipLibCheck": true,
-     "esModuleInterop": true,
-     "allowSyntheticDefaultImports": true,
-     "strict": true,
-     "forceConsistentCasingInFileNames": true,
-     "noFallthroughCasesInSwitch": true,
-     "module": "esnext",
-     "moduleResolution": "node",
-     "resolveJsonModule": true,
-     "isolatedModules": true,
-     "noEmit": true,
-     "jsx": "react-jsx",
+  "compilerOptions": {
+    "target": "es6",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "styled-components"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
     "skipDefaultLibCheck": true,
-     "baseUrl": "src",
-     "paths": {
-       "@components/*": ["components/*"],
-       "@services/*": ["services/*"],
-       "@hooks/*": ["hooks/*"],
-       "@store/*": ["store/*"],
-       "@types/*": ["types/*"],
-       "@themes/*": ["themes/*"],
-       "@utils/*": ["utils/*"]
-     },
+    "baseUrl": "src",
+    "paths": {
+      "@components/*": [
+        "components/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@hooks/*": [
+        "hooks/*"
+      ],
+      "@store/*": [
+        "store/*"
+      ],
+      "@types/*": [
+        "types/*"
+      ],
+      "@themes/*": [
+        "themes/*"
+      ],
+      "@utils/*": [
+        "utils/*"
+      ]
+    },
     "plugins": [
       {
         "name": "typescript-styled-plugin"
       }
     ]
-   },
-   "include": ["src/**/*"],
-  "exclude": ["node_modules", "build", "scripts", "**/*.spec.ts", "**/*.test.ts"]
- }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "scripts",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
+}

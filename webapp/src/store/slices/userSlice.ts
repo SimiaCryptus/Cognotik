@@ -8,16 +8,16 @@ const initialState: UserInfo = {
 };
 
 const logStateChange = (actionName: string, prevState: UserInfo, newState: UserInfo) => {
-    // Only log authentication state changes and critical preference updates
+
     if (actionName === 'login' || actionName === 'logout') {
         console.log(`Auth State Change [${actionName}] ${new Date().toISOString()}:`, {
             user: newState.name,
             authenticated: newState.isAuthenticated
         });
     } else if (actionName === 'updatePreferences') {
-        // Log only if critical preferences are changed
+
         const criticalPrefs = ['theme', 'notifications', 'privacy'];
-         const criticalChanges = Object.keys(newState.preferences ?? {})
+        const criticalChanges = Object.keys(newState.preferences ?? {})
             .filter(key => criticalPrefs.includes(key))
             .reduce((acc, key) => ({
                 ...acc, [key]: newState.preferences?.[key]
@@ -27,7 +27,6 @@ const logStateChange = (actionName: string, prevState: UserInfo, newState: UserI
         }
     }
 };
-
 
 const userSlice = createSlice({
     name: 'user',

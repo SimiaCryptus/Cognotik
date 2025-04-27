@@ -1,10 +1,10 @@
 package com.simiacryptus.jopenai.describe
-import org.slf4j.LoggerFactory
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.common.reflect.TypeToken
 import com.simiacryptus.jopenai.describe.DescriptorUtil.componentType
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
+import org.slf4j.LoggerFactory
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.Parameter
@@ -19,6 +19,7 @@ import kotlin.reflect.jvm.javaType
 open class ApiFunctionDescriber : TypeDescriber() {
     private val log = LoggerFactory.getLogger(ApiFunctionDescriber::class.java)
     override val markupLanguage: String get() = ""
+
     init {
         log.info("ApiFunctionDescriber initialized")
     }
@@ -109,10 +110,10 @@ open class ApiFunctionDescriber : TypeDescriber() {
                     kParameters.joinToString("\n") {
                         "    ${it.name}: ${
                             toApiFunctionFormat(
-                                                        it.type.javaType,
-                                                        stackMax - 1,
-                                                        mutableSetOf()
-                                                    ).lineSequence()
+                                it.type.javaType,
+                                stackMax - 1,
+                                mutableSetOf()
+                            ).lineSequence()
                                 .map {
                                     when {
                                         it.isBlank() -> {
@@ -172,7 +173,8 @@ open class ApiFunctionDescriber : TypeDescriber() {
                                 }
                             }
                             .joinToString("\n")
-                    }" }
+                    }"
+                }
         if (methods.isBlank()) return rawType.simpleName
         return "class ${rawType.simpleName} {\n$methods\n}"
     }

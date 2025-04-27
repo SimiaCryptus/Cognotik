@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.core.platform.file
+package com.simiacryptus.cognotik.platform.file
 
 import AuthenticationInterfaceTest
 

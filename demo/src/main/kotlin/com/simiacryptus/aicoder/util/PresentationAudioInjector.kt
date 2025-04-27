@@ -13,6 +13,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.Executors
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
@@ -50,7 +51,7 @@ object PresentationAudioInjector {
 
     private fun generateAudioFile(text: String, filePath: String) {
         log.debug("Generating audio for text: {}", text)
-        val mp3Bytes = OpenAIClient().createSpeech(
+        val mp3Bytes = OpenAIClient(workPool = Executors.newCachedThreadPool()).createSpeech(
             ApiModel.SpeechRequest(
                 input = text,
                 model = AudioModels.TTS.modelName,

@@ -16,7 +16,7 @@ class SimpleAction : BaseAction(
     override fun handle(event: AnActionEvent) {
         val project = event.project ?: return
         UITools.run(project, "Processing", true) { progress ->
-            // Action logic here with progress indication
+
             progress.text = "Doing work..."
         }
     }
@@ -31,7 +31,7 @@ class SimpleAction : BaseAction(
 
 ```kotlin
 class CodeFormatterAction : SelectionAction<FormatterConfig>() {
-    // Custom configuration class
+
     data class FormatterConfig(
         val style: String,
         val indent: Int
@@ -45,11 +45,11 @@ class CodeFormatterAction : SelectionAction<FormatterConfig>() {
     }
 
     override fun processSelection(state: SelectionState, config: FormatterConfig?): String {
-        // Access selection context
+
         val code = state.selectedText ?: return ""
         val lang = state.language ?: return code
         val indent = state.indent?.toString() ?: "    "
-        // Process with configuration
+
         return formatCode(code, lang, config?.style, config?.indent ?: 4)
     }
 }
@@ -77,7 +77,7 @@ class FileProcessorAction : FileContextAction<ProcessorConfig>() {
         progress.text = "Processing ${state.selectedFile.name}"
         val outputFile = File(config?.outputDir, "processed_${state.selectedFile.name}")
         outputFile.parentFile.mkdirs()
-        // Process file with progress updates
+
         progress.isIndeterminate = false
         processFileWithProgress(state.selectedFile, outputFile, progress)
         return arrayOf(outputFile)
@@ -96,14 +96,14 @@ Best practices for thread management:
 * Handle background tasks properly
 
 ```kotlin
-// Good example * proper thread handling:
+
 WriteCommandAction.runWriteCommandAction(project) {
     try {
         UITools.run(project, "Processing", true) { progress ->
             progress.isIndeterminate = false
             progress.text = "Processing..."
             ApplicationManager.getApplication().executeOnPooledThread {
-                // Long running operation
+
                 progress.fraction = 0.5
             }
         }
@@ -112,10 +112,11 @@ WriteCommandAction.runWriteCommandAction(project) {
     }
 }
 
-// Bad example * avoid:
 Thread {
-    document.setText("new text") // Don't modify documents outside WriteCommandAction
-}.start() 
+    document.setText("new text")
+
+}.start()
+
 ```
 
 ### 2. Error Handling
@@ -127,7 +128,7 @@ Comprehensive error handling strategy:
 * Log errors appropriately
 
 ```kotlin
-// Good example:
+
 try {
     processFile(file)
 } catch (e: IOException) {
@@ -139,7 +140,7 @@ try {
         arrayOf("Retry", "Cancel")
     )
     if (choice == 0) {
-        // Retry logic
+
         processFile(file)
     }
 } finally {

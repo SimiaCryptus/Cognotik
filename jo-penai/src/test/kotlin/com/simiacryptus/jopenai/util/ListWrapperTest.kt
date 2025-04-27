@@ -17,7 +17,6 @@ class ListWrapperTest {
 
     private val objectMapper = JsonUtil.objectMapper()
 
-    //    @Test
     fun testSerializationOfComplexObject() {
         val team = Team(ListWrapper(listOf(Person("Alice", 30), Person("Bob", 25))))
         val mapper = objectMapper
@@ -82,7 +81,8 @@ class ListWrapperTest {
         """.trimIndent()
         )
         val kType = typeOf<ListWrapper<String>>()
-        val javaType = TypeFactory.defaultInstance().constructCollectionType(ListWrapper::class.java, String::class.java)
+        val javaType =
+            TypeFactory.defaultInstance().constructCollectionType(ListWrapper::class.java, String::class.java)
         val deserialized = mapper.readValue<ListWrapper<String>>(json, javaType)
         assertEquals(listWrapper, deserialized)
     }
@@ -98,7 +98,10 @@ class ListWrapperTest {
             $json
         """.trimIndent()
         )
-        val deserialized = mapper.readValue<ListWrapper<Int>>(json, TypeFactory.defaultInstance().constructType(typeOf<ListWrapper<Int>>().javaType))
+        val deserialized = mapper.readValue<ListWrapper<Int>>(
+            json,
+            TypeFactory.defaultInstance().constructType(typeOf<ListWrapper<Int>>().javaType)
+        )
         assertTrue(deserialized.isEmpty())
         assertEquals("[]", deserialized.toString())
     }

@@ -17,12 +17,12 @@ class ApiFunctionDescriberTest : TypeDescriberTestBase() {
     override val methodDescription
         get() = """
             methodExample(
-              p1: int
-              p2: string
+                p1: int
+                p2: string
             )
         """.trimIndent()
 
     override fun testDescribeRecursiveType() {
-//        super.testDescribeRecursiveType()
+
     }
 }

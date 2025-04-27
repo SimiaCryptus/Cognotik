@@ -4,7 +4,8 @@ Here's a document with guidance and best practices for the narration of demotest
 
 ## 1. Introduction
 
-Narrating demotests is crucial for creating engaging and informative demonstrations of software features. This document provides guidelines and best practices
+Narrating demotests is crucial for creating engaging and informative demonstrations of software features. This document
+provides guidelines and best practices
 to ensure consistent, clear, and effective narration across all demotests.
 
 ## 2. General Principles
@@ -111,5 +112,6 @@ Use gender-neutral terms and avoid assumptions about the audience's technical kn
 
 ## 6. Conclusion
 
-Effective narration can greatly enhance the impact of demotests. By following these guidelines and best practices, you can create engaging, informative, and
+Effective narration can greatly enhance the impact of demotests. By following these guidelines and best practices, you
+can create engaging, informative, and
 professional demonstrations that effectively showcase the features of the AI Coder plugin.

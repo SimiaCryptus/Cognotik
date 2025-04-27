@@ -1,11 +1,12 @@
 import {ThemeName} from './theme';
 import {ConsoleStyle} from "../types";
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
+
 export interface LogFilter {
     include?: string[];
     exclude?: string[];
 }
-
 
 export interface WebSocketConfig {
     url: string;

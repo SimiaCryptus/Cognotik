@@ -82,7 +82,7 @@ class CustomEditActionTest : DemoTestBase(
             tts("Let's examine the code we want to improve. Take a moment to notice its current structure.")?.play()
             sleep(5000)
             log.info("Starting Custom Edit operation")
-            // Add longer initial delay to show code
+
             sleep(3000)
             tts("Now we'll use Custom Edit to improve our code. First, let's select the code we want to modify.")?.play()
 
@@ -90,13 +90,13 @@ class CustomEditActionTest : DemoTestBase(
                 try {
                     val editor = find(EditorFixture::class.java, byXpath("//div[@class='EditorComponentImpl']"))
                     selectAllText(editor)
-                    // Add delay after selection
+
                     sleep(2000)
                     tts("With our code selected, we can access Custom Edit through the context menu.")?.play(2000)
                     editor.rightClick(editor.findAllText().firstOrNull()?.point?.location!!)
 
                     selectAICoderMenu()
-                    // Add delay for menu visibility
+
                     sleep(1000)
                     tts("Now we'll select Custom Edit from the AI Coder menu.")?.play(300)
                     findAll(

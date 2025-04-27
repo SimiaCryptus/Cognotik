@@ -1,7 +1,6 @@
 package com.simiacryptus.jopenai.util
 
 import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.exceptions.*
 import com.simiacryptus.jopenai.models.APIProvider
@@ -107,17 +106,41 @@ object ClientUtil {
 
     fun checkError(result: String, model: TextModel? = null) {
         try {
-            val jsonObject = Gson().fromJson(result, JsonObject::class.java) ?: return
-            if (jsonObject.has("error")) {
-                val errorObject = jsonObject.getAsJsonObject("error")
-                val errorMessage = errorObject["message"].asString
-                errorPatterns.forEach { errorPattern ->
-                    errorPattern.match(errorMessage)?.let { throw it }
+
+            val jsonElement = Gson().fromJson(result, com.google.gson.JsonElement::class.java) ?: return
+
+            if (jsonElement.isJsonObject) {
+                val jsonObject = jsonElement.asJsonObject
+                if (jsonObject.has("error")) {
+                    val errorObject = jsonObject.getAsJsonObject("error")
+                    val errorMessage = errorObject["message"].asString
+                    errorPatterns.forEach { errorPattern ->
+                        errorPattern.match(errorMessage)?.let { throw it }
+                    }
+                    throw IOException(errorMessage)
                 }
-                throw IOException(errorMessage)
+            } else if (jsonElement.isJsonArray) {
+
+                val jsonArray = jsonElement.asJsonArray
+                for (element in jsonArray) {
+                    if (element.isJsonObject) {
+                        val jsonObject = element.asJsonObject
+                        if (jsonObject.has("error")) {
+                            val errorObject = jsonObject.getAsJsonObject("error")
+                            val errorMessage = errorObject["message"].asString
+                            errorPatterns.forEach { errorPattern ->
+                                errorPattern.match(errorMessage)?.let { throw it }
+                            }
+                            throw IOException(errorMessage)
+                        }
+                    }
+                }
             }
         } catch (e: com.google.gson.JsonSyntaxException) {
-            throw IOException("Invalid JSON response: $result" + (if(null == model) "" else "\nChat Model: ${model}"), e)
+            throw IOException(
+                "Invalid JSON response: $result" + (if (null == model) "" else "\nChat Model: ${model}"),
+                e
+            )
         }
     }
 

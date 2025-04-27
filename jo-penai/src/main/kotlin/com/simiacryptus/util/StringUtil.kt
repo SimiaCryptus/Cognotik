@@ -1,4 +1,5 @@
 package com.simiacryptus.util
+
 import org.slf4j.LoggerFactory
 
 import java.nio.charset.Charset
@@ -77,7 +78,8 @@ object StringUtil {
     @JvmStatic
     fun getWhitespaceSuffix(vararg lines: CharSequence): String {
         log.debug("getWhitespaceSuffix called with {} lines", lines.size)
-        return reverse(Arrays.stream(lines)
+        return reverse(
+            Arrays.stream(lines)
             .map { obj: CharSequence? -> reverse(obj!!) }
             .map { l: CharSequence ->
                 toString(
@@ -128,7 +130,12 @@ object StringUtil {
      */
     @JvmStatic
     fun getPrefixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence {
-        log.debug("getPrefixForContext called with text of length: {}, idealLength: {}, delimiters: {}", text.length, idealLength, Arrays.toString(delimiters))
+        log.debug(
+            "getPrefixForContext called with text of length: {}, idealLength: {}, delimiters: {}",
+            text.length,
+            idealLength,
+            Arrays.toString(delimiters)
+        )
         return getSuffixForContext(text.reversed(), idealLength, *delimiters).reversed()
     }
 
@@ -147,7 +154,6 @@ object StringUtil {
         return sb.toString()
     }
 
-
     /**
      *
      * Get the suffix for the given context.
@@ -159,34 +165,39 @@ object StringUtil {
      */
     @JvmStatic
     fun getSuffixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence {
-        log.debug("getSuffixForContext called with text of length: {}, idealLength: {}, delimiters: {}", text.length, idealLength, Arrays.toString(delimiters))
-        // Create a list of candidates by splitting the text by each of the delimiters
+        log.debug(
+            "getSuffixForContext called with text of length: {}, idealLength: {}, delimiters: {}",
+            text.length,
+            idealLength,
+            Arrays.toString(delimiters)
+        )
+
         val candidates = Stream.of(*delimiters).flatMap { d: CharSequence? ->
-            // Create a string builder to store the split strings
+
             val sb = StringBuilder()
-            // Split the text by the delimiter
+
             val split = text.split(Pattern.quote(d.toString()).toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            // Iterate through the split strings in reverse order
+
             for (i in split.indices.reversed()) {
                 val s = split[i]
-                // If the length of the string builder is closer to the ideal length than the length of the string builder plus the current string, break
+
                 if (abs(sb.length - idealLength) < abs(sb.length + s.length - idealLength)) break
-                // If the string builder is not empty or the text ends with the delimiter, add the delimiter to the string builder
+
                 if (sb.isNotEmpty() || text.endsWith(d.toString())) sb.insert(0, d)
-                // Add the current string to the string builder
+
                 sb.insert(0, s)
-                // If the length of the string builder is greater than the ideal length, break
+
                 if (sb.length > idealLength) {
-                    //if (i > 0) sb.insert(0, d);
+
                     break
                 }
             }
-            // If the split strings are empty, return an empty stream
+
             if (split.isEmpty()) return@flatMap Stream.empty<String>()
-            // Return a stream of the string builder
+
             Stream.of(sb.toString())
         }.collect(Collectors.toList())
-        // Return the string with the closest length to the ideal length
+
         return candidates.stream().min(Comparator.comparing { s: CharSequence ->
             abs(
                 s.length - idealLength

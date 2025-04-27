@@ -31,13 +31,13 @@
   border-radius: $border-radius;
 }
 
-// Root styles
 body {
   @include typography($font-family-secondary);
   color: $primary-text-color;
   background-color: $primary-bg-color;
   margin: 0;
-  padding: 80px 10px 60px; // Reduced horizontal padding
+  padding: 80px 10px 60px;
+
   line-height: 1.6;
   transition: background-color 0.3s ease;
 }
@@ -47,9 +47,11 @@ body {
   padding: 10px;
   background-color: $secondary-bg-color;
   box-shadow: $box-shadow;
-  margin-bottom: 20px; // Add some space at the bottom
+  margin-bottom: 20px;
+
   border-radius: $border-radius;
-  max-width: 95%; // Increased max-width
+  max-width: 95%;
+
   margin-left: auto;
   margin-right: auto;
   transition: all 0.3s ease;
@@ -67,7 +69,8 @@ body {
   flex: 1;
   border: 1px solid $border-color;
   box-shadow: $box-shadow;
-  font-size: 16px; // Increase font size for better readability
+  font-size: 16px;
+
   transition: border-color 0.3s ease;
   min-height: 40px;
 
@@ -83,11 +86,15 @@ body {
 .code-execution {
   @include flex-container(row);
   padding: 5px;
-  width: 95%; // Adjusted width
-  max-width: 95%; // Increased max-width
+  width: 95%;
+
+  max-width: 95%;
+
   background-color: $primary-bg-color;
-  align-items: center; // Align items vertically
-  gap: 10px; // Add space between input and button
+  align-items: center;
+
+  gap: 10px;
+
   margin-bottom: 20px;
   margin-left: auto;
   margin-right: auto;
@@ -149,7 +156,6 @@ body {
   }
 }
 
-// Add styles for message types
 .user-message,
 .response-message,
 .reply-message {
@@ -244,7 +250,8 @@ pre {
 #toolbar,
 #namebar {
   background-color: $toolbar-bg-color;
-  padding: 15px 2.5%; // Reduced padding
+  padding: 15px 2.5%;
+
   position: fixed;
   top: 0;
   text-align: left;
@@ -294,8 +301,10 @@ pre {
     margin: 10% auto;
     padding: 30px;
     border: 1px solid $border-color;
-    width: 90%; // Increased width
-    max-width: 95%; // Increased max-width
+    width: 90%;
+
+    max-width: 95%;
+
     position: relative;
     border-radius: $border-radius;
     box-shadow: $box-shadow;
@@ -480,10 +489,14 @@ pre.response-message {
 .applist {
   border-collapse: collapse;
   margin-top: 20px;
-  width: 95%; // Added width
-  max-width: 95%; // Added max-width
-  margin-left: auto; // Center the table
-  margin-right: auto; // Center the table
+  width: 95%;
+
+  max-width: 95%;
+
+  margin-left: auto;
+
+  margin-right: auto;
+
 
   th {
     padding-top: 15px;
@@ -537,7 +550,6 @@ pre.response-message {
   }
 }
 
-// Keyframes
 @keyframes bounce {
   0% {
     transform: translateY(0);

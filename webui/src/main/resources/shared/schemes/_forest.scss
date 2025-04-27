@@ -1,6 +1,5 @@
 @import 'night';
 
-// Typography Variables
 $font-family-primary: fantasy;
 $font-family-secondary: sans-serif;
 $font-size-base: 1em;
@@ -11,17 +10,23 @@ $font-size-small: 0.8em;
 $font-weight-normal: 100;
 $font-weight-bold: 500;
 
-// Base colors for Forest Canopy theme
-$base-forest-floor: #2E342D; // Rich dark earth for main backgrounds
-$base-tree-bark: #8B5A2B; // Warm brown for headers and footers
-$base-canopy-leaf: #3A5F0B; // Deep green for accents and active elements
-$base-sunbeam: #F0E68C; // Light khaki for highlights and special features
-$base-dew: #C5E3BF; // Pale green for subtle background contrasts
-$base-underbrush: #2D3C0F; // Dark Olive green for secondary backgrounds and buttons
-$base-fern: #71A267; // Muted medium green for borders and separators
-$base-acorn: #C68A18; // Nutty brown for text and icons
+$base-forest-floor: #2E342D;
 
-// Derived colors for Forest Canopy theme
+$base-tree-bark: #8B5A2B;
+
+$base-canopy-leaf: #3A5F0B;
+
+$base-sunbeam: #F0E68C;
+
+$base-dew: #C5E3BF;
+
+$base-underbrush: #2D3C0F;
+
+$base-fern: #71A267;
+
+$base-acorn: #C68A18;
+
+
 $secondary-bg-color: $base-forest-floor;
 $secondary-text-color: lighten($base-acorn, 15%);
 $applist-header-bg: $base-tree-bark;
@@ -63,7 +68,6 @@ $user-message-border: $base-fern;
 $verbose-pre-bg: $base-underbrush;
 $verbose-pre-border: $base-fern;
 
-// Buttons
 $button-bg-color: $base-canopy-leaf;
 $button-text-color: $base-forest-floor;
 $button-hover-bg-color: darken($button-bg-color, 10%);
@@ -71,14 +75,12 @@ $button-hover-text-color: lighten($button-text-color, 10%);
 $button-border-radius: $border-radius;
 $button-box-shadow: $box-shadow;
 
-// Forms
 $input-border-color: $base-fern;
 $input-border-focus-color: $base-dew;
 $input-bg-color: $base-forest-floor;
 $input-text-color: $base-acorn;
 $input-padding: 10px;
 
-// Messages and Modals
 $message-info-bg-color: lighten($base-canopy-leaf, 40%);
 $message-info-text-color: $base-tree-bark;
 $message-success-bg-color: lighten($base-canopy-leaf, 40%);

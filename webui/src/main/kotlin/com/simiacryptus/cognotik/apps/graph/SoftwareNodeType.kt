@@ -106,7 +106,6 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         var priority: String? = "Medium"
     ) : NodeBase<ScmProjectNode>
 
-
     data class ProjectImportNode(
         override var id: NodeId<ProjectImportNode> = NodeId.createNew(),
         override val type: String = "ProjectImport",
@@ -176,7 +175,7 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         @Description("Package name")
         var name: String? = null,
         @Description("Package description")
-         var description: String? = null,
+        var description: String? = null,
         @Description("Package-level architecture patterns")
         var architecturePatterns: MutableSet<String>? = null,
         @Description("Package dependencies and their coupling metrics")
@@ -189,7 +188,11 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         override var id: NodeId<CodeProjectNode> = NodeId.createNew(),
         override val type: String = "CodeProject",
         var projectId: NodeId<ScmProjectNode>? = null,
-        val packageIds: MutableSet<NodeId<CodePackageNode>> = mutableSetOf<NodeId<CodePackageNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+        val packageIds: MutableSet<NodeId<CodePackageNode>> = mutableSetOf<NodeId<CodePackageNode>>().toSortedSet { o1: NodeId<*>, o2: NodeId<*> ->
+            o1.value.compareTo(
+                o2.value
+            )
+        },
         @Description("Project name")
         var name: String? = null,
         @Description("Minimum required dependencies (e.g. Java 11, Python 3.8)")
@@ -256,12 +259,12 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
             newGraph.nodes.addAll(this.nodes)
             other.nodes.forEach { otherNode: NodeBase<*> ->
                 if (otherNode.id.isNegated) {
-                    // Remove node if ID is negated
+
                     newGraph.nodes.removeAll { it.id == otherNode.id.absoluteValue }
                 } else if (newGraph.nodes.none { it.id == otherNode.id }) {
                     newGraph.nodes.add(otherNode)
                 } else {
-                    // Merge nodes with the same ID
+
                     val existingNode: NodeBase<*> = newGraph.nodes.first { it.id == otherNode.id }
                     newGraph.nodes.remove(existingNode)
                     newGraph.nodes.add(otherNode + existingNode)
@@ -279,16 +282,16 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
                 }
                 if (otherNode != null) {
                     if (otherNode.id.isNegated) {
-                        // If other node is negated, include this node with negated ID
+
                         newGraph.nodes.add(thisNode.copy {
                             id = thisNode.id.negate() as NodeId<Nothing>
                         })
                     } else {
-                        // If node exists in both graphs, create diff
+
                         newGraph.nodes.add(thisNode - otherNode)
                     }
                 } else {
-                    // If node only exists in this graph, include it in diff
+
                     newGraph.nodes.add(thisNode)
                 }
             }
@@ -304,7 +307,7 @@ class SoftwareGraphDeserializer : JsonDeserializer<SoftwareGraph>() {
         val node: JsonNode = mapper.readTree(p)
         val nodes: MutableSet<NodeBase<*>> = when {
             node.has("nodes") -> {
-                // Process each node individually with type information
+
                 node["nodes"].map { nodeJson ->
                     val typeNode = nodeJson["type"]
                     if (typeNode == null) {
@@ -324,7 +327,7 @@ class SoftwareGraphDeserializer : JsonDeserializer<SoftwareGraph>() {
             }
 
             node.isObject -> {
-                // Process single node with type information
+
                 val typeNode = node["type"]
                 if (typeNode == null) {
                     throw IllegalArgumentException("Node is missing required 'type' field")
@@ -348,7 +351,7 @@ class SoftwareGraphDeserializer : JsonDeserializer<SoftwareGraph>() {
             }
 
             else -> {
-                // Invalid format
+
                 throw IllegalArgumentException("Invalid SoftwareGraph format")
             }
         }
@@ -423,8 +426,10 @@ operator fun NodeBase<*>.plus(other: NodeBase<*>) = when {
             dependencyIds = this.dependencyIds?.union(other.dependencyIds ?: emptySet())
                 ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
             specificationIds = this.specificationIds?.union(other.specificationIds ?: emptySet())
-                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<SpecificationDocumentNode>>(),
-            importIds = this.importIds.union(other.importIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) }
+                ?: mutableSetOf<NodeId<SpecificationDocumentNode>>(),
+            importIds = this.importIds.union(other.importIds)
+                .toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
             language = other.language?.ifEmpty { this.language },
             path = other.path?.ifEmpty { this.path }
         )
@@ -434,9 +439,11 @@ operator fun NodeBase<*>.plus(other: NodeBase<*>) = when {
         this.copy(
             packageId = other.packageId ?: this.packageId,
             testedFileIds = this.testedFileIds.union(other.testedFileIds)
-                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<CodeFileNode>>(),
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) }
+                ?: mutableSetOf<NodeId<CodeFileNode>>(),
             dependencyIds = this.dependencyIds.union(other.dependencyIds)
-                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<CodeFileNode>>(),
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) }
+                ?: mutableSetOf<NodeId<CodeFileNode>>(),
             testFramework = other.testFramework?.ifEmpty { this.testFramework },
             testCategory = other.testCategory?.ifEmpty { this.testCategory },
             path = other.path?.ifEmpty { this.path },
@@ -447,10 +454,12 @@ operator fun NodeBase<*>.plus(other: NodeBase<*>) = when {
     this is CodePackageNode && other is CodePackageNode -> {
         this.copy(
             projectId = other.projectId ?: this.projectId,
-            fileIds = this.fileIds.union(other.fileIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+            fileIds = this.fileIds.union(other.fileIds)
+                .toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
             specificationIds = this.specificationIds.union(other.specificationIds)
                 .toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
-            importIds = this.importIds.union(other.importIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
+            importIds = this.importIds.union(other.importIds)
+                .toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) },
             name = other.name?.ifEmpty { this.name },
             description = other.description?.ifEmpty { this.description }
         )
@@ -460,22 +469,26 @@ operator fun NodeBase<*>.plus(other: NodeBase<*>) = when {
         this.copy(
             projectId = other.projectId ?: this.projectId,
             name = other.name?.ifEmpty { this.name },
-            packageIds = this.packageIds.union(other.packageIds).toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) }
+            packageIds = this.packageIds.union(other.packageIds)
+                .toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) }
         )
     }
 
     this is ScmProjectNode && other is ScmProjectNode -> {
         this.copy(
             projectIds = this.projectIds?.union(other.projectIds ?: emptySet())
-                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) } ?: mutableSetOf<NodeId<CodeProjectNode>>(),
+                ?.toSortedSet { o1: NodeId<*>, o2: NodeId<*> -> o1.value.compareTo(o2.value) }
+                ?: mutableSetOf<NodeId<CodeProjectNode>>(),
             name = other.name?.ifEmpty { this.name },
         )
     }
 
     this is ProjectImportNode && other is ProjectImportNode -> {
         this.copy(
-            importedResources = this.importedResources?.union(other.importedResources ?: emptySet())?.toSortedSet() ?: mutableSetOf(),
-            importConfig = (this.importConfig ?: emptyMap<String,String>()) + (other.importConfig ?: emptyMap<String,String>())
+            importedResources = this.importedResources?.union(other.importedResources ?: emptySet())?.toSortedSet()
+                ?: mutableSetOf(),
+            importConfig = (this.importConfig ?: emptyMap<String, String>()) + (other.importConfig
+                ?: emptyMap<String, String>())
         )
     }
 

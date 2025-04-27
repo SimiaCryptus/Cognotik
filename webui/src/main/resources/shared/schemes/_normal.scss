@@ -7,20 +7,28 @@ $font-size-small: 0.8px;
 $font-weight-normal: 400;
 $font-weight-bold: 700;
 
-// Base colors
 $base-white: #ffffff;
-$base-dark: #333333; // Dark color for text
-$base-light-blue: #dae8fc; // Light blue for a subtle background
-$base-grey: #7f8c8d; // Adjust for better readability
-$base-dark-blue: #2c3e50; // Good for headers or footers
-$base-light-grey: #ecf0f1; // Good for backgrounds
-$base-blue: #3498db; // Vibrant blue for links and buttons
-$base-green: #2ecc71; // Success color
-$base-red: #e74c3c; // Error color
-$base-orange: #e67e22; // A warm, friendly color for buttons
-$base-dark-grey: #95a5a6; // For subtle text
+$base-dark: #333333;
 
-// Derived colors
+$base-light-blue: #dae8fc;
+
+$base-grey: #7f8c8d;
+
+$base-dark-blue: #2c3e50;
+
+$base-light-grey: #ecf0f1;
+
+$base-blue: #3498db;
+
+$base-green: #2ecc71;
+
+$base-red: #e74c3c;
+
+$base-orange: #e67e22;
+
+$base-dark-grey: #95a5a6;
+
+
 $secondary-bg-color: $base-white;
 $secondary-text-color: $base-dark;
 $applist-header-bg: $base-dark-blue;
@@ -40,13 +48,17 @@ $error-color: $base-red;
 $success-color: $base-green;
 $footer-link-color: $base-dark-grey;
 $footer-link-hover-color: darken($footer-link-color, 10%);
-$link-color: $base-orange; // Changed from yellow to orange
+$link-color: $base-orange;
+
 $link-hover-color: darken($link-color, 10%);
 $modal-overlay-color: rgba($base-dark-blue, 0.7);
-$new-session-link-bg: $base-orange; // Changed from yellow to orange
+$new-session-link-bg: $base-orange;
+
 $new-session-link-hover-bg: darken($new-session-link-bg, 10%);
-$primary-bg-color: $base-light-grey; // Light background for content areas
-$primary-text-color: $base-dark; // Dark text for better readability
+$primary-bg-color: $base-light-grey;
+
+$primary-text-color: $base-dark;
+
 $reply-message-bg: $base-white;
 $reply-message-border: $base-grey;
 $response-message-bg: $base-white;
@@ -62,7 +74,6 @@ $user-message-border: $base-grey;
 $verbose-pre-bg: $base-light-grey;
 $verbose-pre-border: $base-grey;
 
-// Buttons
 $button-bg-color: $base-blue;
 $button-text-color: $base-white;
 $button-hover-bg-color: darken($button-bg-color, 10%);
@@ -70,14 +81,12 @@ $button-hover-text-color: $button-text-color;
 $button-border-radius: $border-radius;
 $button-box-shadow: $box-shadow;
 
-// Forms
 $input-border-color: $base-grey;
 $input-border-focus-color: $base-blue;
 $input-bg-color: $base-white;
 $input-text-color: $secondary-text-color;
 $input-padding: 10px;
 
-// Messages and Modals
 $message-info-bg-color: lighten($base-blue, 50%);
 $message-info-text-color: $base-dark-blue;
 $message-success-bg-color: lighten($base-green, 50%);

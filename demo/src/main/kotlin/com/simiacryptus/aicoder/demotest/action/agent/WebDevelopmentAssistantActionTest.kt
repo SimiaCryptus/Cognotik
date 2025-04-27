@@ -139,14 +139,12 @@ class WebDevelopmentAssistantActionTest : DemoTestBase(
                         2000
                     )
 
-                    // Wait for response and show tabs
                     try {
                         wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".tabs-container")))
                         tts("The AI has completed its analysis and generated suggested changes. Each tab represents a different file that needs modifications. Let's review some of these changes.")?.play(
                             3000
                         )
 
-                        // Click through available tabs
                         val tabs = driver.findElements(By.cssSelector(".tabs-container .tab-button"))
                         tabs.take(3).forEach { tab ->
                             tab.click()

@@ -80,11 +80,11 @@ class CreateImageActionTest : DemoTestBase(
             tts("Under the Generate submenu, we'll find the Create Image action. This tool can generate various types of diagrams including UML, flowcharts, and architectural visualizations.")?.play()
             waitFor(Duration.ofSeconds(15)) {
                 try {
-                    // Find and hover over Generate menu
+
                     findAll(CommonContainerFixture::class.java, byXpath("//div[@text='⚡ Generate']"))
                         .firstOrNull()?.moveMouse()
                     sleep(1000)
-                    // Click Create Image option
+
                     findAll(
                         CommonContainerFixture::class.java,
                         byXpath("//div[contains(@class, 'ActionMenuItem') and contains(@text, 'Create Image')]")

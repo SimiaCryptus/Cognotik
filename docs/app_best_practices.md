@@ -9,7 +9,7 @@ Here's a best practices document for developing apps in this project:
 1. Single Responsibility:
 
 ```kotlin
-// Each class should have a single, well-defined purpose
+
 class DocumentProcessor(
     val parser: DocumentParser,
     val validator: DocumentValidator,
@@ -25,7 +25,7 @@ class MyApp(
     private val storage: StorageService,
     private val validator: ValidationService
 ) : ApplicationServer {
-    // Dependencies are injected rather than created internally
+
 }
 ```
 
@@ -35,17 +35,16 @@ class MyApp(
 
 ```kotlin
 class MyApp(
-    // Core configuration 
+
     val settings: Settings,
     val model: ChatModel,
-    // UI configuration
+
     applicationName: String = "My App",
     path: String = "/myapp"
 ) : ApplicationServer(applicationName, path) {
-    // Core business logic methods
+
     private fun processData() {}
 
-    // UI handling methods
     override fun userMessage() {}
 }
 ```
@@ -69,12 +68,11 @@ data class RetryConfig(
 3. Handle state management:
 
 ```kotlin
-// Per-session state
+
 private val sessionState = mutableMapOf<String, SessionState>()
-// Thread-safe state updates
+
 private val stateGuard = AtomicBoolean(false)
 
-// Immutable state updates
 fun updateState(sessionId: String, update: (SessionState) -> SessionState) {
     synchronized(stateGuard) {
         sessionState[sessionId] = update(sessionState[sessionId] ?: SessionState())
@@ -141,7 +139,7 @@ log.debug("Fine-grained diagnostic info")
 log.info("General operational events")
 log.warn("Potentially harmful situations")
 log.error("Error events that might still allow the app to continue")
-// Add context to error logs
+
 log.error(
     "Operation failed", mapOf(
         "error" to e.message,
@@ -156,7 +154,7 @@ log.error(
 ### API Client Lifecycle
 
 ```kotlin
-// Use structured resource management
+
 inline fun <T> withAPI(crossinline block: (API) -> T): T {
     return api.use { client ->
         try {
@@ -169,7 +167,7 @@ inline fun <T> withAPI(crossinline block: (API) -> T): T {
 
 api.use { client ->
     try {
-        // Use API client
+
     } finally {
         client.close()
     }
@@ -179,20 +177,19 @@ api.use { client ->
 ### Memory Management
 
 ```kotlin
-// Use sequences for large collections and implement pagination
+
 files.asSequence()
     .filter { it.length() < maxSize }
     .map { process(it) }
     .take(limit)
     .chunked(pageSize)
     .toList()
-// Implement resource pooling
+
 val resourcePool = ResourcePool<ExpensiveResource>(
     maxSize = 10,
     factory = { createExpensiveResource() }
 )
 
-// Clear buffers after use
 buffer.clear()
 ```
 
@@ -209,7 +206,7 @@ log.error("Error processing task ${taskId}", exception)
 
 ```kotlin
 try {
-    // Main operation
+
     checkPreconditions()
     validateInput(data)
 } catch (e: SocketTimeoutException) {
@@ -260,7 +257,7 @@ when (e) {
 ```kotlin
 Retryable(ui, task) { content ->
     try {
-        // Operation that might need retry
+
         val result = performOperation()
         renderMarkdown(result, ui = ui)
     } catch (e: Exception) {
@@ -297,27 +294,33 @@ val childTabs = TabbedDisplay(childTask)
 
 ```kotlin
 val task = ui.newTask()
-task.add(SessionTask.spinner) // Show loading spinner
+task.add(SessionTask.spinner)
+
 ```
 
 2. In Progress:
 
 ```kotlin
-task.add("Processing...") // Update status
-task.verbose("Detailed progress info") // Show detailed progress
+task.add("Processing...")
+
+task.verbose("Detailed progress info")
+
 ```
 
 3. Completion:
 
 ```kotlin
-task.complete() // Normal completion
-task.complete("Operation completed successfully") // Completion with message
+task.complete()
+
+task.complete("Operation completed successfully")
+
 ```
 
 4. Error State:
 
 ```kotlin
-task.error(ui, exception) // Show error with details
+task.error(ui, exception)
+
 ```
 
 ### Progress Tracking
@@ -345,7 +348,7 @@ mainTask.verbose(subTask2.placeholder)
 
 ```kotlin
 task.header("Processing Stage 1")
-// ... operations ...
+
 task.header("Processing Stage 2")
 ```
 
@@ -369,7 +372,7 @@ task.add(
 
 ```kotlin
 try {
-    // Use resources
+
 } finally {
     resource.close()
     task.complete()
@@ -389,4 +392,5 @@ fun truncate(output: String, kb: Int = 32): String {
 }
 ```
 
-Following these best practices will help ensure your apps are reliable, maintainable, and provide a good user experience.
+Following these best practices will help ensure your apps are reliable, maintainable, and provide a good user
+experience.

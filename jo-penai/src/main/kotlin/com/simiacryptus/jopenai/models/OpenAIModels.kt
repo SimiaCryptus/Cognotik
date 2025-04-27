@@ -9,7 +9,7 @@ object OpenAIModels {
         inputTokenPricePerK = 0.010,
         outputTokenPricePerK = 0.030
     )
-    
+
     val GPT4o = ChatModel(
         name = "GPT4o",
         modelName = "gpt-4o",
@@ -18,7 +18,7 @@ object OpenAIModels {
         inputTokenPricePerK = 0.0025,
         outputTokenPricePerK = 0.010
     )
-    
+
     val GPT45 = ChatModel(
         name = "GPT45",
         modelName = "gpt-4.5-preview-2025-02-27",
@@ -42,7 +42,7 @@ object OpenAIModels {
         modelName = "o1-preview",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
-        inputTokenPricePerK = 0.0005, 
+        inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015,
         hasTemperature = false,
         hasReasoningEffort = true,
@@ -53,7 +53,7 @@ object OpenAIModels {
         modelName = "o1",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
-        inputTokenPricePerK = 0.015, 
+        inputTokenPricePerK = 0.015,
         outputTokenPricePerK = 0.060,
         hasTemperature = false,
         hasReasoningEffort = true,
@@ -64,7 +64,7 @@ object OpenAIModels {
         modelName = "o1-mini",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
-        inputTokenPricePerK = 0.00110, 
+        inputTokenPricePerK = 0.00110,
         outputTokenPricePerK = 0.00440,
         hasTemperature = false,
         hasReasoningEffort = false,
@@ -75,7 +75,7 @@ object OpenAIModels {
         modelName = "o3-mini",
         maxTotalTokens = 128 * 1024,
         provider = APIProvider.OpenAI,
-        inputTokenPricePerK = 0.00110, 
+        inputTokenPricePerK = 0.00110,
         outputTokenPricePerK = 0.00440,
         hasTemperature = false,
         hasReasoningEffort = true,
@@ -100,7 +100,6 @@ object OpenAIModels {
         hasTemperature = false,
         hasReasoningEffort = true,
     )
-    
 
     val GPT41 = ChatModel(
         name = "GPT 4.1",
@@ -134,7 +133,7 @@ object OpenAIModels {
         hasTemperature = true,
         hasReasoningEffort = false,
     )
-    
+
     val values = mapOf(
         "GPT4Turbo" to GPT4Turbo,
         "GPT4o" to GPT4o,

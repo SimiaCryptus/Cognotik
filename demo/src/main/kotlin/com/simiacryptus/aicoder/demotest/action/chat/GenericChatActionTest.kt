@@ -138,17 +138,15 @@ class GenericChatActionTest : DemoTestBase(
 
                     wait.until(ExpectedConditions.elementToBeClickable(By.id("send-message-button"))).click()
                     log.info("Question submitted successfully")
-                    // Wait longer for response
+
                     tts("Waiting for AI to analyze and provide a detailed response...")?.play()
                     sleep(5000)
                     tts("The question is submitted, and the AI is analyzing it to provide comprehensive guidance on Kotlin error handling patterns.")?.play(
                         2000
                     )
 
-
-                    // Wait for response
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.className("response-message")))
-                    // Give time to read response
+
                     sleep(10000)
                     tts("The AI has provided a detailed response, including code examples and best practices. Notice how the response is well-structured and specifically tailored to Kotlin development.")?.play(
                         3000

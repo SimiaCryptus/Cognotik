@@ -62,7 +62,8 @@ const MenuContainer = styled.div<MenuContainerProps>`
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     background: ${({theme}) => `
-        linear-gradient(135deg, 
+        linear-gradient(135deg,
+
             ${theme.colors.surface}f0,
             ${theme.colors.background}f8,
             ${theme.colors.surface}f0
@@ -71,7 +72,6 @@ const MenuContainer = styled.div<MenuContainerProps>`
     backdrop-filter: blur(8px);
     /* Specific transitions instead of 'all' */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-
 
     @media (max-width: 768px) {
         padding: ${({theme}) => theme.sizing.spacing.xs};
@@ -249,7 +249,6 @@ export const Menu: React.FC = () => {
         console.log('[Menu] User initiated logout');
     };
 
-
     return (
         <MenuContainer $hidden={!showMenubar}
                        data-testid="main-menu"
@@ -257,11 +256,11 @@ export const Menu: React.FC = () => {
             <ToolbarLeft>
                 <DropButton as="a" href="/" onClick={() => console.debug('[Menu] Home navigation')}
                             data-testid="home-button"
-                             id="home-button">
+                            id="home-button">
                     <FontAwesomeIcon icon={faHome}/> Home
                 </DropButton>
 
-                <Dropdown
+                {/*<Dropdown
                     data-testid="app-menu-button"
                     id="app-menu-button">
                     <DropButton
@@ -271,7 +270,7 @@ export const Menu: React.FC = () => {
                         <DropdownItem onClick={() => openModal('sessions')}>Session List</DropdownItem>
                         <DropdownItem as="a" href={"./#" + newGlobalID()}>New</DropdownItem>
                     </DropdownContent>
-                </Dropdown>
+                </Dropdown>*/}
 
                 <Dropdown>
                     <DropButton>
@@ -279,16 +278,16 @@ export const Menu: React.FC = () => {
                     </DropButton>
                     <DropdownContent>
                         <DropdownItem onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
-{/*
+                        {/*
                         <DropdownItem onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
 */}
                         <DropdownItem onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
                         <DropdownItem onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
-{/*
+                        {/*
                         <DropdownItem onClick={() => handleMenuClick('share')}>Share</DropdownItem>
 */}
                         <DropdownItem onClick={() => handleMenuClick('cancel')}>Cancel</DropdownItem>
-{/*
+                        {/*
                         <DropdownItem onClick={() => handleMenuClick('delete')}>Delete</DropdownItem>
 */}
                         <DropdownItem onClick={handleVerboseToggle}>
@@ -298,7 +297,7 @@ export const Menu: React.FC = () => {
                 </Dropdown>
 
                 <ThemeMenu/>
-{/*
+                {/*
 
                 <Dropdown>
                     <DropButton>About</DropButton>
@@ -323,14 +322,14 @@ export const Menu: React.FC = () => {
 
             <Dropdown>
                 <DropButton>
-                    <FontAwesomeIcon icon={faSignInAlt}/> Login
+                    <FontAwesomeIcon icon={faSignInAlt}/>User
                 </DropButton>
                 <DropdownContent>
                     <DropdownItem onClick={() => handleMenuClick('/userSettings')}>Settings</DropdownItem>
                     <DropdownItem onClick={() => handleMenuClick('/usage')}>Usage</DropdownItem>
-                    <DropdownItem onClick={handleLogout}>
+                    {/*<DropdownItem onClick={handleLogout}>
                         <FontAwesomeIcon icon={faSignOutAlt}/> Logout
-                    </DropdownItem>
+                    </DropdownItem>*/}
                 </DropdownContent>
             </Dropdown>
         </MenuContainer>

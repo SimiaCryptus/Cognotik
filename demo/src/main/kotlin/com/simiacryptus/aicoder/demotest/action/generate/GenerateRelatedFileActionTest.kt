@@ -95,7 +95,7 @@ class GenerateRelatedFileActionTest : DemoTestBase(
             tts("Select 'Generate Related File' to create a new file based on our README's content. This feature intelligently generates related files while maintaining context.")?.play()
             waitFor(Duration.ofSeconds(15)) {
                 try {
-                    // Find and hover over Generate menu
+
                     findAll(CommonContainerFixture::class.java, byXpath("//div[@text='⚡ Generate']"))
                         .firstOrNull()?.moveMouse()
                     sleep(1000)
@@ -104,7 +104,6 @@ class GenerateRelatedFileActionTest : DemoTestBase(
                         byXpath("//div[@class='ActionMenuItem' and contains(@text, 'Generate Related File')]")
                     )
 
-                    // Click Generate Related File option
                     findAll(
                         CommonContainerFixture::class.java,
                         byXpath("//div[@class='ActionMenuItem' and contains(@text, 'Generate Related File')]")

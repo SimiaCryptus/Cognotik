@@ -105,7 +105,7 @@ class DocumentedMassPatchActionTest : DemoTestBase(
             waitFor(Duration.ofSeconds(10)) {
                 val dialog = find(CommonContainerFixture::class.java, byXpath("//div[@class='MyDialog']"))
                 if (dialog.isShowing) {
-                    // Set AI instruction
+
                     val instructionField =
                         dialog.find(JTextAreaFixture::class.java, byXpath("//div[@class='JBTextArea']"))
                     instructionField.click()
@@ -116,7 +116,6 @@ class DocumentedMassPatchActionTest : DemoTestBase(
                         enterText("Update code to match documentation standards")
                     }
 
-                    // Enable auto-apply
                     dialog.find(JCheckboxFixture::class.java, byXpath("//div[@text='Auto Apply Changes']"))
                         .apply { if (!isSelected()) click() }
 
@@ -144,11 +143,10 @@ class DocumentedMassPatchActionTest : DemoTestBase(
                 val wait = WebDriverWait(driver, Duration.ofSeconds(90))
 
                 try {
-                    // Wait for interface to load
+
                     wait.until(ExpectedConditions.elementToBeClickable(By.id("chat-input")))
                     tts("The interface has loaded, showing us a detailed breakdown of all proposed changes. Each modification is carefully aligned with our documentation standards.")?.play()
 
-                    // Wait for patches to be generated and applied
                     wait.until { driver ->
                         val elements = driver.findElements(By.cssSelector(".message-container"))
                         elements.any { it.isDisplayed }
@@ -157,7 +155,6 @@ class DocumentedMassPatchActionTest : DemoTestBase(
                         5000
                     )
 
-                    // Review results
                     val tabButtons = driver.findElements(By.cssSelector(".tabs-container > .tabs > .tab-button"))
                     tabButtons.take(3).forEach { button ->
                         button.click()

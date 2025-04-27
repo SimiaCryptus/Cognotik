@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.apps.code
 
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
 import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
@@ -41,7 +41,7 @@ class JDBCCodingApp : ApplicationServer(
             model = settings.model,
             mainTask = ui.newTask(),
         ) {
-//            override fun getInterpreterString(): String = JDBCCodingApp::class.java.name
+
 
         }.start(
             userMessage = userMessage,

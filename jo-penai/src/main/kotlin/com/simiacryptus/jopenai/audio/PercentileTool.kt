@@ -16,8 +16,8 @@ class PercentileTool(
             var klDiv = 0.0
             val maxValue = kotlin.math.max(a.lastOrNull() ?: 0.0, b.lastOrNull() ?: 0.0)
             if (maxValue == 0.0) return 0.0
-            val aList = a.map { it/maxValue }.toMutableList()
-            val bList = b.map { it/maxValue }.toMutableList()
+            val aList = a.map { it / maxValue }.toMutableList()
+            val bList = b.map { it / maxValue }.toMutableList()
             while (aList.isNotEmpty() && bList.isNotEmpty()) {
                 val aV = aList.first()
                 val bV = bList.first()
@@ -37,7 +37,8 @@ class PercentileTool(
         }
     }
 
-    internal var memory = ArrayList<Double>() // Maintains sorted order
+    internal var memory = ArrayList<Double>()
+
         private set
 
     /**
@@ -47,10 +48,10 @@ class PercentileTool(
     @Synchronized
 
     fun add(value: Double) {
-        // Insert value in sorted order using binary search
+
         val index = memory.binarySearch(value).let { if (it < 0) -it - 1 else it }
         memory.add(index, value)
-        // If memory exceeds memorySize, rebuild the list to include every other element
+
         if (memory.size > memorySize) {
             val newSize = memorySize / 2
             val newMemory = ArrayList<Double>(newSize)
@@ -143,7 +144,7 @@ class PercentileTool(
             val fractionOfValues = i.toDouble() / memory.size
             if (fractionOfValues == 0.0 || fractionOfRange <= 0.0) continue
             if (fractionOfValues >= 1.0 || fractionOfRange >= 1.0) break
-            // Different entropy formulation: using Gini impurity
+
             val gini1 = fractionOfValues * (1.0 - fractionOfValues)
             val gini2 = fractionOfRange * (1.0 - fractionOfRange)
             val giniScore = gini1 + gini2
@@ -214,7 +215,7 @@ class PercentileTool(
             val fractionOfRange = (threshold - min) / (max - min)
             if (fractionOfValues == 0.0 || fractionOfRange <= 0.0) continue
             if (fractionOfValues >= 1.0 || fractionOfRange >= 1.0) break
-            // Compute KL divergence in base 2
+
             val kl = fractionOfValues * log(fractionOfValues / fractionOfRange, 2.0) +
                     (1.0 - fractionOfValues) * log((1.0 - fractionOfValues) / (1.0 - fractionOfRange), 2.0)
             if (kl > maxKL) {
@@ -244,9 +245,8 @@ class PercentileTool(
         val min = memory.first()
         val max = memory.last()
 
-        // Inline helper for computing the Jensen-Shannon divergence in base 2.
         fun jensenShannonDivergence(p: Double, q: Double): Double {
-            // Avoid edge cases; if p or q are 0 or 1, the JS can be degenerate
+
             if (p <= 0.0 || p >= 1.0 || q <= 0.0 || q >= 1.0) return Double.NEGATIVE_INFINITY
             val m = (p + q) / 2
             val p1 = 1 - p
@@ -269,11 +269,9 @@ class PercentileTool(
             val fractionOfValues = i.toDouble() / memory.size
             val fractionOfRange = (threshold - min) / (max - min)
 
-            // Avoid invalid or degenerate values
             if (fractionOfValues <= 0.0 || fractionOfRange <= 0.0) continue
             if (fractionOfValues >= 1.0 || fractionOfRange >= 1.0) break
 
-            // Compute Jensen–Shannon divergence
             val js = jensenShannonDivergence(fractionOfValues, fractionOfRange)
 
             if (js > maxJS) {
@@ -283,7 +281,6 @@ class PercentileTool(
             }
         }
 
-        // Apply percentileBias if requested
         if (percentileBias != 0.0 && bestIndex != -1) {
             val percentileIndex = (bestIndex + (percentileBias * memory.size)).toInt().coerceIn(0, memory.size - 1)
             if (percentileIndex != bestIndex) {
@@ -301,29 +298,27 @@ class PercentileTool(
         val min = memory.first()
         val max = memory.last()
 
-        // Helper to compute the Bhattacharyya distance for two probabilities p and q,
-        // where p,q represent fractions (0 < p,q < 1).
+
         fun bhattacharyyaDistance(p: Double, q: Double): Double {
-            // The Bhattacharyya coefficient is:
-            //     BC(p, q) = sqrt(p*q) + sqrt( (1-p)*(1-q) )
-            // Distance:
-            //     BD(p, q) = -ln( BC(p, q) )
-            // We’ll guard against p/q being 0 or 1 because ln(0) → -∞ (which is invalid here).
+
+
+
+
+
             if (p <= 0.0 || p >= 1.0 || q <= 0.0 || q >= 1.0) {
                 return Double.NEGATIVE_INFINITY
             }
             val bc = kotlin.math.sqrt(p * q) + kotlin.math.sqrt((1 - p) * (1 - q))
-            return -kotlin.math.log(bc, 2.0) // Using log base 2 to be consistent with other methods
+            return -kotlin.math.log(bc, 2.0)
+
         }
 
         for (i in 1 until memory.size) {
-            // Skip if the next point is identical to the previous
+
             if (memory[i] == memory[i - 1]) continue
 
-            // Midpoint threshold between adjacent data
             val threshold = (memory[i - 1] + memory[i]) / 2
 
-            // Skip thresholds that are out of bounds or degenerate
             if (threshold <= min || threshold >= max) continue
 
             val fractionOfValues = i.toDouble() / memory.size
@@ -335,7 +330,6 @@ class PercentileTool(
                 continue
             }
 
-            // Compute Bhattacharyya distance
             val bd = bhattacharyyaDistance(fractionOfValues, fractionOfRange)
             if (bd > maxBD) {
                 maxBD = bd
@@ -344,7 +338,6 @@ class PercentileTool(
             }
         }
 
-        // If desired, apply a percentile bias
         if (percentileBias != 0.0 && bestIndex != -1) {
             val percentileIndex = (bestIndex + (percentileBias * memory.size)).toInt()
                 .coerceIn(0, memory.size - 1)

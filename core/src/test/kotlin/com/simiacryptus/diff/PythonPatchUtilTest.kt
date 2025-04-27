@@ -1,11 +1,13 @@
 package com.simiacryptus.diff
 
-import com.simiacryptus.cognotik.core.util.PythonPatchUtil
+import com.simiacryptus.cognotik.util.PythonPatchUtil
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+
 class PythonPatchUtilTest {
-    // This helper normalizes line endings and trims the overall string.
+
     private fun normalize(text: String) = text.trim().replace("\r\n", "\n")
+
     @Test
     fun testPatchExactMatch() {
         val source = """
@@ -21,6 +23,7 @@ class PythonPatchUtilTest {
         val result = PythonPatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(source), normalize(result))
     }
+
     @Test
     fun testPatchAddLine() {
         val source = """
@@ -43,6 +46,7 @@ class PythonPatchUtilTest {
         val result = PythonPatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
+
     @Test
     fun testPatchModifyLine() {
         val source = """
@@ -64,7 +68,7 @@ class PythonPatchUtilTest {
         val result = PythonPatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
-//    @Test
+
     fun testPatchRemoveLine() {
         val source = """
             line1
@@ -83,7 +87,7 @@ class PythonPatchUtilTest {
         val result = PythonPatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
-//    @Test
+
     fun testPatchAdd2Lines() {
         val source = """
             line1
@@ -107,6 +111,7 @@ class PythonPatchUtilTest {
         val result = PythonPatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
+
     @Test
     fun testGeneratePatchNoChanges() {
         val oldCode = "line1\nline2\nline3"
@@ -115,6 +120,7 @@ class PythonPatchUtilTest {
         val expected = ""
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
+
     @Test
     fun testGeneratePatchAddLine() {
         val oldCode = "line1\nline2\nline3"
@@ -123,6 +129,7 @@ class PythonPatchUtilTest {
         val expected = "  line1\n  line2\n+ newLine\n  line3"
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
+
     @Test
     fun testGeneratePatchRemoveLine() {
         val oldCode = "line1\nline2\nline3"
@@ -131,6 +138,7 @@ class PythonPatchUtilTest {
         val expected = "  line1\n- line2\n  line3"
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
+
     @Test
     fun testGeneratePatchModifyLine() {
         val oldCode = "line1\nline2\nline3"
@@ -139,31 +147,31 @@ class PythonPatchUtilTest {
         val expected = "  line1\n- line2\n+ modifiedLine2\n  line3"
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
+
     @Test
     fun testGeneratePatchComplexChanges() {
         val oldCode = """
             function example() {
                 console.log("Hello");
-                // Some comment
+
                 return true;
             }
         """.trimIndent()
         val newCode = """
             function example() {
                 console.log("Hello, World!");
-                // Modified comment
+
                 let x = 5;
                 return x > 0;
             }
         """.trimIndent()
         val result = PythonPatchUtil.generatePatch(oldCode, newCode)
         val expected = """
-              function example() {
+            function example() {
             -     console.log("Hello");
-            -     // Some comment
-            -     return true;
             +     console.log("Hello, World!");
-            +     // Modified comment
+              
+            -     return true;
             +     let x = 5;
             +     return x > 0;
               }

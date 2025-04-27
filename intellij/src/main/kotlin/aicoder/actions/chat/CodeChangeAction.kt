@@ -11,20 +11,20 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.cognotik.Discussable
-import com.simiacryptus.cognotik.core.actors.ParsedActor
-import com.simiacryptus.cognotik.core.actors.SimpleActor
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.FileSelectionUtils
-import com.simiacryptus.cognotik.core.util.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.core.util.getModuleRootForFile
+import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.diff.AddApplyFileDiffLinks
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.describe.Description
@@ -43,11 +43,13 @@ import kotlin.io.path.relativeTo
 
 class CodeChangeAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
-    
+
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (FileSelectionUtils.expandFileList(
-            *PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.map { it.toFile }?.toTypedArray<File>() ?: arrayOf()
-        ).isEmpty()) return false
+                *PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.map { it.toFile }?.toTypedArray<File>()
+                    ?: arrayOf()
+            ).isEmpty()
+        ) return false
         return super.isEnabled(event)
     }
 
@@ -70,10 +72,11 @@ class CodeChangeAction : BaseAction() {
         try {
             val root = getRoot(event) ?: throw RuntimeException("No file or folder selected")
             val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)
-            val initialFiles = FileSelectionUtils.expandFileList(*virtualFiles?.map { it.toFile }?.toTypedArray() ?: arrayOf()).map {
-                it.toPath().relativeTo(root)
-            }.toSet()
-            
+            val initialFiles =
+                FileSelectionUtils.expandFileList(*virtualFiles?.map { it.toFile }?.toTypedArray() ?: arrayOf()).map {
+                    it.toPath().relativeTo(root)
+                }.toSet()
+
             val session = Session.newGlobalID()
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
@@ -167,8 +170,7 @@ class CodeChangeAction : BaseAction() {
                 task.add("Analyzing files...")
 
                 val api = (api as ChatClient).getChildClient(task)
-                
-                // First stage: Analyze files with fast model
+
                 val fileAnalyzer = ParsedActor(
                     resultClass = FileAnalysis::class.java,
                     prompt = """
@@ -190,9 +192,8 @@ class CodeChangeAction : BaseAction() {
 
                 task.add("Identified relevant files: ${initialAnalysis.obj.filesToModify?.joinToString(", ")}")
 
-                // Second stage: Process selected files with smart model
                 val relevantPaths = ((initialAnalysis.obj.filesToModify ?: emptyList()) +
-                    (initialAnalysis.obj.contextFiles ?: emptyList())).mapNotNull { filePath ->
+                        (initialAnalysis.obj.contextFiles ?: emptyList())).mapNotNull { filePath ->
                     allFiles.find { it.toString().endsWith(filePath) }
                 }.toSet()
 
@@ -200,9 +201,9 @@ class CodeChangeAction : BaseAction() {
                     return SimpleActor(
                         prompt = """
                             You are a helpful AI that helps people with coding.
-                            
+
                             You will be answering questions about the following code:
-                            
+
                         """.trimIndent() + codeSummary(relevantPaths) + patchFormatPrompt,
                         model = AppSettingsState.instance.smartModel.chatModel()
                     )

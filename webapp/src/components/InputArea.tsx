@@ -19,7 +19,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import EditIcon from '@mui/icons-material/Edit';
-import { debounce } from '../utils/tabHandling';
+import {debounce} from '../utils/tabHandling';
+
 const CollapseButton = styled.button`
     position: absolute;
     top: -12px;
@@ -55,7 +56,7 @@ const CollapsedPlaceholder = styled.div`
         background: ${({theme}) => theme.colors.hover};
     }
 `;
-// Add preview container styles
+
 const PreviewContainer = styled.div`
     padding: 0.5rem;
     border: 1px solid ${props => props.theme.colors.border};
@@ -75,7 +76,6 @@ const PreviewContainer = styled.div`
     }
 `;
 
-// Debug logging utility
 const DEBUG = process.env.NODE_ENV === 'development';
 const log = (message: string, data?: unknown) => {
     if (DEBUG) {
@@ -86,7 +86,7 @@ const log = (message: string, data?: unknown) => {
         }
     }
 };
-// Critical error logging
+
 const logError = (message: string, error?: unknown) => {
     console.error(`[InputArea] ${message}`, error);
 };
@@ -100,7 +100,8 @@ const InputContainer = styled.div<InputContainerProps>`
     background-color: ${(props) => props.theme.colors.surface};
     /* Add test id */
     &[data-testid] {
-      outline: none; 
+      outline: none;
+
     }
     border-top: 1px solid ${(props) => props.theme.colors.border};
     display: ${({theme, $hide}) => $hide ? 'none' : 'block'};
@@ -109,7 +110,8 @@ const InputContainer = styled.div<InputContainerProps>`
     z-index: 10;
     backdrop-filter: blur(16px) saturate(180%);
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
-    background: ${({theme}) => `linear-gradient(to top, 
+    background: ${({theme}) => `linear-gradient(to top,
+
         ${theme.colors.surface}dd,
         ${theme.colors.background}aa
     )`};
@@ -127,7 +129,8 @@ const EditorToolbar = styled.div`
     background: ${({theme}) => theme.colors.surface};
     border: 1px solid ${({theme}) => theme.colors.border};
     border-bottom: none;
-    border-radius: ${({theme}) => theme.sizing.borderRadius.md} 
+    border-radius: ${({theme}) => theme.sizing.borderRadius.md}
+
                   ${({theme}) => theme.sizing.borderRadius.md} 0 0;
     /* Toolbar sections */
     .toolbar-section {
@@ -155,7 +158,6 @@ const ToolbarButton = styled.button`
     }
 `;
 
-
 const TextArea = styled.textarea`
     width: 100%;
     padding: 0.5rem;
@@ -182,8 +184,10 @@ const TextArea = styled.textarea`
 `;
 const SendButton = styled.button`
     padding: 0.75rem 1.5rem;
-    background: ${({theme}) => `linear-gradient(135deg, 
-        ${theme.colors.primary}, 
+    background: ${({theme}) => `linear-gradient(135deg,
+
+        ${theme.colors.primary},
+
         ${theme.colors.primaryDark}
     )`};
     color: white;
@@ -233,27 +237,27 @@ interface InputAreaProps {
 }
 
 const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected = true}: InputAreaProps) {
-    // Remove non-critical initialization log
+
     const [message, setMessage] = useState('');
-    // Debounce preview mode toggling to avoid rapid switching that can trigger flicker
+
     const [isPreviewMode, setIsPreviewMode] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const config = useSelector((state: RootState) => state.config);
     const messages = useSelector((state: RootState) => state.messages.messages);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const handleToggleCollapse = useCallback(() => {
-    setIsCollapsed(prev => {
-        const newVal = !prev;
-        // If the input area is being expanded (i.e. newVal is false), focus the textarea.
-        if (!newVal) {
-            setTimeout(() => textAreaRef.current?.focus(), 0);
-        }
-        return newVal;
-    });
+        setIsCollapsed(prev => {
+            const newVal = !prev;
+
+            if (!newVal) {
+                setTimeout(() => textAreaRef.current?.focus(), 0);
+            }
+            return newVal;
+        });
     }, []);
     const textAreaRef = React.useRef<HTMLTextAreaElement>(null);
     const shouldHideInput = config.singleInput && messages.length > 0;
-    // Add syntax highlighting effect
+
     React.useEffect(() => {
         if (isPreviewMode) {
             Prism.highlightAll();
@@ -267,7 +271,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
             const selectedText = textarea.value.substring(start, end);
             const newText = syntax.replace('$1', selectedText || 'text');
             setMessage(prev => prev.substring(0, start) + newText + prev.substring(end));
-            // Set cursor position inside the inserted markdown
+
             setTimeout(() => {
                 const newCursorPos = start + newText.indexOf(selectedText || 'text');
                 textarea.focus();
@@ -285,17 +289,18 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         insertMarkdown(tableTemplate);
     }, [insertMarkdown]);
 
-
     const handleSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         if (isSubmitting || !isWebSocketConnected) return;
 
         if (message.trim()) {
             setIsSubmitting(true);
-            log('Sending message', {
-                messageLength: message.length,
-                message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
-            });
+            if (DEBUG) {
+                log('Sending message', {
+                    messageLength: message.length,
+                    message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
+                });
+            }
             Promise.resolve(onSendMessage(message)).finally(() => {
                 setMessage('');
                 setIsSubmitting(false);
@@ -305,7 +310,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         } else {
             log('Empty message submission prevented');
         }
-    }, [message, onSendMessage, isSubmitting, isWebSocketConnected]);
+    }, [message, onSendMessage, isSubmitting, isWebSocketConnected, DEBUG]);
 
     const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newMessage = e.target.value;
@@ -326,14 +331,14 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
             logError('Failed to focus input on mount', error);
         }
         return () => {
-            // Remove non-critical unmounting log
+
         };
     }, [config]);
-    // Create a message to show when disconnected
+
     const connectionStatusMessage = !isWebSocketConnected ? (
-        <div style={{ 
-            color: 'red', 
-            fontSize: '0.8rem', 
+        <div style={{
+            color: 'red',
+            fontSize: '0.8rem',
             marginTop: '0.5rem',
             display: 'flex',
             alignItems: 'center',
@@ -343,10 +348,9 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         </div>
     ) : null;
 
-
     if (isCollapsed) {
         return (
-            <InputContainer 
+            <InputContainer
                 $hide={shouldHideInput}
                 data-testid="input-container"
                 id="chat-input-container"
@@ -357,7 +361,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                     title="Expand input area"
                     data-testid="expand-input"
                 >
-                <KeyboardArrowUpIcon fontSize="small" />
+                    <KeyboardArrowUpIcon fontSize="small"/>
                 </CollapseButton>
                 <CollapsedPlaceholder onClick={handleToggleCollapse}>
                     Click to expand input
@@ -367,7 +371,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         );
     }
     return (
-        <InputContainer 
+        <InputContainer
             $hide={shouldHideInput}
             data-testid="input-container"
             id="chat-input-container"
@@ -378,120 +382,120 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                 title="Collapse input area"
                 data-testid="collapse-input"
             >
-                <KeyboardArrowDownIcon fontSize="small" />
+                <KeyboardArrowDownIcon fontSize="small"/>
 
             </CollapseButton>
             <div className="input-area-content">
                 <StyledForm onSubmit={handleSubmit}>
-                    <div style={{ width: '100%' }}>
+                    <div style={{width: '100%'}}>
                         <EditorToolbar>
                             <div className="toolbar-section">
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => {
-                                    const newValue = !isPreviewMode;
-                                    debounce(() => setIsPreviewMode(newValue), 150)();
-                                  }}
-                                  title={isPreviewMode ? "Edit" : "Preview"}
-                                  className={isPreviewMode ? 'active' : ''}
+                                    type="button"
+                                    onClick={() => {
+                                        const newValue = !isPreviewMode;
+                                        debounce(() => setIsPreviewMode(newValue), 150)();
+                                    }}
+                                    title={isPreviewMode ? "Edit" : "Preview"}
+                                    className={isPreviewMode ? 'active' : ''}
                                 >
-                                    {isPreviewMode ? <EditIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                                    {isPreviewMode ? <EditIcon fontSize="small"/> : <VisibilityIcon fontSize="small"/>}
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('# $1')}
-                                  title="Heading"
+                                    type="button"
+                                    onClick={() => insertMarkdown('# $1')}
+                                    title="Heading"
                                 >
-                                    <TitleIcon fontSize="small" />
+                                    <TitleIcon fontSize="small"/>
                                 </ToolbarButton>
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('**$1**')}
-                                  title="Bold"
+                                    type="button"
+                                    onClick={() => insertMarkdown('**$1**')}
+                                    title="Bold"
                                 >
-                                    <FormatBoldIcon fontSize="small" />
+                                    <FormatBoldIcon fontSize="small"/>
                                 </ToolbarButton>
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('*$1*')}
-                                  title="Italic"
+                                    type="button"
+                                    onClick={() => insertMarkdown('*$1*')}
+                                    title="Italic"
                                 >
-                                    <FormatItalicIcon fontSize="small" />
+                                    <FormatItalicIcon fontSize="small"/>
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('`$1`')}
-                                  title="Inline Code"
+                                    type="button"
+                                    onClick={() => insertMarkdown('`$1`')}
+                                    title="Inline Code"
                                 >
-                                    <CodeIcon fontSize="small" />
+                                    <CodeIcon fontSize="small"/>
                                 </ToolbarButton>
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('```\n$1\n```')}
-                                  title="Code Block"
+                                    type="button"
+                                    onClick={() => insertMarkdown('```\n$1\n```')}
+                                    title="Code Block"
                                 >
-                                    <div style={{ display: 'flex' }}>
-                                        <CodeIcon fontSize="small" style={{ marginRight: '2px' }} />
-                                        <CodeIcon fontSize="small" />
+                                    <div style={{display: 'flex'}}>
+                                        <CodeIcon fontSize="small" style={{marginRight: '2px'}}/>
+                                        <CodeIcon fontSize="small"/>
                                     </div>
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('- $1')}
-                                  title="Bullet List"
+                                    type="button"
+                                    onClick={() => insertMarkdown('- $1')}
+                                    title="Bullet List"
                                 >
-                                    <FormatListBulletedIcon fontSize="small" />
+                                    <FormatListBulletedIcon fontSize="small"/>
                                 </ToolbarButton>
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('> $1')}
-                                  title="Quote"
+                                    type="button"
+                                    onClick={() => insertMarkdown('> $1')}
+                                    title="Quote"
                                 >
-                                    <FormatQuoteIcon fontSize="small" />
+                                    <FormatQuoteIcon fontSize="small"/>
                                 </ToolbarButton>
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('- [ ] $1')}
-                                  title="Task List"
+                                    type="button"
+                                    onClick={() => insertMarkdown('- [ ] $1')}
+                                    title="Task List"
                                 >
-                                    <CheckBoxIcon fontSize="small" />
+                                    <CheckBoxIcon fontSize="small"/>
                                 </ToolbarButton>
                             </div>
                             <div className="toolbar-section">
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('[$1](url)')}
-                                  title="Link"
+                                    type="button"
+                                    onClick={() => insertMarkdown('[$1](url)')}
+                                    title="Link"
                                 >
-                                    <LinkIcon fontSize="small" />
+                                    <LinkIcon fontSize="small"/>
                                 </ToolbarButton>
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={() => insertMarkdown('![$1](image-url)')}
-                                  title="Image"
+                                    type="button"
+                                    onClick={() => insertMarkdown('![$1](image-url)')}
+                                    title="Image"
                                 >
-                                    <ImageIcon fontSize="small" />
+                                    <ImageIcon fontSize="small"/>
                                 </ToolbarButton>
                                 <ToolbarButton
-                                  type="button"
-                                  onClick={insertTable}
-                                  title="Table"
+                                    type="button"
+                                    onClick={insertTable}
+                                    title="Table"
                                 >
-                                    <TableChartIcon fontSize="small" />
+                                    <TableChartIcon fontSize="small"/>
                                 </ToolbarButton>
                             </div>
                         </EditorToolbar>
                         <div className="input-modes">
                             {isPreviewMode ? (
-                                <div style={{ display: 'block', transition: 'opacity 0.2s ease' }}>
+                                <div style={{display: 'block', transition: 'opacity 0.2s ease'}}>
                                     <PreviewContainer>
-                                        <ReactMarkdown 
+                                        <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
                                                 code({node, className, children, ...props}) {
@@ -508,7 +512,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                                     </PreviewContainer>
                                 </div>
                             ) : (
-                                <div style={{ display: 'block', transition: 'opacity 0.2s ease' }}>
+                                <div style={{display: 'block', transition: 'opacity 0.2s ease'}}>
                                     <TextArea
                                         ref={textAreaRef}
                                         data-testid="chat-input"
@@ -516,8 +520,8 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                                         value={message}
                                         onChange={handleMessageChange}
                                         onKeyPress={handleKeyPress}
-                                        placeholder={isWebSocketConnected 
-                                            ? "Type a message... (Markdown supported)" 
+                                        placeholder={isWebSocketConnected
+                                            ? "Type a message... (Markdown supported)"
                                             : "Connection lost. Reconnecting..."}
                                         rows={3}
                                         aria-label="Message input"
@@ -529,7 +533,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                         {connectionStatusMessage}
                         <SendButton
                             type="submit"
-                            data-testid="send-button" 
+                            data-testid="send-button"
                             id="send-message-button"
                             disabled={isSubmitting || !message.trim() || !isWebSocketConnected}
                             aria-label="Send message"
@@ -542,6 +546,5 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         </InputContainer>
     );
 });
-
 
 export default InputArea;

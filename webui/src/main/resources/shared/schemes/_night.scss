@@ -1,16 +1,22 @@
 @import 'normal';
 
-// Base colors for Nighttime theme
-$base-night: #141414; // A very dark gray, almost black, for backgrounds
-$base-midnight-blue: #2c3e50; // A dark blue, suitable for headers and footers
-$base-twilight-blue: #34495e; // A slightly lighter shade of dark blue for accents
-$base-dark-grey: #7f8c8d; // A muted grey for readable text that isn't too harsh
-$base-moonlit-aqua: #1abc9c; // A muted aqua for subtle highlights and accents
-$base-starlight-yellow: #f1c40f; // A soft yellow for important buttons or icons
-$base-cloudy-grey: #bdc3c7; // A lighter grey for background contrasts
-$base-meteorite-border: #95a5a6; // A medium grey for borders and lines
+$base-night: #141414;
 
-// Derived colors for Nighttime theme
+$base-midnight-blue: #2c3e50;
+
+$base-twilight-blue: #34495e;
+
+$base-dark-grey: #7f8c8d;
+
+$base-moonlit-aqua: #1abc9c;
+
+$base-starlight-yellow: #f1c40f;
+
+$base-cloudy-grey: #bdc3c7;
+
+$base-meteorite-border: #95a5a6;
+
+
 $secondary-bg-color: $base-night;
 $secondary-text-color: $base-cloudy-grey;
 $applist-header-bg: $base-midnight-blue;
@@ -52,7 +58,6 @@ $user-message-border: $base-meteorite-border;
 $verbose-pre-bg: $base-dark-grey;
 $verbose-pre-border: $base-meteorite-border;
 
-// Buttons
 $button-bg-color: $base-starlight-yellow;
 $button-text-color: $base-night;
 $button-hover-bg-color: darken($button-bg-color, 10%);
@@ -60,9 +65,7 @@ $button-hover-text-color: $button-text-color;
 $button-border-radius: $border-radius;
 $button-box-shadow: $box-shadow;
 
-// Forms remain the same
 
-// Messages and Modals
 $message-info-bg-color: lighten($base-twilight-blue, 20%);
 $message-info-text-color: $base-midnight-blue;
 $message-success-bg-color: lighten($base-moonlit-aqua, 20%);

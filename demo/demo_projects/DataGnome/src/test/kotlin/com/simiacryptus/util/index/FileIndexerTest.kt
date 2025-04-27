@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.File
 
-
 class FileIndexerTest {
 
     @Test
@@ -20,12 +19,11 @@ class FileIndexerTest {
             val result = String(buffer)
             assertEquals("This", result)
         } finally {
-            // Close the index file and delete the temporary file
+
             fileIndexer.close()
             tempDataFile.delete()
         }
     }
-
 
     @Test
     fun testIndexGetAndSet() {
@@ -37,15 +35,14 @@ class FileIndexerTest {
             val result = fileIndexer.index.get(XElements(0))
             assertEquals(1, result)
         } finally {
-            // Close the index file and delete the temporary file
+
             fileIndexer.close()
             tempDataFile.delete()
         }
     }
 
-//  @Test fun smokeSearch_WordTokenFile() = smokeSearch { WordTokenFile(it) }
-//  @Test fun smokeSearch_CharsetTokenFile() = smokeSearch { CharsetTokenFile(it) }
-//  @Test fun smokeSearch_SimpleTokenFile() = smokeSearch { SimpleTokenFile(it) }
+
+
 
     private fun smokeSearch(tokenFileFactory: (File) -> TokenFile) {
         val tempDataFile = File.createTempFile("testData", ".txt")
@@ -69,7 +66,7 @@ class FileIndexerTest {
             assertEquals(emptyList<Int>(), fileIndexer.find("foo").toList().sortedBy { it.asLong })
             assertEquals(listOf(8L, 16L, 18L), fileIndexer.find("a").toList().sortedBy { it.asLong })
         } finally {
-            // Close the index file and delete the temporary file
+
             fileIndexer.close()
             tempDataFile.delete()
         }
@@ -78,12 +75,12 @@ class FileIndexerTest {
     @Test
     fun testDataFile() {
         testDataFile(
-//       File("C:\\Users\\andre\\Downloads\\pg100.txt")
+
             File("C:\\Users\\andre\\Downloads\\pg84.txt")
         ) {
-//      WordTokenFile(it)
+
             CharsetTokenFile(it)
-//      SimpleTokenFile(it)
+
         }
     }
 
@@ -93,16 +90,16 @@ class FileIndexerTest {
     ) {
         val indexFile = File(dataFile.parentFile, "${dataFile.name}.index")
         if (indexFile.exists()) indexFile.delete()
-        //    val indexer = FileIndexer(CharsetTokenFile(dataFile), indexFile)
+
         val indexer = FileIndexer(tokenFileFactory(dataFile), indexFile)
         withPerf("buildIndex (${dataFile.length()} bytes)") { indexer.buildIndex(XChars(2)) }
         for (pos in withPerf("find") { indexer.find("This").toList() }.sortedBy { it.asLong }) {
-//      println(indexer.data.readString(pos, XChars(100)).takeWhile { it != '\n' }.trim())
+
         }
         val characters = indexer.tokenSet
         val dictionaryMaxSize = Integer.MAX_VALUE.toInt() - characters.size
         val codec = withPerf("findCompressionPrefixes") { indexer.findCompressionPrefixes(200, dictionaryMaxSize) }
-//    codec.forEach { (k, v) -> println("<$k>: $v") }
+
         val codecMap = (codec.map { it.first } + characters).sorted()
         val (compressed, dictionaryFile) = withPerf("data.compress") { indexer.data.writeCompressed(codecMap) }
         val expandFile = File(dataFile.parentFile, "${dataFile.name}.expand")
@@ -111,7 +108,7 @@ class FileIndexerTest {
         val compressedIndexer = FileIndexer(CompressedTokenFile(compressed, dictionaryFile))
         withPerf("buildIndex (${compressedIndexer.data.fileLength} bytes)") { compressedIndexer.buildIndex(XChars(3)) }
         for (pos in withPerf("find") { compressedIndexer.find("This").toList() }.sorted()) {
-            //      println(compressedIndexer.data.readString(pos, 100).takeWhile { it != '\n' }.trim())
+
         }
     }
 

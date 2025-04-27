@@ -71,7 +71,8 @@ declare module 'styled-components' {
             secondaryDark?: string;
             errorDark?: string;
             successDark?: string;
-            disabled: string;  // Keep as required to match ExtendedTheme
+            disabled: string;
+
         };
         name: string;
         activeTab?: string;
@@ -82,7 +83,8 @@ declare module 'styled-components' {
         logging: {
             colors: {
                 error: string;
-                critical?: string;  // Make critical optional
+                critical?: string;
+
                 warning: string;
                 info: string;
                 debug: string;
@@ -92,7 +94,8 @@ declare module 'styled-components' {
             };
             fontSize: {
                 normal: string;
-                critical?: string;  // Make critical optional
+                critical?: string;
+
                 large: string;
                 small: string;
                 system: string;
@@ -104,7 +107,8 @@ declare module 'styled-components' {
             };
             background: {
                 error: string;
-                critical?: string;  // Make critical optional
+                critical?: string;
+
                 warning: string;
                 info: string;
                 debug: string;

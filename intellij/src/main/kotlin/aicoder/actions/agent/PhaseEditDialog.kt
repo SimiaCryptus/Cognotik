@@ -15,8 +15,7 @@ class PhaseEditDialog(
     companion object {
         private const val COLUMNS_LARGE = 50
     }
-    
-    
+
     private var model = phase.model
     private var extract = phase.extract
     private var question = phase.question

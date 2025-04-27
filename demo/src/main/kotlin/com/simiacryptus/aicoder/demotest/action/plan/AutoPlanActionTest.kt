@@ -188,7 +188,7 @@ class AutoPlanActionTest : DemoTestBase(
                 )
 
                 try {
-                    // Submit task description
+
                     log.debug("Submitting task description to chat interface")
                     val chatInput = wait.until(ExpectedConditions.elementToBeClickable(By.id("chat-input")))
                     chatInput.click()
@@ -199,7 +199,6 @@ class AutoPlanActionTest : DemoTestBase(
                     log.info("Task description submitted successfully")
                     tts("Task description submitted.")?.play(1000)
 
-                    // Monitor execution progress
                     log.debug("Beginning execution progress monitoring")
                     tts("Auto-Plan is analyzing the task and creating an execution plan.")?.play()
 
@@ -247,7 +246,7 @@ class AutoPlanActionTest : DemoTestBase(
                                         "div.message-body > div.tabs-container > div.active div.iteration.tabs-container > div.tabs > button:nth-child($taskIndex)"
                                     )
                                 } catch (e: Exception) {
-                                    //log.debug("Failed to find task button: ${e.message}", e)
+
                                     continue
                                 }
                             val text = taskButton.text

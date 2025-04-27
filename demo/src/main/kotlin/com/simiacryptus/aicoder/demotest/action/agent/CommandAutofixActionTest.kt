@@ -43,7 +43,6 @@ import kotlin.io.path.name
  * - The build should remain successful after fixes are applied
  * - All UI interactions should be properly logged and narrated
  */
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CommandAutofixActionTest : DemoTestBase(
     splashScreenConfig = SplashScreenConfig(
@@ -89,7 +88,7 @@ class CommandAutofixActionTest : DemoTestBase(
                             CommonContainerFixture::class.java,
                             byXpath("//div[contains(@class, 'Menu') and contains(@text, 'Agents')]")
                         )
-                        // Add delay for menu animation
+
                         sleep(500)
                         robot.mouseMove(agentsMenu.locationOnScreen.x + 10, agentsMenu.locationOnScreen.y)
                         agentsMenu.click()
@@ -104,13 +103,13 @@ class CommandAutofixActionTest : DemoTestBase(
                         true
                     } catch (e: Exception) {
                         log.warn("Failed to navigate Auto-Fix menu: ${e.message}")
-                        // Wait for initial analysis
+
                         tts("The AI is now analyzing your codebase and build configuration. This may take a few moments.")?.play()
                         sleep(5000)
-                        // Wait longer for response and processing
+
                         sleep(10000)
                         tts("The AI is now processing the request and making necessary code changes. Let's review the modifications as they happen.")?.play()
-                        // Give time to view changes
+
                         sleep(5000)
                         tts("If the menu doesn't appear immediately, the IDE will automatically retry. This ensures reliable access to the feature.")?.play()
                         false
@@ -160,7 +159,7 @@ class CommandAutofixActionTest : DemoTestBase(
                     tts("The Command Autofix interface opens in your browser, providing a detailed view of the analysis process and any fixes being applied.")?.play()
                     try {
                         this@CommandAutofixActionTest.driver.get(url.toString())
-                        // Add longer initial wait for interface load
+
                         sleep(5000)
                     } catch (e: Exception) {
                         log.error("Failed to initialize browser", e)
@@ -172,12 +171,12 @@ class CommandAutofixActionTest : DemoTestBase(
                         val wait = WebDriverWait(this@CommandAutofixActionTest.driver, Duration.ofSeconds(600))
                         try {
                             tts("Watch as Command Autofix analyzes your build output, identifies issues, and applies appropriate fixes. The AI considers your project's context and build configuration.")?.play()
-                            // Wait for response content
+
                             wait.until(ExpectedConditions.presenceOfElementLocated(By.className("response-message")))
-                            // Give time to view response
+
                             sleep(5000)
-//              val buildSuccessful = codeElements.any { it.text.contains("BUILD SUCCESSFUL") }
-//              require(buildSuccessful) { "BUILD SUCCESSFUL not found in any code element" }
+
+
                             tts("Excellent! Command Autofix has successfully resolved the build issues. Notice how the build now completes without errors, demonstrating the effectiveness of the automated fixes.")?.play()
                             break
                         } catch (e: Exception) {

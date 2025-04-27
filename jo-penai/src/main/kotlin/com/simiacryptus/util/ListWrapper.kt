@@ -3,11 +3,11 @@ package com.simiacryptus.util
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.*
-import org.slf4j.LoggerFactory
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.slf4j.LoggerFactory
 
 @JsonDeserialize(using = ListWrapper.ListWrapperDeserializer::class)
 @JsonSerialize(using = ListWrapper.ListWrapperSerializer::class)
@@ -75,7 +75,7 @@ open class ListWrapper<T : Any>(
                 log.info("Deserialized ListWrapper with items: {}", items)
                 return ListWrapper(items)
             }
-            // If the node is an object, we assume it's a wrapper object with a single field
+
             log.info("Deserializing ListWrapper from object node")
             val items = jacksonObjectMapper().convertValue(node.fields().next().value, List::class.java)
             return ListWrapper(items as List<T>)

@@ -9,7 +9,7 @@ export const useTheme = (initialTheme?: ThemeName): [ThemeName, (theme: ThemeNam
 
     const dispatch = useDispatch();
     const currentTheme = useSelector((state: RootState) => state.ui.theme);
-    // Load saved theme on mount
+
     React.useEffect(() => {
         const savedTheme = themeStorage.getTheme();
         if (savedTheme && savedTheme !== currentTheme) {
@@ -27,10 +27,6 @@ export const useTheme = (initialTheme?: ThemeName): [ThemeName, (theme: ThemeNam
         [dispatch]
     );
 
-
-
-
-    // Use initialTheme if provided and no theme is set in state
     React.useEffect(() => {
         const savedTheme = themeStorage.getTheme();
         if (initialTheme && !currentTheme && initialTheme !== savedTheme) {

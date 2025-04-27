@@ -11,15 +11,10 @@ version = properties("libraryVersion")
 repositories {
     mavenCentral()
 }
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
-
 
 dependencies {
-    implementation("org.antlr:antlr4-runtime:4.13.2")
-    antlr("org.antlr:antlr4:4.13.2")
+    implementation(libs.antlr.runtime)
+    antlr("org.antlr:antlr4:${libs.versions.antlr.get()}")
 }
 
 tasks {
@@ -27,8 +22,32 @@ tasks {
         maxHeapSize = "64m"
         arguments = arguments + listOf("-visitor", "-long-messages")
         outputDirectory = file("build/generated-src/antlr/main")
+
+        outputs.cacheIf { true }
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDir("build/generated-src/antlr/main")
+            }
+        }
     }
     withType<JavaCompile> {
         options.release.set(17)
+
+
+    }
+
+    register("cleanGeneratedSources") {
+        group = "build"
+        description = "Cleans the generated ANTLR sources"
+        doLast {
+            delete("build/generated-src/antlr")
+        }
+    }
+
+    clean {
+        dependsOn("cleanGeneratedSources")
     }
 }

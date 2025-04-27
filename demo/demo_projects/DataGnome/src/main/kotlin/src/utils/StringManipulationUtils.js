@@ -1,27 +1,22 @@
 // New utility class for string manipulation
 class StringManipulationUtils {
 
-    // Method to trim whitespace from both ends of a string
     static trim(str) {
         return str.trim();
     }
 
-    // Method to split a string by a given delimiter
     static split(str, delimiter) {
         return str.split(delimiter);
     }
 
-    // Method to join an array of strings with a given delimiter
     static join(arr, delimiter) {
         return arr.join(delimiter);
     }
 
-    // Method to convert a string to uppercase
     static toUpperCase(str) {
         return str.toUpperCase();
     }
 
-    // Method to convert a string to lowercase
     static toLowerCase(str) {
         return str.toLowerCase();
     }

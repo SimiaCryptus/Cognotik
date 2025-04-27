@@ -1,12 +1,12 @@
 // More info about initialization & config:
-// * https://revealjs.com/initialization/
-// * https://revealjs.com/config/
+
+
 Reveal.initialize({
     hash: true,
-// Plugins configuration
+
     plugins: [RevealMarkdown, RevealHighlight, RevealNotes, RevealZoom],
     navigationMode: 'linear',
-// Additional configuration options
+
     slideNumber: true,
     progress: true,
     transition: 'slide',
@@ -20,7 +20,9 @@ Reveal.initialize({
         pan: false
     },
     keyboard: {
-        65: toggleAutoplay, // 'a' key
-        68: displayDebugLog // 'd' key
+        65: toggleAutoplay,
+
+        68: displayDebugLog
+
     },
 });

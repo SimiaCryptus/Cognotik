@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+# Stop the running Cognotik server if any
+if [ -x "/opt/cognotik/bin/Cognotik" ]; then
+  "/opt/cognotik/bin/Cognotik" --stop || true
+fi
+# Remove desktop files
+rm -f /usr/share/applications/cognotik.desktop
+rm -f /usr/share/applications/cognotik-folder-action.desktop
+# Update desktop database
+update-desktop-database /usr/share/applications || true
+exit 0

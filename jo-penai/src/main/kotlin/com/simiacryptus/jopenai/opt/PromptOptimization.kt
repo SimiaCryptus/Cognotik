@@ -37,7 +37,8 @@ open class PromptOptimization(
         systemPrompts: List<String>,
         testCases: List<TestCase>,
         selectionSize: Int = max(ceil(ln((systemPrompts.size + 1).toDouble()) / ln(2.0)), 3.0)
-            .toInt(), // apx ln(N)
+            .toInt(),
+
         populationSize: Int = max(max(selectionSize, 5), systemPrompts.size),
         generations: Int = 3
     ): List<String> {
@@ -106,7 +107,8 @@ open class PromptOptimization(
                 log.warn("Failed to recombine {} + {}", a, b, e)
             }
         }
-        return a // Return the original prompt if recombination fails
+        return a
+
     }
 
     open fun mutate(selected: String): String {
@@ -124,13 +126,13 @@ open class PromptOptimization(
                 log.warn("Failed to mutate {}", selected, e)
             }
         }
-        throw RuntimeException("Failed to mutate $selected after multiple retries", )
+        throw RuntimeException("Failed to mutate $selected after multiple retries")
     }
 
     open fun getMutationDirective(): String {
-    val fate = mutationTypes.values.sum() * Math.random()
+        val fate = mutationTypes.values.sum() * Math.random()
         var cumulative = 0.0
-    for ((key, value) in mutationTypes) {
+        for ((key, value) in mutationTypes) {
             cumulative += value
             if (fate < cumulative) {
                 return key

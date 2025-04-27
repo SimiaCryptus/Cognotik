@@ -93,7 +93,8 @@ class DiffChatActionTest : DemoTestBase(
             editor.click()
             keyboard {
                 pressing(KeyEvent.VK_CONTROL) {
-                    key(KeyEvent.VK_A) // Select all
+                    key(KeyEvent.VK_A)
+
                 }
             }
         }
@@ -160,9 +161,8 @@ class DiffChatActionTest : DemoTestBase(
                         2000
                     )
 
-                    // Wait for and handle the response
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".message-container")))
-                    // Scroll to show full response
+
                     (driver as JavascriptExecutor).executeScript(
                         """
       document.querySelector(".message-container").scrollIntoView({
@@ -176,7 +176,6 @@ class DiffChatActionTest : DemoTestBase(
                         3000
                     )
 
-                    // Look for and click any "Apply" buttons
                     val applyButtons = driver.findElements(By.cssSelector("a.href-link"))
                         .filter { it.text.contains("Apply", ignoreCase = true) }
 

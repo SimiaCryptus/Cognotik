@@ -10,8 +10,7 @@
  * https://github.com/JetBrains/kotlin/tree/master/compiler/testData/psi
  */
 
-// $antlr-format alignTrailingComments true, columnLimit 150, minEmptyLines 1, maxEmptyLinesToKeep 1, reflowComments false, useTab false
-// $antlr-format allowShortRulesOnASingleLine false, allowShortBlocksOnASingleLine true, alignSemicolons hanging, alignColons hanging
+
 
 parser grammar KotlinParser;
 
@@ -270,7 +269,6 @@ simpleUserType
     : simpleIdentifier (NL* typeArguments)?
     ;
 
-//parameters for functionType
 functionTypeParameters
     : LPAREN NL* (parameter | type)? (NL* COMMA NL* (parameter | type))* (NL* COMMA)? NL* RPAREN
     ;
@@ -364,9 +362,12 @@ atomicExpression
     : parenthesizedExpression
     | literalConstant
     | functionLiteral
-    | thisExpression        // THIS labelReference?
-    | superExpression       // SUPER (LANGLE type RANGLE)? labelReference?
-    | conditionalExpression // ifExpression, whenExpression
+    | thisExpression
+
+    | superExpression
+
+    | conditionalExpression
+
     | tryExpression
     | objectLiteral
     | jumpExpression
@@ -481,7 +482,6 @@ lambdaParameter
     | multiVariableDeclaration (NL* COLON NL* type)?
     ;
 
-// https://kotlinlang.org/docs/reference/grammar.html#objectLiteral
 objectLiteral
     : OBJECT (NL* COLON NL* delegationSpecifiers)? NL* classBody?
     ;
@@ -767,7 +767,7 @@ identifier
 
 simpleIdentifier
     : Identifier
-    //soft keywords:
+
     | ABSTRACT
     | ANNOTATION
     | BY
@@ -803,7 +803,7 @@ simpleIdentifier
     | SETTER
     | VARARG
     | WHERE
-    //strong keywords
+
     | CONST
     | SUSPEND
     ;

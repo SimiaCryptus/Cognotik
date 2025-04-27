@@ -20,7 +20,7 @@ class SpokenText(
             val format = originalAudioInputStream.format
             val frameSize = format.frameSize
             val audioData = originalAudioInputStream.readAllBytes()
-            // Ensure all values are positive
+
             for (i in audioData.indices) {
                 audioData[i] = (audioData[i].toInt() and 0xFF).toByte()
             }
@@ -31,11 +31,11 @@ class SpokenText(
             clip.open(correctedAudioInputStream)
             clip.apply {
                 start()
-                // Wait for the audio to finish playing
+
                 val millis = (frameLength * 1000L) / format.frameRate.toLong()
                 log.info("Playing audio for $millis ms")
                 Thread.sleep(millis)
-                // Ensure the clip is closed after playing
+
                 close()
             }
         }

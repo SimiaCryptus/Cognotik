@@ -3,22 +3,20 @@ package com.simiacryptus.jopenai
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import com.simiacryptus.jopenai.exceptions.AIServiceException
-import com.simiacryptus.jopenai.exceptions.InvalidModelException
-import com.simiacryptus.jopenai.exceptions.ModelMaxException
-import com.simiacryptus.jopenai.exceptions.QuotaException
-import com.simiacryptus.jopenai.exceptions.RateLimitException
+import com.simiacryptus.jopenai.exceptions.*
+import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager
 import org.apache.hc.core5.http.HttpHeaders
+import org.apache.hc.core5.http.io.SocketConfig
 import org.apache.hc.core5.util.Timeout
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
-import org.slf4j.Logger
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.*
@@ -28,8 +26,7 @@ import kotlin.math.pow
 open class HttpClientManager(
     private val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    private val scheduledPool: ListeningScheduledExecutorService = Companion.scheduledPool,
-    private val workPool: ExecutorService = Companion.workPool,
+    private val workPool: ExecutorService,
 ) : API() {
 
     companion object {
@@ -43,23 +40,29 @@ open class HttpClientManager(
                 )
             )
 
-        val workPool: ExecutorService =
-            ThreadPoolExecutor(
-                16,
-                128,
-                500,
-                TimeUnit.MILLISECONDS,
-                LinkedBlockingQueue(),
-                ThreadFactoryBuilder().setNameFormat("API Thread %d").build()
-            )
-
-        private const val DEFAULT_USER_AGENT = "JOpenAI/1.0"
+        private const val DEFAULT_USER_AGENT = "Cognotik/1.0"
         val client by lazy { createHttpClient(DEFAULT_USER_AGENT) }
         fun createHttpClient(userAgent: String = DEFAULT_USER_AGENT): CloseableHttpClient = HttpClientBuilder.create()
-            .setRetryStrategy(DefaultHttpRequestRetryStrategy(0, Timeout.ofSeconds(1)))
+            .setRetryStrategy(DefaultHttpRequestRetryStrategy(
+                /* maxRetries = */ 0,
+                /* defaultRetryInterval = */ Timeout.ofSeconds(1)
+            ))
             .setConnectionManager(with(PoolingHttpClientConnectionManager()) {
-                defaultMaxPerRoute = 100
-                maxTotal = 100
+                defaultSocketConfig = with(SocketConfig.custom()) {
+                    setSoTimeout(Timeout.ofSeconds(600))
+                    setSoReuseAddress(false)
+                    setSoLinger(Timeout.ofSeconds(0))
+                    setDefaultConnectionConfig(ConnectionConfig.custom().apply {
+                        setConnectTimeout(Timeout.ofSeconds(60))
+                        setSocketTimeout(Timeout.ofSeconds(600))
+                        setSoKeepAlive(true)
+                        //setTimeToLive(Timeout.ofSeconds(600))
+                    }.build())
+                    setSoKeepAlive(true)
+                    build()
+                }
+                defaultMaxPerRoute = 64
+                maxTotal = 64
                 this
             })
             .setUserAgent(userAgent)
@@ -104,8 +107,9 @@ open class HttpClientManager(
         }
 
     }
+
     protected fun captureCallerStack(): String {
-        // Skip the frames in withPool and this utility
+
         var stack = Throwable().stackTrace
             .dropWhile { it.methodName == "withPool" || it.className.contains("HttpClientManager") }
             .joinToString("\n") { "\tat $it" }
@@ -114,14 +118,17 @@ open class HttpClientManager(
         }
         return stack
     }
+
     val stackCalls: MutableMap<Thread, String> = ConcurrentHashMap()
-    
+
     private fun <T> withPool(fn: () -> T): T {
-        val callerStack = captureCallerStack()  // capture caller stack before switching threads
+        val callerStack = captureCallerStack()
+
         val future = workPool.submit(Callable {
             stackCalls[Thread.currentThread()] = callerStack
             return@Callable fn()
         })
+
         fun handleException(future: Future<*>, e: Throwable, callerStack: String): Nothing {
             future.cancel(true)
             when (e) {
@@ -129,18 +136,22 @@ open class HttpClientManager(
                     log(Level.INFO, "InterruptedException in withPool. Caller stack:\n$callerStack")
                     throw e
                 }
+
                 is ExecutionException -> {
                     log(Level.WARN, "ExecutionException in withPool. Caller stack:\n$callerStack")
                     handleException(future, e.cause ?: throw e, callerStack)
                 }
+
                 is CancellationException -> {
                     log(Level.INFO, "CancellationException in withPool. Caller stack:\n$callerStack")
                     throw e
                 }
+
                 is TimeoutException -> {
                     log(Level.WARN, "TimeoutException in withPool. Caller stack:\n$callerStack")
                     throw e
                 }
+
                 else -> {
                     log(Level.WARN, "Exception in withPool. Caller stack:\n$callerStack\n${e.message}")
                     throw e
@@ -153,8 +164,7 @@ open class HttpClientManager(
             handleException(future, e, callerStack)
         }
     }
-    
-    
+
     private fun <T> withExpBackoffRetry(
         retryCount: Int,
         sleepScale: Long = TimeUnit.SECONDS.toMillis(5),
@@ -162,7 +172,7 @@ open class HttpClientManager(
     ): T {
         var lastException: Throwable? = null
         var i = 0
-        while (i++ < retryCount) {
+        while (i++ <= retryCount) {
             val sleepPeriod = sleepScale * 2.0.pow(i.toDouble()).toLong()
             try {
                 return fn()
@@ -172,7 +182,7 @@ open class HttpClientManager(
                 this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount): " + exception.message)
                 Thread.sleep(sleepPeriod)
                 lastException = exception
-            } 
+            }
         }
         throw lastException!!
     }
@@ -200,7 +210,6 @@ open class HttpClientManager(
         return e
     }
 
-
     private fun <T> withTimeout(duration: Duration, fn: () -> T): T {
         var thread = Thread.currentThread()
         val start = Date()
@@ -218,14 +227,18 @@ open class HttpClientManager(
         }
     }
 
-    fun <T> withReliability(requestTimeoutSeconds: Long = (5 * 60), retryCount: Int = 3, fn: () -> T): T =
+    fun <T> withReliability(
+        requestTimeoutSeconds: Long = (5 * 60),
+        retryCount: Int = 0,
+        fn: () -> T
+    ): T =
         withExpBackoffRetry(retryCount) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), fn) }
 
     fun <T> withPerformanceLogging(fn: () -> T): T {
         val start = Date()
         try {
             return fn()
-        } finally { 
+        } finally {
             log(Level.DEBUG, "Request completed in ${Date().time - start.time}ms")
         }
     }

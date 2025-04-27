@@ -8,6 +8,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.*
 import kotlin.system.exitProcess
 
 /**
@@ -20,25 +21,26 @@ object DaemonClient {
     private const val DEFAULT_HOST = "localhost"
     private const val PID_FILE = "cognotik_server.pid"
     private const val MAX_PORT_ATTEMPTS = 10
-    private const val SOCKET_PORT_OFFSET = 1 // Socket port is main port + this offset
+    private const val SOCKET_PORT_OFFSET = 1
+
+    private const val SESSION_DIR_BASE = ".cognotik"
 
     @JvmStatic
     fun main(args: Array<String>) {
         log.info("DaemonClient starting. PID: ${ManagementFactory.getRuntimeMXBean().name}. Args: ${args.joinToString(" ")}")
-        // Check if the first argument is "stop"
+
         if (args.isNotEmpty() && args[0].equals("--stop", ignoreCase = true)) {
             log.info("Stop command received, attempting to stop the server")
             stopServer()
             exitProcess(0)
         }
-        
-        
-        // Check if the first argument is "server"
+
         if (args.isNotEmpty() && args[0].equals("server", ignoreCase = true)) {
             log.info("First argument is 'server', delegating to AppServer.main")
-            AppServer.main(args) // Delegate to AppServer
+            AppServer.main(args)
+
         } else {
-            // Original DaemonClient logic
+
             var port = DEFAULT_PORT
             val host = DEFAULT_HOST
             log.debug("Default host: $host, Default port: $port")
@@ -46,7 +48,7 @@ object DaemonClient {
                 log.info("Server not running. Launching daemon...")
                 println("Server not running on $host:$port. Launching daemon...")
                 try {
-                    // Just test if the port is available - don't keep it open
+
                     ServerSocket(port).use {
                         log.debug("Port $port is available")
                     }
@@ -63,22 +65,50 @@ object DaemonClient {
                 log.info("Server already running on $host:$port.")
                 println("Server already running on $host:$port.")
             }
-            if (args.isNotEmpty()) {
-                log.info("Dispatching command: ${args.joinToString(" ")}")
-                dispatchCommand(host, port + SOCKET_PORT_OFFSET, args)
+            val commandArgs = if (args.isNotEmpty()) {
+                args
             } else {
-                log.warn("No command specified. Use: daemonclient <command> [args]")
-                println("No command specified. Use: daemonclient <command> [args]")
+
+                val sessionDir = createRandomSessionDir()
+                log.info("No command specified. Created random session directory: $sessionDir")
+                println("Created random session directory: $sessionDir")
+                arrayOf(sessionDir)
             }
+            log.info("Dispatching command: ${commandArgs.joinToString(" ")}")
+            dispatchCommand(
+                host,
+                port + SOCKET_PORT_OFFSET,
+                (commandArgs.take(1).map { File(it).absolutePath } + commandArgs.drop(1)).toTypedArray())
         }
     }
+
+    /**
+     * Creates a random session directory under ~/.cognotik
+     * @return The path to the created directory
+     */
+    fun createRandomSessionDir(): String {
+        val userHome = System.getProperty("user.home")
+        val baseDir = File(userHome, SESSION_DIR_BASE)
+        if (!baseDir.exists()) {
+            log.info("Creating base directory: ${baseDir.absolutePath}")
+            baseDir.mkdirs()
+        }
+        val sessionId = UUID.randomUUID().toString().substring(0, 8)
+        val sessionDir = File(baseDir, sessionId)
+        if (!sessionDir.exists()) {
+            log.info("Creating session directory: ${sessionDir.absolutePath}")
+            sessionDir.mkdirs()
+        }
+        return sessionDir.absolutePath
+    }
+
     /**
      * Stops the running server by sending a shutdown command or killing the process
      */
     private fun stopServer() {
         val host = DEFAULT_HOST
         val port = DEFAULT_PORT
-        // First try to send a shutdown command via socket
+
         if (isServerRunning(host, port)) {
             try {
                 log.info("Sending shutdown command to server at $host:${port + SOCKET_PORT_OFFSET}")
@@ -93,7 +123,7 @@ object DaemonClient {
                         println("Server response: $response")
                     }
                 }
-                // Wait for server to shut down
+
                 var attempts = 0
                 while (isServerRunning(host, port) && attempts < 10) {
                     log.info("Waiting for server to shut down...")
@@ -111,7 +141,7 @@ object DaemonClient {
                 println("Failed to stop server via socket: ${e.message}")
             }
         }
-        // If socket method failed or server still running, try to kill the process using PID file
+
         try {
             val pidFile = File(PID_FILE)
             if (pidFile.exists()) {
@@ -143,8 +173,7 @@ object DaemonClient {
             println("Error stopping server: ${e.message}")
         }
     }
-    
-    
+
     private fun findAvailablePort(startPort: Int): Int {
         var port = startPort
         log.debug("Searching for available port starting from $startPort")
@@ -167,7 +196,6 @@ object DaemonClient {
         return randomPort
     }
 
-
     private fun isServerRunning(host: String, port: Int): Boolean {
         return try {
             log.debug("Checking if server is running at $host:$port")
@@ -175,7 +203,7 @@ object DaemonClient {
             log.debug("Connection successful to $host:$port. Server is running.")
             true
         } catch (e: ConnectException) {
-            // This is the expected case when the server is not running
+
             log.debug("Server is not running at $host:$port: ${e.message}")
             false
         } catch (e: Exception) {
@@ -195,39 +223,38 @@ object DaemonClient {
             }
             Thread.sleep(200)
         }
-        // isServerRunning logs success internally now
+
         log.info("Server is now running at $host:$port")
         println("Server is now running.")
     }
 
     private fun launchDaemon(port: Int) {
-        // Get the current JVM executable path
+
         val javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
         val classpath = System.getProperty("java.class.path")
         val className = "com.simiacryptus.cognotik.AppServer"
         log.debug("Java executable: $javaBin")
         log.debug("Classpath: $classpath")
         log.debug("Server class: $className")
-        
-        // Create a temporary script file to launch the daemon
+
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
         val scriptExt = if (isWindows) "bat" else "sh"
         val scriptFile = File.createTempFile("cognotik_daemon_", ".$scriptExt")
-        //scriptFile.deleteOnExit()
-        
+
+
         if (isWindows) {
             log.debug("Detected Windows OS.")
-            // Windows batch file
+
             scriptFile.writeText(
                 """
                 @echo log.info("Daemon process launched. Waiting for it to start...")
-                start /b /min "" "$javaBin" -cp "$classpath" $className server --port $port
+                start /b /min "" "C:/Program Files/Cognotik/Cognotik.exe" server --port $port
                 exit
             """.trimIndent()
             )
         } else {
             log.debug("Detected non-Windows OS (assuming Unix-like).")
-            // Unix shell script
+
             scriptFile.writeText(
                 """
                 #!/bin/sh
@@ -237,11 +264,10 @@ object DaemonClient {
             )
             scriptFile.setExecutable(true)
         }
-        
+
         log.info("Created daemon launcher script: ${scriptFile.absolutePath}")
         log.debug("Script content:\n${scriptFile.readText()}")
-        
-        // Build the process to run the script
+
         val processBuilder = if (isWindows) {
             log.debug("Using ProcessBuilder: cmd /c ${scriptFile.absolutePath}")
             ProcessBuilder("cmd", "/c", scriptFile.absolutePath)
@@ -249,10 +275,10 @@ object DaemonClient {
             log.debug("Using ProcessBuilder: sh ${scriptFile.absolutePath}")
             ProcessBuilder("sh", scriptFile.absolutePath)
         }
-        // Ensure the process doesn't inherit IO streams from parent
+
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
-        
+
         val process = try {
             log.info("Launching daemon process using script: ${processBuilder.command().joinToString(" ")}")
             processBuilder.start()
@@ -260,16 +286,14 @@ object DaemonClient {
             log.error("Failed to launch daemon process: ${e.message}", e)
             throw e
         }
-        
-        // Check if the daemon is running by writing the PID file
+
         try {
             writePidFile(process)
         } catch (e: Exception) {
             log.error("Failed to write PID file: ${e.message}", e)
             println("Failed to write PID file: ${e.message}")
         }
-        
-        // Wait for 5 seconds while relaying output, then exit
+
         Thread.sleep(5000)
         log.info("Daemon launched successfully, waiting for server to be ready...")
     }
@@ -284,7 +308,7 @@ object DaemonClient {
             println("Warning: Could not write PID file: ${e.message}")
         }
     }
-    
+
     private fun dispatchCommand(host: String, port: Int, args: Array<String>) {
         try {
             log.debug("Attempting to connect to server at $host:$port to dispatch command: \"${args.joinToString(" ")}\"")
@@ -294,7 +318,7 @@ object DaemonClient {
                 val input = BufferedReader(InputStreamReader(socket.getInputStream()))
                 out.println(args.joinToString(" "))
                 log.info("Sent command: ${args.joinToString(" ") { "`$it`" }}")
-                // Read response (if any)
+
                 log.debug("Waiting for server response...")
                 val response = input.readLine()
                 if (response != null) {

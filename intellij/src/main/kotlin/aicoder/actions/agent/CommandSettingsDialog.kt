@@ -11,7 +11,8 @@ import javax.swing.JComponent
 import javax.swing.JOptionPane
 import javax.swing.JScrollPane
 
-class CommandSettingsDialog(project: Project?, private val settingsUI: CommandAutofixAction.Companion.SettingsUI) : DialogWrapper(project) {
+class CommandSettingsDialog(project: Project?, private val settingsUI: CommandAutofixAction.Companion.SettingsUI) :
+    DialogWrapper(project) {
     init {
         title = "Command Autofix Settings"
         init()
@@ -75,7 +76,7 @@ class CommandSettingsDialog(project: Project?, private val settingsUI: CommandAu
                 }
             }
             row("Exit Code Options") {
-                // Radio buttons are already part of exitCodeOptions ButtonGroup
+
                 panel {
                     buttonsGroup {
                         row {
@@ -92,7 +93,7 @@ class CommandSettingsDialog(project: Project?, private val settingsUI: CommandAu
                         }
                     }
                 }
-                
+
             }
             row("Max Auto-Retries") {
                 cell(settingsUI.maxRetriesSlider)

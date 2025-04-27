@@ -3,8 +3,24 @@ import {ThemeProvider as StyledThemeProvider} from 'styled-components';
 import {useSelector} from 'react-redux';
 import {RootState} from '../store';
 import {logThemeChange, ThemeName, themes} from './themes';
+import { initNewCollapsibleElements } from '../utils/tabHandling'; // Import the function
 import Prism from 'prismjs';
 import {GlobalStyles} from "../styles/GlobalStyles";
+
+const loadFonts = () => {
+    const fontUrls = [
+        'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+        'https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Raleway:wght@600;700;800&display=swap',
+        'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap',
+        'https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap'
+    ];
+    fontUrls.forEach(url => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = url;
+        document.head.appendChild(link);
+    });
+};
 
 interface ThemeProviderProps {
     children: React.ReactNode;
@@ -28,7 +44,7 @@ const loadPrismTheme = async (themeName: ThemeName) => {
     const prismTheme = prismThemes[themeName] || 'prism';
     try {
         await import(`prismjs/themes/${prismTheme}.css`);
-        // Remove debug log as successful theme loading is expected behavior
+
     } catch (error) {
         console.error(`${LOG_PREFIX} Failed to load Prism theme: ${prismTheme}. This will affect code highlighting.`, error);
     }
@@ -39,6 +55,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
     const isInitialMount = useRef(true);
     const previousTheme = useRef(currentTheme);
     const styleElRef = useRef<HTMLStyleElement | null>(null);
+
+    useEffect(() => {
+        loadFonts();
+    }, []);
 
     useEffect(() => {
         if (!themes[currentTheme]) {
@@ -93,7 +113,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
         }
 
         document.body.className = `theme-${currentTheme}`;
-        // Add dynamic CSS rules for message content
+
         styleEl.textContent = `
         .message-content.theme-${currentTheme} {
             --theme-background: ${themes[currentTheme].colors.background};
@@ -108,7 +128,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
             content.classList.add('theme-transition');
         });
 
-
         loadPrismTheme(currentTheme).then(() => {
             requestAnimationFrame(() => {
                 const codeBlocks = document.querySelectorAll('pre code');
@@ -120,12 +139,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
                         (block as HTMLElement).classList.add('theme-transition');
                     });
                 });
-                // Batch DOM updates
+
                 requestAnimationFrame(() => {
                     updates.forEach(update => update());
                     Prism.highlightAll();
                 });
             });
+            // Re-initialize collapsible elements after theme change and potential DOM updates
+            // Use requestAnimationFrame to ensure it runs after rendering updates
+            requestAnimationFrame(initNewCollapsibleElements);
         });
         return () => {
             if (styleElRef.current) {
@@ -136,13 +158,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
     }, [currentTheme]);
 
     const theme = themes[currentTheme] || themes.main;
-    // Remove duplicate theme warning - already handled above
+
 
     return (
         <StyledThemeProvider theme={theme}>
             <GlobalStyles theme={theme}/>{children}
         </StyledThemeProvider>);
 };
-
 
 export default ThemeProvider;

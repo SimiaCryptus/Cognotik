@@ -32,9 +32,9 @@ import java.nio.file.Paths
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
-
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class DemoTestBase(
@@ -101,7 +101,7 @@ abstract class DemoTestBase(
 
     @AfterAll
     fun tearDown() {
-        //UDPClient.stopUdpServer()
+
         if (driverInitialized) {
             driver.quit()
         }
@@ -119,9 +119,9 @@ abstract class DemoTestBase(
 
     private fun initializeTestProject() {
         log.info("Creating temporary directory for test project")
-        // Create temporary directory
+
         testProjectDir = Files.createTempDirectory("test-project-")
-        // Get template project path
+
         val templatePath = Paths.get(getTemplateProjectPath())
         log.debug("Template project path: {}", templatePath)
         if (!Files.exists(templatePath)) {
@@ -129,7 +129,7 @@ abstract class DemoTestBase(
             throw IllegalStateException("Template project directory not found: $templatePath")
         }
         log.info("Copying template project to temporary directory")
-        // Copy template project to temp directory
+
         templatePath.toFile().copyRecursively(testProjectDir.toFile(), true)
         log.info("Initialized test project in: $testProjectDir")
 
@@ -139,21 +139,21 @@ abstract class DemoTestBase(
             try {
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
                     .firstOrNull()?.apply {
-                    click()
-                    keyboard {
-                        escape()
-                        sleep(500)
+                        click()
+                        keyboard {
+                            escape()
+                            sleep(500)
+                        }
                     }
-                }
 
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
                     .firstOrNull()?.apply {
-                    click()
-                    keyboard {
-                        enter()
-                        sleep(500)
+                        click()
+                        keyboard {
+                            enter()
+                            sleep(500)
+                        }
                     }
-                }
 
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@text='Cancel']")).firstOrNull()
                     ?.click()
@@ -203,7 +203,7 @@ abstract class DemoTestBase(
 
     private fun cleanupTestProject() {
         if (::testProjectDir.isInitialized) {
-            //testProjectDir.toFile().deleteRecursively()
+
             log.info("Cleaned up test project directory")
         }
     }
@@ -242,7 +242,7 @@ abstract class DemoTestBase(
             try {
                 aiCoderMenu = remoteRobot.find(CommonContainerFixture::class.java, byXpath(AI_CODER_MENU_XPATH)).apply {
                     log.debug("Found AI Coder menu, waiting for visibility")
-                    // Ensure menu is visible before clicking
+
                     waitFor(Duration.ofSeconds(2)) { isShowing }
                     click()
                 }
@@ -280,7 +280,7 @@ abstract class DemoTestBase(
             return SpokenText(text, cacheFile.readBytes().inputStream(), 0)
         }
         val startTime = System.currentTimeMillis()
-        val speechWavBytes = OpenAIClient().createSpeech(
+        val speechWavBytes = OpenAIClient(workPool = Executors.newCachedThreadPool()).createSpeech(
             ApiModel.SpeechRequest(
                 input = text,
                 model = AudioModels.TTS.modelName,
@@ -289,9 +289,9 @@ abstract class DemoTestBase(
                 response_format = "wav"
             )
         ) ?: throw RuntimeException("No response")
-        // Save to cache
+
         cacheFile.writeBytes(speechWavBytes)
-        // Play the speech
+
         val renderTime = System.currentTimeMillis() - startTime
         log.info("Received speech response in $renderTime ms")
         return SpokenText(text, speechWavBytes.inputStream(), renderTime)

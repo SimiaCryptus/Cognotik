@@ -124,7 +124,7 @@
  * @see AppServer
  */
 class DocumentedMassPatchAction : BaseAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -260,7 +260,8 @@ class DocumentedMassPatchAction : BaseAction() {
 /**
  * MultiStepPatchAction provides an AI-assisted multi-step code modification system.
  *
- * This action creates an interactive development assistant that breaks down complex coding tasks 
+ * This action creates an interactive development assistant that breaks down complex coding tasks
+
  * into manageable steps and implements changes across multiple files. It uses AI to analyze code,
  * plan modifications, and generate appropriate patches.
  *
@@ -394,7 +395,8 @@ class DocumentedMassPatchAction : BaseAction() {
 ```kotlin
 /**
  * Configuration dialog for the AI-powered document outline generation tool.
- * 
+ *
+
  * This dialog allows users to configure multiple aspects of the outline generation process,
  * including model selection, temperature settings, and output preferences. It provides
  * a multi-step approach to outline generation with configurable AI models.
@@ -494,7 +496,8 @@ class DocumentedMassPatchAction : BaseAction() {
  * Example usage:
  * ```kotlin
  * val action = ShellCommandAction()
- * action.handle(event) // Initializes shell environment and opens browser interface
+ * action.handle(event)
+
  *```
  *
  * @see BaseAction
@@ -559,11 +562,13 @@ class DocumentedMassPatchAction : BaseAction() {
  *
  * Example Usage:
  * ```kotlin
- * // Basic action invocation
+ *
+
  * val action = SimpleCommandAction()
  * action.handle(event)
  *
- * // Custom settings
+ *
+
  * val settings = Settings(
  *     workingDirectory = File("/path/to/project")
  * )
@@ -631,7 +636,8 @@ class DocumentedMassPatchAction : BaseAction() {
  * Example Usage:
  * ```kotlin
  * val action = WebDevelopmentAssistantAction()
- * action.handle(event) // Opens web UI for development
+ * action.handle(event)
+
  *```
  *
  * @see BaseAction
@@ -694,7 +700,7 @@ class DocumentedMassPatchAction : BaseAction() {
  * @see AppServer
  */
 class CodeChatAction : BaseAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -730,7 +736,8 @@ class CodeChatAction : BaseAction() {
  * - Integrates with IntelliJ's document model for safe writes
  * - Maintains session state across interactions
  * - Supports both full file and selection-based contexts
- * 
+ *
+
  * Configuration:
  * - Uses AppSettingsState.smartModel for AI model selection
  * - Customizable system prompt for diff formatting
@@ -754,7 +761,8 @@ class CodeChatAction : BaseAction() {
  * Example Diff Format:
  * ```diff
  * ### filename.ext
- *  // Context lines
+ *
+
  *  function example() {
  * -   return oldValue;
  * +   return newValue;
@@ -819,7 +827,7 @@ class CodeChatAction : BaseAction() {
  * @see AppSettingsState
  */
 class GenericChatAction : BaseAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -829,7 +837,8 @@ class GenericChatAction : BaseAction() {
 /**
  * Enhanced Chat Interface for Large-Scale Code Discussions
  *
- * Provides an advanced chat interface optimized for handling large, structured responses 
+ * Provides an advanced chat interface optimized for handling large, structured responses
+
  * in code-related discussions. This action creates a dedicated browser-based chat session
  * with enhanced formatting and organization capabilities.
  *
@@ -881,7 +890,7 @@ class GenericChatAction : BaseAction() {
  * @see LargeOutputActor
  */
 class LargeOutputChatAction : BaseAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -890,7 +899,8 @@ class LargeOutputChatAction : BaseAction() {
 ```kotlin
 /**
  * Enables interactive AI-assisted code discussions and modifications across multiple files.
- * 
+ *
+
  * This action provides a chat interface for discussing and modifying multiple code files simultaneously.
  * It creates a web-based chat session where users can interact with an AI assistant to analyze, discuss,
  * and modify code across multiple files in the project.
@@ -937,10 +947,12 @@ class LargeOutputChatAction : BaseAction() {
  * - Validates file selection before activation
  * - Provides error feedback through UI
  * - Implements retry mechanism for failed API calls
- * 
+ *
+
  * Example Usage:
  * ```kotlin
- * // Programmatic usage
+ *
+
  * val action = MultiCodeChatAction()
  * action.handle(event)
  *```
@@ -1006,7 +1018,8 @@ class LargeOutputChatAction : BaseAction() {
  * Example Usage:
  * ```kotlin
  * val action = MultiDiffChatAction()
- * action.handle(event) // Opens chat interface for selected files
+ * action.handle(event)
+
  *```
  *
  * @see BaseAction
@@ -1021,7 +1034,8 @@ class LargeOutputChatAction : BaseAction() {
 ```kotlin
 /**
  * Applies patch content to selected files in the IDE.
- * 
+ *
+
  * This action allows developers to apply text-based patches to files directly within the IDE.
  * It provides a simple interface for inputting patch content and handles the patch application
  * process with appropriate error handling and user feedback.
@@ -1117,10 +1131,13 @@ class LargeOutputChatAction : BaseAction() {
  *
  * Example Usage:
  * ```kotlin
- * // Reference specific lines in chat
- * 001 // References first line of code
+ *
+
+ * 001
+
  * ## Some markdown heading
- * 025 // References line 25 of code
+ * 025
+
  *```
  *
  * @see BaseAction
@@ -1232,11 +1249,15 @@ class LargeOutputChatAction : BaseAction() {
  *
  * Example Usage:
  * ```kotlin
- * // Original code
+ *
+
  * println("Hello")
- * 
- * // Instruction: "Add parameter validation"
- * // Result:
+ *
+
+ *
+
+ *
+
  * if (message != null) {
  *     println("Hello")
  * }
@@ -1259,7 +1280,8 @@ class LargeOutputChatAction : BaseAction() {
 /**
  * Generates natural language descriptions of selected code blocks with appropriate code comments.
  *
- * This action analyzes selected code and generates human-readable descriptions using AI, 
+ * This action analyzes selected code and generates human-readable descriptions using AI,
+
  * automatically formatting them as comments appropriate for the programming language.
  * It helps improve code readability and documentation by providing clear explanations
  * of what the code does.
@@ -1275,7 +1297,8 @@ class LargeOutputChatAction : BaseAction() {
  * - Preserves code indentation
  * - Supports multiple programming languages
  * - Configurable output language via AppSettingsState.humanLanguage
- * 
+ *
+
  * Technical Details:
  * - Uses ChatProxy for AI-powered code description generation
  * - Processes code asynchronously in background thread
@@ -1295,7 +1318,8 @@ class LargeOutputChatAction : BaseAction() {
  *
  * Example output:
  *```
- * // This function calculates the factorial of a number recursively
+ *
+
  * fun factorial(n: Int): Int {
  *     return if (n <= 1) 1 else n * factorial(n - 1)
  * }
@@ -1306,7 +1330,7 @@ class LargeOutputChatAction : BaseAction() {
  * @see AppSettingsState
  */
 class DescribeAction : SelectionAction<String>() {
-    // ... existing implementation
+
 }
 ```
 
@@ -1315,7 +1339,8 @@ class DescribeAction : SelectionAction<String>() {
 ```kotlin
 /**
  * Base class for intelligent clipboard paste actions that automatically convert content to appropriate code format.
- * 
+ *
+
  * This action analyzes clipboard content and converts it to match the target file's programming language,
  * supporting both plain text and HTML clipboard content with automatic language detection.
  *
@@ -1331,7 +1356,8 @@ class DescribeAction : SelectionAction<String>() {
  * - HTML content cleaning and optimization
  * - Configurable AI model selection
  * - Progress indication during conversion
- * 
+ *
+
  * Technical Details:
  * - Uses ChatGPT API for content conversion
  * - HTML processing via JSoup library
@@ -1342,7 +1368,8 @@ class DescribeAction : SelectionAction<String>() {
  * Configuration:
  * - Model selection via AppSettingsState
  * - Temperature setting for conversion flexibility
- * 
+ *
+
  * Limitations:
  * - Requires valid clipboard content
  * - May have reduced accuracy with complex HTML
@@ -1355,7 +1382,8 @@ abstract class PasteActionBase...
 
 /**
  * Smart paste implementation using more capable but slower AI model.
- * 
+ *
+
  * This action provides high-quality code conversion with better understanding
  * of complex code structures and language features.
  *
@@ -1436,7 +1464,7 @@ class FastPasteAction...
  * @see ComputerLanguage
  */
 class RecentCodeEditsAction : ActionGroup() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -1496,18 +1524,21 @@ class RecentCodeEditsAction : ActionGroup() {
 ```kotlin
 /**
  * Enables batch modification of code based on find results using AI assistance.
- * 
+ *
+
  * This action allows users to modify multiple occurrences of found text across files
  * by leveraging AI to suggest and apply consistent changes. It provides an interactive
  * interface through a web browser for reviewing and applying modifications.
- * 
+ *
+
  * Usage:
  * 1. Perform a find operation in the IDE
  * 2. Select the find results
  * 3. Invoke "Modify Find Results" action
  * 4. Enter replacement text and configuration in dialog
  * 5. Review and approve changes in browser interface
- * 
+ *
+
  * Features:
  * - AI-assisted code modifications across multiple files
  * - Interactive web UI for reviewing changes
@@ -1515,40 +1546,47 @@ class RecentCodeEditsAction : ActionGroup() {
  * - Batch application of changes
  * - Auto-apply option for automated modifications
  * - Preserves code structure and formatting
- * 
+ *
+
  * Configuration Options:
  * - Replacement text: The desired modification pattern
  * - Auto-apply: Toggle automatic application of changes
- * 
+ *
+
  * Technical Details:
  * - Integrates with IntelliJ's Usage View system
  * - Uses OpenAI API for intelligent code modifications
  * - Implements web-based diff review interface
  * - Handles PSI-based code analysis for context awareness
  * - Supports parallel processing of multiple files
- * 
+ *
+
  * Prerequisites:
  * - Active find results in Usage View
  * - Valid project context
  * - Selected files must be writable
- * 
+ *
+
  * Limitations:
  * - Requires active find results
  * - Changes are limited to found text contexts
  * - Network connectivity required for AI assistance
- * 
+ *
+
  * Error Handling:
  * - Validates find results availability
  * - Checks for project context
  * - Handles browser launch failures
  * - Provides error feedback through UI
- * 
+ *
+
  * Example Usage:
  * ```kotlin
  * val action = FindResultsModificationAction()
  * action.handle(event)
  *```
- * 
+ *
+
  * @see UsageView
  * @see PatchApp
  * @see FindResultsModificationDialog
@@ -1563,7 +1601,8 @@ class RecentCodeEditsAction : ActionGroup() {
  * Dialog for configuring AI-based modifications to search results in code.
  *
  * Provides an interface for users to enter natural language instructions for modifying code matches
- * found through IDE's find functionality. The dialog collects user preferences for how the 
+ * found through IDE's find functionality. The dialog collects user preferences for how the
+
  * modifications should be applied and validated.
  *
  * Usage:
@@ -1578,7 +1617,8 @@ class RecentCodeEditsAction : ActionGroup() {
  * - Input validation with meaningful error messages
  * - Resizable instruction input area
  * - Focus management for immediate typing
- * 
+ *
+
  * Configuration Options:
  * - replacementText: Instructions for how code should be modified
  * - autoApply: Whether to apply changes automatically without confirmation
@@ -1599,8 +1639,10 @@ class RecentCodeEditsAction : ActionGroup() {
  * val dialog = FindResultsModificationDialog(project, matchCount)
  * val config = dialog.showAndGetConfig()
  * if (config != null) {
- *     // Process modifications with config.replacementText
- *     // Handle auto-apply based on config.autoApply
+ *
+
+ *
+
  * }
  *```
  *
@@ -1671,7 +1713,7 @@ class RecentCodeEditsAction : ActionGroup() {
  * @see UITools
  */
 class CreateFileFromDescriptionAction : aicoder.actions.FileContextAction<CreateFileFromDescriptionAction.Settings>(false, true) {
-    // ... rest of the implementation
+
 }
 ```
 
@@ -1680,7 +1722,8 @@ class CreateFileFromDescriptionAction : aicoder.actions.FileContextAction<Create
 ```kotlin
 /**
  * Creates AI-generated images based on code context and user instructions.
- * 
+ *
+
  * This action analyzes selected code files and generates technical illustrations using AI image generation.
  * It provides a dialog interface for customizing the image generation process and handles the creation
  * and storage of the resulting images.
@@ -1731,7 +1774,7 @@ class CreateFileFromDescriptionAction : aicoder.actions.FileContextAction<Create
  * @see IdeaOpenAIClient
  */
 class CreateImageAction : BaseAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -1814,8 +1857,10 @@ class CreateImageAction : BaseAction() {
 ```kotlin
 /**
  * Generates related files based on existing source files using AI assistance.
- * 
- * This action analyzes an existing source file and creates a related file (like tests, implementations, 
+ *
+
+ * This action analyzes an existing source file and creates a related file (like tests, implementations,
+
  * or complementary code files) based on user-provided directives. It uses AI to intelligently generate
  * appropriate content while maintaining project structure and naming conventions.
  *
@@ -1832,7 +1877,8 @@ class CreateImageAction : BaseAction() {
  * - Configurable generation directives
  * - Automatic file opening after generation
  * - Project structure awareness
- * 
+ *
+
  * Configuration Options:
  * - Directive: Text describing the type of file to generate (e.g. "Create test cases")
  * - Uses global temperature setting from AppSettingsState
@@ -1859,7 +1905,8 @@ class CreateImageAction : BaseAction() {
  *
  * Example Usage:
  * ```kotlin
- * // Generate test file for source file
+ *
+
  * val settings = Settings(
  *     UserSettings(directive = "Create test cases"),
  *     project
@@ -1903,7 +1950,8 @@ class CreateImageAction : BaseAction() {
  * - Integrates with IntelliJ VCS framework
  * - Uses IterativePatchUtil for diff generation
  * - Supports session persistence and management
- * 
+ *
+
  * Configuration:
  * - Uses AppSettingsState for model configuration
  * - Configurable through standard IntelliJ settings
@@ -1925,7 +1973,7 @@ class CreateImageAction : BaseAction() {
  * @see AppSettingsState
  */
 class ChatWithCommitAction : AnAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -1984,7 +2032,7 @@ class ChatWithCommitDiffAction : BaseAction(
     name = "Chat with Commit Diff",
     description = "Opens a chat interface to discuss commit differences"
 ) {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -1993,7 +2041,8 @@ class ChatWithCommitDiffAction : BaseAction(
 ```kotlin
 /**
  * Enables interactive chat discussions about working copy changes in version control.
- * 
+ *
+
  * This action allows developers to review and discuss uncommitted changes in their working copy
  * through an AI-powered chat interface. It generates a diff of the current changes and opens
  * a chat session focused on those changes.
@@ -2043,7 +2092,7 @@ class ChatWithCommitDiffAction : BaseAction(
  * @see ChangeListManager
  */
 class ChatWithWorkingCopyDiffAction : AnAction() {
-    // ... rest of the implementation
+
 }
 ```
 
@@ -2161,7 +2210,8 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
  * Example usage:
  * ```kotlin
  * val action = CreateProjectorFromQueryIndexAction()
- * action.handle(event) // Processes selected files and opens visualization
+ * action.handle(event)
+
  *```
  *
  * @see TensorflowProjector
@@ -2176,8 +2226,10 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
 /**
  * Extracts structured data from documents using AI-powered analysis.
  *
- * This action processes various document types (PDF, text, HTML, markdown) to extract meaningful 
- * structured data using AI models. It's particularly useful for bulk document analysis and 
+ * This action processes various document types (PDF, text, HTML, markdown) to extract meaningful
+
+ * structured data using AI models. It's particularly useful for bulk document analysis and
+
  * data extraction tasks.
  *
  * Usage:
@@ -2243,10 +2295,11 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
  * @see ParsingModel
  */
 class DocumentDataExtractorAction : BaseAction(
-    name = "Extract Document Data", 
+    name = "Extract Document Data",
+
     description = "Extracts structured data from documents using AI"
 ) {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -2255,7 +2308,8 @@ class DocumentDataExtractorAction : BaseAction(
 ```kotlin
 /**
  * Configuration dialog for document data extraction settings.
- * 
+ *
+
  * This dialog allows users to configure various parameters for the document parsing process,
  * including DPI settings, page limits, output formats, and processing options. It provides
  * a user-friendly interface to customize the DocumentParserApp behavior.
@@ -2264,7 +2318,8 @@ class DocumentDataExtractorAction : BaseAction(
  * 1. Instantiate with project, settings, and model type
  * 2. Show dialog using showAndGet()
  * 3. Access updated settings and model type after dialog closes
- * 
+ *
+
  * Features:
  * - Model type selection from available parsing models
  * - DPI configuration for image processing
@@ -2272,7 +2327,8 @@ class DocumentDataExtractorAction : BaseAction(
  * - Output format customization
  * - Multiple output options (images, text, JSON)
  * - Processing mode options (fast mode, line numbers)
- * 
+ *
+
  * Configuration Options:
  * - DPI: Resolution for image processing (positive float value)
  * - Max Pages: Maximum number of pages to process (positive integer)
@@ -2357,7 +2413,7 @@ class DocumentDataExtractorAction : BaseAction(
  * @see BaseAction
  */
 class SaveAsQueryIndexAction : BaseAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -2413,7 +2469,7 @@ class SaveAsQueryIndexAction : BaseAction() {
  * @see ChatProxy
  */
 class MarkdownImplementActionGroup : ActionGroup() {
-    // ... existing implementation ...
+
 }
 
 /**
@@ -2433,7 +2489,7 @@ class MarkdownImplementActionGroup : ActionGroup() {
  * @property language Target programming language for code generation
  */
 open class MarkdownImplementAction(private val language: String) : SelectionAction<String>(true) {
-    // ... existing implementation ...
+
 }
 ```
 
@@ -2623,7 +2679,7 @@ open class MarkdownImplementAction(private val language: String) : SelectionActi
  * @see SessionProxyServer
  */
 class PlanAheadAction : BaseAction() {
-    // ... rest of the implementation ...
+
 }
 ```
 
@@ -2632,11 +2688,14 @@ class PlanAheadAction : BaseAction() {
 ```kotlin
 /**
  * Provides an interactive planning and command execution interface through a chat-based UI.
- * 
+ *
+
  * This action opens a specialized chat interface that allows users to plan and execute commands
- * in their development environment. It supports both Windows (PowerShell) and Unix (Bash) 
+ * in their development environment. It supports both Windows (PowerShell) and Unix (Bash)
+
  * environments, providing a unified interface for system operations through natural language.
- * 
+ *
+
  * Usage:
  * 1. Select a folder or file in the project view
  * 2. Invoke the action through the context menu or shortcut
@@ -2647,7 +2706,8 @@ class PlanAheadAction : BaseAction() {
  *    - Environment variables
  *    - API tokens (GitHub, Google)
  * 4. Interact with the chat interface to plan and execute commands
- * 
+ *
+
  * Features:
  * - Intelligent command planning using AI models
  * - Support for both PowerShell and Bash environments
@@ -2655,19 +2715,22 @@ class PlanAheadAction : BaseAction() {
  * - Integration with GitHub and Google services
  * - Context-aware command execution
  * - Real-time command output
- * 
+ *
+
  * Technical Details:
  * - Uses separate AI models for planning and parsing
  * - Implements asynchronous command execution
  * - Maintains session-based chat history
  * - Integrates with IDE's command system
  * - Supports custom working directory selection
- * 
+ *
+
  * Prerequisites:
  * - Valid project context
  * - Selected file or folder
  * - Configured API credentials in settings
- * 
+ *
+
  * Configuration Options:
  * - Default AI model for main interactions
  * - Parsing model for command interpretation
@@ -2676,18 +2739,21 @@ class PlanAheadAction : BaseAction() {
  * - Working directory path
  * - Environment variables
  * - API tokens for external services
- * 
+ *
+
  * Error Handling:
  * - Validates project context and selection
  * - Provides error feedback through UI
  * - Handles browser opening failures
  * - Manages chat session initialization errors
- * 
+ *
+
  * Limitations:
  * - Requires valid project selection
  * - Depends on external AI service availability
  * - Shell command execution restricted to configured environments
- * 
+ *
+
  * @see PlanConfigDialog
  * @see PlanSettings
  * @see PlanChatApp
@@ -2747,7 +2813,8 @@ class PlanAheadAction : BaseAction() {
  * @property project The current IntelliJ project context
  * @property settings The plan settings object to configure
  * @property singleTaskMode Flag to enable single task selection mode
- * 
+ *
+
  * @see PlanSettings
  * @see TaskType
  * @see AppSettingsState
@@ -2888,8 +2955,10 @@ class PlanAheadAction : BaseAction() {
 ```kotlin
 /**
  * Analyzes IDE-detected code problems and suggests fixes using AI assistance.
- * 
- * This action helps developers resolve code issues by providing AI-powered analysis and 
+ *
+
+ * This action helps developers resolve code issues by providing AI-powered analysis and
+
  * suggested fixes for problems identified in the IDE's Problems view. It examines the problem
  * context, related files, and project structure to generate targeted solutions.
  *
@@ -2952,17 +3021,20 @@ class PlanAheadAction : BaseAction() {
 ```kotlin
 /**
  * Automatically analyzes test failures and suggests code fixes using AI assistance.
- * 
+ *
+
  * This action processes failed test results, analyzes the error messages and stack traces,
  * and provides AI-generated suggestions for fixing the failing tests. It examines the project
  * structure and relevant files to provide contextual fixes.
- * 
+ *
+
  * Usage:
  * 1. Run tests in the IDE
  * 2. When a test fails, select the failed test in the test runner
  * 3. Click the "Analyze Test Result" action
  * 4. Review and apply suggested fixes in the opened browser window
- * 
+ *
+
  * Features:
  * - Automatic test failure analysis
  * - AI-powered fix suggestions
@@ -2970,36 +3042,42 @@ class PlanAheadAction : BaseAction() {
  * - Project-wide context awareness
  * - Multi-file fix support
  * - Git integration for file management
- * 
+ *
+
  * Technical Details:
  * - Uses OpenAI API for analysis and fix generation
  * - Implements retry logic for API operations
  * - Supports both single and multiple error analysis
  * - Generates patches in standard diff format
  * - Integrates with IDE's test framework
- * 
+ *
+
  * Configuration:
  * - Uses AppSettingsState for model configuration
  * - Supports custom session management
  * - Configurable through standard IDE action system
- * 
+ *
+
  * Limitations:
  * - Requires valid test results with error messages
  * - File size limit of 0.5MB for analysis
  * - Depends on Git project structure
- * 
+ *
+
  * Implementation Notes:
  * - Processes files recursively excluding .git and ignored files
  * - Creates interactive web UI for fix review
  * - Maintains session state for ongoing fixes
  * - Supports markdown rendering for documentation
- * 
+ *
+
  * Error Handling:
  * - Validates test proxy availability
  * - Checks for valid virtual files
  * - Implements progress indicators for long operations
  * - Provides error feedback through UI
- * 
+ *
+
  * @see BaseAction
  * @see SMTestProxy
  * @see ApplicationServer

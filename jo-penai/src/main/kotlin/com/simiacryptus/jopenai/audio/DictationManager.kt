@@ -4,6 +4,8 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.AudioModels
 import org.slf4j.LoggerFactory
 import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.swing.JOptionPane
@@ -82,7 +84,7 @@ open class DictationManager {
             }
             processor = Thread {
                 transcriptionProcessor = TranscriptionProcessor(
-                    client = OpenAIClient(),
+                    client = OpenAIClient(workPool = Executors.newCachedThreadPool()),
                     audioBuffer = processedBuffer,
                     model = transcriptionModel,
                     continueFn = { isRecording },
@@ -118,6 +120,5 @@ open class DictationManager {
         processor = null
         log.info("Recording stopped")
     }
-
 
 }

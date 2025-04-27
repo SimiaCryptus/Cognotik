@@ -4,7 +4,8 @@
 
 ##### Objective:
 
-To verify that the `CustomEditAction` class functions correctly, allowing users to edit code based on given instructions and configurations.
+To verify that the `CustomEditAction` class functions correctly, allowing users to edit code based on given instructions
+and configurations.
 
 ##### Test Environment:
 
@@ -15,7 +16,8 @@ To verify that the `CustomEditAction` class functions correctly, allowing users 
 ##### Pre-requisites:
 
 - The project should be correctly set up in IntelliJ IDEA.
-- Ensure that `AppSettingsState` is properly configured with valid settings for `temperature`, `smartModel`, and `humanLanguage`.
+- Ensure that `AppSettingsState` is properly configured with valid settings for `temperature`, `smartModel`, and
+  `humanLanguage`.
 
 ##### Test Cases:
 
@@ -49,7 +51,8 @@ To verify that the `CustomEditAction` class functions correctly, allowing users 
 2. Trigger the `CustomEditAction`.
 3. Enter an instruction relevant to the selected language, e.g., "Format according to PEP8".
 4. Submit the instruction.
-   **Expected Result**: The code should be modified according to the instruction and should be appropriate for the language.
+   **Expected Result**: The code should be modified according to the instruction and should be appropriate for the
+   language.
 
 ###### TC4: Error Handling Test
 
@@ -68,7 +71,8 @@ To verify that the `CustomEditAction` class functions correctly, allowing users 
 
 1. Trigger the `CustomEditAction` multiple times with different instructions.
 2. Check if the recent instructions are stored and displayed correctly in subsequent uses.
-   **Expected Result**: The history should correctly reflect recent instructions, and users should be able to select from them.
+   **Expected Result**: The history should correctly reflect recent instructions, and users should be able to select
+   from them.
 
 ###### TC6: Multi-language Support Test
 
@@ -78,7 +82,8 @@ To verify that the `CustomEditAction` class functions correctly, allowing users 
 1. Change the `humanLanguage` setting in `AppSettingsState` to a non-English language.
 2. Trigger the `CustomEditAction`.
 3. Enter an instruction in the selected human language.
-   **Expected Result**: The code should be edited according to the instruction, and the interaction should be in the selected human language.
+   **Expected Result**: The code should be edited according to the instruction, and the interaction should be in the
+   selected human language.
 
 ##### Post-Test Cleanup:
 
@@ -91,7 +96,8 @@ To verify that the `CustomEditAction` class functions correctly, allowing users 
 - Capture screenshots or logs in case of failures.
 - Provide feedback or suggestions for improving the functionality based on test results.
 
-This manual test plan will help ensure that the `CustomEditAction` class meets its functional requirements and handles different scenarios gracefully.
+This manual test plan will help ensure that the `CustomEditAction` class meets its functional requirements and handles
+different scenarios gracefully.
 
 # code\DocAction.kt
 
@@ -99,7 +105,8 @@ This manual test plan will help ensure that the `CustomEditAction` class meets i
 
 ##### Objective:
 
-To verify that the `DocAction` class correctly generates documentation comments for selected code blocks in supported programming languages.
+To verify that the `DocAction` class correctly generates documentation comments for selected code blocks in supported
+programming languages.
 
 ##### Pre-requisites:
 
@@ -125,31 +132,32 @@ To verify that the `DocAction` class correctly generates documentation comments 
 **Objective**: Ensure that `DocAction` generates appropriate documentation for a simple function.
 
 - **Steps**:
-  1. Open a project and navigate to a source file.
-  2. Select a simple function or method.
-  3. Trigger the `DocAction`.
-  4. Observe the generated documentation.
-- **Expected Result**: The documentation should be correctly added above the selected code block, matching the language's documentation style.
+    1. Open a project and navigate to a source file.
+    2. Select a simple function or method.
+    3. Trigger the `DocAction`.
+    4. Observe the generated documentation.
+- **Expected Result**: The documentation should be correctly added above the selected code block, matching the
+  language's documentation style.
 
 ###### TC2: Language Support Verification
 
 **Objective**: Verify that `DocAction` supports all specified languages and ignores unsupported ones.
 
 - **Steps**:
-  1. Repeat TC1 for each supported language (e.g., Java, Kotlin, Python).
-  2. Attempt to use `DocAction` on an unsupported language (e.g., plain text).
+    1. Repeat TC1 for each supported language (e.g., Java, Kotlin, Python).
+    2. Attempt to use `DocAction` on an unsupported language (e.g., plain text).
 - **Expected Result**:
-  - Documentation is generated for supported languages.
-  - An appropriate message or no action for unsupported languages.
+    - Documentation is generated for supported languages.
+    - An appropriate message or no action for unsupported languages.
 
 ###### TC3: Error Handling
 
 **Objective**: Ensure that `DocAction` handles errors gracefully (e.g., API failures, invalid selections).
 
 - **Steps**:
-  1. Simulate API failure or provide invalid code selection.
-  2. Trigger the `DocAction`.
-  3. Observe the behavior and any error messages.
+    1. Simulate API failure or provide invalid code selection.
+    2. Trigger the `DocAction`.
+    3. Observe the behavior and any error messages.
 - **Expected Result**: The action should not crash the IDE and should display a user-friendly error message.
 
 ###### TC4: Configuration Impact
@@ -157,9 +165,9 @@ To verify that the `DocAction` class correctly generates documentation comments 
 **Objective**: Test the impact of different configurations in `AppSettingsState` on the documentation generation.
 
 - **Steps**:
-  1. Modify settings in `AppSettingsState` (e.g., `humanLanguage`, `temperature`).
-  2. Trigger the `DocAction` on a known code block.
-  3. Observe and verify the changes in the generated documentation.
+    1. Modify settings in `AppSettingsState` (e.g., `humanLanguage`, `temperature`).
+    2. Trigger the `DocAction` on a known code block.
+    3. Observe and verify the changes in the generated documentation.
 - **Expected Result**: Changes in settings should reflect appropriately in the documentation style and content.
 
 ###### TC5: Selection Boundary Test
@@ -167,9 +175,9 @@ To verify that the `DocAction` class correctly generates documentation comments 
 **Objective**: Verify that `DocAction` correctly identifies the boundaries of code blocks.
 
 - **Steps**:
-  1. Select partial code blocks, nested functions, and adjacent code blocks.
-  2. Trigger the `DocAction`.
-  3. Check if the documentation is added correctly and only within the selected boundaries.
+    1. Select partial code blocks, nested functions, and adjacent code blocks.
+    2. Trigger the `DocAction`.
+    3. Check if the documentation is added correctly and only within the selected boundaries.
 - **Expected Result**: Documentation should only apply within the exact boundaries of the selected code block.
 
 ###### TC6: Undo/Redo Functionality
@@ -177,12 +185,12 @@ To verify that the `DocAction` class correctly generates documentation comments 
 **Objective**: Ensure that the documentation addition can be undone and redone without issues.
 
 - **Steps**:
-  1. Apply `DocAction` to a code block.
-  2. Use the IDE's undo feature.
-  3. Use the IDE's redo feature.
+    1. Apply `DocAction` to a code block.
+    2. Use the IDE's undo feature.
+    3. Use the IDE's redo feature.
 - **Expected Result**:
-  - The added documentation should be removed on undo.
-  - The removed documentation should be reinstated on redo.
+    - The added documentation should be removed on undo.
+    - The removed documentation should be reinstated on redo.
 
 ##### Post-Test Cleanup:
 
@@ -194,7 +202,8 @@ To verify that the `DocAction` class correctly generates documentation comments 
 - Document all test results, including any discrepancies from expected outcomes.
 - Report any bugs or issues to the development team for resolution.
 
-This manual test plan will help ensure that the `DocAction` class functions correctly across different scenarios and configurations, providing reliable and
+This manual test plan will help ensure that the `DocAction` class functions correctly across different scenarios and
+configurations, providing reliable and
 accurate documentation generation in the IDE environment.
 
 # code\DescribeAction.kt
@@ -203,7 +212,8 @@ accurate documentation generation in the IDE environment.
 
 ##### Objective:
 
-To verify that the `DescribeAction` class correctly generates descriptions for selected code snippets in various programming languages and integrates these
+To verify that the `DescribeAction` class correctly generates descriptions for selected code snippets in various
+programming languages and integrates these
 descriptions as comments in the appropriate format.
 
 ##### Pre-requisites:
@@ -292,7 +302,8 @@ descriptions as comments in the appropriate format.
 - Capture screenshots or logs if applicable.
 - Provide feedback or suggestions for improvement based on test results.
 
-This manual test plan will help ensure that the `DescribeAction` class functions correctly across various scenarios and configurations.
+This manual test plan will help ensure that the `DescribeAction` class functions correctly across various scenarios and
+configurations.
 
 # code\CommentsAction.kt
 
@@ -300,7 +311,8 @@ This manual test plan will help ensure that the `DescribeAction` class functions
 
 ##### Objective:
 
-To verify that the `CommentsAction` class functions correctly by adding comments to selected code based on the specified programming and human languages.
+To verify that the `CommentsAction` class functions correctly by adding comments to selected code based on the specified
+programming and human languages.
 
 ##### Pre-requisites:
 
@@ -340,7 +352,8 @@ To verify that the `CommentsAction` class functions correctly by adding comments
 2. Insert a plain text snippet.
 3. Select the text.
 4. Trigger the `CommentsAction`.
-5. **Expected Result**: No action is taken, and possibly an informative message is displayed indicating unsupported language.
+5. **Expected Result**: No action is taken, and possibly an informative message is displayed indicating unsupported
+   language.
 
 ###### TC3: Null Selection Test
 
@@ -360,7 +373,8 @@ To verify that the `CommentsAction` class functions correctly by adding comments
 3. Select the code snippet.
 4. Simulate a network failure (disconnect from the internet).
 5. Trigger the `CommentsAction`.
-6. **Expected Result**: The action should handle the failure gracefully, possibly with an error notification about network issues.
+6. **Expected Result**: The action should handle the failure gracefully, possibly with an error notification about
+   network issues.
 
 ###### TC5: Multiple Languages and Complex Code
 
@@ -379,7 +393,8 @@ To verify that the `CommentsAction` class functions correctly by adding comments
 2. Change the `temperature` and `model` settings.
 3. Insert a code snippet and select it.
 4. Trigger the `CommentsAction`.
-5. **Expected Result**: The output should reflect the changes in configuration, potentially altering the style or detail of comments.
+5. **Expected Result**: The output should reflect the changes in configuration, potentially altering the style or detail
+   of comments.
 
 ##### Post-Test Cleanup:
 
@@ -391,7 +406,8 @@ To verify that the `CommentsAction` class functions correctly by adding comments
 - Document all outcomes and, if any test fails, capture screenshots or logs if applicable.
 - Report the findings to the development team for further action or bug fixing.
 
-This manual test plan will help ensure that the `CommentsAction` class performs as expected across various scenarios and handles errors gracefully.
+This manual test plan will help ensure that the `CommentsAction` class performs as expected across various scenarios and
+handles errors gracefully.
 
 # code\ImplementStubAction.kt
 
@@ -399,7 +415,8 @@ This manual test plan will help ensure that the `CommentsAction` class performs 
 
 ##### Objective:
 
-To manually test the `ImplementStubAction` class to ensure it correctly interacts with the `VirtualAPI` to edit code stubs based on user selections within an
+To manually test the `ImplementStubAction` class to ensure it correctly interacts with the `VirtualAPI` to edit code
+stubs based on user selections within an
 IDE environment.
 
 ##### Test Environment:
@@ -422,7 +439,8 @@ IDE environment.
 
 1. **Steps**:
 
-- Invoke the method with various `ComputerLanguage` values including `null`, `ComputerLanguage.Text`, and other supported languages.
+- Invoke the method with various `ComputerLanguage` values including `null`, `ComputerLanguage.Text`, and other
+  supported languages.
 
 2. **Expected Results**:
 
@@ -431,7 +449,8 @@ IDE environment.
 
 ###### TC2: Default Selection for Code
 
-**Objective**: Ensure that the `defaultSelection` method correctly identifies the smallest code block or the entire line if no code blocks are identified.
+**Objective**: Ensure that the `defaultSelection` method correctly identifies the smallest code block or the entire line
+if no code blocks are identified.
 
 1. **Steps**:
 
@@ -495,7 +514,8 @@ IDE environment.
 - Document all test results, noting any failures or unexpected behaviors.
 - Report bugs or issues to the development team for resolution.
 
-This manual test plan will help ensure that the `ImplementStubAction` class functions correctly within its intended environment and interacts properly with
+This manual test plan will help ensure that the `ImplementStubAction` class functions correctly within its intended
+environment and interacts properly with
 external services.
 
 # code\InsertImplementationAction.kt
@@ -504,7 +524,8 @@ external services.
 
 ##### Objective:
 
-To ensure that the `InsertImplementationAction` class functions correctly across various scenarios, including handling different programming languages,
+To ensure that the `InsertImplementationAction` class functions correctly across various scenarios, including handling
+different programming languages,
 processing comments, and interacting with the virtual API to generate code implementations.
 
 ##### Test Environment:
@@ -602,7 +623,8 @@ processing comments, and interacting with the virtual API to generate code imple
 - Revert any changes made to the source files during testing.
 - Restore original `AppSettingsState` configurations if modified.
 
-This manual test plan will help ensure that the `InsertImplementationAction` class meets its functional requirements and handles edge cases gracefully.
+This manual test plan will help ensure that the `InsertImplementationAction` class meets its functional requirements and
+handles edge cases gracefully.
 
 # code\PasteAction.kt
 
@@ -610,7 +632,8 @@ This manual test plan will help ensure that the `InsertImplementationAction` cla
 
 ##### Objective:
 
-To verify that the `PasteAction` class functions correctly by pasting and converting clipboard content into a specified programming language using a virtual
+To verify that the `PasteAction` class functions correctly by pasting and converting clipboard content into a specified
+programming language using a virtual
 API.
 
 ##### Prerequisites:
@@ -695,7 +718,8 @@ API.
 - Reset any settings or configurations changed during testing.
 - Clear the clipboard to avoid any data leakage.
 
-This manual test plan will help ensure that the `PasteAction` class behaves as expected under various conditions and handles different types of clipboard
+This manual test plan will help ensure that the `PasteAction` class behaves as expected under various conditions and
+handles different types of clipboard
 content appropriately.
 
 # code\RecentCodeEditsAction.kt
@@ -704,7 +728,8 @@ content appropriately.
 
 ##### Objective:
 
-To ensure that the `RecentCodeEditsAction` class functions correctly, providing a dynamic list of recent custom code edits in the IDE, and enabling or disabling
+To ensure that the `RecentCodeEditsAction` class functions correctly, providing a dynamic list of recent custom code
+edits in the IDE, and enabling or disabling
 based on the context.
 
 ##### Pre-requisites:
@@ -722,10 +747,10 @@ based on the context.
 ##### Test Data:
 
 - Sample recent commands in `AppSettingsState`:
-  - "Refactor variable names"
-  - "Optimize imports"
-  - "Format code"
-  - "Add documentation comments"
+    - "Refactor variable names"
+    - "Optimize imports"
+    - "Format code"
+    - "Add documentation comments"
 
 ##### Test Cases:
 
@@ -754,7 +779,8 @@ based on the context.
 
 **Expected Results**:
 
-- The list should correctly display all recent edits stored in `AppSettingsState`, formatted as specified (e.g., "_1: Refactor variable names").
+- The list should correctly display all recent edits stored in `AppSettingsState`, formatted as specified (e.g., "_1:
+  Refactor variable names").
 
 ###### TC3: Execution of a Recent Edit Command
 
@@ -791,7 +817,8 @@ based on the context.
 - Capture screenshots or logs if applicable.
 - Provide feedback or suggestions for improvements based on test outcomes.
 
-This manual test plan aims to cover basic functional aspects of the `RecentCodeEditsAction` class. Adjustments may be necessary based on actual application
+This manual test plan aims to cover basic functional aspects of the `RecentCodeEditsAction` class. Adjustments may be
+necessary based on actual application
 behavior and additional requirements.
 
 # code\RenameVariablesAction.kt
@@ -800,7 +827,8 @@ behavior and additional requirements.
 
 ##### Objective
 
-To manually test the `RenameVariablesAction` class to ensure that it correctly suggests and applies variable name changes in code based on AI recommendations.
+To manually test the `RenameVariablesAction` class to ensure that it correctly suggests and applies variable name
+changes in code based on AI recommendations.
 
 ##### Test Environment
 
@@ -898,7 +926,8 @@ To manually test the `RenameVariablesAction` class to ensure that it correctly s
 
 1. **Steps**:
 
-- Simulate an API failure or network issue (e.g., by temporarily modifying the `ChatProxy` settings to an invalid state).
+- Simulate an API failure or network issue (e.g., by temporarily modifying the `ChatProxy` settings to an invalid
+  state).
 - Open a source file and select a variable name.
 - Trigger the `RenameVariablesAction`.
 
@@ -922,7 +951,8 @@ To manually test the `RenameVariablesAction` class to ensure that it correctly s
 
 ##### Objective:
 
-To verify the functionality and robustness of the `AppServer` class, ensuring it can handle web application contexts, manage WebSocket connections, and respond
+To verify the functionality and robustness of the `AppServer` class, ensuring it can handle web application contexts,
+manage WebSocket connections, and respond
 appropriately to user interactions and system events.
 
 ##### Test Environment:
@@ -950,61 +980,61 @@ appropriately to user interactions and system events.
 
 - **Objective**: Verify that the server initializes correctly with the specified local name and port.
 - **Steps**:
-  1. Instantiate `AppServer` with "localhost" and 8080.
-  2. Call `start()` method.
+    1. Instantiate `AppServer` with "localhost" and 8080.
+    2. Call `start()` method.
 - **Expected Result**: Server starts without errors, and logs indicate initialization at the specified address and port.
 
 2. **Add Application Test**
 
 - **Objective**: Verify that applications can be added dynamically and are accessible.
 - **Steps**:
-  1. Start the server.
-  2. Create a `ChatServer` instance and add it using `addApp("/chat", chatServerInstance)`.
-  3. Access `localhost:8080/chat`.
+    1. Start the server.
+    2. Create a `ChatServer` instance and add it using `addApp("/chat", chatServerInstance)`.
+    3. Access `localhost:8080/chat`.
 - **Expected Result**:
-  - The server should restart with the new context.
-  - The chat application should be accessible and functional at the specified path.
+    - The server should restart with the new context.
+    - The chat application should be accessible and functional at the specified path.
 
 3. **Server Restart on New App Addition**
 
 - **Objective**: Ensure the server restarts correctly when a new application is added.
 - **Steps**:
-  1. Start the server.
-  2. Add a new `ChatServer` application.
-  3. Monitor logs for restart messages.
+    1. Start the server.
+    2. Add a new `ChatServer` application.
+    3. Monitor logs for restart messages.
 - **Expected Result**: Logs should indicate that the server was stopped and restarted successfully.
 
 4. **Concurrency Test**
 
 - **Objective**: Verify that the server can handle multiple requests simultaneously.
 - **Steps**:
-  1. Start the server.
-  2. Simultaneously access multiple paths ("/chat", "/info") from different clients.
+    1. Start the server.
+    2. Simultaneously access multiple paths ("/chat", "/info") from different clients.
 - **Expected Result**: All clients should receive correct responses without any delay or errors.
 
 5. **Error Handling Test**
 
 - **Objective**: Verify that the server handles errors gracefully.
 - **Steps**:
-  1. Start the server.
-  2. Simulate an error scenario (e.g., add an app with invalid configuration).
-  3. Check the response and logs.
+    1. Start the server.
+    2. Simulate an error scenario (e.g., add an app with invalid configuration).
+    3. Check the response and logs.
 - **Expected Result**: Appropriate error messages are logged, and the server continues to run other contexts correctly.
 
 6. **Server Stop Test**
 
 - **Objective**: Ensure the server stops cleanly on command.
 - **Steps**:
-  1. Start the server.
-  2. Call `stop()` from the `AppServer.Companion` object.
+    1. Start the server.
+    2. Call `stop()` from the `AppServer.Companion` object.
 - **Expected Result**: Server stops without errors, and logs indicate a clean shutdown.
 
 7. **Resource Leak Test**
 
 - **Objective**: Ensure there are no resource leaks (threads, file handles, sockets) after server operations.
 - **Steps**:
-  1. Start and stop the server multiple times.
-  2. Monitor system resources.
+    1. Start and stop the server multiple times.
+    2. Monitor system resources.
 - **Expected Result**: No increase in resource usage over time, indicating no leaks.
 
 ##### Post-conditions:
@@ -1021,7 +1051,8 @@ appropriately to user interactions and system events.
 - Ensure all instances of `AppServer` are terminated.
 - Release any ports and system resources used during testing.
 
-This manual test plan will help ensure that the `AppServer` class functions as expected under various conditions and handles errors and multiple simultaneous
+This manual test plan will help ensure that the `AppServer` class functions as expected under various conditions and
+handles errors and multiple simultaneous
 requests efficiently.
 
 # dev\PrintTreeAction.kt
@@ -1030,7 +1061,8 @@ requests efficiently.
 
 ##### Objective:
 
-To verify that the `PrintTreeAction` in the IntelliJ plugin correctly prints the tree structure of a PsiFile when triggered.
+To verify that the `PrintTreeAction` in the IntelliJ plugin correctly prints the tree structure of a PsiFile when
+triggered.
 
 ##### Pre-requisites:
 
@@ -1128,7 +1160,8 @@ To verify that the `PrintTreeAction` in the IntelliJ plugin correctly prints the
 - Capture log outputs and any error messages for failed test cases.
 - Provide feedback or suggestions for improving the action based on test results.
 
-This manual test plan will help ensure that the `PrintTreeAction` functions correctly across different scenarios and setups, providing confidence in its
+This manual test plan will help ensure that the `PrintTreeAction` functions correctly across different scenarios and
+setups, providing confidence in its
 reliability and effectiveness.
 
 # generic\GenerateRelatedFileAction.kt
@@ -1137,7 +1170,8 @@ reliability and effectiveness.
 
 ##### Objective:
 
-To verify that the `CreateFileFromTemplateAction` class functions correctly across various scenarios, including file generation based on user directives and
+To verify that the `CreateFileFromTemplateAction` class functions correctly across various scenarios, including file
+generation based on user directives and
 handling of file paths.
 
 ##### Test Environment Setup:
@@ -1253,7 +1287,8 @@ handling of file paths.
 - Document all test results, including any discrepancies from expected outcomes.
 - Report bugs or enhancement requests based on the findings.
 
-This manual test plan ensures comprehensive coverage of the `CreateFileFromTemplateAction` functionality and helps maintain high quality and reliability of the
+This manual test plan ensures comprehensive coverage of the `CreateFileFromTemplateAction` functionality and helps
+maintain high quality and reliability of the
 feature.
 
 # generic\AppendTextWithChatAction.kt
@@ -1262,7 +1297,8 @@ feature.
 
 ##### Objective:
 
-To verify that the `AppendTextWithChatAction` class correctly appends text to the user's selected text using the AI model's response.
+To verify that the `AppendTextWithChatAction` class correctly appends text to the user's selected text using the AI
+model's response.
 
 ##### Pre-requisites:
 
@@ -1310,7 +1346,8 @@ To verify that the `AppendTextWithChatAction` class correctly appends text to th
 1. Mock different responses from the API, including success, failure, and edge cases like empty strings or null.
 2. Select a string of text and trigger the `AppendTextWithChatAction` for each mocked response.
 3. Observe how the application handles each response.
-   **Expected Result**: The application should handle each scenario gracefully, appending text correctly on success, and showing appropriate messages or
+   **Expected Result**: The application should handle each scenario gracefully, appending text correctly on success, and
+   showing appropriate messages or
    handling on failures.
 
 ###### TC4: Long Text Selections
@@ -1353,7 +1390,8 @@ To verify that the `AppendTextWithChatAction` class correctly appends text to th
 - Document any discrepancies from the expected results.
 - Provide feedback and suggestions based on the test outcomes.
 
-This manual test plan will help ensure that the `AppendTextWithChatAction` class functions correctly across various scenarios and handles both expected and edge
+This manual test plan will help ensure that the `AppendTextWithChatAction` class functions correctly across various
+scenarios and handles both expected and edge
 cases gracefully.
 
 # generic\CodeChatAction.kt
@@ -1362,7 +1400,8 @@ cases gracefully.
 
 ##### Objective:
 
-To manually test the `CodeChatAction` class to ensure it correctly initializes and handles a code chat session within an IDE environment.
+To manually test the `CodeChatAction` class to ensure it correctly initializes and handles a code chat session within an
+IDE environment.
 
 ##### Pre-requisites:
 
@@ -1459,7 +1498,8 @@ To manually test the `CodeChatAction` class to ensure it correctly initializes a
 - Capture logs and screenshots for failed test cases.
 - Provide recommendations for bug fixes or enhancements based on test outcomes.
 
-This manual test plan will help ensure that the `CodeChatAction` behaves as expected across various scenarios and handles edge cases gracefully.
+This manual test plan will help ensure that the `CodeChatAction` behaves as expected across various scenarios and
+handles edge cases gracefully.
 
 # generic\VoiceToTextAction.kt
 
@@ -1467,7 +1507,8 @@ This manual test plan will help ensure that the `CodeChatAction` behaves as expe
 
 ##### Objective:
 
-To ensure that the `VoiceToTextAction` class functions correctly, handling audio input, processing it, and converting it into text which is then inserted into
+To ensure that the `VoiceToTextAction` class functions correctly, handling audio input, processing it, and converting it
+into text which is then inserted into
 the editor at the correct position.
 
 ##### Test Environment:
@@ -1570,7 +1611,8 @@ the editor at the correct position.
 - Restore any settings changed during testing.
 - Remove test artifacts from the IDE environment.
 
-This manual test plan will help ensure that the `VoiceToTextAction` class functions as expected and provides a robust feature within the IDE environment.
+This manual test plan will help ensure that the `VoiceToTextAction` class functions as expected and provides a robust
+feature within the IDE environment.
 
 # generic\CreateFileFromDescriptionAction.kt
 
@@ -1578,14 +1620,16 @@ This manual test plan will help ensure that the `VoiceToTextAction` class functi
 
 ##### Objective:
 
-To verify that the `CreateFileFromDescriptionAction` class functions correctly, creating new files based on directives provided by the user, and handling file
+To verify that the `CreateFileFromDescriptionAction` class functions correctly, creating new files based on directives
+provided by the user, and handling file
 paths and naming conflicts appropriately.
 
 ##### Test Environment Setup:
 
 - Ensure the testing environment has access to a Java development setup with necessary libraries installed.
 - Clone or have access to the repository containing the `CreateFileFromDescriptionAction` class.
-- Setup an instance of the `AppSettingsState` with appropriate configurations for the chat model and temperature settings.
+- Setup an instance of the `AppSettingsState` with appropriate configurations for the chat model and temperature
+  settings.
 
 ##### Test Data:
 
@@ -1618,7 +1662,8 @@ paths and naming conflicts appropriately.
 **Steps**:
 
 1. Create a directive to generate a file that already exists in the target directory.
-2. Run the `processSelection` method and check if the file is renamed appropriately to avoid overwriting the existing file.
+2. Run the `processSelection` method and check if the file is renamed appropriately to avoid overwriting the existing
+   file.
 
 ###### Test Case 4: Error Handling
 
@@ -1643,7 +1688,8 @@ paths and naming conflicts appropriately.
 **Steps**:
 
 1. Mock the chat model response to return a predetermined output.
-2. Verify that the `generateFile` method correctly interprets the chat model's response and creates the file accordingly.
+2. Verify that the `generateFile` method correctly interprets the chat model's response and creates the file
+   accordingly.
 
 ##### Reporting:
 
@@ -1656,7 +1702,8 @@ paths and naming conflicts appropriately.
 - Remove any files or directories created during testing.
 - Reset any configurations changed during the test setup.
 
-This manual test plan will help ensure that the `CreateFileFromDescriptionAction` class meets its functional requirements and handles various scenarios
+This manual test plan will help ensure that the `CreateFileFromDescriptionAction` class meets its functional
+requirements and handles various scenarios
 gracefully.
 
 # generic\DiffChatAction.kt
@@ -1665,7 +1712,8 @@ gracefully.
 
 ##### Objective:
 
-To validate the functionality of the `DiffChatAction` class, ensuring it correctly handles user interactions for generating and applying code diffs through a
+To validate the functionality of the `DiffChatAction` class, ensuring it correctly handles user interactions for
+generating and applying code diffs through a
 chat interface.
 
 ##### Pre-requisites:
@@ -1719,7 +1767,8 @@ chat interface.
 
 1. Input an incorrectly formatted diff response.
 2. Verify that the system provides a meaningful error message or guidance.
-3. Attempt to invoke the action with no open editor or document, and verify that it fails gracefully, possibly with a user notification.
+3. Attempt to invoke the action with no open editor or document, and verify that it fails gracefully, possibly with a
+   user notification.
 
 ###### TC5: Session Management
 
@@ -1727,7 +1776,8 @@ chat interface.
 
 1. Open multiple instances of the chat interface with different code files.
 2. Ensure that each session maintains its state independently.
-3. Close and reopen the browser or tab, and verify if the session persists or restarts correctly based on the designed behavior.
+3. Close and reopen the browser or tab, and verify if the session persists or restarts correctly based on the designed
+   behavior.
 
 ###### TC6: Network Failure Simulation
 
@@ -1744,7 +1794,8 @@ chat interface.
 
 ##### Reporting:
 
-Document all findings with screenshots and logs where applicable. Report any deviations from expected outcomes, including any UI issues, functionality bugs, or
+Document all findings with screenshots and logs where applicable. Report any deviations from expected outcomes,
+including any UI issues, functionality bugs, or
 crashes.
 
 # generic\LineFilterChatAction.kt
@@ -1753,7 +1804,8 @@ crashes.
 
 ##### Objective:
 
-To validate the functionality of the `LineFilterChatAction` class, ensuring that it correctly handles user interactions, processes code, and integrates with the
+To validate the functionality of the `LineFilterChatAction` class, ensuring that it correctly handles user interactions,
+processes code, and integrates with the
 chat system for code assistance.
 
 ##### Prerequisites:
@@ -1862,7 +1914,8 @@ chat system for code assistance.
 - Close all open sessions and browser tabs related to testing.
 - Restore any settings changed during testing to their original state.
 
-This manual test plan will help ensure that the `LineFilterChatAction` behaves as expected under various conditions and usage scenarios.
+This manual test plan will help ensure that the `LineFilterChatAction` behaves as expected under various conditions and
+usage scenarios.
 
 # generic\MultiStepPatchAction.kt
 
@@ -1870,7 +1923,8 @@ This manual test plan will help ensure that the `LineFilterChatAction` behaves a
 
 ##### Objective:
 
-To verify the functionality and robustness of the `MultiStepPatchAction` class, ensuring it correctly handles user interactions, processes data, and integrates
+To verify the functionality and robustness of the `MultiStepPatchAction` class, ensuring it correctly handles user
+interactions, processes data, and integrates
 with the system environment and other components.
 
 ##### Test Environment:
@@ -1891,66 +1945,67 @@ with the system environment and other components.
 
 - **Objective**: Ensure the `MultiStepPatchAction` initializes correctly within the IDE environment.
 - **Steps**:
-  1. Start the IDE.
-  2. Open a project.
-  3. Trigger the `MultiStepPatchAction`.
+    1. Start the IDE.
+    2. Open a project.
+    3. Trigger the `MultiStepPatchAction`.
 - **Expected Result**: The action initializes without errors, and the Auto Dev Assistant UI is accessible.
 
 2. **UI Accessibility Test**
 
 - **Objective**: Verify that the Auto Dev Assistant UI opens in the default browser and displays correctly.
 - **Steps**:
-  1. Trigger the `MultiStepPatchAction`.
-  2. Observe the browser opening automatically.
+    1. Trigger the `MultiStepPatchAction`.
+    2. Observe the browser opening automatically.
 - **Expected Result**: The Auto Dev Assistant UI is displayed correctly in the browser with all elements visible.
 
 3. **Session Handling Test**
 
 - **Objective**: Confirm that sessions are handled correctly, allowing multiple instances without conflict.
 - **Steps**:
-  1. Trigger the `MultiStepPatchAction` multiple times with different projects.
-  2. Navigate between different sessions in the browser.
+    1. Trigger the `MultiStepPatchAction` multiple times with different projects.
+    2. Navigate between different sessions in the browser.
 - **Expected Result**: Each session should maintain its state independently.
 
 4. **File Selection and Data Storage Interaction**
 
 - **Objective**: Ensure that the action correctly handles file selections and interacts with the data storage.
 - **Steps**:
-  1. Select different folders and files in the IDE.
-  2. Trigger the `MultiStepPatchAction`.
-  3. Check if the selected files are correctly recognized and listed in the UI.
+    1. Select different folders and files in the IDE.
+    2. Trigger the `MultiStepPatchAction`.
+    3. Check if the selected files are correctly recognized and listed in the UI.
 - **Expected Result**: The selected files should be correctly passed to the Auto Dev Assistant and displayed in the UI.
 
 5. **Task Generation and Display**
 
 - **Objective**: Test the generation and display of tasks based on user input.
 - **Steps**:
-  1. Provide a specific development directive in the UI.
-  2. Observe the tasks generated by the system.
+    1. Provide a specific development directive in the UI.
+    2. Observe the tasks generated by the system.
 - **Expected Result**: Tasks relevant to the user's directive are generated and displayed correctly.
 
 6. **Error Handling Test**
 
 - **Objective**: Ensure that the system gracefully handles errors.
 - **Steps**:
-  1. Trigger scenarios likely to produce errors (e.g., invalid file paths, unsupported operations).
-  2. Observe the system's response.
-- **Expected Result**: Errors are handled gracefully, with informative messages displayed to the user without crashing the system.
+    1. Trigger scenarios likely to produce errors (e.g., invalid file paths, unsupported operations).
+    2. Observe the system's response.
+- **Expected Result**: Errors are handled gracefully, with informative messages displayed to the user without crashing
+  the system.
 
 7. **Concurrency Test**
 
 - **Objective**: Verify that the system handles concurrent operations without data corruption or crashes.
 - **Steps**:
-  1. Trigger multiple instances of `MultiStepPatchAction` simultaneously.
-  2. Perform operations in multiple UI sessions at the same time.
+    1. Trigger multiple instances of `MultiStepPatchAction` simultaneously.
+    2. Perform operations in multiple UI sessions at the same time.
 - **Expected Result**: All operations are processed correctly without interference, data corruption, or system crashes.
 
 8. **Cleanup and Session Termination**
 
 - **Objective**: Confirm that sessions are cleaned up properly after termination.
 - **Steps**:
-  1. Close the browser or terminate sessions from the UI.
-  2. Check system resources and logs for any remnants.
+    1. Close the browser or terminate sessions from the UI.
+    2. Check system resources and logs for any remnants.
 - **Expected Result**: All resources are released, and no session data remains after termination.
 
 ##### Post-conditions:
@@ -1963,7 +2018,8 @@ with the system environment and other components.
 - All findings from the test cases should be documented, including any discrepancies from the expected results.
 - Severity and priority should be assigned to each finding for further action and resolution.
 
-This manual test plan provides a structured approach to validate the functionality and reliability of the `MultiStepPatchAction` within a development
+This manual test plan provides a structured approach to validate the functionality and reliability of the
+`MultiStepPatchAction` within a development
 environment. Adjustments may be necessary based on specific configurations or additional requirements.
 
 # generic\RedoLast.kt
@@ -2024,7 +2080,8 @@ To verify that the RedoLast action correctly redoes the last AI Coder action per
 - Ensure no actions are performed or undo any performed actions.
 - Trigger the RedoLast action.
 
-3. **Expected Result**: No changes should occur in the editor. The action should handle the absence of redoable actions gracefully.
+3. **Expected Result**: No changes should occur in the editor. The action should handle the absence of redoable actions
+   gracefully.
 
 ###### TC4: Redo in Different File Types
 
@@ -2044,7 +2101,8 @@ To verify that the RedoLast action correctly redoes the last AI Coder action per
 - Close and reopen IntelliJ.
 - Open the same file and trigger the RedoLast action.
 
-3. **Expected Result**: The last undone action should be redone correctly, assuming session persistence for undo/redo stacks.
+3. **Expected Result**: The last undone action should be redone correctly, assuming session persistence for undo/redo
+   stacks.
 
 ##### Reporting:
 
@@ -2056,7 +2114,8 @@ To verify that the RedoLast action correctly redoes the last AI Coder action per
 
 - Revert any changes made to the code files during testing to maintain a clean state.
 
-This test plan ensures comprehensive coverage of the RedoLast functionality within the AI Coder plugin, addressing different scenarios and edge cases.
+This test plan ensures comprehensive coverage of the RedoLast functionality within the AI Coder plugin, addressing
+different scenarios and edge cases.
 
 # generic\MultiDiffChatAction.kt
 
@@ -2064,7 +2123,8 @@ This test plan ensures comprehensive coverage of the RedoLast functionality with
 
 ##### Objective:
 
-To ensure that the `MultiDiffChatAction` class functions correctly across various scenarios, handling file differences and chat interactions as expected within
+To ensure that the `MultiDiffChatAction` class functions correctly across various scenarios, handling file differences
+and chat interactions as expected within
 an IDE environment.
 
 ##### Test Environment:
@@ -2177,7 +2237,8 @@ an IDE environment.
 
 ##### Objective
 
-To verify that the `GenerateDocumentationAction` class functions correctly, allowing users to compile documentation from selected files using AI-generated
+To verify that the `GenerateDocumentationAction` class functions correctly, allowing users to compile documentation from
+selected files using AI-generated
 content.
 
 ##### Test Environment
@@ -2213,7 +2274,8 @@ content.
 
 ###### TC2: Validation of Output File Naming
 
-**Objective**: To verify that the system handles existing filenames correctly by creating a new file with an incremented index.
+**Objective**: To verify that the system handles existing filenames correctly by creating a new file with an incremented
+index.
 
 1. **Steps**:
 
@@ -2297,7 +2359,8 @@ content.
 
 ##### Objective
 
-To verify that the `ReplaceWithSuggestionsAction` class functions correctly, providing appropriate suggestions for text replacement based on the selected text
+To verify that the `ReplaceWithSuggestionsAction` class functions correctly, providing appropriate suggestions for text
+replacement based on the selected text
 within an IDE environment.
 
 ##### Pre-requisites
@@ -2339,7 +2402,8 @@ within an IDE environment.
 2. Trigger the `ReplaceWithSuggestionsAction`.
 3. Observe the behavior.
 
-**Expected Result**: No action should be taken, or a user-friendly message should be displayed indicating no text is selected.
+**Expected Result**: No action should be taken, or a user-friendly message should be displayed indicating no text is
+selected.
 
 ###### TC3: Large Text Selection
 
@@ -2350,7 +2414,8 @@ within an IDE environment.
 2. Trigger the `ReplaceWithSuggestionsAction`.
 3. Observe the suggestions provided.
 
-**Expected Result**: The action should handle large texts gracefully, possibly truncating or summarizing the context appropriately.
+**Expected Result**: The action should handle large texts gracefully, possibly truncating or summarizing the context
+appropriately.
 
 ###### TC4: Edge Case with Special Characters
 
@@ -2396,7 +2461,8 @@ within an IDE environment.
 - Restore any settings or configurations changed during testing to their original state.
 - Close and reopen the IDE to clear any temporary states or caches if necessary.
 
-This manual test plan will help ensure that the `ReplaceWithSuggestionsAction` behaves as expected across various scenarios and handles edge cases and errors
+This manual test plan will help ensure that the `ReplaceWithSuggestionsAction` behaves as expected across various
+scenarios and handles edge cases and errors
 gracefully.
 
 # generic\PlanAheadAction.kt
@@ -2405,7 +2471,8 @@ gracefully.
 
 ##### Objective:
 
-To verify the functionality and robustness of the PlanAheadAction and TaskRunnerApp components, ensuring they handle task creation, session management, and user
+To verify the functionality and robustness of the PlanAheadAction and TaskRunnerApp components, ensuring they handle
+task creation, session management, and user
 interactions correctly.
 
 ##### Test Environment:
@@ -2471,7 +2538,8 @@ interactions correctly.
 
 1. Attempt to execute tasks that require elevated permissions without the necessary rights.
 2. Verify that the application prevents unauthorized actions and logs the attempts.
-3. Test the application with users having different roles and verify that permissions are enforced according to the role.
+3. Test the application with users having different roles and verify that permissions are enforced according to the
+   role.
 
 ###### TC7: Performance and Scalability
 
@@ -2483,14 +2551,17 @@ interactions correctly.
 
 ##### Test Reporting:
 
-- Document the results of each test case, including the steps taken, expected outcomes, actual outcomes, and any discrepancies.
+- Document the results of each test case, including the steps taken, expected outcomes, actual outcomes, and any
+  discrepancies.
 - Include screenshots or logs where applicable to provide evidence of the test results.
 - Summarize the findings and provide recommendations for improvements or bug fixes.
 
 ##### Conclusion:
 
-This manual test plan aims to cover critical functionalities of the PlanAheadAction and TaskRunnerApp to ensure they meet the required standards for
-performance, usability, and reliability. Regular testing and updates based on the findings will help maintain the quality of the application.
+This manual test plan aims to cover critical functionalities of the PlanAheadAction and TaskRunnerApp to ensure they
+meet the required standards for
+performance, usability, and reliability. Regular testing and updates based on the findings will help maintain the
+quality of the application.
 
 # generic\WebDevelopmentAssistantAction.kt
 
@@ -2498,7 +2569,8 @@ performance, usability, and reliability. Regular testing and updates based on th
 
 ##### Objective:
 
-To ensure that the `WebDevelopmentAssistantAction` class and its associated components function correctly across various scenarios, handling user interactions,
+To ensure that the `WebDevelopmentAssistantAction` class and its associated components function correctly across various
+scenarios, handling user interactions,
 file operations, and server communications effectively.
 
 ##### Test Environment Setup:
@@ -2638,7 +2710,8 @@ file operations, and server communications effectively.
 - Remove any test-specific configurations and files.
 - Restart the server to clear all sessions and data.
 
-This manual test plan will help ensure that the `WebDevelopmentAssistantAction` behaves as expected under various conditions and handles user interactions
+This manual test plan will help ensure that the `WebDevelopmentAssistantAction` behaves as expected under various
+conditions and handles user interactions
 correctly.
 
 # markdown\MarkdownImplementActionGroup.kt
@@ -2647,7 +2720,8 @@ correctly.
 
 ##### Objective
 
-To verify that the `MarkdownImplementActionGroup` and its child actions (`MarkdownImplementAction`) function correctly within an IDE environment, enabling users
+To verify that the `MarkdownImplementActionGroup` and its child actions (`MarkdownImplementAction`) function correctly
+within an IDE environment, enabling users
 to convert selected text into various programming languages within a Markdown context.
 
 ##### Test Environment
@@ -2665,7 +2739,8 @@ to convert selected text into various programming languages within a Markdown co
 
 ###### TC1: Action Visibility and Enablement
 
-**Objective**: Ensure that the action group is only visible and enabled when a Markdown file is active and text is selected.
+**Objective**: Ensure that the action group is only visible and enabled when a Markdown file is active and text is
+selected.
 
 1. Open a non-Markdown file and verify that the action group is neither visible nor enabled.
 2. Open a Markdown file but do not select any text. Verify that the action group is visible but not enabled.
@@ -2676,7 +2751,8 @@ to convert selected text into various programming languages within a Markdown co
 **Objective**: Verify that all supported languages are listed under the action group when invoked.
 
 1. Open a Markdown file and select some text.
-2. Activate the action group and verify that all expected programming languages are listed (e.g., SQL, Java, Python, etc.).
+2. Activate the action group and verify that all expected programming languages are listed (e.g., SQL, Java, Python,
+   etc.).
 
 ###### TC3: Code Conversion Functionality
 
@@ -2686,7 +2762,8 @@ to convert selected text into various programming languages within a Markdown co
 
 - Select a block of text in a Markdown file.
 - Trigger the `MarkdownImplementAction` for the language.
-- Verify that the selected text is converted appropriately into the target language and wrapped in the correct Markdown code block syntax.
+- Verify that the selected text is converted appropriately into the target language and wrapped in the correct Markdown
+  code block syntax.
 - Check for proper escaping and indentation of the generated code.
 
 ###### TC4: Error Handling
@@ -2723,7 +2800,8 @@ to convert selected text into various programming languages within a Markdown co
 - Performance metrics should be recorded and analyzed.
 - Suggestions for improvement or additional test cases should be submitted for review.
 
-This manual test plan will help ensure that the `MarkdownImplementActionGroup` behaves as expected, providing a reliable feature for users to convert text into
+This manual test plan will help ensure that the `MarkdownImplementActionGroup` behaves as expected, providing a reliable
+feature for users to convert text into
 various programming languages directly within Markdown files.
 
 # markdown\MarkdownListAction.kt
@@ -2732,7 +2810,8 @@ various programming languages directly within Markdown files.
 
 ##### Objective:
 
-To verify that the `MarkdownListAction` class functions correctly within an IDE environment, specifically focusing on generating and appending new list items to
+To verify that the `MarkdownListAction` class functions correctly within an IDE environment, specifically focusing on
+generating and appending new list items to
 existing markdown lists in a markdown file.
 
 ##### Test Environment:
@@ -2788,7 +2867,8 @@ existing markdown lists in a markdown file.
 
 1. Open a markdown file and create a list with empty items or simulate a scenario where the list API might return null.
 2. Trigger the action.
-3. **Expected Result**: The action should handle empty/null gracefully, either by ignoring them or by providing a default item text.
+3. **Expected Result**: The action should handle empty/null gracefully, either by ignoring them or by providing a
+   default item text.
 
 ###### TC6: Error Handling
 
@@ -2816,13 +2896,16 @@ existing markdown lists in a markdown file.
 
 ##### Post-Conditions:
 
-- After testing, ensure no unwanted changes are saved in the markdown files unless specifically testing save functionality.
+- After testing, ensure no unwanted changes are saved in the markdown files unless specifically testing save
+  functionality.
 
 ##### Reporting:
 
-- All issues encountered should be documented with screenshots and detailed steps to reproduce. These should be reported to the development team for fixes.
+- All issues encountered should be documented with screenshots and detailed steps to reproduce. These should be reported
+  to the development team for fixes.
 
-This manual test plan will help ensure that the `MarkdownListAction` behaves as expected across different scenarios and markdown list formats.
+This manual test plan will help ensure that the `MarkdownListAction` behaves as expected across different scenarios and
+markdown list formats.
 
 # git\PrintGitCommitPatchAction.kt
 
@@ -2830,7 +2913,8 @@ This manual test plan will help ensure that the `MarkdownListAction` behaves as 
 
 ##### Objective:
 
-To verify that the "Print Git Commit Patch" action in the IntelliJ plugin correctly displays the patch information for a selected Git commit.
+To verify that the "Print Git Commit Patch" action in the IntelliJ plugin correctly displays the patch information for a
+selected Git commit.
 
 ##### Pre-requisites:
 
@@ -2877,7 +2961,8 @@ To verify that the "Print Git Commit Patch" action in the IntelliJ plugin correc
 **Steps**:
 
 1. Open a project in IntelliJ that is under Git version control.
-2. Without selecting any commit, invoke the "Print Git Commit Patch" action (via any accessible means, such as a shortcut or command palette).
+2. Without selecting any commit, invoke the "Print Git Commit Patch" action (via any accessible means, such as a
+   shortcut or command palette).
 
 **Expected Result**:
 
@@ -2912,7 +2997,8 @@ To verify that the "Print Git Commit Patch" action in the IntelliJ plugin correc
 
 **Expected Result**:
 
-- The dialog should display patch information for all changed files in the selected commit, separated by clear demarcations.
+- The dialog should display patch information for all changed files in the selected commit, separated by clear
+  demarcations.
 
 ---
 
@@ -2938,6 +3024,7 @@ To verify that the "Print Git Commit Patch" action in the IntelliJ plugin correc
 
 ##### Reporting:
 
-- Document any discrepancies from the expected results and report them as issues in the issue tracker for the plugin development team to address. Include
+- Document any discrepancies from the expected results and report them as issues in the issue tracker for the plugin
+  development team to address. Include
   screenshots and detailed steps to reproduce the issue.
 

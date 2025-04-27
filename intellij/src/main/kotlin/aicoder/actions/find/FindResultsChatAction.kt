@@ -17,13 +17,13 @@ import com.simiacryptus.aicoder.AppServer
 import com.simiacryptus.aicoder.config.AppSettingsState
 import com.simiacryptus.aicoder.util.BrowseUtil.browse
 import com.simiacryptus.aicoder.util.UITools
-import com.simiacryptus.cognotik.Retryable
+import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.core.actors.SimpleActor
-import com.simiacryptus.cognotik.core.platform.Session
-import com.simiacryptus.cognotik.core.platform.model.User
-import com.simiacryptus.cognotik.core.util.getModuleRootForFile
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -151,7 +151,6 @@ class FindResultsChatAction(
             }.joinToString("\n").replace("(?:\\.\\.\\.\n){2,}".toRegex(), "...\n")
         }
 
-
         private fun getCodeContext(): String {
             return usages.entries.joinToString("\n\n") { (file, usages) ->
                 file ?: return@joinToString ""
@@ -193,7 +192,8 @@ class FindResultsChatAction(
 
             Retryable(ui = ui, task = task) { content ->
                 val task = ui.newTask(false)
-                task.add("<div>" + renderMarkdown(
+                task.add(
+                    "<div>" + renderMarkdown(
                         SimpleActor(
                             prompt = """
                              You are a helpful AI that helps people understand code.

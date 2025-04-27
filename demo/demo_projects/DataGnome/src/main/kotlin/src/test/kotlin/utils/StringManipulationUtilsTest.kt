@@ -7,12 +7,12 @@ import org.junit.jupiter.api.assertThrows
 class StringManipulationUtilsTest {
     @Test
     fun testReverseString() {
-        // Test normal strings
+
         assertEquals("dcba", StringManipulationUtils.reverseString("abcd"))
         assertEquals("olleh", StringManipulationUtils.reverseString("hello"))
-        // Test empty string
+
         assertEquals("", StringManipulationUtils.reverseString(""))
-        // Test strings with special characters
+
         assertEquals("!@#$%^&*()", StringManipulationUtils.reverseString(")(*&^%$#@!"))
         assertEquals("12345!@# ", StringManipulationUtils.reverseString(" #@!54321"))
     }

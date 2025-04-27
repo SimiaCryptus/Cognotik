@@ -1,15 +1,18 @@
 package com.simiacryptus.util
 
+import com.simiacryptus.aicoder.util.EncryptionUtil
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class EncryptionUtilTest {
 
     @Test
     fun testEncryptAndDecrypt() {
         val key = "mysecretkey12345"
         var originalText = "Hello, World!"
-        for( i in 0..10) {
+        for (i in 0..10) {
             val encryptedText = EncryptionUtil.encrypt(originalText, key)
             assertNotNull(encryptedText, "Encryption should not return null")
             val decryptedText = EncryptionUtil.decrypt(encryptedText, key)

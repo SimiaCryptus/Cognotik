@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.core.platform.Session
+import com.simiacryptus.cognotik.DaemonClient.createRandomSessionDir
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory.ChildWebApp
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
@@ -23,7 +23,8 @@ class SystemTrayManager(
     private val log = LoggerFactory.getLogger(SystemTrayManager::class.java)
     private var trayIcon: TrayIcon? = null
     private var lastErrorTime: Long = 0
-    private val ERROR_COOLDOWN = 5000 // 5 second cooldown between error messages
+    private val ERROR_COOLDOWN = 5000
+
     private var lastErrorMessage: String? = null
     private fun loadSvgImage(): Image? {
         return try {
@@ -37,6 +38,7 @@ class SystemTrayManager(
                     override fun createImage(w: Int, h: Int): BufferedImage {
                         return BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
                     }
+
                     override fun writeImage(img: BufferedImage, output: TranscoderOutput?) {
                         this.image = img
                     }
@@ -52,7 +54,6 @@ class SystemTrayManager(
         }
     }
 
-
     fun initialize() {
         if (!SystemTray.isSupported()) {
             log.warn("System tray is not supported")
@@ -64,7 +65,8 @@ class SystemTrayManager(
                 val tray = SystemTray.getSystemTray()
                 val image = loadSvgImage()
                 val popup = PopupMenu()
-                // Add Applications submenu
+
+                /*// Add Applications submenu
                 if (apps.isNotEmpty()) {
                     popup.addSeparator()
                     apps.forEach { app ->
@@ -75,8 +77,8 @@ class SystemTrayManager(
                         popup.add(item)
                     }
                 }
-                
-                popup.addSeparator()
+                popup.addSeparator()*/
+
                 val exitItem = MenuItem("Exit")
                 exitItem.addActionListener {
                     confirm("Exit?") {
@@ -118,10 +120,11 @@ class SystemTrayManager(
         }
     }
 
-
-    private fun openInBrowser(path: String = "") {
+    private fun openInBrowser() {
         try {
-            val url = "http://${if (host == "0.0.0.0") "localhost" else host}:$port$path"
+            val sessionDir = createRandomSessionDir()
+            val domainName = "http://${if (host == "0.0.0.0") "localhost" else host}:$port"
+            val url = "$domainName/#${sessionDir.urlEncode()}"
             Desktop.getDesktop().browse(URI(url))
             log.info("Opened browser to $url")
         } catch (e: Exception) {
@@ -129,6 +132,7 @@ class SystemTrayManager(
             showError("Failed to open browser")
         }
     }
+
     private fun showError(message: String) {
         val now = System.currentTimeMillis()
         if (now - lastErrorTime > ERROR_COOLDOWN && message != lastErrorMessage) {

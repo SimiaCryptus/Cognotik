@@ -86,11 +86,11 @@ class CreateFileFromDescriptionActionTest : DemoTestBase(
             tts("The Create File from Description action lets us generate complete code files using natural language. It's particularly useful for creating data models, interfaces, and other standard code structures.")?.play()
             waitFor(Duration.ofSeconds(15)) {
                 try {
-                    // Find and hover over Generate menu
+
                     findAll(CommonContainerFixture::class.java, byXpath("//div[@text='⚡ Generate']")).firstOrNull()
                         ?.moveMouse()
                     sleep(1000)
-                    // Click Create File from Description option
+
                     findAll(
                         CommonContainerFixture::class.java,
                         byXpath("//div[@class='ActionMenuItem' and contains(@text, 'Create File from Description')]")
@@ -166,7 +166,7 @@ class CreateFileFromDescriptionActionTest : DemoTestBase(
                                     .joinToString("\n")
                             }
                         }
-            
+
             """)
                 }
                 fileCreated

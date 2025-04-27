@@ -1,4 +1,5 @@
 package com.simiacryptus.jopenai.models
+
 import org.slf4j.LoggerFactory
 
 @Suppress("unused")
@@ -53,7 +54,6 @@ enum class ImageModels(
 
     open val quality: String = "standard"
     abstract fun pricing(width: Int, height: Int): Double
-
 
     companion object {
         private val log = LoggerFactory.getLogger(ImageModels::class.java)

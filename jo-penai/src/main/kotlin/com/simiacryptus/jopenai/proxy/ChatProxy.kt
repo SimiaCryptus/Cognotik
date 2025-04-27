@@ -18,16 +18,6 @@ open class ChatProxy<T : Any>(
     validation: Boolean = true
 ) : GPTProxyBase<T>(clazz, temperature, validation, deserializerRetries) {
 
-    constructor(params: LinkedHashMap<String, Any?>) : this(
-        clazz = params["clazz"] as Class<T>,
-        api = params["api"] as ChatClient? ?: ChatClient(),
-        model = (params["model"] as ChatModel?)!!,
-        temperature = params["temperature"] as Double? ?: 0.7,
-        moderated = params["moderated"] as Boolean? ?: true,
-        deserializerRetries = params["deserializerRetries"] as Int? ?: 5,
-        validation = params["validation"] as Boolean? ?: true,
-    )
-
     override fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String {
         log.info("Starting completion with prompt: {}", prompt.toString())
         var request = ChatRequest()
@@ -55,15 +45,15 @@ open class ChatProxy<T : Any>(
                           Outputs are based on inputs, with any missing information filled randomly
                           You will respond to the following method
                           """.trimIndent() + prompt.apiYaml
-                        ).trim().toContentList()
+                                ).trim().toContentList()
                     )
                 ) + exampleMessages +
-                listOf(
-                    ChatMessage(
-                        ApiModel.Role.user,
-                        argsToString(prompt.argList).toContentList()
-                    )
-                )
+                        listOf(
+                            ChatMessage(
+                                ApiModel.Role.user,
+                                argsToString(prompt.argList).toContentList()
+                            )
+                        )
             )
         )
         request = request.copy(model = model.modelName)

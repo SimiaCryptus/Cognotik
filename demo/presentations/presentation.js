@@ -4,7 +4,6 @@ let utterances = [];
 let currentUtteranceIndex = 0;
 const autoplayButton = document.getElementById('autoplayButton');
 const voiceSelect = document.getElementById('voiceSelect');
-const statusMessage = document.getElementById('statusMessage');
 const debugLog = [];
 
 function handleVideoElements(callback) {
@@ -35,10 +34,10 @@ function handleVideoElements(callback) {
 
 function log(message) {
     console.log(message);
-    //debugLog.push(`${new Date().toISOString()}: ${message}`);
-    //if (debugLog.length > 100) debugLog.shift();
-    //statusMessage.textContent = message;
-    //setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+
+
+
+
 }
 
 function displayDebugLog() {
@@ -61,7 +60,6 @@ function createUtterances(text) {
     });
 }
 
-
 function speakNotes() {
     log('Entering speakNotes function');
     let notes = Reveal.getCurrentSlide().querySelector('aside.notes');
@@ -83,7 +81,8 @@ function speakNotes() {
             } catch (error) {
                 log(`Error playing audio: ${error.message}`);
             }
-            return; // Exit the function to prevent speech synthesis
+            return;
+
         }
         let text = notes.textContent.replace(/\s+/g, ' ').trim();
         log(`Notes text: ${text.substring(0, 50)}...`);
@@ -94,7 +93,8 @@ function speakNotes() {
             utterance.onend = onUtteranceEnd;
         });
         try {
-            synth.cancel();  // Cancel any ongoing speech
+            synth.cancel();
+
             synth.speak(utterances[currentUtteranceIndex]);
             log('Started speaking first utterance');
         } catch (error) {
@@ -111,7 +111,6 @@ function speakNotes() {
     handleVideoElements();
 }
 
-// Check if speech synthesis is supported and initialize voices
 function initSpeech() {
     if ('speechSynthesis' in window) {
         log('Speech synthesis is supported');
@@ -128,10 +127,8 @@ function initSpeech() {
     }
 }
 
-// Call initSpeech when the page loads
 window.addEventListener('load', initSpeech);
 
-// List available voices
 function listVoices() {
     let voices = synth.getVoices();
     log(`Available voices: ${voices.length}`);
@@ -148,7 +145,6 @@ function listVoices() {
     }
 }
 
-// Call listVoices when voices are loaded
 if (synth.onvoiceschanged !== undefined) {
     synth.onvoiceschanged = listVoices;
 }

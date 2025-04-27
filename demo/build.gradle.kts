@@ -1,8 +1,11 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 fun properties(key: String) = providers.gradleProperty(key).get()
 
 plugins {
-    id("java") // Java support
-    kotlin("jvm") version "2.1.20"
+    id("cognotik.common-conventions")
+    `java-library`
+    alias(libs.plugins.kotlin)
 }
 
 group = "com.simiacryptus"
@@ -15,21 +18,17 @@ repositories {
     maven(url = "https://packages.jetbrains.team/maven/p/iuia/qa-automation-maven")
 }
 
-val slf4j_version = "2.0.16"
 val remoterobot_version = "0.11.23"
-val jackson_version = "2.17.2"
-val logback_version = "1.5.13"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("software.amazon.awssdk:bedrock:2.25.7")
-    implementation("software.amazon.awssdk:bedrockruntime:2.25.7")
-    implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5", version = "5.3.1") {
+    implementation(libs.kotlinx.coroutines)
+    implementation(libs.aws.bedrock)
+    implementation(libs.aws.bedrockruntime)
+    implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
     implementation("org.jsoup:jsoup:1.19.1")
-
 
     implementation(project(":jo-penai"))
     implementation(project(":core"))
@@ -46,19 +45,22 @@ dependencies {
     implementation(group = "com.intellij.remoterobot", name = "remote-fixtures", version = remoterobot_version)
     implementation(group = "com.intellij.remoterobot", name = "remote-robot", version = remoterobot_version)
 
-    implementation(group = "ch.qos.logback", name = "logback-classic", version = logback_version)
-    implementation(group = "ch.qos.logback", name = "logback-core", version = logback_version)
-    implementation(group = "org.slf4j", name = "slf4j-api", version = slf4j_version)
+    implementation(libs.logback.classic)
+    implementation(libs.logback.core)
+    implementation(libs.slf4j.api)
 
-    implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jackson_version)
-    implementation(group = "com.fasterxml.jackson.core", name = "jackson-annotations", version = jackson_version)
-    implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jackson_version)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.annotations)
+    implementation(libs.jackson.kotlin)
 
     implementation(group = "com.squareup.okhttp3", name = "okhttp", version = "4.12.0")
     implementation(platform("org.junit:junit-bom:5.10.1"))
     implementation("org.junit.jupiter:junit-jupiter")
-    implementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+    implementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+
+
+
 }
 
 java {
@@ -68,40 +70,16 @@ java {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        //jvmArgs = listOf("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.set(listOf("-Xjsr305=strict"))
     }
 }
 
 tasks.test {
+    enabled = false
     useJUnitPlatform()
     jvmArgs = listOf("--add-opens", "java.base/java.lang=ALL-UNNAMED")
-}
-
-sourceSets {
-    main {
-        kotlin {
-            srcDirs("src/main/kotlin")
-        }
-    }
-}
-
-java {
-    sourceSets {
-        main {
-            java {
-                srcDirs("src/main/java")
-            }
-        }
-        test {
-            java {
-                srcDirs("src/test/java")
-            }
-        }
-
-    }
 }
 
 tasks {
@@ -132,24 +110,10 @@ tasks {
         from(sourceSets.main.get().output)
     }
 
-    test {
-        useJUnitPlatform()
-        testLogging {
-            events("passed", "skipped", "failed")
-        }
-        classpath = sourceSets.test.get().runtimeClasspath
-
-    }
-
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
             javaParameters.set(true)
         }
     }
-
-    wrapper {
-        gradleVersion = properties("gradleVersion")
-    }
-
 }

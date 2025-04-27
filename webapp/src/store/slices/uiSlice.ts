@@ -1,6 +1,6 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {ThemeName} from '../../themes/themes';
-// Helper function to safely interact with localStorage
+
 const safeStorage = {
     setItem(key: string, value: string) {
         try {
@@ -11,7 +11,7 @@ const safeStorage = {
                 error: error instanceof Error ? error.message : String(error),
                 key
             });
-            // Try to clear old items if storage is full
+
             if (error instanceof Error && error.name === 'QuotaExceededError') {
                 this.clearOldItems();
                 try {
@@ -24,18 +24,9 @@ const safeStorage = {
             return false;
         }
     },
-    getUsedSpace() {
-        let total = 0;
-        for (const key in localStorage) {
-            if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
-                total += localStorage[key].length + key.length;
-            }
-        }
-        return (total * 2) / 1024 / 1024; // Approximate MB used
-    },
     clearOldItems() {
         const themeKey = 'theme';
-        // Keep theme but clear other items
+
         const currentTheme = localStorage.getItem(themeKey);
         localStorage.clear();
         if (currentTheme) {
@@ -60,19 +51,19 @@ const initialState: UiState = {
     modalType: null,
     modalContent: '',
     verboseMode: localStorage.getItem('verboseMode') === 'true',
-    activeTab: 'chat', // Set default tab
+    activeTab: 'chat',
+
     lastUpdate: Date.now()
 };
 
-// Only log meaningful state changes
 const logStateChange = (action: string, payload: any = null, prevState: any = null) => {
-    // Only log critical state changes
+
     const criticalChanges = ['theme', 'verboseMode'];
     if (!criticalChanges.includes(action.toLowerCase())) {
         return;
     }
     if (prevState !== null && JSON.stringify(payload) !== JSON.stringify(prevState)) {
-        console.debug(`[UI Slice] ${action}:`, 
+        console.debug(`[UI Slice] ${action}:`,
             `${prevState} → ${payload}`
         );
     }
@@ -82,19 +73,10 @@ export const uiSlice = createSlice({
     name: 'ui',
     initialState,
     reducers: {
-        setActiveTab: (state, action: PayloadAction<string>) => {
-            state.activeTab = action.payload;
-        },
         setTheme: (state, action: PayloadAction<ThemeName>) => {
             logStateChange('Theme', action.payload, state.theme);
             state.theme = action.payload;
             safeStorage.setItem('theme', action.payload);
-        },
-        setDarkMode: (state, action: PayloadAction<boolean>) => {
-            const newTheme = action.payload ? 'night' : 'main';
-            logStateChange('Dark mode theme', newTheme, state.theme);
-            state.theme = newTheme;
-            safeStorage.setItem('theme', newTheme);
         },
         showModal: (state, action: PayloadAction<string>) => {
             state.modalOpen = true;
@@ -112,7 +94,7 @@ export const uiSlice = createSlice({
             const newVerboseState = !state.verboseMode;
             logStateChange('Verbose mode', newVerboseState, state.verboseMode);
             safeStorage.setItem('verboseMode', newVerboseState.toString());
-            // Add class to body to allow global CSS targeting
+
             if (typeof document !== 'undefined') {
                 document.body.classList.toggle('verbose-mode', newVerboseState);
             }
@@ -121,6 +103,6 @@ export const uiSlice = createSlice({
     },
 });
 
-export const {setTheme, showModal, hideModal, toggleVerbose, setActiveTab, setModalContent} = uiSlice.actions;
+export const {setTheme, showModal, hideModal, toggleVerbose, setModalContent} = uiSlice.actions;
 
 export default uiSlice.reducer;

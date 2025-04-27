@@ -11,6 +11,6 @@ fun validateCredentials(email: String, password: String): Boolean {
             +if (!DataValidationUtils.isStrongPassword(password)) {
                 return false
             }
-            // Continue with authentication
+
             return true
         }

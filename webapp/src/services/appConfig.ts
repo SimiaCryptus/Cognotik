@@ -1,60 +1,75 @@
-import { store } from '../store';
+import {store} from '../store';
 
-import { setAppInfo } from '../store/slices/configSlice';
-import { ThemeName } from '../types';
+import {setAppInfo} from '../store/slices/configSlice';
+import {ThemeName} from '../types';
 
 const LOG_PREFIX = '[AppConfig]';
-// Add archive detection and export
-export const isArchive = document.documentElement.hasAttribute('data-archive');
 
-// Compute base API URL so that it works for subpaths (non-root deploys)
-function getBaseApiUrl() {
-  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
-  // Remove trailing slash from pathname if present
-  let basePath = window.location.pathname.replace(/\/$/, '');
-  // If basePath is just '', set to '/'
-  if (!basePath) basePath = '/';
-  return window.location.origin + basePath + (basePath.endsWith('/') ? '' : '/');
-}
-
-const BASE_API_URL = getBaseApiUrl();
+const BASE_API_URL = (() => {
+    const baseUrl = process.env.REACT_APP_API_URL || (window.location.origin + window.location.pathname);
+    return baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+})();
 
 let loadConfigPromise: Promise<any> | null = null;
+
+export const isArchive = window.location.pathname.includes('/archive/');
+
 const STORAGE_KEYS = {
-  THEME: 'theme',
+    THEME: 'theme',
 } as const;
-// Type guard for theme validation
+
 const isValidTheme = (theme: unknown): theme is ThemeName => {
-  const validThemes = ['default', 'main', 'night', 'forest', 'pony', 'alien', 'sunset', 'ocean', 'cyberpunk'] as ThemeName[];
-  return typeof theme === 'string' && validThemes.includes(theme as ThemeName);
+    const validThemes = ['default', 'main', 'night', 'forest', 'pony', 'alien', 'sunset', 'ocean', 'cyberpunk'] as ThemeName[];
+    return typeof theme === 'string' && validThemes.includes(theme as ThemeName);
 };
-// Add theme storage functionality
+
 export const themeStorage = {
-  getTheme: (): ThemeName | null => {
-    const theme = localStorage.getItem(STORAGE_KEYS.THEME);
-    return isValidTheme(theme) ? theme : null;
-  },
-  setTheme: (theme: ThemeName): void => {
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  },
+    getTheme: (): ThemeName | null => {
+        const theme = localStorage.getItem(STORAGE_KEYS.THEME);
+        return isValidTheme(theme) ? theme : null;
+    },
+    setTheme: (theme: ThemeName): void => {
+        localStorage.setItem(STORAGE_KEYS.THEME, theme);
+    },
 };
-// Add fetchAppConfig function
-export const fetchAppConfig = async (sessionId: string, endpoint = 'appInfo') : Promise<any> => {
-  if (loadConfigPromise) {
-    return loadConfigPromise;
-  }
-  console.info(`${LOG_PREFIX} Fetching app config from ${endpoint} for session: ${sessionId}`);
-  loadConfigPromise = fetch(`${BASE_API_URL}${endpoint}?session=${sessionId}`)
-    .then(response => response.json())
-    .then(config => {
-      console.info(`${LOG_PREFIX} Received app config:`, config);
-      store.dispatch(setAppInfo(config));
-      return config;
+
+export const fetchAppConfig = async (sessionId: string, endpoint = 'appInfo'): Promise<any> => {
+    if (loadConfigPromise) {
+        return loadConfigPromise;
+    }
+    console.info(`${LOG_PREFIX} Fetching app config from ${endpoint} for session: ${sessionId}`);
+    loadConfigPromise = fetch(`${BASE_API_URL}${endpoint}?session=${sessionId}`, {
+        headers: {
+            'Accept': 'application/json'
+        }
     })
-    .catch(error => {
-      console.error(`${LOG_PREFIX} Failed to fetch app config:`, error);
-      loadConfigPromise = null;
-      throw error;
-    });
-  return loadConfigPromise;
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch app config: ${response.status} ${response.statusText}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error(`Expected JSON response but got ${contentType}`);
+            }
+            return response.json();
+        })
+        .then(config => {
+            console.info(`${LOG_PREFIX} Received app config:`, config);
+            store.dispatch(setAppInfo(config));
+            return config;
+        })
+        .catch(error => {
+            console.error(`${LOG_PREFIX} Failed to fetch app config:`, error);
+            loadConfigPromise = null;
+
+            return {
+                applicationName: 'Chat App',
+                singleInput: false,
+                stickyInput: true,
+                loadImages: true,
+                showMenubar: true
+            };
+        });
+    return loadConfigPromise;
 };
