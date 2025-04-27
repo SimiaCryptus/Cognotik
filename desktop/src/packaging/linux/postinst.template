@@ -1,11 +1,18 @@
 #!/bin/sh
 set -e
+# Remove any auto-generated desktop file if it exists
+# This prevents duplicate entries in the applications menu
+if [ -f "/usr/share/applications/Cognotik.desktop" ]; then
+  rm -f "/usr/share/applications/Cognotik.desktop"
+fi
 
 
-# Update desktop database
-# This ensures the system recognizes the newly installed .desktop files.
-cp /opt/cognotik/lib/cognotik-Cognotik.desktop /usr/share/applications
+# Update desktop database after jpackage/dpkg installs the .desktop files
+# from the resource-dir into /usr/share/applications.
 update-desktop-database /usr/share/applications || true
+# Update icon cache after dpkg installs the icon file
+# into /usr/share/icons/hicolor/*/apps/cognotik.png
+gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
 
 # Create /usr/local/bin if it doesn't exist
 mkdir -p /usr/local/bin

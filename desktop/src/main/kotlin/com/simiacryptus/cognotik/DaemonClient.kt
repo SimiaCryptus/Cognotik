@@ -76,7 +76,11 @@ object DaemonClient {
             dispatchCommand(
                 host,
                 port + SOCKET_PORT_OFFSET,
-                (commandArgs.take(1).map { File(it).absolutePath } + commandArgs.drop(1)).toTypedArray())
+                (commandArgs.take(1).map { it.trim('\'', '"') }.map { when(it) {
+                    "." -> File(".").absolutePath
+                    ".." -> File("..").absolutePath
+                    else -> it
+                } } + commandArgs.drop(1)).toTypedArray())
         }
     }
 
@@ -95,7 +99,7 @@ object DaemonClient {
         return sessionDir.absolutePath
     }
 
-    private fun getHome(): File {
+    fun getHome(): File {
         val userHome = System.getProperty("user.home")
         val baseDir = File(userHome, SESSION_DIR_BASE)
         if (!baseDir.exists()) {
@@ -278,10 +282,9 @@ object DaemonClient {
             log.debug("Using ProcessBuilder: sh ${scriptFile.absolutePath}")
             ProcessBuilder("sh", scriptFile.absolutePath)
         }
-
+        processBuilder.directory(getHome())
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
-
         val process = try {
             log.info("Launching daemon process using script: ${processBuilder.command().joinToString(" ")}")
             processBuilder.start()

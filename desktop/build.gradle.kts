@@ -1,5 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 
 plugins {
     id("cognotik.common-conventions")
@@ -203,13 +205,6 @@ fun installContextMenuAction(os: String) {
             println("Wrote stop server Quick Action to: ${stopScript.parentFile}")
             println("Wrote context menu Quick Action to: ${script.parentFile}")
         }
-
-
-
-
-        // Linux context menu actions are handled via .desktop files prepared
-        // in the prepareLinuxDesktopFile task and included via jpackage resource-dir.
-        // No specific action needed here for Linux.
     }
 }
 
@@ -337,46 +332,44 @@ tasks.register("packageMsi", JPackageTask::class) {
     }
 }
 
-tasks.register("packageDeb", JPackageTask::class) {
+tasks.register("createAppImage", JPackageTask::class) {
     group = "distribution"
-    description = "Creates a .deb package for Linux"
+    description = "Creates a self-contained application image for Linux"
     onlyIf { System.getProperty("os.name").lowercase().contains("linux") }
-    dependsOn("shadowJar", "prepareLinuxDesktopFile")
+    dependsOn("shadowJar")
+    // Define outputs for incremental build
+    outputs.dir(layout.buildDirectory.dir("jpackage/linux-image"))
     doLast {
-
-        val resourcesDir = layout.buildDirectory.dir("jpackage/resources").get().asFile
-        if (!resourcesDir.exists()) {
-            resourcesDir.mkdirs()
-        }
-
         val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
         val shadowJarName = shadowJarFile.name
+        val inputDir = layout.buildDirectory.dir("jpackage/input").get().asFile
+        if (!inputDir.exists()) {
+            inputDir.mkdirs()
+        }
+        copy {
+            from(shadowJarFile)
+            into(inputDir)
+        }
         execOperations.exec {
             commandLine(
                 "jpackage",
-                "--type", "deb",
-                "--input", layout.buildDirectory.dir("libs").get().asFile.path,
+                "--type", "app-image",
+                "--input", inputDir.path,
                 "--main-jar", shadowJarName,
                 "--main-class", "com.simiacryptus.cognotik.DaemonClient",
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
-                "--name", "Cognotik",
+                "--dest", layout.buildDirectory.dir("jpackage/linux-image").get().asFile.path,
+                "--name", "Cognotik", // This name determines the output directory name inside dest
                 "--app-version", "${project.version}",
-                "--copyright", "Copyright © 2024 SimiaCryptus",
-                "--description", "Cognotik Agentic Toolkit",
-                "--linux-menu-group", "Utilities",
-                "--resource-dir", layout.buildDirectory.dir("jpackage/resources").get().asFile.path,
-                "--linux-deb-maintainer", "support@simiacryptus.com",
-                "--linux-shortcut",
-                "--linux-app-category", "Development;Utility",
-                "--icon", layout.projectDirectory.file("src/main/resources/toolbarIcon.svg").asFile.path,
-                "--linux-package-name", "cognotik"
+                "--icon", layout.projectDirectory.file("src/main/resources/icon-512x512.png").asFile.path,
+                // No icon, resource-dir, or linux specific flags needed here
             )
         }
     }
 }
+
 tasks.register("prepareLinuxDesktopFile") {
     group = "build"
-    description = "Copies the .desktop file to the jpackage input directory for Linux"
+    description = "Copies desktop files and icons to the jpackage resource directory for Linux"
     onlyIf { System.getProperty("os.name").lowercase().contains("linux") }
     doLast {
 
@@ -385,20 +378,15 @@ tasks.register("prepareLinuxDesktopFile") {
             resourcesDir.mkdirs()
         }
 
-        val contextMenuDesktopFile = File(resourcesDir, "cognotik-folder-action.desktop")
-        val contextMenuTemplateFile =
-            layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
-        val contextMenuContent = contextMenuTemplateFile.readText()
-        contextMenuDesktopFile.writeText(contextMenuContent)
-
+        // Use the package name for the main desktop file.
         val mainDesktopFile = File(resourcesDir, "cognotik.desktop")
         val mainDesktopTemplateFile = layout.projectDirectory.file("src/packaging/linux/main.desktop.template").asFile
-        mainDesktopFile.writeText(mainDesktopTemplateFile.readText())
+        mainDesktopFile.writeText(mainDesktopTemplateFile.readText()) // Copy template content directly
 
         val installScript = File(resourcesDir, "postinst")
 
         val postinstTemplateFile = layout.projectDirectory.file("src/packaging/linux/postinst.template").asFile
-        // Copy the template directly. Placeholders are no longer needed as jpackage/dpkg handle file placement.
+        // Copy the template directly.
         installScript.writeText(postinstTemplateFile.readText())
         installScript.setExecutable(true)
 
@@ -409,9 +397,117 @@ tasks.register("prepareLinuxDesktopFile") {
 
         println("Created desktop files in jpackage resources directory:")
         println("- ${mainDesktopFile.absolutePath}")
-        println("- ${contextMenuDesktopFile.absolutePath}")
         println("- ${installScript.absolutePath}")
         println("- ${uninstallScript.absolutePath}")
+    }
+}
+
+// Remove the old packageDeb task that used jpackage --type deb
+tasks.findByName("packageDeb")?.enabled = false
+
+tasks.register("buildDebManually", JPackageTask::class) {
+    group = "distribution"
+    description = "Builds a .deb package manually from the app image"
+    onlyIf { System.getProperty("os.name").lowercase().contains("linux") }
+    dependsOn("createAppImage", "prepareLinuxDesktopFile")
+
+    doLast {
+        val appImageDir = layout.buildDirectory.dir("jpackage/linux-image/Cognotik").get().asFile
+        val resourcesDir = layout.buildDirectory.dir("jpackage/resources").get().asFile
+        val stagingDir = layout.buildDirectory.dir("deb-staging").get().asFile
+        val debOutputDir = layout.buildDirectory.dir("jpackage").get().asFile
+        val packageName = "cognotik"
+        val version = project.version.toString()
+        // Assume amd64, make configurable if needed
+        val arch = "amd64"
+        val debFileName = "${packageName}_${version}_${arch}.deb"
+        val iconSourcePath = layout.projectDirectory.file("src/main/resources/icon-512x512.png")
+
+        // --- 1. Clean and Setup Staging Directory ---
+        if (stagingDir.exists()) {
+            stagingDir.deleteRecursively()
+        }
+        stagingDir.mkdirs()
+
+        val debianDir = File(stagingDir, "DEBIAN").apply { mkdirs() }
+        val optDir = File(stagingDir, "opt").apply { mkdirs() }
+        val appInstallDir = File(optDir, packageName).apply { mkdirs() }
+        val usrDir = File(stagingDir, "usr").apply { mkdirs() }
+        val shareDir = File(usrDir, "share").apply { mkdirs() }
+        val applicationsDir = File(shareDir, "applications").apply { mkdirs() }
+        val iconsDir = File(shareDir, "icons/hicolor/512x512/apps").apply { mkdirs() }
+
+        // --- 2. Copy Application Files ---
+        copy {
+            from(appImageDir)
+            into(appInstallDir)
+            // Ensure executables keep their permissions
+            eachFile(Action<FileCopyDetails> {
+                if (Files.isExecutable(file.toPath())) {
+                    setMode(mode or 0b001_001_001) // Add execute permissions ugo+x
+                }
+            })
+            // Remove the auto-generated .desktop file to avoid duplication
+            exclude("lib/Cognotik.desktop")
+        }
+
+        // --- 3. Copy Desktop Files ---
+        copy {
+            from(resourcesDir) { include("*.desktop") }
+            into(applicationsDir)
+        }
+
+        // --- 4. Copy Icon ---
+        copy {
+            from(iconSourcePath)
+            into(iconsDir)
+            rename { "cognotik.png" } // Ensure consistent naming
+        }
+
+        // --- 5. Copy Control Scripts (postinst, prerm) ---
+        listOf("postinst", "prerm").forEach { scriptName ->
+            val scriptFile = File(resourcesDir, scriptName)
+            val destFile = File(debianDir, scriptName)
+            copy {
+                from(scriptFile)
+                into(debianDir)
+            }
+            // Make scripts executable
+            Files.setPosixFilePermissions(destFile.toPath(), setOf(
+                PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
+                PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_EXECUTE,
+                PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_EXECUTE
+            ))
+        }
+
+        // --- 6. Create DEBIAN/control file ---
+        val controlFile = File(debianDir, "control")
+        // Calculate installed size (approximation)
+        val installedSizeKb = Files.walk(stagingDir.toPath())
+                                  .filter { Files.isRegularFile(it) }
+                                  .mapToLong { Files.size(it) }
+                                  .sum() / 1024
+
+        controlFile.writeText("""
+            Package: $packageName
+            Version: $version
+            Architecture: $arch
+            Maintainer: support@simiacryptus.com
+            Installed-Size: $installedSizeKb
+            Section: utils
+            Priority: optional
+            Description: Cognotik Agentic Toolkit
+             AI-powered application suite for various tasks.
+            """.trimIndent() + "\n")
+
+        // --- 7. Build the .deb package ---
+        if (!debOutputDir.exists()) debOutputDir.mkdirs()
+        execOperations.exec {
+            commandLine(
+                "dpkg-deb", "--build", stagingDir.absolutePath, File(debOutputDir, debFileName).absolutePath
+            )
+        }
+        println("Successfully built DEB package: ${File(debOutputDir, debFileName).absolutePath}")
     }
 }
 
@@ -419,7 +515,7 @@ tasks.register("package") {
     description = "Creates a platform-specific package"
     val os = System.getProperty("os.name").lowercase()
     when {
-        os.contains("linux") -> dependsOn("prepareLinuxDesktopFile", "shadowJar", "packageDeb")
+        os.contains("linux") -> dependsOn("buildDebManually") // Depend on the new manual task
         os.contains("mac") -> dependsOn("packageDmg")
         os.contains("windows") -> dependsOn("packageMsi")
     }
@@ -427,7 +523,7 @@ tasks.register("package") {
 
 tasks.register("packageLinux") {
     description = "Creates a Linux package using the custom flow"
-    dependsOn("clean", "shadowJar", "packageDeb")
+    dependsOn("clean", "buildDebManually") // Depend on the new manual task
 }
 
 tasks.named("build") {
@@ -443,7 +539,7 @@ tasks.register("updateVersionFromEnv") {
     }
 }
 
-tasks.register("verifyRuntimeEnvironment") {
+tasks.register("verifyRuntimeEnvironment", JPackageTask::class) { // Inherit from JPackageTask to get execOperations
     group = "verification"
     description = "Verifies the runtime environment for packaging"
     doLast {
@@ -453,13 +549,21 @@ tasks.register("verifyRuntimeEnvironment") {
         println("Java Version: $javaVersion")
 
         try {
-            @Suppress("DEPRECATION")
-            exec {
+            execOperations.exec { // Use injected execOperations
                 commandLine("jpackage", "--version")
                 standardOutput = System.out
             }
         } catch (e: Exception) {
             logger.warn("jpackage command not found. Make sure you're using JDK 14+ with jpackage.")
+        }
+        // Verify dpkg-deb exists for Linux manual build
+        if (System.getProperty("os.name").lowercase().contains("linux")) {
+            try {
+                execOperations.exec { commandLine("dpkg-deb", "--version") } // Use injected execOperations
+            } catch (e: Exception) {
+                logger.error("dpkg-deb command not found. It is required for building .deb packages manually.")
+                throw e
+            }
         }
     }
 }
