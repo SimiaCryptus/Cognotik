@@ -43,7 +43,6 @@ import kotlin.io.path.name
  * - The build should remain successful after fixes are applied
  * - All UI interactions should be properly logged and narrated
  */
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CommandAutofixActionTest : DemoTestBase(
     splashScreenConfig = SplashScreenConfig(

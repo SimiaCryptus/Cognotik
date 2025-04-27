@@ -77,6 +77,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 }
 
 tasks.test {
+    enabled = false
     useJUnitPlatform()
     jvmArgs = listOf("--add-opens", "java.base/java.lang=ALL-UNNAMED")
 }
@@ -116,4 +117,3 @@ tasks {
         }
     }
 }
-

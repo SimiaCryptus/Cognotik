@@ -260,7 +260,7 @@ export const Menu: React.FC = () => {
                     <FontAwesomeIcon icon={faHome}/> Home
                 </DropButton>
 
-                <Dropdown
+                {/*<Dropdown
                     data-testid="app-menu-button"
                     id="app-menu-button">
                     <DropButton
@@ -270,7 +270,7 @@ export const Menu: React.FC = () => {
                         <DropdownItem onClick={() => openModal('sessions')}>Session List</DropdownItem>
                         <DropdownItem as="a" href={"./#" + newGlobalID()}>New</DropdownItem>
                     </DropdownContent>
-                </Dropdown>
+                </Dropdown>*/}
 
                 <Dropdown>
                     <DropButton>
@@ -322,14 +322,14 @@ export const Menu: React.FC = () => {
 
             <Dropdown>
                 <DropButton>
-                    <FontAwesomeIcon icon={faSignInAlt}/> Login
+                    <FontAwesomeIcon icon={faSignInAlt}/>User
                 </DropButton>
                 <DropdownContent>
                     <DropdownItem onClick={() => handleMenuClick('/userSettings')}>Settings</DropdownItem>
                     <DropdownItem onClick={() => handleMenuClick('/usage')}>Usage</DropdownItem>
-                    <DropdownItem onClick={handleLogout}>
+                    {/*<DropdownItem onClick={handleLogout}>
                         <FontAwesomeIcon icon={faSignOutAlt}/> Logout
-                    </DropdownItem>
+                    </DropdownItem>*/}
                 </DropdownContent>
             </Dropdown>
         </MenuContainer>
