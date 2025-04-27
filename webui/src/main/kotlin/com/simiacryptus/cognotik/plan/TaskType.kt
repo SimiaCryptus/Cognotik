@@ -440,8 +440,10 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             if (strict && !planSettings.getTaskSettings(taskType).enabled) {
                 throw DisabledTaskException(taskType)
             }
-            val constructor =
-                taskConstructors[taskType] ?: throw RuntimeException("Unknown task type: ${taskType.name}")
+            val constructor = taskConstructors[taskType]
+            if (constructor == null) {
+                throw RuntimeException("Unknown task type: ${taskType.name}")
+            }
             return constructor(planSettings, planTask)
         }
 

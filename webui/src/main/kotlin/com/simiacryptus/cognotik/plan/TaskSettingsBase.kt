@@ -16,17 +16,19 @@ open class TaskSettingsBase(
     var model: ChatModel? = null
 ) {
     class PlanTaskTypeIdResolver : TypeIdResolverBase() {
-        override fun idFromValue(value: Any) = when (value) {
-            is TaskSettingsBase -> if (value.task_type != null) {
-                value.task_type
-            } else {
-                throw IllegalArgumentException("Unknown task type")
-            }
+        override fun idFromValue(value: Any): String? {
+            return when (value) {
+                is TaskSettingsBase -> if (value.task_type != null) {
+                    value.task_type
+                } else {
+                    return null
+                }
 
-            else -> throw IllegalArgumentException("Unexpected value type: ${value.javaClass}")
+                else -> throw IllegalArgumentException("Unexpected value type: ${value.javaClass}")
+            }
         }
 
-        override fun idFromValueAndType(value: Any, suggestedType: Class<*>): String {
+        override fun idFromValueAndType(value: Any, suggestedType: Class<*>): String? {
             return idFromValue(value)
         }
 

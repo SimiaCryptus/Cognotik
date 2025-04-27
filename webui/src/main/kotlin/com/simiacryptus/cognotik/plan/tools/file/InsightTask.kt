@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -14,6 +15,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.util.toJson
 import org.slf4j.LoggerFactory
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -30,7 +32,7 @@ class InsightTask(
         val inquiry_questions: List<String>? = null,
         @Description("The goal or purpose of the inquiry")
         val inquiry_goal: String? = null,
-        @Description("The specific files (or file patterns) to be used as input for the task")
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -42,19 +44,21 @@ class InsightTask(
         state = state
     )
 
-    override fun promptSegment() = if (!planSettings.autoFix) """
-    InsightTask - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
-        ** Specify the questions and the goal of the inquiry.
-        ** Optionally, list input files to be examined when answering the questions.
-        ** User response/feedback and iteration are supported
-        ** The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
-    """.trimIndent() else """
-    InsightTask - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
-        ** Specify the questions and the goal of the inquiry.
-        ** Optionally, list input files to be examined when answering the questions.
-        ** The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
-    """.trimIndent()
-
+    override fun promptSegment() = (if (!planSettings.autoFix) """
+InsightTask - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+  * Specify the questions and the goal of the inquiry.
+  * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
+  * User response/feedback and iteration are supported.
+  * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
+""" else """
+InsightTask - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+  * Specify the questions and the goal of the inquiry.
+  * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
+  * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
+""") + """
+Available files:
+${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
+"""
     private val insightActor by lazy {
         SimpleActor(
             name = "Insight",
@@ -102,7 +106,7 @@ class InsightTask(
                     taskConfig?.inquiry_questions?.joinToString(
                         "\n"
                     )
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
+                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.taskConfig?.toJson()}"
             },
             heading = "",
             initialResponse = { it: String -> insightActor.answer(toInput(it), api = api) },
@@ -113,7 +117,7 @@ class InsightTask(
             reviseResponse = { usermessages: List<Pair<String, Role>> ->
                 val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                     taskConfig?.inquiry_questions?.joinToString("\n")
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
+                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.taskConfig?.toJson()}"
                 val messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
                     .toTypedArray<ApiModel.ChatMessage>()
                 insightActor.respond(
