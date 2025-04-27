@@ -104,7 +104,8 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
         val vocabLines = this.vocab.split("\n")
         val bpeMerges: List<Pair<String, String>> = vocabLines
             .subList(1, vocabLines.size - 1)
-            .map { line -> line.split(Regex("(\\s+)")).filter { part -> part.trim().length > 0 } }
+            .map { line -> line.split(Regex("(\\s+)")).filter { it.isNotBlank() } }
+            .filter { list -> list.size == 2 }
             .map { list -> Pair(list[0], list[1]) }
 
         if (this.nMergedSpaces > 0) {

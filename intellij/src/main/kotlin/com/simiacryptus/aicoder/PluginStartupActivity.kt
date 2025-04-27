@@ -69,7 +69,7 @@ class PluginStartupActivity : ProjectActivity {
                 currentThread.contextClassLoader = prevClassLoader
             }
 
-            setupDocumentationTracking(project)
+            //setupDocumentationTracking(project)
 
             if (AppSettingsState.instance.showWelcomeScreen || AppSettingsState.instance.greetedVersion != AppSettingsState.WELCOME_VERSION) {
                 val welcomeFile = "welcomePage.md"

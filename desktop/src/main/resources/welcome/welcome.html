@@ -694,8 +694,8 @@
 
     const taskTypes = [
         {
-            id: 'InquiryTask',
-            name: 'Inquiry Task',
+            id: 'InsightTask',
+            name: 'Insight Task',
             description: 'Analyze code and provide detailed explanations of implementation patterns',
             tooltip: 'Provides detailed answers and insights about code implementation by analyzing specified files.',
         },
@@ -1267,7 +1267,6 @@
                 const baseInput = document.getElementById(`api-base-${provider.id}`);
                 if (baseInput) {
                     apiBase[provider.id] = baseInput.value;
-                    apiSummary.innerHTML = '<p class="warning">⚠️ No API keys configured. Please configure API keys before launching.</p>';
                 } else {
                     apiBase[provider.id] = provider.baseUrl;
                 }

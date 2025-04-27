@@ -52,48 +52,48 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
             Companion.statusBar = statusBar
             val project = statusBar.project ?: return
             DictationState.project = project
-            val connection = project.messageBus.connect()
-            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
-                override fun selectionChanged(event: FileEditorManagerEvent) {
-
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                    val editorHash = editor?.hashCode() ?: return
-                    if (!editorsWithListeners.add(editorHash)) {
-
-                        return
-                    }
-                    editor.document.addDocumentListener(object : DocumentListener {
-                        override fun documentChanged(event: DocumentEvent) {
-
-                            val str = event.document.text.take(1024)
-                            DictationManager.transcriptionProcessor?.prompt = str
-
-                        }
-                    })
-                    editor.selectionModel.addSelectionListener(object : SelectionListener {
-                        override fun selectionChanged(event: SelectionEvent) {
-
-                            val str = editor.selectionModel.selectedText?.take(1024) ?: ""
-                            DictationManager.transcriptionProcessor?.prompt = str
-
-                        }
-                    })
-                    editor.caretModel.addCaretListener(object : CaretListener {
-                        override fun caretPositionChanged(event: CaretEvent) {
-
-                            val caret = event.caret
-                            val offset = caret?.offset
-                            val document = caret?.editor?.document
-                            val str = document?.text?.take(offset ?: 0)?.takeLast(1024)
-                            DictationManager.transcriptionProcessor?.prompt = str ?: ""
-
-                        }
-                    })
-                    DictationManager.discriminator.onModeChanged.addListener {
-                        Companion.statusBar?.updateWidget(ID)
-                    }
-                }
-            })
+//            val connection = project.messageBus.connect()
+//            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
+//                override fun selectionChanged(event: FileEditorManagerEvent) {
+//
+//                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+//                    val editorHash = editor?.hashCode() ?: return
+//                    if (!editorsWithListeners.add(editorHash)) {
+//
+//                        return
+//                    }
+//                    editor.document.addDocumentListener(object : DocumentListener {
+//                        override fun documentChanged(event: DocumentEvent) {
+//
+//                            val str = event.document.text.take(1024)
+//                            DictationManager.transcriptionProcessor?.prompt = str
+//
+//                        }
+//                    })
+//                    editor.selectionModel.addSelectionListener(object : SelectionListener {
+//                        override fun selectionChanged(event: SelectionEvent) {
+//
+//                            val str = editor.selectionModel.selectedText?.take(1024) ?: ""
+//                            DictationManager.transcriptionProcessor?.prompt = str
+//
+//                        }
+//                    })
+//                    editor.caretModel.addCaretListener(object : CaretListener {
+//                        override fun caretPositionChanged(event: CaretEvent) {
+//
+//                            val caret = event.caret
+//                            val offset = caret?.offset
+//                            val document = caret?.editor?.document
+//                            val str = document?.text?.take(offset ?: 0)?.takeLast(1024)
+//                            DictationManager.transcriptionProcessor?.prompt = str ?: ""
+//
+//                        }
+//                    })
+//                    DictationManager.discriminator.onModeChanged.addListener {
+//                        Companion.statusBar?.updateWidget(ID)
+//                    }
+//                }
+//            })
         }
 
         override fun ID(): String = ID

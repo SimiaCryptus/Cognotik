@@ -10,6 +10,7 @@ import com.simiacryptus.jopenai.describe.Description
 import org.slf4j.LoggerFactory
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 import kotlin.streams.asSequence
@@ -38,29 +39,16 @@ class FileSearchTask(
     )
 
     override fun promptSegment(): String {
-        val availableFiles = getAvailableFiles()
+        val availableFiles = getAvailableFiles(root)
         return """
-    FileSearchTask - Search for patterns in files and provide results with context
-      ** Specify the search pattern (substring or regex)
-      ** Specify whether the pattern is a regex or a substring
-      ** Specify the number of context lines to include
-      ** List input files or file patterns to be searched
-    Available files:
-    ${availableFiles.joinToString("\n") { "- $it" }}
-    """.trimIndent()
-    }
-
-    private fun getAvailableFiles(): List<String> {
-        return try {
-            Files.walk(root)
-                .filter { path -> FileSelectionUtils.isLLMIncludableFile(path.toFile()) }
-                .map { path -> root.relativize(path).toString() }
-                .sorted()
-                .collect(Collectors.toList())
-        } catch (e: Exception) {
-            log.error("Error listing available files", e)
-            listOf("Error listing files: ${e.message}")
-        }
+FileSearchTask - Search for patterns in files and provide results with context
+  * Specify the search pattern (substring or regex)
+  * Specify whether the pattern is a regex or a substring
+  * Specify the number of context lines to include
+  * List files (incl glob patterns) to be searched
+Available files:
+${availableFiles.joinToString("\n") { "  - $it" }}
+""".trimIndent()
     }
 
     override fun run(
@@ -149,5 +137,17 @@ class FileSearchTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
+        fun getAvailableFiles(path: Path): List<String> {
+            return try {
+                Files.walk(path)
+                    .filter { FileSelectionUtils.isLLMIncludableFile(it.toFile()) }
+                    .map { path.relativize(it).toString() }
+                    .sorted()
+                    .collect(Collectors.toList())
+            } catch (e: Exception) {
+                log.error("Error listing available files", e)
+                listOf("Error listing files: ${e.message}")
+            }
+        }
     }
 }

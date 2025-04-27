@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
-import com.simiacryptus.cognotik.plan.tools.file.InquiryTask.InquiryTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.file.InsightTask.InsightTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.ForeachTask.ForeachTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.util.DynamicEnum
@@ -111,23 +111,23 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
         )
-        val InquiryTask = TaskType(
-            "InquiryTask",
-            InquiryTaskConfigData::class.java,
+        val InsightTask = TaskType(
+            "InsightTask",
+            InsightTaskConfigData::class.java,
             TaskSettingsBase::class.java,
-            "Analyze code and provide detailed explanations of implementation patterns",
+            "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
             """
-                      Provides detailed answers and insights about code implementation by analyzing specified files.
-                      <ul>
-                        <li>Answers detailed questions about code functionality and implementation</li>
-                        <li>Analyzes code patterns, relationships and architectural decisions</li>
-                        <li>Supports interactive discussions and follow-up questions in blocking mode</li>
-                        <li>Generates comprehensive markdown reports with code examples</li>
-                        <li>Handles multiple files and complex cross-reference queries</li>
-                        <li>Provides context-aware technical recommendations</li>
-                        <li>Explains trade-offs and rationale behind implementation choices</li>
-                      </ul>
-                    """
+            Provides direct answers and insights using the LLM, optionally referencing project files.
+            <ul>
+              <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
+              <li>Reading files is optional; the task can operate with or without file input</li>
+              <li>User feedback and iterative refinement are supported but not required</li>
+              <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
+              <li>Can answer detailed questions about code, design, or project context</li>
+              <li>Supports both one-shot and interactive discussion modes</li>
+              <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
+            </ul>
+            """
         )
         val FileSearchTask = TaskType(
             "FileSearchTask",
@@ -339,8 +339,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                     task
                 )
             }
-            registerConstructor(InquiryTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.file.InquiryTask(
+            registerConstructor(InsightTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.file.InsightTask(
                     settings,
                     task
                 )

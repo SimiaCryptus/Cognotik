@@ -121,7 +121,7 @@ class RunShellCommandTask(
             ): String {
                 return ui.hrefLink("Accept", "href-link play-button") {
                     response.let {
-                        "## Shell Command Output\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n\n$TRIPLE_TILDE\n${response.renderedResponse}\n$TRIPLE_TILDE\n"
+                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
                     }.apply { resultFn(this) }
                     semaphore.release()
                 }

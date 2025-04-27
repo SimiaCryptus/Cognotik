@@ -44,8 +44,7 @@ open class TaskChatMode(
 
     private var isProcessing = false
 
-    private val systemPrompt = "Given the following input, choose ONE task to execute. " +
-            "Do not create a full plan, just select the most appropriate task types for the given input."
+    private val systemPrompt = "Given the following input, choose ONE task to execute and describe it in detail."
 
     override fun initialize() {
 

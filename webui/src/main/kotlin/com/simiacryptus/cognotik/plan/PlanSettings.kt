@@ -23,7 +23,7 @@ open class PlanSettings(
     val taskSettings: MutableMap<String, TaskSettingsBase> = TaskType.values().associateWith { taskType ->
         TaskSettingsBase(
             taskType.name, when (taskType) {
-                TaskType.FileModificationTask, TaskType.InquiryTask -> true
+                TaskType.FileModificationTask, TaskType.InsightTask -> true
                 else -> false
             }
         )

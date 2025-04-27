@@ -43,23 +43,26 @@ open class HttpClientManager(
         private const val DEFAULT_USER_AGENT = "Cognotik/1.0"
         val client by lazy { createHttpClient(DEFAULT_USER_AGENT) }
         fun createHttpClient(userAgent: String = DEFAULT_USER_AGENT): CloseableHttpClient = HttpClientBuilder.create()
-            .setRetryStrategy(DefaultHttpRequestRetryStrategy(0, Timeout.ofSeconds(1)))
+            .setRetryStrategy(DefaultHttpRequestRetryStrategy(
+                /* maxRetries = */ 0,
+                /* defaultRetryInterval = */ Timeout.ofSeconds(1)
+            ))
             .setConnectionManager(with(PoolingHttpClientConnectionManager()) {
                 defaultSocketConfig = with(SocketConfig.custom()) {
                     setSoTimeout(Timeout.ofSeconds(600))
-                    setSoReuseAddress(true)
-                    setSoLinger(Timeout.ofSeconds(10))
+                    setSoReuseAddress(false)
+                    setSoLinger(Timeout.ofSeconds(0))
                     setDefaultConnectionConfig(ConnectionConfig.custom().apply {
-                        setConnectTimeout(Timeout.ofSeconds(600))
+                        setConnectTimeout(Timeout.ofSeconds(60))
                         setSocketTimeout(Timeout.ofSeconds(600))
                         setSoKeepAlive(true)
-                        setTimeToLive(Timeout.ofSeconds(600))
+                        //setTimeToLive(Timeout.ofSeconds(600))
                     }.build())
                     setSoKeepAlive(true)
                     build()
                 }
-                defaultMaxPerRoute = 16
-                maxTotal = 16
+                defaultMaxPerRoute = 64
+                maxTotal = 64
                 this
             })
             .setUserAgent(userAgent)

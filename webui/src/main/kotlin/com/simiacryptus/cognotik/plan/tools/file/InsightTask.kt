@@ -21,11 +21,11 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.streams.asSequence
 
-class InquiryTask(
+class InsightTask(
     planSettings: PlanSettings,
-    planTask: InquiryTaskConfigData?
-) : AbstractTask<InquiryTask.InquiryTaskConfigData>(planSettings, planTask) {
-    class InquiryTaskConfigData(
+    planTask: InsightTaskConfigData?
+) : AbstractTask<InsightTask.InsightTaskConfigData>(planSettings, planTask) {
+    class InsightTaskConfigData(
         @Description("The specific questions or topics to be addressed in the inquiry")
         val inquiry_questions: List<String>? = null,
         @Description("The goal or purpose of the inquiry")
@@ -36,25 +36,28 @@ class InquiryTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskConfigBase(
-        task_type = TaskType.InquiryTask.name,
+        task_type = TaskType.InsightTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = if (!planSettings.autoFix) """
-    InquiryTask - Answer questions by reading in files and providing a summary that can be discussed with and approved by the user
-        ** Specify the questions and the goal of the inquiry
-        ** List input files to be examined when answering the questions
+    InsightTask - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+        ** Specify the questions and the goal of the inquiry.
+        ** Optionally, list input files to be examined when answering the questions.
+        ** User response/feedback and iteration are supported
+        ** The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
     """.trimIndent() else """
-    InquiryTask - Answer questions by reading in files and providing a report
-        ** Specify the questions and the goal of the inquiry
-        ** List input files to be examined when answering the questions
+    InsightTask - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+        ** Specify the questions and the goal of the inquiry.
+        ** Optionally, list input files to be examined when answering the questions.
+        ** The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
     """.trimIndent()
 
-    private val inquiryActor by lazy {
+    private val insightActor by lazy {
         SimpleActor(
-            name = "Inquiry",
+            name = "Insight",
             prompt = """
                 Create code for a new file that fulfills the specified requirements and context.
                 Given a detailed user request, break it down into smaller, actionable tasks suitable for software development.
@@ -91,7 +94,7 @@ class InquiryTask(
             ).filter { it.isNotBlank() }
         }
 
-        val taskConfig: InquiryTaskConfigData? = this.taskConfig
+        val taskConfig: InsightTaskConfigData? = this.taskConfig
         val inquiryResult = if (!planSettings.autoFix) Discussable(
             task = task,
             userMessage = {
@@ -102,7 +105,7 @@ class InquiryTask(
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
             },
             heading = "",
-            initialResponse = { it: String -> inquiryActor.answer(toInput(it), api = api) },
+            initialResponse = { it: String -> insightActor.answer(toInput(it), api = api) },
             outputFn = { design: String ->
                 MarkdownUtil.renderMarkdown(design, ui = agent.ui)
             },
@@ -113,7 +116,7 @@ class InquiryTask(
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
                 val messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
                     .toTypedArray<ApiModel.ChatMessage>()
-                inquiryActor.respond(
+                insightActor.respond(
                     messages = messages,
                     input = toInput(inStr),
                     api = api
@@ -121,7 +124,7 @@ class InquiryTask(
             },
             atomicRef = AtomicReference(),
             semaphore = Semaphore(0),
-        ).call() else inquiryActor.answer(
+        ).call() else insightActor.answer(
             toInput(
                 "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                     taskConfig?.inquiry_questions?.joinToString(
@@ -163,6 +166,6 @@ class InquiryTask(
             }
 
     companion object {
-        private val log = LoggerFactory.getLogger(InquiryTask::class.java)
+        private val log = LoggerFactory.getLogger(InsightTask::class.java)
     }
 }
