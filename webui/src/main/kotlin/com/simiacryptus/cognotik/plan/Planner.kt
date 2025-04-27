@@ -98,6 +98,7 @@ open class Planner {
         inStrings: List<String>,
         describer: TypeDescriber
     ): ParsedResponse<Map<String, TaskConfigBase>> {
+        planSettings.workingDir?.apply { File(this).mkdirs() }
         val planningActor = planSettings.planningActor(describer)
         return planningActor.respond(
             messages = planningActor.chatMessages(inStrings),

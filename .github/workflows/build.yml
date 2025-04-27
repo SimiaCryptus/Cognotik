@@ -126,41 +126,114 @@ jobs:
       - name: Ensure App Image Directory Exists
         shell: pwsh
         run: |
-          if (-Not (Test-Path "build\\jpackage\\SkyenetApps")) {
-              New-Item -ItemType Directory -Force -Path "build\\jpackage\\SkyenetApps"
+          if (-Not (Test-Path "build\\jpackage\\Cognotik")) {
+              New-Item -ItemType Directory -Force -Path "build\\jpackage\\Cognotik"
           }
-      - name: Update SkyenetApps Version
+      - name: Update Cognotik Version
         shell: pwsh
         run: |
           $version = "${{ needs.build.outputs.version }}"
-          Write-Output "Setting SkyenetApps version to: $version"
-          $gradlePropertiesPath = "SkyenetApps/gradle.properties"
+          Write-Output "Setting Cognotik version to: $version"
+          $gradlePropertiesPath = "Cognotik/gradle.properties"
           $content = Get-Content $gradlePropertiesPath -Raw
           $updatedContent = $content -replace "libraryVersion\s*=\s*[0-9.]+", "libraryVersion = $version"
           Set-Content -Path $gradlePropertiesPath -Value $updatedContent
           Write-Output "Updated gradle.properties with new version"
       - name: Make Gradle wrapper executable
-        working-directory: SkyenetApps
         run: |
           # Ensure the wrapper is executable on Windows
           chmod +x ./gradlew.bat
       - name: Build Windows MSI Installer
-        working-directory: SkyenetApps
-        run: ./gradlew.bat jpackage
+        run: ./gradlew.bat :desktop:package
       - name: List MSI artifacts
-        working-directory: SkyenetApps
         run: |
           echo "MSI artifacts in jpackage directory:"
-          if (Test-Path "build/jpackage") {
-            Get-ChildItem -Path build/jpackage -Recurse -Filter *.msi | ForEach-Object { $_.FullName }
+          if (Test-Path "desktop/build/jpackage") {
+            Get-ChildItem -Path desktop/build/jpackage -Recurse -Filter *.msi | ForEach-Object { $_.FullName }
           } else {
-            Write-Output "build/jpackage directory not found."
+            Write-Output "desktop/build/jpackage directory not found."
           }
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
           name: skyenet-windows-installer
-          path: SkyenetApps/build/jpackage/*.msi
+          path: desktop/build/jpackage/*.msi
+  build-linux-installer:
+    name: Build Linux Installer
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+    steps:
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+      - name: Configure Git
+        run: |
+          git config --global init.defaultBranch main
+          git --version
+          echo "Git configuration:"
+          git config --list
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: Build Linux DEB Installer
+        run: ./gradlew :desktop:package
+      - name: List DEB artifacts
+        run: |
+          echo "DEB artifacts in jpackage directory:"
+          ls -la desktop/build/jpackage/*.deb || echo "No DEB files found"
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyenet-linux-installer
+          path: desktop/build/jpackage/*.deb
+  build-mac-installer:
+    name: Build Mac Installer
+    runs-on: macos-latest
+    needs: [ build ]
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - name: Print Java version
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: Build Mac DMG Installer
+        run: ./gradlew :desktop:package
+      - name: List DMG artifacts
+        run: |
+          echo "DMG artifacts in jpackage directory:"
+          ls -la desktop/build/jpackage/*.dmg || echo "No DMG files found"
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyenet-mac-installer
+          path: desktop/build/jpackage/*.dmg
 
   test:
     name: Test
@@ -281,10 +354,12 @@ jobs:
           name: pluginVerifier-result
           path: intellij/build/reports/pluginVerifier
 
+
+
   releaseDraft:
     name: Release draft
     if: github.event_name != 'pull_request'
-    needs: [ build, test, verify, build-windows-installer ]
+    needs: [ build, test, verify, build-windows-installer, build-linux-installer, build-mac-installer ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -362,6 +437,16 @@ jobs:
         with:
           name: skyenet-windows-installer
           path: ./windows-installer
+      - name: Download Linux Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: skyenet-linux-installer
+          path: ./linux-installer
+      - name: Download Mac Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: skyenet-mac-installer
+          path: ./mac-installer
 
       - name: Upload Plugin Release Asset
         env:
@@ -385,3 +470,31 @@ jobs:
           echo "Found MSI file: $MSI_FILE"
           gh release upload "v${{ needs.build.outputs.version }}" \
             "$MSI_FILE"
+      - name: Upload Linux Installer Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading Linux installer asset..."
+          DEB_FILE=$(find ./linux-installer -name "*.deb" -type f)
+          if [ -z "$DEB_FILE" ]; then
+            echo "Error: No DEB file found in linux-installer directory"
+            ls -la ./linux-installer
+            exit 1
+          fi
+          echo "Found DEB file: $DEB_FILE"
+          gh release upload "v${{ needs.build.outputs.version }}" \
+            "$DEB_FILE"
+      - name: Upload Mac Installer Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading Mac installer asset..."
+          DMG_FILE=$(find ./mac-installer -name "*.dmg" -type f)
+          if [ -z "$DMG_FILE" ]; then
+            echo "Error: No DMG file found in mac-installer directory"
+            ls -la ./mac-installer
+            exit 1
+          fi
+          echo "Found DMG file: $DMG_FILE"
+          gh release upload "v${{ needs.build.outputs.version }}" \
+            "$DMG_FILE"
