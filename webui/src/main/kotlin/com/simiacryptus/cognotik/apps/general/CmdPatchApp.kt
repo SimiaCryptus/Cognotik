@@ -62,8 +62,6 @@ class CmdPatchApp(
 
         .map { root.toPath().relativize(it) ?: it }.toSet()
 
-    private val tripleTilde = "```"
-
     override fun projectSummary(): String {
         val codeFiles = codeFiles()
         val str = codeFiles

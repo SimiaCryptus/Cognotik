@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan.tools
 import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -14,24 +13,20 @@ import com.simiacryptus.jopenai.models.ChatModel
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.exists
 
 class CommandAutoFixTask(
-    planSettings: PlanSettings,
-    planTask: CommandAutoFixTaskConfigData?
+    planSettings: PlanSettings, planTask: CommandAutoFixTaskConfigData?
 ) : AbstractTask<CommandAutoFixTask.CommandAutoFixTaskConfigData>(planSettings, planTask) {
     class CommandAutoFixTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
         model: ChatModel? = null,
-        @Description("List of command executables that can be used for auto-fixing")
-        var commandAutoFixCommands: List<String>? = listOf()
+        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: List<String>? = listOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 
     class CommandAutoFixTaskConfigData(
-        @Description("The commands to be executed with their respective working directories")
-        val commands: List<CommandWithWorkingDir>? = null,
+        @Description("The commands to be executed with their respective working directories") val commands: List<CommandWithWorkingDir>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
@@ -43,10 +38,8 @@ class CommandAutoFixTask(
     )
 
     data class CommandWithWorkingDir(
-        @Description("The command to be executed")
-        val command: List<String> = emptyList(),
-        @Description("The relative path of the working directory")
-        val workingDir: String? = null
+        @Description("The command to be executed") val command: List<String> = emptyList(),
+        @Description("The relative path of the working directory") val workingDir: String? = null
     )
 
     override fun promptSegment(): String {
@@ -73,45 +66,34 @@ class CommandAutoFixTask(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
-        var autoRetries = if (planSettings.autoFix) 5 else 0
         val semaphore = Semaphore(0)
-        val hasError = AtomicBoolean(false)
-        val onComplete = { semaphore.release() }
-        var retryable: Retryable? = null
-        retryable = Retryable(agent.ui, task = task) {
-            val task = agent.ui.newTask(false).apply { it.append(placeholder) }
-            val api = api.getChildClient(task)
-            this.taskConfig?.commands?.forEachIndexed { index, commandWithDir ->
-                val alias = commandWithDir.command.firstOrNull()
-                val commandAutoFixCommands = taskConfig.commands.map {
-                    val cmd = it.command.firstOrNull()
-                    taskSettings.commandAutoFixCommands?.firstOrNull { it.endsWith(cmd ?: "") } ?: cmd
-                }
-                val cmds = commandAutoFixCommands
-                    .map { File(it) }?.associateBy { it.name }
-                    ?.filterKeys { it.startsWith(alias ?: "") }
-                    ?: emptyMap()
-                val executable = when {
-                    cmds.isNotEmpty() -> cmds.entries.firstOrNull()?.value
-                    alias.isNullOrBlank() -> null
-                    root.resolve(alias).exists() -> root.resolve(alias).toFile().absoluteFile
-                    File(alias).exists() -> File(alias).absoluteFile
-                    else -> null
-                } ?: throw IllegalArgumentException("Command not found: $alias")
-                val workingDirectory = (commandWithDir.workingDir
-                    ?.let { agent.root.toFile().resolve(it) } ?: agent.root.toFile())
-                    .apply { mkdirs() }
-                val outputResult = CmdPatchApp(
+        Retryable(agent.ui, task = task) {
+            val task = agent.ui.newTask(false)
+            agent.pool.submit {
+                val api = api.getChildClient(task)
+                CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
-                        commands = listOf(
+                        commands = this.taskConfig?.commands?.map { commandWithDir ->
+                            val alias = commandWithDir.command.firstOrNull()
+                            val cmds = taskConfig.commands.map {
+                                val cmd = it.command.firstOrNull()
+                                taskSettings.commandAutoFixCommands?.firstOrNull { it.endsWith(cmd ?: "") } ?: cmd
+                            }.map { File(it!!) }.associateBy { it.name }.filterKeys { it.startsWith(alias ?: "") }
                             PatchApp.CommandSettings(
-                                executable = executable,
+                                executable = when {
+                                    cmds.isNotEmpty() -> cmds.entries.firstOrNull()?.value
+                                    alias.isNullOrBlank() -> null
+                                    root.resolve(alias).exists() -> root.resolve(alias).toFile().absoluteFile
+                                    File(alias).exists() -> File(alias).absoluteFile
+                                    else -> null
+                                } ?: throw IllegalArgumentException("Command not found: $alias"),
                                 arguments = commandWithDir.command.drop(1).joinToString(" "),
-                                workingDirectory = workingDirectory,
+                                workingDirectory = (commandWithDir.workingDir?.let { agent.root.toFile().resolve(it) }
+                                    ?: agent.root.toFile()).apply { mkdirs() },
                                 additionalInstructions = ""
                             )
-                        ),
+                        } ?: emptyList(),
                         autoFix = agent.planSettings.autoFix,
                         exitCodeOption = "nonzero",
                         includeLineNumbers = false,
@@ -121,50 +103,15 @@ class CommandAutoFixTask(
                     model = taskSettings.model ?: agent.planSettings.defaultModel,
                     parsingModel = agent.planSettings.parsingModel,
                 ).run(
-                    ui = agent.ui,
-                    task = task
+                    ui = agent.ui, task = task
                 )
                 task.add(
-                    MarkdownUtil.renderMarkdown(
-                        "## Command Auto Fix Result for Command ${index + 1}\n",
-                        ui = agent.ui,
-                        tabs = false
-                    )
-                )
-                task.add(
-                    if (outputResult.exitCode == 0) {
-                        MarkdownUtil.renderMarkdown("Command Success\n", ui = agent.ui, tabs = false)
-                    } else {
-                        hasError.set(true)
-                        MarkdownUtil.renderMarkdown(
-                            "Command Failed: ${outputResult.exitCode}\n",
-                            ui = agent.ui,
-                            tabs = false
-                        )
+                    agent.ui.hrefLink("Accept", "href-link cmd-button") {
+                        resultFn("All Commands completed")
+                        semaphore.release()
                     }
                 )
             }
-            resultFn("All Command Auto Fix tasks completed")
-            task.add(
-                if (!hasError.get()) {
-                    onComplete()
-                    MarkdownUtil.renderMarkdown(
-                        "## All Command Auto Fix tasks completed successfully\n",
-                        ui = agent.ui,
-                        tabs = false
-                    )
-                } else {
-                    val s = MarkdownUtil.renderMarkdown(
-                        "## Some Command Auto Fix tasks failed\n",
-                        ui = agent.ui, tabs = false
-                    ) + acceptButtonFooter(
-                        agent.ui
-                    ) {
-                        onComplete()
-                    }
-                    if (autoRetries-- > 0) retryable?.retry()
-                    s
-                })
             task.placeholder
         }
         try {

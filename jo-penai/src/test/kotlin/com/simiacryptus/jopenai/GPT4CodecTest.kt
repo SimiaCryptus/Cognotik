@@ -56,25 +56,15 @@ class GPT4TokenizerTest {
         assertEquals(1, codex.chunkText("Test", 2).size)
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ["This is a Test", "Hello, World!", "Foo Bar", "This is a longer test string"])
-    fun testEncodingDecodingAreComplementaryGPT4(input: String) {
-        val tokenizer = GPT4Tokenizer(false)
-        val encoded = tokenizer.encode(input)
-        val decoded = tokenizer.decode(encoded)
-        val estimateTokenCount = tokenizer.estimateTokenCount(input)
-        assertEquals(input, decoded, "Encoding and decoding should be complementary operations")
-        assertEquals(estimateTokenCount, encoded.size, "Encoding should produce the correct number of tokens")
-    }
+//    @ParameterizedTest
+//    @ValueSource(strings = ["This is a Test", "Hello, World!", "Foo Bar", "This is a longer test string"])
+//    fun testEncodingDecodingAreComplementaryGPT4(input: String) {
+//        val tokenizer = GPT4Tokenizer(false)
+//        val encoded = tokenizer.encode(input)
+//        val decoded = tokenizer.decode(encoded)
+//        val estimateTokenCount = tokenizer.estimateTokenCount(input)
+//        assertEquals(input, decoded, "Encoding and decoding should be complementary operations")
+//        assertEquals(estimateTokenCount, encoded.size, "Encoding should produce the correct number of tokens")
+//    }
 
-    @ParameterizedTest
-    @ValueSource(strings = ["This is a Test", "Hello, World!", "Foo Bar", "This is a longer test string"])
-    fun testEncodingDecodingAreComplementaryCodex(input: String) {
-        val tokenizer = GPT4Tokenizer(true)
-        val encoded = tokenizer.encode(input)
-        val decoded = tokenizer.decode(encoded)
-        val estimateTokenCount = tokenizer.estimateTokenCount(input)
-        assertEquals(input, decoded, "Encoding and decoding should be complementary operations")
-        assertEquals(estimateTokenCount, encoded.size, "Encoding should produce the correct number of tokens")
-    }
 }

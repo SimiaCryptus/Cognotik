@@ -40,10 +40,7 @@ open class YamlDescriber : TypeDescriber() {
         }
         if (isAbbreviated(rawType) || stackMax <= 0) return "\ntype: object\nclass: ${rawType.name}".trim()
         if (rawType.isEnum || DynamicEnum::class.java.isAssignableFrom(rawType)) {
-            return """
-          type: enumeration
-          values:
-          """.trimIndent() + getEnumValues(rawType).joinToString("\n") { "  - $it" }
+            return "type: enumeration\nvalues:\n" + getEnumValues(rawType).joinToString("\n") { "  - $it" }
         }
         val propertiesYaml = if (rawType.isKotlinClass()) {
             rawType.kotlin.memberProperties.filter { it.visibility == KVisibility.PUBLIC }.map {

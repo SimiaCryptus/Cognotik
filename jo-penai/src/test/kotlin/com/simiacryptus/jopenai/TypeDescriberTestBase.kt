@@ -38,7 +38,7 @@ abstract class TypeDescriberTestBase {
 
     @Test
     open fun testDescribeMethod() {
-        Assertions.assertEquals(methodDescription, typeDescriber.describe(this::methodExample.javaMethod!!))
+        Assertions.assertEquals(methodDescription.trim(), typeDescriber.describe(this::methodExample.javaMethod!!).trim())
     }
 
     @Test

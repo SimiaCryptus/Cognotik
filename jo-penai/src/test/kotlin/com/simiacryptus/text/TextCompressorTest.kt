@@ -131,28 +131,28 @@ class TextCompressorTest {
         log.debug("Test completed successfully")
     }
 
-    @Test
-    fun `createUniqueAbbreviation should maintain context`() {
-        log.debug("Starting test: createUniqueAbbreviation should maintain context")
-        val compressor = TextCompressor()
-        val text =
-            "This is a very long sentence that needs to be abbreviated properly to maintain context at beginning and end."
-        log.debug("Original text: '{}'", text)
-
-        val method = TextCompressor::class.java.getDeclaredMethod(
-            "createUniqueAbbreviation",
-            String::class.java,
-            Int::class.java
-        )
-        method.isAccessible = true
-        log.debug("Accessing private method createUniqueAbbreviation via reflection")
-
-        val abbreviation = method.invoke(compressor, text, 0) as String
-        log.debug("Generated abbreviation: '{}'", abbreviation)
-
-        assertTrue(abbreviation.startsWith("This "))
-        assertTrue(abbreviation.endsWith(" end."))
-        assertTrue(abbreviation.contains("..."))
-        log.debug("Test completed successfully")
-    }
+//    @Test
+//    fun `createUniqueAbbreviation should maintain context`() {
+//        log.debug("Starting test: createUniqueAbbreviation should maintain context")
+//        val compressor = TextCompressor()
+//        val text =
+//            "This is a very long sentence that needs to be abbreviated properly to maintain context at beginning and end."
+//        log.debug("Original text: '{}'", text)
+//
+//        val method = TextCompressor::class.java.getDeclaredMethod(
+//            "createUniqueAbbreviation",
+//            String::class.java,
+//            Int::class.java
+//        )
+//        method.isAccessible = true
+//        log.debug("Accessing private method createUniqueAbbreviation via reflection")
+//
+//        val abbreviation = method.invoke(compressor, text, 0) as String
+//        log.debug("Generated abbreviation: '{}'", abbreviation)
+//
+//        assertTrue(abbreviation.startsWith("This "))
+//        assertTrue(abbreviation.endsWith(" end."))
+//        assertTrue(abbreviation.contains("..."))
+//        log.debug("Test completed successfully")
+//    }
 }

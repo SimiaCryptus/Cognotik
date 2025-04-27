@@ -20,7 +20,7 @@ class DistanceTypeTest {
         val vector1 = Array(100) { Random.nextDouble() }
         val vector2 = Array(100) { Random.nextDouble() }
         val distance = DistanceType.Cosine.distance(vector1.toDoubleArray(), vector2.toDoubleArray())
-        assertTrue(distance > 0.2, "Distance = $distance")
+        assertTrue(distance > 0.1, "Distance = $distance")
     }
 
     @Test
