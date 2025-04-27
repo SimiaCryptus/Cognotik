@@ -22,7 +22,6 @@ object DaemonClient {
     private const val PID_FILE = "cognotik_server.pid"
     private const val MAX_PORT_ATTEMPTS = 10
     private const val SOCKET_PORT_OFFSET = 1
-
     private const val SESSION_DIR_BASE = ".cognotik"
 
     @JvmStatic
@@ -48,7 +47,6 @@ object DaemonClient {
                 log.info("Server not running. Launching daemon...")
                 println("Server not running on $host:$port. Launching daemon...")
                 try {
-
                     ServerSocket(port).use {
                         log.debug("Port $port is available")
                     }
@@ -87,12 +85,7 @@ object DaemonClient {
      * @return The path to the created directory
      */
     fun createRandomSessionDir(): String {
-        val userHome = System.getProperty("user.home")
-        val baseDir = File(userHome, SESSION_DIR_BASE)
-        if (!baseDir.exists()) {
-            log.info("Creating base directory: ${baseDir.absolutePath}")
-            baseDir.mkdirs()
-        }
+        val baseDir = getHome()
         val sessionId = UUID.randomUUID().toString().substring(0, 8)
         val sessionDir = File(baseDir, sessionId)
         if (!sessionDir.exists()) {
@@ -100,6 +93,16 @@ object DaemonClient {
             sessionDir.mkdirs()
         }
         return sessionDir.absolutePath
+    }
+
+    private fun getHome(): File {
+        val userHome = System.getProperty("user.home")
+        val baseDir = File(userHome, SESSION_DIR_BASE)
+        if (!baseDir.exists()) {
+            log.info("Creating base directory: ${baseDir.absolutePath}")
+            baseDir.mkdirs()
+        }
+        return baseDir
     }
 
     /**
@@ -143,7 +146,7 @@ object DaemonClient {
         }
 
         try {
-            val pidFile = File(PID_FILE)
+            val pidFile = getHome().resolve(PID_FILE)
             if (pidFile.exists()) {
                 val pid = pidFile.readText().trim().toLong()
                 log.info("Attempting to kill server process with PID: $pid")
