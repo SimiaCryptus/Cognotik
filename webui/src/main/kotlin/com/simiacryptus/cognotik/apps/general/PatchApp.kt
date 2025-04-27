@@ -8,8 +8,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isGitignore
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isLLMIncludableFile
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -358,15 +356,10 @@ abstract class PatchApp(
                         )
 
                         val searchResults = error.research?.searchQueries?.flatMap { query ->
-                            val filter1 = filteredWalk(
-                                settings.workingDirectory ?: root
-                            ) { !isGitignore(it.toPath()) }.filter { isLLMIncludableFile(it) }
-                            val filter2 = filter1.filter { file ->
+                            filteredWalk(settings.workingDirectory ?: root).filter { file ->
                                 FileSystems.getDefault().getPathMatcher("glob:" + query.fileGlob).matches(file.toPath())
-                            }
-                            val filter3 =
-                                filter2.filter { it.readText().contains(query.pattern ?: "", ignoreCase = true) }
-                            filter3.map { it.toPath() }.toList()
+                            }.filter { it.readText().contains(query.pattern ?: "", ignoreCase = true) }
+                                .map { it.toPath() }.toList()
                         }?.toSet() ?: emptySet()
                         if (searchResults.isNotEmpty()) {
                             task.verbose(

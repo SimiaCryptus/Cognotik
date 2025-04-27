@@ -11,6 +11,7 @@ import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
+import java.util.concurrent.Executors
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Execution(ExecutionMode.CONCURRENT)
@@ -56,7 +57,7 @@ class ModelTests {
     private fun testChatWithModel(model: ChatModel) {
         val prov = ClientUtil.keyMap[ClientUtil.defaultApiProvider.name] ?: return
         if (prov.isBlank()) return
-        val client = ChatClient(ClientUtil.keyMap.mapKeys { APIProvider.valueOf(it.key) })
+        val client = ChatClient(ClientUtil.keyMap.mapKeys { APIProvider.valueOf(it.key) }, workPool = Executors.newCachedThreadPool())
         val request = ApiModel.ChatRequest(
             model = model.modelName,
             messages = ArrayList(

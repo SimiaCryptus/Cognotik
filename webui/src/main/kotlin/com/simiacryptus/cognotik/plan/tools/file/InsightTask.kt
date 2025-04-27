@@ -147,15 +147,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         ((taskConfig?.input_files ?: listOf()))
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                Files.walk(root).asSequence()
-                    .filter { path ->
-                        matcher.matches(root.relativize(path)) &&
-                                FileSelectionUtils.isLLMIncludableFile(path.toFile())
-                    }
-                    .map { path ->
+                FileSelectionUtils.filteredWalk(root.toFile()) {
+                        path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                }.map { it.toPath() }.map { path ->
                         root.relativize(path).toString()
-                    }
-                    .toList()
+                }.toList()
             }
             .distinct()
             .sortedBy { it }

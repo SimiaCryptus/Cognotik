@@ -7,8 +7,6 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskConfig
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.jopenai.describe.Description
 import java.nio.file.FileSystems
-import java.nio.file.Files
-import kotlin.streams.asSequence
 
 abstract class AbstractFileTask<T : FileTaskConfigBase>(
     planSettings: PlanSettings,
@@ -33,15 +31,11 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
         ((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf()))
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                Files.walk(root).asSequence()
-                    .filter { path ->
-                        matcher.matches(root.relativize(path)) &&
-                                FileSelectionUtils.isLLMIncludableFile(path.toFile())
-                    }
-                    .map { path ->
+                FileSelectionUtils.filteredWalk(root.toFile()) { path ->
+                    matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                }.map { it.toPath() }.map { path ->
                         root.relativize(path).toString()
-                    }
-                    .toList()
+                }.toList()
             }
             .distinct()
             .sortedBy { it }

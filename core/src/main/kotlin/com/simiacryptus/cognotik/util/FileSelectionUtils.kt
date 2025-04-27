@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
@@ -8,10 +9,11 @@ import kotlin.io.path.name
 
 class FileSelectionUtils {
     companion object {
+        val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
         fun filteredWalk(
             file: File,
             maxFilesPerDir: Int = 20,
-            fn: (File) -> Boolean
+            fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
         ): List<File> {
             val result = mutableListOf<File>()
             if (fn(file)) {
@@ -22,6 +24,8 @@ class FileSelectionUtils {
                 } else {
                     result.add(file)
                 }
+            } else {
+                log.debug("Skipping file: ${file.absolutePath}")
             }
             return result
         }

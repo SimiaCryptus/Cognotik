@@ -20,7 +20,6 @@ import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isGitignore
 import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isLLMIncludableFile
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
@@ -135,8 +134,7 @@ class SimpleCommandAction : BaseAction() {
             override fun searchFiles(searchStrings: List<String>): Set<Path> {
                 require(searchStrings.isNotEmpty()) { "Search strings cannot be empty" }
                 return searchStrings.flatMap { searchString ->
-                    filteredWalk(settings.workingDirectory) { !isGitignore(it.toPath()) }
-                        .filter { isLLMIncludableFile(it) }
+                    filteredWalk(settings.workingDirectory)
                         .filter { it.readText().contains(searchString, ignoreCase = true) }
                         .map { it.toPath() }
                         .toList()

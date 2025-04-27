@@ -84,7 +84,7 @@ class UnifiedPlanAction : BaseAction() {
                                     buildString {
 
                                         append("Selected Files:\n")
-                                        append(filteredWalk(File(root)) { true }.joinToString("\n") {
+                                        append(filteredWalk(File(root)).joinToString("\n") {
                                             "* ${
                                                 it.toRelativeString(
                                                     File(root)
@@ -113,7 +113,7 @@ class UnifiedPlanAction : BaseAction() {
                                     buildString {
 
                                         append("Selected Files:\n")
-                                        append(filteredWalk(File(root)) { true }.joinToString("\n") {
+                                        append(filteredWalk(File(root)).joinToString("\n") {
                                             "* ${
                                                 it.toRelativeString(
                                                     File(root)
@@ -151,7 +151,7 @@ class UnifiedPlanAction : BaseAction() {
                                     buildString {
 
                                         append("Selected Files:\n")
-                                        append(filteredWalk(File(root)) { true }.joinToString("\n") {
+                                        append(filteredWalk(File(root)).joinToString("\n") {
                                             "* ${
                                                 it.toRelativeString(
                                                     File(root)
@@ -192,7 +192,7 @@ class UnifiedPlanAction : BaseAction() {
                                         buildString {
 
                                             append("Selected Files:\n")
-                                            append(filteredWalk(File(root)) { true }.joinToString("\n") {
+                                            append(filteredWalk(File(root)).joinToString("\n") {
                                                 "* ${
                                                     it.toRelativeString(
                                                         File(root)

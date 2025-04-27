@@ -50,8 +50,7 @@ class CommandPatchApp(
 
     override fun searchFiles(searchStrings: List<String>): Set<Path> {
         return searchStrings.flatMap { searchString ->
-            FileSelectionUtils.filteredWalk(settings.workingDirectory!!) { !FileSelectionUtils.isGitignore(it.toPath()) }
-                .filter { FileSelectionUtils.isLLMIncludableFile(it) }
+            FileSelectionUtils.filteredWalk(settings.workingDirectory!!)
                 .filter { it.readText().contains(searchString, ignoreCase = true) }
                 .map { it.toPath() }
                 .toList()

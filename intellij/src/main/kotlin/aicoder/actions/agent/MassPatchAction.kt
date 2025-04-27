@@ -22,6 +22,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
 import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isLLMIncludableFile
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -88,12 +89,12 @@ class MassPatchAction : BaseAction() {
 
     fun getConfig(project: Project?, e: AnActionEvent): Settings? {
         val root = UITools.getSelectedFolder(e)?.toNioPath()
-        val files = Files.walk(root)
-            .filter { isLLMIncludableFile(it.toFile()) }
-            .toList().filterNotNull().toTypedArray()
+        val files = root?.toFile()?.let { filteredWalk(it) }?.map { it.toPath() } ?: emptyList()
         val settingsUI = SettingsUI().apply {
-            filesToProcess.setItems(files.toMutableList()) { path ->
-                root?.relativize(path)?.toString() ?: path.toString()
+            files.toMutableList().apply {
+                filesToProcess.setItems(this) { path ->
+                    root?.relativize(path).toString()
+                }
             }
             files.forEach { path ->
                 filesToProcess.setItemSelected(path, true)

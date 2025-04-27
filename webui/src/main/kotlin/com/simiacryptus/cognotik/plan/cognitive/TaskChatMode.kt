@@ -47,13 +47,8 @@ open class TaskChatMode(
     private val systemPrompt = "Given the following input, choose ONE task to execute and describe it in detail."
 
     override fun initialize() {
-
         val enabledTasks = TaskType.getAvailableTaskTypes(planSettings)
-        require(enabledTasks.size == 1) {
-            "TaskChatMode requires exactly one enabled task type. Found ${enabledTasks.size}: ${enabledTasks.map { it.name }}"
-        }
-        log.debug("TaskChatMode initialized with task type: ${enabledTasks.first().name}")
-
+        log.debug("TaskChatMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
         synchronized(messagesLock) {
             messages.add(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList()))
         }

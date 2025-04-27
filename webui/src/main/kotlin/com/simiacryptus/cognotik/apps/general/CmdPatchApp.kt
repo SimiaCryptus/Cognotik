@@ -88,7 +88,7 @@ class CmdPatchApp(
             var exitCode = 0
             for ((index, cmdSettings) in settings.commands.withIndex()) {
                 val processBuilder = ProcessBuilder(
-                    listOf(cmdSettings.executable.absolutePath) + cmdSettings.arguments.split(" ")
+                    listOf(cmdSettings.executable.toString()) + cmdSettings.arguments.split(" ")
                         .filter(String::isNotBlank)
                 ).directory(cmdSettings.workingDirectory)
                 processBuilder.environment().putAll(System.getenv())
@@ -155,8 +155,7 @@ class CmdPatchApp(
     }
 
     override fun searchFiles(searchStrings: List<String>) = searchStrings.flatMap { searchString ->
-        FileSelectionUtils.filteredWalk(settings.workingDirectory!!) { !FileSelectionUtils.isGitignore(it.toPath()) }
-            .filter { FileSelectionUtils.isLLMIncludableFile(it) }
+        FileSelectionUtils.filteredWalk(settings.workingDirectory!!)
             .filter { it.readText().contains(searchString, ignoreCase = true) }
             .map { it.toPath() }
             .toList()

@@ -32,6 +32,7 @@ import java.nio.file.Paths
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.LocalDateTime
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 
@@ -279,7 +280,7 @@ abstract class DemoTestBase(
             return SpokenText(text, cacheFile.readBytes().inputStream(), 0)
         }
         val startTime = System.currentTimeMillis()
-        val speechWavBytes = OpenAIClient().createSpeech(
+        val speechWavBytes = OpenAIClient(workPool = Executors.newCachedThreadPool()).createSpeech(
             ApiModel.SpeechRequest(
                 input = text,
                 model = AudioModels.TTS.modelName,

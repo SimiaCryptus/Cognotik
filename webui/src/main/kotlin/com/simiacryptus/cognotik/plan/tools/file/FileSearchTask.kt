@@ -76,12 +76,9 @@ ${availableFiles.joinToString("\n") { "  - $it" }}
         return (taskConfig?.input_files ?: listOf())
             .flatMap { filePattern ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$filePattern")
-                Files.walk(root).asSequence()
-                    .filter { path ->
-                        matcher.matches(root.relativize(path)) &&
-                                FileSelectionUtils.isLLMIncludableFile(path.toFile())
-                    }
-                    .flatMap { path ->
+                FileSelectionUtils.filteredWalk(root.toFile()) {
+                    path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                }.map { it.toPath() }.flatMap { path ->
                         val relativePath = root.relativize(path).toString()
                         val lines = Files.readAllLines(path)
                         lines.mapIndexed { index, line ->
@@ -139,11 +136,10 @@ ${availableFiles.joinToString("\n") { "  - $it" }}
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
         fun getAvailableFiles(path: Path): List<String> {
             return try {
-                Files.walk(path)
-                    .filter { FileSelectionUtils.isLLMIncludableFile(it.toFile()) }
-                    .map { path.relativize(it).toString() }
+                val stringList = FileSelectionUtils.filteredWalk(path.toFile(), 20)
+                    .map { path.relativize(it.toPath()).toString() }
                     .sorted()
-                    .collect(Collectors.toList())
+                stringList
             } catch (e: Exception) {
                 log.error("Error listing available files", e)
                 listOf("Error listing files: ${e.message}")

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.io.path.exists
 
 class CommandAutoFixTask(
     planSettings: PlanSettings,
@@ -90,11 +91,13 @@ class CommandAutoFixTask(
                     .map { File(it) }?.associateBy { it.name }
                     ?.filterKeys { it.startsWith(alias ?: "") }
                     ?: emptyMap()
-                var executable = cmds.entries.firstOrNull()?.value
-                executable = executable ?: alias?.let { root.resolve(it).toFile() }
-                if (executable == null) {
-                    throw IllegalArgumentException("Command not found: $alias")
-                }
+                val executable = when {
+                    cmds.isNotEmpty() -> cmds.entries.firstOrNull()?.value
+                    alias.isNullOrBlank() -> null
+                    root.resolve(alias).exists() -> root.resolve(alias).toFile().absoluteFile
+                    File(alias).exists() -> File(alias).absoluteFile
+                    else -> null
+                } ?: throw IllegalArgumentException("Command not found: $alias")
                 val workingDirectory = (commandWithDir.workingDir
                     ?.let { agent.root.toFile().resolve(it) } ?: agent.root.toFile())
                     .apply { mkdirs() }
