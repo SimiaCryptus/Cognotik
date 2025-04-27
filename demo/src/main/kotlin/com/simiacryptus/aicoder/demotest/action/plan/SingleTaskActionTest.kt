@@ -82,11 +82,11 @@ class SingleTaskActionTest : DemoTestBase(
             )
             waitFor(Duration.ofSeconds(10)) {
                 try {
-                    // Navigate to Task Plans submenu
+
                     findAll(CommonContainerFixture::class.java, byXpath("//div[@text='📋 Task Plans']"))
                         .firstOrNull()?.moveMouse()
                     sleep(1000)
-                    // Click Single Task option
+
                     findAll(CommonContainerFixture::class.java, byXpath("//div[contains(@text, 'Single Task')]"))
                         .firstOrNull()?.click()
                     log.info("Single Task action clicked")
@@ -151,7 +151,6 @@ class SingleTaskActionTest : DemoTestBase(
                         5000
                     )
 
-                    // Wait for response
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.className("response-message")))
                     tts("Notice how the AI provides not just the implementation, but also includes documentation and usage examples. You can now review and apply these changes directly to your code.")?.play(
                         3000

@@ -48,11 +48,11 @@ class CrawlerAgentTask(
         @Description("Method to seed the crawler (GoogleSearch or DirectUrls)") val seed_method: SeedMethod = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (HttpClient or Selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
-//    @Description("Whether to follow links found in the analysis") val follow_links: Boolean? = true,
-//    @Description("Whether to create a final summary of all results") val create_final_summary: Boolean? = true,
-//    @Description("Maximum size of the final output in characters") val max_final_output_size: Int? = 10000,
-//    @Description("Number of pages to process concurrently") val concurrent_page_processing: Int? = 5,
-//    @Description("Whether to allow analyzing the same URL multiple times") val allow_revisit_pages: Boolean? = false,
+
+
+
+
+
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -62,7 +62,6 @@ class CrawlerAgentTask(
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
-
 
     var selenium: Selenium? = null
 
@@ -112,7 +111,6 @@ class CrawlerAgentTask(
         val link_data: List<LinkData>? = null,
     )
 
-
     override fun run(
         agent: PlanCoordinator,
         messages: List<String>,
@@ -125,11 +123,9 @@ class CrawlerAgentTask(
         val webSearchDir = File(agent.root.toFile(), ".websearch")
         if (!webSearchDir.exists()) webSearchDir.mkdirs()
 
-        // Get the seed strategy based on the selected method
         val seedMethod = taskConfig?.seed_method ?: SeedMethod.GoogleSearch
         val seedItems = seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
 
-        // Create processing queue with initial items
         val pageQueue = mutableListOf<LinkData>().apply {
             seedItems?.forEach { item ->
                 add(
@@ -142,16 +138,14 @@ class CrawlerAgentTask(
             }
         }
 
-        // Create a thread-safe map to store analysis results by index
         val analysisResultsMap = ConcurrentHashMap<Int, String>()
         val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
         val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
 
-        // Header for the analysis results
         val header = buildString {
             appendLine("# Analysis of Search Results")
             appendLine()
-            // Display seed method, search query or direct URLs
+
             when (seedMethod) {
                 SeedMethod.GoogleSearch -> {
                     appendLine("**Search Query:** ${taskConfig?.search_query}")
@@ -185,7 +179,8 @@ class CrawlerAgentTask(
                 pageQueue.count { it.completed } < maxPages
             ) {
                 while (
-                    pageQueue.count { it.started } < maxPages && // Ensure we don't start more than maxPages
+                    pageQueue.count { it.started } < maxPages &&
+
                     pageQueue.count { !it.started } > 0
                 ) {
                     val page = synchronized(pageQueue) {
@@ -209,7 +204,7 @@ class CrawlerAgentTask(
                                     appendLine()
 
                                     try {
-                                        // Fetch and transform content
+
                                         val content = fetchAndProcessUrl(url, webSearchDir, currentIndex, agent.pool)
                                         if (content.isBlank()) {
                                             appendLine("*Empty content, skipping this result*")
@@ -257,7 +252,7 @@ class CrawlerAgentTask(
                                         appendLine()
 
                                         if (/*taskConfig?.follow_links ?:*/ follow_links) {
-                                            // First try to use the structured link data if available
+
                                             var linkData = analysis.obj.link_data
                                             val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/allow_revisit_pages
                                             if (linkData.isNullOrEmpty()) {
@@ -335,7 +330,7 @@ class CrawlerAgentTask(
     private fun createFinalSummary(analysisResults: String, api: API): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
         val maxSize = /*taskConfig?.max_final_output_size ?:*/ max_final_output_size
-        // If the analysis is not too much larger than our target, just truncate it
+
         if (analysisResults.length < maxSize * 1.5) {
             log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
             return analysisResults.substring(
@@ -343,14 +338,14 @@ class CrawlerAgentTask(
                 min(analysisResults.length, maxSize)
             ) + "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
         }
-        // Extract the header section (everything before the first URL analysis)
+
         val headerEndIndex = analysisResults.indexOf("## 1. [")
         val header = if (headerEndIndex > 0) {
             analysisResults.substring(0, headerEndIndex)
         } else {
             "# Web Search: ${taskConfig?.search_query ?: taskConfig?.direct_urls ?: ""}\n\n"
         }
-        // Extract all the URL sections
+
         val urlSections = extractUrlSections(analysisResults)
         log.info("Extracted ${urlSections.size} URL sections for summarization")
         val summary = SimpleActor(
@@ -388,16 +383,16 @@ class CrawlerAgentTask(
     }
 
     private fun summarizeSection(content: String): String {
-        // Extract the first paragraph or first few sentences
+
         val firstParagraph = content.split("\n\n").firstOrNull()?.trim() ?: ""
         if (firstParagraph.length < 300) return firstParagraph
-        // If first paragraph is too long, get first few sentences
+
         val sentences = content.split(". ").take(3)
         return sentences.joinToString(". ") + (if (sentences.size >= 3) "..." else "")
     }
 
     private fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ExecutorService): String {
-        // Check if URL is already in cache
+
         val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/ allow_revisit_pages
         if (!allowRevisit && urlContentCache.containsKey(url)) {
             log.info("Using cached content for URL: $url")
@@ -406,7 +401,6 @@ class CrawlerAgentTask(
         return (taskConfig?.fetch_method ?: FetchMethod.HttpClient).createStrategy(this)
             .fetch(url, webSearchDir, index, pool, planSettings)
     }
-
 
     private fun extractLinksFromMarkdown(markdown: String): List<LinkData> {
         val links = mutableListOf<Pair<String, String>>()
@@ -447,7 +441,7 @@ class CrawlerAgentTask(
             val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
             val urlSafe = url.replace(Regex("https?://"), "").replace(Regex("[^a-zA-Z0-9]"), "_").take(100)
             val analysisFile = File(webSearchDir, "${urlSafe}_${index}_${timestamp}.md")
-            // Create metadata JSON header
+
             val metadata = mapOf(
                 "url" to url,
                 "timestamp" to LocalDateTime.now().toString(),
@@ -456,7 +450,7 @@ class CrawlerAgentTask(
                 "content_query" to (taskConfig?.content_queries ?: "")
             )
             val metadataJson = ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
-            // Write file with commented JSON header followed by the analysis
+
             val contentWithHeader =
                 "<!-- ${metadataJson}${analysis.obj.let { JsonUtil.toJson(it) }} -->\n\n${analysis.text}"
             analysisFile.writeText(contentWithHeader)
@@ -472,12 +466,12 @@ class CrawlerAgentTask(
         planSettings: PlanSettings,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
-        // Check if content is too large and needs to be split
+
         val maxChunkSize = 50000
         if (content.length <= maxChunkSize) {
             return pageParsedResponse(planSettings, analysisGoal, content, api, describer)
         }
-        // Split content into manageable chunks
+
         log.info("Content size (${content.length}) exceeds limit, splitting into chunks")
         val chunks = splitContentIntoChunks(content, maxChunkSize)
         log.info("Split content into ${chunks.size} chunks")
@@ -534,22 +528,24 @@ class CrawlerAgentTask(
     }
 
     private fun findBreakPoint(text: String, maxSize: Int): Int {
-        // Look for paragraph breaks near the max size
+
         val paragraphBreakSearch = text.substring(0, minOf(maxSize, text.length)).lastIndexOf("\n\n")
         if (paragraphBreakSearch > maxSize * 0.7) {
-            return paragraphBreakSearch + 2 // Include the newlines
+            return paragraphBreakSearch + 2
+
         }
-        // Look for single newlines
+
         val newlineSearch = text.substring(0, minOf(maxSize, text.length)).lastIndexOf("\n")
         if (newlineSearch > maxSize * 0.7) {
             return newlineSearch + 1
         }
-        // Look for sentence breaks (period followed by space)
+
         val sentenceSearch = text.substring(0, minOf(maxSize, text.length)).lastIndexOf(". ")
         if (sentenceSearch > maxSize * 0.7) {
-            return sentenceSearch + 2 // Include the period and space
+            return sentenceSearch + 2
+
         }
-        // If no good break point, just use the max size
+
         return minOf(maxSize, text.length)
     }
 

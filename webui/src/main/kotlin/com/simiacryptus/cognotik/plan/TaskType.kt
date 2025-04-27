@@ -22,7 +22,6 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
     val tooltipHtml: String? = null,
 ) : DynamicEnum<TaskType<*, *>>(name) {
 
-
     companion object {
         val SoftwareGraphPlanningTask = TaskType(
             "SoftwareGraphPlanningTask",

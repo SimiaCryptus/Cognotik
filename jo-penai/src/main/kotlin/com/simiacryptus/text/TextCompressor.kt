@@ -30,7 +30,6 @@ class TextCompressor(
             return text
         }
 
-        // Build & reuse one suffix-array for both our LCP scan and the FullTextSearcher
         val suffixArray = SuffixArray(text)
         log.debug("Suffix array created in {}ms", System.currentTimeMillis() - startTime)
         val searcher = FullTextSearcher(text, suffixArray)
@@ -42,7 +41,6 @@ class TextCompressor(
             candidates.size, System.currentTimeMillis() - candidateStartTime
         )
 
-        // Sort candidates by length (descending) and then by frequency (descending)
         val sortedCandidates = candidates.sortedWith(
             compareByDescending<Pair<String, List<Int>>> { it.first.length }
                 .thenByDescending { it.second.size }
@@ -58,7 +56,6 @@ class TextCompressor(
             }
         }
 
-        // Apply abbreviations
         val abbreviationStartTime = System.currentTimeMillis()
         val result = applyAbbreviations(text, sortedCandidates)
         val compressionRatio = if (text.isNotEmpty()) (result.length.toDouble() / text.length) * 100 else 100.0
@@ -83,22 +80,19 @@ class TextCompressor(
         log.debug("Finding repeating subsequences with minLength={}, minOccurrences={}", minLength, minOccurrences)
         val startTime = System.currentTimeMillis()
         val suffixes = suffixArray.getArray()
-        // pull in the precomputed LCP
+
         val lcp = suffixArray.lcpArray
         val candidates = mutableListOf<Pair<String, List<Int>>>()
 
-        // Use the suffix array to identify common prefixes
         var comparisonCount = 0
         var candidatesFound = 0
 
-
         for (i in 0 until suffixes.size - 1) {
             val pos1 = suffixes[i]
-            // use LCP for adjacent suffixes in the sorted array
+
             comparisonCount++
             val commonLength = lcp[i]
 
-            // If common prefix is long enough, check if it occurs frequently
             if (commonLength >= minLength) {
                 val pattern = text.substring(pos1, pos1 + commonLength)
                 val occurrences = searcher.findAll(pattern)
@@ -131,26 +125,25 @@ class TextCompressor(
     ): String {
         log.debug("Applying abbreviations from {} candidates", candidates.size)
 
-
         val applyStartTime = System.currentTimeMillis()
         if (candidates.isEmpty()) {
             log.debug("No candidates for abbreviation, returning original text")
             return text
         }
         val isReplaced = BooleanArray(text.length) { false }
-        val selectedReplacements = mutableListOf<Triple<Int, Int, String>>() // Triple: origStart, origEnd, abbreviation
-        // Iterate through candidates sorted by length/frequency
+        val selectedReplacements = mutableListOf<Triple<Int, Int, String>>()
+
+
 
         candidates.forEach { (pattern, positions) ->
-            // Process occurrences from second onwards
+
             positions.drop(1).forEach { origPos ->
                 val origStart = origPos
                 val origEnd = origPos + pattern.length
 
-                // Check if this region overlaps with an already selected replacement in the original text
                 var overlaps = false
                 for (i in origStart until origEnd) {
-                    // Check bounds to prevent IndexOutOfBoundsException
+
                     if (i >= 0 && i < isReplaced.size && isReplaced[i]) {
                         overlaps = true
                         break
@@ -158,28 +151,30 @@ class TextCompressor(
                 }
 
                 if (!overlaps) {
-                    // Keep first and last few characters to maintain context
+
                     val prefixLength = minOf(5, pattern.length / 4)
                     val suffixLength = minOf(5, pattern.length / 4)
                     val abbr = if (pattern.length <= prefixLength + suffixLength + 5) {
                         log.trace("Pattern too short to abbreviate (length={})", pattern.length)
-                        // If pattern is too short, don't abbreviate
+
                         pattern
                     } else {
-                        // Create abbreviation with prefix, position marker, and suffix
+
                         val prefix = pattern.substring(0, prefixLength)
                         val suffix = pattern.substring(pattern.length - suffixLength)
                         log.trace("Created abbreviation: '{}'", "$prefix...$suffix")
                         "$prefix...$suffix"
                     }
                     val diff = abbr.length - pattern.length
-                    if (diff < 0) { // Only apply if it actually shortens the text
-                        // Select this replacement
+                    if (diff < 0) {
+
+
                         selectedReplacements.add(Triple(origStart, origEnd, abbr))
-                        // Mark the region in the original text as replaced
+
                         for (i in origStart until origEnd) {
-                            // Check bounds again for safety
-                            if (i < isReplaced.size) { // i >= 0 is guaranteed by origPos >= 0
+
+                            if (i < isReplaced.size) {
+
                                 isReplaced[i] = true
                             }
                         }
@@ -198,23 +193,23 @@ class TextCompressor(
             return text
         }
 
-        // Sort replacements by start index to build the final string correctly
         selectedReplacements.sortBy { it.first }
 
         val result = StringBuilder()
         var lastEnd = 0
         selectedReplacements.forEach { (start, end, abbr) ->
-            // Append text segment before this replacement (from original text)
-            if (start > lastEnd) { // Ensure indices are valid and append the segment
+
+            if (start > lastEnd) {
+
                 result.append(text.substring(lastEnd, start))
             }
-            // Append the abbreviation
+
             result.append(abbr)
-            // Update the end position of the last appended segment (in original text coordinates)
-            lastEnd = minOf(end, text.length) // Cap lastEnd at text length
+
+            lastEnd = minOf(end, text.length)
+
         }
 
-        // Append any remaining text after the last replacement
         if (lastEnd < text.length) {
             result.append(text.substring(lastEnd))
         }
@@ -227,6 +222,5 @@ class TextCompressor(
         )
         return result.toString()
     }
-
 
 }

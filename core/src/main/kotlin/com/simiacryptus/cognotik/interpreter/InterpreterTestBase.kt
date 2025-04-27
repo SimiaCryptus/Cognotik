@@ -64,7 +64,6 @@ abstract class InterpreterTestBase {
         Assertions.assertEquals(null, result)
     }
 
-
     @Test
     fun `test run with tool Any and invalid code`() {
         val interpreter = newInterpreter(mapOf("tool" to (FooBar() as Any)))

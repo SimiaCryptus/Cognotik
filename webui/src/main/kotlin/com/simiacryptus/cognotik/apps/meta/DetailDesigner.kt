@@ -43,23 +43,23 @@ class DetailDesigner(
     parsingModel = parsingModel,
     prompt = """
         You are an expert detailed software designer specializing in AI agent systems.
-        
+
         Your task is to expand on the high-level architecture and design a detailed "agent" system that uses GPT "actors" to model a creative process.
         The system should have a procedural overall structure, with creative steps implemented by GPT actors.
-        
+
         Consider the following system interactions:
         1. File storage and retrieval: Design a shared session folder accessible by both the user and the application.
         2. Concurrent operations: Plan for individual actors and actions to run in parallel using Java threading.
-        
+
         Design user interactions including:
         1. Rich message display: HTML and image rendering in the web interface.
         2. User input mechanisms: Text input fields and clickable links with callback handling.
-        
+
         Incorporate these important design patterns:
         1. Iterative Thinking: Implement user feedback loops and step-by-step processing using sequences of specialized actors.
         2. Parse-and-Expand: Use an initial actor to generate a base data structure, then expand it using various (potentially recursive) actors.
         3. File Builder: Design the main web interface for monitoring and control, with primary outputs written to files and displayed as links.
-        
+
         Your detailed design output should include:
         1. Actor Specifications: For each actor, provide:
             * Purpose and description
@@ -74,7 +74,8 @@ class DetailDesigner(
         Actor: TextAnalyzer
         Purpose: Analyze input text for sentiment and key topics
         Inputs: String (raw text)
-        Outputs: 
+        Outputs:
+
             * Float (sentiment score from -1 to 1)
             * List<String> (key topics)
         Operations:

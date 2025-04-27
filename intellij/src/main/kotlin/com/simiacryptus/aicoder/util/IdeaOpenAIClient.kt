@@ -20,14 +20,14 @@ class IdeaOpenAIClient : OpenAIClient(
 ) {
 
     init {
-        //log.info("Initializing OpenAI Client", Throwable())
+
         require(key.size == apiBase.size) {
             "API Key not configured for all providers: ${key.keys} != ${APIProvider.values().toList()}"
         }
     }
 
     override fun onUsage(model: OpenAIModel?, tokens: ApiModel.Usage) {
-//        AppSettingsState.instance.tokenCounter += tokens.total_tokens
+
         ApplicationServices.usageManager.incrementUsage(
             IdeaChatClient.currentSession,
             IdeaChatClient.localUser, model!!, tokens
@@ -47,7 +47,7 @@ class IdeaOpenAIClient : OpenAIClient(
     companion object {
 
         val instance by lazy {
-            //log.info("Initializing OpenAI Client", Throwable())
+
             val client = IdeaOpenAIClient()
             if (AppSettingsState.instance.apiLog) {
                 try {

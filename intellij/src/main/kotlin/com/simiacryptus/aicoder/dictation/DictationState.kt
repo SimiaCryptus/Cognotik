@@ -140,7 +140,6 @@ open class DictationState {
     }
 }
 
-// Extension function to get current editor
 private fun Project.currentEditor() = FileEditorManager
     .getInstance(this)
     .selectedTextEditor

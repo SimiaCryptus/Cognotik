@@ -59,9 +59,10 @@ class InquiryTask(
                 Create code for a new file that fulfills the specified requirements and context.
                 Given a detailed user request, break it down into smaller, actionable tasks suitable for software development.
                 Compile comprehensive information and insights on the specified topic.
-                Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations. 
+                Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
+
                 Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
-                
+
                 When generating insights, consider the existing project context and focus on information that is directly relevant and applicable.
                 Focus on generating insights and information that support the task types available in the system (${
                 planSettings.taskSettings.filter { it.value.enabled }.keys.joinToString(", ")

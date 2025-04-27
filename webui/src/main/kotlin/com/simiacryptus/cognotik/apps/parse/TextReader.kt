@@ -26,7 +26,7 @@ class TextReader(private val textFile: File) : DocumentParserApp.DocumentReader 
     }
 
     override fun close() {
-        // No resources to close for text files
+
     }
 
     private fun splitIntoPages(text: String, maxChars: Int = 16000): List<String> {

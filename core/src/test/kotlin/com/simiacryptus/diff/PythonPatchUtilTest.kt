@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class PythonPatchUtilTest {
-    // This helper normalizes line endings and trims the overall string.
+
     private fun normalize(text: String) = text.trim().replace("\r\n", "\n")
 
     @Test
@@ -69,7 +69,6 @@ class PythonPatchUtilTest {
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
-    //    @Test
     fun testPatchRemoveLine() {
         val source = """
             line1
@@ -89,7 +88,6 @@ class PythonPatchUtilTest {
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
-    //    @Test
     fun testPatchAdd2Lines() {
         val source = """
             line1
@@ -155,14 +153,14 @@ class PythonPatchUtilTest {
         val oldCode = """
             function example() {
                 console.log("Hello");
-                // Some comment
+
                 return true;
             }
         """.trimIndent()
         val newCode = """
             function example() {
                 console.log("Hello, World!");
-                // Modified comment
+
                 let x = 5;
                 return x > 0;
             }
@@ -171,10 +169,12 @@ class PythonPatchUtilTest {
         val expected = """
               function example() {
             -     console.log("Hello");
-            -     // Some comment
+            -
+
             -     return true;
             +     console.log("Hello, World!");
-            +     // Modified comment
+            +
+
             +     let x = 5;
             +     return x > 0;
               }

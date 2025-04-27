@@ -110,9 +110,9 @@ class LineFilterChatAction : BaseAction() {
                 return com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown(
                     response.split("\n").joinToString("\n") {
                         when {
-                            // Is numeric, use line if in range
+
                             it.toIntOrNull()?.let { i -> lines.indices.contains(i) } == true -> lines[it.toInt()]
-                            // Otherwise, use response
+
                             else -> it
                         }
                     }

@@ -11,7 +11,6 @@ import java.util.*
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.typeOf
 
-
 class MetadataStorage(private val dataDir: File) : MetadataStorageInterface {
     private val log = org.slf4j.LoggerFactory.getLogger(MetadataStorage::class.java)
 
@@ -37,7 +36,6 @@ class MetadataStorage(private val dataDir: File) : MetadataStorageInterface {
         val settings = getSettings(sessionDir, "settings.json")
         setJson(sessionDir, "settings.json", settings.plus("name" to name))
     }
-
 
     override fun getMessageIds(user: User?, session: Session): List<String> {
         log.debug("Fetching message IDs for session: ${session.sessionId}, user: ${user?.email}")
@@ -84,7 +82,6 @@ class MetadataStorage(private val dataDir: File) : MetadataStorageInterface {
         val dateFormat = SimpleDateFormat.getDateTimeInstance()
         setJson(sessionDir, "internal.json", settings.plus("time" to dateFormat.format(time)))
     }
-
 
     override fun listSessions(path: String): List<String> {
         log.debug("Listing sessions in dataDir.absolutePath}")

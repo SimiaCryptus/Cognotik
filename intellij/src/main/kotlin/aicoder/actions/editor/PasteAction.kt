@@ -1,6 +1,5 @@
 package aicoder.actions.editor
 
-// ... keep existing imports
 import aicoder.actions.SelectionAction
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
@@ -54,15 +53,15 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
                 val node: JsonNode = p.codec.readTree(p)
                 val result = ConvertedText()
                 when {
-                    // Case 1: Direct string value
+
                     node.isTextual -> {
                         result.converted_text = node.asText()
                     }
-                    // Case 2: Object with expected "converted_text" field
+
                     node.has("converted_text") -> {
                         result.converted_text = node.get("converted_text").asText()
                     }
-                    // Case 3: Object with a single text field (use first field found)
+
                     node.isObject && node.fields().hasNext() -> {
                         val fields = node.fields()
                         while (fields.hasNext()) {
@@ -83,7 +82,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
         private val log: Logger = LoggerFactory.getLogger(PasteActionBase::class.java)
         fun scrubHtml(str: String, maxLength: Int = 100 * 1024): String {
             val document: Document = Jsoup.parse(str)
-            // Remove unnecessary elements, attributes, and optimize the document
+
             document.apply {
                 fun qTry(block: () -> Unit) {
                     return try {
@@ -94,14 +93,16 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
                 }
                 if ((document.body()?.html()?.length ?: 0) > maxLength) return document.body()?.html()
                     ?.substring(0, maxLength) ?: ""
-                select("script, style, link, meta, iframe, noscript").remove() // Remove unnecessary and potentially harmful tags
-                outputSettings().prettyPrint(false) // Disable pretty printing for compact output
+                select("script, style, link, meta, iframe, noscript").remove()
+
+                outputSettings().prettyPrint(false)
+
                 if ((document.body()?.html()?.length ?: 0) > maxLength) return document.body()?.html()
                     ?.substring(0, maxLength) ?: ""
-                // Remove comments
+
                 qTry { select("*").forEach { it.childNodes().removeAll { node -> node.nodeName() == "#comment" } } }
                 if (document.body().html().length > maxLength) return@apply
-                // Remove data-* attributes
+
                 qTry {
                     select("*[data-*]").forEach {
                         it.attributes().removeAll { attr -> attr.key.startsWith("data-") }
@@ -116,7 +117,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
                     }
                 }
                 if (document.body().html().length > maxLength) return@apply
-                // Remove empty elements
+
                 qTry {
                     select("*").forEach { element ->
                         if (element.childNodes().isEmpty() && element.attributes().isEmpty()) {
@@ -125,7 +126,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
                     }
                 }
                 if (document.body().html().length > maxLength) return@apply
-                // Unwrap single-child elements with no attributes
+
                 qTry {
                     select("*").forEach { element ->
                         if (element.childNodes().size == 1 && element.childNodes()[0].nodeName() == "#text" && element.attributes()
@@ -136,7 +137,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
                     }
                 }
                 if (document.body().html().length > maxLength) return@apply
-                // Convert relative URLs to absolute
+
                 qTry {
                     select("[href],[src]").forEach { element ->
                         element.attr("href").let { href -> element.attr("href", href.makeAbsolute()) }
@@ -144,7 +145,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
                     }
                 }
                 if (document.body().html().length > maxLength) return@apply
-                // Remove empty attributes
+
                 qTry {
                     select("*").forEach { element ->
                         element.attributes().removeAll { it.value.isBlank() }
@@ -152,7 +153,6 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
                 }
             }
 
-            // Truncate if necessary
             val result = document.body().html()
             return if (result.length > maxLength) {
                 result.substring(0, maxLength)
@@ -211,7 +211,6 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
     override fun getConfig(project: Project?): String {
         return ""
     }
-
 
     override fun processSelection(state: SelectionState, config: String?, progress: ProgressIndicator): String {
         val progress: ProgressIndicator? = state.progress

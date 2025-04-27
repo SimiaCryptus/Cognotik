@@ -132,7 +132,7 @@ interface AuthorizationInterface {
     enum class OperationType {
         Read, Write, Public, Share, Execute, Delete, Admin, GlobalKey
     }
-    
+
     fun isAuthorized(
         applicationClass: Class<*>?,
         user: User?,
@@ -164,7 +164,7 @@ interface StorageInterface {
     fun getDataDir(user: User?, session: Session): File
     fun listSessions(user: User?, path: String): List<Session>
     fun updateMessage(user: User?, session: Session, messageId: String, value: String)
-    // ... additional methods
+
 }
 ```
 
@@ -176,7 +176,7 @@ interface MetadataStorageInterface {
     fun setSessionName(user: User?, session: Session, name: String)
     fun getMessageIds(user: User?, session: Session): List<String>
     fun setMessageIds(user: User?, session: Session, ids: List<String>)
-    // ... additional methods
+
 }
 ```
 
@@ -236,7 +236,7 @@ if (ApplicationServices.authorizationManager.isAuthorized(
     user = currentUser,
     operationType = OperationType.Execute
 )) {
-    // Perform authorized operation
+
 }
 ```
 

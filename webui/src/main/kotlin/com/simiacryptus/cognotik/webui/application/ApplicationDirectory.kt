@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.webui.application
 
-
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
@@ -29,13 +28,13 @@ import java.net.URI
 import java.util.*
 import kotlin.system.exitProcess
 
-
 abstract class ApplicationDirectory(
     val localName: String = "localhost",
     val publicName: String = "localhost",
     val port: Int = 8081,
 ) {
-    var domainName: String = "" // Resolved in _main
+    var domainName: String = ""
+
         private set
     abstract val childWebApps: List<ChildWebApp>
 
@@ -108,7 +107,7 @@ abstract class ApplicationDirectory(
         try {
             Desktop.getDesktop().browse(URI("$domainName/"))
         } catch (e: Throwable) {
-            // Ignore
+
         }
     }
 
@@ -150,7 +149,7 @@ abstract class ApplicationDirectory(
         vararg webAppContexts: WebAppContext
     ): Server {
         val contexts = ContextHandlerCollection()
-//    val stats = StatisticsHandler()
+
         log.info("Starting server on port: $port")
         contexts.handlers = (
                 listOf(
@@ -162,12 +161,13 @@ abstract class ApplicationDirectory(
                         }
                 ).toTypedArray()
         val server = Server(port)
-        // Increase the number of acceptors and selectors for better scalability in a non-blocking model
+
         val serverConnector = ServerConnector(server, 4, 8, httpConnectionFactory())
         serverConnector.port = port
         serverConnector.host = host
         serverConnector.acceptQueueSize = 1000
-        serverConnector.idleTimeout = 30000 // Set idle timeout to 30 seconds
+        serverConnector.idleTimeout = 30000
+
         server.connectors = arrayOf(serverConnector)
         server.handler = contexts
         server.start()
@@ -226,7 +226,6 @@ abstract class ApplicationDirectory(
         context.addServlet(servletHolder, "/")
         return context
     }
-
 
     companion object {
         private val log = LoggerFactory.getLogger(ApplicationDirectory::class.java)

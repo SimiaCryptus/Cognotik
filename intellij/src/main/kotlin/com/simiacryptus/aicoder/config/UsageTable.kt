@@ -32,11 +32,11 @@ class UsageTable(
                 String.format("%.2f", entry.value.cost)
             ).toMutableList()
         }
-        // Calculate totals
+
         val totalPromptTokens = usageData.sumOf { it[1].toString().toInt() }
         val totalCompletionTokens = usageData.sumOf { it[2].toString().toInt() }
         val totalCost = usageData.sumOf { it[3].toString().toDouble() }
-        // Add totals row
+
         (usageData + listOf(
             listOf(
                 "TOTAL",
@@ -58,7 +58,7 @@ class UsageTable(
             }
 
             override fun isCellEditable(row: Int, column: Int): Boolean {
-                // Make the total row non-editable
+
                 return row != rowData.size - 1
             }
 
@@ -70,9 +70,8 @@ class UsageTable(
                 return columnNames.size
             }
 
-
             override fun setValueAt(value: Any, row: Int, col: Int) {
-                // Prevent editing total row
+
                 if (row == rowData.size - 1) return
                 val strings = rowData[row]
                 strings[col] = value.toString()
@@ -86,7 +85,6 @@ class UsageTable(
 
     private val scrollpane by lazy { JBScrollPane(jtable) }
 
-
     private val clearButton by lazy {
         JButton(object : AbstractAction("Clear") {
             override fun actionPerformed(e: ActionEvent?) {
@@ -98,7 +96,7 @@ class UsageTable(
     }
 
     init {
-        // Custom renderer for the total row
+
         val totalRowRenderer = object : DefaultTableCellRenderer() {
             override fun getTableCellRendererComponent(
                 table: JTable?,
@@ -120,12 +118,11 @@ class UsageTable(
         jtable.columnModel.getColumn(1).cellRenderer = DefaultTableCellRenderer()
         jtable.columnModel.getColumn(2).cellRenderer = DefaultTableCellRenderer()
         jtable.columnModel.getColumn(3).cellRenderer = DefaultTableCellRenderer()
-        // Apply the total row renderer to all columns
+
         for (i in 0..3) {
             val column = jtable.columnModel.getColumn(i)
             column.cellRenderer = totalRowRenderer
         }
-
 
         val editor = object : JXTable.GenericEditor() {
             override fun isCellEditable(anEvent: EventObject?) = false
@@ -140,7 +137,6 @@ class UsageTable(
         jtable.columnModel.getColumn(2).headerRenderer = DefaultTableCellRenderer()
         jtable.columnModel.getColumn(3).headerRenderer = DefaultTableCellRenderer()
 
-        // Set the preferred width for the first column (checkboxes) to the header label width
         initCol(0)
         initCol(1)
         initCol(2)

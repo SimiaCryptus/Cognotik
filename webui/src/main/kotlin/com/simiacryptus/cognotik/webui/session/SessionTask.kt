@@ -153,10 +153,10 @@ abstract class SessionTask(
         when {
             e is ValidatedObject.ValidationError -> renderMarkdown(
                 """
-        **Data Validation Error** 
-        
+        **Data Validation Error**
+
         """.trimIndent() + e.message + """
-        
+
         Stack Trace:
         ```text
         """.trimIndent() + e.stackTraceTxt + """
@@ -232,10 +232,10 @@ val Throwable.stackTraceTxt: String
 
 fun ChatClient.getChildClient(task: SessionTask): ChatClient = this.getChildClient().apply {
     val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log").second
-    // Handle potential null from createFile
+
     createFile?.apply {
         val buffered = this.outputStream().buffered()
-        // Pring a header and stack trace
+
         buffered.write("API Logging Started\n".toByteArray())
         buffered.write("Stack Trace:\n".toByteArray())
         val stackTrace = Thread.currentThread().stackTrace

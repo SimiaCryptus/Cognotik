@@ -55,7 +55,6 @@ enum class ImageModels(
     open val quality: String = "standard"
     abstract fun pricing(width: Int, height: Int): Double
 
-
     companion object {
         private val log = LoggerFactory.getLogger(ImageModels::class.java)
     }

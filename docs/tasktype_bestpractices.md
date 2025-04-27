@@ -15,7 +15,7 @@ class NewTask(
     planSettings: PlanSettings,
     planTask: NewTaskConfigData?
 ) : AbstractFileTask<NewTask.NewTaskConfigData>(planSettings, planTask) {
-    // Implementation
+
 }
 ```
 
@@ -110,7 +110,7 @@ override val actorPrompt = """
 protected fun validateConfig() {
     requireNotNull(taskConfig) { "Task configuration is required" }
     require(!taskConfig.input_files.isNullOrEmpty()) { "At least one input file must be specified" }
-    // Additional validation
+
 }
 ```
 

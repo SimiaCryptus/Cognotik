@@ -1,10 +1,10 @@
 // Logging utility for menu components
 const logMenuComponent = (componentName: string) => {
-    // Only log in development mode
+
     if (process.env.NODE_ENV === 'development') {
         console.debug(`[Menu] ${componentName} initialized`);
     } else {
-        // In production, only log if component fails to load
+
         try {
             require(`./${componentName}`);
         } catch (error) {
@@ -13,7 +13,6 @@ const logMenuComponent = (componentName: string) => {
     }
 };
 
-// Log component initialization
 logMenuComponent('ThemeMenu');
 logMenuComponent('WebSocketMenu');
 

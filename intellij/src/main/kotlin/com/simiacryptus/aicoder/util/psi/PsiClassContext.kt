@@ -32,12 +32,12 @@ class PsiClassContext(
                 val textRange = element.textRange
                 val textRangeEndOffset = textRange.endOffset + 1
                 val textRangeStartOffset = textRange.startOffset
-                // Check if the element comes before the selection
+
                 val isPrior = textRangeEndOffset < selectionStart
-                // Check if the element overlaps with the selection
+
                 val isOverlap =
                     textRangeStartOffset in selectionStart..selectionEnd || textRangeEndOffset in selectionStart..selectionEnd || selectionStart in textRangeStartOffset..textRangeEndOffset || selectionEnd in textRangeStartOffset..textRangeEndOffset
-                // Check if the element is within the selection
+
                 val within =
                     selectionStart in textRangeStartOffset until textRangeEndOffset && textRangeStartOffset <= selectionEnd && textRangeEndOffset > selectionEnd
                 if (PsiUtil.matchesType(element, "ImportList")) {
@@ -90,7 +90,7 @@ class PsiClassContext(
                         currentContext.children.add(PsiClassContext("}", isPrior, false, language))
                     }
                 } else if (!isOverlap && PsiUtil.matchesType(element, "CodeBlock", "ForStatement")) {
-                    // Skip
+
                 } else {
                     element.acceptChildren(self)
                 }

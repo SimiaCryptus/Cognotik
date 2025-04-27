@@ -106,10 +106,9 @@ object ClientUtil {
 
     fun checkError(result: String, model: TextModel? = null) {
         try {
-            // First try to parse as a JsonObject
+
             val jsonElement = Gson().fromJson(result, com.google.gson.JsonElement::class.java) ?: return
 
-            // Handle both JsonObject and JsonArray cases
             if (jsonElement.isJsonObject) {
                 val jsonObject = jsonElement.asJsonObject
                 if (jsonObject.has("error")) {
@@ -121,7 +120,7 @@ object ClientUtil {
                     throw IOException(errorMessage)
                 }
             } else if (jsonElement.isJsonArray) {
-                // Handle array response - check each element for error
+
                 val jsonArray = jsonElement.asJsonArray
                 for (element in jsonArray) {
                     if (element.isJsonObject) {

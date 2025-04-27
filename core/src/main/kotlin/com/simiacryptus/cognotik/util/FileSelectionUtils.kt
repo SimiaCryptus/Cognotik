@@ -61,7 +61,7 @@ class FileSelectionUtils {
             if (!file.exists() || file.isDirectory || file.length() == 0L) {
                 return false
             }
-            // Check common binary file extensions first for efficiency
+
             val binaryExtensions = setOf(
                 "jar", "zip", "class", "png", "jpg", "jpeg", "gif", "ico", "stl",
                 "exe", "dll", "so", "dylib", "bin", "dat", "pdf", "doc", "docx", "xls", "xlsx"
@@ -69,13 +69,13 @@ class FileSelectionUtils {
             if (file.extension.lowercase(Locale.getDefault()) in binaryExtensions) {
                 return true
             }
-            // Sample the beginning of the file to check for binary content
+
             return try {
                 file.inputStream().use { input ->
                     isBinaryStream(input)
                 }
             } catch (e: Exception) {
-                // If we can't read the file, assume it's not binary
+
                 false
             }
         }
@@ -90,20 +90,25 @@ class FileSelectionUtils {
             val bytes = ByteArray(sampleSize)
             val bytesRead = input.read(bytes, 0, sampleSize)
             if (bytesRead <= 0) return false
-            // Count the number of bytes that are outside the printable ASCII range
-            // or are control characters other than common whitespace
+
+
             var binaryCount = 0
             for (i in 0 until bytesRead) {
                 val b = bytes[i].toInt() and 0xFF
                 when {
-                    b == 0 -> binaryCount++ // Null character
-                    b == 7 -> {} // Bell character
-                    b < 9 -> binaryCount++ // Control characters
-                    b > 13 && b < 32 -> binaryCount++ // Control characters
-                    b >= 127 -> binaryCount++ // Non-ASCII characters
+                    b == 0 -> binaryCount++
+
+                    b == 7 -> {}
+
+                    b < 9 -> binaryCount++
+
+                    b > 13 && b < 32 -> binaryCount++
+
+                    b >= 127 -> binaryCount++
+
                 }
             }
-            // If more than 10% of the bytes are binary, consider it a binary file
+
             return binaryCount.toDouble() / bytesRead > 0.1
         }
 
@@ -125,7 +130,7 @@ class FileSelectionUtils {
         }
 
         fun isLLMIgnored(path: Path): Boolean {
-            // Check common directories to ignore
+
             when {
                 path.name == "node_modules" -> return true
                 path.name == "target" -> return true
@@ -133,7 +138,8 @@ class FileSelectionUtils {
             }
             var currentDir = path.toFile().parentFile
             currentDir ?: return false
-            while (!currentDir.resolve(".llm").exists()) { // When a '.llm' folder is found, we stop searching up
+            while (!currentDir.resolve(".llm").exists()) {
+
                 currentDir.resolve(".llmignore").let {
                     if (it.exists()) {
                         val llmignore = it.readText()
@@ -141,7 +147,7 @@ class FileSelectionUtils {
                                 try {
                                     val trimmedLine = line.trim()
                                     if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) return@any false
-                                    // Convert .llmignore pattern to regex
+
                                     val regexPattern = "^" + Regex.escape(trimmedLine)
                                         .replace("\\*", ".*")
                                         .replace("\\?", ".") + "$"
@@ -154,7 +160,7 @@ class FileSelectionUtils {
                 }
                 currentDir = currentDir.parentFile ?: break
             }
-            // Check the final directory's .llmignore if present
+
             currentDir.resolve(".llmignore").let {
                 if (it.exists()) {
                     val llmignore = it.readText()
@@ -189,7 +195,7 @@ class FileSelectionUtils {
                                 try {
                                     val trimmedLine = line.trim()
                                     if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) return@any false
-                                    // Convert gitignore pattern to regex
+
                                     val regexPattern = "^" + Regex.escape(trimmedLine)
                                         .replace("\\*", ".*")
                                         .replace("\\?", ".") + "$"
@@ -202,7 +208,7 @@ class FileSelectionUtils {
                 }
                 currentDir = currentDir.parentFile ?: break
             }
-            // After .git is found, check the final directory's .gitignore
+
             currentDir.resolve(".gitignore").let {
                 if (it.exists()) {
                     val gitignore = it.readText()

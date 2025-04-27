@@ -52,18 +52,16 @@ The package offers different planning strategies through cognitive modes:
 ### Basic Plan Execution
 
 ```kotlin
-// Create plan settings
+
 val planSettings = PlanSettings(
     defaultModel = ChatModel.GPT4,
     parsingModel = ChatModel.GPT4,
     autoFix = true
 )
 
-// Enable specific task types
 planSettings.taskSettings["FileModificationTask"]?.enabled = true
 planSettings.taskSettings["InquiryTask"]?.enabled = true
 
-// Create coordinator
 val coordinator = PlanCoordinator(
     user = currentUser,
     session = currentSession,
@@ -73,7 +71,6 @@ val coordinator = PlanCoordinator(
     root = projectRoot
 )
 
-// Execute a plan
 val plan = mapOf(
     "task1" to FileModificationTaskConfigData(
         task_description = "Create a new file",
@@ -92,7 +89,7 @@ coordinator.executePlan(
 ### Using Cognitive Modes
 
 ```kotlin
-// Create an AutoPlanMode instance
+
 val cognitiveMode = AutoPlanMode(
     ui = applicationInterface,
     api = apiClient,
@@ -103,7 +100,6 @@ val cognitiveMode = AutoPlanMode(
     describer = typeDescriber
 )
 
-// Initialize and handle user message
 cognitiveMode.initialize()
 cognitiveMode.handleUserMessage("Create a REST API with Spring Boot", uiTask)
 ```
@@ -126,7 +122,7 @@ val fileModTask = FileModificationTaskConfigData(
 The package includes built-in visualization for task dependencies using Mermaid diagrams:
 
 ```kotlin
-// Generate a Mermaid diagram for a plan
+
 val diagram = PlanUtil.buildMermaidGraph(plan)
 uiTask.add(MarkdownUtil.renderMarkdown(
     "## Task Dependency Graph\n```mermaid\n$diagram\n```",
@@ -141,7 +137,7 @@ uiTask.add(MarkdownUtil.renderMarkdown(
 The package can analyze software structure and generate task plans based on the codebase graph:
 
 ```kotlin
-// Generate a software graph
+
 val graphTask = SoftwareGraphGenerationTask(
     planSettings = planSettings,
     planTask = SoftwareGraphGenerationTaskConfigData(
@@ -150,7 +146,6 @@ val graphTask = SoftwareGraphGenerationTask(
     )
 )
 
-// Use the graph for planning
 GraphOrderedPlanMode.graphFile = "software_graph.json"
 val graphMode = GraphOrderedPlanMode(
     ui = applicationInterface,
@@ -169,7 +164,7 @@ val graphMode = GraphOrderedPlanMode(
 The package supports web search and browser automation:
 
 ```kotlin
-// Perform a web search
+
 val searchTask = CrawlerAgentTask(
     planSettings = planSettings,
     planTask = SearchAndAnalyzeTaskConfigData(
@@ -179,7 +174,6 @@ val searchTask = CrawlerAgentTask(
     )
 )
 
-// Automate browser interaction
 val seleniumTask = SeleniumSessionTask(
     planSettings = planSettings,
     planTask = SeleniumSessionTaskConfigData(

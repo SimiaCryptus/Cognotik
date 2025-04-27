@@ -27,8 +27,10 @@ class SeleniumSessionTask(
     companion object {
         private val log = LoggerFactory.getLogger(SeleniumSessionTask::class.java)
         private val activeSessions = ConcurrentHashMap<String, Selenium>()
-        private const val TIMEOUT_MS = 30000L // 30 second timeout
-        private const val MAX_SESSIONS = 10 // Maximum number of concurrent sessions
+        private const val TIMEOUT_MS = 30000L
+
+        private const val MAX_SESSIONS = 10
+
     }
 
     private fun cleanupInactiveSessions() {
@@ -98,7 +100,7 @@ class SeleniumSessionTask(
         * "return new Promise(r => setTimeout(() => r(document.title), 1000));" - Async operation
       Note: Commands are executed in the browser context and must be valid JavaScript.
             Use proper error handling and waits for dynamic content.
-      
+
       Active Sessions:
       """.trimIndent() + activeSessions.entries.joinToString("\n") { (id, session: Selenium) ->
         buildString {
@@ -143,9 +145,9 @@ class SeleniumSessionTask(
         requireNotNull(taskConfig) { "SeleniumSessionTaskData is required" }
         var selenium: Selenium? = null
         try {
-            // Cleanup inactive sessions before potentially creating new one
+
             cleanupInactiveSessions()
-            // Check session limit
+
             if (activeSessions.size >= MAX_SESSIONS && taskConfig.sessionId == null) {
                 throw IllegalStateException("Maximum number of concurrent sessions ($MAX_SESSIONS) reached")
             }
@@ -155,12 +157,12 @@ class SeleniumSessionTask(
                 }
             log.info("Starting Selenium session ${taskConfig.sessionId ?: "temporary"} for URL: ${taskConfig.url} with timeout ${taskConfig.timeout}ms")
             selenium.setScriptTimeout(taskConfig.timeout)
-            // Navigate to initial URL
-            // Navigate if URL is provided, regardless of whether it's a new or existing session
+
+
             if (taskConfig.url.isNotBlank()) {
                 selenium.navigate(taskConfig.url)
             }
-            // Execute each command in sequence
+
             val results = taskConfig.commands.map { command ->
                 try {
                     log.debug("Executing command: $command")
@@ -179,7 +181,7 @@ class SeleniumSessionTask(
             task.add(MarkdownUtil.renderMarkdown(result))
             resultFn(result)
         } finally {
-            // Close session if it's temporary or explicitly requested to be closed
+
             if ((taskConfig.sessionId == null || taskConfig.closeSession) && selenium != null) {
                 log.info("Closing temporary session")
                 try {
@@ -229,7 +231,8 @@ class SeleniumSessionTask(
         planTask: SeleniumSessionTaskConfigData,
         selenium: Selenium,
         results: List<String>
-    ): String = buildString(capacity = 163840) { // Pre-allocate buffer for better performance
+    ): String = buildString(capacity = 163840) {
+
         appendLine("## Selenium Session Results")
         if (planTask.url.isNotBlank()) {
             appendLine("Initial URL: ${planTask.url}")
@@ -247,7 +250,8 @@ class SeleniumSessionTask(
             if (result != "null") {
                 appendLine("Result:")
                 appendLine("```")
-                appendLine(result.take(5000)) // Limit result size
+                appendLine(result.take(5000))
+
                 appendLine("```")
             }
         }
@@ -263,7 +267,8 @@ class SeleniumSessionTask(
                     keepObjectIds = taskConfig?.keepObjectIds ?: false,
                     preserveWhitespace = taskConfig?.preserveWhitespace ?: false
                 )
-            ) // Limit page source size
+            )
+
             appendLine("```")
         } catch (e: Exception) {
             appendLine("\nError getting page source: ${e.message}")

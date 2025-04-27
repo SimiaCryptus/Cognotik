@@ -22,7 +22,7 @@ interface AuthenticationInterface {
   fun getUser(accessToken: String?): User?
   fun putUser(accessToken: String, user: User): User
   fun logout(accessToken: String, user: User)
-  
+
   companion object {
     const val AUTH_COOKIE = "sessionId"
   }
@@ -44,7 +44,8 @@ Authorization is managed through the `AuthorizationInterface`:
 interface AuthorizationInterface {
   enum class OperationType {
     Read,
-    Write, 
+    Write,
+
     Public,
     Share,
     Execute,
@@ -221,7 +222,7 @@ class CustomApplication : ApplicationServer(
     ui: ApplicationInterface,
     api: API
   ) {
-    // Implementation
+
   }
 }
 ```
@@ -237,7 +238,7 @@ override fun newSession(user: User?, session: Session): SocketManager {
     applicationClass = this::class.java
   ) {
     override fun userMessage(/*...*/) {
-      // Implementation
+
     }
   }
 }
@@ -284,7 +285,7 @@ data class ErrorResponse(
 
 ```kotlin
 try {
-  // Operation
+
 } catch (e: Exception) {
   log.error("Operation failed", e)
   throw ApiException(500, "Internal error", e)
@@ -342,6 +343,6 @@ fun testWebSocket() {
 fun testConcurrentConnections() {
   val clients = List(100) { WebSocketClient() }
   clients.forEach { it.connect() }
-  // Test concurrent operations
+
 }
 ```

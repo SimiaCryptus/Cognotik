@@ -4,7 +4,7 @@ import utils.StringUtils
 
 fun main() {
     println("Hello World!")
-    // Example usage of StringUtils
+
     val originalString = "Hello World"
     println("Reversed: ${StringUtils.reverse(originalString)}")
     println("Uppercase: ${StringUtils.toUpperCase(originalString)}")

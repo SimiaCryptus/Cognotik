@@ -87,7 +87,7 @@ The action is implemented as a simple override of `actionPerformed()` that calls
 ### Example
 
 ```kotlin
-// The action will be triggered automatically by the IDE when the user activates it
+
 val action = OpenWebPageAction()
 ```
 
@@ -204,7 +204,7 @@ The action uses these settings from the plugin configuration:
 ### Example
 
 ```java
-// This method calculates the factorial of a given number using recursion
+
 public int factorial(int n) {
     if (n <= 1) return 1;
     return n * factorial(n-1);
@@ -598,7 +598,7 @@ class MyAction : BaseAction() {
         val project = e.project
         try {
             runWriteAction(project) {
-                // Perform document modifications
+
             }
         } catch (ex: Exception) {
             showError(project, "Failed to perform action: ${ex.message}")
@@ -932,11 +932,9 @@ User: "Can you optimize this code for better performance?"
 
 Here's the user documentation for the DocumentedMassPatchAction class:
 
-
 ## Documented Mass Patch Action
 
 The Documented Mass Patch Action is a tool that helps you automatically review and update code files according to documentation standards by analyzing both documentation and source code files together.
-
 
 ### Features
 
@@ -945,7 +943,6 @@ The Documented Mass Patch Action is a tool that helps you automatically review a
 - Option to automatically apply suggested changes
 - Web-based interface for reviewing changes
 - Integration with project documentation standards
-
 
 ### Usage
 
@@ -968,14 +965,12 @@ The Documented Mass Patch Action is a tool that helps you automatically review a
    - Apply all approved changes
    - Add comments or additional instructions
 
-
 ### Configuration Options
 
 - **Documentation Files**: Select .md files containing documentation standards, requirements, or guidelines
 - **Code Files**: Select source code files to be analyzed and potentially modified
 - **AI Instruction**: Custom instructions for how the code should be reviewed/updated
 - **Auto Apply**: Toggle automatic application of suggested changes
-
 
 ### Best Practices
 
@@ -985,7 +980,6 @@ The Documented Mass Patch Action is a tool that helps you automatically review a
 4. Keep documentation files focused and relevant to the code being modified
 5. Use version control to track changes
 
-
 ### Technical Details
 
 - Supports any text-based source code files
@@ -993,7 +987,6 @@ The Documented Mass Patch Action is a tool that helps you automatically review a
 - Changes are made through a diff-based patch system
 - Web interface runs on local server for security
 - Session-based to support multiple concurrent operations
-
 
 ### Notes
 
@@ -1008,11 +1001,9 @@ This tool is ideal for ensuring code compliance with documentation standards, im
 
 Here's the user documentation for the DocumentedMassPatchServer class:
 
-
 ## DocumentedMassPatchServer
 
 The DocumentedMassPatchServer is a server component that handles automated code review and patch generation based on documentation files and code files.
-
 
 ### Overview
 
@@ -1020,7 +1011,6 @@ This server facilitates:
 - Reviewing code files against documentation requirements
 - Generating suggested code improvements as patches
 - Providing an interactive interface for reviewing and applying patches
-
 
 ### Key Features
 
@@ -1030,7 +1020,6 @@ This server facilitates:
 - Optional automatic patch application
 - Interactive web interface with tabbed display
 - Logging of API interactions
-
 
 ### Configuration
 
@@ -1045,7 +1034,6 @@ The server requires:
 2. `ChatClient` for AI interactions
 
 3. `autoApply` flag to control automatic patch application
-
 
 ### Usage
 
@@ -1065,7 +1053,6 @@ The server requires:
    - `-` indicates line deletions
    - Context lines are included before and after changes
 
-
 ### Interface
 
 The web interface provides:
@@ -1075,13 +1062,11 @@ The web interface provides:
 - Progress tracking and error reporting
 - API logging for debugging
 
-
 ### Error Handling
 
 - Errors during file processing are logged and displayed in the UI
 - Each file is processed independently to prevent total failure
 - API interactions are logged for troubleshooting
-
 
 ### Technical Details
 
@@ -1095,16 +1080,13 @@ The web interface provides:
 
 Here's the user documentation for the EnhancedChatSocketManager class:
 
-
 ## EnhancedChatSocketManager
 
 The EnhancedChatSocketManager is an enhanced version of the ChatSocketManager that provides support for handling large output responses in chat interactions.
 
-
 ### Overview
 
 This class extends the base ChatSocketManager to integrate with a LargeOutputActor, enabling better handling of lengthy responses from the language model.
-
 
 ### Constructor Parameters
 
@@ -1117,14 +1099,12 @@ This class extends the base ChatSocketManager to integrate with a LargeOutputAct
 - `applicationClass`: The ApplicationServer class type
 - `largeOutputActor`: LargeOutputActor instance for handling large response generation
 
-
 ### Key Features
 
 - Extends standard chat socket management functionality
 - Integrates with LargeOutputActor for handling large responses
 - Provides robust error handling for empty responses
 - Maintains compatibility with base ChatSocketManager features
-
 
 ### Usage Example
 
@@ -1543,14 +1523,13 @@ The AI generates responses in diff format:
 
 #### path/to/file
 ```diff
- // Context lines
+
 -// Removed lines
 +// Added lines
- // More context
-```
 
 ```
 
+```
 
 ### Best Practices
 
@@ -1580,16 +1559,13 @@ This documentation provides a comprehensive overview of the mass patch functiona
 
 Here's the user documentation for the ModelSelectionDialog class:
 
-
 ## ModelSelectionDialog
 
 A dialog component that allows users to select an AI language model from a list of available options.
 
-
 ### Overview
 
 The ModelSelectionDialog presents a simple dropdown interface where users can choose from available ChatGPT/OpenAI models. This dialog is typically used when an action requires user selection of a specific AI model to process requests.
-
 
 ### Features
 
@@ -1598,26 +1574,25 @@ The ModelSelectionDialog presents a simple dropdown interface where users can ch
 - Validates that a model is selected before proceeding
 - Modal dialog that blocks interaction with the parent window until a selection is made
 
-
 ### Usage
 
 ```kotlin
-// Create list of available models
+
 val models = listOf(ChatModel(...), ChatModel(...))
 
-// Create and show the dialog
 val dialog = ModelSelectionDialog(
     project = currentProject,
     availableModels = models,
-    initialSelection = defaultModel // Optional
+    initialSelection = defaultModel
+
 )
 
 if (dialog.showAndGet()) {
-    // User clicked OK
+
     val selectedModel = dialog.selectedModel
-    // Use the selected model...
+
 } else {
-    // User cancelled the dialog
+
 }
 ```
 
@@ -1769,10 +1744,12 @@ The AI will respond with:
 ```diff
 
 #### src/example/File.kt
- // Original code context
+
  function example() {
--  // Old implementation
-+  // New implementation
+-
+
++
+
  }
 ```
 
@@ -3138,15 +3115,17 @@ The following settings affect this action:
 ### Example
 
 ```java
-// Before:
+
 int x = 5;
 x += 10;
 System.out.println(x);
 
-// After:
-int x = 5;           // Initialize variable x with value 5
-x += 10;             // Add 10 to the value of x
-System.out.println(x); // Print the final value of x to console
+int x = 5;
+
+x += 10;
+
+System.out.println(x);
+
 ```
 
 ### Notes
@@ -3273,22 +3252,19 @@ meaningful implementations for method/class declarations.
 ### Examples
 
 ```java
-// Before
+
 public void processData(String input) {
-    // TODO: Implement
+
 }
 
-// After selecting and running "Implement Stub"
 public void processData(String input) {
     if (input == null || input.isEmpty()) {
         throw new IllegalArgumentException("Input cannot be null or empty");
     }
-    
-    // Process the input string
+
     String processed = input.trim().toLowerCase();
-    
-    // Perform necessary operations
-    // ... AI generated implementation ...
+
+
 }
 ```
 
@@ -3362,13 +3338,13 @@ appropriate code implementations while considering the context of your codebase.
 ### Example
 
 ```java
-// Create a function that calculates the factorial of a number
+
 ```
 
 After invoking the action, it might generate:
 
 ```java
-// Create a function that calculates the factorial of a number
+
 public int factorial(int n) {
     if (n <= 1) return 1;
     return n * factorial(n - 1);

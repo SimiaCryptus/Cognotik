@@ -16,17 +16,16 @@ import java.lang.reflect.Type
 object JsonUtil {
     private val log = LoggerFactory.getLogger(JsonUtil::class.java.name)
 
-    // Hack to pass the target type to the deserializer
     val _initForReading: ThreadLocal<JavaType?> = ThreadLocal.withInitial { null }
     open fun objectMapper(): ObjectMapper {
         return object : ObjectMapper() {
             override fun _initForReading(p: JsonParser?, targetType: JavaType?): JsonToken {
-                //log.info("Initializing for reading with targetType: {}", targetType)
+
                 _initForReading.set(targetType)
                 return super._initForReading(p, targetType)
             }
         }
-            //.findAndRegisterModules()
+
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
             .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
             .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
@@ -34,8 +33,8 @@ object JsonUtil {
             .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
             .disable(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)
             .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
-//            .enable(DeserializationFeature.UNWRAP_ROOT_VALUE)
-//            .enable(SerializationFeature.WRAP_ROOT_VALUE)
+
+
             .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature())
             .enable(JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature())
             .enable(JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature())
@@ -44,8 +43,8 @@ object JsonUtil {
             .enable(JsonReadFeature.ALLOW_MISSING_VALUES.mappedFeature())
             .enable(JsonReadFeature.ALLOW_LEADING_DECIMAL_POINT_FOR_NUMBERS.mappedFeature())
             .enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature())
-            //.enable(JsonReadFeature.ALLOW_LEADING_PLUS_SIGN_FOR_NUMBERS.mappedFeature())
-            //.enable(JsonReadFeature.ALLOW_TRAILING_DECIMAL_POINT_FOR_NUMBERS.mappedFeature())
+
+
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .registerModule(
                 KotlinModule.Builder()
@@ -60,19 +59,19 @@ object JsonUtil {
     }
 
     open fun toJson(data: Any): String {
-//        log.debug("Serializing object to JSON: {}", data)
+
         return objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
     }
 
     open fun <T> fromJson(data: String, type: Type): T {
-//        log.debug("Deserializing JSON to object of type: {}", type)
+
         if (type is Class<*> && type.isAssignableFrom(String::class.java)) return data as T
         val objectMapper = objectMapper()
         val value = objectMapper.readValue(data, objectMapper.typeFactory.constructType(type)) as T
-//        log.info("Deserialized JSON to object: {}", value)
+
         return value
     }
-//    companion object : JsonUtil()
+
 }
 
 fun <T : Any> T.copy(fn: T.() -> Unit): T {

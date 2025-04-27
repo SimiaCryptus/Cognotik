@@ -1,6 +1,5 @@
 package com.simiacryptus.aicoder.config
 
-
 import aicoder.actions.plan.PlanConfigDialog.Companion.isVisible
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooser
@@ -123,7 +122,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         buttonPanel.add(removeButton)
         buttonPanel.add(editButton)
         add(buttonPanel, BorderLayout.SOUTH)
-        // Enable multiple selection for the list
+
         executablesList.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
     }
 
@@ -176,7 +175,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         }
     })
 
-
     @Suppress("unused")
     val clearApiLog = JButton(object : AbstractAction("Clear API Log") {
         override fun actionPerformed(e: ActionEvent) {
@@ -191,7 +189,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         }
     })
 
-
     @Suppress("unused")
     @Name("Developer Tools")
     val devActions = JBCheckBox()
@@ -203,7 +200,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     @Suppress("unused")
     @Name("Disable Auto-Open URLs")
     val disableAutoOpenUrls = JBCheckBox()
-
 
     @Suppress("unused")
     @Name("Plugin Home")
@@ -271,7 +267,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         }
     }
 
-
     @Name("Editor Actions")
     var usage = UsageTable(ApplicationServices.usageManager)
     fun getUserSuppliedModels(): List<AppSettingsState.UserSuppliedModel> {
@@ -291,13 +286,13 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     }
 
     init {
-        // Initialize new fields
+
         diffLoggingEnabled.isSelected = AppSettingsState.instance.diffLoggingEnabled
         awsProfile.text = AppSettingsState.instance.awsProfile ?: ""
         awsRegion.text = AppSettingsState.instance.awsRegion ?: ""
         awsBucket.text = AppSettingsState.instance.awsBucket ?: ""
         disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
-        // Initialize executables list
+
         setExecutables(AppSettingsState.instance.executables ?: emptySet())
         ChatModel.values()
             .filter {
@@ -311,7 +306,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         ImageModels.values().forEach {
             this.mainImageModel.addItem(it.name)
         }
-        // Sort the items in the ComboBoxes
+
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }
             .filter { modelItem ->
                 isVisible(
@@ -346,7 +341,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         this.mainImageModel.renderer = getImageModelRenderer()
     }
 
-
     override fun dispose() {
     }
 
@@ -358,7 +352,8 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             selected: Boolean,
             hasFocus: Boolean
         ) {
-            text = value // Here you can add more customization if needed
+            text = value
+
             if (value != null) {
                 val model = ChatModel.values().entries.find { it.value.modelName == value }?.value
                 text = "${model?.provider?.name} - $value"
@@ -374,7 +369,8 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             selected: Boolean,
             hasFocus: Boolean
         ) {
-            text = value // Here you can add more customization if needed
+            text = value
+
         }
     }
 

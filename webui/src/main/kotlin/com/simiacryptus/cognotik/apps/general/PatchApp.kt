@@ -48,7 +48,8 @@ abstract class PatchApp(
 
     companion object {
         private val log = LoggerFactory.getLogger(PatchApp::class.java)
-        const val tripleTilde = "`" + "``" // This is a workaround for the markdown parser when editing this file
+        const val tripleTilde = "`" + "``"
+
     }
 
     /**
@@ -65,13 +66,10 @@ abstract class PatchApp(
         return renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")
     }
 
-    // Track the last parsed error details and use them as the example instance if available
     private var lastParsedErrors: ParsedErrors? = null
 
-    // Stateful records of previous run results and parsed error results
     private val previousParsedErrorsRecords = mutableListOf<ParsedErrorRecord>()
 
-    // Add structured logging
     private fun logEvent(event: String, data: Map<String, Any?>) {
         log.info("$event: ${JsonUtil.toJson(data)}")
     }
@@ -103,7 +101,7 @@ abstract class PatchApp(
                 }
                 val gitDiff = if (settings.includeGitDiffs) {
                     try {
-                        // Use the full path relative to working directory
+
                         val relativePath = path.toString()
                         val process = ProcessBuilder("git", "diff", "HEAD", "--", relativePath)
                             .directory(settings.workingDirectory)
@@ -212,7 +210,6 @@ abstract class PatchApp(
         @Description("Search queries to find relevant code") val searchQueries: List<SearchQuery>? = null
     )
 
-
     data class ParsedError(
         @Description("The error message") val message: String? = null,
         @Description("Summarize output to distill details related to the error message") val details: String? = null,
@@ -232,7 +229,7 @@ abstract class PatchApp(
         val includeGitDiffs: Boolean = false,
         val includeLineNumbers: Boolean = false,
     ) {
-        // For backwards compatibility and convenience
+
         var workingDirectory: File?
             get() = commands.firstOrNull()?.workingDirectory
             set(value) {
@@ -256,7 +253,7 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         task: SessionTask,
     ): OutputResult {
-        // Execute each command in sequence
+
         val tabs = TabbedDisplay(task)
 
         val outputResult = output(task, settings, ui, tabs)
@@ -282,7 +279,7 @@ abstract class PatchApp(
                     override val obj: ParsedErrors = outputResult.errors
                 }
             }
-            // Update the last parsed error details so they can be used in subsequent runs
+
             val parsedErrors: ParsedErrors = plan.obj
             lastParsedErrors = parsedErrors
             val progressHeader = fixTask.header("Processing tasks...", 3)
@@ -338,9 +335,11 @@ abstract class PatchApp(
         val hasErrors = errors.any { it.isWarning != true }
         val filteredErrors = errors.filter {
             if (hasErrors) {
-                !settings.ignoreWarnings || (it.isWarning != true) // If there are errors, respect ignoreWarnings setting
+                !settings.ignoreWarnings || (it.isWarning != true)
+
             } else {
-                true // If there are only warnings, process them regardless of ignoreWarnings
+                true
+
             }
         }
         filteredErrors.groupBy { it.message }
@@ -357,7 +356,7 @@ abstract class PatchApp(
                                 ui = ui
                             )
                         )
-                        // Search for files using the provided search strings
+
                         val searchResults = error.research?.searchQueries?.flatMap { query ->
                             val filter1 = filteredWalk(
                                 settings.workingDirectory ?: root
@@ -428,14 +427,14 @@ abstract class PatchApp(
             parsingModel = parsingModel,
             prompt = ("""
           You are a helpful AI that helps people with coding.
-          
+
           You will be answering questions about the following project:
-          
+
           Project Root: """.trimIndent() + (settings.workingDirectory?.absolutePath ?: "") + """
-          
+
           Files:
           """.trimIndent() + projectSummary() + """
-          
+
           Given the response of a build/test process, identify one or more distinct errors.
           For each error:
              1) predict the files that need to be fixed
@@ -468,10 +467,10 @@ abstract class PatchApp(
                 (error.locations?.map { it.file } ?: emptyList()) +
                 (additionalFiles ?: emptyList())).mapNotNull { filePath ->
             try {
-                // First, remove the root path prefix if present so that the LLM-generated absolute paths become relative.
-                // Then, strip a leading slash if still present.
+
+
                 val normalizedRoot = root.absolutePath.replace(File.separatorChar, '/')
-                // Clean the file path (anything after a space is treated as a note/comment)
+
                 val cleanPath = filePath?.let { cleanFilePath(it) } ?: return@mapNotNull null
                 var relativePath =
                     if (cleanPath.contains(normalizedRoot)) cleanPath.replaceFirst(normalizedRoot, "") else cleanPath

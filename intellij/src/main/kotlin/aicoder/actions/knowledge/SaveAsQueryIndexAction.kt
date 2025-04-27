@@ -22,10 +22,9 @@ class SaveAsQueryIndexAction : BaseAction() {
     )
 
     private fun getConfig(project: com.intellij.openapi.project.Project?): IndexConfig {
-        // Could be enhanced to show a dialog for configuration
+
         return IndexConfig()
     }
-
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
@@ -34,7 +33,6 @@ class SaveAsQueryIndexAction : BaseAction() {
             file.isDirectory || file.name.endsWith(".parsed.json")
         }
     }
-
 
     override fun handle(e: AnActionEvent) {
         val selectedFiles = UITools.getSelectedFiles(e)
@@ -96,7 +94,6 @@ class SaveAsQueryIndexAction : BaseAction() {
             }
         })
     }
-
 
     companion object {
         private val log = LoggerFactory.getLogger(SaveAsQueryIndexAction::class.java)

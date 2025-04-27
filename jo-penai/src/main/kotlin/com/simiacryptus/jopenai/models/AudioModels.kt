@@ -25,12 +25,18 @@ enum class AudioModels(
     }
 
     fun pricing(length: Int): Double = when (this) {
-        Whisper -> 0.006 * length // seconds
-        TTS -> (15.0 / 1000000) * length // characters ($15 per 1M characters)
-        TTS_HD -> (30.0 / 1000000) * length // characters ($30 per 1M characters)
-        GPT4oTranscribe -> 0.006 * length // minutes ($0.006 per minute)
-        GPT4oMiniTranscribe -> 0.003 * length // minutes ($0.003 per minute)
-        GPT4oMiniTTS -> (0.60 / 1000000) * length // characters
+        Whisper -> 0.006 * length
+
+        TTS -> (15.0 / 1000000) * length
+
+        TTS_HD -> (30.0 / 1000000) * length
+
+        GPT4oTranscribe -> 0.006 * length
+
+        GPT4oMiniTranscribe -> 0.003 * length
+
+        GPT4oMiniTTS -> (0.60 / 1000000) * length
+
     }
         .also { log.info("Calculated price: {}", it) }
 

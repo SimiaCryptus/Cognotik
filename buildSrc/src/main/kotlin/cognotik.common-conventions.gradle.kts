@@ -36,29 +36,29 @@ tasks.withType<Test> {
         "--add-opens", "java.base/java.util=ALL-UNNAMED",
         "--add-opens", "java.base/java.lang=ALL-UNNAMED"
     )
-    // Improve test performance
+
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
     failFast = true
 }
-// Add common configurations for all projects
+
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
-    // Enable incremental compilation for faster builds
-//  options.incremental = true
+
+
 }
-// Add common configurations for Javadoc
+
 tasks.withType<Javadoc> {
     options {
         (this as StandardJavadocDocletOptions).apply {
             addStringOption("Xdoclint:none", "-quiet")
             addBooleanOption("html5", true)
-            // Add links to JDK and common library Javadocs
+
             links("https://docs.oracle.com/en/java/javase/17/docs/api/")
         }
     }
 }
-// Add dependency analysis task
+
 tasks.register("analyzeDependencies") {
     description = "Analyzes project dependencies for potential issues"
     doLast {

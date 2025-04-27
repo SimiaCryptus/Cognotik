@@ -34,17 +34,17 @@ open class TypeScriptDescriber : TypeDescriber() {
         stackMax: Int,
         describedTypes: MutableSet<String>
     ): String {
-//        log.debug("Starting description for type: ${rawType.name} with stackMax: $stackMax")
+
         if (!describedTypes.add(rawType.name) && rawType.simpleName.lowercase() !in primitives) {
             log.warn("Recursion detected for type: ${rawType.name}, returning 'any'")
             return "any"
         } else if (rawType.simpleName.lowercase() in primitives) {
             return rawType.simpleName.lowercase()
         }
-//        log.info("Describing type: ${rawType.name}")
+
         if (isAbbreviated(rawType) || stackMax <= 0) return "any /* ${rawType.name} */"
         if (rawType.isEnum || DynamicEnum::class.java.isAssignableFrom(rawType)) {
-//            log.debug("Type is an enum: ${rawType.name}")
+
             return """
                 enum ${rawType.simpleName} {
                     ${getEnumValues(rawType).joinToString(",\n    ")}
@@ -81,7 +81,7 @@ open class TypeScriptDescriber : TypeDescriber() {
                     .map { describe(it, rawType, stackMax - 1) }
             }).joinToString("\n")
         } else ""
-//        log.debug("Completed description for type: ${rawType.name}")
+
 
         return """
             interface ${rawType.simpleName} {
@@ -136,8 +136,9 @@ open class TypeScriptDescriber : TypeDescriber() {
     )
 
     override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
-//        log.info("Describing method: ${self.name} in class: ${clazz?.name} with stackMax: $stackMax")
-        if (stackMax <= 0) return "  // ..."
+
+        if (stackMax <= 0) return "
+
         if (!coverMethods) return ""
         if (clazz != null && clazz.isKotlinClass()) {
             val function = clazz.kotlin.functions.find { it.name == self.name }
@@ -167,11 +168,13 @@ open class TypeScriptDescriber : TypeDescriber() {
         includeOperationID: Boolean = true,
         describedTypes: MutableSet<String>
     ): String {
-//        log.info("Describing Kotlin function: ${self.name} in class: ${concreteClass.qualifiedName} with stackMax: $stackMax")
+
         val functionTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}"
-        if (describedTypes.contains(functionTypeRepresentation) && functionTypeRepresentation !in primitives) return "  // ..."
+        if (describedTypes.contains(functionTypeRepresentation) && functionTypeRepresentation !in primitives) return "
+
         describedTypes.add(functionTypeRepresentation)
-        if (stackMax <= 0) return "  // ..."
+        if (stackMax <= 0) return "
+
         if (!coverMethods) return ""
         val parameterTs = self.parameters.filter { it.name != null }
             .joinToString(", ") { "${it.name}: ${toTypeScript(it.type, stackMax - 1)}" }

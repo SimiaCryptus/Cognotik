@@ -10,14 +10,13 @@ import org.slf4j.LoggerFactory
 
 private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
 
-
 @JsonDeserialize(using = APIProviderDeserializer::class)
 @JsonSerialize(using = APIProviderSerializer::class)
 class APIProvider private constructor(name: String, val base: String? = null) : DynamicEnum<APIProvider>(name) {
     companion object {
         val Google = APIProvider(
             "Google",
-//            "https://generativelanguage.googleapis.com/v1beta/openai"
+
             "https://generativelanguage.googleapis.com"
         )
         val OpenAI = APIProvider("OpenAI", "https://api.openai.com/v1")

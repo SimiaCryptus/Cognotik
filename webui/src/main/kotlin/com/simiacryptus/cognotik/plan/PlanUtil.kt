@@ -8,7 +8,6 @@ import com.simiacryptus.util.JsonUtil
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-
 object PlanUtil {
 
     fun diagram(
@@ -76,14 +75,13 @@ object PlanUtil {
         .replace("\"", "\\\"")
         .let { '"' + it + '"' }
 
-    // Cache for memoizing buildMermaidGraph results
     private val mermaidGraphCache = ConcurrentHashMap<String, String>()
     private val mermaidExceptionCache = ConcurrentHashMap<String, Exception>()
 
     fun buildMermaidGraph(subTasks: Map<String, com.simiacryptus.cognotik.plan.TaskConfigBase>): String {
-        // Generate a unique key based on the subTasks map
+
         val cacheKey = JsonUtil.toJson(subTasks)
-        // Return cached result if available
+
         com.simiacryptus.cognotik.plan.PlanUtil.mermaidGraphCache[cacheKey]?.let { return it }
         com.simiacryptus.cognotik.plan.PlanUtil.mermaidExceptionCache[cacheKey]?.let { throw it }
         try {

@@ -30,7 +30,6 @@ class ApplyPatchAction : BaseAction(
         val project = event.project ?: return
         val virtualFiles = UITools.getSelectedFiles(event) ?: return
 
-        // Prompt user to input patch content
         val patchContent = showPatchInputDialog() ?: return
         if (patchContent.trim().isEmpty()) {
             Messages.showErrorDialog(project, "Patch content cannot be empty", "Invalid Patch")

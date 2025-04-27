@@ -2,20 +2,19 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {AppConfig, WebSocketConfig} from '../../types/config';
 import {ThemeName} from '../../types/theme';
 
-// Helper function to validate theme name
 const isValidTheme = (theme: string | null): theme is ThemeName => {
     return theme === 'default' || theme === 'main' || theme === 'night' ||
         theme === 'forest' || theme === 'pony' || theme === 'alien' ||
         theme === 'sunset' || theme === 'ocean' || theme === 'cyberpunk';
 };
-// Load theme from localStorage with type safety
+
 const loadSavedTheme = (): ThemeName => {
     const savedTheme = localStorage.getItem('theme');
     return isValidTheme(savedTheme) ? savedTheme : 'main';
 };
-// Load websocket config from localStorage or use defaults
+
 const loadWebSocketConfig = () => {
-    // In production, always use the current host
+
     if (process.env.NODE_ENV !== 'development') {
         return {
             url: window.location.hostname,
@@ -46,7 +45,6 @@ const loadWebSocketConfig = () => {
     };
 };
 
-
 const initialState: AppConfig = {
     singleInput: false,
     stickyInput: true,
@@ -65,7 +63,8 @@ const initialState: AppConfig = {
             showTimestamp: true,
             showLevel: true,
             showSource: true,
-            logLevel: 'info',  // Adding the missing required logLevel property
+            logLevel: 'info',
+
             styles: {
                 debug: {color: '#6c757d'},
                 info: {color: '#17a2b8'},
@@ -113,14 +112,14 @@ const configSlice = createSlice({
             localStorage.setItem('theme', action.payload);
         },
         updateWebSocketConfig: (state, action: PayloadAction<Partial<WebSocketConfig>>) => {
-            // Only allow WebSocket config updates in development mode
+
             if (process.env.NODE_ENV !== 'development') {
                 console.warn('[ConfigSlice] WebSocket config updates are only allowed in development mode');
                 return;
             }
 
             state.websocket = {...state.websocket, ...action.payload};
-            // Persist to localStorage
+
             try {
                 localStorage.setItem('websocketConfig', JSON.stringify(state.websocket));
             } catch (error) {

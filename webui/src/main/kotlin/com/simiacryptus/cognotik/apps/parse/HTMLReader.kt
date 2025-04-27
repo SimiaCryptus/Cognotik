@@ -30,13 +30,12 @@ class HTMLReader(private val htmlFile: File) : DocumentParserApp.DocumentReader 
     }
 
     override fun close() {
-        // No resources to close for HTML files
+
     }
 
     private fun splitIntoPages(text: String, maxChars: Int = 16000): List<String> {
         if (text.length <= maxChars) return listOf(text)
 
-        // Split on paragraph boundaries when possible
         val paragraphs = text.split(Regex("\\n\\s*\\n"))
 
         val pages = mutableListOf<String>()
@@ -48,7 +47,7 @@ class HTMLReader(private val htmlFile: File) : DocumentParserApp.DocumentReader 
                     pages.add(currentPage.toString())
                     currentPage = StringBuilder()
                 }
-                // If a single paragraph is longer than maxChars, split it
+
                 if (paragraph.length > maxChars) {
                     val words = paragraph.split(" ")
                     var currentChunk = StringBuilder()

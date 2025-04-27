@@ -1,10 +1,11 @@
 import {WebSocketLike} from '../types/websocket';
- import {store} from '../store';
- import {Message} from "../types/messages";
- import {WebSocketConfig} from "../types/config";
- import {debounce} from "../utils/tabHandling";
- export class WebSocketService implements WebSocketLike {
-     // Implement required WebSocket-like interface properties
+import {store} from '../store';
+import {Message} from "../types/messages";
+import {WebSocketConfig} from "../types/config";
+import {debounce} from "../utils/tabHandling";
+
+export class WebSocketService implements WebSocketLike {
+
      public readonly CONNECTING = 0;
      public readonly OPEN = 1;
      public readonly CLOSING = 2;
@@ -20,15 +21,20 @@ import {WebSocketLike} from '../types/websocket';
      public onerror: ((this: WebSocket, ev: Event) => any) | null = null;
      public onmessage: ((this: WebSocket, ev: MessageEvent) => any) | null = null;
      public ws: WebSocket | null = null;
-     // Add event emitter functionality
+
      private eventListeners: { [key: string]: ((...args: any[]) => void)[] } = {};
-     // Constants for connection management
-     private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
-     private readonly HEARTBEAT_TIMEOUT = 5000; // 5 seconds
-     private readonly CONNECTION_TIMEOUT = 10000; // 10 seconds
-     private readonly BASE_RECONNECT_DELAY = 1000; // 1 second
-     private readonly MAX_RECONNECT_DELAY = 30000; // 30 seconds
-     // Connection state tracking
+
+    private readonly HEARTBEAT_INTERVAL = 30000;
+
+    private readonly HEARTBEAT_TIMEOUT = 5000;
+
+    private readonly CONNECTION_TIMEOUT = 10000;
+
+    private readonly BASE_RECONNECT_DELAY = 1000;
+
+    private readonly MAX_RECONNECT_DELAY = 30000;
+
+
      private lastHeartbeatResponse = 0;
      private lastHeartbeatSent = 0;
      private connectionState: 'connecting' | 'connected' | 'disconnected' | 'error' = 'disconnected';
@@ -40,7 +46,8 @@ import {WebSocketLike} from '../types/websocket';
      };
      private messageQueue: string[] = [];
      private isProcessingQueue = false;
-     private readonly QUEUE_PROCESS_INTERVAL = 50; // ms
+    private readonly QUEUE_PROCESS_INTERVAL = 50;
+
      private readonly DEBUG = process.env.NODE_ENV === 'development';
      private maxReconnectAttempts = 5;
      private reconnectAttempts = 0;
@@ -55,7 +62,8 @@ import {WebSocketLike} from '../types/websocket';
      private bufferTimeout: NodeJS.Timeout | null = null;
      private aggregateBuffer: Message[] = [];
      private aggregateTimeout: NodeJS.Timeout | null = null;
-     private readonly AGGREGATE_INTERVAL = 100; // 100ms aggregation interval
+    private readonly AGGREGATE_INTERVAL = 100;
+
      public close(code?: number, reason?: string): void {
          this.forcedClose = true;
          if (this.ws) {
@@ -77,10 +85,10 @@ import {WebSocketLike} from '../types/websocket';
          if (!this.eventListeners[event]) return;
          this.eventListeners[event] = this.eventListeners[event].filter(cb => cb !== callback);
      }
-     // Add reconnect method
+
      public reconnect(): void {
          if (this.isReconnecting) {
-             // Skip duplicate reconnect attempts silently
+
              return;
          }
          this.forcedClose = false;
@@ -131,28 +139,28 @@ import {WebSocketLike} from '../types/websocket';
                  throw new Error('[WebSocket] Connection config is required');
              }
              let wsConfig: WebSocketConfig;
-             // If string is passed, treat it as sessionId and use stored config
+
              if (typeof config === 'string') {
                  this.sessionId = config;
                  wsConfig = this.getConfig();
              } else {
-                 // If object is passed, use it as config
+
                  this.sessionId = 'default';
                  wsConfig = config;
              }
-             // Clear any existing connection timeout
+
              if (this.connectionTimeout) {
                  clearTimeout(this.connectionTimeout);
              }
              const path = this.getWebSocketPath();
-             // Only create new connection if not already connected or reconnecting
+
              if (!this.isConnected() && !this.isReconnecting) {
                  const lastMessageTime = Math.max(...this.messageHandlers
                      .map(h => (h as any).lastMessageTime || 0)
                      .filter(t => t > 0));
-                 // Construct URL with proper handling of default ports
+
                  let wsUrl = `${wsConfig.protocol}//${wsConfig.url}`;
-                 // Only add port if it's non-standard
+
                  if ((wsConfig.protocol === 'ws:' && wsConfig.port !== '80') ||
                      (wsConfig.protocol === 'wss:' && wsConfig.port !== '443')) {
                      wsUrl += `:${wsConfig.port}`;
@@ -161,14 +169,15 @@ import {WebSocketLike} from '../types/websocket';
                  console.info(`[WebSocket] Establishing connection to ${wsUrl}`);
                  this.ws = new WebSocket(wsUrl);
                  this.setupEventHandlers();
-                 // Set connection timeout
+
                  this.connectionTimeout = setTimeout(() => {
                      if (this.ws?.readyState !== WebSocket.OPEN) {
                          console.warn('[WebSocket] Connection timeout reached, attempting to reconnect');
                          this.ws?.close();
                          this.attemptReconnect();
                      }
-                 }, 10000); // Increase timeout to 10 seconds
+                 }, 10000);
+
              }
          } catch (error) {
              console.error('[WebSocket] Failed to establish connection:', error);
@@ -240,7 +249,8 @@ import {WebSocketLike} from '../types/websocket';
      }
      private reconnectAndSend(message: string): void {
          if (this.isReconnecting) {
-             this.queueMessage(message); // Queue message to be sent after reconnection
+             this.queueMessage(message);
+
              return;
          }
          console.warn('[WebSocket] Connection lost - initiating reconnect before sending message');
@@ -268,14 +278,14 @@ import {WebSocketLike} from '../types/websocket';
      }
      private getConfig() {
          const state = store.getState();
-         // Load from localStorage as fallback if store is not yet initialized
+
          if (!state.config?.websocket) {
              try {
                  const savedConfig = localStorage.getItem('websocketConfig');
                  if (savedConfig) {
                      const config = JSON.parse(savedConfig);
                      this.debugLog('Using config from localStorage:', config);
-                     // Ensure protocol is correct based on window.location.protocol
+
                      config.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                      return config;
                  }
@@ -292,11 +302,11 @@ import {WebSocketLike} from '../types/websocket';
      }
      private getWebSocketPath(): string {
          const path = window.location.pathname;
-         // Simplify path handling to use the base path
+
          let wsPath = '/';
-         // If we're in a subdirectory, use that as the base path
+
          if (path !== '/' && path.length > 0) {
-             // Extract the first path segment
+
              const match = path.match(/^\/([^/]+)/);
              if (match && match[1]) {
                  wsPath = `/${match[1]}/`;
@@ -308,17 +318,17 @@ import {WebSocketLike} from '../types/websocket';
          if (!this.ws) {
              console.error('[WebSocket] Failed to setup handlers - WebSocket not initialized');
              return () => {
-                 // Cleanup not needed since WebSocket was never initialized
+
                  console.debug('[WebSocket] No cleanup needed - WebSocket was never initialized');
              };
          }
          let isDestroyed = false;
-         // Store original handlers to properly clean them up later
+
          const originalOnOpen = this.ws.onopen;
          const originalOnMessage = this.ws.onmessage;
          const originalOnClose = this.ws.onclose;
          const originalOnError = this.ws.onerror;
-         // Combined onopen handler
+
          this.ws.onopen = () => {
              if (isDestroyed) return;
              console.info('[WebSocket] Connection established');
@@ -336,7 +346,7 @@ import {WebSocketLike} from '../types/websocket';
          const debouncedProcessMessages = debounce((messages: Message[]) => {
              const batch = [...messages];
              this.aggregateBuffer = [];
-             // Process messages in chunks to avoid blocking the main thread
+
              const processChunk = (startIndex: number, chunkSize: number) => {
                  const endIndex = Math.min(startIndex + chunkSize, batch.length);
                  for (let i = startIndex; i < endIndex; i++) {
@@ -347,7 +357,8 @@ import {WebSocketLike} from '../types/websocket';
                      setTimeout(() => processChunk(endIndex, chunkSize), 0);
                  }
              };
-             processChunk(0, 10); // Process 10 messages at a time
+             processChunk(0, 10);
+
          }, this.AGGREGATE_INTERVAL);
          this.ws.onmessage = (event) => {
              try {
@@ -357,17 +368,17 @@ import {WebSocketLike} from '../types/websocket';
                      return;
                  }
                  if (data.type === 'ping') {
-                     // Reply with pong when a ping is received and log the event
+
                      this.ws?.send(JSON.stringify({type: 'pong'}));
                      return;
                  }
              } catch (e) {
-                 // Not a JSON message, process normally
+                 console.error('[WebSocket] Failed to parse message:', event.data, e);
              }
-             // Process incoming message – splitting at the first two commas.
+
              this.forcedClose = false;
              const data = event.data;
-             // Fix message parsing to properly handle commas in content
+
              const firstCommaIndex = data.indexOf(',');
              const secondCommaIndex = firstCommaIndex > -1 ? data.indexOf(',', firstCommaIndex + 1) : -1;
              if (firstCommaIndex === -1 || secondCommaIndex === -1) {
@@ -378,7 +389,8 @@ import {WebSocketLike} from '../types/websocket';
              const version = data.substring(firstCommaIndex + 1, secondCommaIndex);
              const content = data.substring(secondCommaIndex + 1);
              const timeSinceConnection = Date.now() - this.connectionStartTime;
-             const shouldBuffer = timeSinceConnection < 10000; // Buffer for first 10 seconds
+             const shouldBuffer = timeSinceConnection < 10000;
+
              if (!id || !version) {
                  console.error('[WebSocket] Missing required message fields:', event.data);
                  return;
@@ -405,7 +417,7 @@ import {WebSocketLike} from '../types/websocket';
                      debouncedProcessMessages(messages);
                  }, 1000);
              } else {
-                 // After warmup period, use message aggregation
+
                  this.aggregateBuffer.push(message);
                  if (this.aggregateBuffer.length === 1) {
                      debouncedProcessMessages(this.aggregateBuffer);
@@ -439,10 +451,10 @@ import {WebSocketLike} from '../types/websocket';
                  this.attemptReconnect();
              }
          };
-         // Add cleanup method
+
          return () => {
              isDestroyed = true;
-             // Properly remove event handlers to prevent memory leaks
+
              if (this.ws) {
                  this.ws.onopen = originalOnOpen;
                  this.ws.onmessage = originalOnMessage;

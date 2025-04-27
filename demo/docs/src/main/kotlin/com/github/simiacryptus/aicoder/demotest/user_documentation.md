@@ -160,7 +160,7 @@ Provides audio narration during test execution.
 
 ```kotlin
 try {
-    // Action code
+
 } catch (e: Exception) {
     log.warn("Failed to execute action: ${e.message}")
 }
@@ -392,12 +392,12 @@ IntelliJ IDEA. This test suite showcases various automated code manipulation and
 The Smart Paste feature intelligently converts code between different programming languages and formats.
 
 ```kotlin
-// Example: Converting JavaScript to Kotlin
-// Original clipboard content:
+
+
 function calculateSum(a, b) {
     return a + b;
 }
-// Will be converted to appropriate Kotlin syntax
+
 ```
 
 #### 2. Fast Paste
@@ -405,8 +405,8 @@ function calculateSum(a, b) {
 Provides quick code conversion functionality, particularly useful for HTML-wrapped code snippets.
 
 ```kotlin
-// Example: Converting HTML-wrapped Java code
-// Original clipboard content:
+
+
 <pre><code>
 public class Example {
     public static void main(String[] args) {
@@ -414,7 +414,7 @@ public class Example {
     }
 }
 </code></pre>
-// Will be converted to clean Kotlin code
+
 ```
 
 #### 3. Code Description

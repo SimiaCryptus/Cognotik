@@ -79,7 +79,7 @@ class GenerateDocumentationActionTest : DemoTestBase(
 
             step("Navigate to files utility package") {
                 tts("Navigating to the files utility package for documentation generation.")?.play()
-                //val path = arrayOf(testProjectDir.name, "src", "main", "kotlin", "com.simiacryptus.util.files")
+
                 val path = arrayOf(testProjectDir.name, "src", "main", "kotlin", "com", "simiacryptus", "util", "files")
                 val tree =
                     remoteRobot.find(JTreeFixture::class.java, byXpath(PROJECT_TREE_XPATH)).apply { expandAll(path) }
@@ -98,7 +98,7 @@ class GenerateDocumentationActionTest : DemoTestBase(
                 tts("Let's select 'Generate Documentation' to begin the AI-powered documentation process.")?.play()
                 waitFor(Duration.ofSeconds(15)) {
                     try {
-                        // Find and hover over Generate menu
+
                         findAll(CommonContainerFixture::class.java, byXpath("//div[@text='⚡ Generate']"))
                             .firstOrNull()?.moveMouse()
                         sleep(1000)
@@ -107,7 +107,6 @@ class GenerateDocumentationActionTest : DemoTestBase(
                             byXpath("//div[@class='ActionMenuItem' and contains(@text, 'Generate Documentation')]")
                         )
 
-                        // Click Generate Documentation option
                         findAll(
                             CommonContainerFixture::class.java,
                             byXpath("//div[@class='ActionMenuItem' and contains(@text, 'Generate Documentation')]")
@@ -142,8 +141,10 @@ class GenerateDocumentationActionTest : DemoTestBase(
                 aiInstructionField.click()
                 keyboard {
                     pressing(KeyEvent.VK_CONTROL) {
-                        key(KeyEvent.VK_A) // Select all
-                        key(KeyEvent.VK_BACK_SPACE) // Delete
+                        key(KeyEvent.VK_A)
+
+                        key(KeyEvent.VK_BACK_SPACE)
+
                     }
                 }
                 remoteRobot.keyboard { enterText("Create comprehensive API documentation for the files utility package") }

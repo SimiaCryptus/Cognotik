@@ -11,9 +11,12 @@ open class TrainedSilenceDiscriminator(
     continueFn: () -> Boolean,
     var isVerbose: Boolean = false,
     val frequencyBands: List<Pair<Double, Double>> = listOf(
-        85.0 to 255.0,    // Low band
-        256.0 to 2000.0,  // Mid band
-        2001.0 to 8000.0  // High band
+        85.0 to 255.0,
+
+        256.0 to 2000.0,
+
+        2001.0 to 8000.0
+
     )
 ) : SilenceDiscriminator(
     inputBuffer = inputBuffer,
@@ -24,7 +27,7 @@ open class TrainedSilenceDiscriminator(
 
     init {
         onModeChanged.addListener {
-            // Log KL-divergence when training data is updated
+
             if (isTraining != null && silence.rmsPercentileTool.memory.size > 1 && speech.rmsPercentileTool.memory.size > 1) {
                 logKL()
             }
@@ -40,7 +43,6 @@ open class TrainedSilenceDiscriminator(
         val spectralCentroidPercentileTool by lazy { newPercentile() }
         val spectralFlatnessPercentileTool by lazy { newPercentile() }
 
-        // Dynamic frequency band tools
         val frequencyBandTools by lazy { frequencyBands.map { newPercentile() } }
 
         fun isQuiet(vararg packets: AudioPacket): Double {
@@ -75,7 +77,7 @@ open class TrainedSilenceDiscriminator(
                     logKL()
                 }
                 if (value == null) {
-                    // TODO: Calculate a more sophisticated discriminator
+
                 }
             }
         }
@@ -168,9 +170,9 @@ open class TrainedSilenceDiscriminator(
         compare(packet.rms, silence.rmsPercentileTool, speech.rmsPercentileTool),
         compare(packet.aWeighting, silence.iec61672PercentileTool, speech.iec61672PercentileTool),
         compare(packet.spectralEntropy, silence.spectralEntropyPercentileTool, speech.spectralEntropyPercentileTool),
-        // Intentionally inverted - these metrics trend lower for active speech
-//        compare(packet.spectralCentroid, speech.spectralCentroidPercentileTool, silence.spectralCentroidPercentileTool),
-//        compare(packet.spectralFlatness, speech.spectralFlatnessPercentileTool, silence.spectralFlatnessPercentileTool)
+
+
+
     ) + frequencyBands.mapIndexed { index, (low, high) ->
         compare(
             packet.frequencyBandPower(low, high),

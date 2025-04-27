@@ -15,8 +15,7 @@ class Pointer<T : Any>(
     @JsonIgnore
     var heapObject: T? = null
 
-//  var v : T get() = getValue<T>()
-//    set(value) { setValue(value)}
+
 
     inline fun <reified TT : Any> getValue(): TT {
         if (null != heapObject) return heapObject!! as TT
@@ -47,7 +46,6 @@ class Pointer<T : Any>(
         }
     }
 
-
     @get:JsonIgnore
     @set:JsonIgnore
     var raw: ByteArray
@@ -66,7 +64,6 @@ class Pointer<T : Any>(
             val blobID = stm.blobs.write(value)
             stm.pointers.set(id, blobID)
         }
-
 
     companion object {
         private val log = LoggerFactory.getLogger(Pointer::class.java)

@@ -101,7 +101,7 @@ class JsonFunctionRecorder(baseDir: File) : FunctionInterceptor, Closeable {
     private val sequenceId = AtomicInteger(0)
 
     override fun close() {
-        // No resources to close in this implementation
+
     }
 
     override fun <T : Any> intercept(returnClazz: Class<T>, fn: () -> T): T {
@@ -156,7 +156,7 @@ class JsonFunctionRecorder(baseDir: File) : FunctionInterceptor, Closeable {
             FunctionInterceptor::class.java,
             NoopFunctionInterceptor::class.java,
         )
-        // Get the caller method name from the stack trace (first caller not in internalClassList)
+
         val caller = Thread.currentThread().stackTrace
             .filter { !internalClassList.contains(Class.forName(it.className)) }
             .filter { it.methodName != "intercept" }
@@ -175,9 +175,7 @@ class JsonFunctionRecorder(baseDir: File) : FunctionInterceptor, Closeable {
     }
 }
 
-
 fun getModel(modelName: String?): OpenAIModel? = ChatModel.values().values.find { it.modelName == modelName }
     ?: EmbeddingModels.values().values.find { it.modelName == modelName }
     ?: ImageModels.values().find { it.modelName == modelName }
-
 

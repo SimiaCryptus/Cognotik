@@ -70,7 +70,6 @@ for repo in "${!REPOS[@]}"; do
   fi
 done
 
-
 # Build application
 echo "[$(date)] Building application..."
 pushd "/home/ec2-user/SkyenetApps"  # SkyenetApps repository

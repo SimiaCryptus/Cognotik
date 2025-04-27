@@ -98,14 +98,14 @@ class PlanAheadActionTest : DemoTestBase(
             tts("Let's launch the Task Runner. This tool will help us plan and execute complex development tasks with AI assistance.")?.play()
             waitFor(Duration.ofSeconds(10)) {
                 try {
-                    // First navigate to Task Plans submenu
+
                     val taskPlansMenu = find(
                         CommonContainerFixture::class.java,
                         byXpath("//div[@text='AI Coder']//div[@text='📋 Task Plans']")
                     )
                     taskPlansMenu.moveMouse()
                     sleep(1000)
-                    // Then find and click Task Runner
+
                     findAll(CommonContainerFixture::class.java, byXpath(TASK_RUNNER_XPATH))
                         .firstOrNull()?.click()
                     log.info("Task Runner action found and clicked successfully")

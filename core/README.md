@@ -71,7 +71,8 @@ val simpleActor = SimpleActor(
 )
 
 val response = simpleActor.answer(listOf("What is the capital of France?"), api)
-println(response) // Paris
+println(response)
+
 ```
 
 ### Using the CodingActor
@@ -97,17 +98,14 @@ println(result.result.resultValue)
 ### Managing Sessions
 
 ```kotlin
-// Create a new global session
+
 val session = Session.newGlobalID()
 
-// Get storage for the session
 val dataStorage = ApplicationServices.dataStorageFactory(dataStorageRoot)
 val sessionDir = dataStorage.getSessionDir(user, session)
 
-// Store a message
 dataStorage.updateMessage(user, session, "msg001", "Hello, world!")
 
-// Retrieve messages
 val messages = dataStorage.getMessages(user, session)
 ```
 
@@ -136,10 +134,9 @@ println(newCode)
 The core module can be configured through the `ApplicationServicesConfig` object:
 
 ```kotlin
-// Set the data storage root directory
+
 ApplicationServicesConfig.dataStorageRoot = File("/path/to/data")
 
-// Lock the configuration to prevent further changes
 ApplicationServicesConfig.isLocked = true
 ```
 

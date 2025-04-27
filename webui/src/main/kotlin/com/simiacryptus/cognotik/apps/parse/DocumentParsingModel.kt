@@ -11,7 +11,6 @@ import com.simiacryptus.util.JsonUtil
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
-
 open class DocumentParsingModel(
     private val parsingModel: ChatModel,
     private val temperature: Double

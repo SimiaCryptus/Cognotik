@@ -14,7 +14,7 @@ class ChatSocket(
     override fun onWebSocketConnect(session: Session) {
         super.onWebSocketConnect(session)
         sessionState.addSocket(this, session)
-        // Extract lastMessageTime from query parameters
+
         val lastMessageTime =
             session.upgradeRequest.parameterMap["lastMessageTime"]?.firstOrNull()?.toLongOrNull() ?: 0L
         sessionState.getReplay(lastMessageTime).forEach {

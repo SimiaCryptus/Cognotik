@@ -25,7 +25,7 @@ try {
     );
     console.log('[App] Application started successfully ✅');
 } catch (error) {
-    // Type guard to check if error is an Error object
+
     const err = error as Error;
     console.error('[App] Critical Error: Failed to render application:', {
         error: err,

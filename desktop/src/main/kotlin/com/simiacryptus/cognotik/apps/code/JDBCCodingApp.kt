@@ -41,7 +41,7 @@ class JDBCCodingApp : ApplicationServer(
             model = settings.model,
             mainTask = ui.newTask(),
         ) {
-//            override fun getInterpreterString(): String = JDBCCodingApp::class.java.name
+
 
         }.start(
             userMessage = userMessage,

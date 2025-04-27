@@ -94,7 +94,7 @@ tasks.register("optimizeDependencies") {
                             allDependencies.getOrPut(key) { mutableSetOf() }.add(version)
                         }
                     } catch (e: Exception) {
-                        // Ignore configurations that can't be resolved
+
                     }
                 }
         }

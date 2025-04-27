@@ -18,10 +18,11 @@ class LogPatternGenerator(
         Analyze the log text and identify regular expressions that can parse individual log messages.
         For each pattern:
         1. Create a regex that captures important fields as named groups
-        2. Capture names should use only letters in camelCase 
+        2. Capture names should use only letters in camelCase
+
         3. Ensure the pattern is specific enough to avoid false matches
         4. Describe what type of log message the pattern identifies
-        
+
         Return only the regex patterns with descriptions, no matches or analysis.
     """.trimIndent()
 

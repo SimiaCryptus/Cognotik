@@ -106,7 +106,7 @@ open class HttpClientManager(
     }
 
     protected fun captureCallerStack(): String {
-        // Skip the frames in withPool and this utility
+
         var stack = Throwable().stackTrace
             .dropWhile { it.methodName == "withPool" || it.className.contains("HttpClientManager") }
             .joinToString("\n") { "\tat $it" }
@@ -119,7 +119,8 @@ open class HttpClientManager(
     val stackCalls: MutableMap<Thread, String> = ConcurrentHashMap()
 
     private fun <T> withPool(fn: () -> T): T {
-        val callerStack = captureCallerStack()  // capture caller stack before switching threads
+        val callerStack = captureCallerStack()
+
         val future = workPool.submit(Callable {
             stackCalls[Thread.currentThread()] = callerStack
             return@Callable fn()
@@ -160,7 +161,6 @@ open class HttpClientManager(
             handleException(future, e, callerStack)
         }
     }
-
 
     private fun <T> withExpBackoffRetry(
         retryCount: Int,
@@ -206,7 +206,6 @@ open class HttpClientManager(
         if (null != invalidModelException) return invalidModelException
         return e
     }
-
 
     private fun <T> withTimeout(duration: Duration, fn: () -> T): T {
         var thread = Thread.currentThread()

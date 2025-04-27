@@ -20,7 +20,6 @@ object PsiUtil {
         "Comment", "DocComment", "LineComment", "BlockComment", "JavadocComment"
     )
 
-    // Common block types used in multiple places
     private val BLOCK_TYPES = arrayOf(
         "CodeBlock", "BlockExpr", "Block", "BlockExpression", "StatementList", "BlockFields",
         "ClassBody", "MethodBody", "FunctionBody", "TryBlock", "CatchBlock", "FinallyBlock"
@@ -32,7 +31,7 @@ object PsiUtil {
     fun getName(element: PsiElement): String? {
         if (!matchesType(element, *ELEMENTS_CODE)) return null
         val declaration = getDeclaration(element)
-        // Extract name from declaration based on element type
+
         return when {
             matchesType(element, "Class", "Interface", "Enum") ->
                 declaration.substringAfter("class ")

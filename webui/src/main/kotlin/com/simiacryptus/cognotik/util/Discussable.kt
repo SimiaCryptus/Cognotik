@@ -37,11 +37,12 @@ ${
                 val idx: Int = size
                 this.set(label(idx), newTask.placeholder)
                 main(idx, newTask)
-                //this.selectedTab = idx
+
                 header?.clear()
                 newTask.complete()
             }
-        } 
+        }
+
 </div>
 """
     }
@@ -52,12 +53,12 @@ ${
         try {
             val history = mutableListOf<Pair<String, Role>>()
             val userMessage = userMessage()
-            //log.info("User message: $userMessage")
+
             history.add(userMessage to Role.user)
             val design = initialResponse(userMessage)
-            //log.info("Initial response generated: $design")
+
             val rendered = outputFn(design)
-            //log.info("Rendered output: $rendered")
+
             history.add(rendered to Role.assistant)
             val tabContent = task.add(rendered)!!
             val feedbackForm = feedbackForm(tabIndex, tabContent, design, history, task)
@@ -176,7 +177,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
             return
         }
         try {
-            //if (null != tabIndex) tabs.selectedTab = tabIndex
+
             tabContent.apply {
                 val prevTab = toString()
                 set(prevTab)
@@ -194,7 +195,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
 
     override fun call(): T {
         try {
-            //log.info("Calling Discussable with heading: $heading")
+
             if (heading.isNotBlank()) task.echo(heading)
             val idx = tabs.size
             val newTask = ui.newTask(false)
@@ -202,7 +203,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
             tabs[tabs.label(idx)] = newTask.placeholder
             try {
                 main(idx, newTask)
-                //tabs.selectedTab = idx
+
                 semaphore.acquire()
             } catch (e: Throwable) {
                 log.error("Error in main function", e)

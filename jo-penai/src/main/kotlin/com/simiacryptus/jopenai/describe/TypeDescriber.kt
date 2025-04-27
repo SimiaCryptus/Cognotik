@@ -22,23 +22,23 @@ abstract class TypeDescriber {
 
     abstract fun describe(self: Method, clazz: Class<*>? = null, stackMax: Int = 5): String
     open fun isAbbreviated(self: Type): Boolean {
-//        log.debug("Checking if type is abbreviated: {}", self.typeName)
+
         val name = self.typeName
         val typeName = self.typeName.substringAfterLast('.').replace('$', '.').lowercase(Locale.getDefault())
         if (typeName in primitives) {
-//            log.debug("Type is a primitive: {}", typeName)
+
             return false
         } else if (self is ParameterizedType && List::class.java.isAssignableFrom(self.rawType as Class<*>)) {
-//            log.debug("Type is a parameterized List: {}", self.typeName)
+
             return isAbbreviated(self.actualTypeArguments[0])
         } else if (self is ParameterizedType && Map::class.java.isAssignableFrom(self.rawType as Class<*>)) {
-//            log.debug("Type is a parameterized Map: {}", self.typeName)
+
             return isAbbreviated(self.actualTypeArguments[0]) && isAbbreviated(self.actualTypeArguments[1])
         } else if (self.isArray) {
-//            log.debug("Type is an array: {}", self.typeName)
+
             return isAbbreviated(self.componentType!!)
         }
-//        log.debug("Type is not abbreviated: {}", self.typeName)
+
         if (name.startsWith("java.")) return true
         if (name.startsWith("kotlin.")) return true
         if (name.startsWith("sun.")) return true

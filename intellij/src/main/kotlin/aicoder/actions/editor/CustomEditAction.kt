@@ -44,7 +44,7 @@ open class CustomEditAction : SelectionAction<String>(requiresSelection = true) 
             chatProxy.addExample(
                 VirtualAPI.EditedText(
                     """
-                // Print Hello, World! to the console
+
                 println("Hello, World!")
                 """.trimIndent(),
                     "java"

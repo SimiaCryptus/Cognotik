@@ -12,23 +12,24 @@
 ### 2. Narration Best Practices
 
 ```kotlin
-// Bad
+
 speak("Now we will do something.")
 
-// Good
 speak("Let's explore how the Smart Paste feature automatically converts code between different languages.")
 ```
 
 ### 3. Pacing
 
 ```kotlin
-// Add appropriate pauses for comprehension
+
 step("Demonstrate feature") {
   speak("First, we'll select our target code.")
-  sleep(2000)  // Give viewers time to process
+  sleep(2000)
+
   performAction()
   speak("Notice how the AI analyzes the context before making changes.")
-  sleep(3000)  // Longer pause for complex operations
+  sleep(3000)
+
 }
 ```
 
@@ -37,30 +38,29 @@ step("Demonstrate feature") {
 ### 1. Code Chat Features
 
 ```kotlin
-// Example narration flow for Code Chat
+
 speak("Welcome to the Code Chat feature demonstration.")
 speak("This powerful tool allows real-time AI assistance while coding.")
 
 step("Open code file") {
   speak("Let's start by opening a complex code file that needs analysis.")
-  // ... file opening code ...
+
 }
 
 step("Initialize chat") {
   speak("We can now ask the AI to analyze this code and suggest improvements.")
-  // ... chat initialization ...
+
 }
 ```
 
 ### 2. Editor Features
 
 ```kotlin
-// Smart Paste demonstration
+
 step("Demonstrate Smart Paste") {
   speak("Smart Paste intelligently converts code between languages.")
   speak("Let's convert this JavaScript function to Kotlin.")
 
-  // Show original code
   setClipboardContent(
     """
         function calculateTotal(items) {
@@ -69,7 +69,6 @@ step("Demonstrate Smart Paste") {
     """.trimIndent()
   )
 
-  // Demonstrate paste
   performSmartPaste()
 
   speak("Notice how the AI maintains functionality while adopting Kotlin idioms.")
@@ -87,7 +86,6 @@ step("Generate Documentation") {
   speak("- Return value details")
   speak("- Usage examples")
 
-  // ... documentation generation code ...
 
   speak("The generated documentation follows project conventions and best practices.")
 }
@@ -98,12 +96,12 @@ step("Generate Documentation") {
 ```kotlin
 try {
   step("Feature demonstration") {
-    // ... demo code ...
+
   }
 } catch (e: Exception) {
   log.error("Demo failed: ${e.message}")
   speak("We've encountered an issue. In a real scenario, you would...")
-  // Explain error recovery
+
 }
 ```
 
@@ -130,7 +128,7 @@ splashScreenConfig = SplashScreenConfig(
 step("Long-running operation") {
   speak("Starting the analysis process...")
   showProgressIndicator()
-  // ... operation code ...
+
   hideProgressIndicator()
   speak("Analysis complete. Let's review the results.")
 }
@@ -142,20 +140,22 @@ step("Long-running operation") {
    ```kotlin
    @Test
    fun demoFeature() {
-       // Clear environment
+
        cleanupPreviousState()
-       // Set up demo files
+
        prepareTestFiles()
-       // Start recording
+
        startRecording()
    }
    ```
 
 2. **Timing**
    ```kotlin
-   // Allow time for visual transitions
-   sleep(1000) // Short pause
-   sleep(3000) // Longer pause for complex operations
+
+   sleep(1000)
+
+   sleep(3000)
+
    ```
 
 3. **Error Recovery**
@@ -194,6 +194,6 @@ step("Long-running operation") {
  */
 @Test
 fun demonstrateFeature() {
-    // Demo implementation
+
 }
 ```

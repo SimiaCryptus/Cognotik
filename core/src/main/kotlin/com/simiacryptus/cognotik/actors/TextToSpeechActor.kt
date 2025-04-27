@@ -58,7 +58,6 @@ open class TextToSpeechActor(
             api = this.openAI ?: throw RuntimeException("OpenAI client not set")
         )
 
-
     override fun withModel(model: ChatModel) = TextToSpeechActor(name, audioModel, voice, speed, model)
         .also { it.openAI = this.openAI }
 }

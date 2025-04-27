@@ -33,7 +33,7 @@ class EnhancedOutlineAction : BaseAction() {
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                // Convert settings from EnhancedOutlineConfigDialog into EnhancedSettings used by EnhancedOutlineApp.
+
                 val enhancedSettings = com.simiacryptus.cognotik.apps.general.EnhancedSettings(
                     parsingModel = settings.parsingModel,
                     temperature = settings.temperature,
@@ -49,7 +49,7 @@ class EnhancedOutlineAction : BaseAction() {
                         )
                     }
                 )
-                // Instantiate and register the EnhancedOutlineApp.
+
                 val enhancedApp = com.simiacryptus.cognotik.apps.general.EnhancedOutlineApp(
                     applicationName = "Enhanced Outline Tool",
                     domainName = "enhanced_outline",

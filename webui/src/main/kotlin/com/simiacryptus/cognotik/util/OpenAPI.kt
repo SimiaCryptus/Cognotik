@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.util
 
 import com.fasterxml.jackson.annotation.JsonInclude
 
-// OpenAPI root document
 data class OpenAPI(
     val openapi: String = "3.0.0",
     val info: Info? = null,
@@ -11,7 +10,6 @@ data class OpenAPI(
     val components: Components? = null
 )
 
-// Metadata about the API
 data class Info(
     val title: String? = null,
     val version: String? = null,
@@ -21,20 +19,17 @@ data class Info(
     val license: License? = null
 )
 
-// Contact information
 data class Contact(
     val name: String? = null,
     val url: String? = null,
     val email: String? = null
 )
 
-// License information
 data class License(
     val name: String? = null,
     val url: String? = null
 )
 
-// Paths and operations
 data class PathItem(
     val get: Operation? = null,
     val put: Operation? = null,
@@ -45,7 +40,6 @@ data class PathItem(
     val patch: Operation? = null
 )
 
-// An API operation
 data class Operation(
     val summary: String? = null,
     val description: String? = null,
@@ -59,14 +53,12 @@ data class Operation(
     val deprecated: Boolean? = null,
 )
 
-// Operation response
 data class Response(
     val description: String? = null,
     @JsonInclude(JsonInclude.Include.NON_NULL)
     val content: Map<String, MediaType>? = emptyMap()
 )
 
-// Components for reusable objects
 data class Components(
     val schemas: Map<String, Schema>? = emptyMap(),
     val responses: Map<String, Response>? = emptyMap(),
@@ -79,7 +71,6 @@ data class Components(
     val callbacks: Map<String, Callback>? = emptyMap()
 )
 
-// Simplified examples of component objects
 data class Schema(
     val type: String? = null,
     val properties: Map<String, Schema>? = emptyMap(),

@@ -123,8 +123,8 @@ class DiffUtilTest {
         val reconstructed = ApxPatchUtil.patch(originalCode, llmPatch)
 
         val patchLines = DiffUtil.generateDiff(originalCode.lines(), reconstructed.lines())
-//    println("\n\nPatched:\n\n")
-//    patchLines.forEach { println(it) }
+
+
 
         println("\n\nEcho Patch:\n\n")
         DiffUtil.formatDiff(patchLines).lines().forEach { println(it) }

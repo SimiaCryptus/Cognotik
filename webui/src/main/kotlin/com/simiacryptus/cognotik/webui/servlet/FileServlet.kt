@@ -54,7 +54,7 @@ abstract class FileServlet : HttpServlet() {
                         writeSmall(channel, resp, file, req)
                     }
                 } finally {
-                    //channelCache.put(file, channel)
+
                 }
             }
 
@@ -69,14 +69,14 @@ abstract class FileServlet : HttpServlet() {
                 resp.status = HttpServletResponse.SC_OK
                 val files = file.listFiles()
                     ?.filter { it.isFile }
-//          ?.filter { !it.name.startsWith(".") }
+
                     ?.sortedBy { it.name }
                     ?.joinToString("<br/>\n") {
                         """<a class="file-item" href="${it.name}">${it.name}</a>"""
                     } ?: ""
                 val folders = file.listFiles()
                     ?.filter { !it.isFile }
-//          ?.filter { !it.name.startsWith(".") }
+
                     ?.sortedBy { it.name }
                     ?.joinToString("<br/>\n") {
                         """<a class="folder-item" href="${it.name}/">${it.name}</a>"""
@@ -172,7 +172,6 @@ abstract class FileServlet : HttpServlet() {
             else -> MimeTypes.getDefaultMimeByExtension(fileName) ?: "application/octet-stream"
         }
     }
-
 
     open fun getZipLink(
         req: HttpServletRequest,

@@ -325,12 +325,12 @@ object UITools {
     }
 
     private fun findValue(enumClass: Class<out Enum<*>?>, string: String): Enum<*>? {
-        // First try case-insensitive match
+
         val caseInsensitiveMatch = enumClass.enumConstants?.firstOrNull {
             it?.name?.equals(string, ignoreCase = true) == true
         }
         if (caseInsensitiveMatch != null) return caseInsensitiveMatch
-        // Fall back to exact case match
+
         return try {
             java.lang.Enum.valueOf(enumClass, string)
         } catch (e: IllegalArgumentException) {
@@ -471,7 +471,7 @@ object UITools {
         dialog.addWindowFocusListener(adapter)
         dialog.addComponentListener(object : ComponentAdapter() {
             override fun componentShown(ce: ComponentEvent) {
-                // reset value to ensure closing works properly
+
                 pane.value = JOptionPane.UNINITIALIZED_VALUE
             }
         })
@@ -704,17 +704,14 @@ object UITools {
         }
     }
 
-
     fun <I : Any?, O : Any?> map(
         moderateAsync: ListenableFuture<I>,
         o: com.google.common.base.Function<in I, out O>,
     ): ListenableFuture<O> = Futures.transform(moderateAsync, o::apply, pool)
 
-
     fun logAction(message: String) {
         actionLog += message
     }
-
 
     fun error(log: org.slf4j.Logger, msg: String, e: Throwable) {
         log.error(msg, e)
@@ -882,6 +879,5 @@ object UITools {
         }
         showOptionDialog(panel, "OK", title = title, modal = true)
     }
-
 
 }

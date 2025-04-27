@@ -102,7 +102,7 @@ data class AppSettingsState(
     @JsonIgnore
     override fun getState(): SimpleEnvelope {
         val value = toJson(this)
-        //log.info("Serialize AppSettingsState: ${value.indent("  ")}", RuntimeException("Stack trace"))
+
         return SimpleEnvelope(value)
     }
 
@@ -110,9 +110,9 @@ data class AppSettingsState(
     private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
         val mapper = com.fasterxml.jackson.databind.ObjectMapper()
         val appSettings = fromJson<AppSettingsState>(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
-        // Check if there's an "apiKey" field but no "apiKeys" field
+
         if (jsonNode.has("apiKey") && !jsonNode.has("apiKeys")) {
-            //log.info("Found legacy 'apiKey' field, migrating to 'apiKeys'")
+
             val apiKeyNode = jsonNode.get("apiKey")
             if (apiKeyNode.isObject) {
                 appSettings.apiKeys?.clear()
@@ -121,7 +121,6 @@ data class AppSettingsState(
         }
         return appSettings
     }
-
 
     @JsonIgnore
     fun getRecentCommands(id: String) = recentCommandsJson?.get(id)?.let {
@@ -142,18 +141,17 @@ data class AppSettingsState(
     override fun loadState(state: SimpleEnvelope) {
         state.value ?: return
         val fromJson = try {
-            // Parse to JsonNode first to handle legacy fields
+
             val mapper = com.fasterxml.jackson.databind.ObjectMapper()
             val jsonNode = mapper.readTree(state.value)
 
-            // Handle legacy apiKey field if present
             handleLegacyApiKeys(jsonNode)
 
         } catch (e: Exception) {
             log.warn("Error loading settings: ${state.value}", e)
             AppSettingsState()
         }
-        //log.info("Loaded settings: ${fromJson.toJson().indent("  ")} from ${state.value?.indent("  ")}", RuntimeException("Stack trace"))
+
         XmlSerializerUtil.copyBean(fromJson, this)
         /* Copy userSuppliedModels */
         userSuppliedModels?.clear()
@@ -241,7 +239,7 @@ data class AppSettingsState(
         if (greetedVersion != other.greetedVersion) return false
         if (mainImageModel != other.mainImageModel) return false
         if (executables != other.executables) return false
-        //userSuppliedModels
+
         if (userSuppliedModels != other.userSuppliedModels) return false
         if (awsProfile != other.awsProfile) return false
         if (awsRegion != other.awsRegion) return false

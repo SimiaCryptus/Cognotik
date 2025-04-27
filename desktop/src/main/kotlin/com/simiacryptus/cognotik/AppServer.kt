@@ -26,7 +26,6 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.URI
 
-
 open class AppServer(
     localName: String, publicName: String, port: Int
 ) : ApplicationDirectory(
@@ -52,7 +51,7 @@ open class AppServer(
                     "server" -> handleServer(*args.sliceArray(1 until args.size))
                     "help", "-h", "--help" -> printUsage()
                     "daemon" -> {
-                        // For compatibility: allow launching as a daemon
+
                         handleServer(*args.sliceArray(1 until args.size))
                     }
 
@@ -62,7 +61,7 @@ open class AppServer(
                 }
             } catch (e: Exception) {
                 log.error("Fatal error: ${e.message}", e)
-                // Add shutdown hook
+
                 Runtime.getRuntime().addShutdownHook(Thread {
                     log.info("Shutting down server...")
                     server?.stopServer()
@@ -76,10 +75,10 @@ open class AppServer(
             log.info("Parsing server options...")
             val options = parseServerOptions(*args)
             log.info("Configuring server with options: port=${options.port}, host=${options.host}, publicName=${options.publicName}")
-            // Find an available port if the specified one is in use
+
             var actualPort = options.port
             try {
-                // Just test if the port is available - don't keep it open
+
                 ServerSocket(actualPort).use {
                     log.debug("Port $actualPort is available")
                 }
@@ -97,8 +96,9 @@ open class AppServer(
                 port = actualPort
             )
             server?.initSystemTray()
-            server?.startSocketServer(actualPort + 1) // Use a different port for socket server
-            // Add a shutdown hook to ensure clean shutdown
+            server?.startSocketServer(actualPort + 1)
+
+
             Runtime.getRuntime().addShutdownHook(Thread {
                 log.info("Shutdown hook triggered, stopping server...")
                 server?.stopServer()
@@ -289,9 +289,10 @@ open class AppServer(
         log.info("Received command from DaemonClient: $line")
         if (line != null && line.trim().equals("shutdown", ignoreCase = true)) {
             log.info("Shutdown command received via socket. Stopping server...")
-            // Respond before shutting down
+
             Thread {
-                Thread.sleep(100) // Let response go out before shutdown
+                Thread.sleep(100)
+
                 stopServer()
                 System.exit(0)
             }.start()
@@ -300,7 +301,7 @@ open class AppServer(
             try {
                 Desktop.getDesktop().browse(URI("$domainName/#${line.urlEncode()}"))
             } catch (e: Throwable) {
-                // Ignore
+
             }
             return "OK: $line"
         }
@@ -322,7 +323,7 @@ open class AppServer(
                     log.info("Socket server started on port $port")
                 } catch (e: IOException) {
                     log.error("Failed to start socket server on port $port: ${e.message}")
-                    // Try to find another available port
+
                     for (attemptPort in (port + 1)..(port + 10)) {
                         try {
                             socketServer = ServerSocket(attemptPort)
@@ -401,7 +402,9 @@ private fun String.toFile(): File = File(this)
 fun String?.urlEncode(): String {
     return this?.let {
         java.net.URLEncoder.encode(it, "UTF-8")
-            .replace("+", "%20") // Replace '+' with '%20' for spaces
-            .replace("%7E", "~") // Restore '~' character
+            .replace("+", "%20")
+
+            .replace("%7E", "~")
+
     } ?: ""
 }

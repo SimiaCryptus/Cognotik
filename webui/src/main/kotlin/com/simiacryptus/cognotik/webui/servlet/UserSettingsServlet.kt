@@ -38,7 +38,7 @@ class UserSettingsServlet : HttpServlet() {
                     }.toMap(),
                 )
                 val json = JsonUtil.toJson(visibleSettings)
-                //language=HTML
+
                 resp.writer.write(
                     """
               <html>
@@ -58,7 +58,7 @@ class UserSettingsServlet : HttpServlet() {
                 )
             } catch (e: Exception) {
                 resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-                // HTML error page
+
                 resp.writer.write(
                     """
               <html>

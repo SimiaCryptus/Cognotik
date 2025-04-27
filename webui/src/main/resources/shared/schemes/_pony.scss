@@ -1,6 +1,5 @@
 @import 'normal';
 
-// Typography Variables
 $font-family-primary: cursive;
 $font-family-secondary: cursive;
 $font-size-base: 1.2em;
@@ -9,18 +8,25 @@ $font-size-small: 0.9em;
 $font-weight-normal: 400;
 $font-weight-bold: 700;
 
-// Base colors
-$base-bubblegum: #ff77a9; // A playful pink for primary elements
-$base-light-blue: #3471FF; // A vibrant blue for links and buttons
-$base-candy-red: #ff6b6b; // A soft red for calls to action and highlights
-$base-vanilla: #f3f3f3; // A soft off-white for backgrounds, ensuring legibility
-$base-charcoal: #454545; // A dark grey for text, softer than black for better reading
-$base-pastel-pink: #ffaec9; // A pastel pink for subtle backgrounds
-$base-pastel-yellow: #fdfd96; // A pastel yellow for subtle highlights
-$base-pastel-red: #ff6961; // A pastel red for error states or warnings
-$base-soft-grey: #ced4da; // A soft grey for less important elements
+$base-bubblegum: #ff77a9;
 
-// Derived colors
+$base-light-blue: #3471FF;
+
+$base-candy-red: #ff6b6b;
+
+$base-vanilla: #f3f3f3;
+
+$base-charcoal: #454545;
+
+$base-pastel-pink: #ffaec9;
+
+$base-pastel-yellow: #fdfd96;
+
+$base-pastel-red: #ff6961;
+
+$base-soft-grey: #ced4da;
+
+
 $secondary-bg-color: $base-vanilla;
 $secondary-text-color: $base-charcoal;
 $applist-header-bg: $base-bubblegum;
@@ -62,7 +68,6 @@ $user-message-border: $base-soft-grey;
 $verbose-pre-bg: $base-pastel-yellow;
 $verbose-pre-border: $base-soft-grey;
 
-// Buttons
 $button-bg-color: $base-light-blue;
 $button-text-color: $base-bubblegum;
 $button-hover-bg-color: darken($button-bg-color, 10%);
@@ -70,14 +75,12 @@ $button-hover-text-color: $base-vanilla;
 $button-border-radius: $border-radius;
 $button-box-shadow: $box-shadow;
 
-// Forms
 $input-border-color: $base-soft-grey;
 $input-border-focus-color: $base-candy-red;
 $input-bg-color: $base-vanilla;
 $input-text-color: $secondary-text-color;
 $input-padding: 10px;
 
-// Messages and Modals
 $message-info-bg-color: lighten($base-light-blue, 50%);
 $message-info-text-color: $base-charcoal;
 $message-success-bg-color: lighten($base-candy-red, 50%);

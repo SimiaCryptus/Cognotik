@@ -17,7 +17,6 @@ import kotlin.reflect.KClass
 private const val TT = "`" + "`" + "`"
 typealias CodeInterceptor = (String) -> String
 
-
 open class CodingActor(
     val interpreterClass: KClass<out Interpreter>,
     val symbols: Map<String, Any> = mapOf(),
@@ -69,7 +68,8 @@ open class CodingActor(
     override val prompt: String
         get() {
             val formatInstructions =
-                if (evalFormat) """Code should be structured as appropriately parameterized function(s) 
+                if (evalFormat) """Code should be structured as appropriately parameterized function(s)
+
  with the final line invoking the function with the appropriate request parameters.""" else ""
             return if (symbols.isNotEmpty()) {
                 """
@@ -107,7 +107,6 @@ ${details ?: ""}
             log.info("Describing $name (${utilityObj.javaClass}) in ${describe.length} characters")
             "$name:\n    ${describe.indent("    ")}"
         }.joinToString("\n")
-
 
     val language: String by lazy { interpreter.getLanguage() }
 
@@ -205,7 +204,7 @@ ${details ?: ""}
     }
 
     open fun execute(prefix: String, code: String): ExecutionResult {
-        //language=HTML
+
         log.debug("Running $code")
         OutputInterceptor.clearGlobalOutput()
         val result = try {
@@ -233,7 +232,7 @@ ${details ?: ""}
             }
         }
         log.debug("Result: $result")
-        //language=HTML
+
         val executionResult = ExecutionResult(result.toString(), OutputInterceptor.getThreadOutput())
         OutputInterceptor.clearThreadOutput()
         return executionResult
@@ -393,7 +392,6 @@ ${TT}
             throw IllegalStateException()
         }
 
-
         private val executionResult by lazy { execute(input.codePrefix, code) }
 
         override val result get() = executionResult
@@ -440,7 +438,6 @@ Correct the code and try again.
         api.chat(request.copy(model = model.modelName, temperature = temperature), model)
             .choices.first().message?.content.orEmpty().trim()
 
-
     override fun withModel(model: ChatModel): CodingActor = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
@@ -482,24 +479,20 @@ Correct the code and try again.
             val matches = codeBlockRegex.findAll(response)
             if (matches.count() == 0) return listOf(Pair("text", response))
             for (match in matches) {
-                // Add non-code block before the current match as "text"
+
                 if (startIndex < match.range.first) {
                     result.add(Pair("text", response.substring(startIndex, match.range.first)))
                 }
 
-                // Extract language and code
                 val languageMatch = languageRegex.find(match.groupValues[1])
                 val language = languageMatch?.groupValues?.get(0) ?: "code"
                 val code = match.groupValues[2]
 
-                // Add code block to the result
                 result.add(Pair(language, code))
 
-                // Update the start index
                 startIndex = match.range.last + 1
             }
 
-            // Add any remaining non-code text after the last code block as "text"
             if (startIndex < response.length) {
                 result.add(Pair("text", response.substring(startIndex)))
             }
@@ -555,7 +548,6 @@ Correct the code and try again.
                 }
             }
 
-        // Detect changes in the case of the first letter and prepend a space
         private fun String.fromPascalCase(): String = buildString {
             var lastChar = ' '
             for (c in this@fromPascalCase) {

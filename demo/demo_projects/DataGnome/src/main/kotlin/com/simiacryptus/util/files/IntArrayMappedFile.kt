@@ -47,7 +47,8 @@ class IntArrayMappedFile(private val file: File) {
     fun append(value: Int) {
         val newLength = (length.asLong + 1) * 4
         channel.truncate(newLength)
-        _mappedByteBuffer = null // Invalidate the current buffer
+        _mappedByteBuffer = null
+
         mappedByteBuffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, newLength)
         mappedByteBuffer.putInt((length.asLong * 4 - 4).toInt(), value)
     }

@@ -62,7 +62,8 @@ const MenuContainer = styled.div<MenuContainerProps>`
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     background: ${({theme}) => `
-        linear-gradient(135deg, 
+        linear-gradient(135deg,
+
             ${theme.colors.surface}f0,
             ${theme.colors.background}f8,
             ${theme.colors.surface}f0
@@ -71,7 +72,6 @@ const MenuContainer = styled.div<MenuContainerProps>`
     backdrop-filter: blur(8px);
     /* Specific transitions instead of 'all' */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-
 
     @media (max-width: 768px) {
         padding: ${({theme}) => theme.sizing.spacing.xs};
@@ -248,7 +248,6 @@ export const Menu: React.FC = () => {
     const handleLogout = () => {
         console.log('[Menu] User initiated logout');
     };
-
 
     return (
         <MenuContainer $hidden={!showMenubar}

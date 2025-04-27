@@ -121,5 +121,4 @@ open class DictationManager {
         log.info("Recording stopped")
     }
 
-
 }

@@ -173,9 +173,9 @@ class GenerateRelatedFileAction : aicoder.actions.FileContextAction<GenerateRela
                 ChatMessage(
                     Role.user, ("""
                               Create a new file based on the following directive: """.trimIndent() + directive + """
-                              
+
                               The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
-                              
+
                               ```
                               """.trimIndent() + baseFile.code + """
                               ```
@@ -212,12 +212,12 @@ class GenerateRelatedFileAction : aicoder.actions.FileContextAction<GenerateRela
             val function: () -> Unit = {
                 val file = outputPath.toFile()
                 if (file.exists()) {
-                    // Ensure the IDE is ready for file operations
+
                     ApplicationManager.getApplication().invokeLater {
                         val ioFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
                         if (false == (ioFile?.let { FileEditorManager.getInstance(project).isFileOpen(it) })) {
                             val localFileSystem = LocalFileSystem.getInstance()
-                            // Refresh the file system to ensure the file is visible
+
                             val virtualFile = localFileSystem.refreshAndFindFileByIoFile(file)
                             virtualFile?.let {
                                 FileEditorManager.getInstance(project).openFile(it, true)

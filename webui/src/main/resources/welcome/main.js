@@ -5,7 +5,6 @@ let loadImages = "true";
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof mermaid !== 'undefined') mermaid.run();
 
-    // Restore the selected tabs from localStorage before adding event listeners
     document.querySelectorAll('.tabs-container').forEach(tabsContainer => {
         const savedTab = localStorage.getItem(`selectedTab_${tabsContainer.id}`);
         if (savedTab) {
@@ -66,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
     fetch('/userInfo')
         .then(response => {
             if (!response.ok) {
@@ -76,23 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             if (data.name) {
-                // Update the username link with the user's name and make it visible
+
                 usernameLink.textContent = data.name;
                 usernameLink.style = 'visibility: visible';
 
-                // Update the href for user settings and make it visible
                 userSettingsLink.addEventListener('click', () => showModal('/userSettings'));
                 userSettingsLink.style = 'visibility: visible';
 
-                // Update the href for user usage and make it visible
                 userUsageLink.addEventListener('click', () => showModal('/usage', false));
                 userUsageLink.style = 'visibility: visible';
 
-                // Update the logout link and make it visible
                 logoutLink.href = '/logout';
                 logoutLink.style = 'visibility: visible';
 
-                // Hide the login link since the user is logged in
                 loginLink.style = 'visibility: hidden';
             }
         })

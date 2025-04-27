@@ -45,10 +45,10 @@ class DocumentedMassPatchServer(
             return SimpleActor(
                 prompt = """
          You are a helpful AI that helps people with coding.
-         
+
          You will be reviewing code files based on documentation files and suggesting improvements.
          Please analyze both the documentation and code to ensure they are aligned and suggest improvements.
-         
+
          Response should use one or more code patches in diff format within ```diff code blocks.
          Each diff should be preceded by a header that identifies the file being modified.
          The diff format should use + for line additions, - for line deletions.
@@ -76,7 +76,6 @@ class DocumentedMassPatchServer(
         val tabs = TabbedDisplay(task)
         val userMessage = config.settings?.transformationMessage ?: "Review and update code according to documentation"
 
-        // Process documentation files first
         val docSummary = config.settings?.documentationFiles?.joinToString("\n\n") { path ->
             """
              # Documentation: $path
@@ -86,7 +85,6 @@ class DocumentedMassPatchServer(
              """.trimIndent()
         } ?: ""
 
-        // Then process code files
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, 4)
         config.settings?.codeFilePaths?.map { path: Path ->
             fixedConcurrencyProcessor.submit {
@@ -94,7 +92,7 @@ class DocumentedMassPatchServer(
                     task.add("Processing ${path}...")
                     val codeSummary = """
                              $docSummary
-                             
+
                              # Code: $path
                              ```${path.toString().split('.').lastOrNull()}
                              ${_root.resolve(path).toFile().readText(Charsets.UTF_8)}

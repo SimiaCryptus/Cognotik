@@ -41,7 +41,6 @@ class DiffChatAction : BaseAction() {
         return FileDocumentManager.getInstance().getFile(document) != null
     }
 
-
     override fun handle(e: AnActionEvent) {
         try {
             val editor = e.getData(CommonDataKeys.EDITOR) ?: return
@@ -119,20 +118,18 @@ class DiffChatAction : BaseAction() {
             storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome)
         ) {
 
-            // ... rest of the implementation
             override val systemPrompt: String
                 @Language("Markdown")
                 get() = super.systemPrompt + """
                   Please provide code modifications in the following diff format within triple-backtick diff code blocks. Each diff block should be preceded by a header that identifies the file being modified.
-                  
+
                   The diff format rules are as follows:
                   - Use '-' at the beginning of a line to indicate a deletion.
                   - Use '+' at the beginning of a line to indicate an addition.
                   - Include 2 lines of context before and after every change to help identify the location of the change.
                   - If a line is part of the original code and hasn't been modified, simply include it without '+' or '-'.
                   - Lines starting with "@@" or "---" or "+++" are treated as headers and are ignored.
-                  
-                  
+
                 """.trimIndent() + patchFormatPrompt
 
             override fun renderResponse(response: String, task: SessionTask): String = """<div>${
@@ -157,7 +154,6 @@ class DiffChatAction : BaseAction() {
         }
     }
 
-
     private fun openBrowserWindow(e: AnActionEvent, session: Session) {
         IntellijAppManager.getApplication().executeOnPooledThread {
             val server = AppServer.getServer(e.project)
@@ -166,7 +162,6 @@ class DiffChatAction : BaseAction() {
             browse(uri)
         }
     }
-
 
     companion object {
         private val log = LoggerFactory.getLogger(DiffChatAction::class.java)

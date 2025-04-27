@@ -3,7 +3,6 @@ import type {BaseTheme, ThemeName} from '../types/theme';
 
 export type {ThemeName};
 
-// Enhanced logger configuration
 const themeLogger = {
     styles: {
         theme: 'color: #4CAF50; font-weight: bold',
@@ -19,7 +18,6 @@ const themeLogger = {
         console.groupEnd();
     }
 };
-
 
 interface ThemeSizing {
     spacing: {
@@ -62,7 +60,6 @@ interface ThemeTypography {
     };
 }
 
-// Use BaseTheme directly instead of ExtendedTheme
 type ExtendedTheme = BaseTheme;
 
 const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
@@ -153,11 +150,16 @@ const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
         monoFontFamily: "'Fira Code', 'Consolas', monospace",
         fontSize: {
-            xs: '0.75rem',    // 12px
-            sm: '0.875rem',   // 14px
-            md: '1rem',       // 16px
-            lg: '1.125rem',   // 18px
-            xl: '1.25rem',    // 20px
+            xs: '0.75rem',
+
+            sm: '0.875rem',
+
+            md: '1rem',
+
+            lg: '1.125rem',
+
+            xl: '1.25rem',
+
         },
         fontWeight: {
             regular: 400,
@@ -191,10 +193,14 @@ export const mainTheme: BaseTheme = {
         secondaryDark: '#4240aa',
         errorDark: '#cc2f26',
         successDark: '#2a9f47',
-        critical: '#FF3B30', // Adding critical color (same as error for consistency)
-        disabled: '#E5E5EA', // Make sure this is defined in all themes
-        primaryDark: '#0056b3', // Add darker shade of primary
-        hover: '#2C5282', // Add hover color
+        critical: '#FF3B30',
+
+        disabled: '#E5E5EA',
+
+        primaryDark: '#0056b3',
+
+        hover: '#2C5282',
+
     },
     ...baseTheme,
 };
@@ -219,8 +225,10 @@ export const nightTheme: ExtendedTheme = {
         secondaryDark: '#4b49b8',
         errorDark: '#cc372e',
         successDark: '#28ac3c',
-        critical: '#FF453A', // Adding critical color
-        disabled: '#2C2C2E', // Ensure consistent property definition
+        critical: '#FF453A',
+
+        disabled: '#2C2C2E',
+
     },
     ...baseTheme,
 };
@@ -245,8 +253,10 @@ export const forestTheme: ExtendedTheme = {
         secondaryDark: '#337456',
         errorDark: '#ab2020',
         successDark: '#42926d',
-        critical: '#D62828', // Adding critical color
-        disabled: '#2D3B35', // Ensure consistent property definition
+        critical: '#D62828',
+
+        disabled: '#2D3B35',
+
     },
     ...baseTheme,
 };
@@ -268,8 +278,10 @@ export const ponyTheme: ExtendedTheme = {
         warning: '#FFB6C1',
         info: '#DB7093',
         primaryDark: '#ff1493',
-        critical: '#FF1493', // Adding critical color
-        disabled: '#F8E1E7', // Ensure consistent property definition
+        critical: '#FF1493',
+
+        disabled: '#F8E1E7',
+
     },
     ...baseTheme,
 };
@@ -291,8 +303,10 @@ export const alienTheme: ExtendedTheme = {
         warning: '#FFFF00',
         info: '#00FFFF',
         primaryDark: '#2bbb0e',
-        critical: '#FF0000', // Adding critical color
-        disabled: '#1C1C1C', // Ensure consistent property definition
+        critical: '#FF0000',
+
+        disabled: '#1C1C1C',
+
     },
     ...baseTheme,
 };
@@ -328,7 +342,8 @@ export const themes = {
             info: '#3498DB',
             primaryDark: '#E74C3C',
             disabled: '#7F8C8D',
-            critical: '#E74C3C', // Adding critical color
+            critical: '#E74C3C',
+
         },
         ...baseTheme,
     },
@@ -351,7 +366,8 @@ export const themes = {
             primaryDark: '#0096C7',
             disabled: '#415A77',
             hover: '#0077B6',
-            critical: '#FF6B6B', // Adding critical color
+            critical: '#FF6B6B',
+
         },
         ...baseTheme,
     },
@@ -374,13 +390,13 @@ export const themes = {
             primaryDark: '#CC00CC',
             disabled: '#4A4A4A',
             hover: '#FF69B4',
-            critical: '#FF0000', // Adding critical color
+            critical: '#FF0000',
+
         },
         ...baseTheme,
     },
 };
 
-// Export a helper function to log theme changes
 export const logThemeChange = (from: ThemeName, to: ThemeName) => {
     themeLogger.log('changed', `${from} → ${to}`);
 };

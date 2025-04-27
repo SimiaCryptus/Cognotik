@@ -25,11 +25,10 @@ class FullTextSearcherTest {
     fun testFlyweightCharSequenceBasicOperations() {
         logger.debug("Starting FlyweightCharSequence basic operations test")
         val source = "Hello, World!"
-        // Take the "World!" part (6 letters)
+
         val seq = FlyweightCharSequence(source, offset = 7, size = 6)
         logger.debug("Created FlyweightCharSequence with source='{}', offset={}", source, 7)
 
-        // length, indexing and toString (should include the '!' at the end)
         assertEquals(6, seq.length, "Length should match the provided length")
         logger.debug("Verified sequence length: {}", seq.length)
         assertEquals('W', seq[0], "First character should be 'W'")
@@ -39,7 +38,6 @@ class FullTextSearcherTest {
         assertEquals("World!", seq.toString(), "toString() should reproduce the substring")
         logger.debug("Verified toString() result: {}", seq.toString())
 
-        // subSequence returns a FlyweightCharSequence and correct content
         val sub = seq.subSequence(1, 4)
         logger.debug("Created subsequence from {} to {}: {}", 1, 4, sub)
         assertTrue(sub is FlyweightCharSequence, "subSequence should return a FlyweightCharSequence")
@@ -54,8 +52,8 @@ class FullTextSearcherTest {
         logger.debug("Test text: {}", text)
         val sa = SuffixArray(text)
         logger.debug("Created SuffixArray for text '{}'", text)
-        // Expected sorted order of suffixes:
-        // a(5), ana(3), anana(1), banana(0), na(4), nana(2)
+
+
         val expected = intArrayOf(5, 3, 1, 0, 4, 2)
         logger.debug("Expected suffix array: {}", expected.contentToString())
         logger.debug("Actual suffix array: {}", sa.suffixArray.contentToString())
@@ -69,11 +67,9 @@ class FullTextSearcherTest {
         val searcher = FullTextSearcher("banana")
         logger.debug("Created FullTextSearcher with text: 'banana'")
 
-        // contains()
         logger.debug("Testing contains() with pattern 'ana'")
         assertTrue(searcher.contains("ana"), "'ana' should be found in 'banana'")
 
-        // findAll() and countOccurrences()
         logger.debug("Testing findAll() with pattern 'ana'")
         assertEquals(listOf(1, 3), searcher.findAll("ana"), "findAll should return starting indices [1,3]")
         logger.debug("Testing countOccurrences() with pattern 'ana'")
@@ -88,7 +84,7 @@ class FullTextSearcherTest {
     @Test
     fun testFullTextSearcherEdgeCases() {
         logger.debug("Starting FullTextSearcher edge cases test")
-        // Pattern not in text
+
         val s1 = FullTextSearcher("apple")
         logger.debug("Created FullTextSearcher with text: 'apple'")
         logger.debug("Testing pattern not in text: 'banana'")
@@ -96,7 +92,6 @@ class FullTextSearcherTest {
         assertTrue(s1.findAll("banana").isEmpty(), "Non-existent pattern should yield empty list")
         assertEquals(0, s1.countOccurrences("banana"))
 
-        // Pattern longer than text
         val s2 = FullTextSearcher("hi")
         logger.debug("Created FullTextSearcher with text: 'hi'")
         logger.debug("Testing pattern longer than text: 'hello'")
@@ -104,7 +99,6 @@ class FullTextSearcherTest {
         assertTrue(s2.findAll("hello").isEmpty())
         assertEquals(0, s2.countOccurrences("hello"))
 
-        // Single-character pattern
         val text = "abracadabra"
         logger.debug("Created FullTextSearcher with text: '{}'", text)
         val s3 = FullTextSearcher(text)

@@ -13,7 +13,7 @@ data class SplashScreenConfig(
     val subtitleColor: String = "#6B7C93",
     val timestampColor: String = "#A9B7C6",
     val titleText: String = "Test Recording",
-    //val dateFormat: String = "dddd, MMMM d, yyyy 'at' h:mm:ss a",
+
     val dateFormat: String = "MMMM d, yyyy",
     val containerStyle: String = """
       background: linear-gradient(145deg, #2B2B2B 0%, #3C3F41 100%);

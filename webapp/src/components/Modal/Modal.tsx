@@ -53,13 +53,12 @@ const ModalContent = styled.div`
 `;
 const LOG_PREFIX = '[UI:Modal]';
 
-
 export const Modal: React.FC = () => {
     const dispatch = useDispatch();
     const {modalOpen, modalType, modalContent} = useSelector((state: RootState) => state.ui);
 
     useEffect(() => {
-        // Only log state changes
+
         const logMessage = modalOpen
             ? `Opening modal - Type: ${modalType}, Content length: ${modalContent?.length || 0}`
             : `Closing modal - Type: ${modalType}`;

@@ -43,7 +43,8 @@ abstract class TypeDescriberTestBase {
 
     @Test
     open fun testDescribeRecursiveType() {
-        val expectedDescription = // Expected YAML description for RecursiveDataClass
+        val expectedDescription =
+
             """{
                  "type": "object",
                  "class": "com.simiacryptus.jopenai.TypeDescriberTestBase${"$"}RecursiveDataClass",

@@ -57,7 +57,7 @@ interface RootState {
     websocket: WebSocketConfig;
     singleInput: boolean;
     showMenubar: boolean;
-    // ... other config options
+
   };
   messages: {
     messages: Message[];
@@ -102,19 +102,16 @@ interface RootState {
 
 ```typescript
 class WebSocketService {
-  // Connection states
+
   private connectionState: 'connecting' | 'connected' | 'disconnected' | 'error';
   private reconnectAttempts: number;
-  
-  // Heartbeat configuration
+
   private readonly HEARTBEAT_INTERVAL = 30000;
   private readonly HEARTBEAT_TIMEOUT = 5000;
-  
-  // Message handling
+
   public addMessageHandler(handler: (data: Message) => void): void;
   public removeMessageHandler(handler: (data: Message) => void): void;
-  
-  // Connection methods
+
   public connect(config: WebSocketConfig): void;
   public disconnect(): void;
   public reconnect(): void;
@@ -163,7 +160,7 @@ interface Theme {
       secondary: string;
     };
     border: string;
-    // ... other colors
+
   };
   typography: {
     fontFamily: string;
@@ -174,7 +171,7 @@ interface Theme {
       lg: string;
       xl: string;
     };
-    // ... other typography settings
+
   };
   sizing: {
     spacing: {
@@ -208,16 +205,15 @@ interface Theme {
 
 ```typescript
 const ThemeProvider: React.FC = ({ children }) => {
-  // Theme state management
+
   const currentTheme = useSelector((state: RootState) => state.ui.theme);
-  
-  // Theme switching
+
   useEffect(() => {
-    // Apply theme CSS variables
-    // Update Prism.js theme
-    // Handle transitions
+
+
+
   }, [currentTheme]);
-  
+
   return (
     <StyledThemeProvider theme={themes[currentTheme]}>
       <GlobalStyles />

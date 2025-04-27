@@ -115,7 +115,7 @@ open class ProxyHttpServlet(
         val headers = req.headerNames.toList().filter {
             when (it) {
                 "Authorization" -> false
-                // Remove headers incompatible with HTTP/2
+
                 "Connection" -> false
                 "Host" -> false
                 "Keep-Alive" -> false
@@ -268,14 +268,13 @@ open class ProxyHttpServlet(
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(ProxyHttpServlet::class.java)
 
-        // main
         @JvmStatic
         fun main(args: Array<String>) {
             test()
         }
 
         fun test() {
-            // Start a jetty server, and add 2 servlets: the proxy, and a test servlet
+
             val server = Server(8080)
             val contextHandlerCollection = ContextHandlerCollection()
             val servletHandler = ServletHandler()
@@ -289,7 +288,7 @@ open class ProxyHttpServlet(
             contextHandlerCollection.addHandler(servletHandler)
             server.handler = contextHandlerCollection
             server.start()
-            // Test the proxy
+
             val connection = URL("http://localhost:8080/proxy/test").openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.doOutput = true
@@ -302,6 +301,5 @@ open class ProxyHttpServlet(
             server.stop()
         }
     }
-
 
 }

@@ -101,7 +101,6 @@ object OpenAIModels {
         hasReasoningEffort = true,
     )
 
-
     val GPT41 = ChatModel(
         name = "GPT 4.1",
         modelName = "gpt-4.1-2025-04-14",

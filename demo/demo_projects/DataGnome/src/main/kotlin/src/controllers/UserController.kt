@@ -11,6 +11,6 @@ fun registerUser(email: String, phoneNumber: String, password: String): Boolean 
                 +if (!DataValidationUtils.isStrongPassword(password)) {
                     return false
                 }
-                // Continue with user registration
+
                 return true
             }

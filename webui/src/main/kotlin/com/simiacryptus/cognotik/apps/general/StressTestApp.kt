@@ -29,17 +29,15 @@ class StressTestApp(
         val task = ui.newTask()
         task.add(MarkdownUtil.renderMarkdown("# UI Stress Test", ui = ui))
 
-        // Create nested tabs
         createNestedTabs(task, ui, 3)
 
     }
 
     private fun createNestedTabs(task: SessionTask, ui: ApplicationInterface, depth: Int) {
         if (depth <= 0) {
-            // Create a complex diagram
+
             createComplexDiagram(task, ui)
 
-            // Create multiple placeholders and update them
             createAndUpdatePlaceholders(task, ui)
             return
         }
@@ -89,7 +87,7 @@ class StressTestApp(
             placeholders.forEach { placeholder ->
                 val content = "Placeholder content: Iteration $iteration, Random: ${Random.nextInt(100)}"
                 placeholder.add(MarkdownUtil.renderMarkdown(content, ui = ui))
-                //Thread.sleep(50)
+
             }
         }
         placeholders.forEach { it.complete() }

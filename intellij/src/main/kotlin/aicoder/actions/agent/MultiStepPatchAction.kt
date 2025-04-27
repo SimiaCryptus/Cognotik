@@ -55,7 +55,6 @@ class MultiStepPatchAction : BaseAction() {
         return true
     }
 
-
     override fun handle(e: AnActionEvent) {
         val project = e.project ?: return
         UITools.runAsync(project, "Initializing Auto Dev Assistant", true) { progress ->
@@ -82,7 +81,6 @@ class MultiStepPatchAction : BaseAction() {
                     showMenubar = false
                 )
                 val server = AppServer.getServer(e.project)
-
 
                 ApplicationManager.getApplication().invokeLater {
                     progress.text = "Opening browser..."
@@ -187,7 +185,7 @@ class MultiStepPatchAction : BaseAction() {
             val root = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)
                 ?.map { it.toFile.toPath() }?.toTypedArray()?.commonRoot()!!
             PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.forEach { file ->
-                //
+
                 codeFiles.add(root.relativize(file.toNioPath()))
             }
             require(codeFiles.isNotEmpty()) { "No files selected" }
@@ -207,7 +205,7 @@ class MultiStepPatchAction : BaseAction() {
                 heading = renderMarkdown(userMessage),
                 initialResponse = { it: String -> designActor.answer(toInput(it), api = api) },
                 outputFn = { design: ParsedResponse<TaskList> ->
-                    //          renderMarkdown("${design.text}\n\n```json\n${JsonUtil.toJson(design.obj)/*.indent("  ")*/}\n```")
+
                     AgentPatterns.displayMapInTabs(
                         mapOf(
                             "Text" to renderMarkdown(design.text, ui = ui),
@@ -232,7 +230,7 @@ class MultiStepPatchAction : BaseAction() {
                 val taskTabs = TabbedDisplay(task)
                 architectureResponse.obj.tasks.map { (paths, description) ->
                     var description = (description ?: UUID.random().toString()).trim()
-                    // Strip `#` from the beginning of the description
+
                     while (description.startsWith("#")) {
                         description = description.substring(1)
                     }
@@ -248,13 +246,13 @@ class MultiStepPatchAction : BaseAction() {
                                 require(filter.isNotEmpty()) {
                                     """
                   No files found for """.trimIndent() + paths + """
-                  
+
                   Root:
                   """.trimIndent() + root + """
-                  
+
                   Files:
                   """.trimIndent() + codeFiles.joinToString("\n") + """
-                  
+
                   Paths:
                   """.trimIndent() + (paths?.joinToString("\n") ?: "")
                                 }

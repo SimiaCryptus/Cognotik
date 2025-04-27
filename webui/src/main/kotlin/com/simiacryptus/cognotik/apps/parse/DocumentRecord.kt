@@ -98,7 +98,6 @@ data class DocumentRecord(
             }
         }
 
-
         private fun writeBinary(outputPath: String, records: List<DocumentRecord>) {
             log.info("Writing ${records.size} records to $outputPath")
             ObjectOutputStream(FileOutputStream(outputPath)).use { out ->

@@ -9,7 +9,8 @@ internal class ApxPatchUtilTest {
     fun `test patch with simple addition`() {
         val source = "Line 1\nLine 2\nLine 3"
         val patch = """
-            +++ 
+            +++
+
             @@ -1,3 +1,4 @@
             +Added Line
             Line 1
@@ -25,7 +26,8 @@ internal class ApxPatchUtilTest {
     fun `test patch with deletion`() {
         val source = "Line 1\nLine 2\nLine 3"
         val patch = """
-            --- 
+            ---
+
             @@ -1,3 +1,2 @@
             -Line 2
             Line 1

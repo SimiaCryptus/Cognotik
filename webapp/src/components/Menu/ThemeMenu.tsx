@@ -49,7 +49,8 @@ const ThemeButton = styled.button`
         )`};
         color: ${({theme}) => theme.colors.background};
         transform: translateY(-2px);
-        box-shadow: 
+        box-shadow:
+
             0 4px 16px ${({theme}) => `${theme.colors.primary}40`},
             0 0 0 1px ${({theme}) => `${theme.colors.primary}40`};
         /* Enhanced hover effect */
@@ -165,13 +166,13 @@ export const ThemeMenu: React.FC = () => {
     const menuRef = React.useRef<HTMLDivElement>(null);
     const firstOptionRef = React.useRef<HTMLButtonElement>(null);
     const dispatch = useDispatch();
-    // Focus first option when menu opens
+
     React.useEffect(() => {
         if (isOpen && firstOptionRef.current) {
             firstOptionRef.current.focus();
         }
     }, [isOpen]);
-    // Handle escape key press
+
     React.useEffect(() => {
         const handleEscapeKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && isOpen) {
@@ -185,10 +186,10 @@ export const ThemeMenu: React.FC = () => {
             document.removeEventListener('keydown', handleEscapeKey);
         };
     }, [isOpen]);
-// Add keyboard shortcut handler
+
     React.useEffect(() => {
         const handleKeyboardShortcut = (event: KeyboardEvent) => {
-            // Support both Alt+T (Windows/Linux) and Cmd+T (Mac)
+
             const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
             const isShortcutTriggered = isMac
                 ? (event.ctrlKey && event.key.toLowerCase() === 't')
@@ -198,7 +199,8 @@ export const ThemeMenu: React.FC = () => {
                 const themeContent = `
                 <div>
                     ${Object.keys(themes).map(themeName => `
-                        <button 
+                        <button
+
                             onclick="window.dispatchEvent(new CustomEvent('themeChange', {detail: '${themeName}'}))"
                             style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; ${themeName === currentTheme ? 'background: #eee;' : ''}"
                         >
@@ -248,19 +250,19 @@ export const ThemeMenu: React.FC = () => {
         });
     }, [currentTheme]);
 
-
     const handleThemeChange = async (themeName: keyof typeof themes) => {
         logDebug('Theme change initiated', {
             from: currentTheme,
             to: themeName,
             timestamp: new Date().toISOString(),
-            isDefaultTheme: themeName === 'main' // Use 'main' as default theme instead of 'default'
+            isDefaultTheme: themeName === 'main'
+
         });
 
         setIsLoading(true);
         setIsOpen(false);
         setTheme(themeName);
-        // Add small delay to allow theme to load
+
         await new Promise(resolve => setTimeout(resolve, 300));
         setIsLoading(false);
         logDebug('Theme change completed', {
@@ -278,7 +280,6 @@ export const ThemeMenu: React.FC = () => {
         });
         setIsOpen(!isOpen);
     };
-
 
     return (
         <ThemeMenuContainer ref={menuRef}>

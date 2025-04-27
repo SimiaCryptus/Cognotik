@@ -63,15 +63,14 @@ is not too large and handles file operations efficiently using buffered streams.
 val file = File("integers.dat")
 val intArrayFile = IntArrayAppendFile(file)
 
-// Append integers to the file
 intArrayFile.append(42)
 intArrayFile.append(100)
 
-// Read integers from the file
-val firstValue = intArrayFile.read(0) // 42
-val secondValue = intArrayFile.read(1) // 100
+val firstValue = intArrayFile.read(0)
 
-// Close the file
+val secondValue = intArrayFile.read(1)
+
+
 intArrayFile.close()
 ```
 
@@ -159,22 +158,16 @@ for efficient reading and writing of integer data directly to and from a file, l
 val file = File("data.dat")
 val intArrayFile = IntArrayMappedFile(file)
 
-// Set an integer at position 0
 intArrayFile.set(XElements(0), 42)
 
-// Get the integer at position 0
 val value = intArrayFile.get(XElements(0))
 
-// Append a new integer
 intArrayFile.append(99)
 
-// Fill the file with a specific value
 intArrayFile.fill(0)
 
-// Flush changes to disk
 intArrayFile.flush()
 
-// Close the file
 intArrayFile.close()
 ```
 
@@ -270,19 +263,14 @@ Java's `MappedByteBuffer` and `FileChannel`.
 val file = File("data.bin")
 val longArrayFile = LongArrayMappedFile(file)
 
-// Append a value
 longArrayFile.append(123456789L)
 
-// Get a value
 val value = longArrayFile.get(XElements(0))
 
-// Set a value
 longArrayFile.set(XElements(0), 987654321L)
 
-// Flush changes
 longArrayFile.flush()
 
-// Close the file
 longArrayFile.close()
 ```
 
@@ -429,7 +417,7 @@ fun Int.toBytes(): ByteArray
 ```kotlin
 val number = 123456
 val byteArray = number.toBytes()
-// byteArray now contains the byte representation of the integer 123456
+
 ```
 
 ##### Implementation Details
@@ -488,7 +476,8 @@ and working with sequence files.
   ```kotlin
   val byteArray = byteArrayOf(0x00, 0x00, 0x01, 0x02)
   val intValue = byteArray.toInt()
-  println(intValue) // Outputs: 258
+  println(intValue)
+
   ```
 
 #### 2. `IntArrayAppendFile.kt`

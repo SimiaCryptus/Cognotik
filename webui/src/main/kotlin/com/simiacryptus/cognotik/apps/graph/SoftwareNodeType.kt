@@ -106,7 +106,6 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
         var priority: String? = "Medium"
     ) : NodeBase<ScmProjectNode>
 
-
     data class ProjectImportNode(
         override var id: NodeId<ProjectImportNode> = NodeId.createNew(),
         override val type: String = "ProjectImport",
@@ -260,12 +259,12 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
             newGraph.nodes.addAll(this.nodes)
             other.nodes.forEach { otherNode: NodeBase<*> ->
                 if (otherNode.id.isNegated) {
-                    // Remove node if ID is negated
+
                     newGraph.nodes.removeAll { it.id == otherNode.id.absoluteValue }
                 } else if (newGraph.nodes.none { it.id == otherNode.id }) {
                     newGraph.nodes.add(otherNode)
                 } else {
-                    // Merge nodes with the same ID
+
                     val existingNode: NodeBase<*> = newGraph.nodes.first { it.id == otherNode.id }
                     newGraph.nodes.remove(existingNode)
                     newGraph.nodes.add(otherNode + existingNode)
@@ -283,16 +282,16 @@ class SoftwareNodeType<T : NodeBase<T>> private constructor(
                 }
                 if (otherNode != null) {
                     if (otherNode.id.isNegated) {
-                        // If other node is negated, include this node with negated ID
+
                         newGraph.nodes.add(thisNode.copy {
                             id = thisNode.id.negate() as NodeId<Nothing>
                         })
                     } else {
-                        // If node exists in both graphs, create diff
+
                         newGraph.nodes.add(thisNode - otherNode)
                     }
                 } else {
-                    // If node only exists in this graph, include it in diff
+
                     newGraph.nodes.add(thisNode)
                 }
             }
@@ -308,7 +307,7 @@ class SoftwareGraphDeserializer : JsonDeserializer<SoftwareGraph>() {
         val node: JsonNode = mapper.readTree(p)
         val nodes: MutableSet<NodeBase<*>> = when {
             node.has("nodes") -> {
-                // Process each node individually with type information
+
                 node["nodes"].map { nodeJson ->
                     val typeNode = nodeJson["type"]
                     if (typeNode == null) {
@@ -328,7 +327,7 @@ class SoftwareGraphDeserializer : JsonDeserializer<SoftwareGraph>() {
             }
 
             node.isObject -> {
-                // Process single node with type information
+
                 val typeNode = node["type"]
                 if (typeNode == null) {
                     throw IllegalArgumentException("Node is missing required 'type' field")
@@ -352,7 +351,7 @@ class SoftwareGraphDeserializer : JsonDeserializer<SoftwareGraph>() {
             }
 
             else -> {
-                // Invalid format
+
                 throw IllegalArgumentException("Invalid SoftwareGraph format")
             }
         }

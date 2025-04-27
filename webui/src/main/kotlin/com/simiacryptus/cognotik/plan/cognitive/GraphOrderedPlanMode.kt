@@ -105,7 +105,7 @@ open class GraphOrderedPlanMode(
         api: ChatClient
     ) {
         log.debug("Starting dependency analysis for ${cumulativeTasks.size} tasks")
-        // Validate input parameters
+
         if (cumulativeTasks.isEmpty()) {
             log.warn("No tasks provided for dependency analysis")
             return
@@ -138,17 +138,17 @@ open class GraphOrderedPlanMode(
                             "User Instruction/Query: $userMessage\nPlease evaluate the context and provide your suggested changes or instructions to improve the software plan."
                         ), api = api
             ).obj.dependencies.forEach { (taskToEdit, newUpstreams) ->
-                // Validate task exists
+
                 val task = cumulativeTasks[taskToEdit]
                 if (task == null) {
                     log.warn("Attempted to add dependencies to non-existent task: $taskToEdit")
                     return@forEach
                 }
-                // Initialize dependencies list if null
+
                 if (task.task_dependencies == null) {
                     task.task_dependencies = mutableListOf()
                 }
-                // Filter and add only valid new dependencies
+
                 val validNewDependencies = newUpstreams.filter { upstreamId ->
                     if (!cumulativeTasks.containsKey(upstreamId)) {
                         log.warn("Skipping invalid dependency $upstreamId for task $taskToEdit")
@@ -165,7 +165,7 @@ open class GraphOrderedPlanMode(
                     log.debug("Added ${validNewDependencies.size} dependencies to task $taskToEdit: ${validNewDependencies.joinToString()}")
                 }
             }
-            // Log summary of changes
+
             val newDependencies = cumulativeTasks.mapValues {
                 (it.value.task_dependencies?.toSet() ?: emptySet()) - (existingDependencies[it.key] ?: emptySet())
             }.filterValues { it.isNotEmpty() }

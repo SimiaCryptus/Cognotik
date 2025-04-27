@@ -18,7 +18,7 @@ class DeleteSessionServlet(
         resp.status = HttpServletResponse.SC_OK
         if (req.parameterMap.containsKey("sessionId")) {
             val session = Session(req.getParameter("sessionId"))
-            //language=HTML
+
             resp.writer.write(
                 """
         <html>

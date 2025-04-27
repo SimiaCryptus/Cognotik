@@ -41,15 +41,15 @@ open class OutlineApp(
         get() = ("<div>" + renderMarkdown(
             """
           The Outline Agent is an AI-powered tool for exploring concepts via outline creation and expansion.
-          
+
           Here's how it works:
-          
+
           1. **Generate Initial Outline**: Provide your main idea or topic, and the Outline Agent will create an initial outline.
           2. **Iterative Expansion**: The agent then expands on each section of your outline, adding depth and detail.
           3. **Construct Final Outline**: Once your outline is fully expanded, the agent can compile it into a single outline. This presents the information in a clear and concise manner, making it easy to review.
           4. **Visualize Embeddings**: Each section of your outline is represented as a vector in a high-dimensional space. The Outline Agent uses an Embedding Projector to visualize these vectors, allowing you to explore the relationships between different ideas and concepts.
           5. **Customizable Experience**: You can set the number of iterations and the model used for each to control the depth and price, making it possible to generate sizable outputs.
-          
+
           Start your journey into concept space today with the Outline Agent! 📝✨
           """.trimIndent()
         ) + "</div>")
@@ -152,8 +152,10 @@ class OutlineAgent(
 
         if (models.isNotEmpty()) {
             processRecursive(outlineManager, outlineManager.rootNode, models, task)
-            while (activeThreadCounter.get() == 0) Thread.sleep(100) // Wait for at least one thread to start
-            while (activeThreadCounter.get() > 0) Thread.sleep(100) // Wait for all threads to finish
+            while (activeThreadCounter.get() == 0) Thread.sleep(100)
+
+            while (activeThreadCounter.get() > 0) Thread.sleep(100)
+
         }
 
         val sessionDir = dataStorage.getSessionDir(user, session)

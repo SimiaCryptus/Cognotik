@@ -187,5 +187,4 @@ class HSQLMetadataStorage(private val dbFile: File) : MetadataStorageInterface {
         log.info("Deleted session: ${session.sessionId} for user: ${user?.email ?: "anonymous"}")
     }
 
-
 }

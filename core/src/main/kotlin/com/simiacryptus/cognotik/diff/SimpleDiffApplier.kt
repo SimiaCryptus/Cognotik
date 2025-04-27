@@ -12,7 +12,6 @@ data class DiffApplicationResult(
     val validator: GrammarValidator
 )
 
-
 class SimpleDiffApplier {
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(SimpleDiffApplier::class.java)
@@ -43,7 +42,7 @@ class SimpleDiffApplier {
     ): DiffApplicationResult {
         val matches = DIFF_PATTERN.findAll(response).distinct()
         var currentCode = originalCode
-        // Use language validator if available, otherwise use fallback
+
         val validator = Companion.getValidator(filename)
         val originalCodeErrors = validator.validateGrammar(originalCode)
         val newErrors = matches.flatMap { diffBlock ->
@@ -53,7 +52,7 @@ class SimpleDiffApplier {
                     throw IllegalArgumentException("Diff size exceeds maximum limit")
                 }
                 val newCode = IterativePatchUtil.applyPatch(currentCode, diffVal).replace("\r", "")
-                // Validate using appropriate validator
+
                 val validationErrors = validator.validateGrammar(newCode)
                 currentCode = newCode
                 return@flatMap validationErrors

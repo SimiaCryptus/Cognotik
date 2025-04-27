@@ -17,7 +17,6 @@ import com.simiacryptus.aicoder.util.UITools
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.proxy.ChatProxy
 
-// ... keep existing imports
 
 class DescribeAction : SelectionAction<String>() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -45,7 +44,6 @@ class DescribeAction : SelectionAction<String>() {
         )
     }
 
-
     interface DescribeAction_VirtualAPI {
         fun describeCode(
             code: String,
@@ -69,10 +67,9 @@ class DescribeAction : SelectionAction<String>() {
         ).create()
 
     override fun getConfig(project: Project?): String {
-        // No configuration needed for this action
+
         return ""
     }
-
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false

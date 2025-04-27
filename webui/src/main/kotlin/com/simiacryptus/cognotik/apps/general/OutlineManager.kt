@@ -120,7 +120,7 @@ open class OutlineManager(val rootNode: OutlinedText) {
         } ?: listOf() else if (size == 0) {
             return listOf(node)
         } else {
-            // size == 1
+
             val child = node.children?.let { it }?.first() ?: return listOf(node)
             val expandSectionsdChild = expandNodes(child)
             return expandSectionsdChild.map {

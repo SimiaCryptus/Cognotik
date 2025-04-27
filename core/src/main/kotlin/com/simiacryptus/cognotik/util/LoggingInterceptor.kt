@@ -32,11 +32,10 @@ class LoggingInterceptor(
             vararg loggers: Logger,
             fn: () -> T,
         ): T {
-            // Save the original log level and appender list
+
             val originalLevels = loggers.map { it.level }
             val originalAppenders = loggers.map { it.iteratorForAppenders().asSequence().toList() }
 
-            // Create and attach the custom StringBufferAppender
             val stringBufferAppender = LoggingInterceptor(stringBuffer)
             stringBufferAppender.context = LoggerFactory.getILoggerFactory() as LoggerContext
             stringBufferAppender.start()
@@ -46,7 +45,7 @@ class LoggingInterceptor(
             try {
                 return fn()
             } finally {
-                // Restore the original log level and appender list
+
                 loggers.zip(originalLevels.zip(originalAppenders)).forEach { (jsEngineLogger, t) ->
                     val (originalLevel, originalAppender) = t
                     jsEngineLogger.level = originalLevel

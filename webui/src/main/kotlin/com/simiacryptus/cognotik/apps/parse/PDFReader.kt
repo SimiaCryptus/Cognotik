@@ -15,7 +15,8 @@ class PDFReader(pdfFile: File) : DocumentParserApp.DocumentReader {
 
     override fun getText(startPage: Int, endPage: Int): String {
         val stripper =
-            PDFTextStripper().apply { sortByPosition = true } // Not to be confused with the stripper from last night
+            PDFTextStripper().apply { sortByPosition = true }
+
         stripper.startPage = startPage + 1
         stripper.endPage = endPage + 1
         return stripper.getText(document)

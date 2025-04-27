@@ -11,7 +11,7 @@ import java.io.IOException
 class CorsFilter : Filter {
     @Throws(ServletException::class)
     override fun init(filterConfig: FilterConfig?) {
-        // No initialization needed for this filter
+
     }
 
     @Throws(IOException::class, ServletException::class)
@@ -35,7 +35,7 @@ class CorsFilter : Filter {
     }
 
     override fun destroy() {
-        // Cleanup any resources if needed
+
     }
 
     companion object {

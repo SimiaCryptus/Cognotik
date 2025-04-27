@@ -197,7 +197,6 @@ class OutlineConfigDialog(
         val model: ChatModel,
     )
 
-
     data class OutlineSettings(
         val expansionSteps: List<ExpansionStep> = listOf(
             ExpansionStep(AppSettingsState.instance.smartModel.chatModel()),

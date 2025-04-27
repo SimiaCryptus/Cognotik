@@ -69,7 +69,8 @@ class DocumentDataExtractorAction : BaseAction(
         filename.endsWith(".html", ignoreCase = true) -> true
         filename.endsWith(".htm", ignoreCase = true) -> true
         filename.endsWith(".md", ignoreCase = true) -> true
-        else -> true // Allow other files for code parsing
+        else -> true
+
     }
 
     override fun handle(e: AnActionEvent) {

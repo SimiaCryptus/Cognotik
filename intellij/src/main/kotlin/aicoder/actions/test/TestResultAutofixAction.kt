@@ -38,12 +38,14 @@ import java.text.SimpleDateFormat
 class TestResultAutofixAction : BaseAction() {
     companion object {
         private val log = LoggerFactory.getLogger(TestResultAutofixAction::class.java)
-        val tripleTilde = "`" + "``" // This is a workaround for the markdown parser when editing this file
+        val tripleTilde = "`" + "``"
+
 
         fun getFiles(
             virtualFiles: Array<out Path>?
         ): MutableSet<Path> {
-            val codeFiles = mutableSetOf<Path>()    // Set to avoid duplicates
+            val codeFiles = mutableSetOf<Path>()
+
             virtualFiles?.forEach { file ->
                 if (file.fileName.startsWith(".")) return@forEach
                 if (isGitignore(file)) return@forEach
@@ -62,7 +64,8 @@ class TestResultAutofixAction : BaseAction() {
 
         fun getProjectStructure(root: Path): String {
             val codeFiles = getFiles(arrayOf(root))
-                .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
+                .filter { it.toFile().length() < 1024 * 1024 / 2 }
+
                 .map { root.relativize(it) ?: it }.toSet()
             val str = codeFiles
                 .asSequence()
@@ -121,7 +124,8 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     private fun getTestInfo(testProxy: SMTestProxy): String {
-        val sb = StringBuilder(256) // Pre-allocate buffer with reasonable size
+        val sb = StringBuilder(256)
+
         sb.appendLine("Test Name: ${testProxy.name}")
         sb.appendLine("Duration: ${testProxy.duration} ms")
 
@@ -204,7 +208,7 @@ class TestResultAutofixAction : BaseAction() {
                         For each error:
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
-                        
+
                         Project structure:
                         $projectStructure
                            1) predict the files that need to be fixed

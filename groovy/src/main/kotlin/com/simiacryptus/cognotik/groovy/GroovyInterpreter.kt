@@ -24,7 +24,6 @@ open class GroovyInterpreter(private val defs: java.util.Map<String, Object>) : 
 
     override fun getSymbols() = defs as Map<String, Any>
 
-
     override fun run(code: String): Any? {
         val wrapExecution = wrapExecution {
             try {

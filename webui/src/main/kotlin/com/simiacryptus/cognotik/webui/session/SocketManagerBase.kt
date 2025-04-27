@@ -63,7 +63,6 @@ abstract class SocketManagerBase(
         return SessionTaskImpl(operationID, responseContents, SessionTask.spinner)
     }
 
-
     private inner class SessionTaskImpl(
         operationID: String,
         responseContents: String,
@@ -115,7 +114,7 @@ abstract class SocketManagerBase(
 
     fun send(out: String) {
         try {
-            //log.debug("Sending message: {}", out)
+
             val split = out.split(',', ignoreCase = false, limit = 2)
             val messageID = split[0]
             var newValue = split[1]
@@ -133,7 +132,7 @@ abstract class SocketManagerBase(
             try {
                 val ver = messageVersions[messageID]?.get()
                 val v = messageStates[messageID]
-//        log.debug("Publish Msg: {} - {} - {} - {} bytes", session, messageID, ver, v?.length)
+
                 sockets.keys.toTypedArray<ChatSocket>().forEach<ChatSocket> { chatSocket ->
                     try {
                         val deque = sendQueues.computeIfAbsent(chatSocket) { ConcurrentLinkedDeque() }
@@ -148,7 +147,7 @@ abstract class SocketManagerBase(
                                         val v = messageStates[messageID]
                                         msg = "$messageID,$ver,$v"
                                     } finally {
-//                    log.debug("Sending message: {} to socket: {}", msg, chatSocket)
+
                                         synchronized(chatSocket) {
                                             chatSocket.remote.sendString(msg)
                                         }
@@ -179,7 +178,7 @@ abstract class SocketManagerBase(
     }
 
     private fun setMessage(key: String, value: String): Int {
-//    log.debug("Setting message - Key: {}, Value: {}", key, value)
+
         if (messageStates.containsKey(key)) {
             if (messageStates[key] == value) {
                 return -1
@@ -190,19 +189,19 @@ abstract class SocketManagerBase(
         messageTimestamps[key] = System.currentTimeMillis()
         val incrementAndGet = synchronized(messageVersions)
         { messageVersions.getOrPut(key) { AtomicInteger(0) } }.incrementAndGet()
-//    log.debug("Setting message - Key: {}, v{}, Value: {} bytes", key, incrementAndGet, value.length)
+
         return incrementAndGet
     }
 
     final override fun onWebSocketText(socket: ChatSocket, message: String) {
-//      log.debug("{} - Received message: {}", session, message)
+
         log.debug("Received WebSocket message: {} from socket: {}", message, socket)
-        // Intercept and properly handle heartbeat ping/pong messages
+
         val trimmed = message.trim()
         if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
             if (trimmed.contains("\"type\":\"pong\"")) {
                 log.debug("Received heartbeat pong - updating heartbeat timestamp.")
-                // Optionally update a heartbeat timestamp here if needed
+
                 return
             }
             if (trimmed.contains("\"type\":\"ping\"") || trimmed.contains("\"type\":\"heartbeat\"")) {
@@ -281,13 +280,12 @@ abstract class SocketManagerBase(
         log.debug("Creating text input")
         val operationID = randomID()
         txtTriggers[operationID] = handler
-        //language=HTML
+
         return """<div class="reply-form">
                    <textarea class="reply-input" data-id="$operationID" rows="3" placeholder="Type a message"></textarea>
                    <button class="text-submit-button" data-id="$operationID">Send</button>
                </div>""".trimIndent()
     }
-
 
     protected abstract fun onRun(
         userMessage: String,

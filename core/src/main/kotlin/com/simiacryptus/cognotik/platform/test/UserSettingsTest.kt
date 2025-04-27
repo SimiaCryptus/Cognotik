@@ -12,7 +12,6 @@ abstract class UserSettingsTest(private val userSettings: UserSettingsInterface)
         private val log = org.slf4j.LoggerFactory.getLogger(UserSettingsTest::class.java)
     }
 
-
     @Test
     fun `updateUserSettings should store custom settings for user`() {
         log.info("Starting test: updateUserSettings should store custom settings for user")

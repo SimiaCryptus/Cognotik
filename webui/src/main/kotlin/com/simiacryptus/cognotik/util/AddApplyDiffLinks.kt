@@ -10,11 +10,9 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 
-
 class AddApplyDiffLinks {
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(AddApplyDiffLinks::class.java)
-
 
         private val diffApplier = SimpleDiffApplier()
 
@@ -30,7 +28,6 @@ class AddApplyDiffLinks {
 
     }
 
-
     fun apply(
         socketManagerBase: SocketManagerBase,
         code: () -> String,
@@ -42,7 +39,6 @@ class AddApplyDiffLinks {
     ): String {
         val matches = SimpleDiffApplier.DIFF_PATTERN.findAll(response).distinct()
 
-
         val patch = { code: String, diff: String ->
             val result = diffApplier.apply(code, "```diff\n$diff\n```")
             PatchResult(result.newCode, result.isValid, null)
@@ -50,7 +46,7 @@ class AddApplyDiffLinks {
 
         val withLinks = matches.fold(response) { markdown, diffBlock ->
             val diffVal: String = diffBlock.groupValues[1]
-            // Try to auto-apply if enabled
+
             if (shouldAutoApply) {
                 try {
                     val newCode = patch(code(), diffVal)
@@ -64,7 +60,7 @@ class AddApplyDiffLinks {
               <div class="cmd-button">Diff Automatically Applied</div>"""
                         )
                     }
-                    // Add error message if patch is not valid
+
                     return@fold markdown.replace(
                         diffBlock.value,
                         """```diff

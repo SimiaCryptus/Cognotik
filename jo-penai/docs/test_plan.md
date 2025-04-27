@@ -125,12 +125,10 @@ public class APITest {
     public void testAPIBehavior() {
         API api = new API();
 
-        // Test a specific method in the API class
-        // For example, if there is a method called 'getData()', you can test its behavior like this:
+
         String data = api.getData();
         assertNotNull(data);
 
-        // Add more test cases for other methods in the API class as needed
     }
 }
 ```
@@ -254,7 +252,6 @@ class ApiModelTest {
     assertEquals(false, completionRequest.echo)
   }
 
-  // Add more unit tests for other data classes and methods in the ApiModel interface
 
 }
 ```
@@ -528,19 +525,19 @@ class TestPlan {
   @Test
   @Description("Verify that the login functionality works correctly")
   fun testLogin() {
-    // Test logic for login functionality
+
   }
 
   @Test
   @Description("Verify that the registration process is successful")
   fun testRegistration() {
-    // Test logic for registration process
+
   }
 
   @Test
   @Description("Verify that the user profile can be updated")
   fun testUpdateProfile() {
-    // Test logic for updating user profile
+
   }
 }
 ```
@@ -731,23 +728,22 @@ class YamlDescriberTest {
 
   @Test
   fun testDescribe() {
-    // Test the describe method with different input types and stackMax values
-    // Ensure the output matches the expected YAML description
+
+
   }
 
   @Test
   fun testDescribeMethod() {
-    // Test the describe method for methods with different parameters and return types
-    // Ensure the output matches the expected YAML description
+
+
   }
 
   @Test
   fun testToYaml() {
-    // Test the toYaml method with different types and stackMax values
-    // Ensure the output matches the expected YAML description
+
+
   }
 
-  // Add more unit tests for other methods as needed
 
 }
 ```
@@ -763,17 +759,16 @@ class YamlDescriberIntegrationTest {
 
   @Test
   fun testDescribeWithEnum() {
-    // Test the describe method with an enum class
-    // Ensure the output YAML description includes enum values
+
+
   }
 
   @Test
   fun testDescribeWithProperties() {
-    // Test the describe method with a class containing properties
-    // Ensure the output YAML description includes property details
+
+
   }
 
-  // Add more integration tests for different scenarios
 
 }
 ```
@@ -1176,7 +1171,7 @@ public class APIProviderTest {
 4. **Edge Cases Test**: Write tests to cover any edge cases, such as null values or unexpected behavior.
 
 ```java
-// Add additional tests as needed to cover edge cases
+
 ```
 
 By following these steps and adding more specific tests as needed, you can create a comprehensive test plan for
@@ -1197,32 +1192,32 @@ class HttpClientManagerTest {
 
   @Test
   fun testWithCancellationMonitor() {
-    // Test the withCancellationMonitor method
-    // Write test cases to check if the method behaves as expected
+
+
   }
 
   @Test
   fun testWithTimeout() {
-    // Test the withTimeout method
-    // Write test cases to check if the method behaves as expected
+
+
   }
 
   @Test
   fun testWithReliability() {
-    // Test the withReliability method
-    // Write test cases to check if the method behaves as expected
+
+
   }
 
   @Test
   fun testWithPerformanceLogging() {
-    // Test the withPerformanceLogging method
-    // Write test cases to check if the method behaves as expected
+
+
   }
 
   @Test
   fun testWithClient() {
-    // Test the withClient method
-    // Write test cases to check if the method behaves as expected
+
+
   }
 }
 ```
@@ -1411,9 +1406,12 @@ class EmbeddingModelsTest {
     val smallModel = EmbeddingModels.Small
     val largeModel = EmbeddingModels.Large
 
-    assertEquals(adaEmbedding.pricing(usage), 0.1) // 1000 tokens * 0.0001 / 1000.0 = 0.1
-    assertEquals(smallModel.pricing(usage), 0.02) // 1000 tokens * 0.00002 / 1000.0 = 0.02
-    assertEquals(largeModel.pricing(usage), 0.13) // 1000 tokens * 0.00013 / 1000.0 = 0.13
+    assertEquals(adaEmbedding.pricing(usage), 0.1)
+
+    assertEquals(smallModel.pricing(usage), 0.02)
+
+    assertEquals(largeModel.pricing(usage), 0.13)
+
   }
 }
 ```
@@ -1505,7 +1503,6 @@ class ImageModelsTest {
     assertEquals("hd", ImageModels.DallE3_HD.quality)
   }
 
-  // Add more test cases for other enum values and edge cases
 }
 ```
 
@@ -1946,23 +1943,22 @@ public class GPTProxyBaseTest {
 
     @Test
     public void testCompleteMethod() {
-        // Create an instance of GPTProxyBase and test the complete method
-        // Ensure that the method returns the expected output for a given prompt and examples
+
+
     }
 
     @Test
     public void testAddExamplesMethod() {
-        // Create an instance of GPTProxyBase and test the addExamples method
-        // Ensure that examples are correctly loaded and stored in the examples map
+
+
     }
 
     @Test
     public void testAddExampleMethod() {
-        // Create an instance of GPTProxyBase and test the addExample method
-        // Ensure that a new example is added to the examples map with the correct arguments and response
+
+
     }
 
-    // Add more unit tests for other methods as needed
 }
 ```
 
@@ -1978,17 +1974,16 @@ public class GPTProxyBaseIntegrationTest {
 
     @Test
     public void testProxyCreation() {
-        // Create an instance of GPTProxyBase and test the creation of the proxy
-        // Ensure that the proxy behaves as expected when calling methods on the proxied class
+
+
     }
 
     @Test
     public void testCompleteMethodWithExamples() {
-        // Create an instance of GPTProxyBase and test the complete method with provided examples
-        // Ensure that the method returns the expected output based on the examples provided
+
+
     }
 
-    // Add more integration tests for other scenarios as needed
 }
 ```
 

@@ -150,13 +150,13 @@ class LargeOutputActor(
             }
             iterations++
         }
-        // Apply refinement steps after content expansion
+
         val diffApplier = SimpleDiffApplier()
         refinementSteps.forEach { step ->
             try {
                 repeat(step.iterations) { iteration ->
                     if (step.perSection) {
-                        // Split content into H1 sections
+
                         val sections = splitIntoH1Sections(accumulatedResponse)
                         var modifiedContent = ""
                         sections.forEach { (header, content) ->
@@ -179,7 +179,7 @@ class LargeOutputActor(
                         }
                         accumulatedResponse = modifiedContent.trim()
                     } else {
-                        // Apply refinement to entire content
+
                         val refinementResponse = response(
                             ApiModel.ChatMessage(
                                 role = ApiModel.Role.system,
@@ -228,7 +228,6 @@ class LargeOutputActor(
             val matches = h1Pattern.findAll(content)
             val positions = matches.map { it.range.first }.toList()
 
-            // Handle case where content has no headers
             if (positions.isEmpty()) {
                 return listOf(Pair("", content.trim()))
             }
@@ -243,7 +242,6 @@ class LargeOutputActor(
         }
     }
 }
-
 
 fun largestCommonSubstring(a: String, b: String): String {
     if (a.isEmpty() || b.isEmpty()) return ""

@@ -23,7 +23,8 @@ class SystemTrayManager(
     private val log = LoggerFactory.getLogger(SystemTrayManager::class.java)
     private var trayIcon: TrayIcon? = null
     private var lastErrorTime: Long = 0
-    private val ERROR_COOLDOWN = 5000 // 5 second cooldown between error messages
+    private val ERROR_COOLDOWN = 5000
+
     private var lastErrorMessage: String? = null
     private fun loadSvgImage(): Image? {
         return try {
@@ -52,7 +53,6 @@ class SystemTrayManager(
             null
         }
     }
-
 
     fun initialize() {
         if (!SystemTray.isSupported()) {
@@ -119,7 +119,6 @@ class SystemTrayManager(
             onConfirm()
         }
     }
-
 
     private fun openInBrowser() {
         try {

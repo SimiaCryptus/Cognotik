@@ -76,14 +76,16 @@ export interface ThemeLogging {
         trace: string;
         verbose: string;
         system: string;
-        critical: string;  // Add critical log color
+        critical: string;
+
     };
     fontSize: {
         normal: string;
         large: string;
         small: string;
         system: string;
-        critical: string;  // Add critical font size
+        critical: string;
+
     };
     padding: {
         message: string;
@@ -97,7 +99,8 @@ export interface ThemeLogging {
         debug: string;
         success: string;
         system: string;
-        critical: string;  // Add critical background
+        critical: string;
+
     };
     border: {
         radius: string;

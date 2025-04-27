@@ -21,7 +21,6 @@ class BlobDB : BlobStorage {
         log.debug("Reading $id: ${it.size} bytes: ${String(it)}")
     }
 
-
     companion object {
         val log = LoggerFactory.getLogger(BlobDB::class.java)
     }

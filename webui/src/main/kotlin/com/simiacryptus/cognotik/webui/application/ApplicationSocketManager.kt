@@ -34,7 +34,6 @@ abstract class ApplicationSocketManager(
 
     open val applicationInterface by lazy { ApplicationInterface(this) }
 
-
     abstract fun userMessage(
         session: Session,
         user: User?,
@@ -44,8 +43,8 @@ abstract class ApplicationSocketManager(
     )
 
     companion object {
-        //        val playButton: String get() = """<button class="play-button" data-id="$operationID">▶</button>"""
-//        val cancelButton: String get() = """<button class="cancel-button" data-id="$operationID">&times;</button>"""
-//        val regenButton: String get() = """<button class="regen-button" data-id="$operationID">♲</button>"""
+
+
+
     }
 }

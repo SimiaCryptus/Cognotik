@@ -6,15 +6,13 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.util.*
 
-
 class DiffMatchPatchTest {
 
     @Test
     fun testDiffMain() {
-        // Test equality
+
         Assertions.assertEquals(mutableListOf(Diff(EQUAL, "test")), DiffMatchPatch.diff_main("test", "test", false))
 
-        // Test differences
         val diffs = LinkedList<Diff>()
         diffs.add(Diff(DELETE, "Hello"))
         diffs.add(Diff(INSERT, "Goodbye"))
@@ -40,7 +38,6 @@ class DiffMatchPatchTest {
         Assertions.assertEquals(4, DiffMatchPatch.diff_commonSuffix("1234", "xyz1234"))
     }
 
-    //    @Test
     fun testPatchMakeAndApply() {
         val text1 = "The quick brown fox jumps over the lazy dog."
         val text2 = "The quick red fox jumps over the tired dog."
@@ -54,7 +51,6 @@ class DiffMatchPatchTest {
         }
     }
 
-    //    @Test
     fun testPatchMakeWithDiffs() {
         val text1 = "The quick brown fox jumps over the lazy dog."
         val text2 = "That quick brown fox jumped over a lazy dog."
@@ -72,8 +68,8 @@ class DiffMatchPatchTest {
         if (text1 == null || text2 == null) {
             throw IllegalArgumentException("Null inputs. (patch_make)")
         }
-        // No diffs provided, compute our own.
-        // Set a deadline by which time the diff must be complete.
+
+
         val deadline: Long
         if (DiffMatchPatch.Diff_Timeout <= 0) {
             deadline = Long.MAX_VALUE
@@ -112,14 +108,14 @@ class DiffMatchPatchTest {
     }
 
     @Test
-    // expect IllegalArgumentException::class
+
     fun testPatchFromTextWithInvalidInput() {
         val invalidPatchText = """@@ -1,8 +1,5 @@
 -The quick
 +That
   brown
 """
-        // This should throw an IllegalArgumentException due to the incomplete patch text
+
         DiffMatchPatch.patch_fromText(invalidPatchText)
     }
 

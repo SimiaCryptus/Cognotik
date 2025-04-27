@@ -107,9 +107,12 @@ class TensorflowProjector(
                     <a href="$metadataURL" target="_blank">Metadata</a> |
                     <a href="$PROJECTOR_URL?config=$configURL" target="_blank">Open in Projector</a>
                 </div>
-                <iframe 
-                    src="$PROJECTOR_URL?config=$configURL" 
-                    width="$iframeWidth" 
+                <iframe
+
+                    src="$PROJECTOR_URL?config=$configURL"
+
+                    width="$iframeWidth"
+
                     height="${iframeHeight}px"
                     frameborder="0"
                     allowfullscreen

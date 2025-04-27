@@ -8,7 +8,7 @@ publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
-            // Sources and javadoc jars are now created by the java plugin configuration
+
             pom {
                 name.set(project.name)
                 description.set("Cognotik ${project.name.replaceFirstChar { it.uppercase() }} Module")
@@ -40,7 +40,7 @@ publishing {
             val snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
             url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
             credentials {
-                // Use providers for lazy evaluation and better error handling
+
                 username = providers.environmentVariable("OSSRH_USERNAME")
                     .orElse(providers.systemProperty("ossrhUsername"))
                     .orElse(properties("ossrhUsername"))

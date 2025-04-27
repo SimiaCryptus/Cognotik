@@ -16,7 +16,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.nio.charset.StandardCharsets
 import java.util.*
 
-
 open class AwsPlatform(
     private val bucket: String = System.getProperty("share_bucket", "share.simiacrypt.us"),
     override val shareBase: String = System.getProperty("share_base", "https://" + bucket),
@@ -26,9 +25,9 @@ open class AwsPlatform(
 
     open val credentialsProvider = AwsCredentialsProviderChain.builder()
         .credentialsProviders(
-            // Try EC2 instance profile credentials first
+
             InstanceProfileCredentialsProvider.create(),
-            // Then try profile credentials if profile name is provided
+
             profileName?.let {
                 ProfileCredentialsProvider.create(it)
             } ?: ProfileCredentialsProvider.create()
@@ -85,7 +84,6 @@ open class AwsPlatform(
         log.debug("Upload completed successfully")
         return "$shareBase/$path"
     }
-
 
     override fun encrypt(fileBytes: ByteArray, keyId: String): String? {
         log.info("Encrypting {} bytes using KMS key: {}", fileBytes.size, keyId)

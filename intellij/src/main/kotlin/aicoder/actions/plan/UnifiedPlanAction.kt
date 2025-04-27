@@ -54,16 +54,18 @@ class UnifiedPlanAction : BaseAction() {
                 env = mapOf(),
                 workingDir = root,
             ),
-            singleTaskMode = false, // Initially false, will be updated based on selection
-            apiBudget = DEFAULT_API_BUDGET // Default API budget
+            singleTaskMode = false,
+
+            apiBudget = DEFAULT_API_BUDGET
+
         )
 
         if (dialog.showAndGet()) {
             try {
                 val planSettings = dialog.settings
-                // Get cognitive mode selection from the dialog's combo box (cast as needed)
+
                 val selectedCognitiveMode = dialog.cognitiveModeCombo.selectedItem as String
-                // Convert the selection string to the appropriate CognitiveModeStrategy.
+
                 val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
                     "Plan Ahead" -> object : CognitiveModeStrategy {
                         override val singleInput: Boolean = true
@@ -80,7 +82,7 @@ class UnifiedPlanAction : BaseAction() {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
-                                        // Selected file listing
+
                                         append("Selected Files:\n")
                                         append(filteredWalk(File(root)) { true }.joinToString("\n") {
                                             "* ${
@@ -109,7 +111,7 @@ class UnifiedPlanAction : BaseAction() {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
-                                        // Selected file listing
+
                                         append("Selected Files:\n")
                                         append(filteredWalk(File(root)) { true }.joinToString("\n") {
                                             "* ${
@@ -147,7 +149,7 @@ class UnifiedPlanAction : BaseAction() {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
-                                        // Selected file listing
+
                                         append("Selected Files:\n")
                                         append(filteredWalk(File(root)) { true }.joinToString("\n") {
                                             "* ${
@@ -188,7 +190,7 @@ class UnifiedPlanAction : BaseAction() {
                                 override fun contextData(): List<String> {
                                     return listOf(
                                         buildString {
-                                            // Selected file listing
+
                                             append("Selected Files:\n")
                                             append(filteredWalk(File(root)) { true }.joinToString("\n") {
                                                 "* ${
@@ -206,13 +208,13 @@ class UnifiedPlanAction : BaseAction() {
 
                     else -> throw RuntimeException("Unknown plan mode: $selectedCognitiveMode")
                 }
-                // Update singleTaskMode based on the selected cognitive mode
+
                 val isSingleTaskMode = selectedCognitiveMode == "Single Task"
-                // If in single task mode, ensure only one task is enabled in the settings
+
                 if (isSingleTaskMode) {
                     val enabledTask = TaskType.values().find { planSettings.getTaskSettings(it).enabled }
                     if (enabledTask != null) {
-                        // Disable all other tasks
+
                         TaskType.values().forEach { taskType ->
                             if (taskType != enabledTask) {
                                 planSettings.setTaskSettings(
@@ -301,7 +303,8 @@ class UnifiedPlanAction : BaseAction() {
             parsingModel = AppSettingsState.instance.fastModel.chatModel(),
             showMenubar = false,
             api = api.getChildClient().apply {
-                budget = apiBudget // Set the user-configured budget for the API
+                budget = apiBudget
+
             },
             api2 = api2,
             cognitiveStrategy = cognitiveStrategy,

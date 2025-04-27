@@ -89,7 +89,6 @@ abstract class BaseActionTest : ScreenRec() {
         }
     }
 
-
     @BeforeAll
     fun setup() {
         remoteRobot = RemoteRobot("http://127.0.0.1:8082")

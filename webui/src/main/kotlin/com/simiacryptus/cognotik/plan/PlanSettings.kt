@@ -14,7 +14,6 @@ import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ChatModel
 import org.openqa.selenium.remote.RemoteWebDriver
 
-
 open class PlanSettings(
     var defaultModel: ChatModel,
     var parsingModel: ChatModel,
@@ -36,7 +35,7 @@ open class PlanSettings(
     var maxTaskHistoryChars: Int = 10000,
     var maxTasksPerIteration: Int = 3,
     var maxIterations: Int = 10,
-    // Enable {option1|option2} syntax
+
 ) {
 
     fun getTaskSettings(taskType: TaskType<*, *>): TaskSettingsBase =
@@ -75,8 +74,8 @@ open class PlanSettings(
 
     fun planningActor(describer: TypeDescriber): ParsedActor<TaskBreakdownResult> {
         val planTaskSettings = this.getTaskSettings(TaskType.TaskPlanningTask)
-        // Note: the platform automatically reads and provides the necessary JSON software graph.
-        // The prompt below should focus purely on breaking down the user instruction without re-framing the JSON data.
+
+
         val prompt = """
                       Given a user request, identify and list smaller, actionable tasks that can be directly implemented in code.
                       (Do not repeat or ask for the JSON content since the platform already handles reading the software graph.)

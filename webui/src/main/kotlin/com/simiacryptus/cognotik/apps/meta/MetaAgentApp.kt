@@ -51,15 +51,17 @@ open class MetaAgentApp(
             renderMarkdown(
                 """
                 **It's agents all the way down!**
-                Welcome to the MetaAgentAgent, an innovative tool designed to streamline the process of creating custom AI agents. 
+                Welcome to the MetaAgentAgent, an innovative tool designed to streamline the process of creating custom AI agents.
+
                 This powerful system leverages the capabilities of OpenAI's language models to assist you in designing and implementing your very own AI agent tailored to your specific needs and preferences.
-                
+
                 Here's how it works:
                 1. **Provide a Prompt**: Describe the purpose of your agent.
                 2. **High Level Design**: A multi-step high-level design process will guide you through the creation of your agent. During each phase, you can provide feedback and iterate. When you're satisfied with the design, you can move on to the next step.
                 3. **Implementation**: The MetaAgentAgent will generate the code for your agent, which you can then download and tailor to your needs.
-                
-                Get started with MetaAgentAgent today and bring your custom AI agent to life with ease! 
+
+                Get started with MetaAgentAgent today and bring your custom AI agent to life with ease!
+
                 Whether you're looking to automate customer service, streamline data analysis, or create an interactive chatbot, MetaAgentAgent is here to help you make it happen.
             """.trimIndent()
             )
@@ -208,9 +210,9 @@ open class MetaAgentAgent(
 
             @Language("kotlin") val appCode = """
                 $standardImports
-                
+
                 $imports
-                
+
                 open class ${classBaseName}App(
                     applicationName: String = "${design.obj.name}",
                     path: String = "/${design.obj.path ?: ""}",
@@ -218,14 +220,14 @@ open class MetaAgentAgent(
                     applicationName = applicationName,
                     path = path,
                 ) {
-                
+
                     data class Settings(
                         val model: ChatModels = OpenAIModels.GPT4oMini,
                         val temperature: Double = 0.1,
                     )
                     override val settingsClass: Class<*> get() = Settings::class.java
                     @Suppress("UNCHECKED_CAST") override fun <T:Any> initSettings(session: Session): T? = Settings() as T
-                
+
                     override fun userMessage(
                         session: Session,
                         user: User?,
@@ -248,17 +250,17 @@ open class MetaAgentAgent(
                             log.warn("Error", e)
                         }
                     }
-                
+
                     companion object {
                         private val log = LoggerFactory.getLogger(${classBaseName}App::class.java)
                     }
-                
+
                 }
                 """.trimIndent()
 
             @Language("kotlin") val agentCode = """
         $standardImports
-        
+
         open class ${classBaseName}Agent(
             user: User?,
             session: Session,
@@ -268,34 +270,32 @@ open class MetaAgentAgent(
             model: ChatModels = OpenAIModels.GPT4oMini,
             temperature: Double = 0.3,
         ) : PoolSystem(dataStorage, user, session) {
-        
+
             ${actorInits.indent("    ")}
-        
+
             ${mainImpl.trimIndent().stripImports().indent("    ")}
-        
+
             ${flowImpl.values.joinToString("\n\n") { flowStep -> flowStep.trimIndent() }.stripImports().indent("    ")}
-        
+
             companion object {
                 private val log = org.slf4j.LoggerFactory.getLogger(${classBaseName}Agent::class.java)
-        
+
             }
         }
         """.trimIndent()
 
-            //language=MARKDOWN
             val code = """
                 ```kotlin
                 ${
                 """
                 $appCode
-                
+
                 $agentCode
                 """.trimIndent().sortCode()
             }
                 ```
                 """.trimIndent()
 
-            //language=HTML
             task.complete(renderMarkdown(code, ui = ui))
         } catch (e: IOException) {
             task.complete("An I/O error occurred. Please try again later.")
@@ -442,7 +442,7 @@ open class MetaAgentAgent(
         userMessage: String, design: ParsedResponse<AgentDesign>
     ): Pair<String, String> {
         val api = (api as ChatClient).getChildClient(task)
-        //language=HTML
+
         task.header("Actor: ${actorDesign.name}", 2)
         val type = actorDesign.type
         val codeRequest = CodingActor.CodeRequest(
@@ -499,7 +499,7 @@ open class MetaAgentAgent(
             }
         }
         onComplete.acquire()
-        //language=HTML
+
         task.complete()
         return actorDesign.name to code
     }
@@ -507,7 +507,8 @@ open class MetaAgentAgent(
     private fun <T> execWrap(fn: () -> T): T {
         val classLoader = Thread.currentThread().contextClassLoader
         val prevCL = KotlinInterpreter.classLoader
-        KotlinInterpreter.classLoader = classLoader //req.javaClass.classLoader
+        KotlinInterpreter.classLoader = classLoader
+
         return try {
             WebAppClassLoader.runWithServerClassAccess {
                 require(null != classLoader.loadClass("org.eclipse.jetty.server.Response"))
@@ -691,7 +692,7 @@ data class LogicFlowItem(
     override fun validate(): String? = when {
         null == name -> "name is required"
         name.isEmpty() -> "name is required"
-        //inputs?.isEmpty() != false && inputs?.isEmpty() != false -> "inputs is required"
+
         else -> null
     }
 }

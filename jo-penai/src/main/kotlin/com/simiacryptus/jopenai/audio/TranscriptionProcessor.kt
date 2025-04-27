@@ -60,7 +60,7 @@ open class TranscriptionProcessor(
     }
 
     protected open fun updatePrompt(text: String): String {
-        //return (prompt + text).split(" ").takeLast(32).joinToString(" ")
+
         return prompt
     }
 }

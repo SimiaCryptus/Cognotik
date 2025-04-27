@@ -28,7 +28,6 @@ class CommandAutoFixTask(
         var commandAutoFixCommands: List<String>? = listOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 
-
     class CommandAutoFixTaskConfigData(
         @Description("The commands to be executed with their respective working directories")
         val commands: List<CommandWithWorkingDir>? = null,

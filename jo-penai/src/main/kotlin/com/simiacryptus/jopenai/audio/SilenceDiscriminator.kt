@@ -43,7 +43,8 @@ abstract class SilenceDiscriminator(
     fun poll(audioPackets: Queue<AudioPacket>) {
         val audioPacket = audioPackets.poll()
         if (null == audioPacket) {
-            Thread.sleep(10) // Increased sleep to reduce CPU usage
+            Thread.sleep(10)
+
         } else {
             processPacket(audioPacket)
         }

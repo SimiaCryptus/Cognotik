@@ -77,7 +77,8 @@ class ReplicateCommitAction : BaseAction() {
                 progress.text = "Creating patch application..."
                 val patchApp = object : PatchApp(root.toFile(), session, settings, diffInfo) {
                     override fun codeFiles() = getFiles(virtualFiles)
-                        .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
+                        .filter { it.toFile().length() < 1024 * 1024 / 2 }
+
                         .map { root.relativize(it) ?: it }.toSet()
 
                     override fun codeSummary(paths: List<Path>): String = paths
@@ -137,7 +138,6 @@ class ReplicateCommitAction : BaseAction() {
         }
     }
 
-    // Add proper enablement logic
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
         val project = event.project ?: return false
@@ -226,14 +226,14 @@ class ReplicateCommitAction : BaseAction() {
                     resultClass = ParsedTasks::class.java,
                     prompt = """
                       You are a helpful AI that helps people with coding.
-                      
+
                       You will be answering questions about the following project:
-                      
+
                       Project Root: """.trimIndent() + (settings.workingDirectory.absolutePath ?: "") + """
-                      
+
                       Files:
                       """.trimIndent() + planTxt + """
-                      
+
                       Given the request, identify one or more tasks.
                       For each task:
                          1) predict the files that need to be fixed
@@ -268,9 +268,9 @@ class ReplicateCommitAction : BaseAction() {
                         val response = SimpleActor(
                             prompt = """
                   You are a helpful AI that helps people with coding.
-                  
+
                   You will be answering questions about the following code:
-                  
+
                   """.trimIndent() + codeSummary + "\n" + patchFormatPrompt +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
                             model = AppSettingsState.instance.smartModel.chatModel()
@@ -278,11 +278,11 @@ class ReplicateCommitAction : BaseAction() {
                             listOf(
                                 """
                               We are working on executing the following directive:
-                              
+
                               """.trimIndent() + tripleTilde + """
                               """.trimIndent() + userMessage + """
                               """.trimIndent() + tripleTilde + """
-                              
+
                               Focus on the task at hand:
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
                             ), api = api
@@ -331,7 +331,8 @@ class ReplicateCommitAction : BaseAction() {
     private fun getFiles(
         virtualFiles: Array<out VirtualFile>?
     ): MutableSet<Path> {
-        val codeFiles = mutableSetOf<Path>()    // Set to avoid duplicates
+        val codeFiles = mutableSetOf<Path>()
+
         virtualFiles?.forEach { file ->
             if (file.isDirectory) {
                 if (file.name.startsWith(".")) return@forEach
@@ -369,11 +370,12 @@ class ReplicateCommitAction : BaseAction() {
 
     companion object {
         private val log = LoggerFactory.getLogger(ReplicateCommitAction::class.java)
-        val tripleTilde = "`" + "``" // This is a workaround for the markdown parser when editing this file
+        val tripleTilde = "`" + "``"
+
 
         @OptIn(ExperimentalPathApi::class)
         fun toPaths(root: Path, it: String): Iterable<Path> {
-            // Expand any wildcards
+
             if (it.contains("*")) {
                 val prefix = it.substringBefore("*")
                 val suffix = it.substringAfter("*")

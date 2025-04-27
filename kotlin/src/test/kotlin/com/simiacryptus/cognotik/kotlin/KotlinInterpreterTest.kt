@@ -34,7 +34,7 @@ class KotlinInterpreterTest : InterpreterTestBase() {
                 functionNotDefined()
             }
         """.trimIndent()
-        // This should fail because functionNotDefined is not defined...
+
         val result = interpreter.validate(code)
         Assertions.assertTrue(result is CodingActor.FailedToImplementException)
         try {

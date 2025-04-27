@@ -219,9 +219,10 @@ class FindResultsModificationAction(
                 }
             }
             val intersectingUsages = usages.filter { usage ->
-                //val plainText = usage.presentation.plainText.trim()
+
                 val startOffset = usage.navigationOffset
-                val endOffset = startOffset + 1 // (plainText.length-1)
+                val endOffset = startOffset + 1
+
                 when {
                     startOffset >= lineEnd -> false
                     endOffset <= lineStart -> false

@@ -151,7 +151,6 @@ class FindResultsChatAction(
             }.joinToString("\n").replace("(?:\\.\\.\\.\n){2,}".toRegex(), "...\n")
         }
 
-
         private fun getCodeContext(): String {
             return usages.entries.joinToString("\n\n") { (file, usages) ->
                 file ?: return@joinToString ""

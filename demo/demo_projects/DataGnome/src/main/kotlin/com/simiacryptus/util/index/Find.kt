@@ -14,7 +14,7 @@ fun FileIndexer.find(sequence: CharSequence): Array<XTokens> {
             midVal < sequence -> start = mid + 1
             midVal > sequence -> end = mid
             else -> {
-                // Find the start of the sequence
+
                 var i = mid
                 var buffer: String
                 while (i > 0) {
@@ -22,7 +22,7 @@ fun FileIndexer.find(sequence: CharSequence): Array<XTokens> {
                     if (buffer != sequence) break
                     i -= 1
                 }
-                // Find the end of the sequence
+
                 var j = mid
                 while (j < index.length) {
                     buffer = data.readString(XTokens(index.get(j + 1)), XChars(sequence.length.toLong()))
@@ -45,7 +45,9 @@ private operator fun CharSequence.compareTo(sequence: CharSequence): Int {
         if (next > next2) return 1
         i++
     }
-    if (length > sequence.length) return 1 // The first iterator has more elements
-    if (sequence.length > length) return -1  // The second iterator has more elements
+    if (length > sequence.length) return 1
+
+    if (sequence.length > length) return -1
+
     return 0
 }

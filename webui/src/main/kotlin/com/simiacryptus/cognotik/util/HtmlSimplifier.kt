@@ -81,7 +81,7 @@ object HtmlSimplifier {
         keepMediaElements: Boolean = false,
         keepEventHandlers: Boolean = false
     ): String {
-        // Add input validation for baseUrl
+
         baseUrl?.let {
             require(!it.startsWith("javascript:") && !it.startsWith("data:")) { "Invalid base URL scheme" }
         }
@@ -137,7 +137,7 @@ object HtmlSimplifier {
             if (!keepEventHandlers) {
                 select("*").forEach { element ->
                     element.attributes().removeAll { attr ->
-                        // Simplified condition and fixed logic error
+
                         attr.key.lowercase().startsWith("on") && attr.key !in SCRIPT_ATTRIBUTES
                     }
                 }
@@ -177,7 +177,8 @@ object HtmlSimplifier {
                 if (element.text().isBlank() &&
                     element.attributes().isEmpty &&
                     !element.select("img, br, hr, iframe[src], svg, source[src], track[src]")
-                        .any() // Added more media elements
+                        .any()
+
                 ) {
                     element.remove()
                 }
@@ -205,7 +206,7 @@ object HtmlSimplifier {
 
         simplifyDocument(stepName = "ConvertRelativeUrls") {
             if (baseUrl != null) {
-                // Add more elements that might have URLs
+
                 select("a[href]").forEach {
                     it.attr("href", it.absUrl("href"))
                 }

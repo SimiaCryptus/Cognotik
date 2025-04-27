@@ -63,7 +63,7 @@ class IntArrayAppendFile(val file: File) {
   }
 
   companion object {
-    // Future enhancements and features can be added here
+
   }
 }
 ```
@@ -212,11 +212,10 @@ public class IntArrayMappedFile {
         }
     }
 
-    // Future feature roadmap:
-    // - Add methods for searching, sorting, and manipulating the integer array
-    // - Implement support for different data types and data structures
-    // - Enhance error handling and input validation
-    // - Optimize memory usage and performance
+
+
+
+
 }
 ```
 
@@ -335,7 +334,8 @@ class LongArrayMappedFile(private val file: File) {
     fun append(value: Long) {
         val newLength = (length.asLong + 1) * 8
         channel.truncate(newLength)
-        _mappedByteBuffer = null // Invalidate the current buffer
+        _mappedByteBuffer = null
+
         mappedByteBuffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, newLength)
         mappedByteBuffer.putLong((length.asLong * 8 - 8).toInt(), value)
     }
@@ -364,7 +364,7 @@ class LongArrayMappedFile(private val file: File) {
     }
 
     companion object {
-        // Future enhancements and additional features can be added here
+
     }
 }
 ```
@@ -678,7 +678,6 @@ for text processing and indexing tasks.
      */
     operator fun plus(other: XElements) = XElements(asLong + other.asLong)
 
-    // Other operator functions for subtraction, addition with Long and Int values, and modulo operation.
 
     /**
      * Converts the element to an Int value.
@@ -727,7 +726,8 @@ val Long.elements: XElements get() = XElements(this)
 ```kotlin
 /**
  * This class represents a size in bytes and provides various arithmetic operations for working with byte sizes.
- * 
+ *
+
  * @param asLong The size in bytes as a Long value
  */
 @JvmInline value class XBytes(val asLong: Long) : Comparable<XBytes> {
@@ -735,90 +735,101 @@ val Long.elements: XElements get() = XElements(this)
      * Get the size in bytes as an Int value
      */
     val bytesAsInt get() = asLong.toInt()
-    
+
     /**
      * Compares this XBytes object with another XBytes object.
-     * 
+     *
+
      * @param other The other XBytes object to compare with
      * @return 0 if the objects are equal, a negative value if this object is less than the other object, a positive value if this object is greater than the other object
      */
     override operator fun compareTo(other: XBytes) = asLong.compareTo(other.asLong)
-    
+
     /**
      * Compares this XBytes object with a Long value.
-     * 
+     *
+
      * @param other The Long value to compare with
      * @return 0 if the values are equal, a negative value if this object is less than the Long value, a positive value if this object is greater than the Long value
      */
     operator fun compareTo(other: Long) = asLong.compareTo(other)
-    
+
     /**
      * Compares this XBytes object with an Int value.
-     * 
+     *
+
      * @param other The Int value to compare with
      * @return 0 if the values are equal, a negative value if this object is less than the Int value, a positive value if this object is greater than the Int value
      */
     operator fun compareTo(other: Int) = asLong.compareTo(other)
-    
+
     /**
      * Adds another XBytes object to this XBytes object.
-     * 
+     *
+
      * @param other The XBytes object to add
      * @return A new XBytes object representing the sum of the two sizes
      */
     operator fun plus(other: XBytes) = XBytes(asLong + other.asLong)
-    
+
     /**
      * Subtracts another XBytes object from this XBytes object.
-     * 
+     *
+
      * @param other The XBytes object to subtract
      * @return A new XBytes object representing the difference of the two sizes
      */
     operator fun minus(other: XBytes) = XBytes(asLong - other.asLong)
-    
+
     /**
      * Adds a Long value to this XBytes object.
-     * 
+     *
+
      * @param other The Long value to add
      * @return A new XBytes object representing the sum of the size and the Long value
      */
     operator fun plus(other: Long) = XBytes(asLong + other)
-    
+
     /**
      * Subtracts a Long value from this XBytes object.
-     * 
+     *
+
      * @param other The Long value to subtract
      * @return A new XBytes object representing the difference of the size and the Long value
      */
     operator fun minus(other: Long) = XBytes(asLong - other)
-    
+
     /**
      * Adds an Int value to this XBytes object.
-     * 
+     *
+
      * @param other The Int value to add
      * @return A new XBytes object representing the sum of the size and the Int value
      */
     operator fun plus(other: Int) = XBytes(asLong + other)
-    
+
     /**
      * Subtracts an Int value from this XBytes object.
-     * 
+     *
+
      * @param other The Int value to subtract
      * @return A new XBytes object representing the difference of the size and the Int value
      */
     operator fun minus(other: Int) = XBytes(asLong - other)
-    
+
     /**
      * Calculates the remainder when dividing this XBytes object by another XBytes object.
-     * 
+     *
+
      * @param other The XBytes object to divide by
      * @return A new XBytes object representing the remainder
      */
     operator fun rem(other: XBytes) = XBytes(asLong % other.asLong)
-    
+
     /**
      * Calculates the remainder when dividing this XBytes object by a Long value.
-     * 
+     *
+
      * @param other The Long value to divide by
      * @return A new XBytes object representing the remainder
      */
@@ -837,7 +848,8 @@ val Long.bytes: XBytes get() = XBytes(this)
 
 /**
  * Defines an infix function to create a range of XBytes objects from one XBytes object to another.
- * 
+ *
+
  * @param to The end of the range (inclusive)
  * @return An Iterable of XBytes objects representing the range
  */
@@ -875,20 +887,17 @@ class CompressedTokenFile(
   file: File,
   dictionaryFile: File,
 ) : TokenFile(file) {
-  // Returns an iterable of token indices
+
   override val tokenIndices: Iterable<XBytes> get() = (0 until tokenCount.asLong).map {
       val tokenPosition = XTokens(it)
       XBytes(tokenPosition.asLong * 4)
     }.asIterable()
-  
-  // Lazily initializes and returns the total token count
+
   override val tokenCount: XTokens by lazy { XTokens(file.length() / 4) }
-  
-  // Initializes dictionary file and data file
+
   val dict = SequenceFile(dictionaryFile)
   val data = IntArrayMappedFile(file)
-  
-  // Lazily initializes and reads the codec from the dictionary file
+
   val codec by lazy { dict.read().map { String(it) } }
 
   /**
@@ -900,9 +909,9 @@ class CompressedTokenFile(
   override fun tokenIterator(position: XTokens): () -> Iterator<String> = {
     object : Iterator<String> {
       var nextPos = XElements(position.asLong)
-      
+
       override fun hasNext() = true
-      
+
       override fun next(): String {
         val get: Int = data.get((nextPos % data.length.asLong))
         nextPos += 1
@@ -937,8 +946,10 @@ Here is how you can use the `findCompressionPrefixes` function:
 
 ```kotlin
 val fileIndexer = FileIndexer()
-val threshold = 100 // Set your threshold value
-val count = 5 // Set the number of compression prefixes to return
+val threshold = 100
+
+val count = 5
+
 
 val compressionPrefixes = fileIndexer.findCompressionPrefixes(threshold, count)
 
@@ -974,39 +985,38 @@ specific use cases.
 fun FileIndexer.find(sequence: CharSequence): Array<XTokens> {
     var start = 0.elements
     var end = index.length
-    
+
     while (start < end) {
         val mid = XElements((start + end).asLong / 2)
         val midVal = data.readString(XTokens(index.get(mid)), XChars(sequence.length.toLong()))
-        
+
         when {
             midVal < sequence -> start = mid + 1
             midVal > sequence -> end = mid
             else -> {
-                // Find the start of the sequence
+
                 var i = mid
                 var buffer: String
-                
+
                 while (i > 0) {
                     buffer = data.readString(XTokens(index.get(i - 1)), XChars(sequence.length.toLong()))
                     if (buffer != sequence) break
                     i -= 1
                 }
-                
-                // Find the end of the sequence
+
                 var j = mid
-                
+
                 while (j < index.length) {
                     buffer = data.readString(XTokens(index.get(j + 1)), XChars(sequence.length.toLong()))
                     if (buffer != sequence) break
                     j += 1
                 }
-                
+
                 return (i until (j + 1)).map { index.get(it) }.sorted().map { XTokens(it) }.toTypedArray()
             }
         }
     }
-    
+
     return emptyArray()
 }
 
@@ -1018,20 +1028,22 @@ fun FileIndexer.find(sequence: CharSequence): Array<XTokens> {
  */
 private operator fun CharSequence.compareTo(sequence: CharSequence): Int {
     var i = 0
-    
+
     while (i < length && i < sequence.length) {
         val next = get(i)
         val next2 = sequence[i]
-        
+
         if (next < next2) return -1
         if (next > next2) return 1
-        
+
         i++
     }
-    
-    if (length > sequence.length) return 1 // The first iterator has more elements
-    if (sequence.length > length) return -1  // The second iterator has more elements
-    
+
+    if (length > sequence.length) return 1
+
+    if (sequence.length > length) return -1
+
+
     return 0
 }
 ```
@@ -1139,7 +1151,8 @@ class SimpleTokenFile(file: File) : TokenFile(file) {
 /**
  * The FileIndexer class is responsible for indexing tokens from a data file and storing the index in a LongArrayMappedFile.
  * It provides methods to build the index, count n-grams, populate the index, and close the resources.
- * 
+ *
+
  * @param data The TokenFile containing the data to be indexed.
  * @param index The LongArrayMappedFile to store the index.
  */
@@ -1166,7 +1179,8 @@ class FileIndexer(
 
   /**
    * Builds the index by populating it with n-grams.
-   * 
+   *
+
    * @param n The size of the n-grams.
    */
   fun buildIndex(n: XChars = XChars(2)) {
@@ -1185,7 +1199,8 @@ class FileIndexer(
 
   /**
    * Counts the occurrences of n-grams in the data file.
-   * 
+   *
+
    * @param n The size of the n-grams.
    * @param skip The number of characters to skip.
    * @param indices The indices of tokens to count n-grams for.
@@ -1206,7 +1221,8 @@ class FileIndexer(
 
   /**
    * Populates the index with n-grams based on the provided spans.
-   * 
+   *
+
    * @param n The size of the n-grams.
    * @param skip The number of characters to skip.
    * @param spans An array of start and end positions for each span.
@@ -1216,12 +1232,13 @@ class FileIndexer(
     skip: XChars,
     spans: Array<Pair<XElements, XElements>>
   ) {
-    // Implementation details omitted for brevity
+
   }
 
   /**
    * Populates the index by scanning n-grams and their positions.
-   * 
+   *
+
    * @param n The size of the n-grams.
    * @param skip The number of characters to skip.
    * @param from The starting position in the data file.
@@ -1236,7 +1253,7 @@ class FileIndexer(
     to: XElements,
     indices: Iterable<XTokens>,
   ): TreeMap<CharSequence, Int> {
-    // Implementation details omitted for brevity
+
   }
 
   /**
@@ -1251,13 +1268,14 @@ class FileIndexer(
    * A companion object containing utility methods for the FileIndexer class.
    */
   companion object {
-    // Implementation details of utility methods omitted for brevity
+
   }
 }
 
 /**
  * Creates a FileIndexer instance with the given data file and optional index file.
- * 
+ *
+
  * @param dataFile The data file to be indexed.
  * @param indexFile The index file to store the index (default is dataFile with '.index' extension).
  * @return A new FileIndexer instance.
@@ -1267,7 +1285,8 @@ fun FileIndexer(dataFile: File, indexFile: File = File(dataFile.parentFile, "${d
 
 /**
  * Creates a FileIndexer instance with the given TokenFile and optional index file.
- * 
+ *
+
  * @param data The TokenFile containing the data to be indexed.
  * @param indexFile The index file to store the index (default is data file with '.index' extension).
  * @return A new FileIndexer instance.
@@ -1276,7 +1295,7 @@ fun FileIndexer(
   data: TokenFile,
   indexFile: File = File(data.file.parentFile, "${data.file.name}.index")
 ) = FileIndexer(data, LongArrayMappedFile(indexFile).apply {
-  //data.tokenCount.asLong.elements
+
 })
 ```
 
@@ -1367,7 +1386,7 @@ abstract class TokenFile(val file: File) {
    * @param length The length of data to read
    */
   fun read(i: XBytes, buffer: ByteArray, offset: Int = 0, length: Int = buffer.size - offset) {
-    // Implementation details for reading data from the file
+
   }
 
   /**
@@ -1379,10 +1398,9 @@ abstract class TokenFile(val file: File) {
    * @return The string read from the file
    */
   open fun readString(position: XTokens, n: XChars, skip: XChars = XChars(0)): String {
-    // Implementation details for reading a string from the file
+
   }
 
-  // Other methods and properties omitted for brevity
 
   /**
    * Writes compressed data using the provided codec
@@ -1391,7 +1409,7 @@ abstract class TokenFile(val file: File) {
    * @return A pair of files containing the compressed data and dictionary
    */
   fun writeCompressed(codec: List<String>): Pair<File, File> {
-    // Implementation details for writing compressed data
+
   }
 
   /**
@@ -1402,10 +1420,9 @@ abstract class TokenFile(val file: File) {
    * @param file The file to write the expanded data to
    */
   fun expand(codecMap: List<String>, compressed: File?, file: File) {
-    // Implementation details for expanding compressed data
+
   }
 
-  // Private inner class for prefix lookup omitted for brevity
 
   /**
    * Writes the dictionary file for the codec
@@ -1414,7 +1431,7 @@ abstract class TokenFile(val file: File) {
    * @return The dictionary file containing the codec strings
    */
   private fun writeDictionary(codec: List<String>): File {
-    // Implementation details for writing the dictionary file
+
   }
 }
 ```
@@ -1479,7 +1496,6 @@ abstract class TokenFile(val file: File) {
      */
     operator fun plus(other: XChars) = XChars(asLong + other.asLong)
 
-    // Other arithmetic and comparison operations follow a similar pattern...
 
     /**
      * Generates a range of XChars instances from this XChars instance to the specified XChars instance.
@@ -1542,7 +1558,7 @@ public class WordTokenFile extends TokenFile {
      * @param maxCharSize The maximum character size to be considered
      */
     public WordTokenFile(File file, String charsetName, int maxCharSize) {
-        // Constructor implementation
+
     }
 
     /**
@@ -1552,7 +1568,7 @@ public class WordTokenFile extends TokenFile {
      * @return The string read from the byte index
      */
     public String read(XBytes byteIndex) {
-        // Method implementation
+
     }
 
     /**
@@ -1562,7 +1578,7 @@ public class WordTokenFile extends TokenFile {
      * @return The corresponding token index
      */
     public XTokens charToTokenIndex(XChars position) {
-        // Method implementation
+
     }
 
     /**
@@ -1574,7 +1590,7 @@ public class WordTokenFile extends TokenFile {
      * @return The string read from the token position
      */
     public String readString(XTokens position, XChars n, XChars skip) {
-        // Method implementation
+
     }
 
     /**
@@ -1584,7 +1600,7 @@ public class WordTokenFile extends TokenFile {
      * @return The corresponding character index
      */
     public XChars tokenToCharIndex(XTokens position) {
-        // Method implementation
+
     }
 
     /**
@@ -1594,7 +1610,7 @@ public class WordTokenFile extends TokenFile {
      * @return A function that returns an iterator for iterating through strings
      */
     public () -> Iterator<String> tokenIterator(XTokens position) {
-        // Method implementation
+
     }
 
     /**
@@ -1610,7 +1626,7 @@ public class WordTokenFile extends TokenFile {
          * @param from The starting position to iterate from
          */
         public StringIterator(XBytes from) {
-            // Constructor implementation
+
         }
 
         /**
@@ -1619,7 +1635,7 @@ public class WordTokenFile extends TokenFile {
          * @return True if there is a next string, false otherwise
          */
         public boolean hasNext() {
-            // Method implementation
+
         }
 
         /**
@@ -1628,7 +1644,7 @@ public class WordTokenFile extends TokenFile {
          * @return The next string in the iteration
          */
         public String next() {
-            // Method implementation
+
         }
     }
 }
@@ -1793,27 +1809,27 @@ package com.simiacryptus.util.stm
  * This interface represents a pointer store, which is responsible for storing key-value pairs where both the key and value are integers.
  */
 interface PointerStore {
-  
+
   /**
    * Sets the value for a given key in the pointer store.
    * @param key The key to set the value for.
    * @param value The value to set for the key.
    */
   fun set(key: Int, value: Int)
-  
+
   /**
    * Sets multiple key-value pairs in the pointer store.
    * @param kv The list of key-value pairs to set.
    */
   fun set(vararg kv: Pair<Int, Int>)
-  
+
   /**
    * Retrieves the value associated with a given key from the pointer store.
    * @param key The key to retrieve the value for.
    * @return The value associated with the key.
    */
   fun get(key: Int): Int
-  
+
   /**
    * Generates a new pointer value to be used in the pointer store.
    * @return The newly generated pointer value.
@@ -2322,7 +2338,8 @@ The `reverseWords` function has been added to enhance the string manipulation ca
 ```kotlin
 val originalString = "Hello world from SimiaCryptus"
 val reversedString = reverseWords(originalString)
-println(reversedString) // Output: "SimiaCryptus from world Hello"
+println(reversedString)
+
 ```
 
 #### Function Signature

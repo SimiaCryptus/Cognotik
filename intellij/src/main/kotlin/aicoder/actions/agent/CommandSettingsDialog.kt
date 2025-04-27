@@ -76,7 +76,7 @@ class CommandSettingsDialog(project: Project?, private val settingsUI: CommandAu
                 }
             }
             row("Exit Code Options") {
-                // Radio buttons are already part of exitCodeOptions ButtonGroup
+
                 panel {
                     buttonsGroup {
                         row {

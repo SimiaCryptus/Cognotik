@@ -38,13 +38,10 @@ class TextCompressorTest {
         )
         log.debug("Compressed content: '{}'", compressed)
 
-        // The compressed text should be shorter
         assertTrue(compressed.length < repeatedText.length)
 
-        // The compressed text should contain abbreviation markers
         assertTrue(compressed.contains("..."))
 
-        // The first occurrence should remain intact
         assertTrue(compressed.startsWith("The quick brown fox jumps over the lazy dog."))
         log.debug("Test completed successfully")
     }
@@ -71,17 +68,16 @@ class TextCompressorTest {
         log.debug("Input text length: {}", text.length)
         log.debug("Input content: '{}'", text)
 
-        // With minOccurrences = 3, only the second phrase should be abbreviated
         val compressedWithMin3 = compressor.compress(text)
         log.debug("Compressed text with minOccurrences=3: '{}'", compressedWithMin3)
 
-        // The first repeated phrase should remain intact (only 2 occurrences)
-        // assertTrue(compressedWithMin3.contains("Repeated phrase here. Repeated phrase here.")) // Original assertion
-        // Log shows the second part is abbreviated. Let's assert based on the log.
-        assertTrue(compressedWithMin3.startsWith("Repeated phrase here. Repe")) // Check start
-        assertFalse(compressedWithMin3.contains("Repeated phrase here. Repeated phrase here.")) // Check full phrase pair is gone
 
-        // The second phrase should be abbreviated (3 occurrences)
+
+        assertTrue(compressedWithMin3.startsWith("Repeated phrase here. Repe"))
+
+        assertFalse(compressedWithMin3.contains("Repeated phrase here. Repeated phrase here."))
+
+
         assertFalse(compressedWithMin3.contains("Another repeated phrase. Another repeated phrase. Another repeated phrase."))
         log.debug("Test completed successfully")
     }
@@ -105,17 +101,16 @@ class TextCompressorTest {
         )
         log.debug("Compressed content: '{}'", compressed)
 
-        // The longer pattern should be abbreviated first
-        //assertTrue(compressed.contains("This ...tern.")) // Original assertion based on code reading
-        // The log output shows "This ...n." - let's assert this for now to see if it passes,
-        // indicating the log reflects reality, even if the code logic seems different.
+
+
+
         assertTrue(compressed.contains("This ...n."))
 
-        // After the longer pattern is abbreviated, the shorter one might also be abbreviated
-        // in its standalone occurrences
+
         val shorterPatternCount = "shorter repeated pattern".toRegex().findAll(compressed).count()
         log.debug("Count of 'shorter repeated pattern' in compressed text: {}", shorterPatternCount)
-        assertTrue(shorterPatternCount <= 2) // At most one full occurrence and maybe partial in abbreviation
+        assertTrue(shorterPatternCount <= 2)
+
         log.debug("Test completed successfully")
     }
 
@@ -129,10 +124,8 @@ class TextCompressorTest {
         val compressed = compressor.compress(text)
         log.debug("Compressed text: '{}'", compressed)
 
-        // The text should be compressed
         assertTrue(compressed.length < text.length)
 
-        // There should be only one full alphabet sequence
         val alphabetCount = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toRegex().findAll(compressed).count()
         log.debug("Count of full alphabet sequences in compressed text: {}", alphabetCount)
         log.debug("Test completed successfully")
@@ -146,7 +139,6 @@ class TextCompressorTest {
             "This is a very long sentence that needs to be abbreviated properly to maintain context at beginning and end."
         log.debug("Original text: '{}'", text)
 
-        // Use reflection to access the private method
         val method = TextCompressor::class.java.getDeclaredMethod(
             "createUniqueAbbreviation",
             String::class.java,
@@ -158,7 +150,6 @@ class TextCompressorTest {
         val abbreviation = method.invoke(compressor, text, 0) as String
         log.debug("Generated abbreviation: '{}'", abbreviation)
 
-        // Abbreviation should contain beginning and end of original text
         assertTrue(abbreviation.startsWith("This "))
         assertTrue(abbreviation.endsWith(" end."))
         assertTrue(abbreviation.contains("..."))

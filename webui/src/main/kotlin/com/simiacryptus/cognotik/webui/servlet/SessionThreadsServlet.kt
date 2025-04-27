@@ -17,8 +17,8 @@ class SessionThreadsServlet : HttpServlet() {
             val session = Session(req.getParameter("sessionId"))
             val user = authenticationManager.getUser(req.getCookie())
             val pool = clientManager.getPool(session, user)
-            // Output all pool stack traces
-            //language=HTML
+
+
             resp.writer.write(
                 """
             <html>
@@ -29,7 +29,7 @@ class SessionThreadsServlet : HttpServlet() {
                         margin: 0;
                         padding: 20px;
                     }
-            
+
                     .pool-stats, .pool-threads {
                         border: 1px solid #ddd;
                         padding: 15px;
@@ -37,17 +37,17 @@ class SessionThreadsServlet : HttpServlet() {
                         border-radius: 4px;
                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                     }
-            
+
                     .thread {
                         margin-bottom: 10px;
                         padding: 10px;
                         border-radius: 4px;
                     }
-            
+
                     .thread-name {
                         font-weight: bold;
                     }
-            
+
                     .stack-element {
                         padding: 5px;
                         margin: 2px 0;
@@ -55,32 +55,32 @@ class SessionThreadsServlet : HttpServlet() {
                         font-family: 'Courier New', monospace;
                         font-size: 0.9em;
                     }
-            
+
                     p {
                         line-height: 1.6;
                     }
-            
+
                     a {
                         text-decoration: none;
                     }
-            
+
                     a:hover {
                         text-decoration: underline;
                     }
-            
+
                     .pool-stats p, .pool-threads p {
                         margin: 5px 0;
                     }
-            
+
                     .pool-stats p:first-child, .pool-threads p:first-child {
                         margin-top: 0;
                     }
-            
+
                     .pool-stats p:last-child, .pool-threads p:last-child {
                         margin-bottom: 0;
                     }
                 </style>
-            
+
                 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
             </head>
             <body>

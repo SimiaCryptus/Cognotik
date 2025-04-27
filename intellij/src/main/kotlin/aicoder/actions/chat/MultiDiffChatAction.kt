@@ -80,7 +80,7 @@ open class MultiDiffChatAction(
             val server = AppServer.getServer(e.project)
             launchBrowser(server, session.toString())
         } catch (e: Exception) {
-            // Comprehensive error logging
+
             log.error("Error in MultiDiffChatAction", e)
             UITools.showErrorDialog(e.message ?: "", "Error")
         }
@@ -88,7 +88,6 @@ open class MultiDiffChatAction(
 
     protected open fun getActionName(): String =
         if (showLineNumbers) "MultiDiffChatWithLineNumbers" else "MultiDiffChat"
-
 
     private fun getRoot(event: AnActionEvent): Path? {
         val folder = UITools.getSelectedFolder(event)
@@ -185,17 +184,15 @@ open class MultiDiffChatAction(
         }
 
         override fun respond(api: ChatClient, task: SessionTask, userMessage: String): String {
-            // Display token count information
+
             val codex = GPT4Tokenizer()
             task.verbose((getCodeFiles().joinToString("\n") { path ->
                 "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
             }).renderMarkdown())
 
-            // Set budget if needed
             val settings = Settings()
             api.budget = settings.budget ?: 2.00
 
-            // Use the parent implementation
             return super.respond(api, task, userMessage)
         }
     }

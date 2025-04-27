@@ -61,7 +61,6 @@ class ChatWithCommitAction : AnAction() {
                         "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
                     }
 
-                // Open chat with the diff information
                 openChatWithDiff(e, msg ?: "No changes found")
             } catch (e: Throwable) {
                 log.error("Error comparing changes", e)

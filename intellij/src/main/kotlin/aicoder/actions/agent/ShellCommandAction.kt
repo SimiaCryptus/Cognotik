@@ -71,7 +71,6 @@ class ShellCommandAction : BaseAction() {
             override val singleInput = true
             override val stickyInput = false
 
-
             override fun userMessage(
                 session: Session,
                 user: User?,

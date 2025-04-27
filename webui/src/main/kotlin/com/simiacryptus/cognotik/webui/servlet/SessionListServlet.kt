@@ -25,14 +25,15 @@ class SessionListServlet(
             val sessionTime = dataStorage.getSessionTime(user, session) ?: return@joinToString ""
             val sessionTimeStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(sessionTime)
             """
-            <tr class="session-row" onclick="window.location.href='$prefix#$session'">                
+            <tr class="session-row" onclick="window.location.href='$prefix#$session'">
+
                     <td><a href="$prefix#$session" class="session-link">$sessionName</a></td>
                     <td><a href="$prefix#$session" class="session-link">$sessionTimeStr</a></td>
             </tr>
             """.trimIndent()
         }
         val title = """Sessions"""
-        //language=HTML
+
         resp.writer.write(
             """
             <html>

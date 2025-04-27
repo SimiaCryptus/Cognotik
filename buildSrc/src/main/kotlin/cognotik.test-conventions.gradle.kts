@@ -8,19 +8,16 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-//    testImplementation(libs.mockito)
-//    testImplementation(libs.slf4j.api)
-//    testImplementation(libs.logback.classic)
-//    testImplementation(libs.logback.core)
+
+
+
 }
 
 tasks.test {
     useJUnitPlatform()
 
-    // Parallel test execution
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
 
-    // Test output
     testLogging {
         events("passed", "skipped", "failed")
         showExceptions = true
@@ -29,7 +26,6 @@ tasks.test {
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 
-    // JVM arguments for tests
     jvmArgs(
         "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
         "--add-opens", "java.base/java.util=ALL-UNNAMED",

@@ -63,7 +63,6 @@ open class TabbedDisplay(
         }).filter { it.isNotEmpty() }.joinToString(" ")
     }" data-tab="$idx">${t.second}</div>"""
 
-
     operator fun get(i: String) = tabs.toMap()[i]
     operator fun set(name: String, content: String) =
         when (val index = find(name)) {
@@ -102,7 +101,6 @@ open class TabbedDisplay(
             false
         }
     }
-
 
     open fun clear() {
         log.debug("Clearing all tabs")

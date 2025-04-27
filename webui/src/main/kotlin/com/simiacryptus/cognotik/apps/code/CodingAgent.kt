@@ -23,7 +23,6 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
-
 open class CodingAgent<T : Interpreter>(
     val api: API,
     val dataStorage: StorageInterface,
@@ -146,7 +145,7 @@ open class CodingAgent<T : Interpreter>(
         task.hideable(
             ui, renderMarkdown(
                 response.renderedResponse ?:
-                //language=Markdown
+
                 "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```", ui = ui
             )
         )
@@ -169,7 +168,6 @@ open class CodingAgent<T : Interpreter>(
         formHandle.toString()
         task.complete()
     }
-
 
     protected fun reviseMsg(
         task: SessionTask,

@@ -37,7 +37,6 @@ enum class DistanceType {
         private val log = LoggerFactory.getLogger(DistanceType::class.java)
     }
 
-
     abstract fun distance(
         contentEmbedding: DoubleArray,
         promptEmbedding: DoubleArray

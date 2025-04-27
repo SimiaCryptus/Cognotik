@@ -3,16 +3,14 @@ package com.simiacryptus.text
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-
 /**
  * Builds a suffix array from the provided text.
  * Uses FlyweightCharSequence for efficient substring comparisons.
  */
 class SuffixArray(private val text: String) {
-    // Logger for this class
+
     private val log: Logger = LoggerFactory.getLogger(SuffixArray::class.java)
 
-    // Underlying array of suffix start positions
     val suffixArray: IntArray = IntArray(text.length) { it }
 
     /** LCP[i] = longest common prefix of suffixes at suffixArray[i] and suffixArray[i+1] */
@@ -21,11 +19,9 @@ class SuffixArray(private val text: String) {
     init {
         log.debug("Initializing SuffixArray with text of length {}", text.length)
 
-        // Sort suffix indices lexicographically
         log.debug("Starting suffix array sorting")
         val startTime = System.currentTimeMillis()
 
-        // Sort suffix indices lexicographically and write back into the array
         val sortedList = suffixArray.toMutableList().apply {
             sortWith { i, j ->
                 val a = FlyweightCharSequence(text, i, text.length - i)
@@ -56,7 +52,7 @@ class SuffixArray(private val text: String) {
         val n = text.length
         val lcp = IntArray(maxOf(0, n - 1))
         val rank = IntArray(n)
-        // rank[sa[i]] = i
+
         for (i in 0 until n) rank[suffixArray[i]] = i
         var h = 0
         for (i in 0 until n) {
@@ -66,7 +62,7 @@ class SuffixArray(private val text: String) {
                 continue
             }
             val j = suffixArray[r + 1]
-            // Compare the two suffixes starting at i and j
+
             while (i + h < n && j + h < n && text[i + h] == text[j + h]) {
                 h++
             }

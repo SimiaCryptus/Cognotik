@@ -18,7 +18,6 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.full.functions
 import kotlin.reflect.jvm.javaType
 
-
 abstract class GPTProxyBase<T : Any>(
     val clazz: Class<out T>,
     var temperature: Double = 0.1,
@@ -37,7 +36,6 @@ abstract class GPTProxyBase<T : Any>(
     private val requestCounter = AtomicInteger(0)
     private val attemptCounter = AtomicInteger(0)
     private val requestCounters = HashMap<String, AtomicInteger>()
-
 
     abstract fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String
 
@@ -85,7 +83,7 @@ abstract class GPTProxyBase<T : Any>(
                 attemptCounter.incrementAndGet()
                 log.debug("Attempt $retry for method: ${method.name}")
                 if (retry > 0) {
-                    // Increase temperature on retry; this encourages the model to return a different result
+
                     temperature =
                         if (temperature <= 0.0) 0.0 else temperature.coerceAtLeast(0.1).pow(1.0 / (retry + 1))
                 }
@@ -155,7 +153,6 @@ abstract class GPTProxyBase<T : Any>(
             } as T)
     }
 
-
     private fun openApiLog(file: String): BufferedWriter {
         val writer = BufferedWriter(FileWriter(File(file)))
         writer.write("[")
@@ -183,7 +180,6 @@ abstract class GPTProxyBase<T : Any>(
 
     companion object {
         private val log: Logger = org.slf4j.LoggerFactory.getLogger(GPTProxyBase::class.java)
-
 
         fun fixup(jsonResult: String, type: Type): String {
             var jsonResult1 = jsonResult

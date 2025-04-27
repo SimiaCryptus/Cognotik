@@ -172,7 +172,6 @@ abstract class ApplicationServer(
         fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
             cookies?.find { it.name == name }?.value
 
-
         val appInfoMap = mutableMapOf<Session, AppInfoData>()
     }
 

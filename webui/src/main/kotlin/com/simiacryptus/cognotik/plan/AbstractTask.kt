@@ -8,7 +8,6 @@ import com.simiacryptus.jopenai.OpenAIClient
 import java.io.File
 import java.nio.file.Path
 
-
 abstract class AbstractTask<T : TaskConfigBase>(
     val planSettings: PlanSettings,
     val taskConfig: T?
@@ -33,7 +32,6 @@ abstract class AbstractTask<T : TaskConfigBase>(
         taskConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
             "# $dependency\n\n${planProcessingState.taskResult[dependency] ?: ""}"
         } ?: ""
-
 
     protected fun acceptButtonFooter(ui: ApplicationInterface, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)

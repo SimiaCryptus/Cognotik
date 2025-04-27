@@ -60,14 +60,14 @@ class CommandAutofixAction : BaseAction() {
                     var settings1: PatchApp.Settings? = null
                     SwingUtilities.invokeAndWait {
                         settingsUI = SettingsUI(workingDirectory = root.toFile(), folders)
-                        // If a single file is provided that is executable or has a whitelisted extension
+
                         if (files.size == 1) {
                             val defaultFile = files[0]
                             val whitelist = listOf("sh", "py", "bat", "ps")
                             val matchesWhitelist =
                                 whitelist.any { defaultFile.name.endsWith(".$it", ignoreCase = true) }
                             if (defaultFile.isFile && (defaultFile.toFile.canExecute() || matchesWhitelist)) {
-                                // Update the default fields for the first (and only) command panel
+
                                 val first = settingsUI.commandsList.firstOrNull()
                                 if (first != null) {
                                     first.commandField.selectedItem = defaultFile.toFile.absolutePath
@@ -196,11 +196,11 @@ class CommandAutofixAction : BaseAction() {
             override fun createCenterPanel(): JComponent {
                 val panel = JPanel(BorderLayout())
                 panel.preferredSize = Dimension(800, 600)
-                // Main content panel with scrolling
+
                 val contentPanel = JPanel(BorderLayout()).apply {
                     border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
                 }
-                // Add options panel
+
                 val optionsPanel = panel {
                     row { cell(settingsUI.commandsContainerPanel) }
                     group("Saved Configurations") {
@@ -266,7 +266,6 @@ class CommandAutofixAction : BaseAction() {
             }
         }
 
-
         class SettingsUI(val workingDirectory: File, val folders: List<Path>) {
             val commandsPanel = JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -276,9 +275,9 @@ class CommandAutofixAction : BaseAction() {
                 verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
                 horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
                 preferredSize = Dimension(750, 250)
-                // Improve scrolling speed
+
                 verticalScrollBar.unitIncrement = 16
-                // Set a minimum size to ensure scroll pane is always visible
+
                 minimumSize = Dimension(600, 150)
             }
             val commandsList = mutableListOf<CommandPanel>()
@@ -287,7 +286,6 @@ class CommandAutofixAction : BaseAction() {
                 AppSettingsState.instance.savedCommandConfigsJson?.keys?.sorted()?.forEach { addItem(it) }
             }
 
-            // Radio button selection model
             enum class ExitCodeOption { NONZERO, ZERO, ANY }
 
             var exitCodeOption = ExitCodeOption.NONZERO
@@ -303,31 +301,28 @@ class CommandAutofixAction : BaseAction() {
                 toolTipText = "Show line numbers in code snippets for better context"
             }
 
-            // Container panel for commands with add button
             val commandsContainerPanel = JPanel(BorderLayout()).apply {
                 border = BorderFactory.createTitledBorder("Commands")
                 preferredSize = Dimension(750, 300)
             }
 
-            // Button to add new command panels
             val addCommandButton = JButton("Add Command").apply {
                 addActionListener {
                     addCommandPanel()
                 }
             }
 
-
             init {
-                // Set up the commands container with scroll pane and add button
+
                 commandsContainerPanel.add(commandsScrollPane, BorderLayout.CENTER)
                 val buttonPanel = JPanel(BorderLayout()).apply {
                     border = BorderFactory.createEmptyBorder(5, 0, 0, 0)
                     add(addCommandButton, BorderLayout.EAST)
-                    // Add a button to clear all commands except the first one
+
                     add(JButton("Clear All").apply {
                         addActionListener {
                             if (commandsList.size > 0) {
-                                // Keep the first panel
+
                                 val firstPanel = commandsList.firstOrNull()
                                 commandsList.clear()
                                 commandsPanel.removeAll()
@@ -356,12 +351,12 @@ class CommandAutofixAction : BaseAction() {
                 commandsPanel.add(Box.createVerticalStrut(5))
                 commandsPanel.revalidate()
                 commandsPanel.repaint()
-                // Ensure the newest panel is visible by scrolling to it after UI updates
+
                 SwingUtilities.invokeLater {
-                    // Scroll to the bottom after UI is updated
+
                     commandsScrollPane.revalidate()
                     commandsScrollPane.repaint()
-                    // Schedule scrolling after layout is complete
+
                     SwingUtilities.invokeLater {
                         commandsScrollPane.viewport.viewPosition =
                             java.awt.Point(0, commandsPanel.height - commandsScrollPane.viewport.height)
@@ -370,20 +365,20 @@ class CommandAutofixAction : BaseAction() {
             }
 
             fun removeCommandPanel(panel: CommandPanel) {
-                // Don't allow removing the last panel
+
                 if (commandsList.size <= 1) {
                     return
                 }
 
                 commandsList.remove(panel)
                 commandsPanel.remove(panel)
-                // Also remove the vertical strut that follows the panel if it exists
+
                 if (commandsPanel.componentCount > commandsList.size * 2) {
                     commandsPanel.remove(commandsPanel.getComponentZOrder(panel) + 1)
                 }
                 commandsPanel.revalidate()
                 commandsPanel.repaint()
-                // Adjust the container size after removing a panel
+
                 SwingUtilities.invokeLater {
                     SwingUtilities.getWindowAncestor(commandsPanel)?.pack()
                 }
@@ -392,7 +387,7 @@ class CommandAutofixAction : BaseAction() {
             val maxRetriesField: JSpinner = JSpinner(SpinnerNumberModel(3, 0, 10, 1)).apply {
                 toolTipText = "Maximum number of auto-retry attempts (0-10)"
                 addChangeListener {
-                    // Sync slider with spinner value
+
                     maxRetriesSlider.value = value as Int
                 }
             }
@@ -403,7 +398,7 @@ class CommandAutofixAction : BaseAction() {
                 paintLabels = true
                 toolTipText = "Maximum number of auto-retry attempts (0-10)"
                 addChangeListener {
-                    // Sync spinner with slider value
+
                     maxRetriesField.value = value
                 }
             }
@@ -414,7 +409,7 @@ class CommandAutofixAction : BaseAction() {
                 paintLabels = true
                 toolTipText = "API budget for this session (0.0 - 10.0)"
                 addChangeListener {
-                    // Convert slider value (0-100) to budget (0.0-10.0)
+
                     apiBudgetField.value = value / 10.0
                 }
             }
@@ -425,12 +420,12 @@ class CommandAutofixAction : BaseAction() {
                 wrapStyleWord = true
                 border = BorderFactory.createLoweredBevelBorder()
                 minimumSize = Dimension(400, 100)
-                //preferredSize = Dimension(600, 100)
+
             }
             val apiBudgetField = JSpinner(SpinnerNumberModel(0.0, 0.0, 1000.0, 0.1)).apply {
                 toolTipText = "Specify the API budget for this session (0.0 - 1000.0)"
                 addChangeListener {
-                    // Convert budget value (0.0-10.0) to slider (0-100)
+
                     val budgetValue = value as Double
                     if (budgetValue <= 10.0) {
                         apiBudgetSlider.value = (budgetValue * 10).toInt()
@@ -479,7 +474,7 @@ class CommandAutofixAction : BaseAction() {
                 config.commands.forEach {
                     val panel = CommandPanel(workingDirectory, folders)
                     panel.loadFromSettings(it)
-                    // Ensure working directory is set to the currently selected directory
+
                     panel.workingDirectoryField.selectedItem = workingDirectory.absolutePath
                     commandsList.add(panel)
                     commandsPanel.add(panel)
@@ -495,7 +490,7 @@ class CommandAutofixAction : BaseAction() {
                 includeGitDiffsCheckBox.isSelected = config.includeGitDiffs
                 includeLineNumbersCheckBox.isSelected = config.includeLineNumbers ?: true
                 additionalInstructionsField.text = config.additionalInstructions
-                // Set budget value
+
                 val budgetValue = if (config.apiBudget != null) config.apiBudget else 0.0
                 apiBudgetField.value = budgetValue
                 if (budgetValue <= 10.0) {
@@ -504,7 +499,6 @@ class CommandAutofixAction : BaseAction() {
                 commandsPanel.revalidate()
                 commandsPanel.repaint()
             }
-
 
             class CommandPanel(workingDirectory: File, folders: List<Path>) : JPanel() {
                 val workingDirectoryField = ComboBox<String>().apply {
@@ -569,14 +563,14 @@ class CommandAutofixAction : BaseAction() {
                         BorderFactory.createEtchedBorder()
                     )
                     layout = BorderLayout()
-                    // Set a minimum size to prevent the panel from collapsing
+
                     minimumSize = Dimension(650, 120)
-                    //preferredSize = Dimension(700, 120)
+
                     val fieldsPanel = JPanel().apply {
                         layout = BoxLayout(this, BoxLayout.Y_AXIS)
                         border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
                     }
-                    // Add a remove button in the top-right corner
+
                     val headerPanel = JPanel(BorderLayout()).apply {
                         border = BorderFactory.createEmptyBorder(0, 0, 5, 0)
                     }
@@ -592,7 +586,6 @@ class CommandAutofixAction : BaseAction() {
                     headerPanel.add(removeButton, BorderLayout.EAST)
                     add(headerPanel, BorderLayout.NORTH)
 
-                    // Command row
                     fieldsPanel.add(JPanel(BorderLayout(5, 0)).apply {
                         add(JLabel("Command:", SwingConstants.RIGHT).apply {
                             preferredSize = Dimension(100, preferredSize.height)
@@ -603,7 +596,7 @@ class CommandAutofixAction : BaseAction() {
                         alignmentX = LEFT_ALIGNMENT
                     })
                     fieldsPanel.add(Box.createVerticalStrut(5))
-                    // Arguments row
+
                     fieldsPanel.add(JPanel(BorderLayout(5, 0)).apply {
                         add(JLabel("Arguments:", SwingConstants.RIGHT).apply {
                             preferredSize = Dimension(100, preferredSize.height)
@@ -613,7 +606,7 @@ class CommandAutofixAction : BaseAction() {
                         alignmentX = LEFT_ALIGNMENT
                     })
                     fieldsPanel.add(Box.createVerticalStrut(5))
-                    // Working directory row
+
                     fieldsPanel.add(JPanel(BorderLayout(5, 0)).apply {
                         add(JLabel("Directory:", SwingConstants.RIGHT).apply {
                             preferredSize = Dimension(100, preferredSize.height)
@@ -638,8 +631,8 @@ class CommandAutofixAction : BaseAction() {
                 fun loadFromSettings(settings: PatchApp.CommandSettings) {
                     commandField.selectedItem = settings.executable.absolutePath
                     argumentsField.selectedItem = settings.arguments
-                    // Don't override the working directory from settings to maintain context
-                    // of the currently selected directory/file in the IDE
+
+
                 }
 
             }

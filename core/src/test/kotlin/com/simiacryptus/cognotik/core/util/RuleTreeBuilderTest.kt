@@ -25,24 +25,22 @@ class RuleTreeBuilderTest {
         Assertions.assertEquals("World", testString.safeSubstring(5, 10))
     }
 
-//  @Test
-//  fun testBestNextPrefix() {
-//    val remainingItems = mutableSetOf("apple", "apricot", "banana")
-//    val doNotMatch = sortedSetOf("appetizer", "application")
-//    val bestNextPrefix = RuleTreeBuilder.bestPrefix(remainingItems.toSortedSet(), doNotMatch)
-//    Assertions.assertNotNull(bestNextPrefix)
-//    Assertions.assertEquals("ap", bestNextPrefix)
-//  }
 
-//  @Test
-//  fun testBestNextSuffix() {
-//    val remainingItems = mutableSetOf("apple", "apricot", "banana")
-//    val doNotMatchReversed = sortedSetOf("reztinappa", "noitacilppa")
-//    val sortedItems = remainingItems.toSortedSet()
-//    val bestNextSuffix = RuleTreeBuilder.bestNextSuffix(remainingItems, doNotMatchReversed, sortedItems)
-//    Assertions.assertNotNull(bestNextSuffix)
-//    Assertions.assertEquals("e", bestNextSuffix?.first)
-//  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Test
     fun testPrefixExpand() {

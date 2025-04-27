@@ -17,7 +17,7 @@ class YamlDescriberTest : TypeDescriberTestBase() {
     override val typeDescriber: TypeDescriber get() = YamlDescriber()
     override val classDescription: String
         get() =
-            //language=yaml
+
             """
              type: object
              class: com.simiacryptus.jopenai.TypeDescriberTestBase${"$"}DataClassExample
@@ -41,7 +41,7 @@ class YamlDescriberTest : TypeDescriberTestBase() {
 
     override val methodDescription
         get() =
-            //language=yaml
+
             """
             operationId: methodExample
             description: This is a method
@@ -55,12 +55,13 @@ class YamlDescriberTest : TypeDescriberTestBase() {
               application/json:
                 schema:
                   type: string
-            
+
             """.trimIndent()
 
     @Test
     override fun testDescribeRecursiveType() {
-        val expectedDescription = // Expected YAML description for RecursiveDataClass
+        val expectedDescription =
+
             """type: object
 class: com.simiacryptus.jopenai.TypeDescriberTestBase${"$"}RecursiveDataClass
 properties:

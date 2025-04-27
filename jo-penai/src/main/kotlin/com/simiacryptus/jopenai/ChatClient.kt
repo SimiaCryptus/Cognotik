@@ -180,14 +180,12 @@ open class ChatClient(
     companion object {
         private val log = LoggerFactory.getLogger(ChatClient::class.java)
 
-        // common header names
         private const val HEADER_CONTENT_TYPE = "Content-Type"
         private const val HEADER_ACCEPT = "Accept"
         private const val HEADER_AUTHORIZATION = "Authorization"
         private const val HEADER_API_KEY = "x-api-key"
         private const val HEADER_ANTHROPIC_VERSION = "anthropic-version"
 
-        // common header values
         private const val APPLICATION_JSON = "application/json"
         private const val ANTHROPIC_API_VERSION = "2023-06-01"
 
@@ -204,11 +202,10 @@ open class ChatClient(
         request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
         request.addHeader(HEADER_ACCEPT, APPLICATION_JSON)
 
-
         require(null == budget || budget!!.toDouble() > 0.0) { "Budget Exceeded" }
         when (apiProvider) {
             APIProvider.Google -> {
-//        request.addHeader("X-goog-api-key", "${key.get(apiProvider)}")
+
             }
 
             APIProvider.Anthropic -> {
@@ -418,7 +415,7 @@ open class ChatClient(
         return GenerateContentRequest(
             contents = collectRoleSequences(chatRequest.messages.filter {
                 when (it.role) {
-//                    Role.system -> false
+
                     else -> true
                 }
             }.map {
@@ -447,7 +444,7 @@ open class ChatClient(
             text = parts.joinToString("\n") { it.text ?: "" }
             partsList.removeAll(parts)
             newParts.add(Part(text = text))
-            // Copy all non-text parts
+
             val nonTextParts = partsList.takeWhile { it.text == null }
             newParts.addAll(nonTextParts)
             partsList.removeAll(nonTextParts)
@@ -511,7 +508,8 @@ open class ChatClient(
     )
 
     private data class Candidate(
-        val content: Content? = null, // Reuse or adjust your existing Content class
+        val content: Content? = null,
+
         val finishReason: String? = null, val index: Int? = null, val safetyRatings: List<SafetyRating>? = null
     )
 
@@ -595,18 +593,17 @@ open class ChatClient(
                 "prompt" to toSimplePrompt(chatRequest),
                 "max_gen_len" to model.maxOutTokens,
                 "temperature" to chatRequest.temperature,
-//        "top_p" to 0.9,
+
             )
         }
 
-        //mistral
         model.modelName.contains("mistral") -> {
             mapOf(
                 "prompt" to toSimplePrompt(chatRequest),
                 "max_tokens" to model.maxOutTokens,
                 "temperature" to chatRequest.temperature,
-//        "top_p" to 0.9,
-//        "top_k" to 50,
+
+
             )
         }
 
@@ -616,7 +613,7 @@ open class ChatClient(
                     "maxTokenCount" to model.maxTotalTokens,
                     "stopSequences" to emptyList<String>(),
                     "temperature" to chatRequest.temperature,
-//          "topP" to 0.9,
+
                 )
             )
         }
@@ -626,8 +623,8 @@ open class ChatClient(
                 "prompt" to toSimplePrompt(chatRequest),
                 "max_tokens" to model.maxTotalTokens,
                 "temperature" to chatRequest.temperature,
-//        "p" to 1,
-//        "k" to 0,
+
+
             )
         }
 
@@ -636,7 +633,7 @@ open class ChatClient(
                 "prompt" to toSimplePrompt(chatRequest),
                 "maxTokens" to model.maxTotalTokens,
                 "temperature" to chatRequest.temperature,
-//        "topP" to 0.9,
+
                 "stopSequences" to emptyList<String>(),
                 "countPenalty" to mapOf("scale" to 0),
                 "presencePenalty" to mapOf("scale" to 0),
@@ -667,13 +664,12 @@ open class ChatClient(
             ).filterValues { it != null }
         }
 
-
         else -> throw RuntimeException("Unsupported model: $model")
     }
 
     private fun anthropic_version(model: TextModel) = when {
         else -> "bedrock-2023-05-31"
-//    else -> null
+
     }
 
     private fun alternateMessagesRoles(messages: List<ChatMessage>): List<ChatMessage> {
@@ -967,7 +963,8 @@ open class ChatClient(
                         ), usage = response.meta?.let {
                             Usage(
                                 prompt_tokens = it.max_new_tokens?.toLong() ?: 0,
-                                completion_tokens = 0, // Assuming no direct mapping; adjust as needed.
+                                completion_tokens = 0,
+
                                 total_tokens = it.max_new_tokens?.toLong() ?: 0
                             )
                         })
@@ -1027,6 +1024,5 @@ open class ChatClient(
         max_tokens = chatRequest.max_tokens,
         temperature = chatRequest.temperature,
     )
-
 
 }

@@ -12,6 +12,7 @@ import Spinner from './common/Spinner';
 import './MessageList.css';
 
 const DEBUG_LOGGING = process.env.NODE_ENV === 'development';
+const DEBUG_TAB_SYSTEM = process.env.NODE_ENV === 'development';
 const CONTAINER_ID = 'message-list-' + Math.random().toString(36).substr(2, 9);
 
 /**
@@ -57,12 +58,13 @@ export const handleMessageAction = (messageId: string, action: string) => {
         const input = document.querySelector(`.reply-input[data-id="${messageId}"]`) as HTMLTextAreaElement;
         if (input) {
             const text = input.value;
-            if (!text.trim()) return; // Don't send empty messages
+            if (!text.trim()) return;
+
             const escapedText = encodeURIComponent(text);
             const message = `!${messageId},userTxt,${escapedText}`;
             WebSocketService.send(message);
             input.value = '';
-            // Optional: Add visual feedback
+
             input.style.height = 'auto';
         }
         return;
@@ -103,7 +105,7 @@ export const expandMessageReferences = (
     if (!content) return '';
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
-    // Use an iterative approach with a queue to avoid recursion
+
     const queue: HTMLElement[] = [tempDiv];
     while (queue.length > 0) {
         const currentNode = queue.shift();
@@ -113,7 +115,7 @@ export const expandMessageReferences = (
             processedRefs.add(messageID);
             const referencedMessage = messages.find(m => m.id === messageID);
             if (referencedMessage) {
-                // Replace the inner content with the referenced message content
+
                 currentNode.innerHTML = referencedMessage.content;
             } else {
                 if (DEBUG_LOGGING) {
@@ -121,7 +123,7 @@ export const expandMessageReferences = (
                 }
             }
         }
-        // Add all children for further processing (they might contain nested refs)
+
         Array.from(currentNode.children).forEach(child => {
             if (child instanceof HTMLElement) {
                 queue.push(child);
@@ -132,16 +134,16 @@ export const expandMessageReferences = (
 };
 
 const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
-    // Add archive mode class to container in archive mode
+
     const currentTheme = useSelector((state: RootState) => state.ui.theme);
     const containerClassName = `message-list-container${isArchive ? ' archive-mode' : ''} theme-${currentTheme}`;
-    // Apply theme class to container
+
     React.useEffect(() => {
         if (messageListRef.current) {
             messageListRef.current.setAttribute('data-theme', currentTheme);
         }
     }, [currentTheme]);
-    // Memoize processMessages function
+
     const processMessages = React.useCallback((msgs: Message[]) => {
         return msgs
             .filter((message) => message.id && !message.id.startsWith("z"))
@@ -149,12 +151,12 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     }, []);
 
     const verboseMode = useSelector((state: RootState) => state.ui.verboseMode);
-    // Add selector memoization
+
     const storeMessages = useSelector((state: RootState) => state.messages.messages,
         (prev, next) => prev?.length === next?.length &&
             prev?.every((msg, i) => msg.id === next[i].id && msg.version === next[i].version)
     );
-    // Optimize messages memo
+
     const messages = React.useMemo(() => {
         if (Array.isArray(propMessages)) return propMessages;
         if (Array.isArray(storeMessages)) return storeMessages;
@@ -174,12 +176,12 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     const finalMessages = React.useMemo(() => {
             const filteredMessages = processMessages(messages);
             return filteredMessages.map((message) => {
-                // Handle case where message.content might be undefined
+
                 let content = message.content || '';
                 if (content && message.id && !message.id.startsWith('z')) {
                     content = expandMessageReferences(content, messages);
                 }
-                // Handle verbose content using DOM manipulation
+
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = content;
                 const verboseElements = tempDiv.querySelectorAll('[class*="verbose"]');
@@ -196,21 +198,22 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                 };
             });
         },
-        [messages, referencesVersions, verboseMode]); // Add referencesVersions as dependency
+        [messages, referencesVersions, verboseMode]);
+
 
     useEffect(() => {
         let mounted = true;
         let observer: IntersectionObserver | null = null;
 
         if (messageListRef.current) {
-            // Use intersection observer for visible elements only
+
             observer = new IntersectionObserver((entries) => {
                 if (!mounted) return;
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const element = entry.target;
                         if (element.tagName === 'CODE') {
-                            // Batch highlighting via requestIdleCallback and ensure one reflow per batch
+
                             requestIdleCallback(() => {
                                 if (!mounted) return;
                                 Prism.highlightElement(element);
@@ -222,7 +225,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                     }
                 });
             });
-            // Observe code blocks and verbose wrappers
+
             messageListRef.current.querySelectorAll('pre code').forEach(block => {
                 if (observer) {
                     observer.observe(block);
@@ -243,10 +246,20 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     const debouncedUpdateTabs = React.useCallback(
         debounce(() => {
             try {
+                if (DEBUG_TAB_SYSTEM) {
+                    console.debug(`[MessageList ${CONTAINER_ID}] Updating tabs after content change`);
+                }
                 updateTabs();
             } catch (error) {
                 console.error(`[MessageList ${CONTAINER_ID}] Failed to update tabs`, error);
+
                 resetTabState();
+
+                try {
+                    updateTabs();
+                } catch (retryError) {
+                    console.error(`[MessageList ${CONTAINER_ID}] Failed to update tabs after reset`, retryError);
+                }
             }
         }, 250),
         []
@@ -258,8 +271,52 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     }
 
     React.useEffect(() => {
-        debouncedUpdateTabs();
-    }, [finalMessages]);
+
+        const timer = setTimeout(() => {
+            if (DEBUG_TAB_SYSTEM) {
+                console.debug(`[MessageList ${CONTAINER_ID}] Scheduling tab update after messages changed`, {
+                    messageCount: finalMessages.length
+                });
+            }
+
+            const tabContainers = document.querySelectorAll('.tabs-container');
+            if (tabContainers.length > 0) {
+                debouncedUpdateTabs();
+            } else if (DEBUG_TAB_SYSTEM) {
+                console.debug(`[MessageList ${CONTAINER_ID}] No tab containers found, skipping update`);
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [finalMessages, debouncedUpdateTabs]);
+
+    React.useEffect(() => {
+        if (!messageListRef.current) return;
+        const observer = new MutationObserver((mutations) => {
+            let tabsAdded = false;
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node instanceof HTMLElement) {
+                            if (node.querySelector('.tabs-container') || node.classList.contains('tabs-container')) {
+                                tabsAdded = true;
+                            }
+                        }
+                    });
+                }
+            });
+            if (tabsAdded) {
+                if (DEBUG_TAB_SYSTEM) {
+                    console.debug(`[MessageList ${CONTAINER_ID}] Tabs added to DOM, updating tabs`);
+                }
+                debouncedUpdateTabs();
+            }
+        });
+        observer.observe(messageListRef.current, {
+            childList: true,
+            subtree: true
+        });
+        return () => observer.disconnect();
+   }, [debouncedUpdateTabs]);
 
     return (
         <div
@@ -315,6 +372,5 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         </div>
     );
 };
-
 
 export default MessageList;

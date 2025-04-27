@@ -161,7 +161,6 @@ abstract class SelectionAction<T : Any>(
         return contextRanges.toTypedArray()
     }
 
-
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return false
@@ -184,13 +183,13 @@ abstract class SelectionAction<T : Any>(
     )
 
     open fun isLanguageSupported(computerLanguage: ComputerLanguage?): Boolean {
-        return true // LanguageUtils.isLanguageSupported(computerLanguage)
+        return true
+
     }
 
     open fun defaultSelection(editorState: EditorState, offset: Int) = editorState.line
 
     open fun editSelection(state: EditorState, start: Int, end: Int) = Pair(start, end)
-
 
     open fun processSelection(
         event: AnActionEvent?,

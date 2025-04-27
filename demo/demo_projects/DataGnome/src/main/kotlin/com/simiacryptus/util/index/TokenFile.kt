@@ -15,7 +15,6 @@ abstract class TokenFile(val file: File) {
     abstract val tokenIndices: Iterable<XBytes>
     abstract val tokenCount: XTokens
 
-
     fun read(i: XBytes, buffer: ByteArray, offset: Int = 0, length: Int = buffer.size - offset) {
         when {
             i < 0 -> read((i % fileLength) + fileLength, buffer, offset, length)
@@ -111,7 +110,7 @@ abstract class TokenFile(val file: File) {
         while (elementIndex < arrayFile.length) {
             val index = arrayFile.get(elementIndex)
             val string = codec[index]!!
-            //val size = string.encodeToByteArray().size
+
             writer.write(string)
             elementIndex += 1
         }

@@ -12,14 +12,12 @@ import kotlin.math.min
 object IterativePatchUtil {
     private enum class LineType { CONTEXT, ADD, DELETE }
 
-    // Tracks the nesting depth of different bracket types
     private data class LineMetrics(
         var parenthesesDepth: Int = 0,
         var squareBracketsDepth: Int = 0,
         var curlyBracesDepth: Int = 0
     )
 
-    // Represents a single line in the source or patch text
     private data class LineRecord(
         val index: Int,
         val line: String?,
@@ -42,7 +40,6 @@ object IterativePatchUtil {
             sb.append(" (${metrics.parenthesesDepth})[${metrics.squareBracketsDepth}]{${metrics.curlyBracesDepth}}")
             return sb.toString()
         }
-
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -74,7 +71,7 @@ object IterativePatchUtil {
         annihilateNoopLinePairs(shortDiff)
         log.debug("Generated diff with ${shortDiff.size} lines after processing")
         val patch = StringBuilder()
-        // Generate the patch text
+
         shortDiff.forEach { line ->
             when (line.type) {
                 CONTEXT -> patch.append("  ${line.line}\n")
@@ -92,25 +89,23 @@ object IterativePatchUtil {
      * @return The text after the patch has been applied.
      */
     fun applyPatch(source: String, patch: String): String {
-        // Check if patch contains any explicit diff markers (additions or deletions)
+
         val hasAddOrDeleteLines = patch.lines().any { line ->
             val trimmed = line.trimStart()
             trimmed.startsWith("+") || trimmed.startsWith("-")
         }
         if (!hasAddOrDeleteLines) {
-            // Patch appears to be provided as a snippet using context lines alone.
-            // Instead of assuming a full replacement, try to apply it as a snippet patch.
+
+
             log.info("Patch with context lines only detected. Attempting to apply as snippet patch.")
             return applySnippetPatch(source, patch)
         }
 
-        // Parse the source and patch texts into lists of line records
         val sourceLines = parseLines(source)
         var patchLines = parsePatchLines(patch, sourceLines)
         log.debug("Parsed source lines: ${sourceLines.size}, initial patch lines: ${patchLines.size}")
         link(sourceLines, patchLines, LevenshteinDistance())
 
-        // Filter out patch lines that become empty after normalization
         patchLines = patchLines.filter { it.line != null && normalizeLine(it.line!!).isNotEmpty() }
         log.debug("Filtered patch lines: ${patchLines.size}")
         val result = generatePatchedText(sourceLines, patchLines)
@@ -137,17 +132,17 @@ object IterativePatchUtil {
             }
             i++
         }
-        // Remove the pairs in reverse order to maintain correct indices
+
         toRemove.flatMap { listOf(it.first, it.second) }.distinct().sortedDescending().forEach { diff.removeAt(it) }
         log.debug("Removed ${toRemove.size} no-op line pairs")
     }
 
     private fun markMovedLines(newLines: List<LineRecord>) {
         log.debug("Starting to mark moved lines")
-        // Collect the matched source lines (via newLines’ matching) in original order.
+
         val matchedSourceLines = newLines.mapNotNull { it.matchingLine }.distinct().sortedBy { it.index }
-        // For each source line, if there is any later source line whose matching patch appears earlier,
-        // mark the current source line as moved.
+
+
         for (i in matchedSourceLines.indices) {
             val current = matchedSourceLines[i]
             for (j in i + 1 until matchedSourceLines.size) {
@@ -168,7 +163,7 @@ object IterativePatchUtil {
     ): MutableList<LineRecord> {
         val diff = mutableListOf<LineRecord>()
         log.debug("Starting diff generation")
-        // Generate raw patch without limited context windows
+
         var newLine = newLines.firstOrNull()
         while (newLine != null) {
             val sourceLine = newLine.matchingLine
@@ -179,11 +174,11 @@ object IterativePatchUtil {
                 }
 
                 else -> {
-                    // search for prior, unlinked source lines
+
                     var priorSourceLine = sourceLine.previousLine
                     val lineBuffer = mutableListOf<LineRecord>()
                     while (priorSourceLine != null && (priorSourceLine.matchingLine == null || priorSourceLine.type == DELETE)) {
-                        // Note the deletion of the prior source line
+
                         lineBuffer.add(LineRecord(-1, priorSourceLine.line, type = DELETE))
                         priorSourceLine = priorSourceLine.previousLine
                     }
@@ -199,7 +194,8 @@ object IterativePatchUtil {
     }
 
     private fun truncateContext(diff: MutableList<LineRecord>): MutableList<LineRecord> {
-        val contextSize = 3 // Number of context lines before and after changes
+        val contextSize = 3
+
         log.debug("Truncating context with size $contextSize")
         val truncatedDiff = mutableListOf<LineRecord>()
         val contextBuffer = mutableListOf<LineRecord>()
@@ -207,7 +203,7 @@ object IterativePatchUtil {
             val line = diff[i]
             when {
                 line.type != CONTEXT -> {
-                    // Start of a change, add buffered context
+
                     if (contextSize * 2 < contextBuffer.size) {
                         if (truncatedDiff.isNotEmpty()) {
                             truncatedDiff.addAll(contextBuffer.take(contextSize))
@@ -234,7 +230,7 @@ object IterativePatchUtil {
         } else {
             truncatedDiff.addAll(contextBuffer)
         }
-        // Add trailing context after the last change
+
         log.debug("Truncated diff size: ${truncatedDiff.size}")
         return truncatedDiff
     }
@@ -268,7 +264,8 @@ object IterativePatchUtil {
     ) {
         log.debug("Subsequence linking at depth $depth")
         if (depth > 10 || sourceLines.isEmpty() || patchLines.isEmpty()) {
-            return // Base case: prevent excessive recursion
+            return
+
         }
         val sourceSegment = sourceLines.filter { it.matchingLine == null }
         val patchSegment = patchLines.filter { it.matchingLine == null }
@@ -300,9 +297,9 @@ object IterativePatchUtil {
                 codeLine.matchingLine?.type == DELETE -> {
                     val patchLine = codeLine.matchingLine!!
                     log.debug("Deleting line: {}", codeLine)
-                    // Delete the line -- do not add to patched text
+
                     usedPatchLines.add(patchLine)
-// Fix: Explicitly insert any subsequent ADD lines after a DELETE
+
                     var nextPatchLine = patchLine.nextLine
                     while (nextPatchLine != null && nextPatchLine.type == ADD && !usedPatchLines.contains(nextPatchLine)) {
                         log.debug("Inserting added line after delete: {}", nextPatchLine)
@@ -319,7 +316,7 @@ object IterativePatchUtil {
                     log.debug("Patching line: {} <-> {}", codeLine, patchLine)
                     checkBeforeForInserts(patchLine, usedPatchLines, patchedText)
                     usedPatchLines.add(patchLine)
-                    // Use the source line if it matches the patch line (ignoring whitespace)
+
                     if (normalizeLine(codeLine.line ?: "") == normalizeLine(patchLine.line ?: "")) {
                         patchedText.add(codeLine.line ?: "")
                     } else {
@@ -394,22 +391,22 @@ object IterativePatchUtil {
     private fun matchFirstBrackets(sourceLines: List<LineRecord>, patchLines: List<LineRecord>): Int {
         log.debug("Starting to match first brackets")
         log.debug("Starting to link unique matching lines")
-        // Group source lines by their normalized content
+
         val sourceLineMap = sourceLines.filter {
             it.line?.lineMetrics() != LineMetrics()
         }.groupBy { normalizeLine(it.line!!) }
-        // Group patch lines by their normalized content, excluding ADD lines
+
         val patchLineMap = patchLines.filter {
             it.line?.lineMetrics() != LineMetrics()
         }.filter {
             when (it.type) {
-                ADD -> false // ADD lines are not matched to source lines
+                ADD -> false
+
                 else -> true
             }
         }.groupBy { normalizeLine(it.line!!) }
         log.debug("Created source and patch line maps")
 
-        // Find intersecting keys (matching lines) and link them
         val matched = sourceLineMap.keys.intersect(patchLineMap.keys)
         matched.forEach { key ->
             val sourceGroup = sourceLineMap[key]!!
@@ -432,18 +429,18 @@ object IterativePatchUtil {
      */
     private fun linkUniqueMatchingLines(sourceLines: List<LineRecord>, patchLines: List<LineRecord>): Int {
         log.debug("Starting to link unique matching lines. Source lines: ${sourceLines.size}, Patch lines: ${patchLines.size}")
-        // Group source lines by their normalized content
+
         val sourceLineMap = sourceLines.groupBy { normalizeLine(it.line!!) }
-        // Group patch lines by their normalized content, excluding ADD lines
+
         val patchLineMap = patchLines.filter {
             when (it.type) {
-                ADD -> false // ADD lines are not matched to source lines
+                ADD -> false
+
                 else -> true
             }
         }.groupBy { normalizeLine(it.line!!) }
         log.debug("Created source and patch line maps")
 
-        // Find intersecting keys (matching lines) and link them
         val matched = sourceLineMap.keys.intersect(patchLineMap.keys).filter {
             sourceLineMap[it]?.size == patchLineMap[it]?.size
         }
@@ -469,19 +466,22 @@ object IterativePatchUtil {
         log.debug("Starting to link adjacent matching lines. Source lines: ${sourceLines.size}")
         var foundMatch = true
         var matchedLines = 0
-        // Continue linking until no more matches are found
+
         while (foundMatch) {
             log.debug("Starting new iteration to find adjacent matches")
             foundMatch = false
             for (sourceLine in sourceLines) {
-                val patchLine = sourceLine.matchingLine ?: continue // Skip if there's no matching line
+                val patchLine = sourceLine.matchingLine ?: continue
+
                 val patchPrev = findPreviousValidLine(patchLine.previousLine, skipAdd = true, skipEmpty = true)
                 val sourcePrev = findPreviousValidLine(sourceLine.previousLine, skipEmpty = true)
 
                 if (sourcePrev != null && sourcePrev.matchingLine == null &&
                     patchPrev != null && patchPrev.matchingLine == null
-                ) { // Skip if there's already a match
-                    if (isMatch(sourcePrev, patchPrev, levenshtein)) { // Check if the lines match exactly
+                ) {
+
+                    if (isMatch(sourcePrev, patchPrev, levenshtein)) {
+
                         sourcePrev.matchingLine = patchPrev
                         patchPrev.matchingLine = sourcePrev
                         foundMatch = true
@@ -530,7 +530,7 @@ object IterativePatchUtil {
         val normalizedPatch = normalizeLine(patchPrev.line!!)
         if (normalizedSource == normalizedPatch) return true
         val maxLength = max(normalizedSource.length, normalizedPatch.length)
-        // Use Levenshtein distance if available and the strings are long enough
+
         if (maxLength > 5 && levenshteinDistance != null) {
             val distance = levenshteinDistance.apply(normalizedSource, normalizedPatch)
             log.debug("Levenshtein distance: $distance")
@@ -545,9 +545,9 @@ object IterativePatchUtil {
      */
     private fun parseLines(text: String): List<LineRecord> {
         log.debug("Starting to parse lines")
-        // Create LineRecords for each line and set links between them
+
         val lines = setLinks(text.lines().mapIndexed { index, line -> LineRecord(index, line) })
-        // Calculate bracket metrics for each line
+
         calculateLineMetrics(lines)
         log.debug("Finished parsing ${lines.size} lines")
         return lines
@@ -581,38 +581,38 @@ object IterativePatchUtil {
     private fun parsePatchLines(text: String, sourceLines: List<LineRecord>): List<LineRecord> {
         log.debug("Starting to parse patch lines")
         val patchLines = setLinks(text.lines().mapIndexed { index, line ->
-            // First, check if the line begins with the context marker ("  ") without trimming.
+
             val isContext = line.startsWith("  ")
-            // If so, remove exactly two spaces; otherwise trim normally.
+
             val content = if (isContext) line.substring(2) else line.trimStart()
             LineRecord(
                 index = index,
                 line = run {
                     when {
-                        // If the line is a comment starting with '//' or '#', treat it as context.
+
                         content.startsWith("//") || content.startsWith("#") -> content
-                        // For context lines, use the content directly.
+
                         isContext -> content
-                        // Skip diff metadata lines.
+
                         content.startsWith("+++") || content.startsWith("---") || content.startsWith("@@") -> null
-                        // For explicit insertions/deletions, remove the marker.
+
                         content.startsWith("+") -> content.substring(1)
                         content.startsWith("-") -> content.substring(1)
-                        // Otherwise, use the content as is.
+
                         else -> content
                     }
                 },
                 type = when {
-                    // Always mark a raw context line as CONTEXT.
+
                     isContext -> CONTEXT
-                    // If the line is a comment, treat it as context.
+
                     content.startsWith("//") || content.startsWith("#") -> CONTEXT
-                    // Explicit markers take precedence.
+
                     content.startsWith("+") -> ADD
                     content.startsWith("-") -> DELETE
-                    // If the content appears in the source then it is context…
+
                     sourceLines.any { normalizeLine(it.line ?: "") == normalizeLine(content) } -> CONTEXT
-                    // …otherwise, even without a marker, treat it as an insertion.
+
                     else -> ADD
                 }
             )
@@ -627,7 +627,7 @@ object IterativePatchUtil {
 
     private fun fixPatchLineOrder(patchLines: MutableList<LineRecord>) {
         log.debug("Starting to fix patch line order")
-        // Fixup: Iterate over the patch lines and look for adjacent ADD and DELETE lines; the DELETE should come first... if needed, swap them
+
         var swapped: Boolean
         do {
             swapped = false
@@ -636,7 +636,7 @@ object IterativePatchUtil {
                     swapped = true
                     val addLine = patchLines[i].copy()
                     val deleteLine = patchLines[i + 1].copy()
-                    // Swap records and update pointers
+
                     val nextLine = deleteLine.nextLine
                     val previousLine = addLine.previousLine
 
@@ -716,27 +716,27 @@ object IterativePatchUtil {
       Each diff should be preceded by a header that identifies the file being modified.
       The diff format should use + for line additions, - for line deletions.
       The diff should include 2 lines of context before and after every change.
-      
+
       Example:
-      
+
       Here are the patches:
-      
+
       ### src/utils/exampleUtils.js
       ```diff
-       // Utility functions for example feature
+
        const b = 2;
        function exampleFunction() {
       -   return b + 1;
       +   return b + 2;
        }
       ```
-      
+
       ### tests/exampleUtils.test.js
       ```diff
-       // Unit tests for exampleUtils
+
        const assert = require('assert');
        const { exampleFunction } = require('../src/utils/exampleUtils');
-       
+
        describe('exampleFunction', () => {
       -   it('should return 3', () => {
       +   it('should return 4', () => {
@@ -744,7 +744,7 @@ object IterativePatchUtil {
          });
        });
       ```
-      
+
       Alternately, the patch can be provided as a snippet of updated code with context.
       This is useful when the patch is small and can be applied directly, when creating the delete lines is cumbersome, or when creating a new file.
       """.trimIndent()
@@ -799,12 +799,12 @@ object IterativePatchUtil {
         if (patchLines.isEmpty()) return source
         val sourceLines = source.lines().toMutableList()
         val normalizedSource = sourceLines.map { normalizeLine(it) }
-        // Normalize each patch line so that comparisons ignore whitespace differences.
+
         val normalizedPatch = patchLines.map { normalizeLine(it) }
-        // Use the first and last lines in the patch as anchors.
+
         val firstContext = normalizedPatch.first()
         val lastContext = normalizedPatch.last()
-        // Find the first occurrence of the first anchor and the last occurrence of the last anchor in the source.
+
         val startIndex = normalizedSource.indexOfFirst { it == firstContext }
         val endIndex = normalizedSource.indexOfLast { it == lastContext }
         if (startIndex == -1 || endIndex == -1 || endIndex < startIndex) {
@@ -812,7 +812,7 @@ object IterativePatchUtil {
             return source
         }
         log.info("Applying snippet patch from source line $startIndex to $endIndex")
-        // Replace the block between startIndex and endIndex (inclusive) with the patch snippet.
+
         val newSource = mutableListOf<String>()
         newSource.addAll(sourceLines.subList(0, startIndex))
         newSource.addAll(patchLines)

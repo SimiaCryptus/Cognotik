@@ -44,7 +44,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private val sessionsListModel = DefaultListModel<Session>()
         private fun createModelTree(title: String, selectedModel: String?): Tree {
             val root = DefaultMutableTreeNode(title)
-            // Filter models by providers that have API keys set
+
             val providers = models()
                 .filter { model ->
                     val providerName = model.second.provider.name
@@ -58,19 +58,19 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     val modelNode = DefaultMutableTreeNode(model.second.modelName)
                     providerNode.add(modelNode)
                 }
-                // Only add provider node if it has models
+
                 if (providerNode.childCount > 0) {
                     root.add(providerNode)
                 }
             }
             val treeModel = DefaultTreeModel(root)
             val tree = Tree(treeModel)
-            // Add accessibility description
+
             tree.accessibleContext.accessibleDescription = getMessage("tree.description", title)
-            // Add keyboard navigation
+
             tree.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "toggle")
             tree.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "select")
-            // Add screen reader support for selection changes
+
             tree.addTreeSelectionListener {
                 val selectedNode = tree.lastSelectedPathComponent?.toString()
                 if (selectedNode != null) {
@@ -86,7 +86,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tree.showsRootHandles = true
             tree.addTreeSelectionListener {
                 val selectedPath = tree.selectionPath
-                if (selectedPath != null && selectedPath.pathCount == 3) { // Provider -> Model
+                if (selectedPath != null && selectedPath.pathCount == 3) {
+
                     val modelName = selectedPath.lastPathComponent.toString()
                     when (title) {
                         "Smart Model" -> AppSettingsState.instance.smartModel = modelName
@@ -95,7 +96,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     statusBar?.updateWidget(ID())
                 }
             }
-            // Expand and select the node if a model is selected
+
             if (selectedModel != null) {
                 SwingUtilities.invokeLater {
                     setSelectedModel(tree, selectedModel)
@@ -106,15 +107,15 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         private val temperatureSlider by lazy {
             val slider = JSlider(0, 100, (AppSettingsState.instance.temperature * 100).toInt())
-            // Add accessibility description
+
             slider.accessibleContext.accessibleDescription = getMessage("slider.description")
-            // Add keyboard increments
+
             slider.majorTickSpacing = 10
             slider.minorTickSpacing = 1
             slider.snapToTicks = true
-            val panel = JPanel(BorderLayout(5, 5)) // Add padding
+            val panel = JPanel(BorderLayout(5, 5))
 
-            // Add reasoning effort dropdown
+
             val reasoningPanel = JPanel(FlowLayout(FlowLayout.LEFT))
             val reasoningLabel = JLabel(getMessage("label.reasoningEffort"))
             val reasoningCombo = JComboBox(arrayOf("Low", "Medium", "High"))
@@ -148,14 +149,14 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             panel.accessibleContext.accessibleDescription = getMessage("panel.server.description")
             sessionsList.accessibleContext.accessibleDescription = getMessage("list.sessions.description")
             sessionsList.accessibleContext.accessibleName = getMessage("list.sessions.name")
-            // Add keyboard navigation for sessions list
+
             sessionsList.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "activate")
             sessionsList.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "activate")
-            // Server control buttons
+
             val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
             val startButton = JButton(getMessage("server.start"))
             val stopButton = JButton(getMessage("server.stop"))
-            // Set initial button states
+
             startButton.isEnabled = !AppServer.isRunning()
             stopButton.isEnabled = AppServer.isRunning()
 
@@ -174,20 +175,20 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             buttonPanel.add(startButton)
             buttonPanel.add(stopButton)
             panel.add(buttonPanel, BorderLayout.NORTH)
-            // Sessions list
+
             sessionsList.model = sessionsListModel
             sessionsList.cellRenderer = SessionListRenderer()
             val sessionPanel = JPanel(BorderLayout())
             sessionPanel.add(JLabel(getMessage("label.activeSessions")), BorderLayout.NORTH)
             sessionPanel.add(JScrollPane(sessionsList), BorderLayout.CENTER)
-            // Action buttons for sessions
+
             val actionPanel = JPanel(GridLayout(1, 2))
             val copyButton = JButton(getMessage("action.copyLink"))
             val openButton = JButton(getMessage("action.openLink"))
-            // Set initial button states for session actions
+
             copyButton.isEnabled = false
             openButton.isEnabled = false
-            // Add selection listener to enable/disable action buttons
+
             sessionsList.addListSelectionListener {
                 val hasSelection = sessionsList.selectedValue != null
                 copyButton.isEnabled = hasSelection
@@ -253,7 +254,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     label.background = list?.background
                     label.foreground = list?.foreground
                 }
-                // Add accessibility name to each list item
+
                 label.accessibleContext.accessibleName = label.text
                 label.accessibleContext.accessibleDescription = getMessage("session.item.description", label.text)
                 return label
@@ -264,12 +265,11 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-
         init {
             AppSettingsState.instance.onSettingsLoadedListeners.add {
                 statusBar?.updateWidget(ID())
             }
-            // Initialize selection for both trees on EDT
+
             if (AppSettingsState.instance.smartModel.isNotEmpty()) {
                 SwingUtilities.invokeLater {
                     setSelectedModel(smartModelTree, AppSettingsState.instance.smartModel)
@@ -293,13 +293,12 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             return this
         }
 
-
         override fun install(statusBar: StatusBar) {
             this.statusBar = statusBar
         }
 
         override fun dispose() {
-            // Previously commented out: connection?.disconnect()
+
         }
 
         private fun createHeader(): JPanel {
@@ -339,28 +338,27 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-
         override fun getPopup(): JBPopup {
-            // Update sessions list before creating popup
+
             updateSessionsList()
 
             val panel = JPanel(BorderLayout())
             panel.accessibleContext.accessibleDescription = getMessage("popup.description")
             panel.add(createHeader(), BorderLayout.NORTH)
-            // Create tabbed pane
+
             val tabbedPane = JTabbedPane()
-            // Add accessibility descriptions for tabs
+
             tabbedPane.accessibleContext.accessibleDescription = getMessage("tabs.description")
-            // Smart model tab
+
             val smartModelPanel = JPanel(BorderLayout())
             smartModelPanel.add(JScrollPane(smartModelTree), BorderLayout.CENTER)
-            // Fast model tab
+
             val fastModelPanel = JPanel(BorderLayout())
             fastModelPanel.add(JScrollPane(fastModelTree), BorderLayout.CENTER)
-            // Add usage tab
+
             val usagePanel = JPanel(BorderLayout())
             usagePanel.add(UsageTable(ApplicationServices.usageManager), BorderLayout.CENTER)
-            // Add server control tab
+
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)
             tabbedPane.addTab(getMessage("tab.server"), createServerControlPanel())
@@ -422,7 +420,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
     override fun getDisplayName(): String {
         return "AI Coding Assistant Settings"
     }
-
 
     override fun createWidget(project: Project): StatusBarWidget {
         return SettingsWidget()

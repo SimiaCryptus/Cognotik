@@ -111,7 +111,7 @@ tasks {
             "--add-opens",
             "java.base/sun.nio.ch=ALL-UNNAMED"
         )
-        // Fix for JUnit test assertion
+
         systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     }
 }
@@ -148,7 +148,7 @@ fun installContextMenuAction(os: String) {
     scriptPath.mkdirs()
     when {
         os.contains("windows") -> {
-            // Write a .reg file to add context menu for folders
+
             val regFile = scriptPath.resolve("add_skyenetapps_context_menu.reg")
             val templateFile = layout.projectDirectory.file("src/packaging/windows/context_menu.reg.template").asFile
             val templateContent = templateFile.readText()
@@ -157,7 +157,7 @@ fun installContextMenuAction(os: String) {
                 .replace("{{appName}}", appName)
             regFile.writeText(regContent)
             println("Wrote context menu .reg file to: $regFile")
-            // Create a batch file to apply the registry entries
+
             val batchFile = scriptPath.resolve("install_context_menu.bat")
             batchFile.writeText(
                 """
@@ -172,7 +172,7 @@ fun installContextMenuAction(os: String) {
         }
 
         os.contains("mac") -> {
-            // Write a .plist file for a Finder Quick Action (Service)
+
             val plistFile = scriptPath.resolve("Cognotik.workflow/Contents/info.plist")
             plistFile.parentFile.mkdirs()
             val plistTemplateFile = layout.projectDirectory.file("src/packaging/macos/info.plist.template").asFile
@@ -180,14 +180,12 @@ fun installContextMenuAction(os: String) {
                 .replace("{{appDisplayName}}", appDisplayName)
             plistFile.writeText(plistContent)
 
-            // Write a shell script to launch the app with the folder path
             val script = scriptPath.resolve("Cognotik.workflow/Contents/document.wflow")
             val wflowTemplateFile = layout.projectDirectory.file("src/packaging/macos/document.wflow.template").asFile
             val wflowContent = wflowTemplateFile.readText()
                 .replace("{{appName}}", appName)
             script.writeText(wflowContent)
 
-            // Add a separate Quick Action for stopping the server
             val stopScriptDir = scriptPath.resolve("StopSkyenetApps.workflow/Contents")
             stopScriptDir.mkdirs()
             val stopPlistFile = stopScriptDir.resolve("info.plist")
@@ -206,9 +204,8 @@ fun installContextMenuAction(os: String) {
             println("Wrote context menu Quick Action to: ${script.parentFile}")
         }
 
-
         os.contains("linux") -> {
-            // Write a .desktop file for Nautilus/Thunar context menu
+
             val desktopFile = scriptPath.resolve("cognotik-folder-action.desktop")
             val desktopTemplateFile =
                 layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
@@ -216,7 +213,6 @@ fun installContextMenuAction(os: String) {
                 .replace("{{appDisplayName}}", appDisplayName)
             desktopFile.writeText(desktopContent)
 
-            // Also create a main application desktop file
             val mainDesktopFile =
                 layout.buildDirectory.dir("jpackage/resources").get().asFile.resolve("cognotik.desktop")
             mainDesktopFile.parentFile.mkdirs()
@@ -282,9 +278,9 @@ tasks.register("packageMsi", JPackageTask::class) {
             from(layout.projectDirectory.file("src/main/resources/toolbarIcon_128x128.ico"))
             into(resourceDir)
         }
-        // Install context menu actions and copy files to resource dir
+
         installContextMenuAction("windows")
-        // Copy the registry file and batch script to the resource directory
+
         copy {
             from(layout.buildDirectory.dir("jpackage/scripts").get().asFile) {
                 include("add_skyenetapps_context_menu.reg")
@@ -292,10 +288,10 @@ tasks.register("packageMsi", JPackageTask::class) {
             }
             into(resourceDir)
         }
-        // Create a more user-friendly installer script with instructions
+
         val userInstallerScript = File(resourceDir, "Setup_Context_Menu.bat")
         userInstallerScript.writeText(layout.projectDirectory.file("src/packaging/windows/Setup_Context_Menu.bat.template").asFile.readText())
-        // Create a desktop shortcut to the installer script
+
         val shortcutScript = File(resourceDir, "create_installer_shortcut.ps1")
         shortcutScript.writeText(layout.projectDirectory.file("src/packaging/windows/create_installer_shortcut.ps1.template").asFile.readText())
 
@@ -349,12 +345,12 @@ tasks.register("packageDeb", JPackageTask::class) {
     onlyIf { System.getProperty("os.name").lowercase().contains("linux") }
     dependsOn("shadowJar", "prepareLinuxDesktopFile")
     doLast {
-        // Ensure resources directory exists
+
         val resourcesDir = layout.buildDirectory.dir("jpackage/resources").get().asFile
         if (!resourcesDir.exists()) {
             resourcesDir.mkdirs()
         }
-        // Get the actual shadow jar file name
+
         val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
         val shadowJarName = shadowJarFile.name
         execOperations.exec {
@@ -386,13 +382,12 @@ tasks.register("prepareLinuxDesktopFile") {
     description = "Copies the .desktop file to the jpackage input directory for Linux"
     onlyIf { System.getProperty("os.name").lowercase().contains("linux") }
     doLast {
-        // Create resources directory if it doesn't exist
+
         val resourcesDir = layout.buildDirectory.dir("jpackage/resources").get().asFile
         if (!resourcesDir.exists()) {
             resourcesDir.mkdirs()
         }
 
-        // Create the context menu desktop file
         val contextMenuDesktopFile = File(resourcesDir, "cognotik-folder-action.desktop")
         val contextMenuTemplateFile =
             layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
@@ -400,12 +395,10 @@ tasks.register("prepareLinuxDesktopFile") {
             .replace("{{appDisplayName}}", "Open with Cognotik")
         contextMenuDesktopFile.writeText(contextMenuContent)
 
-        // Create the main application desktop file
         val mainDesktopFile = File(resourcesDir, "cognotik.desktop")
         val mainDesktopTemplateFile = layout.projectDirectory.file("src/packaging/linux/main.desktop.template").asFile
         mainDesktopFile.writeText(mainDesktopTemplateFile.readText())
 
-        // Create a shell script to copy the desktop files to the correct location
         val installScript = File(resourcesDir, "postinst")
 
         val postinstTemplateFile = layout.projectDirectory.file("src/packaging/linux/postinst.template").asFile
@@ -414,7 +407,6 @@ tasks.register("prepareLinuxDesktopFile") {
         installScript.writeText(postinstContent)
         installScript.setExecutable(true)
 
-        // Create a shell script to remove the desktop files and stop the app
         val uninstallScript = File(resourcesDir, "prerm")
         val prermTemplateFile = layout.projectDirectory.file("src/packaging/linux/prerm.template").asFile
         uninstallScript.writeText(prermTemplateFile.readText())
@@ -438,7 +430,6 @@ tasks.register("package") {
     }
 }
 
-// Add a task to run the Linux packaging flow
 tasks.register("packageLinux") {
     description = "Creates a Linux package using the custom flow"
     dependsOn("clean", "shadowJar", "packageDeb")
@@ -456,7 +447,7 @@ tasks.register("updateVersionFromEnv") {
         project.version = envVersion
     }
 }
-// Add a task to verify the runtime environment
+
 tasks.register("verifyRuntimeEnvironment") {
     group = "verification"
     description = "Verifies the runtime environment for packaging"
@@ -465,7 +456,7 @@ tasks.register("verifyRuntimeEnvironment") {
         val javaVersion = System.getProperty("java.version")
         println("Java Home: $javaHome")
         println("Java Version: $javaVersion")
-        // Check if jpackage is available
+
         try {
             @Suppress("DEPRECATION")
             exec {

@@ -39,5 +39,4 @@ object BrowseUtil {
 
     val log = LoggerFactory.getLogger(BrowseUtil::class.java)
 
-
 }

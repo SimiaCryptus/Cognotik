@@ -27,7 +27,8 @@ interface UsageInterface {
     fun incrementUsage(session: Session, apiKey: String?, model: OpenAIModel, tokens: ApiModel.Usage)
 
     fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage> = getUserUsageSummary(
-        ApplicationServices.userSettingsManager.getUserSettings(user).apiKeys[APIProvider.Companion.OpenAI]!! // TODO: Support other providers
+        ApplicationServices.userSettingsManager.getUserSettings(user).apiKeys[APIProvider.Companion.OpenAI]!!
+
     )
 
     fun getUserUsageSummary(apiKey: String): Map<OpenAIModel, ApiModel.Usage>

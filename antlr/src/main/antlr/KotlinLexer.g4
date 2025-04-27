@@ -10,9 +10,8 @@
  * https://github.com/JetBrains/kotlin/tree/master/compiler/testData/psi
  */
 
-// $antlr-format alignTrailingComments true, columnLimit 150, maxEmptyLinesToKeep 1, reflowComments false, useTab false
-// $antlr-format allowShortRulesOnASingleLine true, allowShortBlocksOnASingleLine true, minEmptyLines 0, alignSemicolons ownLine
-// $antlr-format alignColons trailing, singleLineOverrulesHangingColon true, alignLexerCommands true, alignLabels true, alignTrailers true
+
+
 
 lexer grammar KotlinLexer;
 
@@ -28,7 +27,6 @@ WS: [\u0020\u0009\u000C] -> skip;
 
 NL: '\u000A' | '\u000D' '\u000A';
 
-//SEPARATORS & OPERATIONS
 
 RESERVED         : '...';
 DOT              : '.';
@@ -78,7 +76,6 @@ EQEQ             : '==';
 EQEQEQ           : '===';
 SINGLE_QUOTE     : '\'';
 
-//KEYWORDS
 
 RETURN_AT   : 'return@' Identifier;
 CONTINUE_AT : 'continue@' Identifier;
@@ -133,7 +130,6 @@ SETPARAM    : '@setparam';
 DELEGATE    : '@delegate';
 DYNAMIC     : 'dynamic';
 
-//MODIFIERS
 
 PUBLIC      : 'public';
 PRIVATE     : 'private';
@@ -161,7 +157,6 @@ NOINLINE    : 'noinline';
 CROSSINLINE : 'crossinline';
 REIFIED     : 'reified';
 
-//
 
 QUOTE_OPEN        : '"'   -> pushMode(LineString);
 TRIPLE_QUOTE_OPEN : '"""' -> pushMode(MultiLineString);

@@ -43,7 +43,6 @@ open class AutoPlanMode(
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(AutoPlanMode::class.java)
 
-    // State management
     private val currentUserMessage = AtomicReference<String?>(null)
     private val executionRecords = mutableListOf<ExecutionRecord>()
     private val thinkingStatus = AtomicReference<ThinkingStatus?>(null)
@@ -80,7 +79,7 @@ open class AutoPlanMode(
         stopLink = task.add(ui.hrefLink("Stop") {
             log.debug("Stop button clicked - terminating execution")
             continueLoop = false
-            // executor.shutdown() // Avoid shutting down the shared pool
+
             stopLink.set("Stopped")
             task.complete()
         })!!
@@ -338,19 +337,23 @@ open class AutoPlanMode(
         """.trimIndent()
             ) + formatEvalRecords(), api
 
-        ) // Raw LLM response text
-        // Process expansions recursively
+        )
+
+
         val executor = ui.socketManager?.pool
             ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
-        val processor = FixedConcurrencyProcessor(executor, 4) // Use a concurrency level of 4 for expansions
+        val processor = FixedConcurrencyProcessor(executor, 4)
+
         val expandedTasks = processTaskExpansionRecursive(
             currentText = answer.text,
-            task = task, // The main task for this getNextTask step
+            task = task,
+
             api = api,
             parsedActor = parsedActor,
             processor = processor
         )
-        /* // Original direct parsing:
+        /*
+
 
         val chosenTasks = parsedActor.getParser(api).apply(answer.text) /*answer.obj*/
         val tasks = chosenTasks.tasks?.map { task ->
@@ -361,7 +364,7 @@ open class AutoPlanMode(
           })?.taskConfig
         }
         */
-        // Combine tasks from all expansion branches
+
         val allChosenTasks = expandedTasks.flatMap { it.tasks ?: emptyList() }
         val tasks = allChosenTasks.map { taskConfigBase ->
             taskConfigBase to (if (taskConfigBase.task_type == null) {
@@ -388,39 +391,44 @@ open class AutoPlanMode(
      */
     private fun processTaskExpansionRecursive(
         currentText: String,
-        task: SessionTask, // The UI task for displaying this level/branch
+        task: SessionTask,
+
         api: ChatClient,
         parsedActor: ParsedActor<Tasks>,
         processor: FixedConcurrencyProcessor
     ): List<Tasks> {
         val match = expansionExpressionPattern.find(currentText)
         if (match == null) {
-            // Base case: No more expansions, parse this text
-            task.add(currentText.renderMarkdown) // Display the final text before parsing
+
+            task.add(currentText.renderMarkdown)
+
             return try {
                 val chosenTasks = parsedActor.getParser(api).apply(currentText)
                 listOf(chosenTasks)
             } catch (e: Exception) {
                 log.error("Error parsing task text: $currentText", e)
                 task.error(ui, e)
-                emptyList() // Return empty list if parsing fails for this branch
+                emptyList()
+
             }
         } else {
-            // Recursive case: Expansion found
+
             val expression = match.groupValues[1]
             val options = expression.split('|')
-            val tabs = TabbedDisplay(task) // Create tabs under the current task
+            val tabs = TabbedDisplay(task)
+
             val futures = options.map { option ->
                 processor.submit<List<Tasks>> {
-                    // Create a sub-task for this option's tab
+
                     val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
-                    // Replace the first occurrence of the pattern
+
                     val nextText = currentText.replaceFirst(match.value, option)
-                    // Recurse
+
                     processTaskExpansionRecursive(nextText, subTask, api, parsedActor, processor)
                 }
             }
-            return futures.flatMap { it.get() } // Collect results from all branches
+            return futures.flatMap { it.get() }
+
         }
     }
 
@@ -578,7 +586,7 @@ open class AutoPlanMode(
         ## Result:
         ${
                 record.result?.let {
-                    // Add 2 levels of header level to each header
+
                     it.split("\n").joinToString("\n") { line ->
                         if (line.startsWith("#")) {
                             "##$line"
@@ -607,7 +615,6 @@ open class AutoPlanMode(
 
     override fun contextData(): List<String> = emptyList()
 
-    // Data classes for the thinking status
     @Description("The current thinking status of the AI assistant.")
     data class ThinkingStatus(
         @Description("The original user prompt or request that initiated the conversation.")

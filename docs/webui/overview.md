@@ -27,11 +27,10 @@ abstract class ApplicationServer(
     val path: String,
     resourceBase: String = "application"
 ) {
-    // Core server configuration
+
     abstract val dataStorage: StorageInterface?
     val sessions: MutableMap<Session, SocketManager>
-    
-    // Abstract methods
+
     abstract fun newSession(user: User?, session: Session): SocketManager
     abstract fun userMessage(session: Session, user: User?, message: String, ui: ApplicationInterface, api: API)
 }
@@ -48,7 +47,7 @@ abstract class ApplicationDirectory(
     val port: Int = 8081
 ) {
     abstract val childWebApps: List<ChildWebApp>
-    
+
     data class ChildWebApp(
         val path: String,
         val server: ChatServer,
@@ -146,7 +145,7 @@ abstract class SocketManagerBase(
 ) : SocketManager {
     private val sockets: MutableMap<ChatSocket, Session>
     private val sendQueues: MutableMap<ChatSocket, Deque<String>>
-    
+
     fun newTask(cancelable: Boolean = false): SessionTask
     fun send(out: String)
 }
@@ -204,7 +203,7 @@ class CustomApp : ApplicationServer(
         ui: ApplicationInterface,
         api: API
     ) {
-        // Handle user messages
+
     }
 }
 ```
@@ -214,7 +213,7 @@ class CustomApp : ApplicationServer(
 ```kotlin
 val socketManager = object : SocketManagerBase(session, storage, user) {
     override fun onRun(userMessage: String, socket: ChatSocket) {
-        // Process incoming messages
+
     }
 }
 ```

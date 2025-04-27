@@ -9,7 +9,7 @@ plugins {
     application
 }
 application {
-    // Replace 'com.simiacryptus.MainKt' with the fully qualified name of your main class
+
     mainClass.set("com.simiacryptus.MainKt")
 }
 

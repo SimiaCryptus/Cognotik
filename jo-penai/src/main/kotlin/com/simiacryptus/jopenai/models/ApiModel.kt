@@ -22,7 +22,6 @@ interface ApiModel {
         val code: Double? = null,
     )
 
-
     data class LogProbs(
         val tokens: List<CharSequence> = ArrayList(),
         val token_logprobs: DoubleArray = DoubleArray(0),
@@ -52,14 +51,12 @@ interface ApiModel {
         }
     }
 
-
     data class Usage(
         val prompt_tokens: Long = 0,
         val completion_tokens: Long = 0,
         val total_tokens: Long = prompt_tokens + completion_tokens,
         val cost: Double? = null
     )
-
 
     data class Engine(
         val id: String? = null,
@@ -82,7 +79,6 @@ interface ApiModel {
         val echo: Boolean = false,
     )
 
-
     data class CompletionResponse(
         val id: String? = null,
         val `object`: String? = null,
@@ -103,7 +99,8 @@ interface ApiModel {
     data class SpeechRequest(
         val input: String,
         val model: String = "tts-1",
-        val voice: String = "alloy", // alloy, echo, fable, onyx, nova, and shimmer
+        val voice: String = "alloy",
+
         val response_format: String? = "mp3",
         val speed: Double? = 1.0
     )
@@ -225,7 +222,6 @@ interface ApiModel {
         val finish_reason: String? = null,
     )
 
-
     data class ContentPart(
         val type: String,
         val text: String? = null,
@@ -253,7 +249,6 @@ interface ApiModel {
                 log.info("Creating audio ContentPart")
                 return ContentPart(type = "input_audio", input_audio = AudioInput(data, format))
             }
-
 
             fun toBase64(image: BufferedImage, fmt: String): String {
                 log.info("Converting image to Base64")
@@ -287,13 +282,12 @@ interface ApiModel {
 
     data class GroqChatMessage(
         val role: Role? = null,
-        // Changed from List<ContentPart> to List<String> to meet the requirement.
+
         val content: String? = null,
         val function_call: FunctionCall? = null,
     )
 
-    // Any container classes or functions that should support GroqChatMessage should be adjusted here.
-    // For example, if there's a function that takes ChatMessage as an argument, consider overloading it or making it generic to support GroqChatMessage as well.
+
 
     data class EditRequest(
         val model: String = "",
@@ -369,7 +363,6 @@ interface ApiModel {
         val input: String? = null,
     )
 
-    // https://platform.openai.com/docs/api-reference/images/create
     data class ImageGenerationRequest(
         val prompt: String,
         val model: String? = null,
@@ -408,7 +401,7 @@ interface ApiModel {
 
     data class ImageVariationRequest(
         val image: File,
-        //val model: String? = null,
+
         val n: Int? = null,
         val responseFormat: String? = null,
         val size: String? = null,

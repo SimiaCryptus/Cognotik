@@ -47,32 +47,37 @@ import React, {useEffect, useState} from 'react';
      const ws = useWebSocket(sessionId);
      const appConfig = useSelector((state: RootState) => state.config);
      useEffect(() => {
-         // Skip effect in archive mode
+
          if (isArchive) return;
          let mounted = true;
          const loadAppConfig = async () => {
              if (!sessionId) return;
              try {
-                 // Fix: Use the correct endpoint path for app config
+
                  const config = await fetchAppConfig(sessionId);
                  if (mounted && config) {
                      console.info(`${LOG_PREFIX} App config loaded successfully`, config);
                  } else {
-                     console.warn(`${LOG_PREFIX} Could not load app config, using defaults`);
+                    if (mounted) {
+                        console.warn(`${LOG_PREFIX} Could not load app config, using defaults`);
+                    }
                  }
              } catch (error) {
-                 console.error('Failed to fetch app config:', error);
+                if (mounted) {
+                    console.error(`${LOG_PREFIX} Failed to fetch app config:`, error);
+                }
              }
          };
          loadAppConfig();
          return () => {
              mounted = false;
          };
-     }, [sessionId]); // Only depend on sessionId
+     }, [sessionId]);
+
      useEffect(() => {
-         // Skip effect in archive mode
+
          if (isArchive) return;
-         // Add cleanup flag to prevent state updates after unmount
+
          let isComponentMounted = true;
          const handleMessage = (data: WebSocketMessage) => {
              if (!isComponentMounted) return;
@@ -80,7 +85,8 @@ import React, {useEffect, useState} from 'react';
                  const newMessage = {
                      id: `${Date.now()}`,
                      content: data.data || '',
-                     type: 'assistant' as MessageType, // Changed from 'response' to 'assistant'
+                     type: 'assistant' as MessageType,
+
                      timestamp: data.timestamp,
                      isHtml: true,
                      rawHtml: data.data,
@@ -93,15 +99,15 @@ import React, {useEffect, useState} from 'react';
                  dispatch(addMessage(newMessage));
                  return;
              }
-             // Handle regular messages
+
              if (!data.data || typeof data.data !== 'string') {
                  return;
              }
-             // Ignore connect messages
+
              if (data.data.includes('"type":"connect"')) {
                  return;
              }
-             // Fix message parsing to properly handle commas in content
+
              const firstCommaIndex = data.data.indexOf(',');
              const secondCommaIndex = firstCommaIndex > -1 ? data.data.indexOf(',', firstCommaIndex + 1) : -1;
              if (firstCommaIndex === -1 || secondCommaIndex === -1) {

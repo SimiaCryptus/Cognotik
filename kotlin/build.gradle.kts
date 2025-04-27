@@ -21,12 +21,10 @@ repositories {
     }
 }
 
-
 dependencies {
 
     implementation(project(":core"))
     implementation(libs.kotlinx.coroutines)
-
 
     implementation(kotlin("stdlib"))
     implementation(kotlin("scripting-jsr223"))
@@ -45,7 +43,6 @@ dependencies {
     testImplementation(libs.logback.classic)
     testImplementation(libs.logback.core)
     testImplementation(libs.asm)
-
 
 }
 

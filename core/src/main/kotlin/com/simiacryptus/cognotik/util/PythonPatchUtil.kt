@@ -13,8 +13,7 @@ import kotlin.math.max
 object PythonPatchUtil {
     private enum class LineType { CONTEXT, ADD, DELETE }
 
-    // Represents a single line in the source or patch text.
-    // Note: Removed bracket metrics as they are not relevant for Python/YAML.
+
     private data class LineRecord(
         val index: Int,
         val line: String?,
@@ -203,7 +202,8 @@ object PythonPatchUtil {
     }
 
     private fun truncateContext(diff: MutableList<LineRecord>): MutableList<LineRecord> {
-        val contextSize = 3 // Number of context lines before and after changes.
+        val contextSize = 3
+
         log.debug("Truncating context with size $contextSize")
         val truncatedDiff = mutableListOf<LineRecord>()
         val contextBuffer = mutableListOf<LineRecord>()
@@ -277,7 +277,7 @@ object PythonPatchUtil {
         if (sourceSegment.isNotEmpty() && patchSegment.isNotEmpty()) {
             var matchedLines = linkUniqueMatchingLines(sourceSegment, patchSegment)
             matchedLines += linkAdjacentMatchingLines(sourceSegment, levenshteinDistance)
-            // For Python/YAML we skip advanced bracket matching; simply continue.
+
             if (matchedLines > 0) {
                 subsequenceLinking(sourceSegment, patchSegment, depth + 1, levenshteinDistance)
             }

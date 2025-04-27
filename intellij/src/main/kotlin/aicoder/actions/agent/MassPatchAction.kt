@@ -125,7 +125,6 @@ class MassPatchAction : BaseAction() {
         }
     }
 
-
     override fun handle(event: AnActionEvent) {
         try {
             val project = event.project
@@ -175,7 +174,7 @@ class MassPatchAction : BaseAction() {
 
         init {
             this.title = title
-// Set the default values for the UI elements from userSettings
+
             settingsUI.transformationMessage.text = userSettings.transformationMessage
             settingsUI.autoApply.isSelected = userSettings.autoApply
             init()
@@ -184,10 +183,12 @@ class MassPatchAction : BaseAction() {
         override fun createCenterPanel(): JComponent {
             val panel = JPanel(BorderLayout()).apply {
                 val filesScrollPane = JBScrollPane(settingsUI.filesToProcess).apply {
-                    preferredSize = Dimension(400, 300) // Adjust the preferred size as needed
+                    preferredSize = Dimension(400, 300)
+
                 }
                 add(JLabel("Files to Process"), BorderLayout.NORTH)
-                add(filesScrollPane, BorderLayout.CENTER) // Make the files list the dominant element
+                add(filesScrollPane, BorderLayout.CENTER)
+
 
                 val optionsPanel = JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -226,7 +227,6 @@ class MassPatchServer(
     private val log = org.slf4j.LoggerFactory.getLogger(MassPatchServer::class.java)
     private lateinit var _root: Path
 
-
     override val singleInput = false
     override val stickyInput = true
     private val mainActor: SimpleActor
@@ -242,7 +242,6 @@ class MassPatchServer(
                 temperature = AppSettingsState.instance.temperature,
             )
         }
-
 
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)

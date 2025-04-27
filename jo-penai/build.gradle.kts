@@ -61,7 +61,6 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 }
 
-
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
@@ -79,9 +78,9 @@ publishing {
                 name.set("Jo-Penai")
                 description.set("Java OpenAI API Client")
                 url.set("https://github.com/SimiaCryptus/Cognotik")
-                // Add license, developers, and scm sections similar to core module
+
             }
         }
     }
-    // Add repositories section similar to core module
+
 }

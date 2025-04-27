@@ -80,7 +80,8 @@ open class Selenium2S3(
         log.info("Save root: $saveRoot")
         driver.navigate().to(url)
         driver.navigate().refresh()
-        Thread.sleep(5000) // Wait for javascript to load
+        Thread.sleep(5000)
+
 
         htmlPages += mutableMapOf((currentFilename ?: url.file.split("/").last()) to editPage(driver.pageSource ?: ""))
         val baseUrl = url.toString().split("#").first()
@@ -302,7 +303,8 @@ open class Selenium2S3(
 
     protected open fun saveJS(js: String, saveRoot: String, filename: String) {
         val finalJs = linkReplacements.toList().sortedBy { it.first.length }
-            .fold(js) { acc, (href, relative) -> //language=RegExp
+            .fold(js) { acc, (href, relative) ->
+
                 acc.replace("""(?<![/\w])$href""".toRegex(), relative)
             }
         cloud!!.upload(
@@ -360,13 +362,17 @@ open class Selenium2S3(
         link.startsWith(base) -> toRelative(
             base,
             link.removePrefix(base).replace("/{2,}".toRegex(), "/").removePrefix("/")
-        ) // relativize
-        link.startsWith("http") -> null // absolute
-        else -> link // relative
+        )
+
+        link.startsWith("http") -> null
+
+        else -> link
+
     }
 
     protected open fun toArchivePath(link: String): String = when {
-        link.startsWith("fileIndex") -> link.split("/").drop(2).joinToString("/") // rm file segment
+        link.startsWith("fileIndex") -> link.split("/").drop(2).joinToString("/")
+
         else -> link
     }
 
@@ -397,7 +403,7 @@ open class Selenium2S3(
             "gz" -> "application/gzip"
             "bz2" -> "application/bzip2"
             "mp3" -> "audio/mpeg"
-            //"tsv" -> "text/tab-separated-values"
+
             "csv" -> "text/csv"
             "txt" -> "text/plain"
             "xml" -> "text/xml"
@@ -427,10 +433,9 @@ open class Selenium2S3(
         log.debug("Closing", Exception())
         driver.quit()
         httpClient.close()
-        //driver.close()
-        //Companion.chromeDriverService.close()
-    }
 
+
+    }
 
     companion object {
         private val log = org.slf4j.LoggerFactory.getLogger(Selenium2S3::class.java)
@@ -447,12 +452,12 @@ open class Selenium2S3(
         fun chromeDriver(headless: Boolean = true, loadImages: Boolean = !headless): ChromeDriver {
             val osname = System.getProperty("os.name")
             val chromePath = when {
-                // Windows
+
                 osname.contains("Windows") -> listOf(
                     "C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe",
                     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chromedriver.exe"
                 )
-                // Ubuntu
+
                 osname.contains("Linux") -> listOf("/usr/bin/chromedriver")
                 else -> throw RuntimeException("Not implemented for $osname")
             }

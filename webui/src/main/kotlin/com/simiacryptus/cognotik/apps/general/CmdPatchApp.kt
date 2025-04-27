@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.apps.general
 
-
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -44,7 +43,8 @@ class CmdPatchApp(
     private fun getFiles(
         virtualFiles: Array<out File>?
     ): MutableSet<Path> {
-        val codeFiles = mutableSetOf<Path>()    // Set to avoid duplicates
+        val codeFiles = mutableSetOf<Path>()
+
         virtualFiles?.forEach { file ->
             if (file.isDirectory) {
                 if (file.name.startsWith(".")) return@forEach
@@ -58,9 +58,9 @@ class CmdPatchApp(
     }
 
     override fun codeFiles() = getFiles(files)
-        .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
-        .map { root.toPath().relativize(it) ?: it }.toSet()
+        .filter { it.toFile().length() < 1024 * 1024 / 2 }
 
+        .map { root.toPath().relativize(it) ?: it }.toSet()
 
     private val tripleTilde = "```"
 
@@ -113,7 +113,6 @@ class CmdPatchApp(
                     }
                 }
 
-                // Extracted function to read the process stream (error or input)
                 fun readStream(stream: java.io.InputStream) {
                     var lastUpdate = 0L
                     stream.bufferedReader().use { reader ->
@@ -133,7 +132,6 @@ class CmdPatchApp(
                 Thread { readStream(process.errorStream) }.start()
                 Thread { readStream(process.inputStream) }.start()
 
-
                 if (!process.waitFor(5, TimeUnit.MINUTES)) {
                     process.destroy()
                     cancelButton?.clear()
@@ -148,10 +146,10 @@ class CmdPatchApp(
         return OutputResult(1, "No commands to execute")
     }
 
-
     private fun outputString(buffer: StringBuilder): String {
         var output = buffer.toString()
-        output = output.replace(Regex("\\x1B\\[[0-?]*[ -/]*[@-~]"), "") // Remove terminal escape codes
+        output = output.replace(Regex("\\x1B\\[[0-?]*[ -/]*[@-~]"), "")
+
         output = truncate(output)
         return output
     }

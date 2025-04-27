@@ -4,16 +4,26 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
  import {debounce, getAllTabStates, restoreTabStates, updateTabs} from '../../utils/tabHandling';
  import Prism from "prismjs";
  import mermaid from "mermaid";
+
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'loose',
+  theme: 'default',
+  logLevel: 3,
+
+});
+
  const initialState: MessageState = {
      messages: [],
      pendingMessages: [],
      messageQueue: [],
      isProcessing: false,
      messageVersions: {},
-     pendingUpdates: [], // Initialize pendingUpdates
+     pendingUpdates: [],
+
  };
  const sanitizeHtmlContent = (content: string): string => {
-     // Sanitizing HTML content to prevent XSS attacks
+
      return DOMPurify.sanitize(content, {
          ALLOWED_TAGS: ['div', 'span', 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'tr', 'td', 'th', 'thead', 'tbody',
              'button', 'input', 'label', 'select', 'option', 'textarea', 'code', 'pre', 'div', 'section', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'figure', 'figcaption',],
@@ -26,8 +36,28 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
      updateTabs();
      Prism.highlightAll();
      try {
-         mermaid.run();
-         document.querySelectorAll('.mermaid').forEach(el => el.classList.add('mermaid-processed'));
+
+        const mermaidElements = document.querySelectorAll('.mermaid:not(.mermaid-processed)');
+        if (mermaidElements.length > 0) {
+            mermaidElements.forEach(el => {
+                try {
+
+                    if (el.getBoundingClientRect().height > 0) {
+                        mermaid.render(`mermaid-${Date.now()}-${Math.floor(Math.random() * 10000)}`, el.textContent || '')
+                            .then(({ svg }) => {
+                                el.innerHTML = svg;
+                                el.classList.add('mermaid-processed');
+                            })
+                            .catch(err => {
+                                console.warn('[Mermaid] Failed to render diagram:', err?.message);
+                                el.classList.add('mermaid-error');
+                            });
+                    }
+                } catch (err) {
+                    console.warn('[Mermaid] Error processing diagram:', err);
+                }
+            });
+        }
      } catch (error) {
          console.error('Failed to render mermaid diagram:', error);
      }
@@ -49,20 +79,21 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
              const existingVersion = state.messageVersions[messageId];
              state.messageVersions[messageId] = messageVersion || Date.now();
              if (existingVersion) {
-                 // Update the message in place instead of removing and re-adding
+
                  const existingIndex = state.messages.findIndex(msg => msg.id === messageId);
                  if (existingIndex !== -1) {
                      if (action.payload.isHtml && action.payload.rawHtml && !action.payload.sanitized) {
                          debouncedUpdate();
-                         // Check if rawHtml is a string before sanitizing
-                         action.payload.content = typeof action.payload.rawHtml === 'string' 
+
+                         action.payload.content = typeof action.payload.rawHtml === 'string'
+
                              ? sanitizeHtmlContent(action.payload.rawHtml)
                              : '';
                          action.payload.sanitized = true;
-                         // console.debug(` HTML content sanitized for message ${action.payload.id}`);
+
                      }
                      state.messages[existingIndex] = action.payload;
-                     // Force version update for reference messages
+
                      if (messageId.startsWith('z')) {
                          action.payload.version = Date.now();
                      }

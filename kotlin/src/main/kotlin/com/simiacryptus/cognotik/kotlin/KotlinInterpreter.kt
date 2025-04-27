@@ -146,7 +146,6 @@ open class KotlinInterpreter(
         return out.joinToString("\n")
     }
 
-
     companion object {
         private val log = LoggerFactory.getLogger(KotlinInterpreter::class.java)
 
@@ -162,7 +161,6 @@ open class KotlinInterpreter(
                 ) + "^"
             }\n```".trim()
 
-        // TODO: Make this threadlocal with wrapper methods
         var classLoader: ClassLoader? = KotlinInterpreter::class.java.classLoader
 
     }

@@ -320,27 +320,22 @@ object StringManipulationUtils {
             return template?.format(*args) ?: ""
         }
 
-        // Method to remove all whitespace from a string
         fun removeWhitespace(str: String?): String {
             return str?.replace("\\s".toRegex(), "") ?: ""
         }
 
-        // Method to replace the first occurrence of a substring with another substring
         fun replaceFirst(str: String?, oldValue: String, newValue: String): String {
             return str?.replaceFirst(oldValue, newValue) ?: ""
         }
 
-        // Method to replace the last occurrence of a substring with another substring
         fun replaceLast(str: String?, oldValue: String, newValue: String): String {
             return str?.replaceLast(oldValue.toRegex(), newValue) ?: ""
         }
 
-        // Method to truncate a string to a specified length
         fun truncate(str: String?, maxLength: Int): String {
             return if (str != null && str.length > maxLength) str.substring(0, maxLength) else str ?: ""
         }
 
-        // Method to wrap text at a specified width
         fun wrapText(str: String?, width: Int): String {
             if (str == null) return ""
             val regex = "(?<=\\G.{$width})".toRegex()

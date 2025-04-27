@@ -28,7 +28,9 @@ class DataValidationUtilsTest {
         assertTrue(DataValidationUtils.isValidDate("2023-10-15"))
         assertFalse(DataValidationUtils.isValidDate("15-10-2023"))
         assertFalse(DataValidationUtils.isValidDate("2023/10/15"))
-        assertFalse(DataValidationUtils.isValidDate("2023-02-30")) // Invalid date
-        assertFalse(DataValidationUtils.isValidDate("2023-13-01")) // Invalid month
+        assertFalse(DataValidationUtils.isValidDate("2023-02-30"))
+
+        assertFalse(DataValidationUtils.isValidDate("2023-13-01"))
+
     }
 }

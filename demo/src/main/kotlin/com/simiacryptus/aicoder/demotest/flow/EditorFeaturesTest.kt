@@ -58,7 +58,6 @@ class EditorFeaturesTest : DemoTestBase(
         Thread.sleep(500)
     }
 
-
     @Test
     fun testEditorFeatures() = with(remoteRobot) {
         tts("Welcome to the AI Coder Editor Features demonstration, where we'll explore powerful tools that enhance your coding workflow.")?.play(
@@ -88,7 +87,7 @@ class EditorFeaturesTest : DemoTestBase(
             log.info("Starting Smart Paste test")
             tts("First, let's look at Smart Paste, which intelligently converts code between different programming languages.")?.play()
             tts("I'll copy a JavaScript function to the clipboard, and we'll convert it to Kotlin.")?.play()
-            // Set sample code in clipboard
+
             setClipboardContent(
                 """
                 function calculateSum(a, b) {
@@ -108,14 +107,15 @@ class EditorFeaturesTest : DemoTestBase(
                 .firstOrNull()?.click()
             log.debug("Smart Paste operation triggered")
             tts("Notice how Smart Paste automatically converts the JavaScript syntax to idiomatic Kotlin code.")?.play()
-            Thread.sleep(3000) // Wait for AI processing
+            Thread.sleep(3000)
+
         }
 
         step("Test Fast Paste") {
             log.info("Starting Fast Paste test")
             tts("Next, we'll try Fast Paste, which is optimized for quick conversions of simpler code snippets.")?.play()
             tts("This time, we'll convert a Java class that's wrapped in HTML markup.")?.play()
-            // Set HTML content in clipboard
+
             setClipboardContent(
                 """
                 <pre><code>

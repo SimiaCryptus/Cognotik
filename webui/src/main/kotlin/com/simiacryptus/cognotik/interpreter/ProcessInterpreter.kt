@@ -18,9 +18,8 @@ open class ProcessInterpreter(
     final override fun getLanguage(): String = defs["language"]?.toString() ?: "bash"
     override fun getSymbols() = defs
 
-
     override fun validate(code: String): Throwable? {
-        // Always valid
+
         return null
     }
 
@@ -42,7 +41,7 @@ open class ProcessInterpreter(
             process.destroy()
             throw RuntimeException("Timeout; output: $output; error: $error")
         } else if (error.isNotEmpty()) {
-            //throw RuntimeException(error)
+
             return "ERROR:\n```text\n$error\n```\n\nOUTPUT:\n```text\n$output\n```"
         } else {
             return output

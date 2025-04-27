@@ -19,30 +19,30 @@ class ModelTests {
     @TestFactory
     @Execution(ExecutionMode.CONCURRENT)
     fun generateChatModelTests(): Array<DynamicNode> {
-        // Retrieve all ChatModels
+
         return APIProvider.values().filter {
             when (it) {
-//                APIProvider.Google -> true
-//                APIProvider.OpenAI -> true
-//                APIProvider.Anthropic -> true
-//                APIProvider.AWS -> true
-//                APIProvider.Mistral -> true
-//                APIProvider.Groq -> true
-//                APIProvider.Perplexity -> true
-//                APIProvider.ModelsLab -> true
-//                else -> true
+
+
+
+
+
+
+
+
+
                 else -> false
             }
         }.flatMap { provider ->
-            // Generate a dynamic test for each model
+
             ChatModel.values()
                 .filter { it.value.provider == provider }
                 .values
                 .filter { model ->
                     when (model) {
-//                        LLaMA38bInstructAWS -> true
-//                        LLaMA370bInstructAWS -> true
-//                        else -> false
+
+
+
                         else -> true
                     }
                 }.map { model ->

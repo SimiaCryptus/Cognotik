@@ -28,7 +28,7 @@ data class PatchLine(
 }
 
 object DiffUtil {
-    // ... (previous code remains unchanged)
+
 
     private val log = LoggerFactory.getLogger(DiffUtil::class.java)
 
@@ -136,7 +136,6 @@ object DiffUtil {
                 (index < patchLines.size - 1 && patchLines[index + 1].type != Unchanged)
             ) {
 
-                // Print context lines before the change
                 val contextStart = maxOf(lastPrintedLine + 1, index - contextLines)
                 for (i in contextStart until index) {
                     if (i > lastPrintedLine) {
@@ -145,7 +144,6 @@ object DiffUtil {
                     }
                 }
 
-                // Print the change
                 val prefix = when (lineDiff.type) {
                     Added -> "+ "
                     Deleted -> "- "

@@ -201,7 +201,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             }
         })
 
-
         return tabbedPane
     }
 
@@ -209,7 +208,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         val dialog = JDialog(null as Frame?, "Export Configuration", true)
         dialog.layout = BorderLayout()
 
-        // Encrypt keys before converting to JSON
         val encryptedSettings = AppSettingsState.instance.copy()
         encryptedSettings.apiKeys?.replaceAll { k, v -> EncryptionUtil.encrypt(v, password.text) ?: v }
         val configJson = JsonUtil.toJson(encryptedSettings)
@@ -320,7 +318,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         applyButton.addActionListener {
             try {
                 val importedSettings = fromJson<AppSettingsState>(textArea.text, AppSettingsState::class.java)
-                // Confirm before applying
+
                 val confirm = JOptionPane.showConfirmDialog(
                     dialog,
                     "Are you sure you want to apply this configuration? This will overwrite your current settings.",
@@ -337,7 +335,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                             UserSuppliedModel::class.java
                         )
                     } ?: emptyList())
-                    // Update API keys and bases
+
                     importedSettings.apiKeys?.forEach { (provider, key) ->
                         AppSettingsState.instance.apiKeys?.put(provider, key)
                     }
@@ -345,7 +343,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         AppSettingsState.instance.apiBase?.put(provider, base)
                     }
 
-                    // Update UI to reflect imported settings
                     write(AppSettingsState.instance, component!!)
 
                     JOptionPane.showMessageDialog(
@@ -409,8 +406,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 )
             } ?: emptyList())
             val model = component.apis.model as DefaultTableModel
-            model.rowCount = 0 // Clear existing rows
-            model.rowCount = 0 // Clear existing rows
+            model.rowCount = 0
+
+            model.rowCount = 0
+
             val apiKeys = settings.apiKeys
             if (null == apiKeys) {
                 log.warn("API keys are null")
@@ -510,6 +509,5 @@ fun String?.safeDouble() = if (null == this) 0.0 else when {
     } catch (e: NumberFormatException) {
         0.0
     }
-
 
 }

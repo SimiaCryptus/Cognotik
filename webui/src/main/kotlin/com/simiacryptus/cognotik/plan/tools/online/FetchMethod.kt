@@ -9,7 +9,6 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.ExecutorService
 
-
 interface FetchStrategy {
     fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String
 }
@@ -62,7 +61,7 @@ enum class FetchMethod {
                 )
                 log.debug("Saving simplified content for URL: $url")
                 task.saveRawContent(webSearchDir.resolve("reduced_pages"), url, content)
-                // Cache the processed content
+
                 task.urlContentCache[url] = content
                 log.info("Successfully processed URL: $url, content length: ${content.length}")
                 return content

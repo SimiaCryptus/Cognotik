@@ -204,12 +204,11 @@ class MyCustomApp(
         ui: ApplicationInterface,
         api: API
     ) {
-        // Process the user message and display results
+
         val task = ui.newTask()
         task.add("Processing your request...")
 
-        // Use Cognotik components
-        // ...
+
 
         task.complete("Done!")
     }

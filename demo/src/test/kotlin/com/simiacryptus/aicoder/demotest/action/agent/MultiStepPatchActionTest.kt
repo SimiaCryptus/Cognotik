@@ -124,7 +124,8 @@ class MultiStepPatchActionTest : DemoTestBase(
                     val request = "Apply a patch to this class"
                     request.forEach { char ->
                         chatInput.sendKeys(char.toString())
-                        sleep(100) // Add a small delay between each character
+                        sleep(100)
+
                     }
                     sleep(1000)
 

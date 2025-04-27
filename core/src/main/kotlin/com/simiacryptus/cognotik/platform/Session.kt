@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.platform
 
-
 import java.nio.ByteBuffer
 import java.time.LocalDate
 import java.util.*

@@ -55,7 +55,7 @@ object MarkdownUtil {
         var htmlContent = html
         matches.forEach { match ->
             var mermaidCode = match.groups[1]!!.value
-            //mermaidCode = mermaidCode.htmlDecode()
+
             val fixedMermaidCode = fixupMermaidCode(mermaidCode)
             var mermaidDiagramHTML = """<pre class="mermaid">$fixedMermaidCode</pre>"""
             try {
@@ -89,7 +89,7 @@ object MarkdownUtil {
 
     var MMDC_CMD: List<String> = listOf(System.getProperty("mmdc", "mmdc"))
     private fun renderMermaidToSVG(mermaidCode: String): String {
-        // mmdc -i input.mmd -o output.svg
+
         val tempInputFile = Files.createTempFile("mermaid", ".mmd").toFile()
         val tempOutputFile = Files.createTempFile("mermaid", ".svg").toFile()
         tempInputFile.writeText(StringEscapeUtils.unescapeHtml4(mermaidCode))
@@ -122,7 +122,6 @@ object MarkdownUtil {
         return svgContent
     }
 
-    // Simplified parsing states
     enum class State {
         DEFAULT, IN_NODE, IN_EDGE, IN_LABEL, IN_KEYWORD
     }
@@ -138,19 +137,19 @@ object MarkdownUtil {
             when (currentState) {
                 State.DEFAULT -> {
                     if (code.startsWith(keywords.find { code.startsWith(it, index) } ?: "", index)) {
-                        // Start of a keyword
+
                         currentState = State.IN_KEYWORD
                         stringBuilder.append(code[index])
                     } else
                         if (code[index] == '[' || code[index] == '(' || code[index] == '{') {
-                            // Possible start of a label
+
                             currentState = State.IN_LABEL
                             labelStart = index
                         } else if (code[index].isWhitespace() || code[index] == '-') {
-                            // Continue in default state, possibly an edge
+
                             stringBuilder.append(code[index])
                         } else {
-                            // Start of a node
+
                             currentState = State.IN_NODE
                             stringBuilder.append(code[index])
                         }
@@ -158,7 +157,7 @@ object MarkdownUtil {
 
                 State.IN_KEYWORD -> {
                     if (code[index].isWhitespace()) {
-                        // End of a keyword
+
                         currentState = State.DEFAULT
                     }
                     stringBuilder.append(code[index])
@@ -166,29 +165,29 @@ object MarkdownUtil {
 
                 State.IN_NODE -> {
                     if (code[index] == '-' || code[index] == '>' || code[index].isWhitespace()) {
-                        // End of a node, start of an edge or space
+
                         currentState = if (code[index].isWhitespace()) State.DEFAULT else State.IN_EDGE
                         stringBuilder.append(code[index])
                     } else {
-                        // Continue in node
+
                         stringBuilder.append(code[index])
                     }
                 }
 
                 State.IN_EDGE -> {
                     if (!code[index].isWhitespace() && code[index] != '-' && code[index] != '>') {
-                        // End of an edge, start of a node
+
                         currentState = State.IN_NODE
                         stringBuilder.append(code[index])
                     } else {
-                        // Continue in edge
+
                         stringBuilder.append(code[index])
                     }
                 }
 
                 State.IN_LABEL -> {
                     if (code[index] == ']' || code[index] == ')' || code[index] == '}') {
-                        // End of a label
+
                         val label = code.substring(labelStart + 1, index)
                         val escapedLabel = "\"${label.replace("\"", "'")}\""
                         stringBuilder.append(escapedLabel)

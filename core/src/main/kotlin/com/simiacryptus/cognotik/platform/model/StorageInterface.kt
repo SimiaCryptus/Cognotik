@@ -83,7 +83,6 @@ interface StorageInterface {
         @Deprecated("Use Session.newUserID() instead", ReplaceWith("Session.newUserID()"))
         inline fun newUserID(): Session = Session.newUserID()
 
-
         @Deprecated("Use Session.parseSessionID(sessionID) instead", ReplaceWith("Session.parseSessionID(sessionID)"))
         inline fun parseSessionID(sessionID: String): Session = Session.parseSessionID(sessionID)
 

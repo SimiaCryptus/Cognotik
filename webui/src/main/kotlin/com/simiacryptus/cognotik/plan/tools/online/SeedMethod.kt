@@ -12,7 +12,6 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-
 interface SeedStrategy {
     fun getSeedItems(
         taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
@@ -33,11 +32,11 @@ enum class SeedMethod {
                     throw IllegalArgumentException("Search query is required when using Google Search seed method")
                 }
                 val client = HttpClient.newBuilder().build()
-                // Use taskConfig parameter consistently
+
                 val query = taskConfig?.search_query?.trim()
                 log.debug("Using search query: $query")
                 val encodedQuery = URLEncoder.encode(query, "UTF-8")
-                // Define constants to avoid magic numbers
+
                 val resultCount = 10
                 val searchLimit = 20
                 log.debug("Fetching user settings for Google Search API")

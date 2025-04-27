@@ -68,13 +68,12 @@ open class UnifiedPlanApp(
     ) {
         try {
             log.debug("Received user message: $userMessage")
-            // Check if the message contains expansion expressions
+
             if (expansionExpressionPattern.find(userMessage) != null) {
                 processMessageWithExpansions(session, user, userMessage, ui, api)
                 return
             }
 
-            // Get or create the cognitive mode for this session
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
                 if (api is ChatClient) api.budget = settings.budget
@@ -90,7 +89,6 @@ open class UnifiedPlanApp(
                 ).apply { initialize() }
             }
 
-            // Handle the user message with the appropriate cognitive mode
             cognitiveMode.handleUserMessage(userMessage, ui.newTask(true))
 
         } catch (e: Throwable) {
@@ -136,10 +134,10 @@ open class UnifiedPlanApp(
         task: com.simiacryptus.cognotik.webui.session.SessionTask,
         processor: FixedConcurrencyProcessor
     ) {
-        // Find the first expansion pattern in the message
+
         val match = expansionExpressionPattern.find(currentMessage)
         if (match == null) {
-            // Base case: No more expansions, process the message normally
+
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
                 if (api is ChatClient) api.budget = settings.budget
@@ -153,21 +151,21 @@ open class UnifiedPlanApp(
                     describer = describer
                 ).apply { initialize() }
             }
-            // Handle the expanded message with the cognitive mode
+
             cognitiveMode.handleUserMessage(currentMessage, task)
         } else {
-            // Recursive case: Process each expansion option
+
             val expression = match.groupValues[1]
             val options = expression.split('|')
             val tabs = TabbedDisplay(task)
             options.map { option ->
                 processor.submit {
-                    // Create a sub-task for this option
+
                     val subUi = ApplicationInterface(ui.socketManager)
                     val subTask = subUi.newTask(false).apply { tabs[option] = placeholder }
-                    // Replace the first occurrence of the pattern with this option
+
                     val nextMessage = currentMessage.replaceFirst(match.value, option)
-                    // Recursively process the modified message
+
                     processMessageRecursive(
                         session = session,
                         user = user,

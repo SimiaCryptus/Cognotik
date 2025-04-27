@@ -198,13 +198,13 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
 
     private fun summarizeContext(node: JsonNode, path: String, jsonNode: JsonNode): String {
         var summary = mutableMapOf<String, Any>()
-        // Add siblings and descendants
+
         node.fields().forEach { (key, value) ->
             if (value.isPrimitive()) {
                 summary[key] = value.asText()
             }
         }
-        // Add siblings of parent nodes
+
         val pathSegments = path.split(".")
         for (i in pathSegments.size - 1 downTo 1) {
             val parentPath = pathSegments.subList(0, i).joinToString(".")
@@ -221,7 +221,6 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
         }
         return JsonUtil.toJson(summary)
     }
-
 
     data class EmbeddingSearchResult(
         val file: String,

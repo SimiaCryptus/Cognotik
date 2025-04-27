@@ -80,4 +80,3 @@ abstract class ChatServer(private val resourceBase: String = "application") {
     }
 }
 
-

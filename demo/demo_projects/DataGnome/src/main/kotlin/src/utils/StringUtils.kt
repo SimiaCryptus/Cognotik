@@ -47,7 +47,7 @@ object StringUtils {
         registerOperation("join") { _, args -> join(args[0] as List<String>, args[1] as String) }
         registerOperation("toUpperCase") { str, _ -> toUpperCase(str) }
         registerOperation("toLowerCase") { str, _ -> toLowerCase(str) }
-        // Add more default operations as needed
+
     }
 
     /**

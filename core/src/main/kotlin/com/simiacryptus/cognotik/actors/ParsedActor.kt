@@ -91,7 +91,6 @@ open class ParsedActor<T : Any>(
                 ).choices.first().message?.content
                 var contentUnwrapped = content?.trim() ?: throw RuntimeException("No response")
 
-                // If Plaintext is found before the { or ```, strip it
                 if (!contentUnwrapped.startsWith("{") && !contentUnwrapped.startsWith("```")) {
                     val start = contentUnwrapped.indexOf("{").coerceAtMost(contentUnwrapped.indexOf("```"))
                     val end =
@@ -99,7 +98,6 @@ open class ParsedActor<T : Any>(
                     if (start < end && start >= 0) contentUnwrapped = contentUnwrapped.substring(start, end)
                 }
 
-                // if input is wrapped in a ```json block, remove the block
                 if (contentUnwrapped.startsWith("```json")) {
                     val endIndex = contentUnwrapped.lastIndexOf("```")
                     if (endIndex > 7) {
@@ -170,6 +168,5 @@ open class ParsedActor<T : Any>(
     companion object {
         private val log = LoggerFactory.getLogger(ParsedActor::class.java)
     }
-
 
 }

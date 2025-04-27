@@ -272,7 +272,6 @@ class Feature:
     def display_feature_info(self):
         print(f"Feature: {self.name}\nPriority: {self.priority}\nEstimated Time: {self.estimated_time}\nStatus: {self.status}\n")
 
-
 ## Example usage
 feature_list = [
     Feature("Login System", "High", "2 weeks"),
@@ -280,10 +279,8 @@ feature_list = [
     Feature("Payment Integration", "High", "4 weeks"),
 ]
 
-
 ## Update the status of a feature
 feature_list[0].update_status("In Progress")
-
 
 ## Display information about all features
 for feature in feature_list:
@@ -4456,7 +4453,6 @@ your development efforts on track and aligned with your product vision.
 ```python
 import pandas as pd
 
-
 ## Define the features and their attributes
 features = [
     {"Feature": "User Authentication", "Priority": "High", "Status": "In Progress", "Estimated Completion": "Q1 2023"},
@@ -4465,10 +4461,8 @@ features = [
     {"Feature": "Dark Mode", "Priority": "Low", "Status": "Planned", "Estimated Completion": "Q4 2023"},
 ]
 
-
 ## Create a DataFrame
 roadmap_df = pd.DataFrame(features)
-
 
 ## Set the feature name as the index
 roadmap_df.set_index("Feature", inplace=True)
@@ -4695,7 +4689,6 @@ ensures your development efforts remain aligned with your product strategy.
 ```python
 import pandas as pd
 
-
 ## Define the features and their attributes
 features = [
     {"Feature": "User Authentication", "Priority": "High", "Estimated Launch": "Q1 2023", "Status": "In Progress"},
@@ -4704,14 +4697,11 @@ features = [
     {"Feature": "Advanced Analytics", "Priority": "High", "Estimated Launch": "Q4 2023", "Status": "Planned"}
 ]
 
-
 ## Create a DataFrame
 roadmap_df = pd.DataFrame(features)
 
-
 ## Sort the DataFrame by Priority and Estimated Launch
 roadmap_df.sort_values(by=["Priority", "Estimated Launch"], ascending=[False, True], inplace=True)
-
 
 ## Display the roadmap
 print(roadmap_df)
@@ -4861,41 +4851,32 @@ changes in priorities, timelines, or objectives based on new information or feed
 
 ## Feature Development Roadmap for [Product Name]
 
-
 ### Vision
 * Briefly describe the long-term vision of the product.
-
 
 ### Strategy
 * Outline the strategy to achieve this vision.
 
-
 ### Roadmap
-
 
 #### Q1 2023
 - **Feature 1**: Description (Objective, Key Results, Responsible Team)
 - **Improvement 1**: Description (Objective, Key Results, Responsible Team)
 
-
 #### Q2 2023
 - **Feature 2**: Description (Objective, Key Results, Responsible Team)
 - **Improvement 2**: Description (Objective, Key Results, Responsible Team)
-
 
 #### Q3 2023
 - **Feature 3**: Description (Objective, Key Results, Responsible Team)
 - **Improvement 3**: Description (Objective, Key Results, Responsible Team)
 
-
 #### Q4 2023
 - **Feature 4**: Description (Objective, Key Results, Responsible Team)
 - **Improvement 4**: Description (Objective, Key Results, Responsible Team)
 
-
 ### Communication Plan
 * How and when the roadmap will be updated and shared with stakeholders.
-
 
 ### Feedback Loop
 * Mechanisms for collecting and incorporating feedback into the roadmap.

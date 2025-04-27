@@ -17,7 +17,6 @@ class ListWrapperTest {
 
     private val objectMapper = JsonUtil.objectMapper()
 
-    //    @Test
     fun testSerializationOfComplexObject() {
         val team = Team(ListWrapper(listOf(Person("Alice", 30), Person("Bob", 25))))
         val mapper = objectMapper

@@ -60,7 +60,8 @@ open class OAuthGoogle(
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
             val redirect = req.getParameter("redirect") ?: ""
             val state = URLEncoder.encode(redirect, StandardCharsets.UTF_8.toString())
-            val authorizationUrl = // don't want to specify redirectUri to give control of it to user of this class
+            val authorizationUrl =
+
                 GoogleAuthorizationCodeRequestUrl(
                     /* authorizationServerEncodedUrl = */ flow.authorizationServerEncodedUrl,
                     /* clientId = */ flow.clientId,
@@ -74,7 +75,6 @@ open class OAuthGoogle(
             resp.sendRedirect(authorizationUrl)
         }
     }
-
 
     private inner class CallbackServlet : HttpServlet() {
         override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {

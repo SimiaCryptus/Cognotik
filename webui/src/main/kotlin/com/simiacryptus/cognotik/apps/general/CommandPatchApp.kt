@@ -21,7 +21,8 @@ class CommandPatchApp(
     val command: String,
 ) : PatchApp(root, settings, api, model, parsingModel) {
     override fun codeFiles() = getFiles(files)
-        .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
+        .filter { it.toFile().length() < 1024 * 1024 / 2 }
+
         .map { root.toPath().relativize(it) ?: it }.toSet()
 
     override fun output(
@@ -61,7 +62,8 @@ class CommandPatchApp(
         fun getFiles(
             files: Array<out File>?
         ): MutableSet<Path> {
-            val codeFiles = mutableSetOf<Path>()    // Set to avoid duplicates
+            val codeFiles = mutableSetOf<Path>()
+
             files?.forEach { file ->
                 if (file.isDirectory) {
                     if (file.name.startsWith(".")) return@forEach

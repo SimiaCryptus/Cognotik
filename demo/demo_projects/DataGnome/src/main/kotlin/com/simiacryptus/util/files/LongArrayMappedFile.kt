@@ -47,7 +47,8 @@ class LongArrayMappedFile(private val file: File) {
     fun append(value: Long) {
         val newLength = (length.asLong + 1) * 8
         channel.truncate(newLength)
-        _mappedByteBuffer = null // Invalidate the current buffer
+        _mappedByteBuffer = null
+
         mappedByteBuffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, newLength)
         mappedByteBuffer.putLong((length.asLong * 8 - 8).toInt(), value)
     }

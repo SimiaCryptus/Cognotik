@@ -171,7 +171,6 @@ class CodeChangeAction : BaseAction() {
 
                 val api = (api as ChatClient).getChildClient(task)
 
-                // First stage: Analyze files with fast model
                 val fileAnalyzer = ParsedActor(
                     resultClass = FileAnalysis::class.java,
                     prompt = """
@@ -193,7 +192,6 @@ class CodeChangeAction : BaseAction() {
 
                 task.add("Identified relevant files: ${initialAnalysis.obj.filesToModify?.joinToString(", ")}")
 
-                // Second stage: Process selected files with smart model
                 val relevantPaths = ((initialAnalysis.obj.filesToModify ?: emptyList()) +
                         (initialAnalysis.obj.contextFiles ?: emptyList())).mapNotNull { filePath ->
                     allFiles.find { it.toString().endsWith(filePath) }
@@ -203,9 +201,9 @@ class CodeChangeAction : BaseAction() {
                     return SimpleActor(
                         prompt = """
                             You are a helpful AI that helps people with coding.
-                            
+
                             You will be answering questions about the following code:
-                            
+
                         """.trimIndent() + codeSummary(relevantPaths) + patchFormatPrompt,
                         model = AppSettingsState.instance.smartModel.chatModel()
                     )

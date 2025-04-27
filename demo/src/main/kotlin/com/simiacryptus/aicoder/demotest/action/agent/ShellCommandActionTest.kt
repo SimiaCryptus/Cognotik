@@ -84,12 +84,11 @@ class ShellCommandActionTest : DemoTestBase(
                         byXpath("//div[contains(@class, 'Menu') and contains(@text,'Agents')]")
                     )
                         .firstOrNull() ?: throw Exception("Agents menu not found")
-                    // Move mouse and wait briefly for submenu to appear
+
                     robot.mouseMove(agentsMenu.locationOnScreen.x + 5, aiCoderMenu.locationOnScreen.y + 5)
                     agentsMenu.click()
                     Thread.sleep(100)
 
-                    // Find and click Shell Agent menu item
                     val shellAgentMenu = agentsMenu.findAll(
                         CommonContainerFixture::class.java,
                         byXpath("//div[contains(@class, 'MenuItem') and contains(@text,'Shell Agent')]")
@@ -127,7 +126,6 @@ class ShellCommandActionTest : DemoTestBase(
                         1000
                     )
 
-                    // Enter command
                     val command = if (System.getProperty("os.name").lowercase().contains("windows")) {
                         "dir"
                     } else {
@@ -136,12 +134,10 @@ class ShellCommandActionTest : DemoTestBase(
                     chatInput.sendKeys(command)
                     Thread.sleep(1000)
 
-                    // Submit command
                     wait.until(ExpectedConditions.elementToBeClickable(By.id("send-message-button"))).click()
                     log.info("Command submitted")
                     tts("Watch as the command executes and the AI analyzes its output in real-time.")?.play(2000)
 
-                    // Wait for response
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.className("response-message")))
                     tts("The command has completed. Notice how the AI provides context and explanations for the output, making it easier to understand your project's structure.")?.play(
                         3000

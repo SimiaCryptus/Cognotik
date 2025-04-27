@@ -34,7 +34,6 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
         }
     }
 
-
     private fun serveStaticPage(resp: HttpServletResponse?) {
         resp?.contentType = "text/html"
         val inputStream = this::class.java.getResourceAsStream("/welcome/welcome.html")
@@ -100,6 +99,5 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
     companion object {
         val log = LoggerFactory.getLogger(WelcomeServlet::class.java)
     }
-
 
 }

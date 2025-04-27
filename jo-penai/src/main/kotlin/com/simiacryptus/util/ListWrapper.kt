@@ -75,7 +75,7 @@ open class ListWrapper<T : Any>(
                 log.info("Deserialized ListWrapper with items: {}", items)
                 return ListWrapper(items)
             }
-            // If the node is an object, we assume it's a wrapper object with a single field
+
             log.info("Deserializing ListWrapper from object node")
             val items = jacksonObjectMapper().convertValue(node.fields().next().value, List::class.java)
             return ListWrapper(items as List<T>)

@@ -42,14 +42,17 @@ AI models (text, chat, embedding, image, audio) across multiple providers.
 Each provider (OpenAI, Anthropic, Google, AWS, etc.) has a singleton object (e.g., `OpenAIModels`, `AnthropicModels`,
 `GoogleModels`, etc.) containing all known models for that provider as `ChatModel` instances, keyed by a canonical name.
 
-- **Dynamic provider abstraction**:  
+- **Dynamic provider abstraction**:
+
   The `APIProvider` dynamic enum class enumerates all supported API providers, with their base URLs.
 
-- **Serialization/Deserialization**:  
+- **Serialization/Deserialization**:
+
   All models support Jackson serialization/deserialization using custom serializers/deserializers. Models can be
   referenced by name in JSON/YAML, and deserialized to the correct class instance.
 
-- **Pricing and usage**:  
+- **Pricing and usage**:
+
   Each model class provides a `pricing()` method to compute cost based on usage (tokens, characters, seconds, etc).
   Token and output limits are encoded per model.
 
@@ -63,15 +66,15 @@ Each provider (OpenAI, Anthropic, Google, AWS, etc.) has a singleton object (e.g
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ApiModel
 
-// Get a model by name (case-insensitive, works for all registered models)
 val model: ChatModel = ChatModel.values()["GPT4o"]!!
 
-// Access properties
-println(model.modelName)           // "gpt-4o"
-println(model.maxTotalTokens)      // 128000
-println(model.provider.name)       // "OpenAI"
+println(model.modelName)
 
-// Compute pricing for a usage record
+println(model.maxTotalTokens)
+
+println(model.provider.name)
+
+
 val usage = ApiModel.Usage(prompt_tokens = 1000, completion_tokens = 500)
 val cost = model.pricing(usage)
 println("Cost: $cost")
@@ -122,7 +125,7 @@ val MyNewModel = ChatModel(
 )
 val values = mapOf(
     "MyNewModel" to MyNewModel,
-    // ... other models ...
+
 )
 ```
 

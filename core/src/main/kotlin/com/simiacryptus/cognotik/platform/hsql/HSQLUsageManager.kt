@@ -42,12 +42,12 @@ class HSQLUsageManager(private val dbFile: File) : UsageInterface {
         )
     }
 
-
     override fun incrementUsage(session: Session, apiKey: String?, model: OpenAIModel, tokens: ApiModel.Usage) {
         try {
             log.debug("Incrementing usage for session: ${session.sessionId}, apiKey: $apiKey, model: ${model.modelName}")
             val usageKey = UsageInterface.UsageKey(session, apiKey, model)
-            val usageValues = UsageInterface.UsageValues() //getUsageValues(usageKey)
+            val usageValues = UsageInterface.UsageValues()
+
             usageValues.addAndGet(tokens)
             saveUsageValues(usageKey, usageValues)
             log.debug("Usage incremented for session: ${session.sessionId}, apiKey: $apiKey, model: ${model.modelName}")

@@ -23,7 +23,7 @@ import java.time.Instant
 import kotlin.io.path.readText
 
 open class AddApplyFileDiffLinks {
-    // Add constants for commonly used strings
+
     companion object {
         var loggingEnabled = true
         private val diffApplier = SimpleDiffApplier()
@@ -45,8 +45,10 @@ open class AddApplyFileDiffLinks {
                 val duration = Duration.between(startTime, Instant.now())
                 val originalSize = filepath.toFile().length()
                 val stackTrace = Thread.currentThread().stackTrace
-                    .drop(2) // Skip getStackTrace
-                    .take(10) // Get first 5 frames
+                    .drop(2)
+
+                    .take(10)
+
                     .joinToString("\n    ")
                 val logEntry = buildString {
                     appendLine("─".repeat(80))
@@ -121,21 +123,17 @@ open class AddApplyFileDiffLinks {
         ""
     }
 
-
     protected open fun createPatchFixerActor(chatModel: ChatModel): SimpleActor {
         return SimpleActor(
             prompt = """
         You are a helpful AI that helps people with coding.
-        
+
         """.trimIndent() + patchFormatPrompt, model = chatModel, temperature = 0.3
         )
     }
 
-
-    // Function to reverse the order of lines in a string
     private fun String.reverseLines(): String = lines().reversed().joinToString("\n")
 
-    // Main function to add apply file diff links to the response
     fun instrument(
         self: SocketManagerBase,
         root: Path,
@@ -148,10 +146,10 @@ open class AddApplyFileDiffLinks {
         defaultFile: String? = null,
     ): String {
         self.apply {
-            // Check if there's an unclosed code block and close it if necessary
+
             val initiator = getInitiatorPattern()
             if (response.contains(initiator) && !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())) {
-                // Single diff block without the closing ``` due to LLM limitations... add it back and recurse
+
                 return@instrument instrument(
                     self = self,
                     root = root,
@@ -164,22 +162,25 @@ open class AddApplyFileDiffLinks {
                 )
             }
 
-            val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex() // capture filename
-            val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex() // capture filename
+            val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
+
+            val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex()
+
             val findAll = codeblockPattern.findAll(response).toList()
                 .groupBy { block -> findHeader(block, response) ?: defaultFile }
             val findAllGreedy = codeblockGreedyPattern.findAll(response).toList()
                 .groupBy { block -> findHeader(block, response) ?: defaultFile }
             val resolvedMatches = mutableListOf<Pair<String?, List<MatchResult>>>()
             if (findAllGreedy.values.flatten().any { it.groupValues[1] == "markdown" }) {
-//        resolvedMatches.add(findAllGreedy)
+
                 findAllGreedy.forEach { s, matchResults -> resolvedMatches.add(s to matchResults) }
             } else {
-//        resolvedMatches.add(findAll)
+
                 findAll.forEach { s, matchResults -> resolvedMatches.add(s to matchResults) }
             }
 
-            val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex() // capture filename
+            val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
+
             val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
             fun getFile(root: Path, header: String): File = root.resolve(resolve(root, header)).toFile()
 
@@ -200,7 +201,6 @@ open class AddApplyFileDiffLinks {
                 }
             }.flatMap { it.second }.map { it.range to it }.toList()
 
-            // Process diff blocks and add patch links
             val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, diffBlock ->
                 val diffValue = diffBlock.second.groupValues[2].trim()
                 val header =
@@ -209,11 +209,11 @@ open class AddApplyFileDiffLinks {
                 val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, api, shouldAutoApply)
                 markdown.replace(diffBlock.second.value, newValue)
             }
-            // Process code blocks and add save links
+
             val withSaveLinks = codeblocks.foldIndexed(withPatchLinks) { index, markdown, codeBlock ->
                 val lang = codeBlock.second.groupValues[1]
                 var codeValue = codeBlock.second.groupValues[2].trim().trimIndent()
-                // If all lines start with a '+' or '-', remove them
+
                 if (codeValue.lines().all { it.startsWith('+') || it.startsWith('-') }) {
                     codeValue = codeValue.lines().joinToString("\n") { it.drop(1) }
                 }
@@ -228,12 +228,12 @@ open class AddApplyFileDiffLinks {
     }
 
     private fun findHeader(block: MatchResult, response: String): String? {
-        // Capture markdown headers (e.g., "### filename")...
+
         val markdownHeaderPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
-        // ...and file header banners, e.g.:
-        // ─────────────────────────────────────────────
-        // File: src/main/kotlin/com/simiacryptus/cognotik/apps/general/PatchApp.kt
-        // ─────────────────────────────────────────────
+
+
+
+
         val fileHeaderPattern = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
         val headers = mutableListOf<Pair<IntRange, String>>()
         markdownHeaderPattern.findAll(response).forEach { match ->
@@ -298,21 +298,19 @@ open class AddApplyFileDiffLinks {
      */
     private fun resolve(root: Path, filename: String): String {
         log.debug("Resolving filename '{}' relative to root '{}'", filename, root)
-        // Trim whitespace from filename
+
         var filename = filename.trim().split(" ").firstOrNull() ?: ""
-        // Return early if filename is empty
+
         if (filename.isEmpty()) {
             log.warn("Empty filename provided")
             return ""
         }
 
-        // Extract filename from backticks if present (e.g., `filename.txt` -> filename.txt)
         if (pattern_backticks.containsMatchIn(filename)) {
             filename = pattern_backticks.find(filename)!!.groupValues[1]
             log.trace("Extracted filename from backticks: {}", filename)
         }
 
-        // Try to convert filename to absolute path and make it relative to root if possible
         try {
             val path = File(filename).toPath()
             if (path.startsWith(root)) {
@@ -323,15 +321,15 @@ open class AddApplyFileDiffLinks {
             log.error("Error resolving filename '{}': {}", filename, e.message, e)
         }
 
-        // If file doesn't exist directly under root, try to find it recursively
         try {
             val resolvedPath = root.resolve(filename)
             if (!resolvedPath.toFile().exists() || !resolvedPath.toFile().isFile) {
                 log.debug("File not found directly under root, searching recursively")
-                // Search recursively through root directory for matching file
-                // Normalize path separators to handle cross-platform paths
+
+
                 root.toFile().listFilesRecursively()
-                    .filter { it.isFile }  // Only consider files, not directories
+                    .filter { it.isFile }
+
                     .find { it.toString().replace("\\", "/").endsWith(filename.replace("\\", "/")) }
                     ?.toString()
                     ?.apply {
@@ -344,7 +342,6 @@ open class AddApplyFileDiffLinks {
             log.debug("Stack trace:", e)
         }
 
-        // If file doesn't exist directly under root, try to find it using string distance
         try {
             if (!root.resolve(filename).toFile().exists()) {
                 log.debug("File not found, attempting fuzzy match")
@@ -373,8 +370,10 @@ open class AddApplyFileDiffLinks {
         val files = mutableListOf<File>()
         this.listFiles()?.filter {
             !isGitignore(it.toPath()) &&
-                    !it.name.startsWith(".") &&  // Skip hidden files/directories
-                    !it.name.equals("node_modules") // Skip node_modules directory
+                    !it.name.startsWith(".") &&
+
+                    !it.name.equals("node_modules")
+
         }?.forEach {
             files.add(it.absoluteFile)
             if (it.isDirectory) {
@@ -384,7 +383,6 @@ open class AddApplyFileDiffLinks {
         return files
     }
 
-    // Function to render a diff block with apply and revert options
     private fun SocketManagerBase.renderDiffBlock(
         root: Path,
         filename: String,
@@ -414,7 +412,6 @@ open class AddApplyFileDiffLinks {
             renderMarkdown("\n```\n${e.stackTraceToString()}\n```\n", ui = ui)
         }
 
-        // Function to create a revert button
         fun createRevertButton(filepath: Path, originalCode: String, handle: (Map<Path, String>) -> Unit): String {
             val relativize = try {
                 root.relativize(filepath)
@@ -530,7 +527,7 @@ open class AddApplyFileDiffLinks {
         }
 
         if (echoDiff.isNotBlank()) {
-            // Add "Fix Patch" button if the patch is not valid
+
             if (!newCode.isValid) {
                 fixTask.complete(hrefLink("Fix Patch", classname = "href-link cmd-button") {
                     try {
@@ -557,7 +554,6 @@ open class AddApplyFileDiffLinks {
                 })
             }
 
-            // Create "Apply Diff (Bottom to Top)" button
             val applyReversed = hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
                 try {
                     originalCode = load(filepath)
@@ -574,7 +570,7 @@ open class AddApplyFileDiffLinks {
                     applydiffTask.error(null, e)
                 }
             }
-            // Create "Revert" button
+
             revert = hrefLink("Revert", classname = "href-link cmd-button") {
                 try {
                     filepath.toFile().writeText(originalCode, Charsets.UTF_8)
@@ -641,8 +637,6 @@ open class AddApplyFileDiffLinks {
         )
         patch2Task.complete("")
 
-
-        // Create main tabs for displaying diff and verification information
         val mainTabs = displayMapInTabs(
             mapOf(
                 "Diff" to diffTask.placeholder,
@@ -669,6 +663,5 @@ open class AddApplyFileDiffLinks {
             errors.joinToString("\n") { "* ${it.message} (line ${it.line})" }
         )
 
-    // Function to load file contents
     private fun load(filepath: Path?) = loadFile(filepath)
 }

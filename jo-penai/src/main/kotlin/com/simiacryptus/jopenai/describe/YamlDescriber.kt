@@ -25,7 +25,6 @@ open class YamlDescriber : TypeDescriber() {
         log.info("YamlDescriber initialized with markupLanguage: $markupLanguage")
     }
 
-
     override val markupLanguage: String
         get() = "yaml"
 
@@ -275,7 +274,7 @@ ${it.name}:
     override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
         if (stackMax <= 0) return "..."
         if (!coverMethods) return ""
-        // If implClass is a Kotlin class, resolve the KFunction and call the other describe method
+
         if (clazz != null && clazz.isKotlinClass()) {
             val function = clazz.kotlin.functions.find { it.name == self.name }
             if (function != null) {
@@ -433,7 +432,6 @@ ${it.name}:
                 .joinToString("\n")
         }\n  ${defaultValueInfo}".filterEmptyLines()
     }
-
 
     private fun toYaml(self: Type, stackMax: Int, describedTypes: MutableSet<String>): String {
         if (describedTypes.contains(self.toString())) return self.toString()

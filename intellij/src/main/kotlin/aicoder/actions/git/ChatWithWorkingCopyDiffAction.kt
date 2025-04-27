@@ -80,7 +80,6 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
         }.start()
     }
 
-
     private fun getWorkingCopyDiff(changeListManager: ChangeListManager): String {
         val changes = changeListManager.allChanges
         return changes.joinToString("\n\n") { change ->

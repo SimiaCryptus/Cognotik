@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
-// New configuration classes for enhanced customization
 data class PhaseConfig(
     val extract: String,
     val expansionQuestion: String,
@@ -57,11 +56,11 @@ class EnhancedOutlineApp(
         get() = ("<div>" + renderMarkdown(
             """
           Enhanced Outline Agent allows you to customize each phase.
-          
+
           You may configure:
           • Extraction for each phase (what to extract)
           • Custom questions (what to answer when expanding the next level)
-          
+
           For example:
           1. **Initial Phase**: ${settings?.phaseConfigs?.getOrNull(0)?.extract ?: "Default extraction"}
           2. **Expansion Phase**: ${settings?.phaseConfigs?.getOrNull(1)?.expansionQuestion ?: "Default question"}
@@ -117,7 +116,7 @@ class EnhancedOutlineAgent(
     val userMessage: String,
     val ui: ApplicationInterface
 ) {
-    // Create custom actors using enhanced phase configuration
+
     val actors = EnhancedOutlineActors.actorMap(
         temperature = temperature,
         firstLevelModel = parsingModel,

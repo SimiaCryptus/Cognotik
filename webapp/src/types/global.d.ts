@@ -4,5 +4,4 @@ declare global {
     }
 }
 
-
 export type {AppConfig};

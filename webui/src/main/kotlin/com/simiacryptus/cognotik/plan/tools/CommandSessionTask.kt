@@ -19,8 +19,10 @@ class CommandSessionTask(
     companion object {
         private val log = LoggerFactory.getLogger(CommandSessionTask::class.java)
         private val activeSessions = ConcurrentHashMap<String, Process>()
-        private const val TIMEOUT_MS = 30000L // 30 second timeout
-        private const val MAX_SESSIONS = 10 // Maximum number of concurrent sessions
+        private const val TIMEOUT_MS = 30000L
+
+        private const val MAX_SESSIONS = 10
+
 
         private fun cleanupInactiveSessions() {
             activeSessions.entries.removeIf { (id, process) ->
@@ -162,7 +164,8 @@ class CommandSessionTask(
             appendLine("```")
             appendLine("Output:")
             appendLine("```")
-            appendLine(result.take(5000)) // Limit result size
+            appendLine(result.take(5000))
+
             appendLine("```")
         }
     }

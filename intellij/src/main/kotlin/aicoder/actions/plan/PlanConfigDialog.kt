@@ -33,12 +33,11 @@ class PlanConfigDialog(
     val singleTaskMode: Boolean = false,
     var apiBudget: Double = 10.0
 ) : DialogWrapper(project) {
-    // New UI elements for AutoPlanMode parameters
+
     private val maxTaskHistoryCharsField = JBTextField("20000")
     private val maxTasksPerIterationField = JBTextField("3")
     private val maxIterationsField = JBTextField("100")
 
-    // New UI elements for graph file input when "Graph" mode is selected.
     private val graphFileTextField = JTextField(com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile, 20)
     private val selectGraphFileButton = JButton("Select File")
     private val graphFilePanel = JPanel().apply {
@@ -46,10 +45,10 @@ class PlanConfigDialog(
         add(graphFileTextField)
         add(Box.createHorizontalStrut(5))
         add(selectGraphFileButton)
-        isVisible = false // initially hidden
+        isVisible = false
+
     }
 
-    // New panel for AutoPlan settings to appear only when "Auto Plan" is selected.
     private val autoPlanPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(JLabel("Max Task History Chars:"))
@@ -89,10 +88,10 @@ class PlanConfigDialog(
 
     val cognitiveModeCombo = ComboBox(arrayOf("Single Task", "Plan Ahead", "Auto Plan", "Graph")).apply {
         preferredSize = Dimension(200, 30)
-        selectedIndex = 0 // default to "Auto Plan" for example
+        selectedIndex = 0
+
     }
 
-    // Budget slider and label
     private val budgetSlider = JSlider(MIN_BUDGET, MAX_BUDGET, apiBudget.toInt()).apply {
         addChangeListener {
             apiBudget = value.toDouble()
@@ -100,7 +99,6 @@ class PlanConfigDialog(
         }
     }
     private val budgetLabel = JLabel(BUDGET_LABEL.format(apiBudget))
-
 
     private fun validateModelSelection(taskType: TaskType<*, *>, model: ChatModel?): Boolean {
         if (model == null && settings.getTaskSettings(taskType).enabled) {
@@ -405,26 +403,23 @@ class PlanConfigDialog(
         }
         taskTypeList.selectedIndex = 0
 
-        // Add an action listener to transition the UI when the cognitive mode changes.
-
 
         cognitiveModeCombo.addActionListener {
             val selected = cognitiveModeCombo.selectedItem as String
-            // Show the graph file input only when "Graph" is selected.
+
             graphFilePanel.isVisible = (selected == "Graph")
-            // Show the AutoPlan settings only when "Auto Plan" is selected.
+
             autoPlanPanel.isVisible = (selected == "Auto Plan")
 
-            // For "Single Task" mode, keep taskTypeList enabled so the user can select a task,
-            // while disabling all the task checkboxes.
+
             if (selected == "Single Task") {
                 taskTypeList.isEnabled = true
                 if (taskTypeList.selectedIndex == -1) {
                     taskTypeList.selectedIndex = 0
                 }
-                // Disable all checkboxes
+
                 taskConfigs.values.forEach { it.enabledCheckbox.isEnabled = false }
-                // Automatically select the currently selected task only.
+
                 val selectedType = (taskTypeList.selectedValue as TaskType<*, *>).name
                 TaskType.values().forEach { taskType ->
                     taskConfigs[taskType.name]?.enabledCheckbox?.isSelected = (taskType.name == selectedType)
@@ -435,19 +430,17 @@ class PlanConfigDialog(
             }
         }
 
-        // Setup file select button to open a file chooser.
         selectGraphFileButton.addActionListener {
             val chooser = JFileChooser("")
             val result = chooser.showOpenDialog(null)
             if (result == JFileChooser.APPROVE_OPTION) {
                 val selectedFile = chooser.selectedFile
                 graphFileTextField.text = selectedFile.absolutePath
-                // Update the graph file used by GraphOrderedPlanMode.
+
                 com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile = selectedFile.absolutePath
             }
         }
 
-        // Keep the text field in sync with the GraphOrderedPlanMode property.
         graphFileTextField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
             override fun insertUpdate(e: javax.swing.event.DocumentEvent?) {
                 com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode.graphFile = graphFileTextField.text
@@ -468,7 +461,6 @@ class PlanConfigDialog(
             settings.temperature = temperatureSlider.value / 100.0
         }
     }
-
 
     private fun saveCurrentConfig() {
         val configName = JOptionPane.showInputDialog(
@@ -533,7 +525,7 @@ class PlanConfigDialog(
             temperatureLabel.text = TEMPERATURE_LABEL.format(validatedTemp)
             settings.autoFix = config.autoFix
             autoFixCheckbox.isSelected = config.autoFix
-            // Load API budget if available, otherwise use default
+
             apiBudget = config.apiBudget ?: DEFAULT_BUDGET.toDouble()
             budgetSlider.value = apiBudget.toInt()
             budgetLabel.text = BUDGET_LABEL.format(apiBudget)
@@ -552,7 +544,7 @@ class PlanConfigDialog(
                     }
                 }
             }
-            // Update UI once after all changes
+
             taskTypeList.repaint()
         } catch (e: Exception) {
             JOptionPane.showMessageDialog(
@@ -672,7 +664,7 @@ class PlanConfigDialog(
             configPanel.saveSettings()
         }
         settings.autoFix = autoFixCheckbox.isSelected
-        // Save AutoPlanMode settings
+
         settings.maxTaskHistoryChars = maxTaskHistoryCharsField.text.toIntOrNull() ?: 20000
         settings.maxTasksPerIteration = maxTasksPerIterationField.text.toIntOrNull() ?: 3
         settings.maxIterations = maxIterationsField.text.toIntOrNull() ?: 100

@@ -1,6 +1,6 @@
 async function fetchData(endpoint) {
     try {
-        // Add session id to the endpoint as a path parameter
+
         const modalContent = document.getElementById('modal-content');
         if (modalContent) modalContent.innerHTML = "<div>Loading...</div>";
         const response = await fetch(endpoint);
@@ -13,7 +13,6 @@ async function fetchData(endpoint) {
         console.error('Error fetching data:', error);
     }
 }
-
 
 export function showModal(endpoint) {
     fetchData(endpoint).then(r => {
@@ -30,11 +29,12 @@ export function closeModal() {
 (function () {
     class SvgPanZoom {
 
-        // Make sure to update the init function to avoid attaching multiple listeners to the same SVG
         init(svgElement) {
             console.log("Initializing SvgPanZoom for an SVG element");
-            if (svgElement.dataset.svgPanZoomInitialized) return; // Skip if already initialized
-            svgElement.dataset.svgPanZoomInitialized = true; // Mark as initialized
+            if (svgElement.dataset.svgPanZoomInitialized) return;
+
+            svgElement.dataset.svgPanZoomInitialized = true;
+
             this.svgElement = svgElement;
             this.currentTransform = {x: 0, y: 0, scale: 1};
             this.onMove = this.onMove.bind(this);
@@ -44,7 +44,6 @@ export function closeModal() {
             this.attachEventListeners();
         }
 
-        // Ensure the SVG has a <g> element for transformations
         ensureTransformGroup() {
             console.log("Ensuring transform group exists in the SVG");
             if (!this.svgElement.querySelector('g.transform-group')) {
@@ -58,7 +57,6 @@ export function closeModal() {
             this.transformGroup = this.svgElement.querySelector('g.transform-group');
         }
 
-        // Attach event listeners for panning and zooming
         attachEventListeners() {
             console.log("Attaching event listeners for panning and zooming");
             this.svgElement.addEventListener('click', this.onClick.bind(this));
@@ -66,7 +64,6 @@ export function closeModal() {
             this.svgElement.addEventListener('wheel', this.handleZoom.bind(this));
         }
 
-        // Start panning
         onClick(event) {
             if (this.isPanning) {
                 this.isPanning = false;
@@ -80,7 +77,6 @@ export function closeModal() {
             }
         }
 
-        // Perform panning
         onMove(event) {
             const moveScale = this.svgElement.viewBox.baseVal.width / this.svgElement.width.baseVal.value;
             if (this.isPanning === false) return;
@@ -102,18 +98,17 @@ export function closeModal() {
             this.updateTransform();
         }
 
-        // Handle zooming
         handleZoom(event) {
             event.preventDefault();
             const direction = event.deltaY > 0 ? -1 : 1;
             const zoomFactor = 0.1;
             this.currentTransform.scale += direction * zoomFactor;
-            this.currentTransform.scale = Math.max(0.1, this.currentTransform.scale); // Prevent inverting
+            this.currentTransform.scale = Math.max(0.1, this.currentTransform.scale);
+
             console.log("Handling zoom %s (%s)", direction, this.currentTransform.scale);
             this.updateTransform();
         }
 
-        // Update SVG transform
         updateTransform() {
             console.log("Updating SVG transform");
             const transformAttr = `translate(${this.currentTransform.x} ${this.currentTransform.y}) scale(${this.currentTransform.scale})`;
@@ -121,23 +116,23 @@ export function closeModal() {
         }
     }
 
-    // Expose the library to the global scope
     window.SvgPanZoom = SvgPanZoom;
 })();
-
 
 export function toggleVerbose() {
     let verboseToggle = document.getElementById('verbose');
     if (verboseToggle.innerText === 'Hide Verbose') {
         const elements = document.getElementsByClassName('verbose');
         for (let i = 0; i < elements.length; i++) {
-            elements[i].classList.add('verbose-hidden'); // Add the 'verbose-hidden' class to hide
+            elements[i].classList.add('verbose-hidden');
+
         }
         verboseToggle.innerText = 'Show Verbose';
     } else if (verboseToggle.innerText === 'Show Verbose') {
         const elements = document.getElementsByClassName('verbose');
         for (let i = 0; i < elements.length; i++) {
-            elements[i].classList.remove('verbose-hidden'); // Remove the 'verbose-hidden' class to show
+            elements[i].classList.remove('verbose-hidden');
+
         }
         verboseToggle.innerText = 'Hide Verbose';
     } else {
@@ -164,18 +159,19 @@ function refreshReplyForms() {
     });
 }
 
-
 function refreshVerbose() {
     let verboseToggle = document.getElementById('verbose');
     if (verboseToggle.innerText === 'Hide Verbose') {
         const elements = document.getElementsByClassName('verbose');
         for (let i = 0; i < elements.length; i++) {
-            elements[i].classList.remove('verbose-hidden'); // Remove the 'verbose-hidden' class to show
+            elements[i].classList.remove('verbose-hidden');
+
         }
     } else if (verboseToggle.innerText === 'Show Verbose') {
         const elements = document.getElementsByClassName('verbose');
         for (let i = 0; i < elements.length; i++) {
-            elements[i].classList.add('verbose-hidden'); // Add the 'verbose-hidden' class to hide
+            elements[i].classList.add('verbose-hidden');
+
         }
     } else {
         console.log("Error: Unknown state for verbose button");
@@ -189,7 +185,6 @@ function findAncestor(element, selector) {
     return element;
 }
 
-
 function applyToAllSvg() {
     document.querySelectorAll('svg').forEach(svg => {
         if (!svg.dataset.svgPanZoomInitialized) {
@@ -202,7 +197,7 @@ function substituteMessages(outerMessageId, messageDiv) {
     Object.entries(messageMap).forEach(([innerMessageId, content]) => {
         if (outerMessageId !== innerMessageId && messageDiv) messageDiv.querySelectorAll('[id="' + innerMessageId + '"]').forEach((element) => {
             if (element.innerHTML !== content) {
-                //console.log("Substituting message with id " + innerMessageId + " and content " + content);
+
                 element.innerHTML = content;
                 substituteMessages(innerMessageId, element);
             }

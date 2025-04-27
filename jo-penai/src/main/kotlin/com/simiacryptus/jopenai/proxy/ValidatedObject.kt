@@ -14,7 +14,6 @@ interface ValidatedObject {
     companion object {
         private val log = LoggerFactory.getLogger(ValidatedObject::class.java)
 
-
         fun validateFields(obj: Any): String? {
             log.debug("Starting validation for object: ${obj.javaClass.name}")
             obj.javaClass.declaredFields.forEach { field ->
@@ -26,7 +25,7 @@ interface ValidatedObject {
                     log.warn("Validation failed for field: ${field.name} with message: $validate")
                     if (null != validate) return validate
                 }
-                // If the property is a list, validate each element
+
                 if (value is List<*>) {
                     value.forEach {
                         log.debug("Validating list element: $it")
@@ -46,7 +45,7 @@ interface ValidatedObject {
                     log.warn("Validation failed for property: ${property.name} with message: $validate")
                     if (null != validate) return validate
                 }
-                // If the property is a list, validate each element
+
                 if (value is List<*>) {
                     value.forEach {
                         log.debug("Validating list element: $it")

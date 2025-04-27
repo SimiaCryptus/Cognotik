@@ -31,23 +31,23 @@ open class ChatSocketManager(
       </div>
       <div class="expandable-content">
         <p>You can use the following syntaxes in your messages to automatically expand your queries:</p>
-        
+
         <h4 class="expandable-section-title">Parallel Expansion</h4>
         <p class="expandable-description">Use <code>{option1|option2|option3}</code> to run the same prompt with each option in parallel.</p>
         <p class="expandable-example"><em>Example:</em> <code>Tell me a joke about {cats|dogs|birds}</code></p>
-        
+
         <h4 class="expandable-section-title">Sequence Expansion</h4>
         <p class="expandable-description">Use <code>&lt;step1;step2;step3&gt;</code> to run a sequence of prompts, where the output of each feeds into the next.</p>
         <p class="expandable-example"><em>Example:</em> <code>Summarize this text, then &lt;translate to French;translate to German&gt;</code></p>
-        
+
         <h4 class="expandable-section-title">Range Expansion</h4>
         <p class="expandable-description">Use <code>[[start..end:step]]</code> to iterate over a range of numbers.</p>
         <p class="expandable-example"><em>Example:</em> <code>Project an alternate history where Rome never fell. Tell what happened in [[1000..1500:100]]</code></p>
-        
+
         <h4 class="expandable-section-title">Topic Reference Expansion</h4>
         <p class="expandable-description">Use <code>{topicType}</code> to refer to previously identified topics.</p>
         <p class="expandable-example"><em>Example:</em> <code>Tell me about {Person}</code></p>
-        
+
         <p class="expandable-footer">You can combine these syntaxes for more complex expansions.</p>
       </div>
     </div>
@@ -84,7 +84,7 @@ open class ChatSocketManager(
     val ui = ApplicationInterface(this)
 
     override fun onRun(userMessage: String, socket: ChatSocket) {
-        // Apply topic-based autoexpansion to user message
+
         val expandedUserMessage = applyTopicAutoexpansion(userMessage)
 
         val task = newTask()
@@ -101,7 +101,7 @@ open class ChatSocketManager(
                 val responseString = respond(api, task, expandedUserMessage)
 
                 synchronized(messagesLock) {
-                    // Remove last assistant message if it exists (for retries)
+
                     if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
                         messages.removeAt(messages.size - 1)
                     }
@@ -118,7 +118,7 @@ open class ChatSocketManager(
                             val responseString = respond(api, task, expandedUserMessage)
 
                             synchronized(messagesLock) {
-                                // Remove last assistant message if it exists (for retries)
+
                                 if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
                                     messages.removeAt(messages.size - 1)
                                 }
@@ -143,13 +143,10 @@ open class ChatSocketManager(
         }
     }
 
-    // Pattern for parallel expansion: {option1|option2}
     private val expansionExpressionPattern = Regex("""\{([^|\n,/\\;}{]+(?:\|[^|\n,/\\;}{]+)+)}""")
 
-    // Pattern for ordered sequence expansion: <item1;item2;item3>
     private val sequenceExpansionPattern = Regex("""<([^;><\n,/\\]+(?:;[^;><\n,/\\]+)+)>""")
 
-    // Pattern for range expansion: [[start..end:step]]
     private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""")
 
     protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
@@ -162,7 +159,7 @@ open class ChatSocketManager(
             val topicsText = try {
                 answer.topics.let { topics ->
                     if (topics?.isNotEmpty() == true) {
-                        // Add identified topics to the aggregate list
+
                         topics.forEach { (topicType, entities) ->
                             val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
                             synchronized(topicList) {
@@ -188,7 +185,6 @@ open class ChatSocketManager(
             response
         }
     }
-
 
     /**
      * Executes a list of functions, each appending to the target StringBuilder, potentially in parallel.
@@ -218,7 +214,6 @@ open class ChatSocketManager(
         }
     }
 
-
     protected open fun chatMessages() = messages.let {
         synchronized(messagesLock) {
             listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it.toImmutableList()
@@ -238,12 +233,13 @@ open class ChatSocketManager(
         val topicReferencePattern = Regex("""\{([^}|]+)}""")
         return topicReferencePattern.replace(userMessage) { matchResult ->
             val topicType = matchResult.groupValues[1]
-            val entities = aggregateTopics[topicType]?.toList() // Create a copy to avoid concurrent modification
+            val entities = aggregateTopics[topicType]?.toList()
+
             if (entities != null && entities.isNotEmpty()) {
-                // Create an expansion expression with all entities of this type
+
                 "{${entities.joinToString("|")}}"
             } else {
-                // Keep the original reference if no entities found
+
                 matchResult.value
             }
         }
@@ -255,7 +251,7 @@ open class ChatSocketManager(
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
     ): List<(StringBuilder) -> Unit> {
-        // 1. Handle range expansion [start..end:step]
+
         val rangeMatch = rangeExpansionPattern.find(currentMessage)
         if (rangeMatch != null) {
             return expandRange(api, currentMessage, task, baseMessages, rangeMatch)
@@ -264,7 +260,7 @@ open class ChatSocketManager(
         if (sequenceMatch != null) {
             return expandSequences(api, currentMessage, task, baseMessages, sequenceMatch)
         }
-        // 2. Handle parallel expansion {a|b|c}
+
         val match = expansionExpressionPattern.find(currentMessage)
         if (match != null) {
             return expandAlternatives(api, currentMessage, task, baseMessages, match, this::processMsgRecursive)
@@ -272,7 +268,7 @@ open class ChatSocketManager(
 
         return listOf { aggregateResponse: StringBuilder ->
             task.add("")
-            // Base case: no more expansions to process
+
             val finalMessages = baseMessages + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
             val responseRef = AtomicReference<String>()
             try {
@@ -291,7 +287,8 @@ open class ChatSocketManager(
 
             val response = responseRef.get() ?: "No response received"
             task.complete(renderResponse(response, task))
-            aggregateResponse.append(response).append("\n\n") // Append response for aggregation
+            aggregateResponse.append(response).append("\n\n")
+
         }
     }
 
@@ -321,7 +318,6 @@ open class ChatSocketManager(
             api
         )
     }
-
 
     /**
      * Expands alternative expressions in the format {option1|option2|option3}
@@ -383,22 +379,23 @@ open class ChatSocketManager(
         val messages = baseMessages.dropLast(1).toMutableList()
         for (item in items) {
             val itemTask = ui.newTask(false).apply { tabs[item] = placeholder }
-            // Determine the sub-tasks for the current item
+
             val replaceFirst = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
                 api = api,
                 currentMessage = replaceFirst,
                 task = itemTask,
-                // Pass the accumulated messages from previous steps
+
                 baseMessages = messages
             )
-            // Execute the sub-tasks (potentially in parallel if they contain alternatives)
-            // and collect their results into subAggregate
+
+
             val subAggregate = StringBuilder()
-            runAll(subTaskFunctions, subAggregate) // Use runAll to handle potential parallelism within the item
-            // Format and append the result of this step
+            runAll(subTaskFunctions, subAggregate)
+
+
             aggregatedResponse.append("[").append(item).append("]\n").append(subAggregate.toString()).append("\n")
-            // Add the response of this step to the cumulative history for the next step
+
             messages.add(ApiModel.ChatMessage(ApiModel.Role.user, replaceFirst.toContentList()))
             messages.add(ApiModel.ChatMessage(ApiModel.Role.assistant, subAggregate.toString().toContentList()))
         }

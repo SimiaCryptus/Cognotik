@@ -31,7 +31,7 @@ class IntelliJPsiValidator(private val project: Project, val extension: String, 
     }
 
     companion object {
-        // Map of supported file extensions to their language names
+
         private val SUPPORTED_LANGUAGES = mapOf(
             "kt" to "Kotlin",
             "java" to "Java",
@@ -70,7 +70,6 @@ class IntelliJPsiValidator(private val project: Project, val extension: String, 
             return extension?.lowercase()?.let { SUPPORTED_LANGUAGES.containsKey(it) } ?: false
         }
     }
-
 
     private fun collectErrors(psiFile: com.intellij.psi.PsiFile): List<GrammarValidator.ValidationError> {
         val errors = mutableListOf<GrammarValidator.ValidationError>()

@@ -15,5 +15,4 @@ public class NewStringManipulationUtilsBenchmark {
         NewStringManipulationUtils.regexReplace("hello world", "[aeiou]", "x");
     }
 
-    // Add more benchmarks for other methods
 }

@@ -5,7 +5,6 @@
     transition: all 0.3s ease;
 }
 
-
 /* Dark mode improvements */
 /* Improve dark mode media query placement */
 @media (prefers-color-scheme: dark) {
@@ -85,7 +84,6 @@
     transition: all .5s cubic-bezier(0.1, 0, 0.5, 1);
 }
 
-
 /* Improve button states */
 .cmd-button {
     position: relative;
@@ -140,7 +138,6 @@
     justify-content: center;
 }
 
-
 .App-logo {
     height: 40vmin;
     pointer-events: none;
@@ -151,7 +148,6 @@
         animation: App-logo-spin infinite 20s linear;
     }
 }
-
 
 .tab-content {
     flex: 1;
@@ -200,7 +196,6 @@
     }
 }
 
-
 .cmd-button:hover {
     background-color: var(--hover-color);
 }
@@ -219,7 +214,6 @@
     justify-content: center;
     padding: 2rem;
 }
-
 
 /* Loading state with text */
 .loading-container .loading-text {

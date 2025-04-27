@@ -40,7 +40,6 @@ class SoftwareGraphGenerationTask(
         state = state
     )
 
-
     val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
     ) {
@@ -104,7 +103,7 @@ class SoftwareGraphGenerationTask(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
-        // Generate the graph
+
         val chatMessages = graphGenerationActor.chatMessages(
             messages + listOf(
                 getInputFileCode(),
@@ -121,7 +120,6 @@ class SoftwareGraphGenerationTask(
             api = api
         )
 
-        // Save the graph to file
         val outputFile = File(planSettings.workingDir ?: ".").resolve(taskConfig?.output_file.let {
             when {
                 it.isNullOrBlank() -> "software_graph.json"

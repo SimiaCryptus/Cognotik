@@ -38,9 +38,8 @@ class PercentileToolTest {
         val values = listOf(1.0, 2.0, 3.0, 4.0)
         values.forEach { percentileTool.add(it) }
 
-        // 25th percentile should be index 1 (value 2.0)
         assertEquals(2.0, percentileTool.getValueOfPercentile(0.25), 0.0001)
-        // 75th percentile should be index 3 (value 4.0)
+
         assertEquals(4.0, percentileTool.getValueOfPercentile(0.75), 0.0001)
     }
 

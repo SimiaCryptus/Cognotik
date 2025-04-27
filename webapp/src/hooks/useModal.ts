@@ -7,7 +7,6 @@ import Prism from 'prismjs';
 export const useModal = () => {
     const dispatch = useDispatch();
 
-    // Helper to highlight code blocks
     const highlightCode = () => {
         if (typeof window !== 'undefined') {
             requestAnimationFrame(() => {
@@ -81,7 +80,7 @@ export const useModal = () => {
                     stack: error.stack
                 });
                 dispatch(setModalContent(`<div class="error">Error loading content: ${error.message}</div>`));
-                // Keep modal open to show error
+
             });
     };
 

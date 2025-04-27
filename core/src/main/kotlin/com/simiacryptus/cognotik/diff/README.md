@@ -199,20 +199,19 @@ For situations where exact matches aren't possible, the package provides fuzzy m
 ### Basic Diff Generation and Application
 
 ```kotlin
-// Generate a diff between two versions
+
 val original = "function add(a, b) {\n  return a + b;\n}"
 val modified = "function add(a, b) {\n  const sum = a + b;\n  return sum;\n}"
 val patchLines = DiffUtil.generateDiff(original.lines(), modified.lines())
 val formattedDiff = DiffUtil.formatDiff(patchLines)
 
-// Apply the diff to the original text
 val result = ApxPatchUtil.patch(original, formattedDiff)
 ```
 
 ### Interactive UI Integration
 
 ```kotlin
-// Add interactive diff application links to markdown content
+
 val enhancedMarkdown = AddApplyDiffLinks.addApplyDiffLinks(
     socketManager,
     { currentCode },
@@ -226,7 +225,7 @@ val enhancedMarkdown = AddApplyDiffLinks.addApplyDiffLinks(
 ### File-Based Diff Application
 
 ```kotlin
-// Add interactive file diff application links to markdown content
+
 val enhancedMarkdown = AddApplyFileDiffLinks.instrumentFileDiffs(
     socketManager,
     projectRoot,

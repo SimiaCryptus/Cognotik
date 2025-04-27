@@ -69,7 +69,7 @@ open class UsageManager(val root: File) : UsageInterface {
                             else -> throw RuntimeException("Unknown direction $direction")
                         }
                     } catch (e: Exception) {
-                        //log.debug("Error loading log line: ${e.message}")
+
                     }
                 }
             } catch (e: Exception) {
@@ -125,9 +125,12 @@ open class UsageManager(val root: File) : UsageInterface {
         File(root, "counters.json").writeText(text)
         val toClean = txLogFile.parentFile.listFiles()
             ?.filter { it.name.startsWith(txLogFile.name) && it.name != txLogFile.absolutePath }
-            ?.sortedBy { it.lastModified() } // oldest first
-            ?.dropLast(2) // keep 2 newest
-            ?.drop(2) // keep 2 oldest
+            ?.sortedBy { it.lastModified() }
+
+            ?.dropLast(2)
+
+            ?.drop(2)
+
         toClean?.forEach { it.delete() }
     }
 

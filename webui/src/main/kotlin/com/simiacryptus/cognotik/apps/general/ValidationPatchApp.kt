@@ -23,7 +23,6 @@ class ValidationPatchApp(
     companion object {
         private val log = LoggerFactory.getLogger(ValidationPatchApp::class.java)
 
-        // Validation error messages
         private val validationMessages = mapOf(
             "curly" to "Unbalanced curly braces",
             "square" to "Unbalanced square brackets",
@@ -41,7 +40,7 @@ class ValidationPatchApp(
         tabs: TabbedDisplay
     ): OutputResult {
         val validationErrors = mutableListOf<ValidationError>()
-        // Use the provided tabs instance; avoid shadowing variable names.
+
         val filePaths = getFiles(files)
         filePaths.forEach { file ->
             val fileTask = ui.newTask(false).apply { tabs[file.toString()] = placeholder }
@@ -125,7 +124,8 @@ class ValidationPatchApp(
     }
 
     override fun codeFiles(): Set<Path> = getFiles(files)
-        .filter { it.toFile().length() < 1024 * 1024 / 2 } // Limit to 0.5MB
+        .filter { it.toFile().length() < 1024 * 1024 / 2 }
+
         .map { root.toPath().relativize(it) ?: it }.toSet()
 
     override fun projectSummary(): String = codeFiles()

@@ -134,7 +134,7 @@ class CreateFileFromDescriptionAction :
                 ChatMessage(
                     Role.user, """
                     Create a new file based on the following directive: $directive
-                    
+
                     The file location should be based on the selected path `$basePath`
                 """.trimIndent().toContentList(), null
                 )

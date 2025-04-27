@@ -64,7 +64,6 @@ open class ClientManager {
         createScheduledPool(session, user, dataStorage)
     }
 
-
     protected open fun createChatClient(
         session: Session,
         user: User?,

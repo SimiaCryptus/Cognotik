@@ -21,7 +21,7 @@ const Spinner: React.FC<SpinnerProps> = ({
                                              'aria-label': ariaLabel = 'Loading...'
                                          }) => {
     useEffect(() => {
-        // Log only in development environment
+
         if (process.env.NODE_ENV === 'development') {
             console.debug(`Spinner mounted with size: ${size}`);
         }

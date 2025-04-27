@@ -100,14 +100,14 @@ open class DocumentParserApp(
         progressBar: ProgressState? = null
     ) {
         try {
-            // Validate inputs
+
             if (fileInputs.isEmpty()) {
                 throw IllegalArgumentException("No input files provided")
             }
 
             task.header("Knowledge Extractor", 2)
             val api = api.getChildClient(task)
-            // Create output directory
+
             val outputDir = root.resolve("output").apply<File> { mkdirs() }
             if (!outputDir.exists()) {
                 throw IOException("Failed to create output directory: $outputDir")
@@ -127,7 +127,8 @@ open class DocumentParserApp(
                         if (reader is TextReader) {
                             reader.configure(settings)
                         }
-                        var previousPageText = "" // Keep this for context
+                        var previousPageText = ""
+
                         val pageCount = minOf(reader.getPageCount(), maxPages)
                         val pageSets = 0 until pageCount step pagesPerBatch
                         progressBar?.add(0.0, pageCount.toDouble())
@@ -281,7 +282,7 @@ open class DocumentParserApp(
         pageTask: SessionTask,
         progressBar: ProgressState?
     ): DocumentData? {
-        // Generate consistent file name pattern
+
         val fileBaseName = generateFileBaseName(batchStart, batchEnd)
 
         return try {

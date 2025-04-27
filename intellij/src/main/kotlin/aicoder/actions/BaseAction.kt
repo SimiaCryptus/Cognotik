@@ -21,7 +21,7 @@ abstract class BaseAction(
 ) : AnAction(name, description, icon) {
 
     private val log by lazy { LoggerFactory.getLogger(javaClass) }
-    //override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+
     /**
      * Primary API client for chat interactions
      */
@@ -56,7 +56,6 @@ abstract class BaseAction(
 
     /** Determines if this action is enabled in the current context */
 
-
     final override fun actionPerformed(e: AnActionEvent) {
         UITools.logAction(
             "Action: ${javaClass.simpleName}".trim()
@@ -74,7 +73,6 @@ abstract class BaseAction(
     }
 
     open fun isEnabled(event: AnActionEvent): Boolean = true
-
 
     companion object {
         val log by lazy { LoggerFactory.getLogger(javaClass) }

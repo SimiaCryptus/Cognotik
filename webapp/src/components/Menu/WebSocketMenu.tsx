@@ -6,7 +6,7 @@ import {updateWebSocketConfig} from '../../store/slices/configSlice';
 import WebSocketService from '../../services/websocket';
 
 interface StyledButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'danger' | 'success';
+    $variant?: 'primary' | 'secondary' | 'danger' | 'success';
 }
 
 const StyledButton = styled.button<StyledButtonProps>`
@@ -16,8 +16,8 @@ const StyledButton = styled.button<StyledButtonProps>`
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
-  ${({variant, theme}) => {
-    switch (variant) {
+  ${({$variant, theme}) => {
+    switch ($variant) {
         case 'primary':
             return `
           background: ${theme.colors.primary};
@@ -132,13 +132,12 @@ export const WebSocketMenu: React.FC = () => {
     const [lastError, setLastError] = useState<string | null>(null);
     const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
-
     const [config, setConfig] = useState({
         url: process.env.NODE_ENV === 'development' ? wsConfig.url : window.location.hostname,
         port: process.env.NODE_ENV === 'development' ? wsConfig.port : window.location.port,
         protocol: wsConfig.protocol
     });
-    // Add connection status monitoring
+
     useEffect(() => {
         const handleConnectionChange = (connected: boolean) => {
             setConnectionStatus(connected ? 'connected' : 'disconnected');
@@ -250,12 +249,12 @@ export const WebSocketMenu: React.FC = () => {
                     />
                 </FormGroup>
                 <ButtonGroup>
-                    <StyledButton type="submit" variant="primary">
+                    <StyledButton type="submit" $variant="primary">
                         Save Configuration
                     </StyledButton>
                     <StyledButton
                         type="button"
-                        variant="secondary"
+                        $variant="secondary"
                         onClick={handleReconnect}
                         disabled={connectionStatus === 'connected' || connectionStatus === 'connecting'}
                     >
@@ -263,7 +262,7 @@ export const WebSocketMenu: React.FC = () => {
                     </StyledButton>
                     <StyledButton
                         type="button"
-                        variant="danger"
+                        $variant="danger"
                         onClick={handleDisconnect}
                         disabled={connectionStatus === 'disconnected'}
                     >

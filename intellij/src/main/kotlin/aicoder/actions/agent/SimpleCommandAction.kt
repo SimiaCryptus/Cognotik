@@ -98,7 +98,7 @@ class SimpleCommandAction : BaseAction() {
     ): PatchApp = UITools.run(null, "Creating Patch Application", true) { progress ->
         progress.text = "Initializing patch application..."
         object : PatchApp(root, session, settings) {
-            // Limit file size to 0.5MB for performance
+
             private val maxFileSize = 512 * 1024
 
             override fun codeFiles() = (virtualFiles?.toList<VirtualFile>()?.flatMap<VirtualFile, File> {
@@ -106,7 +106,7 @@ class SimpleCommandAction : BaseAction() {
             }?.map<File, Path> { it.toPath() }?.toSet<Path>()?.toMutableSet<Path>() ?: mutableSetOf<Path>())
                 .filter { it.toFile().length() < maxFileSize }
                 .map { root.toPath().relativize(it) ?: it }.toSet()
-            // Add progress indication for long operations
+
 
             override fun codeSummary(paths: List<Path>) = paths
                 .filter { it.toFile().exists() }
@@ -120,7 +120,7 @@ class SimpleCommandAction : BaseAction() {
                         path.toFile().readText(Charsets.UTF_8)
                     }\n$tripleTilde"
                 }.joinToString("\n\n")
-            // Add validation for file operations
+
 
             override fun projectSummary() = codeFiles()
                 .asSequence()
@@ -144,7 +144,7 @@ class SimpleCommandAction : BaseAction() {
             }
         }
     }
-    // Add proper resource cleanup
+
 
     private fun openBrowserWithDelay(uri: java.net.URI) {
         Thread({
@@ -207,14 +207,14 @@ class SimpleCommandAction : BaseAction() {
                     resultClass = ParsedTasks::class.java,
                     prompt = """
                       You are a helpful AI that helps people with coding.
-                      
+
                       You will be answering questions about the following project:
-                      
+
                       Project Root: """.trimIndent() + (settings.workingDirectory.absolutePath ?: "") + """
-                      
+
                       Files:
                       """.trimIndent() + planTxt + """
-                      
+
                       Given the request, identify one or more tasks.
                       For each task:
                          1) predict the files that need to be fixed
@@ -243,11 +243,11 @@ class SimpleCommandAction : BaseAction() {
                         val response = SimpleActor(
                             prompt = """
                 You are a helpful AI that helps people with coding.
-                
+
                 You will be answering questions about the following code:
-                
+
                 """.trimIndent() + codeSummary + "\n\n" + patchFormatPrompt + """
-                
+
                 If needed, new files can be created by using code blocks labeled with the filename in the same manner.
                 """.trimIndent(),
                             model = AppSettingsState.instance.smartModel.chatModel()
@@ -344,11 +344,12 @@ class SimpleCommandAction : BaseAction() {
 
     companion object {
         private val log = LoggerFactory.getLogger(SimpleCommandAction::class.java)
-        val tripleTilde = "`" + "``" // This is a workaround for the markdown parser when editing this file
+        val tripleTilde = "`" + "``"
+
 
         @OptIn(ExperimentalPathApi::class)
         fun toPaths(root: Path, it: String): Iterable<Path> {
-            // Expand any wildcards
+
             return if (it.contains("*")) {
                 val prefix = it.substringBefore("*")
                 val suffix = it.substringAfter("*")

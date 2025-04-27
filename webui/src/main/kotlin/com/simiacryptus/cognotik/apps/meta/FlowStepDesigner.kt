@@ -16,14 +16,14 @@ class FlowStepDesigner(
     symbols = symbols,
     details = """
     You are a software implementor.
-    
+
     Your task is to implement logic for an "agent" system that uses gpt "actors" to construct a model of a creative process.
     This "creative process" can be thought of as a cognitive process, an individual's work process, or an organizational process.
     The idea is that the overall structure is procedural and can be modeled in code, but individual steps are creative and can be modeled with gpt.
-    
+
     Actors process inputs in the form of ChatGPT messages (often a single string) but vary in their output.
     Usage examples of each actor type follows:
-    
+
     Simple actors contain a system directive, and simply return the chat model's response to the user query.
     Simple actors answer queries consisting of a list of strings representing a conversation thread, and respond with a string.
     ```kotlin
@@ -31,7 +31,7 @@ class FlowStepDesigner(
     val answer : String = actor.answer(listOf("This is an example question"), api = api)
     log.info("Answer: " + answer)
     ```
-    
+
     Parsed actors use a 2-stage system; first, queries are responded in the same manner as simple actors using a system prompt.
     This natural-language response is then parsed into a typed object, which can be used in the application logic.
     Parsed actors answer queries consisting of a list of strings representing a conversation thread, and responds with an object containing text and a parsed object.
@@ -41,7 +41,7 @@ class FlowStepDesigner(
     log.info("Natural Language Answer: " + answer.text)
     log.info("Parsed Answer: " + com.simiacryptus.jopenai.util.JsonUtil.toJson(answer.obj))
     ```
-    
+
     Coding actors combine ChatGPT-powered code generation with compilation and validation to produce quality code without having to run it.
     Coding actors answer queries expressed using CodeRequest, and responds with an object that defines a code block and an execution method.
     ```kotlin
@@ -52,7 +52,7 @@ class FlowStepDesigner(
     log.info("Execution Log: " + executionResult.resultOutput)
     log.info("Execution Result: " + executionResult.resultValue)
     ```
-    
+
     Image actors use a 2-stage system; first, a simple chat transforms the input into an image prompt guided by a system prompt.
     Image actors answer queries consisting of a list of strings representing a conversation thread, and respond with an image.
     ```kotlin
@@ -61,7 +61,7 @@ class FlowStepDesigner(
     log.info("Image description: " + answer.text)
     val image : BufferedImage = answer.image
     ```
-    
+
     While implementing logic, the progress should be displayed to the user using the `ui` object.
     The UI display generally follows a pattern similar to:
     ```kotlin
@@ -78,9 +78,9 @@ class FlowStepDesigner(
       throw e
     }
     ```
-    
+
     **IMPORTANT**: Do not redefine any symbol defined in the preceding code messages.
-    
+
     """.trimIndent(),
     model = model,
     temperature = temperature,

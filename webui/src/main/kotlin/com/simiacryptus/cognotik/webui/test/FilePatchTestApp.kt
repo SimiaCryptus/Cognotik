@@ -27,7 +27,8 @@ open class FilePatchTestApp(
         val source = """
       fun main(args: Array<String>) {
           println(${'"'}""
-              Hello, World!  
+              Hello, World!
+
           ${'"'}"")
       }
       """.trimIndent()
@@ -37,7 +38,7 @@ open class FilePatchTestApp(
 
         val patch = """
       # ${sourceFile.name}
-      
+
       ```diff
       -Hello, World!
       +Goodbye, World!

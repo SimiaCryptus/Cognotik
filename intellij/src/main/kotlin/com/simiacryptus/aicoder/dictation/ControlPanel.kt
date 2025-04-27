@@ -27,7 +27,8 @@ class ControlPanel(
     private val rmsLabel = JBLabel("RMS: ")
     private val iec61672Label = JBLabel("IEC61672: ")
     private val micLineComboBox = ComboBox<String>().apply {
-        border = JBUI.Borders.emptyRight(5) // Consider adding a left border as well
+        border = JBUI.Borders.emptyRight(5)
+
         addItem("Default")
         DictationManager.availableMicLines.forEach(::addItem)
         (AppSettingsState.instance.selectedMicLine ?: settings.selectedMicLine)?.let {
@@ -50,46 +51,46 @@ class ControlPanel(
         border = JBUI.Borders.emptyRight(5)
     }
 
-    // Assuming max talk time display is around 10 seconds for the progress bar scale
     private val maxTalkTimeDisplayMs = 10000
     private val talkTimeProgressBar = JProgressBar(0, maxTalkTimeDisplayMs).apply {
-        // Display format can be customized if needed, e.g., showing seconds
-        // isStringPainted = true
-        // string = "0.0s" // Initial value
+
+
+
         toolTipText = "Current consecutive talk duration"
         border = JBUI.Borders.emptyRight(5)
     }
     private val talkTimeLabel = JBLabel()
     private val formatComboBox = ComboBox<String>().apply {
-        border = JBUI.Borders.emptyRight(5) // Consider adding a left border as well
-        // Add common audio format combinations
+        border = JBUI.Borders.emptyRight(5)
+
+
         val formats = listOf(
-            // Standard telephone quality
+
             "8000Hz 8-bit Mono",
             "8000Hz 16-bit Mono",
-            // Speech recognition optimized
+
             "16000Hz 16-bit Mono",
-            // ... other formats ...
+
             "22050Hz 16-bit Mono",
-            // Standard audio quality
+
             "32000Hz 16-bit Mono",
             "32000Hz 16-bit Stereo",
-            // CD quality
+
             "44100Hz 16-bit Mono",
             "44100Hz 16-bit Stereo",
             "44100Hz 24-bit Mono",
             "44100Hz 24-bit Stereo",
-            // Professional audio quality
+
             "48000Hz 16-bit Mono",
             "48000Hz 24-bit Mono",
             "48000Hz 16-bit Stereo",
             "48000Hz 24-bit Stereo",
-            // High-resolution audio
+
             "96000Hz 24-bit Stereo",
             "192000Hz 24-bit Stereo"
         )
         formats.forEach(::addItem)
-        // Set initial selection based on current settings
+
         val currentFormat =
             "${settings.sampleRate}Hz ${settings.sampleSize}-bit ${if (settings.channels == 1) "Mono" else "Stereo"}"
         selectedItem = formats.find { it == currentFormat } ?: formats[1]
@@ -270,16 +271,17 @@ class ControlPanel(
             gridy = 6
             fill = GridBagConstraints.HORIZONTAL
         })
-        // Filler component to push everything to the top-left
+
         add(JPanel(), GridBagConstraints().apply {
             gridx = 0
-            gridy = 7 // Next available row
-            gridwidth = GridBagConstraints.REMAINDER // Span remaining columns
+            gridy = 7
+
+            gridwidth = GridBagConstraints.REMAINDER
+
             weightx = 1.0
             weighty = 1.0
             fill = GridBagConstraints.BOTH
         })
-
 
         dictationButton.addActionListener {
             toggleRecording()
@@ -303,10 +305,12 @@ class ControlPanel(
     private fun updateParams() {
         val rmsValue = settings.rmsLevel.coerceIn(rmsProgressBar.minimum, rmsProgressBar.maximum)
         rmsProgressBar.value = rmsValue
-        rmsLabel.text = "RMS: $rmsValue%" // Update label as well
+        rmsLabel.text = "RMS: $rmsValue%"
+
         val iecValue = settings.iec61672Level.coerceIn(iec61672ProgressBar.minimum, iec61672ProgressBar.maximum)
         iec61672ProgressBar.value = iecValue
-        iec61672Label.text = "IEC61672: $iecValue%" // Update label as well
+        iec61672Label.text = "IEC61672: $iecValue%"
+
         talkTimeLabel.text = "Talk Time: ${settings.talkTime.format("%.3f")}s"
         val currentFormat =
             "${settings.sampleRate}Hz ${settings.sampleSize}-bit ${if (settings.channels == 1) "Mono" else "Stereo"}"

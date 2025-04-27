@@ -37,7 +37,7 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.gson)
     implementation(libs.httpclient5)
-    //implementation(libs.jetty.servlet.api)
+
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)

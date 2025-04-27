@@ -8,7 +8,7 @@ open class LogDataParsingModel(
     private val parsingModel: ChatModel,
     private val temperature: Double
 ) : ParsingModel<LogDataParsingModel.LogData> {
-    private val maxIterations = 10 // Make constant value explicit for clarity
+    private val maxIterations = 10
 
 
     override fun merge(
@@ -49,13 +49,13 @@ open class LogDataParsingModel(
         var iterationCount = 0
         var currentPatterns = existingPatterns
         try {
-            // First try with existing patterns
+
             if (currentPatterns.isNotEmpty()) {
                 val applyPatterns = applyPatterns(remainingText, currentPatterns)
                 result = applyPatterns.first
                 remainingText = applyPatterns.second
             }
-            // Then generate new patterns for remaining text
+
             while (remainingText.isNotBlank() && iterationCount++ < maxIterations) {
                 val newPatterns = patternGenerator.generatePatterns(api, remainingText)
                 if (newPatterns.isEmpty()) break
@@ -73,7 +73,6 @@ open class LogDataParsingModel(
         }
         return result ?: LogData()
     }
-
 
     private fun applyPatterns(text: String, patterns: List<PatternData>): Pair<LogData, String> {
         val patterns = patterns.filter { it.regex != null }.groupBy { it.id }.map { it.value.first() }
@@ -122,7 +121,7 @@ open class LogDataParsingModel(
         val remainingText = matchesWithRanges.reversed().fold(text) { acc, match ->
             acc.replaceRange(match.second.second.range, "")
         }
-        // Sort matches by their start index to ensure correct ordering
+
         return LogData(
             matches = matchesWithRanges.sortedBy { it.second.second.range.start }.map { it.first },
             patterns = matchesWithRanges.map { it.second.first }.distinct()
@@ -130,7 +129,7 @@ open class LogDataParsingModel(
     }
 
     private fun extractCaptures(regex: Regex, matchResult: MatchResult): Map<String, String> {
-        // Improved named group detection
+
         val namedGroups = regex.pattern
             .split("(?<")
             .drop(1)
@@ -140,7 +139,8 @@ open class LogDataParsingModel(
             .filterNotNull()
             .mapIndexed { index, group ->
                 when {
-                    index == 0 -> null  // Skip the full match
+                    index == 0 -> null
+
                     index <= namedGroups.size -> namedGroups[index - 1] to group.value
                     else -> "group${index}" to group.value
                 }
@@ -148,7 +148,6 @@ open class LogDataParsingModel(
             .filterNotNull()
             .toMap()
     }
-
 
     override fun newDocument() = LogData()
 

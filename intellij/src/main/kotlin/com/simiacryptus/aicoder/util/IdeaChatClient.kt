@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.swing.JPanel
 import javax.swing.JTextArea
 
-
 open class IdeaChatClient(
     key: Map<APIProvider, String> = AppSettingsState.instance.apiKeys?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
         ?.associate { it.key to it.value } ?: mapOf(),
@@ -43,7 +42,7 @@ open class IdeaChatClient(
 ) {
 
     init {
-        //log.info("Initializing OpenAI Client", Throwable())
+
         require(key.size == apiBase.size) {
             "API Key not configured for all providers: ${key.keys} != ${APIProvider.values().toList()}"
         }
@@ -73,7 +72,7 @@ open class IdeaChatClient(
     private val isInRequest = AtomicBoolean(false)
 
     override fun onUsage(model: OpenAIModel?, tokens: Usage) {
-//        AppSettingsState.instance.tokenCounter += tokens.total_tokens
+
         ApplicationServices.usageManager.incrementUsage(currentSession, localUser, model!!, tokens)
     }
 
@@ -131,7 +130,6 @@ open class IdeaChatClient(
         }
     }
 
-
     companion object {
 
         val instance
@@ -139,7 +137,7 @@ open class IdeaChatClient(
                 reasoningEffort = AppSettingsState.instance.reasoningEffort.let(ReasoningEffort::valueOf)
             }
         private val _instance by lazy {
-            //log.info("Initializing OpenAI Client", Throwable())
+
             val client = IdeaChatClient()
             if (AppSettingsState.instance.apiLog) {
                 try {
@@ -208,7 +206,6 @@ open class IdeaChatClient(
             }
             return ref.get()
         }
-
 
         fun <T : Any, V : Any> withJsonDialog(
             request: T,

@@ -1,6 +1,6 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {ThemeName} from '../../themes/themes';
-// Helper function to safely interact with localStorage
+
 const safeStorage = {
     setItem(key: string, value: string) {
         try {
@@ -11,7 +11,7 @@ const safeStorage = {
                 error: error instanceof Error ? error.message : String(error),
                 key
             });
-            // Try to clear old items if storage is full
+
             if (error instanceof Error && error.name === 'QuotaExceededError') {
                 this.clearOldItems();
                 try {
@@ -26,7 +26,7 @@ const safeStorage = {
     },
     clearOldItems() {
         const themeKey = 'theme';
-        // Keep theme but clear other items
+
         const currentTheme = localStorage.getItem(themeKey);
         localStorage.clear();
         if (currentTheme) {
@@ -51,13 +51,13 @@ const initialState: UiState = {
     modalType: null,
     modalContent: '',
     verboseMode: localStorage.getItem('verboseMode') === 'true',
-    activeTab: 'chat', // Set default tab
+    activeTab: 'chat',
+
     lastUpdate: Date.now()
 };
 
-// Only log meaningful state changes
 const logStateChange = (action: string, payload: any = null, prevState: any = null) => {
-    // Only log critical state changes
+
     const criticalChanges = ['theme', 'verboseMode'];
     if (!criticalChanges.includes(action.toLowerCase())) {
         return;
@@ -94,7 +94,7 @@ export const uiSlice = createSlice({
             const newVerboseState = !state.verboseMode;
             logStateChange('Verbose mode', newVerboseState, state.verboseMode);
             safeStorage.setItem('verboseMode', newVerboseState.toString());
-            // Add class to body to allow global CSS targeting
+
             if (typeof document !== 'undefined') {
                 document.body.classList.toggle('verbose-mode', newVerboseState);
             }

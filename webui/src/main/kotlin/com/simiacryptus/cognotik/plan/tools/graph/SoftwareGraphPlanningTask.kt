@@ -74,7 +74,8 @@ class SoftwareGraphPlanningTask(
             planProcessingState.taskResult.forEach { (taskId, result) ->
                 appendLine("#### $taskId")
                 appendLine("```")
-                appendLine(result.take(500)) // Limit output size
+                appendLine(result.take(500))
+
                 appendLine("```")
             }
         }

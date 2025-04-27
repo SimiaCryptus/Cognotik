@@ -34,7 +34,6 @@ class SoftwareGraphModificationTask(
         state = state
     )
 
-
     override fun promptSegment() = """
      SoftwareGraphModificationTask - Load, modify and save software graph representations
        ** Specify the input graph file path
@@ -57,15 +56,15 @@ class SoftwareGraphModificationTask(
             prompt = """
             Analyze the provided software graph and generate modifications based on the given goal.
             Return only the delta changes that should be applied to the graph.
-            
+
             Consider:
             - Only include nodes that need to be modified
             - Preserve existing relationships where appropriate
             - Ensure all new NodeId values are unique
             - Validate all references between nodes
-            
+
             Format the response as a valid SoftwareGraph JSON structure containing only the delta changes.
-            
+
             Node Types:
             """.trimIndent() + SoftwareNodeType.values().joinToString("\n") {
                 "* " + it.name + ": " + it.description?.prependIndent("  ") +
@@ -90,7 +89,6 @@ class SoftwareGraphModificationTask(
             describer = agent.describer,
         )
 
-        // Load the input graph
         val inputFile = (planSettings.workingDir?.let { File(it) } ?: File("."))
             .resolve(taskConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
@@ -99,7 +97,6 @@ class SoftwareGraphModificationTask(
             SoftwareNodeType.SoftwareGraph::class.java
         )
 
-        // Generate the modification delta
         val response = graphModificationActor.answer(
             messages + listOf(
                 "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
@@ -108,11 +105,9 @@ class SoftwareGraphModificationTask(
             api = api
         )
 
-        // Apply the delta to create the new graph
         val deltaGraph = response.obj
         val newGraph = originalGraph + deltaGraph
 
-        // Save the modified graph
         val outputFile = (planSettings.workingDir?.let { File(it) } ?: File("."))
             .resolve(
                 when {
@@ -124,7 +119,6 @@ class SoftwareGraphModificationTask(
         outputFile.parentFile?.mkdirs()
         outputFile.writeText(JsonUtil.toJson(newGraph))
 
-        // Generate summary
         val summary = buildString {
             appendLine("# Software Graph Modification Complete")
             appendLine()

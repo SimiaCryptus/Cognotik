@@ -15,7 +15,8 @@ class ZipServlet(val dataStorage: StorageInterface) : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val session = Session(req.getParameter("session"))
         val path = req.parameterMap.get("path")?.find { it.isNotBlank() } ?: "/"
-        FileServlet.parsePath(path) // Validate path
+        FileServlet.parsePath(path)
+
         val sessionDir = dataStorage.getSessionDir(
             ApplicationServices.authenticationManager.getUser(req.getCookie()), session
         )

@@ -154,7 +154,6 @@ object StringUtil {
         return sb.toString()
     }
 
-
     /**
      *
      * Get the suffix for the given context.
@@ -172,33 +171,33 @@ object StringUtil {
             idealLength,
             Arrays.toString(delimiters)
         )
-        // Create a list of candidates by splitting the text by each of the delimiters
+
         val candidates = Stream.of(*delimiters).flatMap { d: CharSequence? ->
-            // Create a string builder to store the split strings
+
             val sb = StringBuilder()
-            // Split the text by the delimiter
+
             val split = text.split(Pattern.quote(d.toString()).toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            // Iterate through the split strings in reverse order
+
             for (i in split.indices.reversed()) {
                 val s = split[i]
-                // If the length of the string builder is closer to the ideal length than the length of the string builder plus the current string, break
+
                 if (abs(sb.length - idealLength) < abs(sb.length + s.length - idealLength)) break
-                // If the string builder is not empty or the text ends with the delimiter, add the delimiter to the string builder
+
                 if (sb.isNotEmpty() || text.endsWith(d.toString())) sb.insert(0, d)
-                // Add the current string to the string builder
+
                 sb.insert(0, s)
-                // If the length of the string builder is greater than the ideal length, break
+
                 if (sb.length > idealLength) {
-                    //if (i > 0) sb.insert(0, d);
+
                     break
                 }
             }
-            // If the split strings are empty, return an empty stream
+
             if (split.isEmpty()) return@flatMap Stream.empty<String>()
-            // Return a stream of the string builder
+
             Stream.of(sb.toString())
         }.collect(Collectors.toList())
-        // Return the string with the closest length to the ideal length
+
         return candidates.stream().min(Comparator.comparing { s: CharSequence ->
             abs(
                 s.length - idealLength

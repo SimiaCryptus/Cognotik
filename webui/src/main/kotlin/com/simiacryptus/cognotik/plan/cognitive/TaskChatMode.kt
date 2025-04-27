@@ -37,29 +37,24 @@ open class TaskChatMode(
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(TaskChatMode::class.java)
 
-    // Message history for the conversation
     private val messagesLock = Any()
     private val messages = ConcurrentLinkedQueue<ApiModel.ChatMessage>()
 
-    // Buffer for queued messages while processing
     private val messageBuffer = ConcurrentLinkedQueue<String>()
 
-    // Flag to track if we're currently processing a task
     private var isProcessing = false
 
-    // System prompt for task selection
     private val systemPrompt = "Given the following input, choose ONE task to execute. " +
             "Do not create a full plan, just select the most appropriate task types for the given input."
 
     override fun initialize() {
-        // Validate that only one task type is enabled
+
         val enabledTasks = TaskType.getAvailableTaskTypes(planSettings)
         require(enabledTasks.size == 1) {
             "TaskChatMode requires exactly one enabled task type. Found ${enabledTasks.size}: ${enabledTasks.map { it.name }}"
         }
         log.debug("TaskChatMode initialized with task type: ${enabledTasks.first().name}")
 
-        // Initialize conversation with system message
         synchronized(messagesLock) {
             messages.add(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList()))
         }
@@ -67,7 +62,7 @@ open class TaskChatMode(
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
-        // If already processing a message, add to buffer and return
+
         synchronized(messagesLock) {
             if (isProcessing) {
                 log.debug("Already processing a task, adding message to buffer: ${userMessage}")
@@ -77,7 +72,6 @@ open class TaskChatMode(
             isProcessing = true
         }
 
-        // Add user message to conversation history
         synchronized(messagesLock) {
             messages.add(ApiModel.ChatMessage(ApiModel.Role.user, userMessage.toContentList()))
         }
@@ -96,7 +90,6 @@ open class TaskChatMode(
         val apiClient = (api as ChatClient).getChildClient(task)
         apiClient.budget = planSettings.budget
 
-
         val coordinator = PlanCoordinator(
             user = user,
             session = session,
@@ -109,12 +102,9 @@ open class TaskChatMode(
             planSettings = planSettings
         )
 
-
         try {
             val taskType = TaskType.getAvailableTaskTypes(planSettings).first()
 
-
-            // Build the task selection prompt
             val taskSelectionPrompt =
                 "Available task types:\n" +
                         TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n") { taskType ->
@@ -150,13 +140,10 @@ open class TaskChatMode(
                     }
             )
 
-
-            // Prepare input with conversation context
             val input = getConversationContext() +
                     listOf(
                         "Please choose the next single task to execute based on the current status.\nIf there are no tasks to execute, return {}."
                     )
-
 
             val taskConfig = actor.answer(input, apiClient).obj
             task.add(renderMarkdown("Executing ${taskType.name}:\n```json\n${JsonUtil.toJson(taskConfig)}\n```"))
@@ -180,19 +167,19 @@ open class TaskChatMode(
                 tabs["Output"] = placeholder
                 complete(renderMarkdown("Task completed. Result:\n${result}"))
             }
-            // Add assistant response to conversation history
+
             val assistantResponse = "Task executed: ${taskType.name}\n${result}"
             synchronized(messagesLock) {
                 messages.add(ApiModel.ChatMessage(ApiModel.Role.assistant, assistantResponse.toContentList()))
             }
-            // Complete the task
+
             task.complete()
-            // Process any buffered messages
+
             processBufferedMessages()
         } catch (e: Exception) {
             log.error("Error executing task", e)
             task.error(null, e)
-            // Reset processing flag even if there was an error
+
             synchronized(messagesLock) {
                 isProcessing = false
             }
@@ -205,25 +192,24 @@ open class TaskChatMode(
     private fun processBufferedMessages() {
         synchronized(messagesLock) {
             if (messageBuffer.isNotEmpty()) {
-                // Concatenate all buffered messages
+
                 val combinedMessage = messageBuffer.joinToString("\n\n")
                 log.debug("Processing buffered messages: ${messageBuffer.size} messages")
-                // Clear the buffer
+
                 messageBuffer.clear()
-                // Reset processing flag to allow the new task to start
+
                 isProcessing = false
-                // Process the combined message
+
                 val newTask = ui.newTask(false)
                 ui.socketManager?.pool?.submit {
                     handleUserMessage(combinedMessage, newTask)
                 }
             } else {
-                // No buffered messages, just reset the flag
+
                 isProcessing = false
             }
         }
     }
-
 
     /**
      * Gets the current conversation context as a list of messages

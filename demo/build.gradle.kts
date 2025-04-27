@@ -30,7 +30,6 @@ dependencies {
     }
     implementation("org.jsoup:jsoup:1.19.1")
 
-
     implementation(project(":jo-penai"))
     implementation(project(":core"))
 
@@ -60,9 +59,8 @@ dependencies {
     implementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
 
-//    intellijPlatform {
-//        intellijIdeaCommunity("2024.1")
-//    }
+
+
 }
 
 java {
@@ -82,7 +80,6 @@ tasks.test {
     useJUnitPlatform()
     jvmArgs = listOf("--add-opens", "java.base/java.lang=ALL-UNNAMED")
 }
-
 
 tasks {
     compileKotlin {
@@ -111,8 +108,6 @@ tasks {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(sourceSets.main.get().output)
     }
-
-
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {

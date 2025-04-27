@@ -245,7 +245,7 @@ abstract class ShellToolAgent<T : Interpreter>(
     }
 
     private fun openAPIParsedActor() = object : ParsedActor<OpenAPI>(
-//    parserClass = OpenApiParser::class.java,
+
         resultClass = OpenAPI::class.java,
         model = model,
         prompt = "You are a code documentation assistant. You will create the OpenAPI definition for a servlet handler written in kotlin",
@@ -253,7 +253,7 @@ abstract class ShellToolAgent<T : Interpreter>(
     ) {
         override val describer: TypeDescriber
             get() = object : AbbrevWhitelistYamlDescriber(
-                //"com.simiacryptus", "com.simiacryptus"
+
             ) {
                 override val includeMethods: Boolean get() = false
             }
@@ -301,7 +301,6 @@ abstract class ShellToolAgent<T : Interpreter>(
             get() = super.prompt
     }
 
-
     private fun parsedActor() = object : CodingActor(
         interpreterClass = KotlinInterpreter::class,
         symbols = mapOf(),
@@ -314,7 +313,6 @@ abstract class ShellToolAgent<T : Interpreter>(
         override val prompt: String
             get() = super.prompt
     }
-
 
     /**
      *
@@ -346,7 +344,7 @@ abstract class ShellToolAgent<T : Interpreter>(
                     execute(ui.newTask(), response)
                 }) + "\n          " + super.ui.hrefLink("♻", "href-link regen-button") {
                     super.responseAction(task, "Regenerating...", formHandle!!, formText) {
-                        //val task = super.ui.newTask()
+
                         val codeRequest =
                             request.copy(messages = request.messages.dropLastWhile { it.second == ApiModel.Role.assistant })
                         try {
@@ -382,7 +380,7 @@ abstract class ShellToolAgent<T : Interpreter>(
                     }
                 } + "</div>  " + super.ui.textInput { feedback ->
                     super.responseAction(task, "Revising...", formHandle!!, formText) {
-                        //val task = super.ui.newTask()
+
                         try {
                             task.echo(renderMarkdown(feedback, ui = ui))
                             val codeRequest = CodingActor.CodeRequest(
@@ -431,7 +429,6 @@ abstract class ShellToolAgent<T : Interpreter>(
         task.complete()
     }
 
-
     class ServletBuffer : ArrayList<HttpServlet>()
 
     private fun buildTestPage(
@@ -445,7 +442,7 @@ abstract class ShellToolAgent<T : Interpreter>(
                 JsonUtil.toJson(openAPI), servletImpl
             ), api
         )
-        // if ```html unwrap
+
         if (testPage.contains("```html")) testPage = testPage.substringAfter("```html").substringBefore("```")
         task.add(renderMarkdown("```html\n${testPage.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }}\n```", ui = ui))
         task.complete(
@@ -462,12 +459,13 @@ abstract class ShellToolAgent<T : Interpreter>(
         fun <T> execWrap(fn: () -> T): T {
             val classLoader = Thread.currentThread().contextClassLoader
             val prevCL = KotlinInterpreter.classLoader
-            KotlinInterpreter.classLoader = classLoader //req.javaClass.classLoader
+            KotlinInterpreter.classLoader = classLoader
+
             return try {
                 WebAppClassLoader.runWithServerClassAccess {
                     require(null != classLoader.loadClass("org.eclipse.jetty.server.Response"))
                     require(null != classLoader.loadClass("org.eclipse.jetty.server.Request"))
-                    // com.simiacryptus.jopenai.OpenAIClient
+
                     require(null != classLoader.loadClass("com.simiacryptus.jopenai.OpenAIClient"))
                     require(null != classLoader.loadClass("com.simiacryptus.jopenai.API"))
                     fn()

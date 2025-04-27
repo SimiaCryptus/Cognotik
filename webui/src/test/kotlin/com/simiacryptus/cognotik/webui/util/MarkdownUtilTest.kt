@@ -31,5 +31,4 @@ class MarkdownUtilTest {
         assertEquals(expected, result, "The Mermaid code should be correctly formatted.")
     }
 
-
 }

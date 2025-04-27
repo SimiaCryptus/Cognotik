@@ -15,7 +15,8 @@ class SessionSettingsServlet(
     private val server: ApplicationServer,
 ) : HttpServlet() {
     private val logger = LoggerFactory.getLogger(SessionSettingsServlet::class.java)
-    val settingsClass = Map::class.java // server.settingsClass
+    val settingsClass = Map::class.java
+
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         try {
@@ -43,7 +44,6 @@ class SessionSettingsServlet(
                         return
                     }
 
-                    //language=HTML
                     resp.writer.write(
                         """
             <html>

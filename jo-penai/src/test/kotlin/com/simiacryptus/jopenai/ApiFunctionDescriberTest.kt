@@ -23,6 +23,6 @@ class ApiFunctionDescriberTest : TypeDescriberTestBase() {
         """.trimIndent()
 
     override fun testDescribeRecursiveType() {
-//        super.testDescribeRecursiveType()
+
     }
 }

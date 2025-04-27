@@ -72,7 +72,7 @@ open class OpenAIClient(
     protected open fun authorize(request: HttpRequest, apiProvider: APIProvider) {
         when (apiProvider) {
             APIProvider.Google -> {
-//        request.addHeader("X-goog-api-key", "${key.get(apiProvider)}")
+
             }
 
             APIProvider.Anthropic -> {
@@ -558,7 +558,7 @@ open class OpenAIClient(
 
             val entityBuilder = MultipartEntityBuilder.create()
             entityBuilder.addPart("image", FileBody(request.image))
-            //request.model?.let { entityBuilder.addTextBody("model", it) }
+
             request.n?.let { entityBuilder.addTextBody("n", it.toString()) }
             request.responseFormat?.let { entityBuilder.addTextBody("response_format", it) }
             request.size?.let { entityBuilder.addTextBody("size", it) }

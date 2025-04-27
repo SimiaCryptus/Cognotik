@@ -6,7 +6,7 @@ interface ErrorFallbackProps {
 
 const ErrorFallback: React.FC<ErrorFallbackProps> = ({error}) => {
     useEffect(() => {
-        // Log structured error information with timestamp and error details
+
         console.error('[Critical Error]', {
             timestamp: new Date().toISOString(),
             message: error.message,

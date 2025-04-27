@@ -46,17 +46,16 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("com.simiacryptus")
 
         try {
-            // Configure diff logging based on settings
+
             com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled =
                 AppSettingsState.instance.diffLoggingEnabled
 
-            //ApplicationServicesConfig.dataStorageRoot = ApplicationServicesConfig.dataStorageRoot.resolve("intellij")
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader
             try {
                 currentThread.contextClassLoader = PluginStartupActivity::class.java.classLoader
                 init(project)
-                // Add user-supplied models to ChatModel
+
                 addUserSuppliedModels(AppSettingsState.instance.userSuppliedModels?.mapNotNull {
                     try {
                         fromJson(it, AppSettingsState.UserSuppliedModel::class.java)
@@ -69,7 +68,7 @@ class PluginStartupActivity : ProjectActivity {
             } finally {
                 currentThread.contextClassLoader = prevClassLoader
             }
-            // Set up file editor listener for documentation tracking
+
             setupDocumentationTracking(project)
 
             if (AppSettingsState.instance.showWelcomeScreen || AppSettingsState.instance.greetedVersion != AppSettingsState.WELCOME_VERSION) {
@@ -118,7 +117,7 @@ class PluginStartupActivity : ProjectActivity {
                         log.error("Error opening welcome page", e)
                     }
                 } ?: log.error("Welcome page not found")
-                // Set showWelcomeScreen to false after showing it for the first time
+
                 AppSettingsState.instance.greetedVersion = AppSettingsState.WELCOME_VERSION
                 AppSettingsState.instance.showWelcomeScreen = false
             }
@@ -226,10 +225,13 @@ class PluginStartupActivity : ProjectActivity {
                 ChatModel.values[model.displayName] = ChatModel(
                     name = model.displayName,
                     modelName = model.modelId,
-                    maxTotalTokens = 4096, // Default value, adjust as needed
+                    maxTotalTokens = 4096,
+
                     provider = model.provider,
-                    inputTokenPricePerK = 0.0, // Default value, adjust as needed
-                    outputTokenPricePerK = 0.0 // Default value, adjust as needed
+                    inputTokenPricePerK = 0.0,
+
+                    outputTokenPricePerK = 0.0
+
                 )
             }
         }

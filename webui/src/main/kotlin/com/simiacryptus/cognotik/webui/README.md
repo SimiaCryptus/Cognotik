@@ -207,7 +207,6 @@ class MyCustomApp(root: File) : ApplicationServer(
     val task = ui.newTask()
     task.echo(userMessage)
 
-    // Process the message and generate a response
     val response = "This is a response to: $userMessage"
 
     task.complete(response)
@@ -222,14 +221,12 @@ fun processUserQuery(query: String, ui: ApplicationInterface) {
   val task = ui.newTask()
   task.echo(query)
 
-  // Show progress
   task.add("Processing your request...")
 
   try {
-    // Perform some work
+
     val result = doSomeWork(query)
 
-    // Show the result
     task.complete("Here's your result: $result")
   } catch (e: Exception) {
     task.error(ui, e)
@@ -243,12 +240,10 @@ fun processUserQuery(query: String, ui: ApplicationInterface) {
 fun createInteractiveUI(ui: ApplicationInterface) {
   val task = ui.newTask()
 
-  // Add a clickable link
   val link = ui.hrefLink("Click me", "my-link") {
     task.add("You clicked the link!")
   }
 
-  // Add a text input form
   val input = ui.textInput { text ->
     task.add("You entered: $text")
   }

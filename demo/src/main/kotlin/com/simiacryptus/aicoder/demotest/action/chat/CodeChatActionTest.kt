@@ -20,7 +20,6 @@ import java.lang.Thread.sleep
 import java.time.Duration
 import kotlin.io.path.name
 
-
 /**
  * Tests the Code Chat functionality of the AI Coder plugin.
  *
@@ -102,7 +101,8 @@ class CodeChatActionTest : DemoTestBase(
             editor.click()
             keyboard {
                 pressing(KeyEvent.VK_CONTROL) {
-                    key(KeyEvent.VK_A) // Select all
+                    key(KeyEvent.VK_A)
+
                 }
             }
         }
@@ -166,15 +166,15 @@ class CodeChatActionTest : DemoTestBase(
                 val wait = WebDriverWait(driver, Duration.ofSeconds(90))
 
                 try {
-                    // Get chat input element
+
                     val chatInput = wait.until(ExpectedConditions.elementToBeClickable(By.id("chat-input")))
-                    // Clear input and wait
+
                     chatInput.clear()
                     sleep(1000)
-                    // Clear any existing text and wait
+
                     chatInput.clear()
                     sleep(1000)
-                    // Clear any existing text
+
                     chatInput.clear()
                     sleep(1000)
                     log.info("Chat interface loaded successfully")
@@ -184,30 +184,30 @@ class CodeChatActionTest : DemoTestBase(
                     log.debug("Submitting request to chat interface")
                     chatInput.apply {
                         click()
-                        // Type message more slowly for demo
+
                         "Please explain this code and suggest improvements".forEach { c ->
                             sendKeys(c.toString())
                             sleep(100)
                         }
-                        // Wait before submitting
+
                         sleep(2000)
-                        // Type message character by character for demo
+
                         "Create a user manual for this class".forEach { c ->
                             sendKeys(c.toString())
                             sleep(100)
                         }
                     }
-                    // Wait before submitting
+
                     sleep(2000)
                     tts("Let's ask the AI to create a user manual for our class. This demonstrates how Code Chat can help with documentation tasks while maintaining full context of the code.")?.play(
                         1000
                     )
 
                     wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[@type='submit']"))).click()
-                    // Wait longer for response
+
                     sleep(10000)
                     log.info("Request submitted successfully")
-                    // Wait longer for response
+
                     sleep(5000)
                     tts("The request is being processed. The AI analyzes both the code structure and your request to generate comprehensive, contextually relevant responses.")?.play(
                         2000
@@ -258,6 +258,5 @@ class CodeChatActionTest : DemoTestBase(
     companion object {
         val log = LoggerFactory.getLogger(CodeChatActionTest::class.java)
     }
-
 
 }

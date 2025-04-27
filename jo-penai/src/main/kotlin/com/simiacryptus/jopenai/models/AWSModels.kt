@@ -171,8 +171,10 @@ object AWSModels {
         maxTotalTokens = 8192,
         maxOutTokens = 2048,
         provider = APIProvider.AWS,
-        inputTokenPricePerK = 0.0005, // Assuming pricing, adjust as necessary
-        outputTokenPricePerK = 0.0015  // Assuming pricing, adjust as necessary
+        inputTokenPricePerK = 0.0005,
+
+        outputTokenPricePerK = 0.0015
+
     )
     val LLaMA370bInstructAWS = ChatModel(
         name = "LLaMA370bInstructAWS",
@@ -180,40 +182,50 @@ object AWSModels {
         maxTotalTokens = 8192,
         maxOutTokens = 2048,
         provider = APIProvider.AWS,
-        inputTokenPricePerK = 0.0005, // Assuming pricing, adjust as necessary
-        outputTokenPricePerK = 0.0015  // Assuming pricing, adjust as necessary
+        inputTokenPricePerK = 0.0005,
+
+        outputTokenPricePerK = 0.0015
+
     )
     val AmazonNovaProV1 = ChatModel(
         name = "AmazonNovaProV1",
         modelName = "amazon.nova-pro-v1:0",
         maxTotalTokens = 4096,
         provider = APIProvider.AWS,
-        inputTokenPricePerK = 0.001, // Assumed pricing, adjust as needed
-        outputTokenPricePerK = 0.002  // Assumed pricing, adjust as needed
+        inputTokenPricePerK = 0.001,
+
+        outputTokenPricePerK = 0.002
+
     )
     val AmazonNovaLiteV1 = ChatModel(
         name = "AmazonNovaLiteV1",
         modelName = "amazon.nova-lite-v1:0",
         maxTotalTokens = 4096,
         provider = APIProvider.AWS,
-        inputTokenPricePerK = 0.0005, // Assumed pricing, adjust as needed
-        outputTokenPricePerK = 0.001   // Assumed pricing, adjust as needed
+        inputTokenPricePerK = 0.0005,
+
+        outputTokenPricePerK = 0.001
+
     )
     val AmazonNovaMicroV1 = ChatModel(
         name = "AmazonNovaMicroV1",
         modelName = "amazon.nova-micro-v1:0",
         maxTotalTokens = 4096,
         provider = APIProvider.AWS,
-        inputTokenPricePerK = 0.00025, // Assumed pricing, adjust as needed
-        outputTokenPricePerK = 0.0005   // Assumed pricing, adjust as needed
+        inputTokenPricePerK = 0.00025,
+
+        outputTokenPricePerK = 0.0005
+
     )
     val DeepseekLLMR1DistillQwen32b = ChatModel(
         name = "DeepseekLLMR1DistillQwen32b",
         modelName = "deepseek-llm-r1-distill-qwen-32b",
         maxTotalTokens = 8192,
         provider = APIProvider.AWS,
-        inputTokenPricePerK = 0.0010, // Assumed pricing, adjust as necessary
-        outputTokenPricePerK = 0.0020  // Assumed pricing, adjust as necessary
+        inputTokenPricePerK = 0.0010,
+
+        outputTokenPricePerK = 0.0020
+
     )
     val values = mapOf(
         "LLaMA370bInstructAWS" to LLaMA370bInstructAWS,

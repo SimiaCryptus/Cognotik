@@ -1131,7 +1131,8 @@ r al
 ĠS he
 ar ge
 Ġ --
-: //
+:
+
 Ġb ro
 ĠP h
 at s
@@ -3126,7 +3127,8 @@ ok es
 ĠJ ew
 Ġto wards
 as c
-Ġ //
+Ġ
+
 ĠK ore
 Ġtalk ing
 Ġcor rect
@@ -9458,7 +9460,7 @@ r ates
 ĠB rew
 d og
 M ark
-// //
+
 Ġexec ution
 Ġj oke
 ph ones
@@ -15903,7 +15905,7 @@ xd0 xb0
 ĠJ edi
 Ġun law
 v ised
-//// ////
+
 ] (
 ĠWe iss
 Ġpre st
@@ -20132,7 +20134,7 @@ xd1 Ĥ
 In s
 ĠD ame
 Ġunp redict
-// /
+
 gh ai
 Ġart illery
 Ġcru ise
@@ -26999,7 +27001,7 @@ m ust
 ĠMar tha
 Ġbirth s
 C over
-//////// ////////
+
 ĠW ong
 Ph ot
 ĠA LS
@@ -49457,7 +49459,7 @@ OR GE
 G iving
 Ġport ed
 78 1
-//////////////// ////////////////
+
 bre eding
 Ġlog ger
 ĠH OL

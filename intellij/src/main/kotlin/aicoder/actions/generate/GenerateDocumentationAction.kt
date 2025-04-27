@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import javax.swing.*
 
-
 class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDocumentationAction.Settings>() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
@@ -113,7 +112,7 @@ class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDo
         }
         if (settings.filesToProcess.isEmpty()) return null
         mruDocumentationInstructions.addInstructionToHistory("${settings.outputFilename} ${settings.transformationMessage}")
-        //.map { path -> return@map root?.resolve(path) }.filterNotNull()
+
         return Settings(settings, project)
     }
 
@@ -135,9 +134,9 @@ class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDo
     override fun processSelection(state: SelectionState, config: Settings?, progress: ProgressIndicator): Array<File> {
         progress.fraction = 0.0
         if (config?.settings == null) {
-            // Dialog was cancelled, return empty array
+
             return emptyArray<File>().also {
-                // Ensure we don't attempt to open any files when dialog is cancelled
+
                 return@also
             }
         }
@@ -202,14 +201,16 @@ class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDo
                                     return@submit null
                                 }
                                 log.warn("Error processing file: $path. Retrying (attempt $retries)", e)
-                                Thread.sleep(1000L * retries) // Exponential backoff
+                                Thread.sleep(1000L * retries)
+
                             }
                         }
                         null
                     }
                 }?.toTypedArray()?.map { future ->
                     try {
-                        future.get(2, TimeUnit.MINUTES) // Set a timeout for each file processing
+                        future.get(2, TimeUnit.MINUTES)
+
                     } catch (e: Exception) {
                         when (e) {
                             is TimeoutException -> log.error("File processing timed out", e)
@@ -303,12 +304,12 @@ class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDo
             function = {
                 val file = outputPath.toFile()
                 if (file.exists()) {
-                    // Ensure the IDE is ready for file operations
+
                     ApplicationManager.getApplication().invokeLater {
                         val ioFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
                         if (false == (ioFile?.let { FileEditorManager.getInstance(project).isFileOpen(it) })) {
                             val localFileSystem = LocalFileSystem.getInstance()
-                            // Refresh the file system to ensure the file is visible
+
                             val virtualFile = localFileSystem.refreshAndFindFileByIoFile(file)
                             virtualFile?.let {
                                 FileEditorManager.getInstance(project).openFile(it, true)
@@ -331,7 +332,7 @@ class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDo
 
         init {
             title = "Compile Documentation"
-            // Set the default values for the UI elements from userSettings
+
             settingsUI.transformationMessage.text = userSettings.transformationMessage
             settingsUI.outputFilename.text = userSettings.outputFilename
             settingsUI.outputDirectory.text = userSettings.outputDirectory
@@ -348,20 +349,24 @@ class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDo
         override fun createCenterPanel(): JComponent {
             val panel = JPanel(BorderLayout()).apply {
                 val filesScrollPane = JBScrollPane(settingsUI.filesToProcess).apply {
-                    preferredSize = Dimension(600, 400) // Increase the size for better visibility
+                    preferredSize = Dimension(600, 400)
+
                 }
-                add(filesScrollPane, BorderLayout.CENTER) // Make the files list the dominant element
+                add(filesScrollPane, BorderLayout.CENTER)
+
 
                 val optionsPanel = JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    border = BorderFactory.createEmptyBorder(10, 10, 10, 10) // Add some padding
+                    border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+
                     add(JLabel("Recent Instructions"))
                     add(settingsUI.recentInstructions)
                     add(Box.createVerticalStrut(10))
                     add(JLabel("AI Instruction"))
                     add(settingsUI.transformationMessage)
                     add(Box.createVerticalStrut(10))
-                    add(Box.createVerticalStrut(10)) // Add some vertical spacing
+                    add(Box.createVerticalStrut(10))
+
                     add(JLabel("Output File"))
                     add(settingsUI.outputFilename)
                     add(Box.createVerticalStrut(10))
@@ -383,8 +388,8 @@ class GenerateDocumentationAction : aicoder.actions.FileContextAction<GenerateDo
             userSettings.transformationMessage = settingsUI.transformationMessage.text
             userSettings.outputFilename = settingsUI.outputFilename.text
             userSettings.outputDirectory = settingsUI.outputDirectory.text
-            // Assuming filesToProcess already reflects the user's selection
-//          userSettings.filesToProcess = settingsUI.filesToProcess.selectedValuesList
+
+
             userSettings.filesToProcess =
                 settingsUI.filesToProcess.items.filter { path -> settingsUI.filesToProcess.isItemSelected(path) }
             userSettings.singleOutputFile = settingsUI.singleOutputFile.isSelected

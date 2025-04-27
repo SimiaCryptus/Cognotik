@@ -8,7 +8,6 @@ export interface LogFilter {
     exclude?: string[];
 }
 
-
 export interface WebSocketConfig {
     url: string;
     port: string;

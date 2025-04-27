@@ -73,7 +73,7 @@ class DataTableCompilationTask(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
-        // Step 1: Collect all files matching the glob patterns
+
         task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns", ui = agent.ui))
         val result = mutableListOf<Path>()
         val basePath = Paths.get(planSettings.workingDir ?: ".")
@@ -125,7 +125,7 @@ class DataTableCompilationTask(
             prompt = """
                 Analyze the provided files and identify distinct columns for a data table based on the following instructions:
                 ${taskConfig?.column_identification_instructions}
-                
+
                 For each column you identify:
                 1. Assign a unique column ID - should be a short, descriptive string
                 2. Provide a detailed description of what the column represents
@@ -166,10 +166,10 @@ class DataTableCompilationTask(
             prompt = """
                 You are a data extraction agent that is building a data table.
                 Analyze the provided files and identify ALL distinct rows found in the data:
-                
+
                 Special Instructions:
                 ${taskConfig?.row_identification_instructions}
-                
+
                 For each row you identify:
                 1. Assign a unique row ID - should be a short, descriptive string
                 2. List the source files that contain data for this row
@@ -189,7 +189,6 @@ class DataTableCompilationTask(
         task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows", ui = agent.ui))
         task.add(MarkdownUtil.renderMarkdown("Identified ${columnsList.size} columns", ui = agent.ui))
 
-        // Step 4: Extract rows
         task.add(MarkdownUtil.renderMarkdown("## Step 4: Extracting cell data for each row", ui = agent.ui))
         val tableData = mutableListOf<Map<String, Any>>()
         val progressTotal = rowsList.obj.rows.size
@@ -241,7 +240,6 @@ class DataTableCompilationTask(
             tableData.add(rowMap)
         }
 
-        // Step 5: Compile and save the table
         task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table", ui = agent.ui))
 
         val outputPath = taskConfig?.output_file ?: "compiled_data.json"
@@ -251,27 +249,24 @@ class DataTableCompilationTask(
             File(outputPath)
         }
 
-        // Create parent directories if they don't exist
         outputFile.parentFile?.mkdirs()
 
-        // Save the data based on file extension
         when {
             outputPath.endsWith(".json", ignoreCase = true) -> {
-                // Save as JSON
+
                 val finalData = TableData(tableData, columnsList)
                 val mapper = jacksonObjectMapper()
                 mapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, finalData)
             }
 
             outputPath.endsWith(".csv", ignoreCase = true) -> {
-                // Save as CSV
+
                 BufferedWriter(FileWriter(outputFile)).use { writer ->
-                    // Write header
+
                     val header = columnsList.joinToString(",") { "\"${it.name.replace("\"", "\"\"")}\"" }
                     writer.write(header)
                     writer.newLine()
 
-                    // Write rows
                     tableData.forEach { row ->
                         val rowValues = columnsList.map { column ->
                             val value = row[column.id]?.toString() ?: "N/A"
@@ -284,18 +279,18 @@ class DataTableCompilationTask(
             }
 
             outputPath.endsWith(".md", ignoreCase = true) -> {
-                // Save as Markdown table
+
                 BufferedWriter(FileWriter(outputFile)).use { writer ->
                     writeMarkdown(columnsList, writer, tableData)
                 }
             }
 
             outputPath.isBlank() -> {
-                // Don't save the data
+
             }
 
             else -> {
-                // Default to JSON if extension not recognized
+
                 val finalData = TableData(tableData, columnsList)
                 val mapper = jacksonObjectMapper()
                 mapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, finalData)
@@ -316,7 +311,6 @@ class DataTableCompilationTask(
             }
         }").renderMarkdown()
 
-        //task.add(MarkdownUtil.renderMarkdown(resultMessage, ui = agent.ui))
         resultFn(resultMessage)
     }
 
@@ -325,17 +319,15 @@ class DataTableCompilationTask(
         writer: BufferedWriter,
         tableData: MutableList<Map<String, Any>>
     ) {
-        // Write header
+
         val header = columnsList.joinToString(" | ") { it.name }
         writer.write("| $header |")
         writer.newLine()
 
-        // Write separator
         val separator = columnsList.joinToString(" | ") { "---" }
         writer.write("| $separator |")
         writer.newLine()
 
-        // Write rows
         tableData.forEach { row ->
             val rowValues = columnsList.joinToString(" | ") { column ->
                 val value = row[column.id]?.toString() ?: "N/A"

@@ -59,7 +59,6 @@ class ChatWithCommitDiffAction : BaseAction(
         }
     }
 
-
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
         val session = Session.newGlobalID()
         SessionProxyServer.agents[session] = CodeChatSocketManager(

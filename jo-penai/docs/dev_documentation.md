@@ -264,7 +264,6 @@ output token price per K for each model.
 
 This table represents a concise summary of the chat models defined in the code, including their key attributes.
 
-
 <!-- TOC -->
 
 * [High-Level Architecture Documentation for OpenAI Integration Framework](#high-level-architecture-documentation-for-openai-integration-framework)
@@ -1094,7 +1093,7 @@ offering a framework for building specific API interactions, authentication mech
 package com.simiacryptus.jopenai;
 
 open class API{
-        // Class implementation goes here
+
         }
 ```
 
@@ -1120,7 +1119,7 @@ package com.simiacryptus.jopenai.custom;
 import com.simiacryptus.jopenai.API;
 
 public class CustomAPI extends API {
-    // Implement specific API functionalities here
+
 }
 ```
 
@@ -1195,8 +1194,10 @@ import java.util.ArrayDeque
 
 fun main() {
     val audioBuffer = ArrayDeque<ByteArray>()
-    val secondsPerPacket = 0.5 // 500 milliseconds per packet
-    val continueRecording = { true } // Replace with actual logic to stop recording
+    val secondsPerPacket = 0.5
+
+    val continueRecording = { true }
+
 
     val audioRecorder = AudioRecorder(audioBuffer, secondsPerPacket, continueRecording)
     audioRecorder.run()
@@ -1287,7 +1288,6 @@ val completionRequest = ApiModel.CompletionRequest(
     temperature = 0.7
 )
 
-// Assuming `aiService` is an instance of a class that handles API requests
 val completionResponse = aiService.completeText(completionRequest)
 
 if (completionResponse.error == null) {
@@ -1355,7 +1355,8 @@ To create an `AudioPacket`, you need to provide audio samples as a `FloatArray`.
 rate; otherwise, it defaults to the `AudioRecorder.audioFormat.frameRate`.
 
 ```kotlin
-val audioSamples = FloatArray(1024) // Example audio samples
+val audioSamples = FloatArray(1024)
+
 val audioPacket = AudioPacket(audioSamples)
 ```
 
@@ -1375,7 +1376,8 @@ val combinedPacket = audioPacket + anotherAudioPacket
 The `AudioPacket` class provides methods to convert between raw audio data and different formats, such as WAV.
 
 ```kotlin
-val rawAudio: ByteArray = // Obtain raw audio data
+val rawAudio: ByteArray =
+
 val wavAudio = AudioPacket.convertRawToWav(rawAudio)
 ```
 
@@ -1439,8 +1441,9 @@ class MyLoudnessBuffer(
 ) : LoudnessWindowBuffer(inputBuffer, outputBuffer, continueFn) {
 
     override fun shouldOutput(): Boolean {
-        // Implement logic to determine when to output processed data
-        return true // Example condition
+
+        return true
+
     }
 }
 
@@ -1547,10 +1550,10 @@ val continueProcessing = { true }
 val loudnessBuffer = LookbackLoudnessWindowBuffer(inputBuffer, outputBuffer, continueProcessing)
 
 while (continueProcessing()) {
-    // Add audio packets to inputBuffer
-    // Process audio packets
+
+
     if (loudnessBuffer.shouldOutput()) {
-        // Process outputBuffer data
+
     }
 }
 ```
@@ -1620,7 +1623,6 @@ val transcriptionProcessor = TranscriptionProcessor(
     onText = onText
 )
 
-// Start the transcription process
 transcriptionProcessor.run()
 ```
 
@@ -1851,7 +1853,8 @@ public boolean isAbbreviated(Type self)
 
 ```java
 AbbrevWhitelistYamlDescriber describer = new AbbrevWhitelistYamlDescriber("com.myapp.models", "org.example.types");
-Type myType = ...; // Obtain a Type instance
+Type myType = ...;
+
 boolean shouldAbbreviate = describer.isAbbreviated(myType);
 ```
 
@@ -1908,7 +1911,7 @@ The `Description` annotation can be applied to various program elements. Here ar
 ```kotlin
 @Description("This class represents a user in the system.")
 class User {
-    // Class implementation
+
 }
 ```
 
@@ -1919,7 +1922,7 @@ class User {
 
     @Description("This method returns the user's full name.")
     fun getFullName(): String {
-        // Method implementation
+
     }
 }
 ```
@@ -2058,7 +2061,6 @@ demonstrating how to retrieve all annotations for a property:
 ```kotlin
 import com.simiacryptus.jopenai.describe.DescriptorUtil
 
-// Assuming MyClass has a property named "myProperty"
 val annotations = DescriptorUtil.getAllAnnotations(MyClass::class.java, MyClass::myProperty)
 println(annotations)
 ```
@@ -2215,11 +2217,11 @@ class HTMLTypeDescriber : TypeDescriber() {
     override val methodBlacklist = setOf("toString", "hashCode")
 
     override fun describe(rawType: Class<in Nothing>, stackMax: Int, describedTypes: MutableSet<String>): String {
-        // Implementation for describing a class in HTML
+
     }
 
     override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
-        // Implementation for describing a method in HTML
+
     }
 }
 ```
@@ -2425,7 +2427,7 @@ fun setModelComplexity(complexity: Int) {
     if (complexity <= 0) {
         throw InvalidValueException("complexity", complexity.toString())
     }
-    // Proceed with setting the model complexity
+
 }
 ```
 
@@ -2505,9 +2507,9 @@ logging the error, notifying the user, or attempting to use a fallback model.
 
 ```kotlin
 try {
-    // Code that might throw InvalidModelException
+
 } catch (e: InvalidModelException) {
-    // Handle the exception (e.g., log the error, notify the user)
+
 }
 ```
 
@@ -2587,9 +2589,9 @@ request parameters to comply with the limits.
 
 ```java
 try{
-        // Code that makes a request to an AI service
+
         }catch(ModelMaxException e){
-        // Handle the exception, e.g., by logging the details or notifying the user
+
         System.out.
 
 println("Model max exceeded. Details: "+e.getMessage());
@@ -2644,7 +2646,7 @@ public void checkContent(String content) throws ModerationException {
     if (content.contains("unacceptable content")) {
         throw new ModerationException("Content violates moderation policies.");
     }
-    // Proceed with content processing
+
 }
 ```
 
@@ -2715,7 +2717,7 @@ for the recommended delay before retrying.
 
 ```java
 try{
-        // Code that may trigger a rate limit exception
+
         }catch(RateLimitException e){
         System.err.
 
@@ -2724,16 +2726,18 @@ println("Rate limit exceeded for organization: "+e.org +
     try{
             Thread.
 
-sleep(e.delay); // Wait for the recommended delay
+sleep(e.delay);
+
     }catch(
 InterruptedException ie){
         Thread.
 
 currentThread().
 
-interrupt(); // Restore the interrupted status
+interrupt();
+
     }
-            // Retry the operation or handle the exception further
+
             }
 ```
 
@@ -2776,16 +2780,17 @@ public class AIServiceHandler {
     public void processRequest() {
         try {
             checkQuota();
-            // Proceed with request
+
         } catch (QuotaException e) {
             System.err.println("Request cannot be processed: " + e.getMessage());
-            // Handle quota exceeded scenario, e.g., notify the user, log the event, etc.
+
         }
     }
 
     private void checkQuota() throws QuotaException {
-        // Logic to check if the quota is exceeded
-        boolean quotaExceeded = true; // This would be determined dynamically
+
+        boolean quotaExceeded = true;
+
         if (quotaExceeded) {
             throw new QuotaException();
         }
@@ -2879,15 +2884,16 @@ Below is an example demonstrating how to throw and catch a `RequestOverloadExcep
 ```kotlin
 fun processRequest() {
     try {
-        // Simulate checking the load on a model
-        val isOverloaded = true // This would typically be determined dynamically
+
+        val isOverloaded = true
+
         if (isOverloaded) {
             throw RequestOverloadException()
         }
-        // Proceed with request processing
+
     } catch (e: RequestOverloadException) {
         println("Caught an overload exception: ${e.message}")
-        // Implement retry logic, log the error, or notify the user as necessary
+
     }
 }
 ```
@@ -2958,13 +2964,14 @@ fun checkContentSafety(content: String) {
     if (!isContentSafe(content)) {
         throw SafetyException()
     }
-    // Proceed with operation as content is safe
+
 }
 
 fun isContentSafe(content: String): Boolean {
-    // Implementation of safety check
-    // Returns true if content is safe, false otherwise
-    return content.length < 100 // Example condition for simplicity
+
+
+    return content.length < 100
+
 }
 ```
 
@@ -3397,7 +3404,6 @@ instance by providing the model name, maximum tokens, and token price per thousa
 val models = CompletionModels.values()
 val daVinciModel = models["DaVinci"]
 
-// Creating a new model instance
 val customModel = CompletionModels("custom-model", 1500, 0.0015)
 ```
 
@@ -3464,10 +3470,9 @@ representing the model name into a corresponding `ChatModels` instance.
 ### Usage Example
 
 ```kotlin
-// Define a usage scenario
+
 val usage = Usage(prompt_tokens = 100, completion_tokens = 150)
 
-// Calculate pricing for GPT-3.5 Turbo model
 val price = OpenAIModels.GPT35Turbo.pricing(usage)
 
 println("The price for the usage is: $price")
@@ -3478,7 +3483,7 @@ println("The price for the usage is: $price")
 ```kotlin
 val objectMapper = ObjectMapper()
 objectMapper.writeValueAsString(OpenAIModels.GPT35Turbo)
-// Output: "GPT35Turbo"
+
 ```
 
 ### Deserialization Example
@@ -3487,7 +3492,7 @@ objectMapper.writeValueAsString(OpenAIModels.GPT35Turbo)
 val modelName = "\"GPT35Turbo\""
 val model = objectMapper.readValue(modelName, ChatModels::class.java)
 println(model.name)
-// Output: GPT35Turbo
+
 ```
 
 This documentation provides a comprehensive overview of the `ChatModels` class, its properties, methods, and usage
@@ -3549,7 +3554,8 @@ val editModel = EditModels.values()["DaVinciEdit"]
 Once you have an instance, you can calculate the pricing for a specific usage scenario:
 
 ```kotlin
-val usage = Usage(prompt_tokens = 500) // Example usage
+val usage = Usage(prompt_tokens = 500)
+
 val price = editModel?.pricing(usage)
 println("The cost for the usage is: $price")
 ```
@@ -4391,7 +4397,8 @@ class User(val name: String, val age: Int) : ValidatedObject {
     override fun validate(): String? {
         if (name.isBlank()) return "Name cannot be blank"
         if (age < 0) return "Age cannot be negative"
-        return null // Object is valid
+        return null
+
     }
 }
 ```
@@ -4628,21 +4635,21 @@ To use the `ClientUtil` functionalities, import the module and directly invoke i
 example, to check for errors in an API response:
 
 ```kotlin
-val apiResponse = "{...}" // JSON response from OpenAI API
+val apiResponse = "{...}"
+
 try {
     ClientUtil.checkError(apiResponse)
 } catch (e: Exception) {
-    // Handle specific exceptions
+
 }
 ```
 
 To set or get the API key:
 
 ```kotlin
-// Set the API key
+
 ClientUtil.keyTxt = "your_api_key"
 
-// Get the API key
 val apiKey = ClientUtil.keyTxt
 ```
 
@@ -4711,13 +4718,13 @@ return types, and a `main` method for testing.
 ```kotlin
 class MyGPTProxy : GPTProxyBase<MyInterface>(MyInterface::class.java) {
     override fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String {
-        // Implementation to interact with an AI model
+
     }
 }
 
 fun main() {
     val proxy = MyGPTProxy().create()
-    // Use proxy as an instance of MyInterface
+
 }
 ```
 
@@ -4925,7 +4932,8 @@ Restricts the characters in the given text to those that are encodable in the sp
 ```kotlin
 val originalText = "    This is an example text.    "
 val trimmedText = StringUtil.trimPrefix(originalText).toString()
-println(trimmedText) // Output: "This is an example text.    "
+println(trimmedText)
+
 ```
 
 This documentation provides an overview of the `StringUtil` class and its utility methods. Each method is designed to

@@ -33,7 +33,7 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
                 if (newGraph.nodes.none { it.id == otherNode.id }) {
                     newGraph.nodes.add(otherNode)
                 } else {
-                    // Merge nodes with the same ID
+
                     val existingNode = newGraph.nodes.first { it.id == otherNode.id }
                     newGraph.nodes.remove(existingNode)
                     newGraph.nodes.add(otherNode + existingNode)
@@ -48,10 +48,10 @@ class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
             this.nodes.forEach { thisNode ->
                 val otherNode = other.nodes.find { it.id == thisNode.id }
                 if (otherNode != null) {
-                    // If node exists in both graphs, create diff
+
                     newGraph.nodes.add(thisNode - otherNode)
                 } else {
-                    // If node only exists in this graph, include it in diff
+
                     newGraph.nodes.add(thisNode)
                 }
             }
@@ -287,7 +287,7 @@ operator fun CloudNodeType.NodeBase.minus(other: CloudNodeType.NodeBase) = when 
             sslCertArn = if (this.sslCertArn == other.sslCertArn) "" else this.sslCertArn
         )
     }
-    // Add similar cases for other node types
+
     else -> throw IllegalArgumentException("Unsupported node type for diffing")
 }
 
@@ -311,6 +311,6 @@ operator fun CloudNodeType.NodeBase.plus(other: CloudNodeType.NodeBase) = when {
             sslCertArn = other.sslCertArn.ifEmpty { this.sslCertArn }
         )
     }
-    // Add similar cases for other node types
+
     else -> throw IllegalArgumentException("Unsupported node type for merging")
 }

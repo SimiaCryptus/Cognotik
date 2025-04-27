@@ -20,7 +20,7 @@ class JsonDescriberTest : TypeDescriberTestBase() {
 
     @Test
     override fun testDescribeMethod() {
-//    super.testDescribeMethod()
+
     }
 
     override val typeDescriber: TypeDescriber get() = JsonDescriber()
@@ -35,7 +35,7 @@ class JsonDescriberTest : TypeDescriberTestBase() {
 
     override val methodDescription
         get() =
-            //language=json
+
             """
             {
               "operationId": "methodExample",
@@ -63,7 +63,8 @@ class JsonDescriberTest : TypeDescriberTestBase() {
 
     @Test
     override fun testDescribeRecursiveType() {
-        val expectedDescription = // Expected YAML description for RecursiveDataClass
+        val expectedDescription =
+
             """{
                  "type": "object",
                  "class": "com.simiacryptus.jopenai.TypeDescriberTestBase${"$"}RecursiveDataClass",
@@ -73,23 +74,21 @@ class JsonDescriberTest : TypeDescriberTestBase() {
         Assertions.assertEquals(expectedDescription, actualDescription)
     }
 
-//  @Test
-//  fun testDescribedTypesPreventRecursion() {
-//    val describer = JsonDescriber()
-//    val describedTypes = mutableSetOf<String>()
-//    val description = describer.describe(RecursiveType::class.java, 10, describedTypes)
-//    assertTrue(description.contains("..."), "Description should contain recursion prevention marker")
-//    assertTrue(describedTypes.contains(RecursiveType::class.java.name), "Described types should contain RecursiveType")
-//  }
 
-//  @Test
-//  fun testDescribedTypesTrackMultipleTypes() {
-//    val describer = JsonDescriber()
-//    val describedTypes = mutableSetOf<String>()
-//    describer.describe(FirstType::class.java, 10, describedTypes)
-//    describer.describe(SecondType::class.java, 10, describedTypes)
-//    assertTrue(describedTypes.contains(FirstType::class.java.name), "Described types should contain FirstType")
-//    assertTrue(describedTypes.contains(SecondType::class.java.name), "Described types should contain SecondType")
-//  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }

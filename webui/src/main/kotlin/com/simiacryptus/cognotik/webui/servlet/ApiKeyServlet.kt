@@ -30,8 +30,8 @@ class ApiKeyServlet : HttpServlet() {
     )
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        // Log received parameters for debugging
-//     println("Action: $action, API Key: $apiKey, Mapped Key: $mappedKey, Budget: $budget, Comment: $comment, User: ${user?.email}")
+
+
         resp.contentType = "text/html"
         val user = ApplicationServices.authenticationManager.getUser(req.getCookie()) ?: return resp.sendError(
             HttpServletResponse.SC_UNAUTHORIZED
@@ -49,7 +49,8 @@ class ApiKeyServlet : HttpServlet() {
                 }
             }
 
-            "delete" -> { // Fix the null safety check consistency
+            "delete" -> {
+
                 val record = apiKeyRecords.find { it.apiKey == apiKey && it.owner == user.email }
                 if (record != null) {
                     apiKeyRecords.remove(record)
@@ -61,14 +62,15 @@ class ApiKeyServlet : HttpServlet() {
             }
 
             "create" -> {
-                // Reuse the serveEditPage function but with an empty record for creation
+
                 serveEditPage(
                     resp,
                     ApiKeyRecord(
                         user.email,
                         UUID.randomUUID().toString(),
                         userSettingsManager.getUserSettings(user).apiKeys[APIProvider.OpenAI]
-                            ?: "", // TODO: Expand support for other providers
+                            ?: "",
+
                         0.0,
                         ""
                     )
@@ -80,7 +82,7 @@ class ApiKeyServlet : HttpServlet() {
                 if (record == null) {
                     throw IllegalArgumentException("API Key record not found, or you do not have permission to access it, or you are the owner.")
                 }
-                // Display a confirmation page instead of directly applying the settings
+
                 serveInviteConfirmationPage(resp, record, user)
             }
 
@@ -97,7 +99,7 @@ class ApiKeyServlet : HttpServlet() {
         val mappedKey = req.getParameter("mappedKey")
         val budget = req.getParameter("budget")?.toDoubleOrNull()
         val comment = req.getParameter("comment")
-        // welcomeMessage
+
         val welcomeMessage = req.getParameter("welcomeMessage")
         val user = ApplicationServices.authenticationManager.getUser(req.getCookie())
         val record = apiKeyRecords.find { it.apiKey == apiKey }
@@ -112,13 +114,16 @@ class ApiKeyServlet : HttpServlet() {
             } else {
                 userSettingsManager.updateUserSettings(
                     user, userSettingsManager.getUserSettings(user).copy(
-                        apiKeys = mapOf(APIProvider.OpenAI to apiKey), // TODO: Expand support for other providers
+                        apiKeys = mapOf(APIProvider.OpenAI to apiKey),
+
                         apiBase = mapOf(APIProvider.OpenAI to "https://apps.simiacrypt.us/proxy")
                     )
                 )
-                resp.sendRedirect("/") // Redirect to a success page or another relevant page
+                resp.sendRedirect("/")
+
             }
-        } else if (record != null && budget != null && user == null) { // Ensure user is not null before proceeding
+        } else if (record != null && budget != null && user == null) {
+
             apiKeyRecords.remove(record)
             apiKeyRecords.add(
                 record.copy(
@@ -130,7 +135,7 @@ class ApiKeyServlet : HttpServlet() {
             saveRecords()
             resp.sendRedirect("?action=edit&apiKey=$apiKey&editSuccess=true")
         } else if (apiKey != null && budget != null) {
-            // Create a new record if apiKey is not found
+
             val newRecord = ApiKeyRecord(
                 owner = user?.email ?: "",
                 apiKey = apiKey,
@@ -148,7 +153,8 @@ class ApiKeyServlet : HttpServlet() {
                         "UTF-8"
                     )
                 }&creationSuccess=true"
-            ) // Encode apiKey to prevent URL manipulation
+            )
+
         } else {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid input")
         }
@@ -183,7 +189,7 @@ class ApiKeyServlet : HttpServlet() {
     }
 
     private fun serveInviteConfirmationPage(resp: HttpServletResponse, record: ApiKeyRecord, user: User) {
-        //language=HTML
+
         resp.writer.write(
             """
     <html>
@@ -207,7 +213,7 @@ class ApiKeyServlet : HttpServlet() {
 
     private fun serveEditPage(resp: HttpServletResponse, record: ApiKeyRecord) {
         val usageSummary = ApplicationServices.usageManager.getUserUsageSummary(record.apiKey)
-        //language=HTML
+
         resp.writer.write(
             """
       <html>
@@ -218,39 +224,39 @@ class ApiKeyServlet : HttpServlet() {
                   font-family: Arial, sans-serif;
                   margin: 20px;
               }
-      
+
               form > label {
                   display: block;
                   margin-top: 10px;
               }
-      
+
               form > input[type="text"], textarea {
                   margin-bottom: 10px;
                   display: block;
                   width: 100%;
                   box-sizing: border-box;
               }
-      
+
               form > input[type="text"]#mappedKey {
                   width: 50%;
               }
-      
+
               textarea {
                   height: 100px;
               }
-      
+
               form > input[type="submit"] {
                   margin-top: 10px;
               }
-      
+
               form {
                   max-width: 600px;
               }
-      
+
               h2 {
                   margin-top: 20px;
               }
-      
+
               div {
                   margin-bottom: 10px;
               }

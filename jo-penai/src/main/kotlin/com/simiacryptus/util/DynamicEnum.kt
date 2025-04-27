@@ -14,25 +14,25 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
         private val registries = mutableMapOf<Class<*>, MutableList<Pair<String, DynamicEnum<*>>>>()
 
         internal fun <T> getRegistry(clazz: Class<T>): MutableList<Pair<String, T>> {
-//            log.debug("Fetching registry for class: {}", clazz.name)
+
             @Suppress("UNCHECKED_CAST")
             return registries.getOrPut(clazz) { mutableListOf() } as MutableList<Pair<String, T>>
         }
 
         fun <T> valueOf(clazz: Class<T>, name: String): T {
-//            log.debug("Looking up value for class: {}, name: {}", clazz.name, name)
+
             return getRegistry(clazz).toMap().get(name)
                 ?: throw IllegalArgumentException("Unknown enum constant: $name")
         }
 
         fun <T : DynamicEnum<T>> values(clazz: Class<T>): List<T> {
-//            log.debug("Fetching all values for class: {}", clazz.name)
+
             return getRegistry(clazz).map { it.second }
         }
 
         @JvmStatic
         fun <T : DynamicEnum<T>> register(clazz: Class<T>, enumConstant: T) {
-//            log.info("Registering enum constant: {} for class: {}", enumConstant.name, clazz.name)
+
             getRegistry(clazz).add(enumConstant.name to enumConstant)
         }
     }

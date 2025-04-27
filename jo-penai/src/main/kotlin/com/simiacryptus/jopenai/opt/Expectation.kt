@@ -71,5 +71,4 @@ abstract class Expectation {
 
     abstract fun score(api: OpenAIClient, response: ChatResponse): Double
 
-
 }

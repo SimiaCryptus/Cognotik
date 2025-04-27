@@ -17,17 +17,16 @@ class WordTokenFileTest {
 
     @BeforeEach
     fun setUp() {
-        // Create a test file with sample content
+
         val testFile = File(testFilePath)
         testFile.writeText(testFileContent, Charset.forName("UTF-8"))
 
-        // Initialize WordTokenFile with the test file
         wordTokenFile = WordTokenFile(testFile)
     }
 
     @AfterEach
     fun tearDown() {
-        // Delete test files after each test
+
         File(testFilePath).delete()
         File(emptyFilePath).delete()
         File(specialCharFilePath).delete()
@@ -42,21 +41,24 @@ class WordTokenFileTest {
 
     @Test
     fun testCharToTokenIndex() {
-        val charPosition = XChars(6) // Position after "Hello "
+        val charPosition = XChars(6)
+
         val tokenIndex = wordTokenFile.charToTokenIndex(charPosition)
         assertEquals(XTokens(2), tokenIndex)
     }
 
     @Test
     fun testReadString() {
-        val tokenIndex = XTokens(1) // Token index for "world!"
+        val tokenIndex = XTokens(1)
+
         val result = wordTokenFile.readString(tokenIndex, XChars(5), XChars(0))
         assertEquals("world", result)
     }
 
     @Test
     fun testTokenToCharIndex() {
-        val tokenIndex = XTokens(1) // Token index for "world!"
+        val tokenIndex = XTokens(1)
+
         val charPosition = wordTokenFile.tokenToCharIndex(tokenIndex)
         assertEquals(XChars(6), charPosition)
     }

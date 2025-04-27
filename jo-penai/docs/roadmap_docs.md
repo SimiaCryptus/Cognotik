@@ -222,7 +222,7 @@ val httpClientManager = HttpClientManager()
 
 ```kotlin
 val result = httpClientManager.withReliability {
-    // Your HTTP request logic here
+
 }
 ```
 
@@ -406,33 +406,42 @@ data class AudioPacket(
 
 #### Methods
 
-- **spectrumWindowPower(minFrequency: Double, maxFrequency: Double): Double**  
+- **spectrumWindowPower(minFrequency: Double, maxFrequency: Double): Double**
+
   Calculates the average power of the audio signal within a specified frequency range.
 
-- **aWeightingFilter(fft: FloatArray, sampleRate: Int, aWeightingConstants: Array<Double>): FloatArray**  
+- **aWeightingFilter(fft: FloatArray, sampleRate: Int, aWeightingConstants: Array<Double>): FloatArray**
+
   Applies an A-weighting filter to the FFT data to simulate human ear sensitivity.
 
-- **plus(packet: AudioPacket): AudioPacket**  
+- **plus(packet: AudioPacket): AudioPacket**
+
   Combines two `AudioPacket` instances by concatenating their samples.
 
 #### Companion Object Methods
 
-- **spectralEntropy(floats: FloatArray): Double**  
+- **spectralEntropy(floats: FloatArray): Double**
+
   Computes the spectral entropy of a given array of floats.
 
-- **convertRawToWav(audio: ByteArray): ByteArray?**  
+- **convertRawToWav(audio: ByteArray): ByteArray?**
+
   Converts raw audio data to WAV format.
 
-- **rms(samples: FloatArray): Double**  
+- **rms(samples: FloatArray): Double**
+
   Calculates the RMS value of the audio samples.
 
-- **convertRaw(audio: ByteArray): FloatArray**  
+- **convertRaw(audio: ByteArray): FloatArray**
+
   Converts raw audio byte data to a float array of samples.
 
-- **convertFloatsToRaw(audio: FloatArray): ByteArray**  
+- **convertFloatsToRaw(audio: FloatArray): ByteArray**
+
   Converts a float array of audio samples to raw byte data.
 
-- **fft(input: FloatArray): FloatArray**  
+- **fft(input: FloatArray): FloatArray**
+
   Performs a Fast Fourier Transform on the input float array.
 
 ### Suggested Roadmap for Improvements
@@ -475,37 +484,45 @@ specified condition is met.
 
 #### Properties
 
-- **audioBuffer**: `Deque<ByteArray>`  
+- **audioBuffer**: `Deque<ByteArray>`
+
   A double-ended queue that stores audio packets. Each packet is a byte array representing a segment of recorded audio.
 
-- **secondsPerPacket**: `Double`  
+- **secondsPerPacket**: `Double`
+
   Specifies the duration of each audio packet in seconds.
 
-- **continueFn**: `() -> Boolean`  
+- **continueFn**: `() -> Boolean`
+
   A function that determines whether the recording should continue. The recording loop will run as long as this function
   returns `true`.
 
-- **packetLength**: `Int`  
+- **packetLength**: `Int`
+
   Calculated as the product of the audio format's frame rate, frame size, and `secondsPerPacket`. Represents the size of
   each audio packet in bytes.
 
 #### Methods
 
-- **run()**  
+- **run()**
+
   Initiates the audio recording process. It opens the microphone, reads audio data into a buffer, and manages the data
   using a circular buffer. The method continues to capture audio as long as `continueFn()` returns `true`. It logs the
   start and stop of the recording process and handles exceptions that may occur during recording.
 
 #### Companion Object
 
-- **log**: Logger  
+- **log**: Logger
+
   A log instance for logging informational messages about the recording process.
 
-- **audioFormat**: `AudioFormat`  
+- **audioFormat**: `AudioFormat`
+
   Defines the audio format used for recording. The current configuration is set to a sample rate of 16000 Hz, 16-bit
   sample size, mono channel, signed, and little-endian byte order.
 
-- **openMic()**: `TargetDataLine`  
+- **openMic()**: `TargetDataLine`
+
   Opens and starts the microphone line for capturing audio data. It returns a `TargetDataLine` object configured with
   the specified `audioFormat`.
 
@@ -714,8 +731,9 @@ class CustomLoudnessBuffer(
 ) : LoudnessWindowBuffer(inputBuffer, outputBuffer, continueFn) {
 
     override fun shouldOutput(): Boolean {
-        // Implement custom logic to determine when to output
-        return true // Example: always output
+
+        return true
+
     }
 }
 ```
@@ -1207,7 +1225,7 @@ metadata for runtime processing.
 ```kotlin
 @Description("This class handles user authentication.")
 class AuthenticationManager {
-    // Class implementation
+
 }
 
 @Description("Calculates the sum of two numbers.")
@@ -1451,14 +1469,17 @@ provide specific logic for describing types and methods.
 #### Methods
 
 - **describe(rawType: Class<in Nothing>, stackMax: Int = 10, describedTypes: MutableSet<String> = mutableSetOf()):
-  String**  
+  String**
+
   An abstract method that subclasses must implement to provide a description of a given class type. It takes a class
   type, a maximum stack depth, and a set of already described types to avoid recursion.
 
-- **describe(self: Method, clazz: Class<*>? = null, stackMax: Int = 5): String**  
+- **describe(self: Method, clazz: Class<*>? = null, stackMax: Int = 5): String**
+
   An abstract method for describing a specific method. It can optionally take a class context and a maximum stack depth.
 
-- **isAbbreviated(self: Type): Boolean**  
+- **isAbbreviated(self: Type): Boolean**
+
   A method that determines if a type should be abbreviated in the description. It checks if the type is a primitive, a
   parameterized type (like lists or maps), or belongs to certain packages (e.g., `java.`, `kotlin.`, etc.).
 
@@ -1480,11 +1501,11 @@ class MarkdownTypeDescriber : TypeDescriber() {
     override val methodBlacklist = setOf("toString", "hashCode")
 
     override fun describe(rawType: Class<in Nothing>, stackMax: Int, describedTypes: MutableSet<String>): String {
-        // Implementation for describing a class in Markdown
+
     }
 
     override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
-        // Implementation for describing a method in Markdown
+
     }
 }
 ```
@@ -1732,13 +1753,13 @@ applications that rely on AI services.
 ```kotlin
 fun performAIServiceOperation() {
     try {
-        // Code that might throw an AIServiceException
+
     } catch (e: AIServiceException) {
         if (e.isFatal) {
-            // Handle fatal exception
+
             println("Fatal error occurred: ${e.message}")
         } else {
-            // Handle non-fatal exception
+
             println("Non-fatal error occurred: ${e.message}")
         }
     }
@@ -1825,7 +1846,7 @@ fun loadModel(modelName: String) {
     if (!isValidModel(modelName)) {
         throw InvalidModelException(modelName)
     }
-    // Proceed with loading the model
+
 }
 ```
 
@@ -1921,7 +1942,7 @@ fun validateInput(field: String, value: String) {
 }
 
 fun isValid(value: String): Boolean {
-    // Implement validation logic here
+
     return value.matches(Regex("^[a-zA-Z0-9]+$"))
 }
 ```
@@ -2013,10 +2034,10 @@ to provide feedback to the user or to log the error for further analysis.
 
 ```kotlin
 try {
-    // Code that may exceed model capacity
+
 } catch (e: ModelMaxException) {
     println("Error: ${e.message}")
-    // Handle exception, e.g., by reducing request size or notifying the user
+
 }
 ```
 
@@ -2082,11 +2103,11 @@ fun moderateContent(content: String) {
     if (!isContentAppropriate(content)) {
         throw ModerationException("Content violates moderation guidelines.")
     }
-    // Proceed with processing the content
+
 }
 
 fun isContentAppropriate(content: String): Boolean {
-    // Implement moderation logic here
+
     return true
 }
 ```
@@ -2171,7 +2192,7 @@ fun performOperation() {
     if (isQuotaExceeded()) {
         throw QuotaException()
     }
-    // Continue with operation
+
 }
 ```
 
@@ -2251,11 +2272,11 @@ the rate limit status.
 
 ```kotlin
 try {
-    // Code that interacts with an AI service
+
 } catch (e: RateLimitException) {
     println("Rate limit exceeded for organization: ${e.org}")
     println("Limit: ${e.limit}, please wait for ${e.delay} milliseconds before retrying.")
-    // Implement retry logic or notify the user
+
 }
 ```
 
@@ -2321,10 +2342,10 @@ or notifying the user about the overload.
 
 ```kotlin
 try {
-    // Code that interacts with a model
+
 } catch (e: RequestOverloadException) {
     println("Request could not be processed: ${e.message}")
-    // Implement retry logic or notify the user
+
 }
 ```
 
@@ -5158,7 +5179,7 @@ class.
 ```kotlin
 class MyProxy : GPTProxyBase<MyInterface>(MyInterface::class.java) {
     override fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String {
-        // Implement completion logic here
+
         return ""
     }
 }
@@ -5265,7 +5286,7 @@ class MyValidatedClass : ValidatedObject {
     var field2: Int = 0
 
     override fun validate(): String? {
-        // Custom validation logic if needed
+
         return super.validate()
     }
 }
@@ -5812,10 +5833,11 @@ fun Semaphore.runWithPermit(function: () -> String): String
   ```kotlin
   val semaphore = Semaphore(1)
   val result = semaphore.runWithPermit {
-      // Critical section code
+
       "Operation completed"
   }
-  println(result) // Output: Operation completed
+  println(result)
+
   ```
 
 ### Suggested Roadmap for Improvements

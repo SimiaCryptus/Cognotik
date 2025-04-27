@@ -24,7 +24,6 @@ repositories {
     }
 }
 
-
 val graal_version = "24.1.1"
 
 dependencies {
@@ -100,15 +99,12 @@ dependencies {
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
 
-
     implementation(libs.guava)
 
     implementation("com.google.api-client:google-api-client:2.2.0")
     implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
     implementation("com.google.apis:google-api-services-oauth2:v2-rev20200213-2.0.0")
     implementation("com.google.http-client:google-http-client-gson:1.43.3")
-
-
 
     implementation(libs.commons.io)
     implementation(group = "commons-codec", name = "commons-codec", version = "1.16.0")
@@ -129,7 +125,6 @@ sass {
     sourceMapEmbed.set(false)
     sourceMapEnabled.set(true)
 }
-
 
 tasks {
     test {

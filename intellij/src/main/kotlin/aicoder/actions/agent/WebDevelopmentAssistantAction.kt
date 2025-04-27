@@ -58,7 +58,6 @@ class WebDevelopmentAssistantAction : BaseAction() {
         return file.isDirectory
     }
 
-
     override fun handle(e: AnActionEvent) {
         try {
             val project = e.project ?: return
@@ -92,7 +91,6 @@ class WebDevelopmentAssistantAction : BaseAction() {
             UITools.error(log, "Error launching Web Development Assistant", e)
         }
     }
-
 
     open class WebDevApp(
         applicationName: String = "Web Development Agent",
@@ -168,13 +166,13 @@ class WebDevelopmentAssistantAction : BaseAction() {
             ActorTypes.ArchitectureDiscussionActor to ParsedActor(
                 resultClass = ProjectSpec::class.java,
                 prompt = """
-                  Translate the user's idea into a detailed architecture for a simple web application. 
-                  
+                  Translate the user's idea into a detailed architecture for a simple web application.
+
                   List all html, css, javascript, and image files to be created, and for each file:
                   1. Mark with <file>filename</file> tags.
                   2. Describe the public interface / interaction with other components.
                   3. Core functional requirements.
-                  
+
                   Specify user interactions and how the application will respond to them.
                   Identify key HTML classes and element IDs that will be used to bind the application to the HTML.
                   """.trimIndent(),
@@ -184,9 +182,10 @@ class WebDevelopmentAssistantAction : BaseAction() {
             ActorTypes.CodeReviewer to SimpleActor(
                 prompt = """
                   Analyze the code summarized in the user's header-labeled code blocks.
-                  Review, look for bugs, and provide fixes. 
+                  Review, look for bugs, and provide fixes.
+
                   Provide implementations for missing functions.
-                  
+
                 """.trimIndent() + patchFormatPrompt,
                 model = model,
             ),
@@ -254,7 +253,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 userMessage = { userMessage },
                 initialResponse = { it: String -> architectureDiscussionActor.answer(toInput(it), api = api) },
                 outputFn = { design: ParsedResponse<ProjectSpec> ->
-                    //          renderMarkdown("${design.text}\n\n```json\n${JsonUtil.toJson(design.obj)/*.indent("  ")*/}\n```")
+
                     AgentPatterns.displayMapInTabs(
                         mapOf(
                             "Text" to renderMarkdown(design.text, ui = ui),
@@ -279,12 +278,11 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 heading = renderMarkdown(userMessage)
             ).call()
 
-
             try {
-//                val toolSpecs = tools.map { ToolServlet.tools.find { t -> t.path == it } }
-//                    .joinToString("\n\n") { it?.let { JsonUtil.toJson(it.openApiDescription) } ?: "" }
+
+
                 var messageWithTools = userMessage
-//                if (toolSpecs.isNotBlank()) messageWithTools += "\n\nThese services are available:\n$toolSpecs"
+
                 task.echo(
                     renderMarkdown(
                         "```json\n${JsonUtil.toJson(architectureResponse.obj)/*.indent("  ")*/}\n```",
@@ -313,7 +311,6 @@ class WebDevelopmentAssistantAction : BaseAction() {
                                 actor = javascriptActor,
                                 path = File(path).toPath(), "js", "javascript"
                             )
-
 
                             "css" -> draftResourceCode(
                                 task = task,
@@ -383,7 +380,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                         }
                     }
                 }.toTypedArray().forEach { it.get() }
-                // Apply codeReviewer
+
 
                 iterateCode(task)
             } catch (e: Throwable) {

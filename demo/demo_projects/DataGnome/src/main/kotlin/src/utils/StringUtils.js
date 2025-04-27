@@ -1,5 +1,5 @@
 // StringUtils.js
-// Utility class for common string manipulation operations
+
 
 class StringUtils {
     /**

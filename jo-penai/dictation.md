@@ -98,19 +98,16 @@ Implements multiple entropy calculation methods:
 
 ```kotlin
 val dictationManager = DictationManager().apply {
-    // Optional: Select specific microphone
+
     selectedMicLine = "Built-in Microphone"
 
-    // Configure transcription callback
     onTranscriptionUpdate = { result ->
         println("Transcribed: ${result.text}")
     }
 }
 
-// Start recording
 dictationManager.startRecording()
 
-// Stop recording when done
 dictationManager.stopRecording()
 ```
 

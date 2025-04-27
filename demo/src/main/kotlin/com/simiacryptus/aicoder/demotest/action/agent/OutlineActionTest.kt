@@ -53,7 +53,7 @@ class OutlineActionTest : DemoTestBase(
         step("Select AI Coder > Outline Tool") {
             tts("First, we'll access the Outline Tool through the IDE's main menu. You can find it under Tools > AI Coder.")?.play()
             tts("The Outline Tool is one of several AI-powered features available in the AI Coder menu. Let's select it to begin our content structuring process.")?.play()
-            // Use more specific selectors and handle each click separately
+
             waitFor(Duration.ofSeconds(60)) {
                 try {
                     log.debug("Attempting to find and click main menu")
@@ -151,7 +151,6 @@ class OutlineActionTest : DemoTestBase(
                         5000
                     )
 
-                    // Wait for outline generation and expansion
                     wait.until(ExpectedConditions.presenceOfElementLocated(By.className("outline-container")))
                     tts("Look at how the AI has organized the topic into logical sections. You can click any section to expand it and add more detail. The Projector visualization helps you understand relationships between different parts of your content.")?.play(
                         3000

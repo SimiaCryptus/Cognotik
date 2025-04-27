@@ -10,7 +10,6 @@ class FullTextSearcher(
         val log = LoggerFactory.getLogger(FullTextSearcher::class.java)
     }
 
-
     /**
      * Returns true if [pattern] occurs at least once in the text.
      */
@@ -26,9 +25,9 @@ class FullTextSearcher(
         if (first == -1) return emptyList()
         log.debug("First occurrence found at index {} in {}ms", first, System.currentTimeMillis() - startTime)
         val last = findLast(pattern)
-        // extract matching suffix‐start indices and return them in ascending numeric order
-        // slice out the matching range from the lex‐sorted suffix array,
-        // then re‐sort numerically to satisfy "ascending order" in the API docs/tests
+
+
+
         val result = suffixes.suffixArray.slice(first..last).sorted()
         log.debug("Found {} occurrences in {}ms", result.size, System.currentTimeMillis() - startTime)
         if (log.isTraceEnabled && result.isNotEmpty()) {
@@ -120,7 +119,7 @@ class FullTextSearcher(
             }
             if (diff != 0) return diff
         }
-        // if suffix is shorter than pattern, it's “less”; otherwise if pattern matches as prefix, treat as equal
+
         val suffixLen = textLen - start
         val result = if (suffixLen < pattern.length) {
             suffixLen - pattern.length

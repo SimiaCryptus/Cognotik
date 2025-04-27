@@ -111,12 +111,12 @@ abstract class FileContextAction<T : Any>(
             function = {
                 val file = outputPath.toFile()
                 if (file.exists()) {
-                    // Ensure the IDE is ready for file operations
+
                     ApplicationManager.getApplication().invokeLater {
                         val ioFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
                         if (false == (ioFile?.let { FileEditorManager.getInstance(project).isFileOpen(it) })) {
                             val localFileSystem = LocalFileSystem.getInstance()
-                            // Refresh the file system to ensure the file is visible
+
                             val virtualFile = localFileSystem.refreshAndFindFileByIoFile(file)
                             virtualFile?.let {
                                 FileEditorManager.getInstance(project).openFile(it, true)

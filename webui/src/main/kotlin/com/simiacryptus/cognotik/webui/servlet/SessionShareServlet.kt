@@ -98,7 +98,7 @@ class SessionShareServlet(
 
                 resp.contentType = "text/html"
                 resp.status = HttpServletResponse.SC_OK
-                //language=HTML
+
                 resp.writer.write(
                     """
             <html>
@@ -152,7 +152,7 @@ class SessionShareServlet(
                 }
                 resp.contentType = "text/html"
                 resp.status = HttpServletResponse.SC_OK
-                //language=HTML
+
                 shareURL = url(appName, shareId)
                 qrCodeDataURL = generateQRCodeDataURL(shareURL)
                 resp.writer.write(
@@ -175,7 +175,6 @@ class SessionShareServlet(
                 )
             }
         }
-
 
     }
 

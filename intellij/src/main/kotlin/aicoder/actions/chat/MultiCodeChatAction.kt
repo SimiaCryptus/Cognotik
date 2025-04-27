@@ -135,11 +135,10 @@ class MultiCodeChatAction : BaseAction() {
         budget = 2.0,
     ) {
 
-
         override val systemPrompt: String
             get() = """
         You are a helpful AI that helps people with coding.
-        
+
         You will be answering questions about the following code:
         ${codeSummary()}
       """.trimIndent()
@@ -175,17 +174,15 @@ class MultiCodeChatAction : BaseAction() {
         }</div>"""
 
         override fun respond(api: ChatClient, task: SessionTask, userMessage: String): String {
-            // Display token count information
+
             val codex = GPT4Tokenizer()
             task.verbose((codeFiles.joinToString("\n") { path ->
                 "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
             }).renderMarkdown())
 
-            // Set budget if needed
             val settings = MultiStepPatchAction.AutoDevApp.Settings()
             api.budget = settings.budget ?: 2.00
 
-            // Use the parent implementation
             return super.respond(api, task, userMessage)
         }
     }

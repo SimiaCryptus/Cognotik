@@ -51,10 +51,10 @@ The Kotlin interpreter uses the JSR-223 scripting API with custom configuration.
 
 ```kotlin
 class KotlinInterpreter(val defs: Map<String, Any>) : Interpreter {
-    // Custom script engine configuration
-    val scriptEngine: KotlinJsr223JvmScriptEngineBase = // ...
-    
-    // Error handling with source mapping
+
+    val scriptEngine: KotlinJsr223JvmScriptEngineBase =
+
+
     protected fun wrapException(
         cause: ScriptException,
         wrappedCode: String,
@@ -71,7 +71,6 @@ val interpreter = KotlinInterpreter(mapOf(
     "config" to Configuration()
 ))
 
-// Run code
 interpreter.run("""
     val result = helper.process(config)
     println(result)
@@ -92,8 +91,7 @@ The Groovy interpreter provides dynamic scripting capabilities using GroovyShell
 ```kotlin
 class GroovyInterpreter(private val defs: Map<String, Object>) : Interpreter {
     private val shell: GroovyShell
-    
-    // Initialize with compiler configuration
+
     init {
         val compilerConfiguration = CompilerConfiguration()
         shell = GroovyShell(compilerConfiguration)
@@ -112,7 +110,6 @@ val interpreter = GroovyInterpreter(mapOf(
     "data" to DataObject()
 ))
 
-// Execute Groovy code
 interpreter.run("""
     def result = service.transform(data)
     return result.process()
@@ -132,13 +129,13 @@ The Scala interpreter uses the Scala reflection API for advanced type management
 
 ```scala
 class ScalaLocalInterpreter(javaDefs: java.util.Map[String, Object]) extends Interpreter {
-    // Type management
-    val typeTags: Map[String, Type] = // ...
-    
-    // Custom REPL implementation
+
+    val typeTags: Map[String, Type] =
+
+
     class CustomReplReporter(settings: Settings) extends ReplReporterImpl(settings) {
         val errors = new StringBuilder
-        // Error handling implementation
+
     }
 }
 ```
@@ -151,7 +148,6 @@ val interpreter = new ScalaLocalInterpreter(Map(
     "context" -> ExecutionContext
 ).asJava)
 
-// Run Scala code
 interpreter.run("""
     case class Result(value: String)
     processor.map(context) { data =>
@@ -176,13 +172,13 @@ To add a new language interpreter:
 class NewLanguageInterpreter(defs: Map<String, Any>) : Interpreter {
     override fun getLanguage() = "NewLanguage"
     override fun getSymbols() = defs
-    
+
     override fun run(code: String): Any? {
-        // Implementation
+
     }
-    
+
     override fun validate(code: String): Exception? {
-        // Validation logic
+
     }
 }
 ```
@@ -209,11 +205,11 @@ Standardized error handling across interpreters:
 try {
     interpreter.run(userCode)
 } catch (e: CodingActor.FailedToImplementException) {
-    // Handle implementation errors
+
 } catch (e: ScriptException) {
-    // Handle script errors
+
 } catch (e: Exception) {
-    // Handle general errors
+
 }
 ```
 
@@ -255,7 +251,7 @@ KotlinInterpreter(
 ```kotlin
 GroovyInterpreter(
     defs = mapOf(...),
-    // Additional compiler configuration
+
 )
 ```
 
@@ -264,7 +260,7 @@ GroovyInterpreter(
 ```scala
 ScalaLocalInterpreter(
     javaDefs = javaMap,
-    // Custom settings configuration
+
 )
 ```
 

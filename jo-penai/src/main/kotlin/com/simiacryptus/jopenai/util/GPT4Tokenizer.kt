@@ -14,7 +14,6 @@ import kotlin.reflect.typeOf
 class GPT4Tokenizer(isCodex: Boolean = false) {
     private val log = LoggerFactory.getLogger(GPT4Tokenizer::class.java)
 
-
     class TextEncoder {
         fun encode(text: String): ByteArray {
             return text.map { c -> c.code }.map { i -> i.toByte() }.toByteArray()
@@ -108,7 +107,6 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
             .map { line -> line.split(Regex("(\\s+)")).filter { part -> part.trim().length > 0 } }
             .map { list -> Pair(list[0], list[1]) }
 
-        // add merged spaces for codex tokenizer
         if (this.nMergedSpaces > 0) {
             for (i in 1..this.nMergedSpaces) {
                 for (j in 1..this.nMergedSpaces) {
@@ -193,9 +191,9 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
     }
 
     private fun bpe(token: String): String {
-        //log.debug("Performing BPE on token: {}", token)
+
         if (this.cache.containsKey(token)) {
-            //log.debug("Token found in cache")
+
             return this.cache[token]!!
         }
 
@@ -204,7 +202,7 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
         var pairs = this.getPairs(word)
 
         if (pairs.isEmpty()) {
-            //log.debug("No pairs found, returning token")
+
             return token
         }
 
@@ -257,13 +255,13 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
 
         val finalWord = word.joinToString(separator = " ")
         this.cache[token] = finalWord
-        //log.debug("BPE result: {}", finalWord)
+
 
         return finalWord
     }
 
     fun encode(text: String): MutableList<Int> {
-//        log.debug("Encoding text: {}", text)
+
         val bpeTokens: MutableList<Int> = mutableListOf()
         val matches = bpeRegex.toRegex().findAll(text).flatMap { it.groupValues }.toList().toTypedArray()
 
@@ -283,7 +281,7 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
                 bpeTokens.add(newTokens[i])
             }
         }
-//        log.info("Encoding complete: $bpeTokens")
+
 
         return bpeTokens
     }
@@ -299,7 +297,7 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
     }
 
     fun decode(tokens: List<Int>): String {
-//        log.debug("Decoding tokens: {}", tokens)
+
         val text = tokens.map { x -> this.decodings[x] }.joinToString(separator = "")
         return String(
             text.toCharArray().map { this.byteDecoder[it.toString()]?.toByte() ?: 0 }.toTypedArray().toByteArray(),
@@ -308,7 +306,7 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
     }
 
     fun estimateTokenCount(input: String): Int {
-//        log.debug("Estimating token count for input")
+
         if (input.length >= 0) {
             return input.length / 3
         }
@@ -321,12 +319,12 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
             val newTokens = this.bpe(newToken).split(" ")
             count += newTokens.size
         }
-//        log.info("Estimated token count: $count")
+
         return count
     }
 
     fun chunkText(text: String, maxTokensPerChunk: Int): MutableList<Map<String, Any>> {
-//        log.debug("Chunking text into pieces with max tokens per chunk: {}", maxTokensPerChunk)
+
         val encoded = this.encode(text)
         val chunks: MutableList<Map<String, Any>> = mutableListOf()
         for (i in encoded.indices step maxTokensPerChunk) {
@@ -337,9 +335,9 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
                     "bpe" to chunk
                 )
             )
-            // do whatever
+
         }
-//        log.debug("Chunking complete: {} chunks created", chunks.size)
+
         return chunks
     }
 }

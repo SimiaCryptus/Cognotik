@@ -47,7 +47,6 @@ class CreateImageAction : BaseAction() {
             return "generated_image_$timestamp.png"
         }
 
-
         override fun createCenterPanel(): JComponent {
             return JPanel(GridBagLayout()).apply {
                 val c = GridBagConstraints()
@@ -194,7 +193,8 @@ class CreateImageAction : BaseAction() {
                 getFiles(file.children, root)
             } else {
                 val relative = root.relativize(file.toNioPath())
-                codeFiles.add(relative) //[] = file.contentsToByteArray().toString(Charsets.UTF_8)
+                codeFiles.add(relative)
+
             }
         }
         return codeFiles

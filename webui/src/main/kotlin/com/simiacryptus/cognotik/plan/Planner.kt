@@ -108,7 +108,6 @@ open class Planner {
         } as ParsedResponse<Map<String, TaskConfigBase>>
     }
 
-
     open fun inputFn(
         codeFiles: Map<Path, String>,
         files: Array<File>,

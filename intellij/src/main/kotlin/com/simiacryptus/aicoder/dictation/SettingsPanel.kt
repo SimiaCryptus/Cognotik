@@ -7,7 +7,8 @@ import com.simiacryptus.jopenai.audio.DictationManager
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JPanel
-import javax.swing.JSlider // Keep JSlider import if needed elsewhere, otherwise remove if unused.
+import javax.swing.JSlider
+
 
 class SettingsPanel(
     val project: Project,
@@ -92,7 +93,6 @@ class SettingsPanel(
     private val talkWindowsLabel =
         JBLabel("Required Talk Windows: ${DictationManager.discriminator.requiredTalkWindowsForTransition}")
 
-
     init {
         layout = GridBagLayout()
 
@@ -161,20 +161,20 @@ class SettingsPanel(
             gridy = 4
             fill = GridBagConstraints.HORIZONTAL
         })
-        // Filler component to push everything to the top-left
+
         add(JPanel(), GridBagConstraints().apply {
             gridx = 0
-            gridy = 5 // Next available row
-            gridwidth = GridBagConstraints.REMAINDER // Span remaining columns
+            gridy = 5
+
+            gridwidth = GridBagConstraints.REMAINDER
+
             weightx = 1.0
             weighty = 1.0
             fill = GridBagConstraints.BOTH
         })
 
-
         revalidate()
     }
-
 
     private fun updateBiasLabel() {
         biasLabel.text = "Bias: ${biasSlider.value / 100.0}"
@@ -195,7 +195,6 @@ class SettingsPanel(
     private fun updateTalkWindowsLabel() {
         talkWindowsLabel.text = "Required Talk Windows: ${talkWindowsSlider.value}"
     }
-
 
     override fun close() {
     }

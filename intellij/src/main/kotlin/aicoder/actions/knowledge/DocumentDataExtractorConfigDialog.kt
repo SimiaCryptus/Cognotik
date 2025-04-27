@@ -119,7 +119,6 @@ class DocumentDataExtractorConfigDialog(
             ?: validateIntField(pagesPerBatchValue, "Pages per batch")
     }
 
-
     override fun doOKAction() {
         if (doValidate() != null) return
 

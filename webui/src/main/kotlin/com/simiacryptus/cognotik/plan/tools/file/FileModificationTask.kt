@@ -91,20 +91,20 @@ class FileModificationTask(
         - Follow project coding standards and patterns
         - Consider dependencies and potential side effects
         - Provide clear context and rationale for changes
-                      
+
         For creating new files:
         - Choose appropriate file locations and names
         - Structure code according to project conventions
         - Include necessary imports and dependencies
         - Add comprehensive documentation
         - Ensure no duplication of existing functionality
-                      
+
         Provide a clear summary explaining:
         - What changes were made and why
         - Any important implementation details
         - Potential impacts on other code
         - Required follow-up actions
-                      
+
         Response format:
         For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
         For new files: Use $TRIPLE_TILDE code blocks with a header specifying the new file path.
@@ -112,23 +112,23 @@ class FileModificationTask(
         Include 2 lines of context before and after every change in diffs.
         Separate code blocks with a single blank line.
         For new files, specify the language for syntax highlighting after the opening triple backticks.
-                      
+
         Example:
-                      
+
         Here are the modifications:
-                      
+
         ### src/utils/existingFile.js
         ${TRIPLE_TILDE}diff
-        // Existing utility functions
+
         function existingFunction() {
         return 'old result';
         return 'new result';
         }
         $TRIPLE_TILDE
-                      
+
         ### src/utils/newFile.js
         ${TRIPLE_TILDE}js
-        // New utility functions
+
         function newFunction() {
          return 'new functionality';
         }

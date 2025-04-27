@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.webui
 
-//import com.simiacryptus.cognotik.scala.ScalaLocalInterpreter
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.actors.ImageActor
 import com.simiacryptus.cognotik.actors.ParsedActor
@@ -25,7 +24,6 @@ import com.simiacryptus.jopenai.models.OpenAIModels
 import org.eclipse.jetty.webapp.WebAppContext
 import java.io.File
 import java.util.concurrent.Executors
-
 
 object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.ApplicationDirectory(port = 8082) {
 
@@ -63,10 +61,10 @@ object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.Applicat
             ChildWebApp("/images", ImageActorTestApp(ImageActor(textModel = model).apply {
                 openAI = OpenAIClient(workPool = Executors.newCachedThreadPool())
             })),
-//      ChildWebApp(
-//        "/test_coding_scala",
-//        CodingActorTestApp(CodingActor(ScalaLocalInterpreter::class, model = OpenAIModels.GPT4oMini))
-//      ),
+
+
+
+
             ChildWebApp(
                 "/test_coding_kotlin",
                 CodingActorTestApp(
@@ -97,7 +95,6 @@ object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.Applicat
         )
     }
 
-    //    override val toolServlet: ToolServlet? get() = null
     val log = org.slf4j.LoggerFactory.getLogger(ActorTestAppServer::class.java)
 
     @JvmStatic

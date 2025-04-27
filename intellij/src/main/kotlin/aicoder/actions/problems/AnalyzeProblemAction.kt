@@ -74,7 +74,6 @@ class AnalyzeProblemAction : AnAction() {
                         val column = item.column
                         appendLine("Position: Line ${lineNumber + 1}, Column ${column + 1}")
 
-                        // Capture 5 lines of context
                         val startLine = maxOf(0, lineNumber - 2)
                         val endLine = minOf(document.lineCount - 1, lineNumber + 2)
                         val contextLines = (startLine..endLine).map { line ->

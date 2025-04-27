@@ -5,7 +5,8 @@ import {useEffect, useRef, useState} from 'react';
  import {debounce} from '../utils/tabHandling';
  import {Message} from "../types/messages";
  export const useWebSocket = (sessionId: string) => {
-     const RECONNECT_MAX_DELAY = 60000; // Increased to 60 seconds
+     const RECONNECT_MAX_DELAY = 60000;
+
      const RECONNECT_BASE_DELAY = 1000;
      const CONNECTION_TIMEOUT = 5000;
      const connectionStatus = useRef({attempts: 0, lastAttempt: 0});
@@ -17,11 +18,11 @@ import {useEffect, useRef, useState} from 'react';
      useEffect(() => {
          let connectionTimeout: NodeJS.Timeout;
          let isCleanedUp = false;
-         // Implement exponential backoff for reconnection
+
          const getReconnectDelay = () => {
              return Math.min(RECONNECT_BASE_DELAY * Math.pow(2, connectionStatus.current.attempts), RECONNECT_MAX_DELAY);
          };
-         // Debounce connection attempts
+
          const attemptConnection = debounce(() => {
              if (isCleanedUp) return;
              clearTimeout(connectionTimeout);
@@ -38,7 +39,7 @@ import {useEffect, useRef, useState} from 'react';
                  }
              }, CONNECTION_TIMEOUT);
          }, 100);
-         // Reset connection status when sessionId changes
+
          connectionStatus.current = {attempts: 0, lastAttempt: 0};
          connectionAttemptRef.current = 0;
          const handleReconnecting = (attempts: number) => {
@@ -53,7 +54,7 @@ import {useEffect, useRef, useState} from 'react';
              return;
          }
          const handleMessage = (message: Message) => {
-             // Ensure message has required fields
+
              if (!message?.id || !message?.version) {
                  return;
              }
@@ -65,11 +66,11 @@ import {useEffect, useRef, useState} from 'react';
                  setError(null);
                  setIsReconnecting(false);
                  connectionAttemptRef.current = 0;
-                 // Reset connection attempts on successful connection
+
                  connectionStatus.current.attempts = 0;
                  console.log(`[WebSocket] Connected successfully at ${new Date().toISOString()}`);
              } else if (!isCleanedUp) {
-                 // Try to reconnect if disconnected unexpectedly
+
                  console.warn(`[WebSocket] Disconnected unexpectedly at ${new Date().toISOString()}`);
                  setTimeout(attemptConnection, getReconnectDelay());
              }
@@ -87,7 +88,7 @@ import {useEffect, useRef, useState} from 'react';
                  `[WebSocket] Connection error (attempt ${connectionStatus.current.attempts}):`,
                  err.message
              );
-             // Calculate delay using exponential backoff and retry
+
              const delay = getReconnectDelay();
              console.log(`[WebSocket] Attempting reconnection in ${delay / 1000} seconds`);
              setTimeout(attemptConnection, delay);
@@ -97,7 +98,7 @@ import {useEffect, useRef, useState} from 'react';
          WebSocketService.addConnectionHandler(handleConnectionChange);
          WebSocketService.addErrorHandler(handleError);
          WebSocketService.on('reconnecting', handleReconnecting);
-         // Initiate WebSocket connection
+
          WebSocketService.connect(sessionId);
          return () => {
              isCleanedUp = true;
@@ -109,7 +110,8 @@ import {useEffect, useRef, useState} from 'react';
              WebSocketService.off('reconnecting', handleReconnecting);
              WebSocketService.disconnect();
          };
-     }, [sessionId, dispatch]); // Add dispatch to dependency array
+     }, [sessionId, dispatch]);
+
      return {
          error,
          isReconnecting,

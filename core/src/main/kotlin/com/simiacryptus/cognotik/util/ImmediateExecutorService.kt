@@ -19,11 +19,16 @@ class ImmediateExecutorService(
 ) : ExecutorService {
     val threadFactory = RecordingThreadFactory(session, user)
     private val executor = ThreadPoolExecutor(
-        0, // Core pool size of 0 means no threads are kept alive when idle
-        Integer.MAX_VALUE, // Maximum pool size
-        60L, TimeUnit.SECONDS, // Thread keep-alive time when idle
-        SynchronousQueue<Runnable>(), // Queue for tasks
-        threadFactory // Thread factory
+        0,
+
+        Integer.MAX_VALUE,
+
+        60L, TimeUnit.SECONDS,
+
+        SynchronousQueue<Runnable>(),
+
+        threadFactory
+
     )
 
     override fun execute(command: Runnable) {

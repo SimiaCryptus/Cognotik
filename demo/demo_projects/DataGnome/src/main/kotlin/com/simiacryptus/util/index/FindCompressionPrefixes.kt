@@ -41,14 +41,13 @@ fun FileIndexer.findCompressionPrefixes(threshold: Int, count: Int): Array<Pair<
     return collect(returnMap, count).toList().sortedBy { -prefixFitness(it.first, it.second) }.toTypedArray()
 }
 
-
 private fun prefixFitness(string: String, count: Int): Int {
     val length = string.encodeToByteArray().size
     return (count * length) - (count * 4) - length
 }
 
 private fun collect(map: TreeMap<String, Int>, count: Int): Map<String, Int> {
-    // Iteratively select the top fitness value, add it to the new map, and remove all overlapping entries
+
     val returnMap = TreeMap<String, Int>()
     while (map.isNotEmpty() && returnMap.size < count) {
         val best = map.entries.maxByOrNull { prefixFitness(it.key, it.value) }!!

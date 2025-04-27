@@ -79,7 +79,7 @@ class IterativePatchUtilTest {
         val patch = """
             line1
             line3
-            // This comment should be ignored
+
             -line2
             +modifiedLine2
             # LLMs sometimes get chatty and add stuff to patches__
@@ -117,16 +117,16 @@ class IterativePatchUtilTest {
     fun testPatchAdd2Line2() {
         val source = """
             line1
-            
+
             line2
             line3
         """.trimIndent()
         val patch = """
             line1
           + lineA
-          
+
           + lineB
-          
+
             line2
             line3
         """.trimIndent()
@@ -134,7 +134,7 @@ class IterativePatchUtilTest {
            line1
             lineA
             lineB
-           
+
            line2
            line3
         """.trimIndent()
@@ -146,16 +146,16 @@ class IterativePatchUtilTest {
     fun testPatchAdd2Line3() {
         val source = """
             line1
-            
+
             line2
             line3
         """.trimIndent()
         val patch = """
             line1
-            // extraneous comment
+
           + lineA
           + lineB
-            // llms sometimes get chatty and add stuff to patches
+
             line2
             line3
         """.trimIndent()
@@ -163,7 +163,7 @@ class IterativePatchUtilTest {
           line1
            lineA
            lineB
-          
+
           line2
           line3
         """.trimIndent()
@@ -176,7 +176,8 @@ class IterativePatchUtilTest {
         val source = """
         function updateTabs() {
             document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', (event) => { // Ensure the event is passed as a parameter
+                button.addEventListener('click', (event) => {
+
                     event.stopPropagation();
                     const forTab = button.getAttribute('data-for-tab');
                     let tabsParent = button.closest('.tabs-container');
@@ -200,10 +201,12 @@ class IterativePatchUtilTest {
             if (contentParent === tabsParent) {
                 if (content.getAttribute('data-tab') === forTab) {
                     content.classList.add('active');
-        +           button.classList.add('active'); // Mark the button as active
+        +           button.classList.add('active');
+
                 } else if (content.classList.contains('active')) {
                     content.classList.remove('active')
-        +           button.classList.remove('active'); // Ensure the button is not marked as active
+        +           button.classList.remove('active');
+
                 }
             }
         });
@@ -211,7 +214,8 @@ class IterativePatchUtilTest {
         val expected = """
         function updateTabs() {
             document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', (event) => { // Ensure the event is passed as a parameter
+                button.addEventListener('click', (event) => {
+
                     event.stopPropagation();
                     const forTab = button.getAttribute('data-for-tab');
                     let tabsParent = button.closest('.tabs-container');
@@ -220,10 +224,12 @@ class IterativePatchUtilTest {
                         if (contentParent === tabsParent) {
                             if (content.getAttribute('data-tab') === forTab) {
                                 content.classList.add('active');
-                   button.classList.add('active'); // Mark the button as active
+                   button.classList.add('active');
+
                             } else if (content.classList.contains('active')) {
                                 content.classList.remove('active')
-                   button.classList.remove('active'); // Ensure the button is not marked as active
+                   button.classList.remove('active');
+
                             }
                         }
                     });
@@ -242,47 +248,45 @@ class IterativePatchUtilTest {
                 geometry: BoardGeometry;
                 state: GameState;
                 private moveHistory: MoveHistory;
-    
+
                 constructor(initialBoard?: Piece[]) {
                     this.geometry = new StandardBoardGeometry();
                     this.state = initialBoard ? this.initializeWithBoard(initialBoard) : this.initialize();
                     this.moveHistory = new MoveHistory(this.state.board);
                 }
-    
+
                 redoMove(): GameState {
                     return this.getState();
                 }
-    
+
                 isGameOver(): boolean {
                     return false;
                 }
-    
+
                 getWinner(): 'white' | 'black' | 'draw' | null {
                     return null;
                 }
-    
+
                 importState(stateString: string): GameState {
-                    // Implement import state logic
+
                     const parsedState = JSON.parse(stateString);
-                    // Validate and convert the parsed state to GameState
-                    // For now, we'll just return the current state
+
+
                     return this.getState();
                 }
-    
+
             }
-    
-            // Similar changes for black pawns
+
         """.trimIndent()
         val patch = """
          export class StandardChessModel implements GameModel {
-             // ... other methods ...
-        
+
+
         -    getWinner(): 'white' | 'black' | 'draw' | null {
         +    getWinner(): ChessColor | 'draw' | null {
                  return null;
              }
-        
-             // ... other methods ...
+
          }
         """.trimIndent()
         val expected = """
@@ -290,41 +294,39 @@ class IterativePatchUtilTest {
                 geometry: BoardGeometry;
                 state: GameState;
                 private moveHistory: MoveHistory;
-    
+
                 constructor(initialBoard?: Piece[]) {
                     this.geometry = new StandardBoardGeometry();
                     this.state = initialBoard ? this.initializeWithBoard(initialBoard) : this.initialize();
                     this.moveHistory = new MoveHistory(this.state.board);
                 }
-    
+
                 redoMove(): GameState {
                     return this.getState();
                 }
-    
+
                 isGameOver(): boolean {
                     return false;
                 }
-    
+
                 getWinner(): ChessColor | 'draw' | null {
                     return null;
                 }
-    
+
                 importState(stateString: string): GameState {
-                    // Implement import state logic
+
                     const parsedState = JSON.parse(stateString);
-                    // Validate and convert the parsed state to GameState
-                    // For now, we'll just return the current state
+
+
                     return this.getState();
                 }
-    
+
             }
-    
-            // Similar changes for black pawns
+
         """.trimIndent()
         val result = IterativePatchUtil.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
-
 
     @Test
     fun testGeneratePatchNoChanges() {
@@ -367,14 +369,14 @@ class IterativePatchUtilTest {
         val oldCode = """
             function example() {
                 console.log("Hello");
-                // Some comment
+
                 return true;
             }
         """.trimIndent()
         val newCode = """
             function example() {
                 console.log("Hello, World!");
-                // Modified comment
+
                 let x = 5;
                 return x > 0;
             }
@@ -383,10 +385,12 @@ class IterativePatchUtilTest {
         val expected = """
               function example() {
             -     console.log("Hello");
-            -     // Some comment
+            -
+
             -     return true;
             +     console.log("Hello, World!");
-            +     // Modified comment
+            +
+
             +     let x = 5;
             +     return x > 0;
               }

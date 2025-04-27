@@ -42,7 +42,8 @@ object RuleTreeBuilder {
             .joinToString("\n")
     }
         else -> ${!result}
-      }        
+      }
+
       """.trimIndent().trim()
 
     private fun getRules(
@@ -56,43 +57,42 @@ object RuleTreeBuilder {
         fun String.bestPrefix(): String {
             val pfx = allowedPrefixes(setOf(this), doNotMatch).firstOrNull() ?: this
             require(pfx.isNotBlank())
-            //require(doNotMatch.none { it.startsWith(pfx) })
+
             return pfx
         }
         while (remainingItems.isNotEmpty()) {
 
             val bestNextPrefix = bestPrefix(remainingItems.toSortedSet(), doNotMatch)
 
-//      val doNotMatchReversed = remainingItems.map { it.reversed() }.toSortedSet()
-//      fun String.bestSuffix() = allowedPrefixes(setOf(this).map { it.reversed() }, doNotMatchReversed).firstOrNull()?.reversed() ?: this
-//      val bestNextSuffix = bestNextSuffix(remainingItems, doNotMatchReversed, sortedItems)
+
+
 
             when {
-//        bestNextSuffix != null && bestNextSuffix.second > (bestNextPrefix?.second ?: 0) -> {
-//          val matchedItems = remainingItems.filter { it.endsWith(bestNextSuffix.first) }.toSet()
-//          val matchedSuffixes = matchedItems.map { it.bestSuffix() }.toSet()
-//          val matchedBlacklist = doNotMatch.filter { it.endsWith(bestNextSuffix.first) }
-//          when {
-//            matchedSuffixes.size < 5 -> break
-//            matchedBlacklist.isEmpty() -> sb.append("""path.endsWith("${bestNextSuffix.first.bestSuffix().escape}") -> $result""" + "\n")
-//            else -> {
-//              val subRules = getRuleExpression(
-//                matchedItems.map { it.removeSuffix(bestNextSuffix.first) }.toSet(),
-//                matchedBlacklist.map { it.removeSuffix(bestNextSuffix.first) }.toSortedSet(),
-//                result
-//              )
-//              sb.append(
-//                """
-//                path.endsWith("${bestNextSuffix.first.escape}") -> {
-//                  val path = path.removeSuffix("${bestNextSuffix.first.bestSuffix().escape}")
-//                  ${subRules.prependIndent("  ")}
-//                }
-//                """.trimIndent() + "\n"
-//              )
-//            }
-//          }
-//          remainingItems.removeAll(matchedItems)
-//        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 bestNextPrefix == null -> break
                 else -> {
                     val matchedItems = remainingItems.filter { it.startsWith(bestNextPrefix) }.toSet()
@@ -154,7 +154,7 @@ object RuleTreeBuilder {
             val goodCnt = positiveSet.subSet(prefix, prefix + "\uFFFF").size
             val badCnt = negativeSet.subSet(prefix, prefix + "\uFFFF").size
             if (badCnt == 0) return@map prefix to (goodCnt - 1).toDouble() * prefix.length
-            //if (goodCnt == 0) return@map prefix to (badCnt - 1).toDouble() * prefix.length
+
             val totalCnt = goodCnt + badCnt
             val goodFactor = goodCnt.toDouble() / totalCnt
             val badFactor = badCnt.toDouble() / totalCnt
@@ -191,5 +191,4 @@ object RuleTreeBuilder {
     }
 
 }
-
 

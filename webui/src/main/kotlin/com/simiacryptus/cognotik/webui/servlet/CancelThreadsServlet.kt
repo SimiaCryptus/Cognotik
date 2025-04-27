@@ -16,7 +16,7 @@ class CancelThreadsServlet : HttpServlet() {
         resp.status = HttpServletResponse.SC_OK
         if (req.parameterMap.containsKey("sessionId")) {
             val session = Session(req.getParameter("sessionId"))
-            //language=HTML
+
             resp.writer.write(
                 """
         <html>
@@ -39,7 +39,6 @@ class CancelThreadsServlet : HttpServlet() {
             resp.writer.write("Session ID is required")
         }
     }
-
 
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         require(req.getParameter("confirm").lowercase() == "confirm") { "Confirmation text is required" }
