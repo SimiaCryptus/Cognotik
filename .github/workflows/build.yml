@@ -134,7 +134,7 @@ jobs:
         run: |
           $version = "${{ needs.build.outputs.version }}"
           Write-Output "Setting Cognotik version to: $version"
-          $gradlePropertiesPath = "Cognotik/gradle.properties"
+          $gradlePropertiesPath = "gradle.properties"
           $content = Get-Content $gradlePropertiesPath -Raw
           $updatedContent = $content -replace "libraryVersion\s*=\s*[0-9.]+", "libraryVersion = $version"
           Set-Content -Path $gradlePropertiesPath -Value $updatedContent
@@ -280,7 +280,7 @@ jobs:
       - name: Run Tests
         run: |
           echo "Starting test execution..."
-          ./gradlew :intellij:check --info
+          ./gradlew test check
           echo "Test execution completed"
 
       - name: Collect Tests Result

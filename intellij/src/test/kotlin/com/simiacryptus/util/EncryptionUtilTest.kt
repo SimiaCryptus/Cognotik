@@ -3,7 +3,9 @@ package com.simiacryptus.util
 import com.simiacryptus.aicoder.util.EncryptionUtil
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class EncryptionUtilTest {
 
     @Test

@@ -235,13 +235,24 @@ tasks.register("packageDmg", JPackageTask::class) {
     group = "distribution"
     description = "Creates a .dmg package for macOS"
     onlyIf { System.getProperty("os.name").lowercase().contains("mac") }
+    dependsOn("shadowJar")
     doLast {
+        val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
+        val shadowJarName = shadowJarFile.name
+        val inputDir = layout.buildDirectory.dir("jpackage/input").get().asFile
+        if (!inputDir.exists()) {
+            inputDir.mkdirs()
+        }
+        copy {
+            from(shadowJarFile)
+            into(inputDir)
+        }
         execOperations.exec {
             commandLine(
                 "jpackage",
                 "--type", "dmg",
-                "--input", layout.buildDirectory.dir("libs").get().asFile.path,
-                "--main-jar", "${project.name}-${project.version}-all.jar",
+                "--input", inputDir.path,
+                "--main-jar", shadowJarName,
                 "--main-class", "com.simiacryptus.cognotik.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
                 "--name", "Cognotik",
