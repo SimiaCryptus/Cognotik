@@ -78,8 +78,7 @@ open class CodingAgent<T : Interpreter>(
         codeRequest: CodingActor.CodeRequest,
         task: SessionTask = mainTask,
     ) {
-        val task = ui.newTask(root = false)
-        task.complete(task.placeholder)
+        val task = ui.newTask(root = false).apply { task.complete(placeholder) }
         Retryable(ui, task) {
             val task = ui.newTask(root = false)
             ui.socketManager?.scheduledThreadPoolExecutor!!.schedule({
