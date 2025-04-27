@@ -25,6 +25,7 @@ import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.URI
+import java.util.concurrent.Executors
 
 open class AppServer(
     localName: String, publicName: String, port: Int
@@ -204,7 +205,7 @@ open class AppServer(
         stopSocketServer()
     }
 
-    open val api2 = OpenAIClient()
+    open val api2 = OpenAIClient(workPool = Executors.newCachedThreadPool())
 
     override fun authenticatedWebsite() = object : OAuthBase("") {
         override fun configure(context: WebAppContext, addFilter: Boolean) = context
