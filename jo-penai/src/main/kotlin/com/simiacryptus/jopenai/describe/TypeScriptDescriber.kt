@@ -137,7 +137,7 @@ open class TypeScriptDescriber : TypeDescriber() {
 
     override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
 
-        if (stackMax <= 0) return "
+        if (stackMax <= 0) return ""
 
         if (!coverMethods) return ""
         if (clazz != null && clazz.isKotlinClass()) {
@@ -170,10 +170,10 @@ open class TypeScriptDescriber : TypeDescriber() {
     ): String {
 
         val functionTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}"
-        if (describedTypes.contains(functionTypeRepresentation) && functionTypeRepresentation !in primitives) return "
+        if (describedTypes.contains(functionTypeRepresentation) && functionTypeRepresentation !in primitives) return ""
 
         describedTypes.add(functionTypeRepresentation)
-        if (stackMax <= 0) return "
+        if (stackMax <= 0) return ""
 
         if (!coverMethods) return ""
         val parameterTs = self.parameters.filter { it.name != null }

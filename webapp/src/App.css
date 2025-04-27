@@ -156,19 +156,12 @@
     transition: opacity 0.3s ease-in-out;
     flex-direction: column;
     padding: 1rem;
-    animation: fadeIn 0.3s ease-in-out;
-    display: flex;
-    position: fixed;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
-    opacity: 0;
-    padding: 0;
-    margin: 0;
+    /* Hide inactive tabs cleanly */
+    display: none;
 }
 
 .tab-content.active {
+    /* Show active tabs */
     display: flex;
     opacity: 1;
     position: relative;

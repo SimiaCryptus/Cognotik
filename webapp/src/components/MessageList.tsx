@@ -4,7 +4,7 @@ import {useTheme} from '../hooks/useTheme';
 import {RootState} from '../store';
 import {isArchive} from '../services/appConfig';
 
-import {debounce, resetTabState, updateTabs} from '../utils/tabHandling';
+import {debounce, updateTabs} from '../utils/tabHandling';
 import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
 import {Message} from "../types/messages";
@@ -21,6 +21,7 @@ const CONTAINER_ID = 'message-list-' + Math.random().toString(36).substr(2, 9);
  */
 const extractMessageAction = (target: HTMLElement): { messageId: string | undefined, action: string | undefined } => {
     const messageId = target.getAttribute('data-message-id') ??
+        target.closest('[data-message-id]')?.getAttribute('data-message-id') ?? // Check parents
         target.getAttribute('data-id') ??
         undefined;
     let action = target.getAttribute('data-message-action') ??
@@ -28,6 +29,7 @@ const extractMessageAction = (target: HTMLElement): { messageId: string | undefi
         undefined;
     if (!action) {
         if (target.classList.contains('href-link')) action = 'link';
+        else if (target.closest('.href-link')) action = 'link'; // Check parents
         else if (target.classList.contains('play-button')) action = 'run';
         else if (target.classList.contains('regen-button')) action = 'regen';
         else if (target.classList.contains('cancel-button')) action = 'stop';
@@ -250,15 +252,19 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                     console.debug(`[MessageList ${CONTAINER_ID}] Updating tabs after content change`);
                 }
                 updateTabs();
-            } catch (error) {
-                console.error(`[MessageList ${CONTAINER_ID}] Failed to update tabs`, error);
 
-                resetTabState();
+            } catch (updateError) {
+                console.error(`[MessageList ${CONTAINER_ID}] Failed during initial updateTabs call. Attempting recovery.`, updateError);
+                // Don't reset state immediately, try updating again first.
 
                 try {
+                    // Small delay before retry might help if it was a timing issue
+                    // await new Promise(resolve => setTimeout(resolve, 50)); // Optional delay
+                    console.info(`[MessageList ${CONTAINER_ID}] Retrying tab update after error.`);
                     updateTabs();
                 } catch (retryError) {
-                    console.error(`[MessageList ${CONTAINER_ID}] Failed to update tabs after reset`, retryError);
+                    console.error(`[MessageList ${CONTAINER_ID}] Failed to update tabs on retry. Tab system may be unstable. Consider resetting state as last resort.`, retryError);
+                    // resetTabState(); // Uncomment this line if resetting state is desired after failed retry
                 }
             }
         }, 250),
@@ -317,6 +323,15 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         });
         return () => observer.disconnect();
    }, [debouncedUpdateTabs]);
+    // Prevent click event bubbling for tab buttons to avoid double-handling
+    const handleMessageClick = React.useCallback((e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('.tab-button') && target.closest('.tabs')) {
+            return; // Let the tab system handle this
+        }
+        handleClick(e);
+    }, []);
+
 
     return (
         <div
@@ -339,7 +354,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                 >
                     {<div
                         className="message-content message-body"
-                        onClick={!isArchive ? handleClick : undefined}
+                        onClick={!isArchive ? handleMessageClick : undefined}
                         data-testid={`message-content-${message.id}`}
                         dangerouslySetInnerHTML={{
                             __html: message.content
