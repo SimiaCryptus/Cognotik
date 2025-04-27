@@ -4,7 +4,6 @@ const VERBOSE_LOGGING = false
 const DEBUG_TAB_SYSTEM = false;
 
 
-const MAX_CACHE_SIZE = 1000;
 
 const errors = {
     setupErrors: 0,
@@ -24,6 +23,7 @@ const diagnostics = {
     restoreSuccess: 0,
     restoreFail: 0
 };
+
 const tabStateVersions = new Map<string, number>();
 let currentStateVersion = 0;
 
@@ -42,71 +42,21 @@ export function debounce<T extends (...args: any[]) => void>(func: T, wait: numb
 const tabStates = new Map<string, TabState>();
 let isMutating = false;
 const tabStateHistory = new Map<string, string[]>();
-const tabContentCache = new Map<string, HTMLElement>();
-
-function logTabCacheState(context: string): void {
-    if (DEBUG_TAB_SYSTEM) {
-        console.debug('[TabSystem] Cache state: ' + context, {
-            context,
-            cacheSize: tabContentCache.size,
-
-            cacheKeysCount: tabContentCache.size,
-            tabStatesSize: tabStates.size,
-
-            containerIds: Array.from(tabStates.keys())
-        });
-    }
-}
-
-function getCacheKey(containerId: string, tabId: string): string {
 
 
-    return `tab-${containerId}::${tabId}`;
-}
 
-function cacheTabContent(container: Element, content: Element): void {
-    const containerId = container.id;
-    const tabId = content.getAttribute('data-tab');
-    if (containerId && tabId) {
-        const key = getCacheKey(containerId, tabId);
 
-        const contentClone = content.cloneNode(true) as HTMLElement;
 
-        contentClone.setAttribute('data-cached-at', new Date().toISOString());
-        contentClone.setAttribute('data-source-container', containerId);
 
-        if (tabContentCache.size > MAX_CACHE_SIZE) {
 
-            const keysToDelete = Array.from(tabContentCache.keys()).slice(0, Math.floor(MAX_CACHE_SIZE * 0.2));
-            keysToDelete.forEach(k => tabContentCache.delete(k));
-            console.warn('[TabSystem] Cache size limit reached, pruned oldest entries');
-        }
 
-        tabContentCache.set(key, contentClone);
-        if (VERBOSE_LOGGING || DEBUG_TAB_SYSTEM) {
-            console.debug('[TabSystem] Cached tab content for ' + tabId, {
-                containerId,
-                tabId,
-                contentSize: contentClone.outerHTML.length < 1000 ? contentClone.outerHTML.length : '> 1KB'
-            });
-        }
-    }
-}
 
-function restoreCachedContent(container: Element, tabId: string): HTMLElement | null {
-    const key = getCacheKey(container.id, tabId);
-    const cachedContent = tabContentCache.get(key);
 
-    if (DEBUG_TAB_SYSTEM) {
-        console.debug('[TabSystem] Restore cache: ' + (cachedContent ? 'hit' : 'miss') + ' for ' + tabId, {
-            containerId: container.id,
-            tabId,
-            cachedAt: cachedContent?.getAttribute('data-cached-at')?.split('T')[0] || 'N/A'
-        });
-    }
 
-    return cachedContent || null;
-}
+
+
+
+
 
 function getActiveTab(containerId: string): string | undefined {
     return tabStates.get(containerId)?.activeTab;
@@ -311,9 +261,6 @@ function restoreTabState(container: Element) {
 
 
 
-            // Content visibility is handled by setActiveTab now.
-            // Removed emergency cache restore as we are simplifying away from caching/DOM removal.
-            // If content is missing, it's a different issue (e.g., message didn't render).
         } else {
             diagnostics.restoreFail++;
             console.warn('[TabSystem] No saved tab found for container', {
@@ -343,17 +290,14 @@ function restoreTabState(container: Element) {
 
 export function resetTabState() {
     if (DEBUG_TAB_SYSTEM) {
-        console.debug('[TabSystem] Resetting tab state - clearing ' +
 
-            tabStates.size + ' states, ' +
 
-            tabContentCache.size + ' cached items');
+        console.debug('[TabSystem] Resetting tab state - clearing ' + tabStates.size + ' states');
     }
 
     tabStates.clear();
     tabStateHistory.clear();
     tabStateVersions.clear();
-    tabContentCache.clear();
     currentStateVersion = 0;
     isMutating = false;
 }
@@ -404,9 +348,6 @@ export const updateTabs = debounce(() => {
     }
 
     try {
-        if (DEBUG_TAB_SYSTEM) {
-            logTabCacheState('before-update');
-        }
 
         initNewCollapsibleElements()
         const currentStates = getAllTabStates();
@@ -468,17 +409,12 @@ export const updateTabs = debounce(() => {
         // Removed the second pass that iterated through all .tab-content elements.
         // Visibility is now handled within setActiveTab/restoreTabState.
 
-        requestAnimationFrame(() => {
 
 
 
 
 
 
-            if (DEBUG_TAB_SYSTEM) {
-                logTabCacheState('after-update');
-            }
-        });
         processed.clear();
     } catch (error) {
         errors.updateErrors++;
@@ -524,8 +460,6 @@ export function setupTabContainer(container: Element) {
 
 
 
-                // Button active state is handled within setActiveTab
-                updateTabs();
                 event.stopPropagation();
                 event.preventDefault();
 
