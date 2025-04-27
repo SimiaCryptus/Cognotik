@@ -79,7 +79,6 @@ class IterativePatchUtilTest {
         val patch = """
             line1
             line3
-
             -line2
             +modifiedLine2
             # LLMs sometimes get chatty and add stuff to patches__
@@ -225,11 +224,9 @@ class IterativePatchUtilTest {
                             if (content.getAttribute('data-tab') === forTab) {
                                 content.classList.add('active');
                    button.classList.add('active');
-
                             } else if (content.classList.contains('active')) {
                                 content.classList.remove('active')
                    button.classList.remove('active');
-
                             }
                         }
                     });
@@ -383,14 +380,11 @@ class IterativePatchUtilTest {
         """.trimIndent()
         val result = IterativePatchUtil.generatePatch(oldCode, newCode)
         val expected = """
-              function example() {
+            function example() {
             -     console.log("Hello");
-            -
-
-            -     return true;
             +     console.log("Hello, World!");
-            +
-
+              
+            -     return true;
             +     let x = 5;
             +     return x > 0;
               }

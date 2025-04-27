@@ -167,14 +167,11 @@ class PythonPatchUtilTest {
         """.trimIndent()
         val result = PythonPatchUtil.generatePatch(oldCode, newCode)
         val expected = """
-              function example() {
+            function example() {
             -     console.log("Hello");
-            -
-
-            -     return true;
             +     console.log("Hello, World!");
-            +
-
+              
+            -     return true;
             +     let x = 5;
             +     return x > 0;
               }

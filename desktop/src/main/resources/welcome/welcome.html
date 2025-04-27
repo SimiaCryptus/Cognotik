@@ -760,20 +760,6 @@
             description: 'Search project files using patterns with contextual results',
             tooltip: 'Performs pattern-based searches across project files with context.',
         },
-        /*
-            {
-              id: 'TaskPlanningTask',
-              name: 'Task Planning Task',
-              description: 'Break down and coordinate complex development tasks with dependency management',
-              tooltip: 'Orchestrates complex development tasks by breaking them down into manageable subtasks.',
-            },
-        */
-        /*{
-          id: 'ForeachTask',
-          name: 'Foreach Task',
-          description: 'Execute subtasks for each item in a list',
-          tooltip: 'Executes a set of subtasks for each item in a given list.',
-        },*/
         {
             id: 'CrawlerAgentTask',
             name: 'Web Search Task',
@@ -787,6 +773,18 @@
             tooltip: 'Performs comprehensive searches across GitHub\'s content.',
         },
         /*
+            {
+              id: 'TaskPlanningTask',
+              name: 'Task Planning Task',
+              description: 'Break down and coordinate complex development tasks with dependency management',
+              tooltip: 'Orchestrates complex development tasks by breaking them down into manageable subtasks.',
+            },
+            {
+              id: 'ForeachTask',
+              name: 'Foreach Task',
+              description: 'Execute subtasks for each item in a list',
+              tooltip: 'Executes a set of subtasks for each item in a given list.',
+            },
             {
               id: 'KnowledgeIndexingTask',
               name: 'Knowledge Indexing Task',
@@ -974,12 +972,6 @@
         }
     }
 
-
-
-
-
-
-
     function loadSettingsFromServer() {
         fetch('/userSettings/')
             .then(response => response.text())
@@ -1034,15 +1026,6 @@
             }
         }
     }
-
-
-
-
-
-
-
-
-
 
     document.addEventListener('DOMContentLoaded', function () {
 
