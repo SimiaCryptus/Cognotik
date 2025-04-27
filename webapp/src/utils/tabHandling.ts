@@ -287,8 +287,20 @@ export function initCollapsibleElements() {
 }
 
 export function initNewCollapsibleElements() {
-    document.querySelectorAll('.expandable-header:not([data-initialized])').forEach(header => {
-        header.setAttribute('data-initialized', 'true');
+    // Select all headers, allowing re-initialization if needed after DOM changes (like theme swaps)
+    document.querySelectorAll('.expandable-header').forEach(header => {
+        // Check if a listener is already attached to avoid duplicates if the element persists
+        // Using a simple custom property check
+        if ((header as any).__collapsibleListenerAttached) {
+            // Optional: Update icon state just in case it got out of sync
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.expand-icon');
+            if (content && icon) {
+                 icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
+            }
+            return; // Skip adding listener again
+        }
+
         header.addEventListener('click', (event) => {
             const clickedHeader = event.currentTarget as HTMLElement;
             const content = clickedHeader.nextElementSibling!;
@@ -299,6 +311,8 @@ export function initNewCollapsibleElements() {
                 icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
             }
         });
+        // Mark that we've attached the listener
+        (header as any).__collapsibleListenerAttached = true;
     });
 }
 

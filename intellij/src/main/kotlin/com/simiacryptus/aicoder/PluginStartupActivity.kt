@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.Companion
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
@@ -47,8 +48,7 @@ class PluginStartupActivity : ProjectActivity {
 
         try {
 
-            com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled =
-                AppSettingsState.instance.diffLoggingEnabled
+            com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled = { AppSettingsState.instance.diffLoggingEnabled }
 
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader

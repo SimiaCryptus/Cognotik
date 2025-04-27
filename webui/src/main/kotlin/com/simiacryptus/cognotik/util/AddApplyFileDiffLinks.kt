@@ -25,7 +25,7 @@ import kotlin.io.path.readText
 open class AddApplyFileDiffLinks {
 
     companion object {
-        var loggingEnabled = true
+        var loggingEnabled = { true }
         private val diffApplier = SimpleDiffApplier()
         private val log = org.slf4j.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
             debug("Initializing AddApplyFileDiffLinks")
@@ -40,7 +40,7 @@ open class AddApplyFileDiffLinks {
             startTime: Instant,
             validator: GrammarValidator? = null
         ) {
-            if (loggingEnabled) try {
+            if (loggingEnabled()) try {
                 val logFile = filepath.resolveSibling(filepath.fileName.toString() + ".log").toFile()
                 val duration = Duration.between(startTime, Instant.now())
                 val originalSize = filepath.toFile().length()

@@ -3,6 +3,7 @@ import {ThemeProvider as StyledThemeProvider} from 'styled-components';
 import {useSelector} from 'react-redux';
 import {RootState} from '../store';
 import {logThemeChange, ThemeName, themes} from './themes';
+import { initNewCollapsibleElements } from '../utils/tabHandling'; // Import the function
 import Prism from 'prismjs';
 import {GlobalStyles} from "../styles/GlobalStyles";
 
@@ -144,6 +145,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
                     Prism.highlightAll();
                 });
             });
+            // Re-initialize collapsible elements after theme change and potential DOM updates
+            // Use requestAnimationFrame to ensure it runs after rendering updates
+            requestAnimationFrame(initNewCollapsibleElements);
         });
         return () => {
             if (styleElRef.current) {
