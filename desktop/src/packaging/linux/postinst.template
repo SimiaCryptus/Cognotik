@@ -1,12 +1,16 @@
 #!/bin/sh
 set -e
-# Create desktop files directory if it doesn't exist
-mkdir -p /usr/share/applications
 
-# Copy desktop files from resources
-cp "{{resourcesDir}}/cognotik.desktop" /usr/share/applications/cognotik.desktop
-cp "{{resourcesDir}}/cognotik-folder-action.desktop" /usr/share/applications/cognotik-folder-action.desktop
 
 # Update desktop database
+# This ensures the system recognizes the newly installed .desktop files.
+cp /opt/cognotik/lib/cognotik-Cognotik.desktop /usr/share/applications
 update-desktop-database /usr/share/applications || true
+
+# Create /usr/local/bin if it doesn't exist
+mkdir -p /usr/local/bin
+# Create symlink for the executable
+# This makes 'cognotik' available in the system PATH.
+ln -sf /opt/cognotik/bin/Cognotik /usr/local/bin/cognotik
+
 exit 0

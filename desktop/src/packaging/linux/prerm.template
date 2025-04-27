@@ -7,6 +7,9 @@ fi
 # Remove desktop files
 rm -f /usr/share/applications/cognotik.desktop
 rm -f /usr/share/applications/cognotik-folder-action.desktop
+# Remove symlink
+rm -f /usr/local/bin/cognotik
+
 # Update desktop database
 update-desktop-database /usr/share/applications || true
 exit 0

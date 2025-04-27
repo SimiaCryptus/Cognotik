@@ -10,5 +10,5 @@ Terminal=false
 StartupNotify=true
 Actions=OpenFolder;
 [Desktop Action OpenFolder]
-Name=Open Folder with Cognotik
+Name=Open Folder
 Exec=/opt/cognotik/bin/Cognotik "%f"

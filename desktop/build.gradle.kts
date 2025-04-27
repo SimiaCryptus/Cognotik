@@ -204,25 +204,12 @@ fun installContextMenuAction(os: String) {
             println("Wrote context menu Quick Action to: ${script.parentFile}")
         }
 
-        os.contains("linux") -> {
 
-            val desktopFile = scriptPath.resolve("cognotik-folder-action.desktop")
-            val desktopTemplateFile =
-                layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
-            val desktopContent = desktopTemplateFile.readText()
-                .replace("{{appDisplayName}}", appDisplayName)
-            desktopFile.writeText(desktopContent)
 
-            val mainDesktopFile =
-                layout.buildDirectory.dir("jpackage/resources").get().asFile.resolve("cognotik.desktop")
-            mainDesktopFile.parentFile.mkdirs()
-            val mainDesktopTemplateFile =
-                layout.projectDirectory.file("src/packaging/linux/main.desktop.template").asFile
-            mainDesktopFile.writeText(mainDesktopTemplateFile.readText())
 
-            println("Created main application .desktop file to: $mainDesktopFile")
-            println("Created context menu .desktop file to: $desktopFile")
-        }
+        // Linux context menu actions are handled via .desktop files prepared
+        // in the prepareLinuxDesktopFile task and included via jpackage resource-dir.
+        // No specific action needed here for Linux.
     }
 }
 
@@ -385,7 +372,6 @@ tasks.register("packageDeb", JPackageTask::class) {
                 "--linux-package-name", "cognotik"
             )
         }
-        installContextMenuAction("linux")
     }
 }
 tasks.register("prepareLinuxDesktopFile") {
@@ -403,7 +389,6 @@ tasks.register("prepareLinuxDesktopFile") {
         val contextMenuTemplateFile =
             layout.projectDirectory.file("src/packaging/linux/folder_action.desktop.template").asFile
         val contextMenuContent = contextMenuTemplateFile.readText()
-            .replace("{{appDisplayName}}", "Open with Cognotik")
         contextMenuDesktopFile.writeText(contextMenuContent)
 
         val mainDesktopFile = File(resourcesDir, "cognotik.desktop")
@@ -413,9 +398,8 @@ tasks.register("prepareLinuxDesktopFile") {
         val installScript = File(resourcesDir, "postinst")
 
         val postinstTemplateFile = layout.projectDirectory.file("src/packaging/linux/postinst.template").asFile
-        val postinstContent = postinstTemplateFile.readText()
-            .replace("{{resourcesDir}}", resourcesDir.absolutePath)
-        installScript.writeText(postinstContent)
+        // Copy the template directly. Placeholders are no longer needed as jpackage/dpkg handle file placement.
+        installScript.writeText(postinstTemplateFile.readText())
         installScript.setExecutable(true)
 
         val uninstallScript = File(resourcesDir, "prerm")
