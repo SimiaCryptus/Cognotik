@@ -370,7 +370,7 @@ tasks.register("packageDeb", JPackageTask::class) {
                 "--linux-deb-maintainer", "support@simiacryptus.com",
                 "--linux-shortcut",
                 "--linux-app-category", "Development;Utility",
-                "--icon", layout.projectDirectory.file("src/main/resources/icon.png").asFile.path,
+                "--icon", layout.projectDirectory.file("src/main/resources/toolbarIcon.svg").asFile.path,
                 "--linux-package-name", "cognotik"
             )
         }
