@@ -11,6 +11,7 @@ import {Message} from "../types/messages";
 import Spinner from './common/Spinner';
 import './MessageList.css';
 
+const DEBUG_LOGGING = process.env.NODE_ENV === 'development';
 const DEBUG_TAB_SYSTEM = process.env.NODE_ENV === 'development';
 const CONTAINER_ID = 'message-list-' + Math.random().toString(36).substr(2, 9);
 
@@ -41,7 +42,7 @@ const handleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const {messageId, action} = extractMessageAction(target);
     if (messageId && action) {
-        if (process.env.NODE_ENV === 'development') {
+        if (DEBUG_LOGGING) {
             console.debug('[MessageList] Action clicked:', {messageId, action});
         }
         e.preventDefault();
@@ -51,7 +52,7 @@ const handleClick = (e: React.MouseEvent) => {
 };
 
 export const handleMessageAction = (messageId: string, action: string) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (DEBUG_LOGGING) {
         console.debug('[MessageList] Processing action:', {messageId, action});
     }
 
@@ -119,7 +120,7 @@ export const expandMessageReferences = (
 
                 currentNode.innerHTML = referencedMessage.content;
             } else {
-                if (process.env.NODE_ENV === 'development') {
+                if (DEBUG_LOGGING) {
                     console.warn('[MessageList] Referenced message not found:', messageID);
                 }
             }
@@ -271,6 +272,9 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     );
 
     useTheme();
+    if (DEBUG_LOGGING) {
+        console.debug('[MessageList] Rendering component', {hasPropMessages: !!propMessages});
+    }
 
     React.useEffect(() => {
 
@@ -289,7 +293,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             }
         }, 100);
         return () => clearTimeout(timer);
-    }, [finalMessages.length, debouncedUpdateTabs]); // Trigger only when message count changes significantly
+    }, [finalMessages, debouncedUpdateTabs]);
 
     React.useEffect(() => {
         if (!messageListRef.current) return;
