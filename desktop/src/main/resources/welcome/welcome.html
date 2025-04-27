@@ -473,6 +473,43 @@
     </div>
     <div style="width: inherit;"></div>
     <button class="menu-button" id="open-basic-chat">Basic Chat</button>
+<!-- Modal for Basic Chat Settings -->
+<div class="modal" id="basic-chat-settings-modal">
+    <div class="modal-content">
+        <span class="close" id="close-basic-chat-modal">&times;</span>
+        <h3>Basic Chat Settings</h3>
+        <form id="basic-chat-settings-form">
+            <div class="form-group">
+                <label for="basic-chat-model">Model:</label>
+                <select id="basic-chat-model" required>
+                    <option value="GPT4o">GPT-4o</option>
+                    <option value="GPT4">GPT-4</option>
+                    <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="basic-chat-parsing-model">Parsing Model:</label>
+                <select id="basic-chat-parsing-model" required>
+                    <option value="GPT4oMini">GPT-4o Mini</option>
+                    <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
+                <input id="basic-chat-temperature" type="range" min="0" max="1" step="0.01" value="0.3">
+                <span id="basic-chat-temperature-value">0.3</span>
+            </div>
+            <div class="form-group">
+                <label for="basic-chat-budget">Budget ($):</label>
+                <input id="basic-chat-budget" type="number" min="0" max="1000" step="0.01" value="2.0" required>
+            </div>
+            <div class="button-group">
+                <button type="button" class="button secondary" id="cancel-basic-chat-settings">Cancel</button>
+                <button type="submit" class="button" id="submit-basic-chat-settings">Continue to Chat</button>
+            </div>
+        </form>
+    </div>
+</div>
     <button class="menu-button" id="api-settings-btn">Configure API Keys</button>
 </div>
 
@@ -937,8 +974,13 @@
         }
     }
 
-    function loadSettingsFromServer() {
 
+
+
+
+
+
+    function loadSettingsFromServer() {
         fetch('/userSettings/')
             .then(response => response.text())
             .then(html => {
@@ -955,7 +997,6 @@
                                 const input = document.getElementById(`api-key-${provider}`);
                                 if (input && key) {
                                     input.value = '********';
-
                                 }
                             }
 
@@ -967,7 +1008,6 @@
                                     }
                                 }
                             }
-
                         }
 
                         populateModelSelections();
@@ -979,8 +1019,8 @@
             .catch(error => {
                 console.error('Error loading API settings:', error);
             });
+        // Removed reference to basicChatBtn here (was causing error)
     }
-
     function populateWorkingDirFromHash() {
         if (window.location.hash) {
 
@@ -994,6 +1034,15 @@
             }
         }
     }
+
+
+
+
+
+
+
+
+
 
     document.addEventListener('DOMContentLoaded', function () {
 
@@ -1016,6 +1065,153 @@
         if (!taskSettings.taskSettings || Object.keys(taskSettings.taskSettings).length === 0) {
             saveTaskSelection();
         }
+
+        // --- Basic Chat Modal Setup ---
+        const basicChatBtn = document.getElementById('open-basic-chat');
+        const basicChatModal = document.getElementById('basic-chat-settings-modal');
+        const closeBasicChatModal = document.getElementById('close-basic-chat-modal');
+        const cancelBasicChatSettings = document.getElementById('cancel-basic-chat-settings');
+        const basicChatForm = document.getElementById('basic-chat-settings-form');
+        const tempSlider = document.getElementById('basic-chat-temperature');
+        const tempValue = document.getElementById('basic-chat-temperature-value');
+
+        basicChatBtn.addEventListener('click', function () {
+            // Populate model selectors with available models (same as main pipeline)
+            populateBasicChatModelSelections();
+            // Prefill using main pipeline's preferences (shared keys), fallback to legacy basicChat* keys, then default
+            const model = localStorage.getItem('defaultModel') || localStorage.getItem('basicChatModel') || 'GPT4o';
+            const parsingModel = localStorage.getItem('parsingModel') || localStorage.getItem('basicChatParsingModel') || 'GPT4oMini';
+            const temperature = localStorage.getItem('temperature') || localStorage.getItem('basicChatTemperature') || '0.3';
+            const budget = localStorage.getItem('budget') || localStorage.getItem('basicChatBudget') || '2.0';
+            document.getElementById('basic-chat-model').value = model;
+            document.getElementById('basic-chat-parsing-model').value = parsingModel;
+            document.getElementById('basic-chat-temperature').value = temperature;
+            document.getElementById('basic-chat-temperature-value').textContent = temperature;
+            document.getElementById('basic-chat-budget').value = budget;
+            basicChatModal.style.display = "block";
+        });
+
+        // Populate the Basic Chat model selectors with available models based on API keys
+        function populateBasicChatModelSelections() {
+            const modelSelect = document.getElementById('basic-chat-model');
+            const parsingModelSelect = document.getElementById('basic-chat-parsing-model');
+            if (!modelSelect || !parsingModelSelect) return;
+
+            // Save current values to try to preserve selection
+            const prevModel = modelSelect.value;
+            const prevParsingModel = parsingModelSelect.value;
+
+            modelSelect.innerHTML = '';
+            parsingModelSelect.innerHTML = '';
+            const addedModels = new Set();
+            if (apiSettings && apiSettings.apiKeys) {
+                for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
+                    if (key && availableModels[provider]) {
+                        availableModels[provider].forEach(model => {
+                            if (!addedModels.has(model.id)) {
+                                const option = document.createElement('option');
+                                option.value = model.id;
+                                option.textContent = `${model.name} (${provider})`;
+                                option.title = model.description;
+                                modelSelect.appendChild(option);
+
+                                const parsingOption = document.createElement('option');
+                                parsingOption.value = model.id;
+                                parsingOption.textContent = `${model.name} (${provider})`;
+                                parsingOption.title = model.description;
+                                parsingModelSelect.appendChild(parsingOption);
+                                addedModels.add(model.id);
+                            }
+                        });
+                    }
+                }
+            }
+            // If no models available, show default
+            if (modelSelect.options.length === 0) {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = 'GPT4o';
+                defaultOption.textContent = 'GPT-4o (OpenAI) - Configure API key';
+                modelSelect.appendChild(defaultOption);
+                const defaultParsingOption = document.createElement('option');
+                defaultParsingOption.value = 'GPT4oMini';
+                defaultParsingOption.textContent = 'GPT-4o Mini (OpenAI) - Configure API key';
+                parsingModelSelect.appendChild(defaultParsingOption);
+            }
+            // Try to restore previous selection
+            if (prevModel && Array.from(modelSelect.options).some(opt => opt.value === prevModel)) {
+                modelSelect.value = prevModel;
+            }
+            if (prevParsingModel && Array.from(parsingModelSelect.options).some(opt => opt.value === prevParsingModel)) {
+                parsingModelSelect.value = prevParsingModel;
+            }
+        }
+
+        // Update temperature value display
+        tempSlider.addEventListener('input', function () {
+            tempValue.textContent = this.value;
+        });
+
+        closeBasicChatModal.onclick = function () {
+            basicChatModal.style.display = "none";
+        };
+        cancelBasicChatSettings.onclick = function () {
+            basicChatModal.style.display = "none";
+        };
+        window.addEventListener('click', function (event) {
+            if (event.target === basicChatModal) {
+                basicChatModal.style.display = "none";
+            }
+        });
+            // Save to localStorage for convenience
+        basicChatForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            // Gather settings
+            const model = document.getElementById('basic-chat-model').value;
+            const parsingModel = document.getElementById('basic-chat-parsing-model').value;
+            const temperature = parseFloat(document.getElementById('basic-chat-temperature').value);
+            const budget = parseFloat(document.getElementById('basic-chat-budget').value);
+            // Save to localStorage for convenience AND sync with main pipeline preferences
+            // Always use main pipeline keys for shared params
+            localStorage.setItem('defaultModel', model);
+            localStorage.setItem('parsingModel', parsingModel);
+            localStorage.setItem('temperature', temperature);
+            localStorage.setItem('budget', budget);
+            // Also keep legacy basicChat* keys for backward compatibility if needed
+            localStorage.setItem('basicChatModel', model);
+            localStorage.setItem('basicChatParsingModel', parsingModel);
+            localStorage.setItem('basicChatTemperature', temperature);
+            localStorage.setItem('basicChatBudget', budget);
+            // Generate session id
+            const chatSessionId = generateSessionId();
+            // Post settings to chat app endpoint
+            fetch(`/chat/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    sessionId: chatSessionId,
+                    action: 'save',
+                    settings: JSON.stringify({
+                        model: model,
+                        parsingModel: parsingModel,
+                        temperature: temperature,
+                        budget: budget
+                    })
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    basicChatModal.style.display = "none";
+                    window.location.href = `/chat/#${chatSessionId}`;
+                } else {
+                    showNotification('Failed to save chat settings.', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error saving chat settings: ' + error.message, 'error');
+            });
+        });
     });
 
 
@@ -1217,10 +1413,7 @@
 
         document.getElementById('launch-session').addEventListener('click', launchSession);
 
-        document.getElementById('open-basic-chat').addEventListener('click', function () {
 
-            window.open(`/chat/#${sessionId}`, '_blank');
-        });
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -1234,7 +1427,6 @@
                     }
                     tabs[newIndex].click();
                     tabs[newIndex].focus();
-                    e.preventDefault();
                 }
             }
         });
