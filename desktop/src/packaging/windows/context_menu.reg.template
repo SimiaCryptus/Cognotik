@@ -6,8 +6,3 @@ Windows Registry Editor Version 5.00
 
 [HKEY_CLASSES_ROOT\Directory\shell\{{appDisplayName}}\command]
 @="\"%ProgramFiles%\\{{appName}}\\{{appName}}.exe\" \"%1\""
-[HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server]
-@="Stop Cognotik Server"
-"Icon"="\"%ProgramFiles%\\{{appName}}\\{{appName}}.exe\""
-[HKEY_CLASSES_ROOT\Directory\shell\Stop Cognotik Server\command]
-@="\"%ProgramFiles%\\{{appName}}\\{{appName}}.exe\" \"--stop\""

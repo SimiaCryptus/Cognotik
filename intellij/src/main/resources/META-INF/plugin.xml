@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.github.simiacryptus.intellijopenaicodeassist</id>
+    <id>com.simiacryptus.cognotik</id>
     <name>Cognotik</name>
     <vendor url="https://blog.simiacrypt.us/">SimiaCryptus Software</vendor>
     <category>Code Tools</category>
@@ -9,263 +9,259 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="com.simiacryptus.aicoder.PluginStartupActivity"/>
-        <applicationService serviceImplementation="com.simiacryptus.aicoder.config.AppSettingsState"/>
+        <postStartupActivity implementation="com.simiacryptus.cognotik.PluginStartupActivity"/>
+        <applicationService serviceImplementation="com.simiacryptus.cognotik.config.AppSettingsState"/>
         <applicationConfigurable
                 parentId="tools"
-                instance="com.simiacryptus.aicoder.config.StaticAppSettingsConfigurable"
+                instance="com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable"
                 id="org.intellij.sdk.settings.AppSettingsConfigurable"
                 displayName="Cognotik"/>
         <statusBarWidgetFactory
-                implementation="com.simiacryptus.aicoder.ui.SettingsWidgetFactory"
-                id="com.simiacryptus.aicoder.ui.SettingsWidgetFactory"
+                implementation="com.simiacryptus.cognotik.ui.SettingsWidgetFactory"
+                id="cognotik.ui.SettingsWidgetFactory"
                 order="first"/>
         <statusBarWidgetFactory
-                implementation="com.simiacryptus.aicoder.dictation.DictationWidgetFactory"
+                implementation="com.simiacryptus.cognotik.dictation.DictationWidgetFactory"
                 id="Cognotik.SpeechToTextWidget"
                 order="first"/>
         <toolWindow id="Cognotik Dictator" anchor="right" icon="MyIcons.micInactive"
-                    factoryClass="com.simiacryptus.aicoder.dictation.DictationToolWindowFactory"/>
+                    factoryClass="com.simiacryptus.cognotik.dictation.DictationToolWindowFactory"/>
     </extensions>
 
     <actions>
-        <group id="com.simiacryptus.aicoder.ui.MainMenu"
+        <group id="cognotik.ui.MainMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                popup="true"
                icon="MyIcons.icon"
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
-            <action class="aicoder.actions.chat.GenericChatAction"
+            <action class="cognotik.actions.chat.GenericChatAction"
                     id="GenericChat"
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
             </action>
-            <action class="aicoder.actions.agent.OutlineAction"
+            <action class="cognotik.actions.agent.OutlineAction"
                     id="OutlineAction"
                     text="🗂️ Outline Tool"
                     description="Create and expand outlines using Cognotik assistance">
             </action>
-            <action class="aicoder.actions.agent.EnhancedOutlineAction"
+            <action class="cognotik.actions.agent.EnhancedOutlineAction"
                     id="EnhancedOutlineAction"
                     text="📝 Enhanced Outline Tool"
                     description="Create and expand outlines with customizable phases using Cognotik assistance">
             </action>
         </group>
-        <group id="com.simiacryptus.aicoder.ui.EditorMenu"
+        <group id="cognotik.ui.EditorMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                popup="true"
                icon="MyIcons.icon"
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="EditorPopupMenu" anchor="before" relative-to-action="EditorToggleColumnMode"/>
-            <action class="aicoder.actions.chat.CodeChatAction"
+            <action class="cognotik.actions.chat.CodeChatAction"
                     text="💬 Code Chat"
                     description="Start an interactive dialogue about your selected code, offering insights, explanations, and suggestions for improvements">
             </action>
-            <action class="aicoder.actions.chat.DiffChatAction"
+            <action class="cognotik.actions.chat.DiffChatAction"
                     text="🛠️ Patch Chat"
                     description="Initiate an interactive session to discuss and apply patches to your code, with intelligent suggestions for modifications">
             </action>
-            <action class="aicoder.actions.editor.SmartPasteAction"
+            <action class="cognotik.actions.editor.SmartPasteAction"
                     text="📋 _Smart Paste"
                     description="Smart paste functionality that automatically detects and converts clipboard content to match the current file's programming language">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift V"/>
                 <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift V"/>
             </action>
-            <action class="aicoder.actions.editor.FastPasteAction"
+            <action class="cognotik.actions.editor.FastPasteAction"
                     text="⚡ _Fast Paste"
                     description="Fast paste functionality using a less resource-intensive model for quick conversions.">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt V"/>
                 <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta alt V"/>
             </action>
-            <action class="aicoder.actions.editor.RedoLast"
+            <action class="cognotik.actions.editor.RedoLast"
                     text="🔄 Re_do Last"
                     description="Quickly repeat the most recent intelligent coding operation in the current editor">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift Z"/>
                 <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift Z"/>
             </action>
-            <action class="aicoder.actions.editor.CustomEditAction"
+            <action class="cognotik.actions.editor.CustomEditAction"
                     text="✏️ _Edit Code..."
                     description="Edit code...">
             </action>
-            <group id="aicoder.actions.editor.RecentCodeEditsAction"
-                   class="aicoder.actions.editor.RecentCodeEditsAction"
+            <group id="cognotik.actions.editor.RecentCodeEditsAction"
+                   class="cognotik.actions.editor.RecentCodeEditsAction"
                    text="⏱️ _Recent Code Edits"
                    description="Recent code edits"
                    popup="true">
             </group>
-            <action class="aicoder.actions.markdown.MarkdownListAction"
+            <action class="cognotik.actions.markdown.MarkdownListAction"
                     text="📝 Add _List Items"
                     description="Intelligently extend Markdown lists by generating contextually relevant new items">
             </action>
-            <group id="aicoder.actions.markdown.MarkdownImplementActionGroup"
-                   class="aicoder.actions.markdown.MarkdownImplementActionGroup"
+            <group id="cognotik.actions.markdown.MarkdownImplementActionGroup"
+                   class="cognotik.actions.markdown.MarkdownImplementActionGroup"
                    text="🛠️ Imple_ment As..."
                    description="Convert selected Markdown text into executable code snippets in various programming languages"
                    popup="true">
             </group>
-            <action class="aicoder.actions.editor.DescribeAction"
+            <action class="cognotik.actions.editor.DescribeAction"
                     text="📝 Describe C_ode and Prepend Comment"
                     description="Add doc comments">
                 <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift D"/>
                 <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift D"/>
             </action>
-            <action class="aicoder.actions.dev.LineFilterChatAction"
-                    text="🔍 Filter Lines"
-                    description="Filter lines">
-            </action>
-            <action class="aicoder.actions.dev.PrintTreeAction"
+            <action class="cognotik.actions.dev.PrintTreeAction"
                     text="🌳 Print PSI Tree"
                     description="Print PSI Tree">
                 <keyboard-shortcut keymap="$default" first-keystroke="control alt A"/>
                 <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt A"/>
             </action>
         </group>
-        <group id="com.simiacryptus.aicoder.ui.ProjectMenu"
+        <group id="cognotik.ui.ProjectMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                popup="true"
                icon="MyIcons.icon"
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="WeighingNewGroup"/>
-            <action class="aicoder.actions.chat.MultiCodeChatAction"
+            <action class="cognotik.actions.chat.MultiCodeChatAction"
                     text="💬 Code Chat"
                     description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
             </action>
-            <group id="com.simiacryptus.aicoder.ui.ProjectMenu.Modify"
+            <group id="cognotik.ui.ProjectMenu.Modify"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="🔧 Modify"
                    description="File modification tools">
-                <action class="aicoder.actions.chat.MultiDiffChatAction"
+                <action class="cognotik.actions.chat.MultiDiffChatAction"
                         text="📝 Modify Files"
                         description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
                 </action>
-                <action class="aicoder.actions.chat.MultiDiffChatWithLineNumbersAction"
+                <action class="cognotik.actions.chat.MultiDiffChatWithLineNumbersAction"
                         text="📝 Modify Files (with Line Numbers)"
                         description="Analyze and generate patches for multiple files with line numbers displayed for easier reference">
                 </action>
-                <action class="aicoder.actions.chat.CodeChangeAction"
+                <action class="cognotik.actions.chat.CodeChangeAction"
                         text="🎯 Smart Code Change"
                         description="Intelligently analyze and modify code files using a two-stage approach with optimized model selection">
                 </action>
-                <action class="aicoder.actions.dev.ApplyPatchAction"
+                <action class="cognotik.actions.dev.ApplyPatchAction"
                         text="🔧 Apply Patch"
                         description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
                 </action>
-                <action class="aicoder.actions.agent.DocumentedMassPatchAction"
+                <action class="cognotik.actions.agent.DocumentedMassPatchAction"
                         text="🔨 Mass Patch"
                         description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
                 </action>
             </group>
-            <group id="com.simiacryptus.aicoder.ui.ProjectMenu.Generation"
+            <group id="cognotik.ui.ProjectMenu.Generation"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="⚡ Generate"
                    description="File generation tools">
-                <action class="aicoder.actions.generate.GenerateRelatedFileAction"
+                <action class="cognotik.actions.generate.GenerateRelatedFileAction"
                         text="📄 Generate Related File"
                         description="Intelligently create a new file related to the selected one, suggesting appropriate content and file location">
                 </action>
-                <action class="aicoder.actions.generate.CreateFileFromDescriptionAction"
+                <action class="cognotik.actions.generate.CreateFileFromDescriptionAction"
                         text="✨ Create File from Description"
                         description="Create a new file with appropriate content based on a natural language description, intelligently determining file type and location">
                 </action>
-                <action class="aicoder.actions.generate.CreateImageAction"
+                <action class="cognotik.actions.generate.CreateImageAction"
                         text="🖌️ Create Image"
                         description="Generate visual representations of code structure, algorithms, or data flow based on selected code or project files">
                 </action>
-                <action class="aicoder.actions.generate.GenerateDocumentationAction"
+                <action class="cognotik.actions.generate.GenerateDocumentationAction"
                         text="📚 Generate Documentation"
                         description="Automatically generate comprehensive documentation for selected files or entire project, with customizable output formats">
                 </action>
             </group>
-            <group id="com.simiacryptus.aicoder.ui.ProjectMenu.Agents"
+            <group id="cognotik.ui.ProjectMenu.Agents"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="🤖 Agents"
                    description="Cognotik-powered automation agents">
-                <action class="aicoder.actions.plan.UnifiedPlanAction"
+                <action class="cognotik.actions.plan.UnifiedPlanAction"
                         text="🧠 Task Planning"
                         description="Choose from multiple planning strategies in a unified interface with customizable task settings">
                 </action>
-                <action class="aicoder.actions.agent.CommandAutofixAction"
+                <action class="cognotik.actions.agent.CommandAutofixAction"
                         text="🔄 Run ... and Fix"
                         description="Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions">
                 </action>
-                <action class="aicoder.actions.agent.ValidateCodeAction"
+                <action class="cognotik.actions.agent.ValidateCodeAction"
                         text="✓ Validate Code"
                         description="Validate code syntax and structure using Cognotik-powered analysis">
                 </action>
-                <action class="aicoder.actions.agent.SimpleCommandAction"
+                <action class="cognotik.actions.agent.SimpleCommandAction"
                         text="✨ Do Something"
                         description="Execute custom coding tasks with intelligent assistance, analyzing project structure and context">
                 </action>
-                <action class="aicoder.actions.agent.MultiStepPatchAction"
+                <action class="cognotik.actions.agent.MultiStepPatchAction"
                         text="📝 Multi-Step Editor"
                         description="Break down complex code modifications into a series of manageable steps, with intelligent suggestions for each stage">
                 </action>
                 <action id="CognotikShellCommand"
-                        class="aicoder.actions.agent.ShellCommandAction"
+                        class="cognotik.actions.agent.ShellCommandAction"
                         text="🐚 Shell Agent"
                         description="Execute shell commands in the selected directory via a coding agent">
                 </action>
-                <action class="aicoder.actions.agent.WebDevelopmentAssistantAction"
+                <action class="cognotik.actions.agent.WebDevelopmentAssistantAction"
                         text="🌐 Web Dev"
                         description="Comprehensive tool for web application development, assisting with file generation, code writing, and project structure">
                 </action>
             </group>
-            <group id="com.simiacryptus.aicoder.ui.ProjectMenu.Knowledge"
+            <group id="cognotik.ui.ProjectMenu.Knowledge"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="📚 Knowledge Mgmt"
                    description="Knowledge management and analysis tools">
-                <action class="aicoder.actions.knowledge.DocumentDataExtractorAction"
+                <action class="cognotik.actions.knowledge.DocumentDataExtractorAction"
                         text="📄 Extract Document Data"
                         description="Comprehensive tool for extracting and analyzing text and images from various document formats (PDF, TXT, MD, HTML)">
                 </action>
-                <action id="aicoder.actions.knowledge.CreateProjectorFromQueryIndexAction"
-                        class="aicoder.actions.knowledge.CreateProjectorFromQueryIndexAction"
+                <action id="cognotik.actions.knowledge.CreateProjectorFromQueryIndexAction"
+                        class="cognotik.actions.knowledge.CreateProjectorFromQueryIndexAction"
                         text="🔮 View Projector"
                         description="View Vectors using Tensorflow Projector">
                 </action>
-                <action class="aicoder.actions.knowledge.SaveAsQueryIndexAction"
+                <action class="cognotik.actions.knowledge.SaveAsQueryIndexAction"
                         text="💾 Save as Query DB"
                         description="Convert selected parsed JSON files into an optimized binary index for efficient querying and data retrieval">
                 </action>
             </group>
         </group>
 
-        <group id="com.simiacryptus.aicoder.ui.VcsMenu"
+        <group id="cognotik.ui.VcsMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                popup="true"
                icon="MyIcons.icon"
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
-            <action id="aicoder.actions.git.ChatWithCommitAction"
-                    class="aicoder.actions.git.ChatWithCommitAction"
+            <action id="cognotik.actions.git.ChatWithCommitAction"
+                    class="cognotik.actions.git.ChatWithCommitAction"
                     text="💬 Chat with Commit"
                     description="Chat with Commit">
             </action>
-            <action id="aicoder.actions.git.ChatWithCommitDiffAction"
-                    class="aicoder.actions.git.ChatWithCommitDiffAction"
+            <action id="cognotik.actions.git.ChatWithCommitDiffAction"
+                    class="cognotik.actions.git.ChatWithCommitDiffAction"
                     text="🔄 Chat with Diff (x..HEAD)"
                     description="Chat with Commit Diff">
             </action>
-            <action id="aicoder.actions.git.ChatWithWorkingCopyDiff"
-                    class="aicoder.actions.git.ChatWithWorkingCopyDiffAction"
+            <action id="cognotik.actions.git.ChatWithWorkingCopyDiff"
+                    class="cognotik.actions.git.ChatWithWorkingCopyDiffAction"
                     text="📝 Chat with Working Copy Diff"
                     description="Open a chat session with the diff between HEAD and the working copy">
             </action>
-            <action id="aicoder.actions.git.ReplicateCommitAction"
-                    class="aicoder.actions.git.ReplicateCommitAction"
+            <action id="cognotik.actions.git.ReplicateCommitAction"
+                    class="cognotik.actions.git.ReplicateCommitAction"
                     text="🔄 Replicate Commit"
                     description="Replicate Commit">
             </action>
         </group>
-        <group id="com.simiacryptus.aicoder.ui.FindResultsMenu"
+        <group id="cognotik.ui.FindResultsMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                popup="true"
                icon="MyIcons.icon"
@@ -273,25 +269,25 @@
                description="Cognotik-powered file modification tools">
             <add-to-group group-id="UsageView.Popup" anchor="last"/>
             <action id="CognotikPlugin.FindResultsModification"
-                    class="aicoder.actions.find.FindResultsModificationAction"
+                    class="cognotik.actions.find.FindResultsModificationAction"
                     text="Modify Find Results"
                     description="Modify files based on find results">
             </action>
             <action id="Cognotik.FindResultsChatAction"
-                    class="aicoder.actions.find.FindResultsChatAction"
+                    class="cognotik.actions.find.FindResultsChatAction"
                     text="Chat About Find Results"
                     description="Start a code chat about find results">
             </action>
         </group>
 
-        <action id="aicoder.actions.test.ChatWithTestResultAction"
-                class="aicoder.actions.test.TestResultAutofixAction"
+        <action id="cognotik.actions.test.ChatWithTestResultAction"
+                class="cognotik.actions.test.TestResultAutofixAction"
                 text="🔍 Cognotik Analyze Test Result"
                 description="Open a chat session to analyze the selected test result">
             <add-to-group group-id="TestTreePopupMenu" anchor="last"/>
         </action>
-        <action id="aicoder.actions.problems.AnalyzeProblemAction"
-                class="aicoder.actions.problems.AnalyzeProblemAction"
+        <action id="cognotik.actions.problems.AnalyzeProblemAction"
+                class="cognotik.actions.problems.AnalyzeProblemAction"
                 text="🔧 Cognotik Analyze Problem"
                 description="Open a chat session to analyze and potentially fix the selected problem">
             <add-to-group group-id="ProblemsView.ToolWindow.TreePopup" anchor="last"/>

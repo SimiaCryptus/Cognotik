@@ -1,0 +1,49 @@
+ @echo off
+ echo ========================================================
+ echo    Cognotik Context Menu Uninstaller
+ echo ========================================================
+ echo.
+ echo This script will remove the "Open with Cognotik" option
+ echo from your Windows Explorer context menu for folders.
+ echo.
+ echo You may need to run this script as Administrator.
+ echo.
+ echo Press any key to continue or Ctrl+C to cancel...
+ pause > nul
+ echo.
+ echo Removing context menu entries...
+ if exist "%~dp0\remove_context_menu.reg" (
+     regedit /s "%~dp0\remove_context_menu.reg"
+ ) else if exist "%ProgramFiles%\Cognotik\app-resources\remove_context_menu.reg" (
+     regedit /s "%ProgramFiles%\Cognotik\app-resources\remove_context_menu.reg"
+ ) else (
+     echo ERROR: Registry file not found!
+     echo Looked in:
+     echo - %~dp0\remove_context_menu.reg
+     echo - %ProgramFiles%\Cognotik\app-resources\remove_context_menu.reg
+     goto :error
+ )
+ 
+ if %ERRORLEVEL% EQU 0 (
+     echo.
+     echo ========================================================
+     echo    Uninstallation Successful!
+     echo ========================================================
+     echo.
+     echo The Cognotik context menu options have been removed.
+     echo.
+     echo You may need to restart Windows Explorer for changes to take effect.
+ ) else (
+     :error
+     echo.
+     echo ========================================================
+     echo    Uninstallation Failed!
+     echo ========================================================
+     echo.
+     echo Please try running this script as Administrator:
+     echo Right-click on this file and select "Run as Administrator"
+ )
+ echo.
+ echo Press any key to exit...
+ pause > nul
+ exit /b
