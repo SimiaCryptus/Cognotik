@@ -63,7 +63,14 @@ abstract class ChatServer(private val resourceBase: String = "application") {
 
     abstract fun newSession(user: User?, session: Session): SocketManager
 
-    open val baseResource: Resource? get() = Resource.newResource(javaClass.classLoader.getResource(resourceBase))
+    open val baseResource: Resource? get() = javaClass.classLoader.getResource(resourceBase)?.let {
+        Resource.newResource(it).apply {
+            if (!exists()) {
+                val message = "Resource not found: $it"
+                throw RuntimeException(message)
+            }
+        }
+    }
     private val newSessionServlet by lazy { NewSessionServlet() }
     private val webSocketHandler by lazy { WebSocketHandler() }
     private val defaultServlet by lazy { DefaultServlet() }

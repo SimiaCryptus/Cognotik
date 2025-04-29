@@ -23,14 +23,6 @@ class ValidationPatchApp(
     companion object {
         private val log = LoggerFactory.getLogger(ValidationPatchApp::class.java)
 
-        private val validationMessages = mapOf(
-            "curly" to "Unbalanced curly braces",
-            "square" to "Unbalanced square brackets",
-            "parenthesis" to "Unbalanced parentheses",
-            "quote" to "Unbalanced quotes",
-            "singleQuote" to "Unbalanced single quotes",
-            "kotlin" to "Invalid Kotlin syntax"
-        )
     }
 
     override fun output(

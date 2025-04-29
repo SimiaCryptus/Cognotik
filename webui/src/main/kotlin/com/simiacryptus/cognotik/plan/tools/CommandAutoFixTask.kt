@@ -95,7 +95,6 @@ class CommandAutoFixTask(
                             )
                         } ?: emptyList(),
                         autoFix = agent.planSettings.autoFix,
-                        exitCodeOption = "nonzero",
                         includeLineNumbers = false,
                     ),
                     api = api,
@@ -104,13 +103,22 @@ class CommandAutoFixTask(
                     parsingModel = agent.planSettings.parsingModel,
                 ).run(
                     ui = agent.ui, task = task
-                )
-                task.add(
-                    agent.ui.hrefLink("Accept", "href-link cmd-button") {
-                        resultFn("All Commands completed")
-                        semaphore.release()
+                ).apply {
+                    when {
+                        this.exitCode == 0 -> {
+                            resultFn("All Commands completed")
+                            semaphore.release()
+                        }
+                        else -> {
+                            task.add(
+                                agent.ui.hrefLink("Ignore Error", "href-link cmd-button") {
+                                    resultFn("Error: ${this.exitCode}")
+                                    semaphore.release()
+                                }
+                            )
+                        }
                     }
-                )
+                }
             }
             task.placeholder
         }

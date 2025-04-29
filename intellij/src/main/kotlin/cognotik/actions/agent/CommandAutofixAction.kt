@@ -107,11 +107,6 @@ class CommandAutofixAction : BaseAction() {
                             }.toList()
                             PatchApp.Settings(
                                 commands = commands,
-                                exitCodeOption = when (settingsUI.exitCodeOption) {
-                                    SettingsUI.ExitCodeOption.ZERO -> "0"
-                                    SettingsUI.ExitCodeOption.ANY -> "any"
-                                    SettingsUI.ExitCodeOption.NONZERO -> "nonzero"
-                                },
                                 autoFix = settingsUI.autoFixCheckBox.isSelected,
                                 maxRetries = settingsUI.maxRetriesSlider.value,
                                 includeLineNumbers = settingsUI.includeLineNumbersCheckBox.isSelected,

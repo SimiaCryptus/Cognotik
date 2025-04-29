@@ -145,7 +145,7 @@ tasks.withType<ShadowJar> {
 
 fun installContextMenuAction(os: String) {
     val appName = "Cognotik"
-    val appDisplayName = "Open with Cognotik"
+    val appDisplayName = "Cognotik"
     val scriptPath = layout.buildDirectory.dir("jpackage/scripts").get().asFile
     scriptPath.mkdirs()
     when {
@@ -271,6 +271,10 @@ tasks.register("packageMsi", JPackageTask::class) {
             from(layout.projectDirectory.file("src/main/resources/toolbarIcon_128x128.ico"))
             into(resourceDir)
         }
+        copy {
+            from(layout.projectDirectory.file("src/main/resources/icon-512x512.png"))
+            into(resourceDir)
+        }
 
         installContextMenuAction("windows")
 
@@ -323,7 +327,7 @@ tasks.register("packageMsi", JPackageTask::class) {
                 "--win-dir-chooser",
                 "--win-menu",
                 "--win-shortcut",
-                "--icon", File(resourceDir, "icon-512x512.png").path,
+                "--icon", File(resourceDir, "toolbarIcon_128x128.ico").path,
                 "--resource-dir", resourceDir.path,
                 "--temp", layout.buildDirectory.dir("jpackage/temp").get().asFile.path,
                 "--app-content", appResourcesDir.path,

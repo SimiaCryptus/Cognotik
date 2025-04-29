@@ -45,7 +45,6 @@ class ValidateCodeAction : BaseAction() {
                     commands = listOf(),
                     autoFix = true,
                     maxRetries = 1,
-                    exitCodeOption = "nonzero",
                     includeLineNumbers = false
                 )
 

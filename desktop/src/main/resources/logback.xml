@@ -35,7 +35,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.simiacryptus" level="INFO"/>
+    <logger name="com.simiacryptus" level="DEBUG"/>
 
     <root level="WARN">
 <!--        <appender-ref ref="STDOUT"/>-->
