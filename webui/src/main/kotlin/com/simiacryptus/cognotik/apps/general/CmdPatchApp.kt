@@ -91,104 +91,109 @@ class CmdPatchApp(
         run {
             var exitCode = 0
             for ((index, cmdSettings) in settings.commands.withIndex()) {
-                log.info("Executing command ${index+1}/${settings.commands.size}: ${cmdSettings.executable} ${cmdSettings.arguments}")
-                val processBuilder = ProcessBuilder(
-                    listOf(cmdSettings.executable.toString()) + cmdSettings.arguments.split(" ")
-                        .filter(String::isNotBlank)
-                ).directory(cmdSettings.workingDirectory)
-                processBuilder.environment().putAll(System.getenv())
-                val cmdString = processBuilder.command().joinToString(" ")
-                log.debug("Full command string: $cmdString")
-                log.debug("Working directory: ${cmdSettings.workingDirectory}")
-                val task = ui.newTask(false).apply { tabs[cmdString] = placeholder }
-                task.add("Working Directory: ${cmdSettings.workingDirectory}")
-                task.add("Command: ${cmdString}")
-                task.add("Model: ${model} / ${parsingModel}")
-                val process = processBuilder.start()
-                task.add("Started at: ${java.time.Instant.now()}")
-                val cancelButton = task.add(task.hrefLink("Stop") {
-                    log.info("Process manually stopped by user")
-                    process.destroy()
-                })
-                val taskOutput = task.add("")
-                val buffer = StringBuilder()
-                fun addOutput(taskOutput: StringBuilder?, task: SessionTask) {
-                    synchronized(task) {
-                        log.debug("Updating output display (buffer size: ${buffer.length})")
-                        val extraInfo =
-                            "[Verbose Info] - Updated at: ${java.time.Instant.now()} | Buffer size: ${buffer.length} chars"
-                        taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n\n${extraInfo}\n```".renderMarkdown)
-                        task.update()
+                try {
+                    log.info("Executing command ${index+1}/${settings.commands.size}: ${cmdSettings.executable} ${cmdSettings.arguments}")
+                    val processBuilder = ProcessBuilder(
+                        listOf(cmdSettings.executable.toString()) + cmdSettings.arguments.split(" ")
+                            .filter(String::isNotBlank)
+                    ).directory(cmdSettings.workingDirectory)
+                    processBuilder.environment().putAll(System.getenv())
+                    val cmdString = processBuilder.command().joinToString(" ")
+                    log.debug("Full command string: $cmdString")
+                    log.debug("Working directory: ${cmdSettings.workingDirectory}")
+                    val task = ui.newTask(false).apply { tabs[cmdString] = placeholder }
+                    task.add("Working Directory: ${cmdSettings.workingDirectory}")
+                    task.add("Command: ${cmdString}")
+                    task.add("Model: ${model} / ${parsingModel}")
+                    val process = processBuilder.start()
+                    task.add("Started at: ${java.time.Instant.now()}")
+                    val cancelButton = task.add(task.hrefLink("Stop") {
+                        log.info("Process manually stopped by user")
+                        process.destroy()
+                    })
+                    val taskOutput = task.add("")
+                    val buffer = StringBuilder()
+                    fun addOutput(taskOutput: StringBuilder?, task: SessionTask) {
+                        synchronized(task) {
+                            log.debug("Updating output display (buffer size: ${buffer.length})")
+                            val extraInfo =
+                                "[Verbose Info] - Updated at: ${java.time.Instant.now()} | Buffer size: ${buffer.length} chars"
+                            taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n\n${extraInfo}\n```".renderMarkdown)
+                            task.update()
+                        }
                     }
-                }
 
-                fun readStream(stream: java.io.InputStream) {
-                    var lastUpdate = 0L
-                    try {
-                        log.debug("Starting stream reader thread")
-                        stream.bufferedReader().use { reader ->
-                            while (true) {
-                                val line = reader.readLine() ?: break
-                                if (line.isBlank()) continue
-                                buffer.append(line).append("\n")
-                                if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
-                                    log.debug("Periodic output update (${buffer.length} chars)")
-                                    addOutput(taskOutput, task)
-                                    lastUpdate = System.currentTimeMillis()
+                    fun readStream(stream: java.io.InputStream) {
+                        var lastUpdate = 0L
+                        try {
+                            log.debug("Starting stream reader thread")
+                            stream.bufferedReader().use { reader ->
+                                while (true) {
+                                    val line = reader.readLine() ?: break
+                                    if (line.isBlank()) continue
+                                    buffer.append(line).append("\n")
+                                    if (lastUpdate + TimeUnit.SECONDS.toMillis(15) < System.currentTimeMillis()) {
+                                        log.debug("Periodic output update (${buffer.length} chars)")
+                                        addOutput(taskOutput, task)
+                                        lastUpdate = System.currentTimeMillis()
+                                    }
                                 }
                             }
+                        } finally {
+                            log.debug("Stream reader thread completed")
+                            addOutput(taskOutput, task)
                         }
-                    } finally {
-                        log.debug("Stream reader thread completed")
-                        addOutput(taskOutput, task)
                     }
-                }
-                Thread { readStream(process.errorStream) }.start()
-                Thread { readStream(process.inputStream) }.start()
+                    Thread { readStream(process.errorStream) }.start()
+                    Thread { readStream(process.inputStream) }.start()
 
-                val startTime = System.currentTimeMillis()
-                val timeoutMillis = TimeUnit.MINUTES.toMillis(5)
-                val checkIntervalSeconds = 15L
-                var processCompleted = false
-                
-                while (System.currentTimeMillis() - startTime < timeoutMillis) {
-                    if (process.waitFor(checkIntervalSeconds, TimeUnit.SECONDS)) {
-                        processCompleted = true
-                        break
+                    val startTime = System.currentTimeMillis()
+                    val timeoutMillis = TimeUnit.MINUTES.toMillis(5)
+                    val checkIntervalSeconds = 15L
+                    var processCompleted = false
+
+                    while (System.currentTimeMillis() - startTime < timeoutMillis) {
+                        if (process.waitFor(checkIntervalSeconds, TimeUnit.SECONDS)) {
+                            processCompleted = true
+                            break
+                        }
+
+                        // Log process status every interval
+                        log.info("Process still running after ${(System.currentTimeMillis() - startTime) / 1000} seconds")
+                        try {
+                            val pid = process.pid()
+                            log.info("Process PID: $pid, alive: ${process.isAlive}")
+
+                            // Log memory usage if available
+                            val runtime = Runtime.getRuntime()
+                            log.info("JVM Memory - Total: ${runtime.totalMemory() / 1024 / 1024}MB, Free: ${runtime.freeMemory() / 1024 / 1024}MB")
+
+                            // Add diagnostic info to the task output
+                            taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n\n[Process Status] - Running for ${(System.currentTimeMillis() - startTime) / 1000}s | PID: $pid | Alive: ${process.isAlive}\n```".renderMarkdown)
+                            task.update()
+                        } catch (e: Exception) {
+                            log.warn("Failed to get process diagnostics", e)
+                        }
                     }
-                    
-                    // Log process status every interval
-                    log.info("Process still running after ${(System.currentTimeMillis() - startTime) / 1000} seconds")
-                    try {
-                        val pid = process.pid()
-                        log.info("Process PID: $pid, alive: ${process.isAlive}")
-                        
-                        // Log memory usage if available
-                        val runtime = Runtime.getRuntime()
-                        log.info("JVM Memory - Total: ${runtime.totalMemory() / 1024 / 1024}MB, Free: ${runtime.freeMemory() / 1024 / 1024}MB")
-                        
-                        // Add diagnostic info to the task output
-                        taskOutput?.set("```\n${truncate(buffer.toString()).indent("  ")}\n\n[Process Status] - Running for ${(System.currentTimeMillis() - startTime) / 1000}s | PID: $pid | Alive: ${process.isAlive}\n```".renderMarkdown)
+
+                    if (!processCompleted) {
+                        log.warn("Process timed out after 5 minutes")
+                        process.destroy()
+                        cancelButton?.clear()
+                        throw RuntimeException("Process timed out after 5 minutes")
+                    } else {
+                        exitCode = process.exitValue()
+                        log.info("Process completed with exit code: $exitCode")
+                        cancelButton?.clear()
                         task.update()
-                    } catch (e: Exception) {
-                        log.warn("Failed to get process diagnostics", e)
+                        if (exitCode != 0) {
+                            log.info("Command failed with exit code $exitCode, returning output")
+                            return OutputResult(exitCode, outputString(buffer))
+                        }
                     }
-                }
-                
-                if (!processCompleted) {
-                    log.warn("Process timed out after 5 minutes")
-                    process.destroy()
-                    cancelButton?.clear()
-                    throw RuntimeException("Process timed out after 5 minutes")
-                } else {
-                    exitCode = process.exitValue()
-                    log.info("Process completed with exit code: $exitCode")
-                    cancelButton?.clear()
-                    task.update()
-                    if (exitCode != 0) {
-                        log.info("Command failed with exit code $exitCode, returning output")
-                        return OutputResult(exitCode, outputString(buffer))
-                    }
+                } catch (e: Throwable) {
+                    task.error(null, e)
+                    return OutputResult(1, "Error executing command: ${e.message}")
                 }
             }
         }

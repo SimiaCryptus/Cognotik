@@ -52,7 +52,6 @@ open class AppServer(
                     "server" -> handleServer(*args.sliceArray(1 until args.size))
                     "help", "-h", "--help" -> printUsage()
                     "daemon" -> {
-
                         handleServer(*args.sliceArray(1 until args.size))
                     }
 
@@ -142,13 +141,13 @@ open class AppServer(
         }
 
         private data class ServerOptions(
-            val port: Int = 7681,
+            val port: Int = 7682,
             val host: String = "localhost",
             val publicName: String = "apps.simiacrypt.us"
         )
 
         private fun parseServerOptions(vararg args: String): ServerOptions {
-            var port = 7681
+            var port = 7682
             var host = "localhost"
             var publicName = "apps.simiacrypt.us"
             var i = 0

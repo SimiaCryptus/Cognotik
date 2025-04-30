@@ -97,50 +97,56 @@ open class TaskChatMode(
         )
 
         try {
-            val taskType = TaskType.getAvailableTaskTypes(planSettings).first()
+        // Get all available task types instead of just the first one
+        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
 
             val taskSelectionPrompt =
                 "Available task types:\n" +
-                        TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n") { taskType ->
+                    availableTaskTypes.joinToString("\n") { taskType ->
                             "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment()}"
                         } + "\nChoose the most suitable task types and provide details of how they should be executed."
 
-            val actor = ParsedActor(
-                name = "SingleTaskChooser",
-                resultClass = taskType.taskDataClass,
-                prompt = taskSelectionPrompt,
-                model = coordinator.planSettings.defaultModel,
-                parsingModel = coordinator.planSettings.parsingModel,
-                temperature = coordinator.planSettings.temperature,
-                describer = describer,
-                parserPrompt = "Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
-                    .joinToString("\n\n") {
-                        "\n    ${it.name}:\n      ${
-                            describer.describe(it.taskDataClass).lineSequence()
-                                .map {
-                                    when {
-                                        it.isBlank() -> {
-                                            when {
-                                                it.length < "  ".length -> "  "
-                                                else -> it
-                                            }
-                                        }
 
-                                        else -> "  " + it
-                                    }
-                                }
-                                .joinToString("\n")
-                        }\n    ".trim()
-                    }
-            )
+        // First, get the task type from the user's message
+        val taskTypeActor = ParsedActor(
+            name = "TaskTypeChooser",
+            resultClass = String::class.java,
+            prompt = taskSelectionPrompt + "\n\nFirst, determine which task type is most appropriate for this request.",
+            model = coordinator.planSettings.defaultModel,
+            parsingModel = coordinator.planSettings.parsingModel,
+            temperature = coordinator.planSettings.temperature,
+            describer = describer
+        )
 
             val input = getConversationContext() +
                     listOf(
                         "Please choose the next single task to execute based on the current status.\nIf there are no tasks to execute, return {}."
                     )
 
-            val taskConfig = actor.answer(input, apiClient).obj
-            task.add(renderMarkdown("Executing ${taskType.name}:\n```json\n${JsonUtil.toJson(taskConfig)}\n```"))
+        // Get the task type name
+        val taskTypeName = taskTypeActor.answer(input, apiClient).text.trim()
+        val taskType = availableTaskTypes.find { it.name == taskTypeName } 
+            ?: throw IllegalArgumentException("Unknown task type: $taskTypeName")
+        
+        // Now create an actor with the correct result class for the chosen task type
+        val taskConfigActor = ParsedActor(
+            name = "TaskConfigGenerator",
+            resultClass = taskType.taskDataClass,
+            prompt = "Generate a detailed configuration for a ${taskType.name} based on the user's request.",
+            model = coordinator.planSettings.defaultModel,
+            parsingModel = coordinator.planSettings.parsingModel,
+            temperature = coordinator.planSettings.temperature,
+            describer = describer,
+            parserPrompt = "Task Schema for ${taskType.name}:\n${
+                describer.describe(taskType.taskDataClass).lineSequence()
+                    .map { if (it.isBlank()) it else "  $it" }
+                    .joinToString("\n")
+            }"
+        )
+        
+        // Get the task configuration
+        val taskConfig = taskConfigActor.answer(input, apiClient).obj
+        task.add(renderMarkdown("Executing ${taskType.name}:\n```json\n${JsonUtil.toJson(taskConfig)}\n```"))
 
             val taskImpl = TaskType.getImpl(planSettings, taskConfig)
             val result = StringBuilder()
