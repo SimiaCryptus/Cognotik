@@ -749,6 +749,12 @@
             tooltip: 'Executes shell commands in a controlled environment.',
         },
         {
+            id: 'RunCodeTask',
+            name: 'Run Code Task',
+            description: 'Execute code snippets with AI assistance',
+            tooltip: 'Executes code snippets with AI assistance while maintaining code quality.',
+        },
+        {
           id: 'CommandAutoFixTask',
           name: 'Command Auto Fix Task',
           description: 'Run a command and automatically fix any issues that arise',
@@ -1321,6 +1327,7 @@
             tooltip.appendChild(tooltipText);
             toggleContent.appendChild(checkbox);
             toggleContent.appendChild(label);
+           toggleContent.appendChild(tooltip);
 
             const description = document.createElement('span');
             description.className = 'sr-only';

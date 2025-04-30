@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
@@ -97,58 +98,46 @@ open class TaskChatMode(
         )
 
         try {
-        // Get all available task types instead of just the first one
-        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
-
-            val taskSelectionPrompt =
-                "Available task types:\n" +
-                    availableTaskTypes.joinToString("\n") { taskType ->
-                            "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment()}"
-                        } + "\nChoose the most suitable task types and provide details of how they should be executed."
-
-
-        // First, get the task type from the user's message
-        val taskTypeActor = ParsedActor(
-            name = "TaskTypeChooser",
-            resultClass = String::class.java,
-            prompt = taskSelectionPrompt + "\n\nFirst, determine which task type is most appropriate for this request.",
-            model = coordinator.planSettings.defaultModel,
-            parsingModel = coordinator.planSettings.parsingModel,
-            temperature = coordinator.planSettings.temperature,
-            describer = describer
-        )
-
+            val parsedActor = ParsedActor(
+                name = "TaskChooser",
+                resultClass = AutoPlanMode.Tasks::class.java,
+                exampleInstance = AutoPlanMode.Tasks(
+                    listOfNotNull(
+                        TaskType.getAvailableTaskTypes(coordinator.planSettings).first().let {
+                            TaskType.getImpl(coordinator.planSettings, it).taskConfig
+                        }
+                    ).toMutableList()
+                ),
+                prompt = buildString {
+                    append("Given the following input, choose ONE task to execute. Select the most appropriate task type for the given input and provide all required details.\n")
+                    append("Available task types:\n")
+                    append(TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
+                        "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent().indent("  ")}"
+                    })
+                    append("\nChoose the most suitable task type and provide details of how it should be executed.")
+                },
+                model = coordinator.planSettings.defaultModel,
+                parsingModel = coordinator.planSettings.parsingModel,
+                temperature = coordinator.planSettings.temperature,
+                describer = describer,
+                parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
+                    .joinToString("\n\n") { taskType ->
+                        "${taskType.name}:\n  ${describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")}".trim()
+                    })
+            )
+            
             val input = getConversationContext() +
                     listOf(
-                        "Please choose the next single task to execute based on the current status.\nIf there are no tasks to execute, return {}."
+                        "Please choose a single task to execute based on the current conversation."
                     )
+            
+            val answer = parsedActor.answer(input, apiClient)
+            val chosenTasks = answer.obj.tasks?.firstOrNull() 
+                ?: throw IllegalStateException("No task was selected")
+            
+            val taskImpl = TaskType.getImpl(planSettings, chosenTasks)
+            task.add(renderMarkdown("Executing task:\n```json\n${JsonUtil.toJson(chosenTasks)}\n```"))
 
-        // Get the task type name
-        val taskTypeName = taskTypeActor.answer(input, apiClient).text.trim()
-        val taskType = availableTaskTypes.find { it.name == taskTypeName } 
-            ?: throw IllegalArgumentException("Unknown task type: $taskTypeName")
-        
-        // Now create an actor with the correct result class for the chosen task type
-        val taskConfigActor = ParsedActor(
-            name = "TaskConfigGenerator",
-            resultClass = taskType.taskDataClass,
-            prompt = "Generate a detailed configuration for a ${taskType.name} based on the user's request.",
-            model = coordinator.planSettings.defaultModel,
-            parsingModel = coordinator.planSettings.parsingModel,
-            temperature = coordinator.planSettings.temperature,
-            describer = describer,
-            parserPrompt = "Task Schema for ${taskType.name}:\n${
-                describer.describe(taskType.taskDataClass).lineSequence()
-                    .map { if (it.isBlank()) it else "  $it" }
-                    .joinToString("\n")
-            }"
-        )
-        
-        // Get the task configuration
-        val taskConfig = taskConfigActor.answer(input, apiClient).obj
-        task.add(renderMarkdown("Executing ${taskType.name}:\n```json\n${JsonUtil.toJson(taskConfig)}\n```"))
-
-            val taskImpl = TaskType.getImpl(planSettings, taskConfig)
             val result = StringBuilder()
 
             val tabs = TabbedDisplay(task)
@@ -168,7 +157,7 @@ open class TaskChatMode(
                 complete(renderMarkdown("Task completed. Result:\n${result}"))
             }
 
-            val assistantResponse = "Task executed: ${taskType.name}\n${result}"
+            val assistantResponse = "Task executed: ${chosenTasks.task_type}\n${result}"
             synchronized(messagesLock) {
                 messages.add(ApiModel.ChatMessage(ApiModel.Role.assistant, assistantResponse.toContentList()))
             }
