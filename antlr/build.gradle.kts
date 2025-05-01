@@ -1,5 +1,4 @@
 plugins {
-    `java-library`
     antlr
 }
 
@@ -31,9 +30,6 @@ tasks {
                 srcDir("build/generated-src/antlr/main")
             }
         }
-    }
-    withType<JavaCompile> {
-        options.release.set(17)
     }
 
     register("cleanGeneratedSources") {
