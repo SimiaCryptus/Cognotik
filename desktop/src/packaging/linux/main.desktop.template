@@ -2,15 +2,10 @@
 Type=Application
 Name=Cognotik Editor
 Comment=AI-powered application suite
-Icon=cognotik # Relies on cognotik.png being installed in /usr/share/icons/hicolor/SIZExSIZE/apps/
+Icon=cognotik
 Exec=/opt/cognotik/bin/Cognotik "%f"
 Categories=Development;Utility;TextEditor;
 MimeType=inode/directory;text/plain;
 Terminal=false
 StartupNotify=true
-Actions=StopServer;
-
-[Desktop Action StopServer]
-Name=Stop Cognotik Server
-Exec=/opt/cognotik/bin/Cognotik --stop
-Icon=cognotik # Same icon reference
+NoDisplay=true
