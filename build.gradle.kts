@@ -26,8 +26,6 @@ subprojects {
         }
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        withSourcesJar()
-        withJavadocJar()
     }
     tasks.withType<Test> {
         useJUnitPlatform()
@@ -47,15 +45,6 @@ subprojects {
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
         failFast = true
     }
-    tasks.withType<Javadoc> {
-        options {
-            (this as StandardJavadocDocletOptions).apply {
-                addStringOption("Xdoclint:none", "-quiet")
-                addBooleanOption("html5", true)
-                links("https://docs.oracle.com/en/java/javase/17/docs/api/")
-            }
-        }
-    }
     tasks.register("analyzeDependencies") {
         description = "Analyzes project dependencies for potential issues"
         doLast {
@@ -71,10 +60,7 @@ subprojects {
             }
         }
     }
-    /*
-    */
 }
-
 
 allprojects {
     tasks.withType<JavaCompile> {
@@ -106,8 +92,6 @@ allprojects {
             showStackTraces = true
         }
     }
-    /*
-    */
 }
 
 tasks {
