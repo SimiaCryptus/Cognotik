@@ -473,43 +473,43 @@
     </div>
     <div style="width: inherit;"></div>
     <button class="menu-button" id="open-basic-chat">Basic Chat</button>
-<!-- Modal for Basic Chat Settings -->
-<div class="modal" id="basic-chat-settings-modal">
-    <div class="modal-content">
-        <span class="close" id="close-basic-chat-modal">&times;</span>
-        <h3>Basic Chat Settings</h3>
-        <form id="basic-chat-settings-form">
-            <div class="form-group">
-                <label for="basic-chat-model">Model:</label>
-                <select id="basic-chat-model" required>
-                    <option value="GPT4o">GPT-4o</option>
-                    <option value="GPT4">GPT-4</option>
-                    <option value="GPT35Turbo">GPT-3.5 Turbo</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="basic-chat-parsing-model">Parsing Model:</label>
-                <select id="basic-chat-parsing-model" required>
-                    <option value="GPT4oMini">GPT-4o Mini</option>
-                    <option value="GPT35Turbo">GPT-3.5 Turbo</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
-                <input id="basic-chat-temperature" type="range" min="0" max="1" step="0.01" value="0.3">
-                <span id="basic-chat-temperature-value">0.3</span>
-            </div>
-            <div class="form-group">
-                <label for="basic-chat-budget">Budget ($):</label>
-                <input id="basic-chat-budget" type="number" min="0" max="1000" step="0.01" value="2.0" required>
-            </div>
-            <div class="button-group">
-                <button type="button" class="button secondary" id="cancel-basic-chat-settings">Cancel</button>
-                <button type="submit" class="button" id="submit-basic-chat-settings">Continue to Chat</button>
-            </div>
-        </form>
+    <!-- Modal for Basic Chat Settings -->
+    <div class="modal" id="basic-chat-settings-modal">
+        <div class="modal-content">
+            <span class="close" id="close-basic-chat-modal">&times;</span>
+            <h3>Basic Chat Settings</h3>
+            <form id="basic-chat-settings-form">
+                <div class="form-group">
+                    <label for="basic-chat-model">Model:</label>
+                    <select id="basic-chat-model" required>
+                        <option value="GPT4o">GPT-4o</option>
+                        <option value="GPT4">GPT-4</option>
+                        <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="basic-chat-parsing-model">Parsing Model:</label>
+                    <select id="basic-chat-parsing-model" required>
+                        <option value="GPT4oMini">GPT-4o Mini</option>
+                        <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
+                    <input id="basic-chat-temperature" type="range" min="0" max="1" step="0.01" value="0.3">
+                    <span id="basic-chat-temperature-value">0.3</span>
+                </div>
+                <div class="form-group">
+                    <label for="basic-chat-budget">Budget ($):</label>
+                    <input id="basic-chat-budget" type="number" min="0" max="1000" step="0.01" value="2.0" required>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="button secondary" id="cancel-basic-chat-settings">Cancel</button>
+                    <button type="submit" class="button" id="submit-basic-chat-settings">Continue to Chat</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
     <button class="menu-button" id="api-settings-btn">Configure API Keys</button>
 </div>
 
@@ -719,7 +719,7 @@
     let taskSettings = {
         defaultModel: localStorage.getItem('defaultModel') || 'GPT4o',
         parsingModel: localStorage.getItem('parsingModel') || 'GPT4oMini',
-        workingDir: localStorage.getItem('workingDir') || '.',
+        workingDir: localStorage.getItem('workingDir') || generateTimestampedDirectory(),
         autoFix: localStorage.getItem('autoFix') === 'true',
         maxTaskHistoryChars: 20000,
         maxTasksPerIteration: 3,
@@ -755,10 +755,10 @@
             tooltip: 'Executes code snippets with AI assistance while maintaining code quality.',
         },
         {
-          id: 'CommandAutoFixTask',
-          name: 'Command Auto Fix Task',
-          description: 'Run a command and automatically fix any issues that arise',
-          tooltip: 'Executes a command and automatically fixes any issues that arise.',
+            id: 'CommandAutoFixTask',
+            name: 'Command Auto Fix Task',
+            description: 'Run a command and automatically fix any issues that arise',
+            tooltip: 'Executes a command and automatically fixes any issues that arise.',
         },
         {
             id: 'FileSearchTask',
@@ -855,6 +855,17 @@
         {id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com'},
         {id: 'GoogleSearch', name: 'Google Search', baseUrl: ''},
     ];
+
+    function generateTimestampedDirectory() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `sessions/${year}${month}${day}${hours}${minutes}${seconds}`;
+    }
 
     const availableModels = {
         OpenAI: [
@@ -1019,6 +1030,7 @@
             });
         // Removed reference to basicChatBtn here (was causing error)
     }
+
     function populateWorkingDirFromHash() {
         if (window.location.hash) {
 
@@ -1151,7 +1163,7 @@
                 basicChatModal.style.display = "none";
             }
         });
-            // Save to localStorage for convenience
+        // Save to localStorage for convenience
         basicChatForm.addEventListener('submit', function (e) {
             e.preventDefault();
             // Gather settings
@@ -1189,17 +1201,17 @@
                     })
                 })
             })
-            .then(response => {
-                if (response.ok) {
-                    basicChatModal.style.display = "none";
-                    window.location.href = `/chat/#${chatSessionId}`;
-                } else {
-                    showNotification('Failed to save chat settings.', 'error');
-                }
-            })
-            .catch(error => {
-                showNotification('Error saving chat settings: ' + error.message, 'error');
-            });
+                .then(response => {
+                    if (response.ok) {
+                        basicChatModal.style.display = "none";
+                        window.location.href = `/chat/#${chatSessionId}`;
+                    } else {
+                        showNotification('Failed to save chat settings.', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error saving chat settings: ' + error.message, 'error');
+                });
         });
     });
 
@@ -1327,7 +1339,7 @@
             tooltip.appendChild(tooltipText);
             toggleContent.appendChild(checkbox);
             toggleContent.appendChild(label);
-           toggleContent.appendChild(tooltip);
+            toggleContent.appendChild(tooltip);
 
             const description = document.createElement('span');
             description.className = 'sr-only';
@@ -1402,7 +1414,6 @@
         document.getElementById('next-to-launch').addEventListener('click', saveTaskSettings);
 
         document.getElementById('launch-session').addEventListener('click', launchSession);
-
 
 
         document.addEventListener('keydown', function (e) {
@@ -1635,11 +1646,10 @@
         if (savedParsingModel) {
             taskSettings.parsingModel = savedParsingModel;
         }
-
-        const savedWorkingDir = localStorage.getItem('workingDir');
-        if (savedWorkingDir) {
-            document.getElementById('working-dir').value = savedWorkingDir;
-            taskSettings.workingDir = savedWorkingDir;
+        // Set default working directory if not already set
+        if (!taskSettings.workingDir || taskSettings.workingDir === '') {
+            taskSettings.workingDir = generateTimestampedDirectory();
+            document.getElementById('working-dir').value = taskSettings.workingDir;
         }
 
         if (localStorage.getItem('temperature')) {

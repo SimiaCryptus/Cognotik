@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik
 
+import org.slf4j.LoggerFactory
 import java.io.*
 import java.net.ConnectException
 import java.net.ServerSocket
@@ -74,11 +75,13 @@ object DaemonClient {
             dispatchCommand(
                 host,
                 port + SOCKET_PORT_OFFSET,
-                (commandArgs.take(1).map { it.trim('\'', '"') }.map { when(it) {
-                    "." -> File(".").absolutePath
-                    ".." -> File("..").absolutePath
-                    else -> it
-                } } + commandArgs.drop(1)).toTypedArray())
+                (commandArgs.take(1).map { it.trim('\'', '"') }.map {
+                    when (it) {
+                        "." -> File(".").absolutePath
+                        ".." -> File("..").absolutePath
+                        else -> it
+                    }
+                } + commandArgs.drop(1)).toTypedArray())
         }
     }
 
@@ -243,6 +246,7 @@ object DaemonClient {
         //log.debug("Server class: $className")
 
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        val isMac = System.getProperty("os.name").lowercase().contains("mac")
         val scriptExt = if (isWindows) "bat" else "sh"
         val scriptFile = File.createTempFile("cognotik_daemon_", ".$scriptExt")
 
@@ -257,6 +261,19 @@ object DaemonClient {
                 exit
             """.trimIndent()
             )
+        } else if (isMac) {
+            log.debug("Detected macOS.")
+            scriptFile.writeText(
+                """
+               #!/bin/sh
+               # Use caffeinate to prevent sleep and run in background without UI
+               nohup /usr/bin/caffeinate -i "/Applications/Cognotik.app/Contents/MacOS/Cognotik" server --port $port >/dev/null 2>&1 &
+               # Ensure the process doesn't show in dock
+               defaults write "/Applications/Cognotik.app/Contents/Info" LSUIElement -bool true
+               exit 0
+           """.trimIndent()
+            )
+            scriptFile.setExecutable(true)
         } else {
             //log.debug("Detected non-Windows OS (assuming Unix-like).")
 
@@ -340,5 +357,5 @@ object DaemonClient {
         }
     }
 
-    //val log = LoggerFactory.getLogger(DaemonClient::class.java)
+    val log = LoggerFactory.getLogger(DaemonClient::class.java)
 }

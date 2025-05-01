@@ -226,18 +226,73 @@ tasks.register("packageDmg", JPackageTask::class) {
             from(shadowJarFile)
             into(inputDir)
         }
+        // Prepare resources directory for icon
+        val resourceDir = layout.buildDirectory.dir("jpackage/resources").get().asFile
+        if (!resourceDir.exists()) {
+            resourceDir.mkdirs()
+        }
+        // Convert PNG to ICNS format for macOS
+        val iconFile = File(resourceDir, "Cognotik.icns")
+        if (!iconFile.exists()) {
+            // Create a script to convert PNG to ICNS using macOS tools
+            val iconsetDir = File(resourceDir, "Cognotik.iconset")
+            iconsetDir.mkdirs()
+            
+            // Copy the source PNG icon
+            val sourceIcon = layout.projectDirectory.file("src/main/resources/icon-512x512.png").asFile
+            
+            // Create different sizes for the iconset
+            val sizes = listOf(16, 32, 64, 128, 256, 512, 1024)
+            sizes.forEach { size ->
+                execOperations.exec {
+                    commandLine(
+                        "sips",
+                        "-z", "$size", "$size",
+                        sourceIcon.absolutePath,
+                        "--out", "${iconsetDir.absolutePath}/icon_${size}x${size}.png"
+                    )
+                }
+                // Also create @2x versions for Retina displays
+                if (size <= 512) {
+                    execOperations.exec {
+                        commandLine(
+                            "sips",
+                            "-z", "${size*2}", "${size*2}",
+                            sourceIcon.absolutePath,
+                            "--out", "${iconsetDir.absolutePath}/icon_${size}x${size}@2x.png"
+                        )
+                    }
+                }
+            }
+            
+            // Convert the iconset to ICNS
+            execOperations.exec {
+                commandLine(
+                    "iconutil",
+                    "-c", "icns",
+                    iconsetDir.absolutePath,
+                    "-o", iconFile.absolutePath
+                )
+            }
+            
+            println("Created ICNS icon at: ${iconFile.absolutePath}")
+        }
+        
         execOperations.exec {
             commandLine(
-                "jpackage",
+                "jpackage", "--verbose",
                 "--type", "dmg",
                 "--input", inputDir.path,
                 "--main-jar", shadowJarName,
+                "--icon", iconFile.path,
                 "--main-class", "com.simiacryptus.cognotik.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
                 "--name", "Cognotik",
                 "--app-version", "${project.version}",
                 "--copyright", "Copyright © 2024 SimiaCryptus",
                 "--description", "Cognotik Agentic Toolkit",
+                "--resource-dir", resourceDir.path,
+                "--mac-package-name", "Cognotik"
             )
         }
         installContextMenuAction("mac")
