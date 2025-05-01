@@ -1,7 +1,11 @@
+// This file can be applied to projects that need publishing configuration
+// Apply with: apply(from = rootProject.file("gradle/publish-conventions.gradle.kts"))
+
 plugins {
     `maven-publish`
     signing
 }
+
 fun properties(key: String) = project.findProperty(key).toString()
 
 publishing {
@@ -40,7 +44,6 @@ publishing {
             val snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
             url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
             credentials {
-
                 username = providers.environmentVariable("OSSRH_USERNAME")
                     .orElse(providers.systemProperty("ossrhUsername"))
                     .orElse(properties("ossrhUsername"))

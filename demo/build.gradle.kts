@@ -3,9 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 fun properties(key: String) = providers.gradleProperty(key).get()
 
 plugins {
-    id("cognotik.common-conventions")
     `java-library`
-    alias(libs.plugins.kotlin)
 }
 
 group = "com.simiacryptus"

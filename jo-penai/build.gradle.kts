@@ -3,10 +3,7 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 plugins {
-    id("cognotik.common-conventions")
     `java-library`
-    `maven-publish`
-    id("signing")
 }
 
 repositories {
@@ -61,26 +58,3 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            artifactId = "jo-penai"
-            from(components["java"])
-            versionMapping {
-                usage("java-api") {
-                    fromResolutionOf("runtimeClasspath")
-                }
-                usage("java-runtime") {
-                    fromResolutionResult()
-                }
-            }
-            pom {
-                name.set("Jo-Penai")
-                description.set("Java OpenAI API Client")
-                url.set("https://github.com/SimiaCryptus/Cognotik")
-
-            }
-        }
-    }
-
-}

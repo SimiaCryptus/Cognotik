@@ -5,9 +5,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 fun properties(key: String) = providers.gradleProperty(key).getOrElse("")
 
 plugins {
-    id("java")
-    alias(libs.plugins.kotlin)
-
     alias(libs.plugins.intelliJPlatform)
 
     alias(libs.plugins.changelog)
@@ -15,7 +12,6 @@ plugins {
     alias(libs.plugins.qodana)
 
     alias(libs.plugins.kover)
-
 }
 
 group = "com.simiacryptus"
@@ -88,43 +84,43 @@ dependencies {
 
 }
 
-kotlin {
-    jvmToolchain(17)
-}
+//kotlin {
+//    jvmToolchain(17)
+//}
 
 tasks {
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
-    }
+//    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+//        compilerOptions {
+//            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+//        }
+//    }
+//
+//    jar {
+//        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    }
 
-    jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    }
+//    test {
+//        useJUnitPlatform()
+//        testLogging {
+//            events("passed", "skipped", "failed")
+//        }
+//        systemProperty("junit.jupiter.execution.parallel.enabled", "true")
+//        systemProperty("junit.jupiter.execution.parallel.mode.default", "concurrent")
+//        systemProperty("idea.force.use.core.classloader", "true")
+//        systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
+//
+//        include("**/*Test.class")
+//    }
+//    withType<KotlinCompile> {
+//        compilerOptions {
+//            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+//            javaParameters.set(true)
+//        }
+//    }
 
-    test {
-        useJUnitPlatform()
-        testLogging {
-            events("passed", "skipped", "failed")
-        }
-        systemProperty("junit.jupiter.execution.parallel.enabled", "true")
-        systemProperty("junit.jupiter.execution.parallel.mode.default", "concurrent")
-        systemProperty("idea.force.use.core.classloader", "true")
-        systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
-
-        include("**/*Test.class")
-    }
-    withType<KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            javaParameters.set(true)
-        }
-    }
-
-    runIde {
-        maxHeapSize = "8g"
-    }
+//    runIde {
+//        maxHeapSize = "8g"
+//    }
 
 }
 
@@ -187,11 +183,11 @@ intellijPlatform {
     }
 }
 
-intellijPlatformTesting {
-    testIdeUi {
-
-    }
-}
+//intellijPlatformTesting {
+//    testIdeUi {
+//
+//    }
+//}
 
 tasks {
 

@@ -1,5 +1,4 @@
 plugins {
-    java
     `java-library`
     antlr
 }
@@ -14,7 +13,7 @@ repositories {
 
 dependencies {
     implementation(libs.antlr.runtime)
-    antlr("org.antlr:antlr4:${libs.versions.antlr.get()}")
+    antlr("org.antlr:antlr4:${rootProject.libs.versions.antlr.get()}")
 }
 
 tasks {
@@ -35,8 +34,6 @@ tasks {
     }
     withType<JavaCompile> {
         options.release.set(17)
-
-
     }
 
     register("cleanGeneratedSources") {

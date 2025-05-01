@@ -4,10 +4,7 @@ import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermission
 
 plugins {
-    id("cognotik.common-conventions")
     `java-library`
-    `maven-publish`
-    id("signing")
     alias(libs.plugins.shadow)
     war
     application
