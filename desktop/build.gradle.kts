@@ -185,21 +185,6 @@ fun installContextMenuAction(os: String) {
                 .replace("{{appName}}", appName)
             script.writeText(wflowContent)
 
-            val stopScriptDir = scriptPath.resolve("StopSkyenetApps.workflow/Contents")
-            stopScriptDir.mkdirs()
-            val stopPlistFile = stopScriptDir.resolve("info.plist")
-            val stopPlistTemplateFile =
-                layout.projectDirectory.file("src/packaging/macos/stop_info.plist.template").asFile
-            stopPlistFile.writeText(stopPlistTemplateFile.readText())
-
-            val stopScript = stopScriptDir.resolve("document.wflow")
-            val stopWflowTemplateFile =
-                layout.projectDirectory.file("src/packaging/macos/stop_document.wflow.template").asFile
-            val stopWflowContent = stopWflowTemplateFile.readText()
-                .replace("{{appName}}", appName)
-            stopScript.writeText(stopWflowContent)
-
-            println("Wrote stop server Quick Action to: ${stopScript.parentFile}")
             println("Wrote context menu Quick Action to: ${script.parentFile}")
         }
     }
