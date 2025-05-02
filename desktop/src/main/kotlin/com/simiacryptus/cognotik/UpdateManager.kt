@@ -2,12 +2,15 @@ package com.simiacryptus.cognotik
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import com.simiacryptus.cognotik.SystemTrayManager.Companion.confirm
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import org.slf4j.LoggerFactory
+import scala.reflect.internal.util.NoPosition.showError
 import java.awt.BorderLayout
 import java.awt.BorderLayout.*
 import java.awt.Desktop
 import java.awt.Dimension
+import java.awt.MenuItem
 import java.io.File
 import java.io.IOException
 import java.net.URI
@@ -37,6 +40,8 @@ object UpdateManager {
     // Cache the latest release to avoid repeated API calls
     private var cachedLatestRelease: Release? = null
     private var lastCheckTime: Long = 0
+   private var cachedLatestVersion: Version? = null
+   private var lastVersionCheckTime: Long = 0
     private const val CACHE_DURATION_MS = 3600000 // 1 hour
 
     data class Release(
@@ -180,20 +185,35 @@ object UpdateManager {
     val latestVersion: Version
         get() {
             log.debug("Retrieving latest version information")
+           val now = System.currentTimeMillis()
+           if (cachedLatestVersion != null && now - lastVersionCheckTime < CACHE_DURATION_MS) {
+               log.debug("Using cached version information (age: ${(now - lastVersionCheckTime) / 1000} seconds)")
+               return cachedLatestVersion!!
+           }
+           
             try {
                 val release = fetchLatestRelease()
                 return if (release != null) {
                     val version = release.tagName.removePrefix("v")
                     log.info("Latest available version: $version")
-                    Version(version)
+                   val versionObj = Version(version)
+                   cachedLatestVersion = versionObj
+                   lastVersionCheckTime = now
+                   versionObj
                 } else {
                     log.warn("Could not determine latest version, using current version as fallback")
-                    currentVersion
+                   val currentVer = currentVersion
+                   cachedLatestVersion = currentVer
+                   lastVersionCheckTime = now
+                   currentVer
                 }
             } catch (e: Exception) {
                 log.error("Failed to fetch latest version", e)
                 log.debug("Stack trace for version fetch failure", e)
-                return currentVersion
+               val currentVer = currentVersion
+               cachedLatestVersion = currentVer
+               lastVersionCheckTime = now
+               return currentVer
             }
         }
 
@@ -493,4 +513,18 @@ object UpdateManager {
         }
     }
 
+    fun checkUpdate() {
+        if(latestVersion.greaterThan(currentVersion)) {
+            confirm("Update to ${latestVersion.version}?") {
+                Thread {
+                    try {
+                        doUpdate()
+                    } catch (e: Exception) {
+                        log.error("Failed to update: ${e.message}", e)
+                        showError("Failed to update")
+                    }
+                }.start()
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik
 
+import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
@@ -39,6 +40,7 @@ open class AppServer(
     companion object {
         private val log = LoggerFactory.getLogger(AppServer::class.java.name)
         private const val MAX_PORT_ATTEMPTS = 10
+        val scheduledExecutorService = Executors.newScheduledThreadPool(1)
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -89,7 +91,7 @@ open class AppServer(
                 log.info("Using alternative port $actualPort")
                 println("Using alternative port $actualPort")
             }
-
+            scheduledExecutorService.scheduleAtFixedRate({checkUpdate()}, 0, 24, java.util.concurrent.TimeUnit.HOURS)
             server = AppServer(
                 localName = options.host,
                 publicName = options.publicName,
@@ -187,7 +189,6 @@ open class AppServer(
             systemTrayManager = SystemTrayManager(
                 port = port,
                 host = localName,
-                apps = childWebApps,
                 onExit = {
                     log.info("Exit requested from system tray")
                     stopServer()

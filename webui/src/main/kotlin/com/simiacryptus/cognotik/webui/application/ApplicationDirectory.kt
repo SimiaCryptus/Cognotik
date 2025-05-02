@@ -184,7 +184,10 @@ abstract class ApplicationDirectory(
     }
 
     protected open fun newWebAppContext(path: String, server: ChatServer): WebAppContext {
-        val baseResource = server.baseResource ?: throw IllegalStateException("No base resource")
+        val baseResource = server.baseResource
+        if (baseResource == null) {
+            throw IllegalStateException("No base resource")
+        }
         val webAppContext = newWebAppContext(path, baseResource, resourceBase = "application")
         server.configure(webAppContext)
         log.info("WebAppContext configured for path: $path with ChatServer")
