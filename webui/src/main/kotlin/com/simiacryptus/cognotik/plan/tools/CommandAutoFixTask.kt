@@ -22,7 +22,7 @@ class CommandAutoFixTask(
         task_type: String? = null,
         enabled: Boolean = false,
         model: ChatModel? = null,
-        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: List<String>? = listOf()
+        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 
     class CommandAutoFixTaskConfigData(

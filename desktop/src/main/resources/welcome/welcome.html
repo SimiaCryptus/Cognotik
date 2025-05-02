@@ -264,6 +264,78 @@
         .api-key-group input {
             flex-grow: 1;
         }
+        /* Settings Tabs */
+        .settings-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background-color: #f1f1f1;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: 0.3s;
+            font-size: 16px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab-button:hover {
+            background-color: #ddd;
+        }
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 15px 0;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Local Tools */
+        #local-tools-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        #local-tools-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .tool-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .tool-item:last-child {
+            border-bottom: none;
+        }
+        .tool-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .tool-actions input {
+            flex-grow: 1;
+            padding: 8px;
+        }
+        .remove-tool {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+        .remove-tool:hover {
+            background-color: #c0392b;
+        }
+
 
         .task-toggle {
             display: flex;
@@ -510,20 +582,45 @@
             </form>
         </div>
     </div>
-    <button class="menu-button" id="api-settings-btn">Configure API Keys</button>
+    <button class="menu-button" id="user-settings-btn">User Settings</button>
 </div>
 
-<div class="modal" id="api-settings-modal">
+<div class="modal" id="user-settings-modal">
     <div class="modal-content">
-        <span class="close" id="close-api-modal">&times;</span>
-        <h3>API Configuration</h3>
-        <p>Configure your API keys for different AI providers:</p>
-        <div id="api-keys-container">
-            <!-- API keys will be populated here -->
+        <span class="close" id="close-user-settings-modal">&times;</span>
+        <h3>User Settings</h3>
+        
+        <div class="settings-tabs">
+            <button class="tab-button active" data-tab="api-keys">API Keys</button>
+            <button class="tab-button" data-tab="local-tools">Local Tools</button>
         </div>
+        
+        <div id="api-keys-tab" class="tab-content active">
+            <p>Configure your API keys for different AI providers:</p>
+            <div id="api-keys-container">
+                <!-- API keys will be populated here -->
+            </div>
+        </div>
+        
+        <div id="local-tools-tab" class="tab-content">
+            <p>Configure local tools that can be used by the AI:</p>
+            <div class="form-group">
+                <label for="local-tools-list">Local Tools:</label>
+                <div id="local-tools-container">
+                    <div id="local-tools-list">
+                        <!-- Local tools will be listed here -->
+                    </div>
+                    <div class="tool-actions">
+                        <input type="text" id="new-tool-path" placeholder="Enter tool path or command">
+                        <button class="button" id="add-local-tool">Add Tool</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="button-group">
-            <button class="button secondary" id="reset-api-settings">Reset</button>
-            <button class="button" id="save-api-settings">Save API Settings</button>
+            <button class="button secondary" id="reset-user-settings">Reset</button>
+            <button class="button" id="save-user-settings">Save Settings</button>
         </div>
     </div>
 </div>
@@ -1018,6 +1115,27 @@
                                 }
                             }
                         }
+                        // Populate local tools
+                        if (settings.localTools && Array.isArray(settings.localTools)) {
+                            const toolsList = document.getElementById('local-tools-list');
+                            toolsList.innerHTML = '';
+                            settings.localTools.forEach(toolPath => {
+                                const toolItem = document.createElement('div');
+                                toolItem.className = 'tool-item';
+                                toolItem.dataset.path = toolPath;
+                                const toolText = document.createElement('span');
+                                toolText.textContent = toolPath;
+                                const removeBtn = document.createElement('button');
+                                removeBtn.className = 'remove-tool';
+                                removeBtn.textContent = '×';
+                                removeBtn.addEventListener('click', function() {
+                                    toolItem.remove();
+                                });
+                                toolItem.appendChild(toolText);
+                                toolItem.appendChild(removeBtn);
+                                toolsList.appendChild(toolItem);
+                            });
+                        }
 
                         populateModelSelections();
                     } catch (e) {
@@ -1218,9 +1336,9 @@
 
     function setupWizard() {
 
-        const modal = document.getElementById('api-settings-modal');
-        const btn = document.getElementById('api-settings-btn');
-        const closeBtn = document.getElementById('close-api-modal');
+        const modal = document.getElementById('user-settings-modal');
+        const btn = document.getElementById('user-settings-btn');
+        const closeBtn = document.getElementById('close-user-settings-modal');
 
         btn.onclick = function () {
             modal.style.display = "block";
@@ -1235,6 +1353,22 @@
                 modal.style.display = "none";
             }
         }
+        // Tab functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                // Add active class to clicked tab
+                button.classList.add('active');
+                document.getElementById(`${button.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+
 
         document.getElementById('next-to-task-selection').addEventListener('click', () => {
             navigateToStep('task-selection');
@@ -1363,8 +1497,9 @@
 
     function setupEventListeners() {
 
-        document.getElementById('save-api-settings').addEventListener('click', saveApiSettings);
-        document.getElementById('reset-api-settings').addEventListener('click', resetApiSettings);
+        document.getElementById('save-user-settings').addEventListener('click', saveUserSettings);
+        document.getElementById('reset-user-settings').addEventListener('click', resetUserSettings);
+        document.getElementById('add-local-tool').addEventListener('click', addLocalTool);
 
         apiProviders.forEach(provider => {
             const keyInput = document.getElementById(`api-key-${provider.id}`);
@@ -1447,7 +1582,7 @@
         document.querySelector(`.wizard-step[data-step="${stepId}"]`).classList.add('active');
     }
 
-    function saveApiSettings() {
+    function saveUserSettings() {
         const apiKeys = {};
         const apiBase = {};
         apiProviders.forEach(provider => {
@@ -1465,7 +1600,14 @@
                 apiBase[provider.id] = provider.baseUrl;
             }
         });
-        apiSettings = {apiKeys, apiBase};
+        
+        // Get local tools
+        const localTools = [];
+        document.querySelectorAll('.tool-item').forEach(item => {
+            localTools.push(item.dataset.path);
+        });
+        
+        apiSettings = {apiKeys, apiBase, localTools};
 
         populateModelSelections();
 
@@ -1482,17 +1624,17 @@
             .then(response => {
                 if (response.ok) {
 
-                    showNotification('API settings saved successfully!');
+                    showNotification('User settings saved successfully!');
 
 
-                    document.getElementById('api-settings-modal').style.display = "none";
+                    document.getElementById('user-settings-modal').style.display = "none";
                 } else {
-                    showNotification('Failed to save API settings.', 'error');
+                    showNotification('Failed to save user settings.', 'error');
                 }
             })
             .catch(error => {
-                console.error('Error saving API settings:', error);
-                showNotification('Error saving API settings: ' + error.message, 'error');
+                console.error('Error saving user settings:', error);
+                showNotification('Error saving user settings: ' + error.message, 'error');
             });
     }
 
@@ -1567,11 +1709,46 @@
         }, 3000);
     }
 
-    function resetApiSettings() {
+    function resetUserSettings() {
         apiProviders.forEach(provider => {
             document.getElementById(`api-key-${provider.id}`).value = '';
         });
-        showNotification('API settings reset', 'warning');
+        
+        // Clear local tools
+        document.getElementById('local-tools-list').innerHTML = '';
+        
+        showNotification('User settings reset', 'warning');
+    }
+    
+    function addLocalTool() {
+        const toolPath = document.getElementById('new-tool-path').value.trim();
+        if (!toolPath) {
+            showNotification('Please enter a tool path or command', 'warning');
+            return;
+        }
+        
+        // Create new tool item
+        const toolItem = document.createElement('div');
+        toolItem.className = 'tool-item';
+        toolItem.dataset.path = toolPath;
+        
+        const toolText = document.createElement('span');
+        toolText.textContent = toolPath;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-tool';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', function() {
+            toolItem.remove();
+        });
+        
+        toolItem.appendChild(toolText);
+        toolItem.appendChild(removeBtn);
+        
+        document.getElementById('local-tools-list').appendChild(toolItem);
+        document.getElementById('new-tool-path').value = '';
+        
+        showNotification('Tool added successfully');
     }
 
     function saveTaskSettings() {

@@ -95,11 +95,11 @@ class UserSettingsServlet : HttpServlet() {
                 },
                 apiBase = settings.apiBase.mapValues {
                     when (it.value) {
-                        null -> "https://api.openai.com/v1"
-                        "" -> "https://api.openai.com/v1"
-                        else -> settings.apiBase[it.key]!!
+                        null, "" -> it.key.base!!
+                        else -> settings.apiBase[it.key] ?: prevSettings.apiBase[it.key] ?: it.key.base!!
                     }
                 },
+                localTools = (prevSettings.localTools + settings.localTools).distinct(),
             )
             ApplicationServices.userSettingsManager.updateUserSettings(userinfo, reconstructedSettings)
             resp.sendRedirect("/")
