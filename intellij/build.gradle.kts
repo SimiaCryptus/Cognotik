@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.simiacryptus"
-version = properties("pluginVersion")
+version = properties("libraryVersion")
 
 repositories {
     mavenCentral()
@@ -35,7 +35,6 @@ dependencies {
 
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
-
         exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
@@ -120,7 +119,7 @@ tasks {
 intellijPlatform {
     pluginConfiguration {
         name = providers.gradleProperty("pluginName")
-        version = providers.gradleProperty("pluginVersion")
+        version = providers.gradleProperty("libraryVersion")
 
         description = providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
             val start = "<!-- Plugin description -->"
@@ -137,10 +136,10 @@ intellijPlatform {
         val changelog = project.changelog
 
 
-        changeNotes = providers.gradleProperty("pluginVersion").map { pluginVersion ->
+        changeNotes = providers.gradleProperty("libraryVersion").map { libraryVersion ->
             with(changelog) {
                 renderItem(
-                    (getOrNull(pluginVersion) ?: getUnreleased())
+                    (getOrNull(libraryVersion) ?: getUnreleased())
                         .withHeader(false)
                         .withEmptySections(false),
                     Changelog.OutputType.HTML,
@@ -162,7 +161,7 @@ intellijPlatform {
 
     publishing {
         token = providers.environmentVariable("PUBLISH_TOKEN")
-        channels = providers.gradleProperty("pluginVersion")
+        channels = providers.gradleProperty("libraryVersion")
             .map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 
@@ -198,10 +197,10 @@ tasks {
         })
 
         val changelog = project.changelog
-        changeNotes.set(providers.gradleProperty("pluginVersion").map { pluginVersion ->
+        changeNotes.set(providers.gradleProperty("libraryVersion").map { libraryVersion ->
             with(changelog) {
                 renderItem(
-                    (getOrNull(pluginVersion) ?: getUnreleased())
+                    (getOrNull(libraryVersion) ?: getUnreleased())
                         .withHeader(false)
                         .withEmptySections(false),
                     Changelog.OutputType.HTML,
@@ -219,7 +218,7 @@ tasks {
         dependsOn("patchChangelog")
         token.set(System.getenv("PUBLISH_TOKEN"))
         channels.set(
-            properties("pluginVersion").split('-').drop(1).take(1)
+            properties("libraryVersion").split('-').drop(1).take(1)
                 .map { it.substringBefore('.').ifEmpty { "default" } })
     }
 

@@ -1,0 +1,9 @@
+#!/bin/bash
+echo "Waiting for application to close..."
+sleep 3
+echo "Uninstalling current version..."
+sudo dpkg -r cognotik
+echo "Installing new version..."
+sudo dpkg -i "@@INSTALLER_PATH@@"
+echo "Update completed."
+rm "@@SCRIPT_PATH@@"

@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.DaemonClient.createRandomSessionDir
+import com.simiacryptus.cognotik.UpdateManager.currentVersion
+import com.simiacryptus.cognotik.UpdateManager.latestVersion
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory.ChildWebApp
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
@@ -66,28 +68,38 @@ class SystemTrayManager(
                 val image = loadSvgImage()
                 val popup = PopupMenu()
 
-                /*// Add Applications submenu
-                if (apps.isNotEmpty()) {
-                    popup.addSeparator()
-                    apps.forEach { app ->
-                        val item = MenuItem(app.server.applicationName)
-                        item.addActionListener {
-                            openInBrowser("${app.path}/#" + Session.newUserID())
+                popup.add(MenuItem("Open in Browser").apply {
+                    addActionListener {
+                        openInBrowser()
+                    }
+                })
+
+                if(latestVersion.greaterThan(currentVersion)) {
+                    popup.add(MenuItem("Update to $latestVersion").apply {
+                        addActionListener {
+                            confirm("Update to ${latestVersion.version}?") {
+                                Thread {
+                                    try {
+                                        UpdateManager.doUpdate()
+                                    } catch (e: Exception) {
+                                        log.error("Failed to update: ${e.message}", e)
+                                        showError("Failed to update")
+                                    }
+                                }.start()
+                            }
                         }
-                        popup.add(item)
-                    }
-                }
-                popup.addSeparator()*/
-
-                val exitItem = MenuItem("Exit")
-                exitItem.addActionListener {
-                    confirm("Exit?") {
-                        onExit()
-                    }
+                    })
                 }
 
-                popup.add(exitItem)
-                trayIcon = TrayIcon(image, "Cognotik", popup).apply {
+                popup.add(MenuItem("Exit").apply {
+                    addActionListener {
+                        confirm("Exit?") {
+                            onExit()
+                        }
+                    }
+                })
+
+                trayIcon = TrayIcon(image, "Cognotik ${currentVersion}", popup).apply {
                     isImageAutoSize = true
                     addMouseListener(object : MouseAdapter() {
                         override fun mouseClicked(e: MouseEvent) {

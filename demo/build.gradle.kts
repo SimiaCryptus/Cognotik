@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.simiacryptus"
-version = properties("pluginVersion")
+version = properties("libraryVersion")
 
 repositories {
     mavenCentral()
