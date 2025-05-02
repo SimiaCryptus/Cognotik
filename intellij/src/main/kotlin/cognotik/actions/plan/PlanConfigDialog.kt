@@ -223,7 +223,7 @@ class PlanConfigDialog(
                         taskType.name,
                         settings.getTaskSettings(taskType).enabled,
                         getVisibleModels().find { it.modelName == modelComboBox.selectedItem },
-                        entries.filter { it.enabled }.map { it.command })
+                        entries.filter { it.enabled }.map { it.command }.toMutableList())
                     settings.setTaskSettings(taskType, newSettings)
                 }
             }).apply {
@@ -310,7 +310,7 @@ class PlanConfigDialog(
                                 0
                             ) as? Boolean) ?: false
                         }
-                            .map { row -> commandList?.model?.getValueAt(row, 1) as String })
+                            .map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
                         this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
@@ -327,7 +327,7 @@ class PlanConfigDialog(
                         getVisibleModels().find { it.modelName == modelComboBox.selectedItem },
                         (0 until (commandList?.model?.rowCount ?: 0)).map { row ->
                             commandList?.model?.getValueAt(row, 1) as String
-                        })
+                        }.toMutableList())
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
                         this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
@@ -345,7 +345,7 @@ class PlanConfigDialog(
                     model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem },
                     commandAutoFixCommands = (0 until (commandList?.model?.rowCount ?: 0)).filter { row ->
                         commandList?.model?.getValueAt(row, 0) as Boolean
-                    }.map { row -> commandList?.model?.getValueAt(row, 1) as String })
+                    }.map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
 
                 else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
                     this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
