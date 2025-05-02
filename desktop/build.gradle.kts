@@ -409,10 +409,9 @@ tasks.register("createAppImage", JPackageTask::class) {
                 "--main-jar", shadowJarName,
                 "--main-class", "com.simiacryptus.cognotik.DaemonClient",
                 "--dest", layout.buildDirectory.dir("jpackage/linux-image").get().asFile.path,
-                "--name", "Cognotik", // This name determines the output directory name inside dest
+                "--name", "Cognotik",
                 "--app-version", "${project.version}",
                 "--icon", layout.projectDirectory.file("src/main/resources/icon-512x512.png").asFile.path,
-                // No icon, resource-dir, or linux specific flags needed here
             )
         }
     }
