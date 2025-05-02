@@ -1,13 +1,12 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-fun properties(key: String) = providers.gradleProperty(key).get()
 
 plugins {
     `java-library`
 }
 
 group = "com.simiacryptus"
-version = properties("libraryVersion")
+version = providers.gradleProperty("libraryVersion").get()
 
 repositories {
     mavenCentral()
@@ -107,7 +106,7 @@ tasks {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_17)
             javaParameters.set(true)
         }
     }

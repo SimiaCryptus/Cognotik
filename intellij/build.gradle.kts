@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.simiacryptus"
-version = properties("libraryVersion")
+version = providers.gradleProperty("libraryVersion").get()
 
 repositories {
     mavenCentral()
@@ -36,6 +36,10 @@ dependencies {
     implementation(project(":webui")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.slf4j")
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
     }
 
     implementation(libs.aws.bedrockruntime)
@@ -75,7 +79,7 @@ kotlin {
 }
 
 tasks {
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    withType<KotlinCompile> {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
@@ -212,7 +216,7 @@ tasks {
         dependsOn("patchChangelog")
         token.set(System.getenv("PUBLISH_TOKEN"))
         channels.set(
-            properties("libraryVersion").split('-').drop(1).take(1)
+            providers.gradleProperty("libraryVersion").get().split('-').drop(1).take(1)
                 .map { it.substringBefore('.').ifEmpty { "default" } })
     }
 

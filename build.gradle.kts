@@ -8,7 +8,6 @@ subprojects {
     repositories {
         mavenCentral()
     }
-
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
@@ -19,31 +18,6 @@ subprojects {
             freeCompilerArgs = listOf("-Xjsr305=strict")
             javaParameters = true
         }
-    }
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
-        }
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    tasks.withType<Test> {
-        useJUnitPlatform()
-        testLogging {
-            events = setOf(
-                org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED,
-                org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED,
-                org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
-            )
-            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        }
-        jvmArgs(
-            "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
-            "--add-opens", "java.base/java.util=ALL-UNNAMED",
-            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
-        )
-        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).takeIf { it > 0 } ?: 1
-        failFast = true
     }
     tasks.register("analyzeDependencies") {
         description = "Analyzes project dependencies for potential issues"
@@ -63,10 +37,17 @@ subprojects {
 }
 
 allprojects {
+    apply(plugin = "java")
+    java {
+        toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
     }
     configurations.all {
+        // Apply resolution strategy to all configurations in all projects
         resolutionStrategy {
             force(
                 "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}",
@@ -78,6 +59,7 @@ allprojects {
     }
 
     tasks.withType<Test> {
+        useJUnitPlatform()
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
         maxHeapSize = "2g"
         jvmArgs(
@@ -92,6 +74,7 @@ allprojects {
             showStackTraces = true
         }
     }
+
 }
 
 tasks {
@@ -107,6 +90,6 @@ repositories {
 }
 
 plugins {
-    kotlin("jvm") version "2.0.21"
+    kotlin("jvm") version libs.versions.kotlin.get()
     id("com.github.ben-manes.versions") version "0.50.0"
 }

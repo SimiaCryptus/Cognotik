@@ -1,6 +1,8 @@
-fun properties(key: String) = project.findProperty(key).toString()
-group = properties("libraryGroup")
-version = properties("libraryVersion")
+// Keeping findProperty as it might be needed for immediate resolution by other plugins/tasks
+// If not, switch to providers.gradleProperty(key).get()
+// Use providers for consistency with other modules
+group = providers.gradleProperty("libraryGroup").get()
+version = providers.gradleProperty("libraryVersion").get()
 
 plugins {
     `java-library`
@@ -42,7 +44,7 @@ dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(libs.kotlinx.coroutines)
 
-    testImplementation(kotlin("stdlib"))
+    // testImplementation(kotlin("stdlib")) // Provided by compileOnly or Kotlin plugin
     testImplementation(kotlin("script-runtime"))
 
     testImplementation(platform(libs.junit.bom))

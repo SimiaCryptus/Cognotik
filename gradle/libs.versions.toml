@@ -71,7 +71,6 @@ logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = 
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
-jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson" }
 jackson-jaxrs-json = { group = "com.fasterxml.jackson.jaxrs", name = "jackson-jaxrs-json-provider", version.ref = "jackson" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
 aws-sdk = { group = "software.amazon.awssdk", name = "aws-sdk-java", version.ref = "aws" }
@@ -130,7 +129,6 @@ eclipse-jdt-core = { group = "org.eclipse.jdt", name = "org.eclipse.jdt.core", v
 pdfbox = { group = "org.apache.pdfbox", name = "pdfbox", version.ref = "pdfbox" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 zxing-javase = { group = "com.google.zxing", name = "javase", version.ref = "zxing" }
-openapi-generator-cli = { group = "org.openapitools", name = "openapi-generator-cli", version.ref = "openapiGenerator" }
 google-api-client = { group = "com.google.api-client", name = "google-api-client", version.ref = "googleApiClient" }
 google-oauth-client-jetty = { group = "com.google.oauth-client", name = "google-oauth-client-jetty", version.ref = "googleOauthClientJetty" }
 google-api-services-oauth2 = { group = "com.google.apis", name = "google-api-services-oauth2", version.ref = "googleApiServicesOauth2" }
@@ -148,7 +146,6 @@ aws-bom = { group = "software.amazon.awssdk", name = "bom", version.ref = "aws" 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
 intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intelliJPlatform" }
-kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }

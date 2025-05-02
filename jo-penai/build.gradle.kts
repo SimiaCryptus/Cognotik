@@ -1,6 +1,7 @@
-fun properties(key: String) = project.findProperty(key).toString()
-group = properties("libraryGroup")
-version = properties("libraryVersion")
+val libraryGroup: String by project
+val libraryVersion: String by project
+group = libraryGroup
+version = libraryVersion
 
 plugins {
     `java-library`
@@ -17,7 +18,7 @@ repositories {
 
 dependencies {
 
-    implementation(platform("software.amazon.awssdk:bom:${libs.versions.aws.get()}"))
+    implementation(platform(libs.aws.bom)) // Use BOM alias
     implementation(libs.aws.bedrockruntime)
     implementation(libs.aws.auth)
 
@@ -27,11 +28,10 @@ dependencies {
     implementation(libs.jackson.databind.nullable)
     implementation(libs.jakarta.annotations.api)
 
-    implementation(libs.jackson.core) 
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.jaxrs.json)
-    implementation(libs.jackson.datatype.jsr310) 
+    implementation(libs.jackson.datatype.jsr310)
 
     implementation(libs.slf4j.api)
     testImplementation(libs.logback.classic)
@@ -43,18 +43,17 @@ dependencies {
     implementation(libs.jackson.kotlin)
     implementation(libs.guava)
     implementation(libs.gson)
-    implementation(libs.jtransforms) 
+    implementation(libs.jtransforms)
     implementation(libs.commons.io)
 
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
-    testImplementation(kotlin("stdlib"))
     testImplementation(kotlin("reflect"))
     testImplementation(kotlin("script-runtime"))
 
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter.api) // Version from BOM
-    testImplementation(libs.junit.jupiter.params) // Version from BOM
-    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
-    testImplementation(libs.kotlin.test.junit5) 
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.kotlin.test.junit5)
 }

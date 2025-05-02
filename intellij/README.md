@@ -6,86 +6,71 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <!-- Plugin description -->
+![Cognotik Logo](https://simiacryptus.github.io/intellij_plugins/aicoder/icon.png)
 
-# AI Coder - Your Intelligent Coding Companion
+**Cognotik** is an open-source AI coding assistant plugin for IntelliJ IDEs, focusing on powerful, high-level agentic tools rather than just code completion. Leverage generative AI directly within your IDE using a "Bring Your Own Key" (BYOK) model for maximum control over data, costs, and model choice. Enhance your development workflow with AI-powered code editing, file manipulation, complex task automation via AI agents, and voice-to-text capabilities.
+<!-- Plugin description end -->
 
-![AI Coder Logo](https://simiacryptus.github.io/intellij_plugins/aicoder/icon.png)
+## ✨ Overview
 
-## Open Source & BYOK Model
+Welcome to **Cognotik**, your open-source gateway to advanced AI capabilities directly within the IntelliJ ecosystem. Licensed under Apache 2.0, Cognotik empowers developers with sophisticated agentic tools designed to tackle complex coding tasks.
 
-**AI Coder** is open source software licensed under Apache 2.0. It follows a "Bring Your Own Key" (BYOK) model - you
-provide your own API keys for the AI services you want to use, giving you full control over your data and costs.
+### 🔑 Open Source & Bring Your Own Key (BYOK)
 
-## Transform Your Development Experience
+Cognotik embraces transparency and control. As open-source software, you can inspect, modify, and contribute to its development. The BYOK model means you connect your preferred AI service providers (like OpenAI, Anthropic, etc.) using your own API keys. This gives you:
 
-**AI Coder** is a powerful IntelliJ-based plugin that brings the capabilities of advanced AI models directly into your
-development workflow. Whether you're building new features, refactoring legacy code, or trying to understand complex
-systems, AI Coder acts as your intelligent pair programmer to accelerate your productivity.
+*   **Full Data Control:** Your code and prompts are sent directly to the AI provider you choose, not through intermediary servers.
+*   **Cost Management:** You pay the AI provider directly, benefiting from competitive pricing and usage tiers.
+*   **Model Flexibility:** Use the latest and most suitable AI models available from your chosen provider.
+*   **Enhanced Privacy:** Reduces third-party exposure of your sensitive code.
+
+Our focus on providing robust *tools* rather than a managed *service* ensures a stable, customizable, and cost-effective AI experience tailored to your needs.
+
+### 🤖 High-Level Agentic Tools (Beyond Autocomplete)
+
+Cognotik differentiates itself by focusing on **high-level agentic capabilities** that automate complex workflows and reasoning, rather than simple line-by-line code completion. It's designed to *complement* other AI assistants that excel at autocomplete. Many Cognotik actions leverage a powerful agent platform, often interacting via a web browser window to manage complex, multi-step tasks that require persistent state and sophisticated interaction flows.
 
 ## Key Features
 
-### 🚀 Smart Code Operations
+* Editor Actions - Edit, Paste, and Chat about code directly in the editor to streamline your workflow
+* File actions - Create, edit, and conduct mass operations with AI assistance
+* Agentic tools - Leverage AI agents to perform complex tasks like refactoring, documentation generation, test creation, and workflow automation across multiple files.
+* Voice to Text - Dictate code, comments, and commands using your voice for hands-free coding.
+* Voice to Text - Dictate code and comments using voice commands
 
-- **Smart Paste & Fast Paste**: Intelligently format code from any source to match your project's style
-- **Custom Code Transformations**: Refactor, optimize, or enhance selected code with natural language instructions
-- **Code Generation**: Create new files and components from simple descriptions
-- **Automated Documentation**: Generate comprehensive documentation for your code with a single click
+## 🚀 Getting Started
 
-### 💬 Contextual AI Chat
+### Installation
 
-- **Code Chat**: Discuss your code with AI that understands the full context of your files
-- **Multi-File Chat**: Get insights across multiple files for system-wide understanding
-- **Diff Chat**: Receive suggested changes as diffs that can be applied directly
-- **Git Integration**: Chat about specific commits or working copy changes
+1.  Open IntelliJ IDEA, GoLand, PyCharm, or other compatible JetBrains IDE.
+2.  Go to `Settings/Preferences` > `Plugins`.
+3.  Select the `Marketplace` tab.
+4.  Search for "AI Coding Assistant" or "Cognotik".
+5.  Click `Install` and restart the IDE when prompted.
 
-### 🔄 Intelligent Workflows
+### Configuration
 
-- **Multi-Step Patch (Auto Dev)**: Break complex changes into manageable steps with detailed plans
-- **Test Result Autofix**: Automatically fix failing tests with AI-generated solutions
-- **Problem Analysis**: Get explanations and fixes for compiler errors and warnings
-- **Mass Patch**: Apply consistent changes across multiple files simultaneously
+1.  After installation, open `Settings/Preferences`.
+2.  Navigate to `Tools` > `Cognotik`.
+3.  Enter your API keys for the desired AI service providers (e.g., OpenAI API Key).
+4.  Configure other settings like preferred models and agent behavior as needed.
 
-### 📝 Knowledge Tools
+### Basic Usage
 
-- **Markdown Enhancement**: Extend lists, implement code blocks, and more in your documentation
-- **Document Data Extraction**: Extract structured data from various document formats
-- **Searchable Knowledge Index**: Create queryable indexes from your project documentation
-- **Interactive Knowledge Visualization**: Explore document relationships in 3D space
+*   **Editor Actions:** Right-click within the code editor or select code and use the `AI Tools` context menu (or keyboard shortcuts) to access actions like "Edit Selection", "Chat about Code", etc.
+*   **File Actions:** Right-click on files or folders in the Project view and look for the `AI Tools` menu for operations like "Generate Documentation", "Create Unit Tests", etc.
+*   **Agentic Tools:** Access agentic features through the `AI Tools` menu or dedicated tool windows. Follow the prompts, which may involve interaction in a separate browser window for complex tasks.
+*   **Voice Control:** Activate voice input (check settings for keybindings/activation method) and speak commands or dictate code.
 
-## Designed for Developers
+## 🤝 Contributing
 
-AI Coder integrates seamlessly with your development environment, providing contextual assistance exactly when you need
-it. The plugin respects your workflow, offering suggestions without interruption and giving you full control over any
-changes.
+Cognotik is an open-source project, and contributions are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file (if available) or the GitHub repository's guidelines for details on how to contribute code, report issues, or suggest features.
 
-### Supported Languages
+## ❓ Support
 
-AI Coder works with all languages supported by IntelliJ-based IDEs, including:
+*   **Issues:** Report bugs or suggest features via the [GitHub Issues](https://github.com/SimiaCryptus/intellij-aicoder/issues) page.
+*   **Discussions:** Join the conversation on the [GitHub Discussions](https://github.com/SimiaCryptus/intellij-aicoder/discussions) page.
 
-- Java, Kotlin, Scala
-- Python, JavaScript, TypeScript
-- C#, C++, Go
-- Ruby, PHP, Swift
-- HTML, CSS, SQL
-- And many more!
+---
 
-### Privacy & Security
-
-- Your code stays private - all interactions use your own API keys
-- Configure which models to use for different operations
-- Full control over what context is sent to AI services
-- Detailed usage tracking to monitor API consumption
-
-## Getting Started
-
-1. Install the plugin from the JetBrains Marketplace
-2. Configure your API keys in the settings
-3. Right-click in your editor to access AI Coder features
-4. Use keyboard shortcuts for quick access to common actions
-
-## Take Your Coding to the Next Level
-
-Join thousands of developers who have transformed their productivity with AI Coder. Download now and experience the
-future of software development today!
-
-<!-- Plugin description end -->
+*Keywords: IntelliJ Plugin, AI Coding Assistant, Generative AI, Agentic AI, Open Source, BYOK, Developer Tools, Code Generation, Code Explanation, Refactoring, Voice Coding, JetBrains, OpenAI, Anthropic, Large Language Models (LLM)*

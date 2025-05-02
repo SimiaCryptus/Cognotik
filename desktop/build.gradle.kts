@@ -10,13 +10,10 @@ plugins {
     application
 }
 
-application {
-    mainClass.set("com.simiacryptus.cognotik.DaemonClient")
-}
 
-fun properties(key: String) = project.findProperty(key).toString()
-group = properties("libraryGroup")
-version = properties("libraryVersion")
+// Use providers for consistency with other modules
+group = providers.gradleProperty("libraryGroup").get()
+version = providers.gradleProperty("libraryVersion").get()
 
 repositories {
     mavenCentral {
@@ -26,6 +23,10 @@ repositories {
         }
     }
 }
+application {
+    mainClass.set("com.simiacryptus.cognotik.DaemonClient")
+}
+
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -45,7 +46,7 @@ dependencies {
     implementation(libs.openjfx.graphics)
     implementation(libs.openjfx.base)
     implementation(libs.commons.text)
-    implementation(libs.aws.sdk)
+    // implementation(libs.aws.sdk) // Provided by BOM below
     implementation(libs.jsoup)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
@@ -59,7 +60,7 @@ dependencies {
     implementation(libs.h2)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.collections.immutable)
-    implementation(libs.scala.library)
+    implementation(libs.scala.library) // Ensure this is needed if :scala project isn't used directly
     implementation(libs.scala.compiler)
     implementation(libs.scala.reflect)
     implementation(libs.commons.io)
@@ -185,7 +186,7 @@ fun installContextMenuAction(os: String) {
 
 abstract class JPackageTask : DefaultTask() {
     @get:Inject
-    abstract val execOperations: org.gradle.process.ExecOperations
+    abstract val execOperations: ExecOperations
 }
 
 tasks.register("packageDmg", JPackageTask::class) {
@@ -507,7 +508,7 @@ tasks.register("buildDebManually", JPackageTask::class) {
             // Ensure executables keep their permissions
             eachFile(Action<FileCopyDetails> {
                 if (Files.isExecutable(file.toPath())) {
-                    setMode(mode or 0b001_001_001) // Add execute permissions ugo+x
+                    mode = mode or 0b001_001_001 // Add execute permissions ugo+x
                 }
             })
             // Remove the auto-generated .desktop file to avoid duplication

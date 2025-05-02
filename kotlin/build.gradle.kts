@@ -1,9 +1,7 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import java.net.URI
 
-fun properties(key: String) = project.findProperty(key).toString()
-group = properties("libraryGroup")
-version = properties("libraryVersion")
+group = providers.gradleProperty("libraryGroup").get()
+version = providers.gradleProperty("libraryVersion").get()
 
 plugins {
     `java-library`
@@ -30,22 +28,19 @@ dependencies {
     implementation(kotlin("script-runtime"))
     implementation(kotlin("scripting-compiler-embeddable"))
     implementation(kotlin("compiler-embeddable"))
-
+    implementation(libs.slf4j.api)
     implementation(libs.commons.io)
 
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter.api) // Version from BOM
-    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
-
-    implementation(libs.slf4j.api)
+    testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.logback.classic)
     testImplementation(libs.logback.core)
     testImplementation(libs.asm)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 
 }
 
 tasks {
-
     compileKotlin {
         compilerOptions {
             javaParameters.set(true)
@@ -63,10 +58,5 @@ tasks {
             events(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
         }
-        jvmArgs(
-            "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
-            "--add-opens", "java.base/java.util=ALL-UNNAMED",
-            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
-        )
     }
 }

@@ -2,9 +2,8 @@ plugins {
     antlr
 }
 
-fun properties(key: String) = project.findProperty(key).toString()
-group = properties("libraryGroup")
-version = properties("libraryVersion")
+group = providers.gradleProperty("libraryGroup").get()
+version = providers.gradleProperty("libraryVersion").get()
 
 repositories {
     mavenCentral()

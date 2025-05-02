@@ -630,13 +630,13 @@
         <div class="step-number">1</div>
         <div class="step-text">Choose Mode</div>
     </div>
-    <div class="wizard-step" data-step="task-selection">
-        <div class="step-number">2</div>
-        <div class="step-text">Select Tasks</div>
-    </div>
     <div class="wizard-step" data-step="task-settings">
-        <div class="step-number">3</div>
+        <div class="step-number">2</div>
         <div class="step-text">Configure Settings</div>
+    </div>
+    <div class="wizard-step" data-step="task-selection">
+        <div class="step-number">3</div>
+        <div class="step-text">Select Tasks</div>
     </div>
     <div class="wizard-step" data-step="launch">
         <div class="step-number">4</div>
@@ -693,22 +693,11 @@
     </div>
     <div class="wizard-buttons">
         <div></div> <!-- Empty div for spacing -->
-        <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
-    </div>
-</div>
-<div class="wizard-content" id="task-selection">
-    <h3>Step 2: Select Tasks</h3>
-    <p>Choose which tasks you want to enable:</p>
-    <div class="form-group" id="task-toggles">
-        <!-- Task toggles will be populated here -->
-    </div>
-    <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-cognitive-mode">Back</button>
         <button class="button" id="next-to-task-settings">Next: Configure Settings</button>
     </div>
 </div>
 <div class="wizard-content" id="task-settings">
-    <h3>Step 3: Configure Settings</h3>
+    <h3>Step 2: Configure Settings</h3>
     <p>Configure model and environment settings:</p>
 
     <div class="form-group">
@@ -757,17 +746,33 @@
     </div>
 
     <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-task-selection">Back</button>
+        <button class="button secondary" id="back-to-cognitive-mode">Back</button>
+        <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
+    </div>
+</div>
+<div class="wizard-content" id="task-selection">
+    <h3>Step 3: Select Tasks</h3>
+    <p>Choose which tasks you want to enable:</p>
+    <div class="form-group" id="task-toggles">
+        <!-- Task toggles will be populated here -->
+    </div>
+    <div class="wizard-buttons">
+        <button class="button secondary" id="back-to-task-settings">Back</button>
         <button class="button" id="next-to-launch">Next: Review & Launch</button>
     </div>
 </div>
+
+
+
+
+
 
 <div class="wizard-content" id="launch">
     <h3>Step 4: Review & Launch</h3>
     <p>Review your configuration and launch your AI development session:</p>
 
     <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-task-settings">Back</button>
+        <button class="button secondary" id="back-to-task-selection">Back</button>
         <button class="button" id="launch-session">Launch AI Session</button>
     </div>
 
@@ -1370,28 +1375,30 @@
         });
 
 
-        document.getElementById('next-to-task-selection').addEventListener('click', () => {
-            navigateToStep('task-selection');
+        document.getElementById('next-to-task-settings').addEventListener('click', () => {
+            navigateToStep('task-settings');
         });
 
         document.getElementById('back-to-cognitive-mode').addEventListener('click', () => {
             navigateToStep('cognitive-mode');
         });
 
+        document.getElementById('next-to-task-selection').addEventListener('click', () => {
+            navigateToStep('task-selection');
+        });
+
+
         document.getElementById('next-to-task-settings').addEventListener('click', () => {
             navigateToStep('task-settings');
         });
 
-        document.getElementById('back-to-task-selection').addEventListener('click', () => {
-            navigateToStep('task-selection');
-        });
 
         document.getElementById('next-to-launch').addEventListener('click', () => {
             updateLaunchSummaries();
             navigateToStep('launch');
         });
 
-        document.getElementById('back-to-task-settings').addEventListener('click', () => {
+        document.getElementById('back-to-task-selection').addEventListener('click', () => {
             navigateToStep('task-settings');
         });
     }
@@ -1544,9 +1551,9 @@
         });
 
 
-        document.getElementById('next-to-task-selection').addEventListener('click', saveCognitiveMode);
-        document.getElementById('next-to-task-settings').addEventListener('click', saveTaskSelection);
-        document.getElementById('next-to-launch').addEventListener('click', saveTaskSettings);
+        document.getElementById('next-to-task-settings').addEventListener('click', saveCognitiveMode);
+        document.getElementById('next-to-task-selection').addEventListener('click', saveTaskSettings);
+        document.getElementById('next-to-launch').addEventListener('click', saveTaskSelection);
 
         document.getElementById('launch-session').addEventListener('click', launchSession);
 
