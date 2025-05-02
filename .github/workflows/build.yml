@@ -75,7 +75,7 @@ jobs:
       - name: Build plugin
         run: |
           echo "Starting plugin build..."
-          ./gradlew :intellij:buildPlugin --info
+          ./gradlew :intellij:buildPlugin
           echo "Plugin build completed"
 
       - name: Prepare Plugin Artifact
