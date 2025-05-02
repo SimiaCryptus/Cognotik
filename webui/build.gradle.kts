@@ -27,12 +27,12 @@ dependencies {
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:${libs.versions.kotlin.get()}")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
     compileOnly("org.jetbrains.kotlin:kotlin-scripting-compiler:${libs.versions.kotlin.get()}")
-    compileOnly("org.eclipse.jdt:org.eclipse.jdt.core:3.36.0")
-    compileOnly("org.graalvm.js:js:$graal_version")
-    compileOnly("org.graalvm.js:js-language:$graal_version")
+    compileOnly(libs.eclipse.jdt.core) 
+    compileOnly(libs.graalvm.js) 
+    compileOnly(libs.graalvm.js.language) 
 
     testImplementation(libs.kotlinx.coroutines)
-    testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version = "0.3.8")
+    testImplementation(libs.kotlinx.collections.immutable) 
     testImplementation(kotlin("stdlib"))
     testImplementation(kotlin("scripting-jsr223"))
     testImplementation(kotlin("scripting-jvm"))
@@ -49,27 +49,27 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":kotlin"))
     implementation(project(":groovy"))
-    implementation("org.apache.pdfbox:pdfbox:3.0.3")
+    implementation(libs.pdfbox) 
 
-    implementation("org.seleniumhq.selenium:selenium-java:4.27.0") {
+    implementation(libs.selenium.java) { 
         exclude(group = "com.intellij.remoterobot", module = "remote-robot")
     }
-    implementation("io.github.bonigarcia:webdrivermanager:5.9.2")
-    implementation("org.jsoup:jsoup:1.19.1")
+    implementation(libs.webdrivermanager) 
+    implementation(libs.jsoup) 
 
-    implementation("com.google.zxing:core:3.5.3")
-    implementation("com.google.zxing:javase:3.5.3")
+    implementation(libs.zxing.core) 
+    implementation(libs.zxing.javase) 
 
     compileOnly(libs.aws.sdk)
     testImplementation(libs.aws.sdk)
 
-    compileOnly("org.openapitools:openapi-generator:7.3.0") {
+    // compileOnly("org.openapitools:openapi-generator:7.3.0") { // Base generator lib - add to TOML if needed
+    //     exclude(group = "org.slf4j")
+    // }
+    compileOnly(libs.openapi.generator.cli) {  for CLI
         exclude(group = "org.slf4j")
     }
-    compileOnly("org.openapitools:openapi-generator-cli:7.3.0") {
-        exclude(group = "org.slf4j")
-    }
-    testRuntimeOnly("org.openapitools:openapi-generator-cli:7.3.0")
+    testRuntimeOnly(libs.openapi.generator.cli)  for CLI
 
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlet)
@@ -79,8 +79,8 @@ dependencies {
     implementation("org.eclipse.jetty.websocket:websocket-servlet:${libs.versions.jetty.get()}")
     implementation(libs.jetty.webapp)
 
-    implementation(group = "com.vladsch.flexmark", name = "flexmark", version = "0.64.8")
-    implementation(group = "com.vladsch.flexmark", name = "flexmark-ext-tables", version = "0.64.8")
+    implementation(libs.flexmark.core) 
+    implementation(libs.flexmark.ext.tables) 
 
     compileOnly(libs.kotlinx.coroutines)
 
@@ -91,27 +91,28 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
 
-    implementation("com.fasterxml.jackson.core:jackson-core:${libs.versions.jackson.get()}")
+    implementation(libs.jackson.core) 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
     implementation(libs.guava)
 
-    implementation("com.google.api-client:google-api-client:2.2.0")
-    implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
-    implementation("com.google.apis:google-api-services-oauth2:v2-rev20200213-2.0.0")
-    implementation("com.google.http-client:google-http-client-gson:1.43.3")
+    implementation(libs.google.api.client) 
+    implementation(libs.google.oauth.client.jetty) 
+    implementation(libs.google.api.services.oauth2) 
+    implementation(libs.google.http.client.gson) 
 
     implementation(libs.commons.io)
-    implementation(group = "commons-codec", name = "commons-codec", version = "1.16.0")
+    implementation(libs.commons.codec) 
 
     implementation(libs.slf4j.api)
     runtimeOnly(libs.logback.classic)
     runtimeOnly(libs.logback.core)
 
     testImplementation(kotlin("script-runtime"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api) // Version from BOM
+    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
 }
 
 sass {

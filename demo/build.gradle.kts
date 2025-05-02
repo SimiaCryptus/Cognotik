@@ -26,22 +26,22 @@ dependencies {
     implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
-    implementation("org.jsoup:jsoup:1.19.1")
+    implementation(libs.jsoup)
 
     implementation(project(":jo-penai"))
     implementation(project(":core"))
 
-    implementation("ch.randelshofer:org.monte.media.screenrecorder:17.1")
-    implementation("ch.randelshofer:org.monte.media:17.1")
-    implementation("ch.randelshofer:org.monte.media.swing:17.1")
+    implementation(libs.monte.media.screenrecorder)
+    implementation(libs.monte.media)
+    implementation(libs.monte.media.swing)
 
-    implementation("org.seleniumhq.selenium:selenium-java:4.27.0") {
+    implementation(libs.selenium.java) {
         exclude(group = "com.intellij.remoterobot", module = "remote-robot")
     }
-    implementation("io.github.bonigarcia:webdrivermanager:5.9.2")
+    implementation(libs.webdrivermanager)
 
-    implementation(group = "com.intellij.remoterobot", name = "remote-fixtures", version = remoterobot_version)
-    implementation(group = "com.intellij.remoterobot", name = "remote-robot", version = remoterobot_version)
+    implementation(libs.remoterobot.fixtures)
+    implementation(libs.remoterobot.robot)
 
     implementation(libs.logback.classic)
     implementation(libs.logback.core)
@@ -51,14 +51,11 @@ dependencies {
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
 
-    implementation(group = "com.squareup.okhttp3", name = "okhttp", version = "4.12.0")
-    implementation(platform("org.junit:junit-bom:5.10.1"))
-    implementation("org.junit.jupiter:junit-jupiter")
-    implementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
-
-
-
+    implementation(libs.okhttp)
+    // Use testImplementation for JUnit typically
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api) // Version from BOM
+    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
 }
 
 java {

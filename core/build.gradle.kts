@@ -46,19 +46,20 @@ dependencies {
     testImplementation(kotlin("script-runtime"))
 
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter.api)
-    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.jupiter.api) // Version managed by BOM
+    testRuntimeOnly(libs.junit.jupiter.engine) // Version managed by BOM
+
     compileOnly(platform(libs.junit.bom))
-    compileOnly(libs.junit.jupiter.api)
-    compileOnly(libs.junit.jupiter.engine)
+    compileOnly(libs.junit.jupiter.api) // Version managed by BOM
+    // compileOnly(libs.junit.jupiter.engine) // Engine is usually runtimeOnly
 
     compileOnly(platform(libs.aws.bom))
-    compileOnly(libs.aws.sdk)
+    compileOnly(libs.aws.sdk) // Version managed by BOM
     compileOnly(libs.logback.classic)
     compileOnly(libs.logback.core)
 
     testImplementation(platform(libs.aws.bom))
-    testImplementation(libs.aws.sdk)
+    testImplementation(libs.aws.sdk) // Version managed by BOM
     testImplementation(libs.logback.classic)
     testImplementation(libs.logback.core)
     testImplementation(libs.mockito)

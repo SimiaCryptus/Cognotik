@@ -33,8 +33,9 @@ dependencies {
 
     implementation(libs.commons.io)
 
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
-    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api) // Version from BOM
+    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
 
     implementation(libs.slf4j.api)
     testImplementation(libs.logback.classic)

@@ -23,16 +23,6 @@ repositories {
 
 dependencies {
 
-    implementation(libs.aws.bedrockruntime)
-    implementation(libs.aws.s3)
-    implementation(libs.aws.kms)
-
-    implementation(libs.commons.text)
-    implementation("org.apache.commons:commons-lang3:3.15.0")
-    implementation("com.vladsch.flexmark:flexmark:0.64.8")
-    implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
-    implementation(libs.httpclient5)
-
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.slf4j")
@@ -48,25 +38,29 @@ dependencies {
         exclude(group = "org.slf4j")
     }
 
+    implementation(libs.aws.bedrockruntime)
+    implementation(libs.aws.s3)
+    implementation(libs.aws.kms)
+    implementation(libs.commons.text)
+    implementation(libs.commons.lang3)
+    implementation(libs.flexmark.core)
+    implementation(libs.diffutils)
+    implementation(libs.httpclient5)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
-
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlet)
     implementation(libs.jetty.annotations)
     implementation(libs.jetty.websocket.servlet)
     implementation(libs.jetty.websocket.server)
     implementation(libs.jetty.websocket.client)
-
     implementation(libs.slf4j.api)
     implementation(libs.logback.classic)
 
-    testImplementation(platform("org.junit:junit-bom:5.11.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine")
-    testImplementation("org.junit.vintage:junit-vintage-engine")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 
     intellijPlatform {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))

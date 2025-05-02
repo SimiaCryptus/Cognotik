@@ -33,38 +33,44 @@ java {
 }
 
 dependencies {
-    implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
-    implementation("org.apache.xmlgraphics:batik-codec:1.14")
-
-    implementation("org.openjfx:javafx-swing:17")
-    implementation("org.openjfx:javafx-graphics:17")
-    implementation("org.openjfx:javafx-base:17")
-
-    implementation(libs.commons.text)
-
     implementation(project(":jo-penai"))
     implementation(project(":core"))
     implementation(project(":groovy"))
     implementation(project(":kotlin"))
     implementation(project(":webui"))
 
+    implementation(libs.batik.transcoder)
+    implementation(libs.batik.codec)
+    implementation(libs.openjfx.swing)
+    implementation(libs.openjfx.graphics)
+    implementation(libs.openjfx.base)
+    implementation(libs.commons.text)
     implementation(libs.aws.sdk)
-    implementation("org.jsoup:jsoup:1.19.1")
-
+    implementation(libs.jsoup)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
-
     implementation(libs.guava)
     implementation(libs.jetty.server)
     implementation(libs.jetty.webapp)
-    implementation(libs.jetty.websocket.server)
-    implementation(group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version = "5.2.3")
+    implementation(libs.jetty.websocket.server) // Already in TOML
+    implementation(libs.httpclient5.fluent)
     implementation(libs.gson)
-    implementation(group = "com.h2database", name = "h2", version = "2.2.224")
-
+    implementation(libs.h2)
     implementation(libs.kotlinx.coroutines)
-    implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version = "0.3.8")
+    implementation(libs.kotlinx.collections.immutable)
+    implementation(libs.scala.library)
+    implementation(libs.scala.compiler)
+    implementation(libs.scala.reflect)
+    implementation(libs.commons.io)
+    implementation(libs.flexmark.all)
+    implementation(platform("software.amazon.awssdk:bom:2.27.23"))
+    implementation(libs.aws.sdk)
+    implementation(libs.aws.sso)
+    implementation(libs.slf4j.api)
+    implementation(libs.logback.classic)
+    implementation(libs.logback.core)
+
     implementation(kotlin("stdlib"))
     implementation(kotlin("scripting-jsr223"))
     implementation(kotlin("scripting-jvm"))
@@ -73,23 +79,10 @@ dependencies {
     implementation(kotlin("scripting-compiler-embeddable"))
     implementation(kotlin("compiler-embeddable"))
 
-    implementation(group = "org.scala-lang", name = "scala-library", version = "2.13.9")
-    implementation(group = "org.scala-lang", name = "scala-compiler", version = "2.13.9")
-    implementation(group = "org.scala-lang", name = "scala-reflect", version = "2.13.9")
-
-    implementation(libs.commons.io)
-    implementation(group = "com.vladsch.flexmark", name = "flexmark-all", version = "0.64.8")
-    implementation(platform("software.amazon.awssdk:bom:2.27.23"))
-    implementation(libs.aws.sdk)
-    implementation(group = "software.amazon.awssdk", name = "sso", version = "2.21.29")
-
-    implementation(libs.slf4j.api)
-    implementation(libs.logback.classic)
-    implementation(libs.logback.core)
-
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = "5.10.1")
-    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api) // Version from BOM
+    testImplementation(libs.junit.jupiter.params) // Version from BOM
+    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
 }
 
 tasks {
@@ -222,10 +215,10 @@ tasks.register("packageDmg", JPackageTask::class) {
             // Create a script to convert PNG to ICNS using macOS tools
             val iconsetDir = File(resourceDir, "Cognotik.iconset")
             iconsetDir.mkdirs()
-            
+
             // Copy the source PNG icon
             val sourceIcon = layout.projectDirectory.file("src/main/resources/icon-512x512.png").asFile
-            
+
             // Create different sizes for the iconset
             val sizes = listOf(16, 32, 64, 128, 256, 512, 1024)
             sizes.forEach { size ->
@@ -242,14 +235,14 @@ tasks.register("packageDmg", JPackageTask::class) {
                     execOperations.exec {
                         commandLine(
                             "sips",
-                            "-z", "${size*2}", "${size*2}",
+                            "-z", "${size * 2}", "${size * 2}",
                             sourceIcon.absolutePath,
                             "--out", "${iconsetDir.absolutePath}/icon_${size}x${size}@2x.png"
                         )
                     }
                 }
             }
-            
+
             // Convert the iconset to ICNS
             execOperations.exec {
                 commandLine(
@@ -259,10 +252,10 @@ tasks.register("packageDmg", JPackageTask::class) {
                     "-o", iconFile.absolutePath
                 )
             }
-            
+
             println("Created ICNS icon at: ${iconFile.absolutePath}")
         }
-        
+
         execOperations.exec {
             commandLine(
                 "jpackage", "--verbose",
@@ -328,10 +321,11 @@ tasks.register("packageMsi", JPackageTask::class) {
         val uninstallerScript = File(resourceDir, "Uninstall_Context_Menu.bat")
         uninstallerScript.writeText(layout.projectDirectory.file("src/packaging/windows/Uninstall_Context_Menu.bat.template").asFile.readText())
         val removeRegFile = File(resourceDir, "remove_context_menu.reg")
-        val removeRegTemplateFile = layout.projectDirectory.file("src/packaging/windows/remove_context_menu.reg.template").asFile
+        val removeRegTemplateFile =
+            layout.projectDirectory.file("src/packaging/windows/remove_context_menu.reg.template").asFile
         val removeRegContent = removeRegTemplateFile.readText().replace("{{appDisplayName}}", "Cognotik")
         removeRegFile.writeText(removeRegContent)
-        
+
         // Create a directory for additional resources that need to be included in the app directory
         val appResourcesDir = layout.buildDirectory.dir("jpackage/app-resources").get().asFile
         if (!appResourcesDir.exists()) {
@@ -352,31 +346,50 @@ tasks.register("packageMsi", JPackageTask::class) {
         execOperations.exec {
             commandLine(
                 "jpackage",
-                "--type", "msi",
-                "--input", inputDir.path,
-                "--main-jar", shadowJarName,
-                "--main-class", "com.simiacryptus.cognotik.DaemonClient",
-                "--dest", layout.buildDirectory.dir("jpackage").get().asFile.path,
-                "--name", "Cognotik",
-                "--app-version", project.version.toString().replace("-", "."),
-                "--copyright", "Copyright © 2025 SimiaCryptus",
-                "--description", "Cognotik Agentic Toolkit",
+                "--type",
+                "msi",
+                "--input",
+                inputDir.path,
+                "--main-jar",
+                shadowJarName,
+                "--main-class",
+                "com.simiacryptus.cognotik.DaemonClient",
+                "--dest",
+                layout.buildDirectory.dir("jpackage").get().asFile.path,
+                "--name",
+                "Cognotik",
+                "--app-version",
+                project.version.toString().replace("-", "."),
+                "--copyright",
+                "Copyright © 2025 SimiaCryptus",
+                "--description",
+                "Cognotik Agentic Toolkit",
                 "--win-dir-chooser",
                 "--win-menu",
                 "--win-shortcut",
-                "--icon", File(resourceDir, "toolbarIcon_128x128.ico").path,
-                "--resource-dir", resourceDir.path,
-                "--temp", layout.buildDirectory.dir("jpackage/temp").get().asFile.path,
-                "--app-content", appResourcesDir.path,
+                "--icon",
+                File(resourceDir, "toolbarIcon_128x128.ico").path,
+                "--resource-dir",
+                resourceDir.path,
+                "--temp",
+                layout.buildDirectory.dir("jpackage/temp").get().asFile.path,
+                "--app-content",
+                appResourcesDir.path,
                 "--win-shortcut-prompt",
-                "--win-help-url", "https://github.com/SimiaCryptus/Cognotik",
-                "--win-update-url", "https://github.com/SimiaCryptus/Cognotik/releases",
-                "--file-associations", layout.projectDirectory.file("src/packaging/windows/file-associations.properties").asFile.path,
-                "--install-dir", "Cognotik",
-                "--vendor", "SimiaCryptus",
+                "--win-help-url",
+                "https://github.com/SimiaCryptus/Cognotik",
+                "--win-update-url",
+                "https://github.com/SimiaCryptus/Cognotik/releases",
+                "--file-associations",
+                layout.projectDirectory.file("src/packaging/windows/file-associations.properties").asFile.path,
+                "--install-dir",
+                "Cognotik",
+                "--vendor",
+                "SimiaCryptus",
                 "--win-shortcut",
                 "--win-menu",
-                "--win-menu-group", "Cognotik",
+                "--win-menu-group",
+                "Cognotik",
                 "--win-shortcut-prompt",
             )
         }
@@ -523,22 +536,25 @@ tasks.register("buildDebManually", JPackageTask::class) {
                 into(debianDir)
             }
             // Make scripts executable
-            Files.setPosixFilePermissions(destFile.toPath(), setOf(
-                PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
-                PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_EXECUTE,
-                PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_EXECUTE
-            ))
+            Files.setPosixFilePermissions(
+                destFile.toPath(), setOf(
+                    PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
+                    PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_EXECUTE,
+                    PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_EXECUTE
+                )
+            )
         }
 
         // --- 6. Create DEBIAN/control file ---
         val controlFile = File(debianDir, "control")
         // Calculate installed size (approximation)
         val installedSizeKb = Files.walk(stagingDir.toPath())
-                                  .filter { Files.isRegularFile(it) }
-                                  .mapToLong { Files.size(it) }
-                                  .sum() / 1024
+            .filter { Files.isRegularFile(it) }
+            .mapToLong { Files.size(it) }
+            .sum() / 1024
 
-        controlFile.writeText("""
+        controlFile.writeText(
+            """
             Package: $packageName
             Version: $version
             Architecture: $arch
@@ -548,7 +564,8 @@ tasks.register("buildDebManually", JPackageTask::class) {
             Priority: optional
             Description: Cognotik Agentic Toolkit
              AI-powered application suite for various tasks.
-            """.trimIndent() + "\n")
+            """.trimIndent() + "\n"
+        )
 
         // --- 7. Build the .deb package ---
         if (!debOutputDir.exists()) debOutputDir.mkdirs()

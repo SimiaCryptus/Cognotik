@@ -28,9 +28,10 @@ dependencies {
     implementation(libs.slf4j.api)
 
     testImplementation(group = "org.slf4j", name = "slf4j-simple", version = libs.versions.slf4j.get())
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = "5.10.1")
-    testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = "5.10.1")
-    testImplementation(group = "org.scala-lang.modules", name = "scala-java8-compat_2.13", version = "0.9.1")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api) // Version from BOM
+    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
+    testImplementation(libs.scala.java8.compat) 
 
 }
 

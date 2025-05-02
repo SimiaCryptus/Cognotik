@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     implementation(libs.antlr.runtime)
-    antlr("org.antlr:antlr4:${rootProject.libs.versions.antlr.get()}")
+    antlr(libs.antlr.tool)
 }
 
 tasks {
