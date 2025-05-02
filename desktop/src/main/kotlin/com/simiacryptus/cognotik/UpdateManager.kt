@@ -329,12 +329,8 @@ object UpdateManager {
                         }
 
                         SwingUtilities.invokeLater {
-                            // Update the progress bar with proper EDT synchronization
                             progressBar.let { bar ->
-                                // Check if the dialog (and thus the bar) is still displayable
-                                // This check might be overly cautious if dispose() is handled well,
-                                // but doesn't hurt.
-                                if (bar.isDisplayable) { // isDisplayable checks if component is part of visible hierarchy
+                                if (bar.isDisplayable) {
                                     bar.value = progress
                                 }
                             }
