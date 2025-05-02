@@ -91,7 +91,8 @@ open class AppServer(
                 log.info("Using alternative port $actualPort")
                 println("Using alternative port $actualPort")
             }
-            scheduledExecutorService.scheduleAtFixedRate({checkUpdate()}, 0, 24, java.util.concurrent.TimeUnit.HOURS)
+            scheduledExecutorService.scheduleAtFixedRate({checkUpdate()},
+                0, 7*24, java.util.concurrent.TimeUnit.HOURS)
             server = AppServer(
                 localName = options.host,
                 publicName = options.publicName,
