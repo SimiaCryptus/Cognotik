@@ -1,6 +1,7 @@
 [versions]
 # libraries
 jetty = "11.0.25"
+junit4 = "4.13.2" # Added JUnit 4 version
 slf4j = "2.0.16"
 logback = "1.5.16"
 jackson = "2.17.2"
@@ -139,8 +140,9 @@ commons-codec = { group = "commons-codec", name = "commons-codec", version.ref =
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitJupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
-junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" } # Add params
-kotlin-test-junit5 = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit5" } # Add kotlin test
+junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junit4" } # Added JUnit 4 library alias
+kotlin-test-junit5 = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit5" }
 aws-bom = { group = "software.amazon.awssdk", name = "bom", version.ref = "aws" }
 
 [plugins]

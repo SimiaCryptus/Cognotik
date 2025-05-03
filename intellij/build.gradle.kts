@@ -65,6 +65,8 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    // Add JUnit 4 explicitly as it seems required by the IntelliJ test framework runtime for some tests/runners
+    testRuntimeOnly(libs.junit.junit)
 
     intellijPlatform {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
@@ -168,56 +170,4 @@ intellijPlatform {
             recommended()
         }
     }
-}
-
-intellijPlatformTesting {
-    testIdeUi {
-
-    }
-}
-
-tasks {
-
-    patchPluginXml {
-        sinceBuild.set(properties("pluginSinceBuild"))
-        untilBuild.set(properties("pluginUntilBuild"))
-
-        pluginDescription.set(providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
-            val start = "<!-- Plugin description -->"
-            val end = "<!-- Plugin description end -->"
-
-            with(it.lines()) {
-                if (!containsAll(listOf(start, end))) {
-                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
-                }
-                subList(indexOf(start) + 1, indexOf(end)).joinToString("\n").let(::markdownToHTML)
-            }
-        })
-
-        val changelog = project.changelog
-        changeNotes.set(providers.gradleProperty("libraryVersion").map { libraryVersion ->
-            with(changelog) {
-                renderItem(
-                    (getOrNull(libraryVersion) ?: getUnreleased())
-                        .withHeader(false)
-                        .withEmptySections(false),
-                    Changelog.OutputType.HTML,
-                )
-            }
-        })
-    }
-
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
-    publishPlugin {
-        dependsOn("patchChangelog")
-        token.set(System.getenv("PUBLISH_TOKEN"))
-        channels.set(
-            providers.gradleProperty("libraryVersion").get().split('-').drop(1).take(1)
-                .map { it.substringBefore('.').ifEmpty { "default" } })
-    }
-
 }
