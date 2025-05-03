@@ -78,12 +78,13 @@ dependencies {
     runtimeOnly(libs.logback.core)
 
     testRuntimeOnly("org.openapitools:openapi-generator-cli:7.3.0")
-    testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.kotlinx.coroutines)
     testImplementation(libs.kotlinx.collections.immutable)
     testImplementation(libs.aws.sdk)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 
     compileOnly(kotlin("stdlib"))
     testImplementation(kotlin("stdlib"))

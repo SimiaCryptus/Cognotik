@@ -48,6 +48,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.kotlin.test.junit5)
 
     compileOnly(platform(libs.aws.bom))
     compileOnly(libs.aws.sdk)

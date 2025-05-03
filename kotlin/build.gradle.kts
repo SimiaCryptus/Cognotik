@@ -31,12 +31,14 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.commons.io)
 
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.logback.classic)
     testImplementation(libs.logback.core)
     testImplementation(libs.asm)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.kotlin.test.junit5)
 
 }
 

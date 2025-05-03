@@ -26,7 +26,8 @@ dependencies {
     implementation(libs.commons.io)
 
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter.api) // Version from BOM
-    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.kotlin.test.junit5)
 
 }

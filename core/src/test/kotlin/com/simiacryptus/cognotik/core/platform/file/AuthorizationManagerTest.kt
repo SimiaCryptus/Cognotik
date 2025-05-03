@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 
-open class AuthorizationInterfaceTest(
+abstract open class AuthorizationInterfaceTest(
     private val authInterface: AuthorizationInterface
 ) {
 

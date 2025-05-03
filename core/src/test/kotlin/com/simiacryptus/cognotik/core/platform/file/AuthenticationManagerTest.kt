@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.*
 
-open class AuthenticationInterfaceTest(
+abstract class AuthenticationInterfaceTest(
     private val authInterface: AuthenticationInterface
 ) {
 
