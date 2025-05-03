@@ -21,6 +21,7 @@ repositories {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":kotlin"))
     implementation(libs.pdfbox)
     implementation(libs.webdrivermanager)
     implementation(libs.jsoup)

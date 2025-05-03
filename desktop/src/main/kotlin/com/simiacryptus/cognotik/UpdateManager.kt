@@ -419,17 +419,37 @@ object UpdateManager {
                     // For Mac, we need to uninstall the current version first
                     val appName = "Cognotik"
 
+                    // Create a script to handle the update
+                    log.debug("Creating update script for macOS")
+                    val scriptFile = File.createTempFile("cognotik-update-", ".sh")
+                    scriptFile.setExecutable(true)
+                    
+                    // Write the update script
+                    val installerPath = installerFile.absolutePath
+                    val scriptPath = scriptFile.absolutePath
+                    
+                    val template = loadScriptTemplate("/scripts/update/mac_update.sh.template")
+                    val finalSrc = template
+                        .replace("@@INSTALLER_PATH@@", installerPath)
+                        .replace("@@SCRIPT_PATH@@", scriptPath)
+                        .replace("@@APP_NAME@@", appName)
+                    
+                    log.debug("Writing to macOS update script file: ${scriptFile.absolutePath}: \n${finalSrc.indent("  ")}")
+                    scriptFile.writeText(finalSrc)
+                    
                     // Show confirmation dialog
-                    log.debug("Showing update instructions to user")
+                    log.debug("Showing update confirmation to user")
                     JOptionPane.showMessageDialog(
                         null,
-                        "The installer has been downloaded.\n\n" + "To complete the update:\n" + "1. The application will now close\n" + "2. Please drag the current application from Applications to Trash\n" + "3. Open the downloaded DMG file at: ${installerFile.absolutePath}\n" + "4. Drag the new application to Applications folder",
-                        "Update Instructions",
+                        "The application will now close and update to the latest version.\n" +
+                        "You may need to enter your password for the installation process.",
+                        "Update Confirmation",
                         JOptionPane.INFORMATION_MESSAGE
                     )
-                    log.info("Opening folder containing installer: ${installerFile.parentFile.absolutePath}")
-                    // Open the folder containing the installer
-                    Desktop.getDesktop().open(installerFile.parentFile)
+                    
+                    log.info("Executing update script: ${scriptFile.absolutePath}")
+                    // Execute the update script in a new terminal
+                    ProcessBuilder("open", "-a", "Terminal", scriptFile.absolutePath).start()
 
                     // Schedule application exit
                     CompletableFuture.runAsync {

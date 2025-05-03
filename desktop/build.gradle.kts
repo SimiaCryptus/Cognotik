@@ -271,7 +271,9 @@ tasks.register("packageDmg", JPackageTask::class) {
                 "--copyright", "Copyright © 2024 SimiaCryptus",
                 "--description", "Cognotik Agentic Toolkit",
                 "--resource-dir", resourceDir.path,
-                "--mac-package-name", "Cognotik"
+                "--mac-package-name", "Cognotik",
+                "--mac-package-identifier", "com.simiacryptus.cognotik",
+                "--file-associations", layout.projectDirectory.file("src/packaging/macos/file-associations.properties").asFile.path
             )
         }
         installContextMenuAction("mac")
