@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TRIPLE_TILDE
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -92,7 +93,14 @@ class RunCodeTask<T : Interpreter>(
                             response,
                             formText
                         ) { formHandle!! }
-                    }\n${acceptButton(response)}\n</div>\n${
+                    }\n${
+                        ui.hrefLink("Continue", "href-link play-button") {
+                            response.let {
+                                "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
+                            }.apply { resultFn(this) }
+                            semaphore.release()
+                        }
+                    }\n</div>\n${
                         super.ui.textInput { feedback ->
                             super.responseAction(
                                 task,
@@ -111,16 +119,6 @@ class RunCodeTask<T : Interpreter>(
                 task.complete()
             }
 
-            fun acceptButton(
-                response: CodingActor.CodeResult
-            ): String {
-                return ui.hrefLink("Accept", "href-link play-button") {
-                    response.let {
-                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
-                    }.apply { resultFn(this) }
-                    semaphore.release()
-                }
-            }
         }
         codingAgent.start(
             codingAgent.codeRequest(

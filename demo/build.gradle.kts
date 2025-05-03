@@ -51,10 +51,9 @@ dependencies {
     implementation(libs.jackson.kotlin)
 
     implementation(libs.okhttp)
-    // Use testImplementation for JUnit typically
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter.api) // Version from BOM
-    testRuntimeOnly(libs.junit.jupiter.engine) // Version from BOM
+    implementation(platform(libs.junit.bom))
+    implementation(libs.junit.jupiter.api)
+    runtimeOnly(libs.junit.jupiter.engine)
 }
 
 java {

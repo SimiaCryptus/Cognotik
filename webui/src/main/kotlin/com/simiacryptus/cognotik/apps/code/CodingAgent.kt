@@ -154,7 +154,7 @@ open class CodingAgent<T : Interpreter>(
     fun displayCode(
         task: SessionTask, response: CodeResult
     ) {
-        task.expandable(
+        task.expanded(
             "Code",
             renderMarkdown(
                 response.renderedResponse ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```",
