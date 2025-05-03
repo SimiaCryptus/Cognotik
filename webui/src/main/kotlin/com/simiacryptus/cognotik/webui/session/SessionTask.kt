@@ -129,6 +129,33 @@ abstract class SessionTask(
         additionalClasses = additionalClasses.split(" ").toSet().plus("response-header").joinToString(" ")
     )
 
+    @Description("Adds an expandable/collapsible section to the task output.")
+    fun expandable(
+        @Description("The title displayed in the header")
+        title: String,
+        @Description("The content within the expandable section")
+        content: String,
+        @Description("Whether to show the spinner after adding (default: false)")
+        showSpinner: Boolean = false,
+        @Description("The html tag for the main container (default: div)")
+        tag: String = "div",
+        @Description("Additional css class(es) to apply to the main container")
+        additionalClasses: String = ""
+    ): StringBuilder? {
+        val combinedClasses = (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }.joinToString(" ")
+        val html = """
+            <$tag class="$combinedClasses">
+              <div class="expandable-header">
+                <strong>$title</strong>
+                <span class="expand-icon">▼</span>
+              </div>
+              <div class="expandable-content">$content</div>
+            </$tag>
+        """.trimIndent()
+        return append(html, showSpinner)
+    }
+
+
     @Description("Adds a verbose message to the task output; verbose messages are hidden by default.")
     fun verbose(
         @Description("The message to add")

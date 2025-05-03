@@ -110,38 +110,32 @@ class ShellCommandAction : BaseAction() {
                     ) {
                         val formText = StringBuilder()
                         var formHandle: StringBuilder? = null
-                        formHandle = task.add(
-                            "<div style=\"display: flex;flex-direction: column;\">\n${
-                                if (!super.canPlay) "" else super.playButton(
-                                    task,
-                                    request,
-                                    response,
-                                    formText
-                                ) { formHandle!! }
-                            }\n${
-                                acceptButton(
-                                    task,
-                                    request,
-                                    response,
-                                    formText
-                                ) { formHandle!! }
-                            }\n</div>\n${super.reviseMsg(task, request, response, formText) { formHandle!! }}",
-                            additionalClasses = "reply-message"
-                        )
+                        formHandle = run {
+                            { formHandle!! }
+                            task.add(
+                                "<div>\n${
+                                    if (!super.canPlay) "" else super.playButton(
+                                        task,
+                                        request,
+                                        response,
+                                        formText
+                                    ) { formHandle!! }
+                                }\n${
+                                    ui.hrefLink("Proceed", "href-link play-button") {
+                                            }
+                                }\n</div>\n${
+                                    super.ui.textInput { feedback ->
+                                        super.responseAction(task, "Revising...", formHandle!!, formText) {
+                                            super.feedback(task, feedback, request, response)
+                                        }
+                                    }
+                                }",
+                                additionalClasses = "reply-message"
+                            )
+                        }
                         formText.append(formHandle.toString())
                         formHandle.toString()
                         task.complete()
-                    }
-
-                    fun acceptButton(
-                        task: SessionTask,
-                        request: CodingActor.CodeRequest,
-                        response: CodingActor.CodeResult,
-                        formText: StringBuilder,
-                        formHandle: () -> StringBuilder
-                    ): String {
-                        return ui.hrefLink("Accept", "href-link play-button") {
-                        }
                     }
                 }.apply {
                     this.start(userMessage)

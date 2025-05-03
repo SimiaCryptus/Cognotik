@@ -77,21 +77,23 @@ abstract class ShellToolAgent<T : Interpreter>(
         val formText = StringBuilder()
         var formHandle: StringBuilder? = null
         formHandle = task.add(
-            "<div style=\"display: flex;flex-direction: column;\">\n" + (if (!canPlay) "" else playButton(
+            "<div>\n" + (if (!canPlay) "" else playButton(
                 task,
                 request,
                 response,
                 formText
-            ) { formHandle!! }) + "\n" + super.regenButton(
-                task,
-                request,
-                formText
-            ) { formHandle!! } + "\n" + createToolButton(
-                task,
+            ) { formHandle!! }) + "\n" + run {
+                { formHandle!! }
+                ""
+            } + "\n" + createToolButton(
                 request,
                 response,
                 formText
-            ) { formHandle!! } + "\n</div>  \n" + super.reviseMsg(task, request, response, formText) { formHandle!! },
+            ) { formHandle!! } + "\n</div>  \n" + super.ui.textInput { feedback ->
+                super.responseAction(task, "Revising...", formHandle!!, formText) {
+                    super.feedback(task, feedback, request, response)
+                }
+            },
             additionalClasses = "reply-message"
         )
         formText.append(formHandle.toString())
@@ -102,7 +104,6 @@ abstract class ShellToolAgent<T : Interpreter>(
     private var lastResult: String? = null
 
     private fun createToolButton(
-        task: SessionTask,
         request: CodingActor.CodeRequest,
         response: CodeResult,
         formText: StringBuilder,
@@ -222,20 +223,6 @@ abstract class ShellToolAgent<T : Interpreter>(
                                     )
                                 )
                             }
-                        }
-                        if (ApplicationServices.authorizationManager.isAuthorized(
-                                ShellToolAgent.javaClass, user, AuthorizationInterface.OperationType.Admin
-                            )
-                        ) {/*
-                                          ToolServlet.addTool(
-                                              ToolServlet.Tool(
-                                                  path = openAPI.paths?.entries?.first()?.key?.removePrefix(toolsPrefix) ?: "unknown",
-                                                  openApiDescription = openAPI,
-                                                  interpreterString = getInterpreterString(),
-                                                  servletCode = servletImpl
-                                              )
-                                          )
-              */
                         }
                         buildTestPage(openAPI, servletImpl, task)
                     }
@@ -367,9 +354,7 @@ abstract class ShellToolAgent<T : Interpreter>(
                         } catch (e: Throwable) {
                             log.warn("Error", e)
                             val error = task.error(super.ui, e)
-                            var regenButton: StringBuilder? = null
-                            regenButton = task.complete(super.ui.hrefLink("♻", "href-link regen-button") {
-                                regenButton?.clear()
+                            task.complete(super.ui.hrefLink("♻", "href-link regen-button") {
                                 val header = task.header("Regenerating...", 4)
                                 super.displayCode(task, codeRequest)
                                 header?.clear()
@@ -407,9 +392,7 @@ abstract class ShellToolAgent<T : Interpreter>(
                             } catch (e: Throwable) {
                                 log.warn("Error", e)
                                 val error = task.error(super.ui, e)
-                                var regenButton: StringBuilder? = null
-                                regenButton = task.complete(super.ui.hrefLink("♻", "href-link regen-button") {
-                                    regenButton?.clear()
+                                task.complete(super.ui.hrefLink("♻", "href-link regen-button") {
                                     val header = task.header("Regenerating...", 4)
                                     super.displayCode(task, codeRequest)
                                     header?.clear()

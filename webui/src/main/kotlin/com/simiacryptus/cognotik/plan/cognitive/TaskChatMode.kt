@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
@@ -71,6 +72,7 @@ open class TaskChatMode(
             messages.add(ApiModel.ChatMessage(ApiModel.Role.user, userMessage.toContentList()))
         }
 
+        task.echo(renderMarkdown(userMessage))
         Retryable(ui, task) {
             val subtask = ui.newTask(false)
             ui.socketManager?.pool?.submit {
@@ -81,7 +83,6 @@ open class TaskChatMode(
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-        task.echo(renderMarkdown(userMessage))
         val apiClient = (api as ChatClient).getChildClient(task)
         apiClient.budget = planSettings.budget
 
@@ -136,7 +137,7 @@ open class TaskChatMode(
                 ?: throw IllegalStateException("No task was selected")
             
             val taskImpl = TaskType.getImpl(planSettings, chosenTasks)
-            task.add(renderMarkdown("Executing task:\n```json\n${JsonUtil.toJson(chosenTasks)}\n```"))
+            task.verbose("Executing task:\n```json\n${JsonUtil.toJson(chosenTasks)}\n```".renderMarkdown())
 
             val result = StringBuilder()
 

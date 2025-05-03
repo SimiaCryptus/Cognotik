@@ -95,7 +95,7 @@ class RunShellCommandTask(
                 val formText = StringBuilder()
                 var formHandle: StringBuilder? = null
                 formHandle = task.add(
-                    "<div style=\"display: flex;flex-direction: column;\">\n${
+                    "<div>\n${
                         if (!super.canPlay) "" else super.playButton(
                             task,
                             request,
@@ -103,12 +103,17 @@ class RunShellCommandTask(
                             formText
                         ) { formHandle!! }
                     }\n${acceptButton(response)}\n</div>\n${
-                        super.reviseMsg(
-                            task,
-                            request,
-                            response,
-                            formText
-                        ) { formHandle!! }
+                        super.ui.textInput { feedback ->
+                            super.responseAction(
+                                task,
+                                "Revising...", formHandle!!, formText
+                            ) {
+                                super.feedback(
+                                    task, feedback, request,
+                                    response
+                                )
+                            }
+                        }
                     }", additionalClasses = "reply-message"
                 )
                 formText.append(formHandle.toString())

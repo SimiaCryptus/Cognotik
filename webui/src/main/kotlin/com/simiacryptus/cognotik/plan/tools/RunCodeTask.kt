@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools
 
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.code.CodingAgent
-import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
+import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
@@ -14,15 +14,17 @@ import java.io.File
 import java.util.concurrent.Semaphore
 import kotlin.Any
 import kotlin.String
+import kotlin.reflect.KClass
 
-class RunCodeTask(
+class RunCodeTask<T : Interpreter>(
     planSettings: PlanSettings,
-    planTask: RunCodeTaskConfigData?
+    planTask: RunCodeTaskConfigData?,
+    val interpreter: KClass<T>,
 ) : AbstractTask<RunCodeTask.RunCodeTaskConfigData>(planSettings, planTask) {
 
     class RunCodeTaskConfigData(
         @Description("The task or goal to be accomplished")
-        val coding_task: String? = null,
+        val goal: String? = null,
         @Description("The relative file path of the working directory")
         val workingDir: String? = null,
         task_description: String? = null,
@@ -36,7 +38,9 @@ class RunCodeTask(
     )
 
     override fun promptSegment() = """
-    RunCodeTask - Execute a code snippet using Kotlin.
+    RunCodeTask - Use a Kotlin interpreter to solve and complete the user's request.
+      * Do not directly write code (yet)
+      * Include detailed technical requirements for the needed solution
     """.trimIndent()
 
     override fun run(
@@ -49,13 +53,13 @@ class RunCodeTask(
         planSettings: PlanSettings
     ) {
         val semaphore = Semaphore(0)
-        val codingAgent = object : CodingAgent<KotlinInterpreter>(
+        val codingAgent = object : CodingAgent<T>(
             api = api,
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
             ui = agent.ui,
-            interpreter = KotlinInterpreter::class,
+            interpreter = interpreter,
             symbols = mapOf<String, Any>(
                 "env" to (planSettings.env ?: emptyMap()),
                 "workingDir" to (
@@ -81,7 +85,7 @@ class RunCodeTask(
                 val formText = StringBuilder()
                 var formHandle: StringBuilder? = null
                 formHandle = task.add(
-                    "<div style=\"display: flex;flex-direction: column;\">\n${
+                    "<div>\n${
                         if (!super.canPlay) "" else super.playButton(
                             task,
                             request,
@@ -89,12 +93,17 @@ class RunCodeTask(
                             formText
                         ) { formHandle!! }
                     }\n${acceptButton(response)}\n</div>\n${
-                        super.reviseMsg(
-                            task,
-                            request,
-                            response,
-                            formText
-                        ) { formHandle!! }
+                        super.ui.textInput { feedback ->
+                            super.responseAction(
+                                task,
+                                "Revising...", formHandle!!, formText
+                            ) {
+                                super.feedback(
+                                    task, feedback, request,
+                                    response
+                                )
+                            }
+                        }
                     }", additionalClasses = "reply-message"
                 )
                 formText.append(formHandle.toString())
@@ -116,7 +125,7 @@ class RunCodeTask(
         codingAgent.start(
             codingAgent.codeRequest(
                 messages.map { it to ApiModel.Role.user } + listOf(
-                    (this.taskConfig?.coding_task ?: "") to ApiModel.Role.user,
+                    (this.taskConfig?.goal ?: "") to ApiModel.Role.user,
                 )
             )
         )

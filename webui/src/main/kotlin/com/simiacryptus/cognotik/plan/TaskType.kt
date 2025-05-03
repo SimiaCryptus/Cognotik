@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
@@ -393,9 +394,10 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                 )
             }
             registerConstructor(RunCodeTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.RunCodeTask(
+                com.simiacryptus.cognotik.plan.tools.RunCodeTask<KotlinInterpreter>(
                     settings,
-                    task
+                    task,
+                    KotlinInterpreter::class
                 )
             }
             registerConstructor(ForeachTask) { settings, task ->
