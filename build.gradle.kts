@@ -90,6 +90,29 @@ repositories {
 }
 
 plugins {
-    kotlin("jvm") version libs.versions.kotlin.get()
-    id("com.github.ben-manes.versions") version "0.50.0"
+    kotlin("jvm") // Version is applied globally via settings.gradle.kts
+    id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
+}
+// Configure the dependency updates plugin
+tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
+    // Configure resolution strategy to only recommend stable releases
+    // Other options include: ReleaseCandidate, Milestone, Integration
+    resolutionStrategy {
+        componentSelection {
+            all {
+                if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
+                    reject("Release candidate")
+                }
+            }
+        }
+    }
+    // Optional: Output results to a file (e.g., JSON, XML, plain text)
+    // outputFormatter = "json"
+    // outputDir = "build/dependencyUpdates"
+    // reportfileName = "report"
+}
+// Helper function to check for non-stable versions (adjust keywords as needed)
+fun isNonStable(version: String): Boolean {
+    val unstableKeywords = listOf("rc", "m", "beta", "alpha", "snapshot", "dev", "eap")
+    return unstableKeywords.any { version.contains(it, ignoreCase = true) }
 }

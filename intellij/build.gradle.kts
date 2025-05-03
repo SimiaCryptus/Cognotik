@@ -2,8 +2,6 @@ import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-fun properties(key: String) = providers.gradleProperty(key).getOrElse("")
-
 plugins {
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
