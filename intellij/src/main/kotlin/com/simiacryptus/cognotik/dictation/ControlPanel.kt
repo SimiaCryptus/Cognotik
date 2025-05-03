@@ -21,7 +21,6 @@ class ControlPanel(
     val settings: DictationState = DictationState,
 ) : JPanel(), AutoCloseable {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(ControlPanel::class.java)
     }
 
     private val rmsLabel = JBLabel("RMS: ")

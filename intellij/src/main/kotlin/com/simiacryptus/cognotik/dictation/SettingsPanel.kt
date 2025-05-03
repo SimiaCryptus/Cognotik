@@ -15,7 +15,6 @@ class SettingsPanel(
     val settings: DictationState = DictationState,
 ) : JPanel(), AutoCloseable {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(SettingsPanel::class.java)
     }
 
     private val biasSlider = JSlider(

@@ -36,7 +36,6 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -369,7 +368,6 @@ class ReplicateCommitAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ReplicateCommitAction::class.java)
         val tripleTilde = "`" + "``"
 
 

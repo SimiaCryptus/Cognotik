@@ -47,13 +47,6 @@ class MultiCodeChatAction : BaseAction() {
         val codeFiles =
             getFiles(PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext) ?: arrayOf(), root).toMutableSet()
 
-        fun codeSummary() = codeFiles.filter {
-            root.resolve(it).toFile().exists()
-        }.associateWith { root.resolve(it).toFile().readText(Charsets.UTF_8) }
-            .entries.joinToString("\n\n") { (path, code) ->
-                val extension = path.toString().split('.').lastOrNull()?.let { /*escapeHtml4*/(it)/*.indent("  ")*/ }
-                "# $path\n```$extension\n$code\n```"
-            }
         try {
             UITools.runAsync(event.project, "Initializing Chat", true) { progress ->
                 progress.isIndeterminate = true

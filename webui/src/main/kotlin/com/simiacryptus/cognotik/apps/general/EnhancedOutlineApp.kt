@@ -44,7 +44,6 @@ data class EnhancedSettings(
 
 class EnhancedOutlineApp(
     applicationName: String = "Enhanced Outline Expansion Concept Map",
-    val domainName: String,
     val settings: EnhancedSettings? = null,
     val api2: OpenAIClient,
 ) : ApplicationServer(

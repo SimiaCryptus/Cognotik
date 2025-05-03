@@ -1,7 +1,6 @@
 package com.simiacryptus.jopenai
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.jopenai.exceptions.ModerationException
@@ -15,7 +14,6 @@ import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.StringUtil
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
-import org.apache.hc.client5.http.entity.mime.FileBody
 import org.apache.hc.client5.http.entity.mime.HttpMultipartMode
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder
 import org.apache.hc.core5.http.ContentType
@@ -520,56 +518,6 @@ open class OpenAIClient(
             )
 
             JsonUtil.objectMapper().readValue(response, ImageGenerationResponse::class.java)
-        }
-    }
-
-    open fun createImageEdit(request: ImageEditRequest): ImageEditResponse = withReliability {
-        withPerformanceLogging {
-            val url = "${apiBase[defaultApiProvider]}/images/edits"
-            val httpRequest = HttpPost(url)
-            httpRequest.addHeader("Accept", "application/json")
-            authorize(httpRequest, defaultApiProvider)
-
-            val entityBuilder = MultipartEntityBuilder.create()
-            entityBuilder.addPart("image", FileBody(request.image))
-            entityBuilder.addTextBody("prompt", request.prompt)
-            request.mask?.let { entityBuilder.addPart("mask", FileBody(it)) }
-            request.model?.let { entityBuilder.addTextBody("model", it) }
-            request.n?.let { entityBuilder.addTextBody("n", it.toString()) }
-            request.size?.let { entityBuilder.addTextBody("size", it) }
-            request.responseFormat?.let { entityBuilder.addTextBody("response_format", it) }
-            request.user?.let { entityBuilder.addTextBody("user", it) }
-
-            httpRequest.entity = entityBuilder.build()
-            val response = post(httpRequest)
-            checkError(response)
-            log.info("Image edit response received")
-
-            JsonUtil.objectMapper().readValue(response, ImageEditResponse::class.java)
-        }
-    }
-
-    open fun createImageVariation(request: ImageVariationRequest): ImageVariationResponse = withReliability {
-        withPerformanceLogging {
-            val url = "${apiBase[defaultApiProvider]}/images/variations"
-            val httpRequest = HttpPost(url)
-            httpRequest.addHeader("Accept", "application/json")
-            authorize(httpRequest, defaultApiProvider)
-
-            val entityBuilder = MultipartEntityBuilder.create()
-            entityBuilder.addPart("image", FileBody(request.image))
-
-            request.n?.let { entityBuilder.addTextBody("n", it.toString()) }
-            request.responseFormat?.let { entityBuilder.addTextBody("response_format", it) }
-            request.size?.let { entityBuilder.addTextBody("size", it) }
-            request.user?.let { entityBuilder.addTextBody("user", it) }
-
-            httpRequest.entity = entityBuilder.build()
-            val response = post(httpRequest)
-            checkError(response)
-            log.info("Image variation response received")
-
-            JsonUtil.objectMapper().readValue(response, ImageVariationResponse::class.java)
         }
     }
 

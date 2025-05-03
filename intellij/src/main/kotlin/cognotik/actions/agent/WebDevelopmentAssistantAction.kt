@@ -129,7 +129,6 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     ui = ui,
                     model = settings.model,
                     parsingModel = settings.parsingModel,
-                    tools = settings.tools,
                     root = root,
                 ).start(userMessage = userMessage)
             } catch (e: Throwable) {
@@ -159,7 +158,6 @@ class WebDevelopmentAssistantAction : BaseAction() {
         val ui: ApplicationInterface,
         val model: ChatModel,
         val parsingModel: ChatModel,
-        val tools: List<String> = emptyList(),
         val root: File,
     ) {
         val actors = mapOf(

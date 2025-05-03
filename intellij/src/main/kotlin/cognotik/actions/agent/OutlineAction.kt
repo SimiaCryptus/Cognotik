@@ -41,7 +41,6 @@ class OutlineAction : BaseAction() {
 
                 val outlineApp = OutlineApp(
                     applicationName = "AI Outline Tool",
-                    domainName = "outline",
                     api2 = IdeaOpenAIClient.instance,
                     settings = OutlineApp.Settings(
                         models = settings.expansionSteps.map { it.model },

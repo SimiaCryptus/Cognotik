@@ -2,13 +2,6 @@ package com.simiacryptus.cognotik.util
 
 import com.fasterxml.jackson.annotation.JsonInclude
 
-data class OpenAPI(
-    val openapi: String = "3.0.0",
-    val info: Info? = null,
-    val paths: Map<String, PathItem>? = emptyMap(),
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    val components: Components? = null
-)
 
 data class Info(
     val title: String? = null,

@@ -7,7 +7,6 @@ class PercentileTool(
     val memorySize: Int = 10000
 ) {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(PercentileTool::class.java)
 
         /**
          * Compute the KL-divergence between two sorted lists of values.
@@ -91,148 +90,6 @@ class PercentileTool(
         return 0.0
     }
 
-    fun findEntropyThreshold1(percentileBias: Double = 0.0): Double {
-        if (memory.size < 2) return 0.0
-        if (memory.first() == memory.last()) {
-            return memory.first()
-        }
-        var bestThreshold = memory[0]
-        var bestIndex = -1
-        var maxEntropy = Double.NEGATIVE_INFINITY
-        val min = memory.first()
-        val max = memory.last()
-        for (i in 1 until memory.size) {
-            if (memory[i] == memory[i - 1]) continue
-            val threshold = (memory[i - 1] + memory[i]) / 2
-            if (threshold <= min || threshold >= max) continue
-            val fractionOfRange = (threshold - min) / (max - min)
-            val fractionOfValues = i.toDouble() / memory.size
-            if (fractionOfValues == 0.0 || fractionOfRange <= 0.0) continue
-            if (fractionOfValues >= 1.0 || fractionOfRange >= 1.0) break
-            val entropy = -(fractionOfValues * fractionOfRange * (log(fractionOfRange, 2.0)) +
-                    (1.0 - fractionOfValues) * (1.0 - fractionOfRange) * (log(1.0 - fractionOfRange, 2.0)))
-            if (entropy > maxEntropy) {
-                maxEntropy = entropy
-                bestThreshold = threshold
-                bestIndex = i
-            }
-        }
-        if (percentileBias != 0.0) {
-            val percentileIndex = (bestIndex + (percentileBias * memory.size)).toInt().coerceIn(0, memory.size - 1)
-            if (percentileIndex != bestIndex) {
-                bestThreshold = memory[percentileIndex]
-            }
-        }
-        return bestThreshold
-    }
-
-    fun findEntropyThreshold2(percentileBias: Double = 0.0): Double {
-        if (memory.size < 2) return 0.0
-        if (memory.first() == memory.last()) {
-            return memory.first()
-        }
-        var bestThreshold = memory[0]
-        var bestIndex = -1
-        var maxEntropy = Double.NEGATIVE_INFINITY
-        val min = memory.first()
-        val max = memory.last()
-        for (i in 1 until memory.size) {
-            if (memory[i] == memory[i - 1]) continue
-            val threshold = (memory[i - 1] + memory[i]) / 2
-            if (threshold <= min || threshold >= max) continue
-            val fractionOfRange = (threshold - min) / (max - min)
-            val fractionOfValues = i.toDouble() / memory.size
-            if (fractionOfValues == 0.0 || fractionOfRange <= 0.0) continue
-            if (fractionOfValues >= 1.0 || fractionOfRange >= 1.0) break
-
-            val gini1 = fractionOfValues * (1.0 - fractionOfValues)
-            val gini2 = fractionOfRange * (1.0 - fractionOfRange)
-            val giniScore = gini1 + gini2
-            if (giniScore > maxEntropy) {
-                maxEntropy = giniScore
-                bestThreshold = threshold
-                bestIndex = i
-            }
-        }
-        if (percentileBias != 0.0 && bestIndex != -1) {
-            val percentileIndex = (bestIndex + (percentileBias * memory.size)).toInt().coerceIn(0, memory.size - 1)
-            if (percentileIndex != bestIndex) {
-                bestThreshold = memory[percentileIndex]
-            }
-        }
-        return bestThreshold
-    }
-
-    fun findEntropyThreshold3(percentileBias: Double = 0.0): Double {
-        if (memory.size < 2) return 0.0
-        if (memory.first() == memory.last()) {
-            return memory.first()
-        }
-        var bestThreshold = memory[0]
-        var bestIndex = -1
-        var maxScore = Double.NEGATIVE_INFINITY
-        val min = memory.first()
-        val max = memory.last()
-        for (i in 1 until memory.size) {
-            if (memory[i] == memory[i - 1]) continue
-            val threshold = (memory[i - 1] + memory[i]) / 2
-            if (threshold <= min || threshold >= max) continue
-            val fractionOfValues = i.toDouble() / memory.size
-            val fractionOfRange = (threshold - min) / (max - min)
-            if (fractionOfValues == 0.0 || fractionOfRange <= 0.0) continue
-            if (fractionOfValues >= 1.0 || fractionOfRange >= 1.0) break
-            val synergyScore = fractionOfValues * fractionOfRange
-            if (synergyScore > maxScore) {
-                maxScore = synergyScore
-                bestThreshold = threshold
-                bestIndex = i
-            }
-        }
-        if (percentileBias != 0.0 && bestIndex != -1) {
-            val percentileIndex = (bestIndex + (percentileBias * memory.size)).toInt().coerceIn(0, memory.size - 1)
-            if (percentileIndex != bestIndex) {
-                bestThreshold = memory[percentileIndex]
-            }
-        }
-        return bestThreshold
-    }
-
-    fun findEntropyThreshold4(percentileBias: Double = 0.0): Double {
-        if (memory.size < 2) return 0.0
-        if (memory.first() == memory.last()) {
-            return memory.first()
-        }
-        var bestThreshold = memory[0]
-        var bestIndex = -1
-        var maxKL = Double.NEGATIVE_INFINITY
-        val min = memory.first()
-        val max = memory.last()
-        for (i in 1 until memory.size) {
-            if (memory[i] == memory[i - 1]) continue
-            val threshold = (memory[i - 1] + memory[i]) / 2
-            if (threshold <= min || threshold >= max) continue
-            val fractionOfValues = i.toDouble() / memory.size
-            val fractionOfRange = (threshold - min) / (max - min)
-            if (fractionOfValues == 0.0 || fractionOfRange <= 0.0) continue
-            if (fractionOfValues >= 1.0 || fractionOfRange >= 1.0) break
-
-            val kl = fractionOfValues * log(fractionOfValues / fractionOfRange, 2.0) +
-                    (1.0 - fractionOfValues) * log((1.0 - fractionOfValues) / (1.0 - fractionOfRange), 2.0)
-            if (kl > maxKL) {
-                maxKL = kl
-                bestThreshold = threshold
-                bestIndex = i
-            }
-        }
-        if (percentileBias != 0.0 && bestIndex != -1) {
-            val percentileIndex = (bestIndex + (percentileBias * memory.size)).toInt().coerceIn(0, memory.size - 1)
-            if (percentileIndex != bestIndex) {
-                bestThreshold = memory[percentileIndex]
-            }
-        }
-        return bestThreshold
-    }
-
     fun findEntropyThreshold5(percentileBias: Double = 0.0): Double {
         if (memory.size < 2) return 0.0
         if (memory.first() == memory.last()) {
@@ -291,74 +148,12 @@ class PercentileTool(
         return bestThreshold
     }
 
-    fun findEntropyThreshold6(percentileBias: Double = 0.0): Double {
-        var bestThreshold = memory[0]
-        var bestIndex = -1
-        var maxBD = Double.NEGATIVE_INFINITY
-        val min = memory.first()
-        val max = memory.last()
-
-
-        fun bhattacharyyaDistance(p: Double, q: Double): Double {
-
-
-
-
-
-            if (p <= 0.0 || p >= 1.0 || q <= 0.0 || q >= 1.0) {
-                return Double.NEGATIVE_INFINITY
-            }
-            val bc = kotlin.math.sqrt(p * q) + kotlin.math.sqrt((1 - p) * (1 - q))
-            return -kotlin.math.log(bc, 2.0)
-
-        }
-
-        for (i in 1 until memory.size) {
-
-            if (memory[i] == memory[i - 1]) continue
-
-            val threshold = (memory[i - 1] + memory[i]) / 2
-
-            if (threshold <= min || threshold >= max) continue
-
-            val fractionOfValues = i.toDouble() / memory.size
-            val fractionOfRange = (threshold - min) / (max - min)
-            if (
-                fractionOfValues <= 0.0 || fractionOfValues >= 1.0 ||
-                fractionOfRange <= 0.0 || fractionOfRange >= 1.0
-            ) {
-                continue
-            }
-
-            val bd = bhattacharyyaDistance(fractionOfValues, fractionOfRange)
-            if (bd > maxBD) {
-                maxBD = bd
-                bestThreshold = threshold
-                bestIndex = i
-            }
-        }
-
-        if (percentileBias != 0.0 && bestIndex != -1) {
-            val percentileIndex = (bestIndex + (percentileBias * memory.size)).toInt()
-                .coerceIn(0, memory.size - 1)
-            if (percentileIndex != bestIndex) {
-                bestThreshold = memory[percentileIndex]
-            }
-        }
-
-        return bestThreshold
-    }
-
     fun isEmpty(): Boolean {
         return memory.isEmpty()
     }
 
     fun clear() {
         memory.clear()
-    }
-
-    fun rms(): Double {
-        return memory.average()
     }
 
     fun computeKLDivergence(other: PercentileTool): Double {

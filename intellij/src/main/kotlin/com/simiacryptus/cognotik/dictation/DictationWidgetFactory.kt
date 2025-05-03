@@ -10,9 +10,7 @@ import com.simiacryptus.jopenai.audio.AudioState
 import com.simiacryptus.jopenai.audio.DictationManager
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
-import org.slf4j.LoggerFactory
 import java.awt.event.MouseEvent
-import java.util.concurrent.ConcurrentHashMap
 
 class DictationWidgetFactory : StatusBarWidgetFactory {
     override fun getId(): String = SpeechToTextWidget.ID
@@ -25,10 +23,8 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
     class SpeechToTextWidget : StatusBarWidget,
         StatusBarWidget.IconPresentation {
         companion object {
-            private val log = LoggerFactory.getLogger(SpeechToTextWidget::class.java)
             var statusBar: StatusBar? = null
             val ID = "AICodingAssistant.SpeechToTextWidget"
-            private val editorsWithListeners = ConcurrentHashMap.newKeySet<Int>()
             fun toggleRecording() {
                 if (DictationState.isRecording) {
                     DictationState.setRecordingState(false)

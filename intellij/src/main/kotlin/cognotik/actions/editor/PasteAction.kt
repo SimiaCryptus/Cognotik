@@ -250,7 +250,6 @@ class SmartPasteAction : PasteActionBase({ it.smartModel.chatModel() })
  */
 class FastPasteAction : PasteActionBase({ it.fastModel.chatModel() }) {
     companion object {
-        private val log = LoggerFactory.getLogger(FastPasteAction::class.java)
     }
 
     protected var progress: ProgressIndicator? = null

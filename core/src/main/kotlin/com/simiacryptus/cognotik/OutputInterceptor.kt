@@ -43,12 +43,6 @@ object OutputInterceptor {
         getThreadOutputStream().reset()
     }
 
-    fun getGlobalOutput(): String {
-        synchronized(globalStreamLock) {
-            return globalStream.toString()
-        }
-    }
-
     fun clearGlobalOutput() {
         synchronized(globalStreamLock) {
             globalStream.reset()

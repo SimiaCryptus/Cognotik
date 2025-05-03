@@ -60,7 +60,6 @@ open class ScreenRec(
     private val lock = Any()
     private val screenRecordingStarted = AtomicBoolean(false)
     private var splashFrame: JFrame? = null
-    private var audioMixer: Mixer? = null
 
     protected open fun hideSplashScreen() {
         SwingUtilities.invokeLater {

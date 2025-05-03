@@ -327,7 +327,6 @@ open class GraphOrderedPlanMode(
     }
 
     companion object : CognitiveModeStrategy {
-        private val log = LoggerFactory.getLogger(GraphOrderedPlanMode::class.java)
 
         override val singleInput: Boolean = true
         var graphFile: String = "software_graph.json"

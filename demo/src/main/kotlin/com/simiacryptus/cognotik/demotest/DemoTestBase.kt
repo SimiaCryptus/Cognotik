@@ -14,11 +14,6 @@ import org.junit.jupiter.api.*
 import org.openqa.selenium.*
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
-import org.openqa.selenium.edge.EdgeDriver
-import org.openqa.selenium.edge.EdgeOptions
-import org.openqa.selenium.firefox.FirefoxDriver
-import org.openqa.selenium.firefox.FirefoxDriverLogLevel
-import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
@@ -302,7 +297,6 @@ abstract class DemoTestBase(
 
         const val PROJECT_TREE_XPATH: String = "//div[@class='ProjectViewTree']"
         const val AI_CODER_MENU_XPATH: String = "//div[contains(@class, 'ActionMenu') and contains(@text, 'AI Coder')]"
-        val SHORT_TIMEOUT = Duration.ofSeconds(10)
         val LONG_TIMEOUT = Duration.ofSeconds(300)
 
         fun clickElement(driver: WebDriver, wait: WebDriverWait, selector: String) = runElement(
@@ -391,56 +385,6 @@ abstract class DemoTestBase(
             return driver
         }
 
-        fun getChromium(): ChromeDriver {
-            log.info("Setting up ChromeDriver using WebDriverManager")
-            WebDriverManager.chromiumdriver().setup()
-            log.info("Configuring Chrome options")
-            val options = ChromeOptions().apply {
-                addArguments(
-                    "--start-maximized",
-                    "--remote-allow-origins=*",
-                    "--disable-dev-shm-usage",
-                    "--no-sandbox",
-                    "--disable-application-cache",
-                    "--kiosk",
-                )
-            }
-            val driver = ChromeDriver(options)
-            log.info("Initializing ChromeDriver with configured options")
-            return driver
-        }
-
-        fun getEdge(): EdgeDriver {
-            log.info("Setting up EdgeDriver using WebDriverManager")
-            WebDriverManager.edgedriver().setup()
-            log.info("Configuring Edge options")
-            val options = EdgeOptions().apply {
-                addArguments(
-                    "--start-maximized",
-                    "--disable-dev-shm-usage",
-                    "--no-sandbox",
-                    "--disable-application-cache",
-                    "--kiosk",
-                )
-            }
-            val driver = EdgeDriver(options)
-            log.info("Initializing EdgeDriver with configured options")
-            return driver
-        }
-
-        fun getFirefox(): RemoteWebDriver {
-            log.info("Setting up FirefoxDriver using WebDriverManager")
-            WebDriverManager.firefoxdriver().apply {
-                setup()
-            }
-            log.info("Configuring Firefox options")
-            val options = FirefoxOptions().apply {
-                setLogLevel(FirefoxDriverLogLevel.TRACE)
-            }
-            val driver = FirefoxDriver(options)
-            log.info("Initializing FirefoxDriver with configured options")
-            return driver
-        }
     }
 
 }

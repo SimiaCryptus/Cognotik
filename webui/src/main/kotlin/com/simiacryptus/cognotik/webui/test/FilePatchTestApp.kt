@@ -8,8 +8,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
-import org.slf4j.LoggerFactory
 import java.nio.file.Files
 
 open class FilePatchTestApp(
@@ -57,7 +55,6 @@ open class FilePatchTestApp(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(FilePatchTestApp::class.java)
     }
 
 }

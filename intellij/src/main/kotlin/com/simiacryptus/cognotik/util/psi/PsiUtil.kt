@@ -12,10 +12,6 @@ import java.util.stream.Collectors
 import java.util.stream.Stream
 
 object PsiUtil {
-    val ELEMENTS_CODE = arrayOf<CharSequence>(
-        "Method", "Field", "Class", "Function", "CssBlock", "FunctionDefinition",
-        "Property", "Interface", "Enum", "Constructor", "Parameter", "Variable"
-    )
     val ELEMENTS_COMMENTS = arrayOf<CharSequence>(
         "Comment", "DocComment", "LineComment", "BlockComment", "JavadocComment"
     )
@@ -24,36 +20,6 @@ object PsiUtil {
         "CodeBlock", "BlockExpr", "Block", "BlockExpression", "StatementList", "BlockFields",
         "ClassBody", "MethodBody", "FunctionBody", "TryBlock", "CatchBlock", "FinallyBlock"
     )
-
-    /**
-     * Gets the name of an element (class, method, field etc)
-     */
-    fun getName(element: PsiElement): String? {
-        if (!matchesType(element, *ELEMENTS_CODE)) return null
-        val declaration = getDeclaration(element)
-
-        return when {
-            matchesType(element, "Class", "Interface", "Enum") ->
-                declaration.substringAfter("class ")
-                    .substringAfter("interface ")
-                    .substringAfter("enum ")
-                    .substringBefore("<")
-                    .substringBefore(" ")
-                    .trim()
-
-            matchesType(element, "Method", "Function") ->
-                declaration.substringAfter(" ")
-                    .substringBefore("(")
-                    .trim()
-
-            matchesType(element, "Field", "Variable") ->
-                declaration.substringAfterLast(" ")
-                    .substringBefore("=")
-                    .trim()
-
-            else -> null
-        }
-    }
 
     fun getAll(element: PsiElement, vararg types: CharSequence): List<PsiElement> {
         val elements: MutableList<PsiElement> = ArrayList()
@@ -237,18 +203,6 @@ object PsiUtil {
         return null
     }
 
-    fun getCodeElement(
-        psiFile: PsiElement?, selectionStart: Int, selectionEnd: Int
-    ) = getSmallestIntersecting(psiFile!!, selectionStart.toInt(), selectionEnd.toInt(), *ELEMENTS_CODE)
-
-    fun getDeclaration(element: PsiElement): String {
-        var declaration: CharSequence = element.text
-        declaration =
-            StringUtil.stripPrefix(declaration.toString().trim { it <= ' ' }, getDocComment(element).trim { it <= ' ' })
-        declaration =
-            StringUtil.stripSuffix(declaration.toString().trim { it <= ' ' }, getCode(element).trim { it <= ' ' })
-        return declaration.toString().trim { it <= ' ' }
-    }
 
     fun getCode(element: PsiElement): String {
         val codeBlock = getLargestBlock(element, *BLOCK_TYPES)

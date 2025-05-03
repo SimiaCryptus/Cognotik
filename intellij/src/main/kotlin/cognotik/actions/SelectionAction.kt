@@ -120,9 +120,7 @@ abstract class SelectionAction<T : Any>(
         val end: Int
     ) {
         fun length() = end - start
-        fun range() = Pair(start, end)
 
-        fun subString(text: String) = text.substring(start, end)
     }
 
     private fun editorState(editor: Editor): EditorState {

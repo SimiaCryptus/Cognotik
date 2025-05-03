@@ -522,58 +522,6 @@ object UITools {
         return JOptionPane.CLOSED_OPTION
     }
 
-    fun showCheckboxDialog(
-        promptMessage: String,
-        checkboxIds: Array<String>,
-        checkboxDescriptions: Array<String>,
-    ): Array<String> {
-        val checkboxMap = HashMap<String, JCheckBox>()
-        val panel = panel {
-            for (i in checkboxIds.indices) {
-                row {
-                    val checkbox = checkBox(checkboxDescriptions[i]).selected(true).component
-                    checkboxMap[checkboxIds[i]] = checkbox
-                }
-            }
-        }
-        val dialogResult = showOptionDialog(panel, "OK", title = promptMessage)
-        val selectedIds = ArrayList<String>()
-        if (dialogResult == 0) {
-            for ((checkboxId, checkbox) in checkboxMap) {
-                if (checkbox.isSelected) {
-                    selectedIds.add(checkboxId)
-                }
-            }
-        }
-        return selectedIds.toTypedArray()
-    }
-
-    fun showRadioButtonDialog(
-        promptMessage: CharSequence,
-        vararg radioButtonDescriptions: CharSequence,
-    ): CharSequence? {
-        val radioButtonMap = HashMap<String, JRadioButton>()
-        val buttonGroup = ButtonGroup()
-        val panel = panel {
-            for (description in radioButtonDescriptions) {
-                row {
-                    val radioButton = radioButton(description.toString()).selected(true).component
-                    radioButtonMap[description.toString()] = radioButton
-                    buttonGroup.add(radioButton)
-                }
-            }
-        }
-        val dialogResult = showOptionDialog(panel, "OK", title = promptMessage.toString())
-        if (dialogResult == 0) {
-            for ((radioButtonId, radioButton) in radioButtonMap) {
-                if (radioButton.isSelected) {
-                    return radioButtonId
-                }
-            }
-        }
-        return null
-    }
-
     fun <T : Any> buildFormViaReflection(
         component: T,
         fillVertically: Boolean = true,

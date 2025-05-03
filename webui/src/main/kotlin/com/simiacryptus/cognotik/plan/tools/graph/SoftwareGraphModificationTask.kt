@@ -9,7 +9,6 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
 import java.io.File
 
 class SoftwareGraphModificationTask(
@@ -143,6 +142,5 @@ class SoftwareGraphModificationTask(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SoftwareGraphModificationTask::class.java)
     }
 }

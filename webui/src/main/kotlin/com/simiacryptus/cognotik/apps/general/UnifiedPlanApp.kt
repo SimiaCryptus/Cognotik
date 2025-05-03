@@ -181,8 +181,6 @@ open class UnifiedPlanApp(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     }
 }
 
-private fun String.toFile() = File(this)

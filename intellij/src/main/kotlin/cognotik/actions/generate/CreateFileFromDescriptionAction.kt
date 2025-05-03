@@ -7,13 +7,11 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.jopenai.models.ApiModel.*
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.io.File
-import javax.swing.JTextArea
 
 class CreateFileFromDescriptionAction :
     cognotik.actions.FileContextAction<CreateFileFromDescriptionAction.Settings>(false, true) {
@@ -28,12 +26,6 @@ class CreateFileFromDescriptionAction :
     class ProjectFile(var path: String = "", var code: String = "")
 
     class SettingsUI {
-        @Name("Directive")
-        val directive: JTextArea = JTextArea(
-            DEFAULT_DIRECTIVE,
-            3,
-            120
-        )
     }
 
     class Settings(

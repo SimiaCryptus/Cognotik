@@ -115,13 +115,6 @@ class FixedConcurrencyProcessor(
     fun getWaitingThreadCount(): Int = synchronized(waitingThreads) { waitingThreads.size }
 
     /**
-     * Gets the current number of available permits.
-     *
-     * @return The number of available permits
-     */
-    fun getAvailablePermits(): Int = semaphore.availablePermits()
-
-    /**
      * Shuts down the processor, waiting for all tasks to complete.
      */
     fun shutdown() {

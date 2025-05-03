@@ -1,9 +1,6 @@
 package com.simiacryptus.jopenai.models
 
-import org.slf4j.LoggerFactory
-
 object PerplexityModels {
-    private val log = LoggerFactory.getLogger(PerplexityModels::class.java)
 
     val SonarSmallChat128k = run {
         val maxTotalTokens = 128 * 1024

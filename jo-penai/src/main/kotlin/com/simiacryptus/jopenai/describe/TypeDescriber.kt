@@ -2,14 +2,12 @@ package com.simiacryptus.jopenai.describe
 
 import com.simiacryptus.jopenai.describe.DescriptorUtil.componentType
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
-import org.slf4j.LoggerFactory
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.*
 
 abstract class TypeDescriber {
-    private val createdBy = Thread.currentThread().stackTrace
 
     abstract val markupLanguage: String
     abstract val methodBlacklist: Set<String>
@@ -63,6 +61,5 @@ abstract class TypeDescriber {
             "char",
             "object"
         )
-        private val log = LoggerFactory.getLogger(TypeDescriber::class.java)
     }
 }

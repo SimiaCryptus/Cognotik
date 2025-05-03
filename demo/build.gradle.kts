@@ -15,8 +15,6 @@ repositories {
     maven(url = "https://packages.jetbrains.team/maven/p/iuia/qa-automation-maven")
 }
 
-val remoterobot_version = "0.11.23"
-
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(libs.kotlinx.coroutines)

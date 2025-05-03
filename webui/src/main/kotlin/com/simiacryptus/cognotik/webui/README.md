@@ -192,64 +192,19 @@ val app = BasicChatApp(
 ### Creating a Custom Application
 
 ```kotlin
-class MyCustomApp(root: File) : ApplicationServer(
-  applicationName = "My Custom App",
-  path = "/myapp",
-  root = root
-) {
-  override fun userMessage(
-    session: Session,
-    user: User?,
-    userMessage: String,
-    ui: ApplicationInterface,
-    api: API
-  ) {
-    val task = ui.newTask()
-    task.echo(userMessage)
 
-    val response = "This is a response to: $userMessage"
-
-    task.complete(response)
-  }
-}
 ```
 
 ### Using the Session Task API
 
 ```kotlin
-fun processUserQuery(query: String, ui: ApplicationInterface) {
-  val task = ui.newTask()
-  task.echo(query)
 
-  task.add("Processing your request...")
-
-  try {
-
-    val result = doSomeWork(query)
-
-    task.complete("Here's your result: $result")
-  } catch (e: Exception) {
-    task.error(ui, e)
-  }
-}
 ```
 
 ### Creating Interactive UI Elements
 
 ```kotlin
-fun createInteractiveUI(ui: ApplicationInterface) {
-  val task = ui.newTask()
 
-  val link = ui.hrefLink("Click me", "my-link") {
-    task.add("You clicked the link!")
-  }
-
-  val input = ui.textInput { text ->
-    task.add("You entered: $text")
-  }
-
-  task.add("Here are some interactive elements: $link $input")
-}
 ```
 
 ## Best Practices

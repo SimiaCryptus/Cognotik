@@ -10,6 +10,6 @@ interface GrammarValidator {
     )
 
     enum class Severity {
-        ERROR, WARNING
+        ERROR,
     }
 }

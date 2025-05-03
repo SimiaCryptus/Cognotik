@@ -31,7 +31,6 @@ class SessionProxyServer : ApplicationServer(
         ?: throw IllegalStateException("No agent found for session $session")
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(SessionProxyServer::class.java)
         val metadataStorage by lazy { ApplicationServices.metadataStorageFactory(dataStorageRoot.resolve("metadatadb")) }
         val agents = mutableMapOf<Session, SocketManager>()
         val chats = mutableMapOf<Session, ChatServer>()

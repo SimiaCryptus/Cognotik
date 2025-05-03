@@ -30,16 +30,6 @@ open class ClientManager {
         return chatCache.getOrPut(key) { createChatClient(session, user)!! }
     }
 
-    private val openAICache = mutableMapOf<SessionKey, OpenAIClient>()
-    fun getOpenAIClient(
-        session: Session,
-        user: User?,
-    ): OpenAIClient {
-        log.debug("Fetching client for session: {}, user: {}", session, user)
-        val key = SessionKey(session, user)
-        return openAICache.getOrPut(key) { createOpenAIClient(session, user)!! }
-    }
-
     private val poolCache = mutableMapOf<SessionKey, ImmediateExecutorService>()
     protected open fun createPool(session: Session, user: User?) = ImmediateExecutorService(session, user)
 
@@ -92,46 +82,6 @@ open class ClientManager {
         if (!canUseGlobalKey) throw RuntimeException("No API key")
         return (if (ClientUtil.keyMap.isNotEmpty()) {
             ChatClient(
-                key = ClientUtil.keyMap.mapKeys { APIProvider.valueOf(it.key) },
-                workPool = getPool(session, user),
-            ).apply {
-                this.session = session
-                this.user = user
-                logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
-            }
-        } else {
-            null
-        })!!
-    }
-
-    protected open fun createOpenAIClient(
-        session: Session,
-        user: User?,
-    ): OpenAIClient? {
-        log.debug("Creating ai client for session: {}, user: {}", session, user)
-        val sessionDir = dataStorageFactory(dataStorageRoot).getDataDir(user, session).apply { mkdirs() }
-        if (user != null) {
-            val userSettings = userSettingsManager.getUserSettings(user)
-            val userApi =
-                if (userSettings.apiKeys.isNotEmpty()) {
-                    OpenAIClient(
-                        key = userSettings.apiKeys,
-                        apiBase = userSettings.apiBase,
-                        workPool = getPool(session, user),
-                    ).apply {
-                        this.session = session
-                        this.user = user
-                        logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
-                    }
-                } else null
-            if (userApi != null) return userApi
-        }
-        val canUseGlobalKey = ApplicationServices.authorizationManager.isAuthorized(
-            null, user, OperationType.GlobalKey
-        )
-        if (!canUseGlobalKey) throw RuntimeException("No API key")
-        return (if (ClientUtil.keyMap.isNotEmpty()) {
-            OpenAIClient(
                 key = ClientUtil.keyMap.mapKeys { APIProvider.valueOf(it.key) },
                 workPool = getPool(session, user),
             ).apply {

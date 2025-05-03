@@ -402,7 +402,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         companion object {
-            private val copyLinkURI = "action.openLinkURI"
             private val messages = ResourceBundle.getBundle("messages.SettingsWidget")
             private fun getMessage(key: String, vararg args: Any): String =
                 String.format(messages.getString(key), *args)

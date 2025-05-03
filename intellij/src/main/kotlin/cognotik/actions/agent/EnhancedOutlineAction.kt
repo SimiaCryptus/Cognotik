@@ -52,7 +52,6 @@ class EnhancedOutlineAction : BaseAction() {
 
                 val enhancedApp = com.simiacryptus.cognotik.apps.general.EnhancedOutlineApp(
                     applicationName = "Enhanced Outline Tool",
-                    domainName = "enhanced_outline",
                     settings = enhancedSettings,
                     api2 = com.simiacryptus.cognotik.util.IdeaOpenAIClient.instance
                 )

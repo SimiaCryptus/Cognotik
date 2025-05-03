@@ -133,11 +133,6 @@ data class AppSettingsState(
     } ?: MRUItems()
 
     @JsonIgnore
-    fun updateRecentCommands(id: String, mruItems: MRUItems) {
-        recentCommandsJson?.set(id, toJson(mruItems))
-    }
-
-    @JsonIgnore
     override fun loadState(state: SimpleEnvelope) {
         state.value ?: return
         val fromJson = try {

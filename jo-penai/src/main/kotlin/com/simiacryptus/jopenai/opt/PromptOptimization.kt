@@ -9,9 +9,6 @@ import com.simiacryptus.jopenai.opt.PromptOptimization.GeneticApi.Prompt
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
-import kotlin.math.ceil
-import kotlin.math.ln
-import kotlin.math.max
 import kotlin.math.pow
 
 open class PromptOptimization(
@@ -32,62 +29,6 @@ open class PromptOptimization(
     data class TestCase(val turns: List<Turn>, val retries: Int = 3)
 
     data class Turn(val userMessage: String, val expectations: List<Expectation>)
-
-    open fun runGeneticGenerations(
-        systemPrompts: List<String>,
-        testCases: List<TestCase>,
-        selectionSize: Int = max(ceil(ln((systemPrompts.size + 1).toDouble()) / ln(2.0)), 3.0)
-            .toInt(),
-
-        populationSize: Int = max(max(selectionSize, 5), systemPrompts.size),
-        generations: Int = 3
-    ): List<String> {
-        var topPrompts = regenerate(systemPrompts, populationSize)
-        for (generation in 0..generations) {
-            val scores = topPrompts.map { prompt ->
-                prompt to testCases.map { testCase ->
-                    evaluate(prompt, testCase)
-                }.average()
-            }
-            if (log.isDebugEnabled) {
-                scores.sortedByDescending { it.second }.forEach {
-                    log.debug("Scored {}: {}", it.second, it.first.replace("\n", "\\n"))
-                }
-            }
-            if (generation == generations) {
-                log.info("Final generation: {}", topPrompts.first())
-                break
-            } else {
-                val survivors = scores.sortedByDescending { it.second }.take(selectionSize).map { it.first }
-                topPrompts = regenerate(survivors, populationSize)
-                log.info("Generation {}: {}", generation, topPrompts.first())
-            }
-        }
-        return topPrompts
-    }
-
-    open fun regenerate(progenetors: List<String>, desiredCount: Int): List<String> {
-        val result = listOf<String>().toMutableList()
-        result += progenetors
-        while (result.size < desiredCount) {
-            if (progenetors.size == 1) {
-                val selected = progenetors.first()
-                val mutated = mutate(selected)
-                result += mutated
-            } else if (progenetors.size == 0) {
-                throw RuntimeException("No survivors")
-            } else {
-                val a = progenetors.random()
-                var b: String
-                do {
-                    b = progenetors.random()
-                } while (a == b)
-                val child = recombine(a, b)
-                result += child
-            }
-        }
-        return result
-    }
 
     open fun recombine(a: String, b: String): String {
         val temperature = 0.3

@@ -4,7 +4,6 @@ import ch.qos.logback.classic.Level
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
@@ -39,7 +38,6 @@ import kotlin.reflect.jvm.isAccessible
 
 class PluginStartupActivity : ProjectActivity {
     private val documentationPageOpenTimes = ConcurrentHashMap<String, Long>()
-    private lateinit var messageBusConnection: com.intellij.util.messages.MessageBusConnection
     override suspend fun execute(project: Project) {
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
@@ -126,52 +124,6 @@ class PluginStartupActivity : ProjectActivity {
         }
     }
 
-    private fun setupDocumentationTracking(project: Project) {
-        messageBusConnection = project.messageBus.connect()
-        messageBusConnection.subscribe(
-            FileEditorManagerListener.FILE_EDITOR_MANAGER,
-            object : FileEditorManagerListener {
-                override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
-                    if (isDocumentationFile(file)) {
-                        trackDocumentationPageView(file)
-                    }
-                }
-
-                override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-                    if (isDocumentationFile(file)) {
-                        trackDocumentationPageClose(file)
-                    }
-                }
-            }
-        )
-    }
-
-    private fun isDocumentationFile(file: VirtualFile): Boolean {
-        return file.path.contains("/docs/") || file.extension == "md"
-    }
-
-    private fun trackDocumentationPageView(file: VirtualFile) {
-        if (AppSettingsState.instance.analyticsEnabled) {
-            val pagePath = file.path
-            documentationPageOpenTimes[pagePath] = System.currentTimeMillis()
-            mapOf<String, @NonNls String>("page" to pagePath)
-        }
-    }
-
-    private fun trackDocumentationPageClose(file: VirtualFile) {
-        if (AppSettingsState.instance.analyticsEnabled) {
-            val pagePath = file.path
-            val openTime = documentationPageOpenTimes.remove(pagePath)
-            if (openTime != null) {
-                val timeSpent = System.currentTimeMillis() - openTime
-                mapOf(
-                    "page" to pagePath,
-                    "time_spent" to TimeUnit.MILLISECONDS.toSeconds(timeSpent)
-                )
-            }
-        }
-    }
-
     private val isInitialized = AtomicBoolean(false)
 
     private fun init(project: Project) {
@@ -249,32 +201,5 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
 
-        private fun setLogDebug(name: String) {
-            try {
-                LoggerFactory.getLogger(name).apply {
-                    when (this) {
-                        is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.DEBUG)
-                        is ch.qos.logback.classic.Logger -> setLevel(Level.DEBUG)
-                        else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
-                    }
-                }
-            } catch (e: Exception) {
-                log.error("Error setting log level for $name", e)
-            }
-        }
-
-        private fun setLogWarn(name: String) {
-            try {
-                LoggerFactory.getLogger(name).apply {
-                    when (this) {
-                        is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.WARNING)
-                        is ch.qos.logback.classic.Logger -> setLevel(Level.WARN)
-                        else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
-                    }
-                }
-            } catch (e: Exception) {
-                log.error("Error setting log level for $name", e)
-            }
-        }
     }
 }

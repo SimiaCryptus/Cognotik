@@ -242,9 +242,6 @@ data class AudioPacket(
             return output
         }
 
-        fun fromByteArray(packet: ByteArray, audioFormat: AudioFormat) =
-            AudioPacket(convertRaw(packet, audioFormat), audioFormat)
-
         fun empty(): AudioPacket {
             return AudioPacket(floatArrayOf(), AudioFormat(0f, 0, 0, true, false))
         }

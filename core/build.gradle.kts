@@ -35,7 +35,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.httpclient5)
 
-
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
@@ -44,24 +43,19 @@ dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(libs.kotlinx.coroutines)
 
-    // testImplementation(kotlin("stdlib")) // Provided by compileOnly or Kotlin plugin
     testImplementation(kotlin("script-runtime"))
 
     testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter.api) // Version managed by BOM
-    testRuntimeOnly(libs.junit.jupiter.engine) // Version managed by BOM
-
-    compileOnly(platform(libs.junit.bom))
-    compileOnly(libs.junit.jupiter.api) // Version managed by BOM
-    // compileOnly(libs.junit.jupiter.engine) // Engine is usually runtimeOnly
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.engine)
 
     compileOnly(platform(libs.aws.bom))
-    compileOnly(libs.aws.sdk) // Version managed by BOM
+    compileOnly(libs.aws.sdk)
     compileOnly(libs.logback.classic)
     compileOnly(libs.logback.core)
 
     testImplementation(platform(libs.aws.bom))
-    testImplementation(libs.aws.sdk) // Version managed by BOM
+    testImplementation(libs.aws.sdk)
     testImplementation(libs.logback.classic)
     testImplementation(libs.logback.core)
     testImplementation(libs.mockito)

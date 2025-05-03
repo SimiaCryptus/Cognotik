@@ -35,7 +35,6 @@ import java.text.SimpleDateFormat
 
 class UnifiedPlanAction : BaseAction() {
     private companion object {
-        private const val MAX_FILE_SIZE = 512 * 1024
         private const val DEFAULT_API_BUDGET = 10.0
     }
 

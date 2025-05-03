@@ -11,7 +11,6 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
-import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
 import java.util.*
 
@@ -19,8 +18,6 @@ class AppServer(
     private val localName: String,
     private val port: Int
 ) {
-
-    private val log by lazy { LoggerFactory.getLogger(javaClass) }
 
     val server by lazy {
         val server = Server(InetSocketAddress(localName, port))

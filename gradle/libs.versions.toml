@@ -21,7 +21,7 @@ mockito = "5.17.0"
 flexmark = "0.64.8"
 h2 = "2.3.232"
 scala = "2.13.16"
-groovy = "4.0.26" # Added Groovy version
+groovy = "4.0.26"
 jsoup = "1.20.1"
 monteMedia = "17.2.1"
 selenium = "4.32.0"
@@ -55,7 +55,7 @@ intelliJPlatform = "2.5.0"
 kover = "0.9.1"
 qodana = "2025.1.0"
 shadow = "8.1.1"
-junitJupiter = "5.12.2" # Renamed for consistency
+junitJupiter = "5.12.2"
 
 [libraries]
 jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
@@ -77,7 +77,7 @@ aws-sdk = { group = "software.amazon.awssdk", name = "aws-sdk-java", version.ref
 aws-bedrock = { group = "software.amazon.awssdk", name = "bedrock", version.ref = "aws" }
 aws-bedrockruntime = { group = "software.amazon.awssdk", name = "bedrockruntime", version.ref = "aws" }
 aws-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "aws" }
-aws-kms = { group = "software.amazon.awssdk", name = "kms", version.ref = "aws" } # Already defined, ok
+aws-kms = { group = "software.amazon.awssdk", name = "kms", version.ref = "aws" }
 commons-text = { group = "org.apache.commons", name = "commons-text", version.ref = "commons-text" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 httpclient5 = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version.ref = "httpclient5" }
@@ -112,15 +112,15 @@ batik-codec = { group = "org.apache.xmlgraphics", name = "batik-codec", version.
 openjfx-swing = { group = "org.openjfx", name = "javafx-swing", version.ref = "openjfx" }
 openjfx-graphics = { group = "org.openjfx", name = "javafx-graphics", version.ref = "openjfx" }
 openjfx-base = { group = "org.openjfx", name = "javafx-base", version.ref = "openjfx" }
-httpclient5-fluent = { group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version.ref = "httpclient5" } # Note: version is httpclient5, not a separate one
-aws-sso = { group = "software.amazon.awssdk", name = "sso", version.ref = "awsSso" } # Check if BOM covers this
+httpclient5-fluent = { group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version.ref = "httpclient5" }
+aws-sso = { group = "software.amazon.awssdk", name = "sso", version.ref = "awsSso" }
 commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commonsLang3" }
 diffutils = { group = "com.googlecode.java-diff-utils", name = "diffutils", version.ref = "diffutils" }
 swagger-annotations = { group = "io.swagger", name = "swagger-annotations", version.ref = "swaggerAnnotations" }
 jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "jsr305" }
 jackson-databind-nullable = { group = "org.openapitools", name = "jackson-databind-nullable", version.ref = "jacksonDatabindNullable" }
 jakarta-annotations-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakartaAnnotationsApi" }
-aws-auth = { group = "software.amazon.awssdk", name = "auth", version.ref = "aws" } # Use aws version from BOM
+aws-auth = { group = "software.amazon.awssdk", name = "auth", version.ref = "aws" }
 jtransforms = { group = "org.openimaj", name = "JTransforms", version.ref = "jtransforms" }
 scala-java8-compat = { group = "org.scala-lang.modules", name = "scala-java8-compat_2.13", version.ref = "scalaJava8Compat" }
 graalvm-js = { group = "org.graalvm.js", name = "js", version.ref = "graalvm" }
@@ -134,13 +134,11 @@ google-oauth-client-jetty = { group = "com.google.oauth-client", name = "google-
 google-api-services-oauth2 = { group = "com.google.apis", name = "google-api-services-oauth2", version.ref = "googleApiServicesOauth2" }
 google-http-client-gson = { group = "com.google.http-client", name = "google-http-client-gson", version.ref = "googleHttpClientGson" }
 commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commonsCodec" }
-
-# Add JUnit BOM for consistent test dependencies
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitJupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
 junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
-junit-junit = { group = "junit", name = "junit", version.ref = "junit4" } # Added JUnit 4 library alias
+junit-junit = { group = "junit", name = "junit", version.ref = "junit4" }
 kotlin-test-junit5 = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit5" }
 aws-bom = { group = "software.amazon.awssdk", name = "bom", version.ref = "aws" }
 

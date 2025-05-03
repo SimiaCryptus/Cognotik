@@ -406,4 +406,5 @@
     background-color: var(--success-color-bg, #e9f7ef); /* Use a success background */
 }
 .execution-error {
-    background-color: var(--error-color-bg, #fbeae
+    background-color: var(--error-color-bg, #fbeaef);
+}

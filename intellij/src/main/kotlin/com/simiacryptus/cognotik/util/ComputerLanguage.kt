@@ -414,11 +414,6 @@ enum class ComputerLanguage(configuration: Configuration) {
         docComment = configuration.getDocComments()!!
     }
 
-    fun getCommentModel(text: String?): TextBlockFactory<*> {
-        if (Objects.requireNonNull(docComment)!!.looksLike(text)) return docComment
-        return if (Objects.requireNonNull(blockComment)!!.looksLike(text)) blockComment else lineComment
-    }
-
     internal class Configuration {
         var documentationStyle = ""
             private set

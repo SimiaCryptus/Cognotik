@@ -153,46 +153,6 @@ open class IdeaChatClient(
         }
 
         var lastEvent: AnActionEvent? = null
-        private fun uiEdit(
-            project: Project? = null,
-            title: String = "Edit Request",
-            jsonTxt: String
-        ): String {
-            return execute {
-                val json = JTextArea(
-                    /* text = */ "",
-                    /* rows = */ 3,
-                    /* columns = */ 120
-                )
-                json.isEditable = true
-                json.lineWrap = false
-                val jbScrollPane = JBScrollPane(json)
-                jbScrollPane.horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
-                jbScrollPane.verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-                val dialog = object : DialogWrapper(project) {
-                    init {
-                        this.init()
-                        this.title = title
-                        this.setOKButtonText("OK")
-                        this.setCancelButtonText("Cancel")
-                        this.isResizable = true
-                    }
-
-                    override fun createCenterPanel(): JPanel? {
-                        val formBuilder = FormBuilder.createFormBuilder()
-                        formBuilder.addLabeledComponentFillVertically("JSON", jbScrollPane)
-                        return formBuilder.panel
-                    }
-                }
-                json.text = jsonTxt
-                dialog.show()
-                log.warn("dialog.size = " + dialog.size)
-                if (!dialog.isOK) {
-                    throw RuntimeException("Cancelled")
-                }
-                json.text
-            } ?: jsonTxt
-        }
 
         private fun <T : Any> execute(
             fn: () -> T
@@ -205,15 +165,6 @@ open class IdeaChatClient(
                 ref.set(fn())
             }
             return ref.get()
-        }
-
-        fun <T : Any, V : Any> withJsonDialog(
-            request: T,
-            function: (T) -> V,
-            title: String
-        ): V {
-            val project = lastEvent?.project ?: return function(request)
-            return function(JsonUtil.fromJson(uiEdit(project, title, toJson(request)), request::class.java))
         }
 
         private val log = LoggerFactory.getLogger(IdeaChatClient::class.java)

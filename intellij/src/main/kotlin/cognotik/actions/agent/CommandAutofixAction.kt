@@ -170,7 +170,6 @@ class CommandAutofixAction : BaseAction() {
 
     companion object {
         private val log = LoggerFactory.getLogger(CommandAutofixAction::class.java)
-        private const val DEFAULT_ARGUMENT = "run build"
         private const val MAX_RECENT_ARGUMENTS = 10
         private const val MAX_RECENT_DIRS = 10
         private const val TEXT_AREA_ROWS = 6

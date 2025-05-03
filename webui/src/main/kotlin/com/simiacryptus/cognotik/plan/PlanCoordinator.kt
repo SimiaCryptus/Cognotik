@@ -261,42 +261,6 @@ class PlanCoordinator(
         root = root
     )
 
-    fun executeTask(
-        task: TaskConfigBase,
-        messages: List<String>,
-        sessionTask: SessionTask,
-        api: API,
-        api2: OpenAIClient
-    ) {
-        try {
-            val api = (api as ChatClient).getChildClient(sessionTask)
-            val impl = getImpl(planSettings, task, strict = false)
-            sessionTask.add(
-                renderMarkdown(
-                    """
-          ## Executing Task
-          ${TRIPLE_TILDE}json
-          ${JsonUtil.toJson(task)}
-          ${TRIPLE_TILDE}
-          """.trimIndent(),
-                    ui = ui, tabs = false
-                )
-            )
-            impl.run(
-                agent = this,
-                messages = messages,
-                task = sessionTask,
-                api = api,
-                api2 = api2,
-                resultFn = { /* Individual task execution doesn't need result storage */ },
-                planSettings = planSettings
-            )
-        } catch (e: Throwable) {
-            log.warn("Error during task execution", e)
-            sessionTask.error(ui, e)
-        }
-    }
-
     companion object : Planner() {
         private val log = LoggerFactory.getLogger(PlanCoordinator::class.java)
     }

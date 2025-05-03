@@ -115,37 +115,6 @@ object StringUtil {
     }
 
     @JvmStatic
-    fun getPrefixForContext(text: String, idealLength: Int): CharSequence {
-        log.debug("getPrefixForContext called with text of length: {}, idealLength: {}", text.length, idealLength)
-        return getPrefixForContext(text, idealLength, ".", "\n", ",", ";")
-    }
-
-    /**
-     * Get the prefix for the given context.
-     *
-     * @param text        The text to get the prefix from.
-     * @param idealLength The ideal length of the prefix.
-     * @param delimiters  The delimiters to split the text by.
-     * @return The prefix for the given context.
-     */
-    @JvmStatic
-    fun getPrefixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence {
-        log.debug(
-            "getPrefixForContext called with text of length: {}, idealLength: {}, delimiters: {}",
-            text.length,
-            idealLength,
-            Arrays.toString(delimiters)
-        )
-        return getSuffixForContext(text.reversed(), idealLength, *delimiters).reversed()
-    }
-
-    @JvmStatic
-    fun getSuffixForContext(text: String, idealLength: Int): CharSequence {
-        log.debug("getSuffixForContext called with text of length: {}, idealLength: {}", text.length, idealLength)
-        return getSuffixForContext(text, idealLength, ".", "\n", ",", ";")
-    }
-
-    @JvmStatic
     fun restrictCharacterSet(text: String, charset: Charset): String {
         log.debug("restrictCharacterSet called with text of length: {}, charset: {}", text.length, charset)
         val encoder = charset.newEncoder()
@@ -154,54 +123,4 @@ object StringUtil {
         return sb.toString()
     }
 
-    /**
-     *
-     * Get the suffix for the given context.
-     *
-     * @param text The text to get the suffix from.
-     * @param idealLength The ideal length of the suffix.
-     * @param delimiters The delimiters to use when splitting the text.
-     * @return The suffix for the given context.
-     */
-    @JvmStatic
-    fun getSuffixForContext(text: String, idealLength: Int, vararg delimiters: CharSequence?): CharSequence {
-        log.debug(
-            "getSuffixForContext called with text of length: {}, idealLength: {}, delimiters: {}",
-            text.length,
-            idealLength,
-            Arrays.toString(delimiters)
-        )
-
-        val candidates = Stream.of(*delimiters).flatMap { d: CharSequence? ->
-
-            val sb = StringBuilder()
-
-            val split = text.split(Pattern.quote(d.toString()).toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-
-            for (i in split.indices.reversed()) {
-                val s = split[i]
-
-                if (abs(sb.length - idealLength) < abs(sb.length + s.length - idealLength)) break
-
-                if (sb.isNotEmpty() || text.endsWith(d.toString())) sb.insert(0, d)
-
-                sb.insert(0, s)
-
-                if (sb.length > idealLength) {
-
-                    break
-                }
-            }
-
-            if (split.isEmpty()) return@flatMap Stream.empty<String>()
-
-            Stream.of(sb.toString())
-        }.collect(Collectors.toList())
-
-        return candidates.stream().min(Comparator.comparing { s: CharSequence ->
-            abs(
-                s.length - idealLength
-            )
-        }).orElse("")
-    }
 }

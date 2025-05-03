@@ -60,18 +60,9 @@ abstract class PatchApp(
      */
     private fun cleanFilePath(filePath: String): String = filePath.substringBefore(" ").trim()
 
-    private fun renderCommandOutput(output: OutputResult): String {
-        log.debug("Rendering command output with exit code: ${output.exitCode}")
-        return renderMarkdown("${tripleTilde}\n${output.output}\n${tripleTilde}")
-    }
-
     private var lastParsedErrors: ParsedErrors? = null
 
     private val previousParsedErrorsRecords = mutableListOf<ParsedErrorRecord>()
-
-    private fun logEvent(event: String, data: Map<String, Any?>) {
-        log.info("$event: ${JsonUtil.toJson(data)}")
-    }
 
     abstract fun codeFiles(): Set<Path>
 

@@ -21,7 +21,6 @@ class GenericChatAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     private val systemPrompt = ""
-    private val userInterfacePrompt = ""
 
     override fun handle(e: AnActionEvent) {
         val project = e.project ?: return

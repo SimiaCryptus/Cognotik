@@ -1,8 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import java.util.stream.Stream
-import kotlin.streams.asStream
-
 interface TextBlock {
     companion object {
         val TAB_REPLACEMENT: CharSequence = "  "
@@ -16,5 +13,4 @@ interface TextBlock {
 
     fun withIndent(indent: CharSequence): TextBlock
 
-    fun stream(): Stream<CharSequence> = rawString().asSequence().asStream()
 }

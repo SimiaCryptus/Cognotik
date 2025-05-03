@@ -1,7 +1,5 @@
 package com.simiacryptus.jopenai.describe
 
-import org.slf4j.LoggerFactory
-
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
@@ -11,7 +9,6 @@ import kotlin.reflect.KTypeParameter
 import kotlin.reflect.full.memberFunctions
 
 object DescriptorUtil {
-    private val log = LoggerFactory.getLogger(DescriptorUtil::class.java)
 
     fun getAllAnnotations(
         rawType: Class<in Nothing>,

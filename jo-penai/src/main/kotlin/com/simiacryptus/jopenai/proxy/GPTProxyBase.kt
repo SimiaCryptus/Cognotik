@@ -8,9 +8,7 @@ import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.Logger
-import java.io.BufferedWriter
 import java.io.File
-import java.io.FileWriter
 import java.lang.reflect.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.pow
@@ -123,16 +121,6 @@ abstract class GPTProxyBase<T : Any>(
     }
 
     val examples = HashMap<String, MutableList<RequestResponse>>()
-    private fun loadExamples(file: File = File("api.examples.json")): List<ProxyRecord> {
-        if (!file.exists()) return listOf()
-        val json = file.readText()
-        return fromJson(json, object : ArrayList<ProxyRecord>() {}.javaClass)
-    }
-
-    fun addExamples(file: File) {
-        examples.putAll(loadExamples(file).groupBy { it.methodName }
-            .mapValues { it.value.map { RequestResponse(it.argList, it.response) }.toMutableList() })
-    }
 
     @Suppress("unused")
     fun <R : Any> addExample(returnValue: R, functionCall: (T) -> Unit) {
@@ -151,14 +139,6 @@ abstract class GPTProxyBase<T : Any>(
                 examples.getOrPut(method.name) { ArrayList() }.add(RequestResponse(argList, result))
                 return@newProxyInstance returnValue
             } as T)
-    }
-
-    private fun openApiLog(file: String): BufferedWriter {
-        val writer = BufferedWriter(FileWriter(File(file)))
-        writer.write("[")
-        writer.newLine()
-        writer.flush()
-        return writer
     }
 
     data class ProxyRequest(

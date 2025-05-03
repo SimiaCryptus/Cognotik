@@ -6,7 +6,6 @@ import com.simiacryptus.jopenai.describe.DescriptorUtil.componentType
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
 import com.simiacryptus.jopenai.describe.DescriptorUtil.resolveGenericType
 import com.simiacryptus.util.DynamicEnum
-import org.slf4j.LoggerFactory
 import java.lang.reflect.*
 import kotlin.reflect.*
 import kotlin.reflect.full.functions
@@ -20,7 +19,6 @@ open class JsonDescriber(
     ).toMutableSet()
 ) : TypeDescriber() {
     companion object {
-        private val log = LoggerFactory.getLogger(JsonDescriber::class.java)
     }
 
     override val markupLanguage: String

@@ -1,9 +1,6 @@
 package com.simiacryptus.jopenai.models
 
-import org.slf4j.LoggerFactory
-
 object GroqModels {
-    private val log = LoggerFactory.getLogger(GroqModels::class.java)
 
     val Llama33_70bVersatile = ChatModel(
         name = "Llama33_70bVersatile",
