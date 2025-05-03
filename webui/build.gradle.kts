@@ -22,6 +22,13 @@ repositories {
 dependencies {
     implementation(project(":core"))
     compileOnly(project(":kotlin"))
+    testImplementation(project(":kotlin"))
+    testImplementation(project(":groovy"))
+    testImplementation(project(":scala"))
+    implementation(project(":jo-penai")) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
 
     implementation(libs.pdfbox)
     implementation(libs.webdrivermanager)
@@ -51,10 +58,6 @@ dependencies {
     implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
-    implementation(project(":jo-penai")) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.slf4j")
-    }
     implementation(libs.selenium.java) {
         exclude(group = "com.intellij.remoterobot", module = "remote-robot")
     }
@@ -64,7 +67,6 @@ dependencies {
     compileOnly(libs.graalvm.js.language)
     compileOnly(libs.kotlinx.coroutines)
     compileOnly(libs.aws.sdk)
-    compileOnly(kotlin("stdlib"))
     compileOnly("org.openapitools:openapi-generator:7.3.0") {
         exclude(group = "org.slf4j")
     }
@@ -82,6 +84,8 @@ dependencies {
     testImplementation(libs.aws.sdk)
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
+
+    compileOnly(kotlin("stdlib"))
     testImplementation(kotlin("stdlib"))
     testImplementation(kotlin("scripting-jsr223"))
     testImplementation(kotlin("scripting-jvm"))
