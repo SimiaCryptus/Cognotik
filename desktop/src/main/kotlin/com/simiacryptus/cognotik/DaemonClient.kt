@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik
 
-import org.slf4j.LoggerFactory
-import java.io.*
-import java.lang.management.ManagementFactory
+import java.io.BufferedReader
+import java.io.File
+import java.io.InputStreamReader
+import java.io.PrintWriter
 import java.net.ConnectException
-import java.net.ServerSocket
 import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -13,141 +13,92 @@ import kotlin.system.exitProcess
 
 /**
  * Entry point for the daemon client.
- * This will launch the AppServer as a separate process (daemon) if needed,
- * reconnect if possible, and dispatch commands to the server.
+ * This will launch the AppServer as a separate process (daemon) if needed, reconnect if possible, and dispatch commands to the server.
+ * This should not use the logging system, we want to prevent creating log files in the current directory.
  */
 object DaemonClient {
     private const val DEFAULT_PORT = 7683
     private const val DEFAULT_HOST = "localhost"
     private const val PID_FILE = "cognotik_server.pid"
-    private const val MAX_PORT_ATTEMPTS = 10
     private const val SOCKET_PORT_OFFSET = 1
-
     private const val SESSION_DIR_BASE = ".cognotik"
 
     @JvmStatic
     fun main(args: Array<String>) {
-        log.info("DaemonClient starting. PID: ${ManagementFactory.getRuntimeMXBean().name}. Args: ${args.joinToString(" ")}")
-
         if (args.isNotEmpty() && args[0].equals("--stop", ignoreCase = true)) {
-            log.info("Stop command received, attempting to stop the server")
             stopServer()
             exitProcess(0)
         }
-
         if (args.isNotEmpty() && args[0].equals("server", ignoreCase = true)) {
-            log.info("First argument is 'server', delegating to AppServer.main")
             AppServer.main(args)
-
         } else {
-
-            var port = DEFAULT_PORT
+            val port = DEFAULT_PORT
             val host = DEFAULT_HOST
-            log.debug("Default host: $host, Default port: $port")
             if (!isServerRunning(host, port)) {
-                log.info("Server not running. Launching daemon...")
-                println("Server not running on $host:$port. Launching daemon...")
-                try {
-
-                    ServerSocket(port).use {
-                        log.debug("Port $port is available")
-                    }
-                } catch (e: IOException) {
-                    log.info("Port $port is in use, finding alternative port")
-                    println("Port $port is in use, finding alternative port...")
-                    port = findAvailablePort(port + 1)
-                    log.info("Found available alternative port: $port")
-                    println("Using alternative port: $port")
-                }
                 launchDaemon(port)
                 waitForServer(host, port)
-            } else {
-                log.info("Server already running on $host:$port.")
-                println("Server already running on $host:$port.")
             }
             val commandArgs = if (args.isNotEmpty()) {
                 args
             } else {
-
-                val sessionDir = createRandomSessionDir()
-                log.info("No command specified. Created random session directory: $sessionDir")
-                println("Created random session directory: $sessionDir")
-                arrayOf(sessionDir)
+                arrayOf(createRandomSessionDir())
             }
-            log.info("Dispatching command: ${commandArgs.joinToString(" ")}")
-            dispatchCommand(
-                host,
-                port + SOCKET_PORT_OFFSET,
-                (commandArgs.take(1).map { File(it).absolutePath } + commandArgs.drop(1)).toTypedArray())
+            dispatchCommand(host, port + SOCKET_PORT_OFFSET, (commandArgs.take(1).map { it.trim('\'', '"') }.map {
+                when (it) {
+                    "." -> File(".").absolutePath
+                    ".." -> File("..").absolutePath
+                    else -> it
+                }
+            } + commandArgs.drop(1)).toTypedArray())
         }
     }
 
-    /**
-     * Creates a random session directory under ~/.cognotik
-     * @return The path to the created directory
-     */
     fun createRandomSessionDir(): String {
-        val userHome = System.getProperty("user.home")
-        val baseDir = File(userHome, SESSION_DIR_BASE)
-        if (!baseDir.exists()) {
-            log.info("Creating base directory: ${baseDir.absolutePath}")
-            baseDir.mkdirs()
-        }
+        val baseDir = getHome()
         val sessionId = UUID.randomUUID().toString().substring(0, 8)
         val sessionDir = File(baseDir, sessionId)
         if (!sessionDir.exists()) {
-            log.info("Creating session directory: ${sessionDir.absolutePath}")
             sessionDir.mkdirs()
         }
         return sessionDir.absolutePath
     }
 
-    /**
-     * Stops the running server by sending a shutdown command or killing the process
-     */
+    fun getHome(): File {
+        val userHome = System.getProperty("user.home")
+        val baseDir = File(userHome, SESSION_DIR_BASE)
+        if (!baseDir.exists()) {
+            baseDir.mkdirs()
+        }
+        return baseDir
+    }
+
     private fun stopServer() {
         val host = DEFAULT_HOST
         val port = DEFAULT_PORT
-
         if (isServerRunning(host, port)) {
             try {
-                log.info("Sending shutdown command to server at $host:${port + SOCKET_PORT_OFFSET}")
-                println("Sending shutdown command to server...")
                 Socket(host, port + SOCKET_PORT_OFFSET).use { socket ->
                     val out = PrintWriter(socket.getOutputStream(), true)
                     val input = BufferedReader(InputStreamReader(socket.getInputStream()))
                     out.println("shutdown")
                     val response = input.readLine()
-                    if (response != null) {
-                        log.info("Server response to shutdown: $response")
-                        println("Server response: $response")
-                    }
                 }
-
                 var attempts = 0
                 while (isServerRunning(host, port) && attempts < 10) {
-                    log.info("Waiting for server to shut down...")
-                    println("Waiting for server to shut down...")
                     Thread.sleep(500)
                     attempts++
                 }
                 if (!isServerRunning(host, port)) {
-                    log.info("Server successfully stopped")
-                    println("Server successfully stopped")
                     return
                 }
             } catch (e: Exception) {
-                log.warn("Failed to stop server via socket: ${e.message}", e)
                 println("Failed to stop server via socket: ${e.message}")
             }
         }
-
         try {
-            val pidFile = File(PID_FILE)
+            val pidFile = getHome().resolve(PID_FILE)
             if (pidFile.exists()) {
                 val pid = pidFile.readText().trim().toLong()
-                log.info("Attempting to kill server process with PID: $pid")
-                println("Attempting to kill server process with PID: $pid")
                 val isWindows = System.getProperty("os.name").lowercase().contains("windows")
                 val processBuilder = if (isWindows) {
                     ProcessBuilder("taskkill", "/F", "/PID", pid.toString())
@@ -157,184 +108,117 @@ object DaemonClient {
                 val process = processBuilder.start()
                 val exitCode = process.waitFor()
                 if (exitCode == 0) {
-                    log.info("Server process killed successfully")
-                    println("Server process killed successfully")
                     pidFile.delete()
-                } else {
-                    log.warn("Failed to kill server process, exit code: $exitCode")
-                    println("Failed to kill server process, exit code: $exitCode")
                 }
-            } else {
-                log.warn("PID file not found: $PID_FILE")
-                println("PID file not found. Server may not be running or was started without creating a PID file.")
             }
         } catch (e: Exception) {
-            log.error("Error stopping server: ${e.message}", e)
             println("Error stopping server: ${e.message}")
         }
     }
 
-    private fun findAvailablePort(startPort: Int): Int {
-        var port = startPort
-        log.debug("Searching for available port starting from $startPort")
-        var attempts = 0
-        while (attempts < MAX_PORT_ATTEMPTS) {
-            try {
-                ServerSocket(port).use {
-                    log.debug("Port $port is available")
-                    return port
-                }
-            } catch (e: IOException) {
-                log.debug("Port $port is not available, trying next port")
-                port++
-                attempts++
-            }
-        }
-        log.warn("Could not find available port after $MAX_PORT_ATTEMPTS attempts, using random port")
-        val randomPort = ServerSocket(0).use { it.localPort }
-        log.info("Using random port: $randomPort")
-        return randomPort
-    }
-
     private fun isServerRunning(host: String, port: Int): Boolean {
         return try {
-            log.debug("Checking if server is running at $host:$port")
             Socket(host, port).use { true }
-            log.debug("Connection successful to $host:$port. Server is running.")
             true
         } catch (e: ConnectException) {
-
-            log.debug("Server is not running at $host:$port: ${e.message}")
             false
         } catch (e: Exception) {
-            log.warn("Unexpected error while checking server status: ${e.message}", e)
             false
         }
     }
 
     private fun waitForServer(host: String, port: Int, timeoutMs: Long = 10000L) {
         val start = System.currentTimeMillis()
-        log.info("Waiting for server to start at $host:$port (timeout=${timeoutMs}ms)")
         while (!isServerRunning(host, port)) {
-            log.debug("Server not yet available at $host:$port. Waiting...")
             if (System.currentTimeMillis() - start > timeoutMs) {
-                log.error("Timed out waiting for server to start at $host:$port")
                 throw RuntimeException("Timed out waiting for server to start")
             }
             Thread.sleep(200)
         }
-
-        log.info("Server is now running at $host:$port")
-        println("Server is now running.")
     }
 
     private fun launchDaemon(port: Int) {
-
-        val javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java"
-        val classpath = System.getProperty("java.class.path")
-        val className = "com.simiacryptus.cognotik.AppServer"
-        log.debug("Java executable: $javaBin")
-        log.debug("Classpath: $classpath")
-        log.debug("Server class: $className")
-
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        val isMac = System.getProperty("os.name").lowercase().contains("mac")
         val scriptExt = if (isWindows) "bat" else "sh"
         val scriptFile = File.createTempFile("cognotik_daemon_", ".$scriptExt")
-
-
+        val appPath = System.getProperty("jpackage.app-path", "")
         if (isWindows) {
-            log.debug("Detected Windows OS.")
-
             scriptFile.writeText(
                 """
-                @echo log.info("Daemon process launched. Waiting for it to start...")
-                start /b /min "" "C:/Program Files/Cognotik/Cognotik.exe" server --port $port
+                @echo 
+                start /b /min "" "${if (appPath.isNotEmpty()) appPath else "C:/Program Files/Cognotik/Cognotik.exe"}" server --port $port
                 exit
             """.trimIndent()
             )
+        } else if (isMac) {
+            scriptFile.writeText(
+                """
+               #!/bin/sh
+               # Use caffeinate to prevent sleep and run in background without UI
+               nohup /usr/bin/caffeinate -i "${if (appPath.isNotEmpty()) appPath else "/Applications/Cognotik.app/Contents/MacOS/Cognotik"}" server --port $port >/dev/null 2>&1 &
+               # Ensure the process doesn't show in dock
+               defaults write "${if (appPath.isNotEmpty()) "${File(appPath).resolve("../../Info")}" else "/Applications/Cognotik.app/Contents/Info"}" LSUIElement -bool true
+               exit 0
+           """.trimIndent()
+            )
+            scriptFile.setExecutable(true)
         } else {
-            log.debug("Detected non-Windows OS (assuming Unix-like).")
-
             scriptFile.writeText(
                 """
                 #!/bin/sh
-                nohup /opt/cognotik/bin/Cognotik server --port $port &
+                nohup ${if (appPath.isNotEmpty()) appPath else "/opt/cognotik/bin/Cognotik"} server --port $port &
                 exit 0
             """.trimIndent()
             )
             scriptFile.setExecutable(true)
         }
-
-        log.info("Created daemon launcher script: ${scriptFile.absolutePath}")
-        log.debug("Script content:\n${scriptFile.readText()}")
-
         val processBuilder = if (isWindows) {
-            log.debug("Using ProcessBuilder: cmd /c ${scriptFile.absolutePath}")
             ProcessBuilder("cmd", "/c", scriptFile.absolutePath)
         } else {
-            log.debug("Using ProcessBuilder: sh ${scriptFile.absolutePath}")
             ProcessBuilder("sh", scriptFile.absolutePath)
         }
-
+        processBuilder.directory(getHome())
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
-
         val process = try {
-            log.info("Launching daemon process using script: ${processBuilder.command().joinToString(" ")}")
             processBuilder.start()
         } catch (e: Exception) {
-            log.error("Failed to launch daemon process: ${e.message}", e)
             throw e
         }
-
         try {
             writePidFile(process)
         } catch (e: Exception) {
-            log.error("Failed to write PID file: ${e.message}", e)
             println("Failed to write PID file: ${e.message}")
         }
-
         Thread.sleep(5000)
-        log.info("Daemon launched successfully, waiting for server to be ready...")
     }
 
     private fun writePidFile(process: Process) {
         try {
             val pid = process.pid()
             Files.write(Paths.get(PID_FILE), pid.toString().toByteArray())
-            log.info("Wrote PID file: $PID_FILE with PID $pid")
         } catch (e: Exception) {
-            log.warn("Could not write PID file: ${e.message}", e)
             println("Warning: Could not write PID file: ${e.message}")
         }
     }
 
     private fun dispatchCommand(host: String, port: Int, args: Array<String>) {
         try {
-            log.debug("Attempting to connect to server at $host:$port to dispatch command: \"${args.joinToString(" ")}\"")
             Socket(host, port).use { socket ->
-                log.info("Connected to server at $host:$port")
                 val out = PrintWriter(socket.getOutputStream(), true)
                 val input = BufferedReader(InputStreamReader(socket.getInputStream()))
                 out.println(args.joinToString(" "))
-                log.info("Sent command: ${args.joinToString(" ") { "`$it`" }}")
-
-                log.debug("Waiting for server response...")
                 val response = input.readLine()
                 if (response != null) {
-                    log.info("Received server response: $response")
                     println("Server response: $response")
-                    log.debug("Closing connection to $host:$port")
                 } else {
-                    log.warn("No response received from server.")
                     println("No response received from server.")
                 }
             }
         } catch (e: Exception) {
-            log.error("Failed to dispatch command: ${e.message}", e)
             println("Failed to dispatch command: ${e.message}")
         }
     }
 
-    val log = LoggerFactory.getLogger(DaemonClient::class.java)
 }

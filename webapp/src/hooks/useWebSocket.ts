@@ -6,7 +6,6 @@ import {useEffect, useRef, useState} from 'react';
  import {Message} from "../types/messages";
  export const useWebSocket = (sessionId: string) => {
      const RECONNECT_MAX_DELAY = 60000;
-
      const RECONNECT_BASE_DELAY = 1000;
      const CONNECTION_TIMEOUT = 5000;
      const connectionStatus = useRef({attempts: 0, lastAttempt: 0});

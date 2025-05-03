@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
-import org.slf4j.LoggerFactory
 
 class ForeachTask(
     planSettings: PlanSettings,
@@ -81,6 +80,5 @@ ForeachTask - Execute a task for each item in a list
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(ForeachTask::class.java)
     }
 }

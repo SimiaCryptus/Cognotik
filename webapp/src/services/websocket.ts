@@ -366,14 +366,12 @@ export class WebSocketService implements WebSocketLike {
                  if (data.type === 'pong') {
                      this.lastHeartbeatResponse = Date.now();
                      return;
-                 }
-                 if (data.type === 'ping') {
-
+                 } else if (data.type === 'ping') {
                      this.ws?.send(JSON.stringify({type: 'pong'}));
                      return;
                  }
              } catch (e) {
-                 console.error('[WebSocket] Failed to parse message:', event.data, e);
+                 // Not a json message, continue processing
              }
 
              this.forcedClose = false;
@@ -454,7 +452,6 @@ export class WebSocketService implements WebSocketLike {
 
          return () => {
              isDestroyed = true;
-
              if (this.ws) {
                  this.ws.onopen = originalOnOpen;
                  this.ws.onmessage = originalOnMessage;

@@ -13,7 +13,6 @@ import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
 
 class PlanningTask(
     planSettings: PlanSettings,
@@ -170,6 +169,5 @@ class PlanningTask(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(PlanningTask::class.java)
     }
 }

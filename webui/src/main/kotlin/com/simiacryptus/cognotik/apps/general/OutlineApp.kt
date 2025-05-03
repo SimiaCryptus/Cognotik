@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 open class OutlineApp(
     applicationName: String = "Outline Expansion Concept Map v1.1",
-    val domainName: String,
     val settings: Settings? = null,
     val api2: OpenAIClient,
 ) : ApplicationServer(

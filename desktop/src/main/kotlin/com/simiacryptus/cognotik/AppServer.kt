@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik
 
+import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
@@ -25,7 +26,10 @@ import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.URI
+import java.net.URLEncoder
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 open class AppServer(
     localName: String, publicName: String, port: Int
@@ -39,6 +43,7 @@ open class AppServer(
     companion object {
         private val log = LoggerFactory.getLogger(AppServer::class.java.name)
         private const val MAX_PORT_ATTEMPTS = 10
+        val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -52,7 +57,6 @@ open class AppServer(
                     "server" -> handleServer(*args.sliceArray(1 until args.size))
                     "help", "-h", "--help" -> printUsage()
                     "daemon" -> {
-
                         handleServer(*args.sliceArray(1 until args.size))
                     }
 
@@ -90,7 +94,8 @@ open class AppServer(
                 log.info("Using alternative port $actualPort")
                 println("Using alternative port $actualPort")
             }
-
+            scheduledExecutorService.scheduleAtFixedRate({checkUpdate()},
+                0, 7*24, TimeUnit.HOURS)
             server = AppServer(
                 localName = options.host,
                 publicName = options.publicName,
@@ -142,13 +147,13 @@ open class AppServer(
         }
 
         private data class ServerOptions(
-            val port: Int = 7681,
+            val port: Int = 7682,
             val host: String = "localhost",
             val publicName: String = "apps.simiacrypt.us"
         )
 
         private fun parseServerOptions(vararg args: String): ServerOptions {
-            var port = 7681
+            var port = 7682
             var host = "localhost"
             var publicName = "apps.simiacrypt.us"
             var i = 0
@@ -188,7 +193,6 @@ open class AppServer(
             systemTrayManager = SystemTrayManager(
                 port = port,
                 host = localName,
-                apps = childWebApps,
                 onExit = {
                     log.info("Exit requested from system tray")
                     stopServer()
@@ -344,7 +348,7 @@ open class AppServer(
                 while (!socketServer!!.isClosed) {
                     val client = try {
                         socketServer!!.accept()
-                    } catch (e: java.io.IOException) {
+                    } catch (e: IOException) {
                         log.info("Socket server stopped accepting connections: ${e.message}")
                         break
                     }
@@ -402,7 +406,7 @@ private fun String.toFile(): File = File(this)
 
 fun String?.urlEncode(): String {
     return this?.let {
-        java.net.URLEncoder.encode(it, "UTF-8")
+        URLEncoder.encode(it, "UTF-8")
             .replace("+", "%20")
 
             .replace("%7E", "~")

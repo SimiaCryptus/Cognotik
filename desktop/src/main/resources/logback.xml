@@ -23,10 +23,10 @@
 
     <!-- Time-based Rolling File Appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/cognotik.log</file>
+        <file>cognotik.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover, keep 30 days -->
-            <fileNamePattern>logs/cognotik.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>cognotik.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
@@ -35,11 +35,11 @@
         </encoder>
     </appender>
 
-    <logger name="com.simiacryptus" level="INFO"/>
+    <logger name="com.simiacryptus" level="DEBUG"/>
 
     <root level="WARN">
-        <appender-ref ref="STDOUT"/>
-        <appender-ref ref="STDERR"/>
+<!--        <appender-ref ref="STDOUT"/>-->
+<!--        <appender-ref ref="STDERR"/>-->
         <appender-ref ref="FILE"/>
     </root>
 </configuration>

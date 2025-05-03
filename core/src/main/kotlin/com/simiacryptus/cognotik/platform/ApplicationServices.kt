@@ -9,11 +9,9 @@ import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
-import org.slf4j.LoggerFactory
 import java.io.File
 
 object ApplicationServices {
-    private val log = LoggerFactory.getLogger(ApplicationServices::class.java)
 
     var authorizationManager: AuthorizationInterface = AuthorizationManager()
         set(value) {

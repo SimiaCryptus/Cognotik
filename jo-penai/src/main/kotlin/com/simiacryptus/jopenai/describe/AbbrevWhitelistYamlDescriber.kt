@@ -2,12 +2,10 @@ package com.simiacryptus.jopenai.describe
 
 import com.simiacryptus.jopenai.describe.DescriptorUtil.componentType
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
-import org.slf4j.LoggerFactory
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
 open class AbbrevWhitelistYamlDescriber(private vararg val abbreviated: String) : YamlDescriber() {
-    private val log = LoggerFactory.getLogger(AbbrevWhitelistYamlDescriber::class.java)
     override fun isAbbreviated(self: Type): Boolean {
 
         if (self.typeName in primitives) {

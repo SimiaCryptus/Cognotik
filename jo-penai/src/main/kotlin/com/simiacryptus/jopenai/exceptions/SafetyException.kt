@@ -8,5 +8,4 @@ package com.simiacryptus.jopenai.exceptions
  */
 class SafetyException : AIServiceException {
     constructor() : super("Safety violation")
-    constructor(message: String) : super(message)
 }

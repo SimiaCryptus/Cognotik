@@ -1,15 +1,11 @@
 [Desktop Entry]
 Type=Application
-Name=Cognotik
+Name=Cognotik Editor
 Comment=AI-powered application suite
-Icon=/opt/cognotik/lib/icon.png
-Exec=/opt/cognotik/bin/Cognotik %f
+Icon=cognotik
+Exec=/opt/cognotik/bin/Cognotik "%f"
 Categories=Development;Utility;TextEditor;
 MimeType=inode/directory;text/plain;
 Terminal=false
 StartupNotify=true
-Actions=StopServer;
-[Desktop Action StopServer]
-Name=Stop Cognotik Server
-Exec=/opt/cognotik/bin/Cognotik --stop
-Icon=/opt/cognotik/lib/icon.png
+NoDisplay=true

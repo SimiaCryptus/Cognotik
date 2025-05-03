@@ -137,10 +137,7 @@ val values = mapOf(
    ```
 2. Create a new registry object for the provider:
    ```kotlin
-   object MyProviderModels {
-       val MyModel = ChatModel(/* ... */)
-       val values = mapOf("MyModel" to MyModel)
-   }
+
    ```
 3. Add models as needed.
 

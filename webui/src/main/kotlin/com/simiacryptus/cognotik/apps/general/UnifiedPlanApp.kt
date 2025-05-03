@@ -1,8 +1,11 @@
 package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
+import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
@@ -10,7 +13,6 @@ import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -53,12 +55,6 @@ open class UnifiedPlanApp(
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
 
-    override fun newSession(user: User?, session: Session): SocketManager {
-        planSettings.workingDir?.toFile()?.apply {}
-        val socketManager = super.newSession(user, session)
-        return socketManager
-    }
-
     override fun userMessage(
         session: Session,
         user: User?,
@@ -76,6 +72,10 @@ open class UnifiedPlanApp(
 
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+                user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
+                    (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
+                        ?.commandAutoFixCommands?.addAll(this.localTools)
+                }
                 if (api is ChatClient) api.budget = settings.budget
 
                 cognitiveStrategy.getCognitiveMode(
@@ -181,8 +181,6 @@ open class UnifiedPlanApp(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     }
 }
 
-private fun String.toFile() = File(this)

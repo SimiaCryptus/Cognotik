@@ -1,4 +1,4 @@
-## `com.simiacryptus.aicoder`
+## `com.simiacryptus.cognotik`
 
 This package contains the core components of the AI Coding Assistant plugin. It includes the main plugin startup
 activity and server functionality.
@@ -7,7 +7,7 @@ activity and server functionality.
   the welcome screen.
 - `AppServer`: Provides a web server that hosts the chat interface and API endpoints for the AI coding assistant.
 
-## `com.simiacryptus.aicoder.config`
+## `com.simiacryptus.cognotik.config`
 
 This package handles all configuration and settings for the plugin.
 
@@ -18,14 +18,14 @@ This package handles all configuration and settings for the plugin.
 - `MRUItems`: Manages most recently used items for various features.
 - `UsageTable`: Displays token usage statistics for API calls.
 
-## `com.simiacryptus.aicoder.ui`
+## `com.simiacryptus.cognotik.ui`
 
 This package contains UI components specific to the plugin.
 
 - `SettingsWidgetFactory`: Creates a status bar widget that provides quick access to plugin settings and model
   selection.
 
-## `com.simiacryptus.aicoder.util`
+## `com.simiacryptus.cognotik.util`
 
 This package provides utility classes used throughout the plugin.
 
@@ -37,7 +37,7 @@ This package provides utility classes used throughout the plugin.
 - `BrowseUtil`: Utilities for opening URLs in the browser.
 - `LanguageUtils`: Utilities for detecting and working with programming languages.
 
-## `com.simiacryptus.aicoder.util.psi`
+## `com.simiacryptus.cognotik.util.psi`
 
 This package contains utilities for working with IntelliJ's Program Structure Interface (PSI).
 
@@ -45,7 +45,7 @@ This package contains utilities for working with IntelliJ's Program Structure In
 - `PsiClassContext`: Provides context information about classes in the PSI.
 - `PsiVisitorBase`: Base class for PSI visitors.
 
-## `com.simiacryptus.aicoder.dictation`
+## `com.simiacryptus.cognotik.dictation`
 
 This package implements speech-to-text functionality for the plugin.
 
@@ -56,19 +56,19 @@ This package implements speech-to-text functionality for the plugin.
 - `SettingsPanel`: UI panel for advanced dictation settings.
 - `EventPanel`: UI panel for displaying dictation events and debug information.
 
-## `aicoder.actions`
+## `cognotik.actions`
 
 This package contains action classes that implement various AI-assisted coding features.
 
 - `SessionProxyServer`: Manages chat sessions between the IDE and the AI service.
 
-## `aicoder.actions.agent`
+## `cognotik.actions.agent`
 
 This package implements agent-based AI features.
 
 - Contains classes for implementing AI agents that can perform complex coding tasks.
 
-## `aicoder.actions.plan`
+## `cognotik.actions.plan`
 
 This package implements planning-based AI features.
 

@@ -189,30 +189,7 @@ To create a custom application using the Cognotik framework:
 Example:
 
 ```kotlin
-class MyCustomApp(
-    applicationName: String = "My Custom App",
-    path: String = "/myCustomApp",
-    val model: ChatModel
-) : ApplicationServer(
-    applicationName = applicationName,
-    path = path
-) {
-    override fun userMessage(
-        session: Session,
-        user: User?,
-        userMessage: String,
-        ui: ApplicationInterface,
-        api: API
-    ) {
 
-        val task = ui.newTask()
-        task.add("Processing your request...")
-
-
-
-        task.complete("Done!")
-    }
-}
 ```
 
 ### Extending Existing Components

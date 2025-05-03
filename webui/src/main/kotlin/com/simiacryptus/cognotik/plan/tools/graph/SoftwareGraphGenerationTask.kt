@@ -15,7 +15,6 @@ import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
 import java.io.File
 
 class SoftwareGraphGenerationTask(
@@ -152,6 +151,5 @@ class SoftwareGraphGenerationTask(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SoftwareGraphGenerationTask::class.java)
     }
 }

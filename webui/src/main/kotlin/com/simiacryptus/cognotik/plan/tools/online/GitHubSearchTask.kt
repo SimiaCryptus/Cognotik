@@ -10,7 +10,6 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.APIProvider
-import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -162,6 +161,5 @@ class GitHubSearchTask(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(GitHubSearchTask::class.java)
     }
 }

@@ -10,16 +10,15 @@ import com.simiacryptus.util.DynamicEnumSerializer
 @JsonDeserialize(using = ParsingModelTypeDeserializer::class)
 @JsonSerialize(using = ParsingModelTypeSerializer::class)
 class ParsingModelType<out T : ParsingModel<*>>(
-    name: String,
-    val modelClass: Class<out T>
+    name: String
 ) : DynamicEnum<ParsingModelType<*>>(name) {
     companion object {
         private val modelConstructors =
             mutableMapOf<ParsingModelType<*>, (ChatModel, Double) -> ParsingModel<*>>()
 
-        val Document = ParsingModelType("Document", DocumentParsingModel::class.java)
-        val Code = ParsingModelType("Code", CodeParsingModel::class.java)
-        val Log = ParsingModelType("Log", LogDataParsingModel::class.java)
+        val Document = ParsingModelType<ParsingModel<*>>("Document")
+        val Code = ParsingModelType<ParsingModel<*>>("Code")
+        val Log = ParsingModelType<ParsingModel<*>>("Log")
 
         init {
             registerConstructor(Document) { model, temp -> DocumentParsingModel(model, temp) }

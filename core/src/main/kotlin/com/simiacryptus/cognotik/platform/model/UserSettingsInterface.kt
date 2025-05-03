@@ -6,6 +6,7 @@ interface UserSettingsInterface {
     data class UserSettings(
         val apiKeys: Map<APIProvider, String> = APIProvider.Companion.values().associateWith { "" },
         val apiBase: Map<APIProvider, String> = APIProvider.Companion.values().associateWith { it.base ?: "" },
+        val localTools: List<String> = emptyList(),
     )
 
     fun getUserSettings(user: User): UserSettings

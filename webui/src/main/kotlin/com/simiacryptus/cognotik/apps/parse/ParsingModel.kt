@@ -27,6 +27,5 @@ interface ParsingModel<T : ParsingModel.DocumentData> {
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(ParsingModel::class.java)
     }
 }

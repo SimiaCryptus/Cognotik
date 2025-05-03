@@ -15,7 +15,6 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import kotlinx.collections.immutable.toImmutableList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
@@ -216,7 +215,7 @@ open class ChatSocketManager(
 
     protected open fun chatMessages() = messages.let {
         synchronized(messagesLock) {
-            listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it.toImmutableList()
+            listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it
                 .drop(1)
         }
     }.toList()

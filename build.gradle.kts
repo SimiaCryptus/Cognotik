@@ -2,31 +2,64 @@ fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
 
-allprojects {
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "kotlin")
+    repositories {
+        mavenCentral()
+    }
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
+        options.compilerArgs.add("-parameters")
     }
-    configurations.all {
-        resolutionStrategy {
-            force(
-                "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlin.get()}",
-                "org.jetbrains.kotlin:kotlin-reflect:${libs.versions.kotlin.get()}",
-                "org.slf4j:slf4j-api:${libs.versions.slf4j.get()}"
-            )
-            preferProjectModules()
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = JavaVersion.VERSION_17.toString()
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+            javaParameters = true
+        }
+    }
+    tasks.register("analyzeDependencies") {
+        description = "Analyzes project dependencies for potential issues"
+        doLast {
+            val implementation = configurations.findByName("implementation")
+            val api = configurations.findByName("api")
+            if (implementation != null && api != null) {
+                val implementationDeps = implementation.dependencies.map { "${it.group}:${it.name}" }.toSet()
+                val apiDeps = api.dependencies.map { "${it.group}:${it.name}" }.toSet()
+                val duplicates = implementationDeps.intersect(apiDeps)
+                if (duplicates.isNotEmpty()) {
+                    logger.warn("Found dependencies declared in both api and implementation: $duplicates")
+                }
+            }
         }
     }
 }
 
-tasks {
-    wrapper {
-        gradleVersion = properties("gradleVersion")
-        distributionType = Wrapper.DistributionType.ALL
-    }
-}
-
 allprojects {
-    tasks.withType<Test>().configureEach {
+    apply(plugin = "java")
+    java {
+        toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
+    }
+    configurations.all {
+        // Apply resolution strategy to all configurations in all projects
+        resolutionStrategy {
+            force(
+                "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}",
+                "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}",
+                "org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}"
+            )
+            preferProjectModules()
+        }
+    }
+
+    tasks.withType<Test> {
+        useJUnitPlatform()
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
         maxHeapSize = "2g"
         jvmArgs(
@@ -41,6 +74,14 @@ allprojects {
             showStackTraces = true
         }
     }
+
+}
+
+tasks {
+    wrapper {
+        gradleVersion = properties("gradleVersion")
+        distributionType = Wrapper.DistributionType.ALL
+    }
 }
 
 repositories {
@@ -49,64 +90,29 @@ repositories {
 }
 
 plugins {
-    kotlin("jvm") version "2.1.20"
-    id("com.github.ben-manes.versions") version "0.50.0"
+    kotlin("jvm") // Version is applied globally via settings.gradle.kts
+    id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
 }
-
-tasks.register("analyzeModuleDependencies") {
-    group = "verification"
-    description = "Analyzes dependencies between modules"
-    doLast {
-        val projectDependencies = mutableMapOf<Project, Set<Project>>()
-        subprojects.forEach { project ->
-            val dependencies = project.configurations
-                .filter { it.name == "implementation" || it.name == "api" }
-                .flatMap { it.dependencies }
-                .filterIsInstance<org.gradle.api.internal.artifacts.dependencies.ProjectDependencyInternal>()
-                .map {
-                    @Suppress("DEPRECATION")
-                    it.dependencyProject
+// Configure the dependency updates plugin
+tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
+    // Configure resolution strategy to only recommend stable releases
+    // Other options include: ReleaseCandidate, Milestone, Integration
+    resolutionStrategy {
+        componentSelection {
+            all {
+                if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
+                    reject("Release candidate")
                 }
-                .toSet()
-            projectDependencies[project] = dependencies
-        }
-        println("Module Dependencies:")
-        projectDependencies.forEach { (project, dependencies) ->
-            println("${project.name} depends on: ${dependencies.joinToString { it.name }}")
+            }
         }
     }
+    // Optional: Output results to a file (e.g., JSON, XML, plain text)
+    // outputFormatter = "json"
+    // outputDir = "build/dependencyUpdates"
+    // reportfileName = "report"
 }
-
-tasks.register("optimizeDependencies") {
-    group = "verification"
-    description = "Analyzes and optimizes dependencies"
-    doLast {
-        val allDependencies = mutableMapOf<String, MutableSet<String>>()
-        subprojects.forEach { project ->
-            project.configurations
-                .filter { it.isCanBeResolved }
-                .forEach { config ->
-                    try {
-                        config.resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
-                            val id = artifact.moduleVersion.id
-                            val key = "${id.group}:${id.name}"
-                            val version = id.version
-                            allDependencies.getOrPut(key) { mutableSetOf() }.add(version)
-                        }
-                    } catch (e: Exception) {
-
-                    }
-                }
-        }
-        println("Dependency Version Conflicts:")
-        allDependencies.filter { it.value.size > 1 }.forEach { (dep, versions) ->
-            println("$dep has multiple versions: ${versions.joinToString()}")
-        }
-    }
-}
-
-tasks.register("checkAllDependencyUpdates") {
-    group = "verification"
-    description = "Checks for dependency updates in all modules"
-    dependsOn(subprojects.map { "${it.path}:dependencyUpdates" })
+// Helper function to check for non-stable versions (adjust keywords as needed)
+fun isNonStable(version: String): Boolean {
+    val unstableKeywords = listOf("rc", "m", "beta", "alpha", "snapshot", "dev", "eap")
+    return unstableKeywords.any { version.contains(it, ignoreCase = true) }
 }

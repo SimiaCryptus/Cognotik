@@ -2,7 +2,9 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.InsightTask.InsightTaskConfigData
@@ -196,6 +198,22 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
         )
+        val RunCodeTask = TaskType(
+            "RunCodeTask",
+            RunCodeTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Execute code snippets safely",
+            """
+          Executes code snippets in a controlled environment.
+          <ul>
+            <li>Safe code execution handling</li>
+            <li>Working directory configuration</li>
+            <li>Output capture and formatting</li>
+            <li>Error handling and reporting</li>
+            <li>Interactive result review</li>
+          </ul>
+        """
+        )
         val CommandAutoFixTask = TaskType(
             "CommandAutoFixTask",
             CommandAutoFixTaskConfigData::class.java,
@@ -373,6 +391,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                 com.simiacryptus.cognotik.plan.tools.RunShellCommandTask(
                     settings,
                     task
+                )
+            }
+            registerConstructor(RunCodeTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.RunCodeTask<KotlinInterpreter>(
+                    settings,
+                    task,
+                    KotlinInterpreter::class
                 )
             }
             registerConstructor(ForeachTask) { settings, task ->

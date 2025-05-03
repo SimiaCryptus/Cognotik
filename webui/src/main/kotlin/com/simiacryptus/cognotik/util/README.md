@@ -14,12 +14,7 @@ interactive UI components.
 `TabbedDisplay` is a base class for creating tabbed interfaces in the UI.
 
 ```kotlin
-open class TabbedDisplay(
-  val task: SessionTask,
-  val tabs: MutableList<Pair<String, StringBuilder>> = mutableListOf(),
-  val additionalClasses: String = "",
-  val closable: Boolean = true
-)
+
 ```
 
 **Key Features:**
@@ -43,11 +38,7 @@ display.update()
 `Retryable` extends `TabbedDisplay` to provide retry functionality for operations that might fail.
 
 ```kotlin
-open class Retryable(
-  val ui: ApplicationInterface,
-  task: SessionTask,
-  val process: (StringBuilder) -> String
-) : TabbedDisplay(task)
+
 ```
 
 **Key Features:**
@@ -61,17 +52,7 @@ open class Retryable(
 `Discussable` implements an interactive discussion interface where users can provide feedback on generated content.
 
 ```kotlin
-class Discussable<T : Any>(
-  private val task: SessionTask,
-  private val userMessage: () -> String,
-  private val initialResponse: (String) -> T,
-  private val outputFn: (T) -> String,
-  private val ui: ApplicationInterface,
-  private val reviseResponse: (List<Pair<String, Role>>) -> T,
-  private val atomicRef: AtomicReference<T> = AtomicReference(),
-  private val semaphore: Semaphore = Semaphore(0),
-  private val heading: String
-) : Callable<T>
+
 ```
 
 **Key Features:**
@@ -87,14 +68,7 @@ class Discussable<T : Any>(
 `MarkdownUtil` provides utilities for rendering Markdown content to HTML.
 
 ```kotlin
-object MarkdownUtil {
-  fun renderMarkdown(
-    rawMarkdown: String,
-    options: MutableDataSet = defaultOptions(),
-    tabs: Boolean = true,
-    ui: ApplicationInterface? = null,
-  ): String
-}
+
 ```
 
 **Key Features:**
@@ -109,20 +83,7 @@ object MarkdownUtil {
 `HtmlSimplifier` provides methods to clean and simplify HTML content.
 
 ```kotlin
-object HtmlSimplifier {
-  fun scrubHtml(
-    str: String,
-    baseUrl: String? = null,
-    includeCssData: Boolean = false,
-    simplifyStructure: Boolean = true,
-    keepObjectIds: Boolean = false,
-    preserveWhitespace: Boolean = false,
-    keepScriptElements: Boolean = false,
-    keepInteractiveElements: Boolean = false,
-    keepMediaElements: Boolean = false,
-    keepEventHandlers: Boolean = false
-  ): String
-}
+
 ```
 
 **Key Features:**
@@ -138,11 +99,7 @@ object HtmlSimplifier {
 `Selenium2S3` extends Selenium functionality to save web content to S3 storage.
 
 ```kotlin
-open class Selenium2S3(
-  val pool: ExecutorService = Executors.newCachedThreadPool() as ExecutorService,
-  private val cookies: Array<out jakarta.servlet.http.Cookie>? = null,
-  val driver: RemoteWebDriver = chromeDriver()
-) : Selenium
+
 ```
 
 **Key Features:**
@@ -157,15 +114,7 @@ open class Selenium2S3(
 `TensorflowProjector` generates visualizations of embeddings using TensorFlow Projector.
 
 ```kotlin
-class TensorflowProjector(
-  val api: OpenAIClient,
-  val dataStorage: StorageInterface,
-  val sessionID: Session,
-  val session: ApplicationInterface,
-  val userId: User?,
-  private val iframeHeight: Int = 500,
-  private val iframeWidth: String = "100%"
-)
+
 ```
 
 **Key Features:**
@@ -180,12 +129,7 @@ class TensorflowProjector(
 The `OpenAPI` data classes provide a structured representation of OpenAPI specifications.
 
 ```kotlin
-data class OpenAPI(
-  val openapi: String = "3.0.0",
-  val info: Info? = null,
-  val paths: Map<String, PathItem>? = emptyMap(),
-  val components: Components? = null
-)
+
 ```
 
 **Key Features:**
@@ -199,10 +143,7 @@ data class OpenAPI(
 `EncryptFiles` provides utilities for encrypting files.
 
 ```kotlin
-object EncryptFiles {
-  @JvmStatic
-  fun main(args: Array<String>)
-}
+
 ```
 
 **Key Features:**

@@ -1,12 +1,9 @@
 plugins {
-    java
-    `java-library`
     antlr
 }
 
-fun properties(key: String) = project.findProperty(key).toString()
-group = properties("libraryGroup")
-version = properties("libraryVersion")
+group = providers.gradleProperty("libraryGroup").get()
+version = providers.gradleProperty("libraryVersion").get()
 
 repositories {
     mavenCentral()
@@ -14,7 +11,7 @@ repositories {
 
 dependencies {
     implementation(libs.antlr.runtime)
-    antlr("org.antlr:antlr4:${libs.versions.antlr.get()}")
+    antlr(libs.antlr.tool)
 }
 
 tasks {
@@ -32,11 +29,6 @@ tasks {
                 srcDir("build/generated-src/antlr/main")
             }
         }
-    }
-    withType<JavaCompile> {
-        options.release.set(17)
-
-
     }
 
     register("cleanGeneratedSources") {

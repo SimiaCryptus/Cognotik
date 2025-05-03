@@ -10,11 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
 
 object JsonUtil {
-    private val log = LoggerFactory.getLogger(JsonUtil::class.java.name)
 
     val _initForReading: ThreadLocal<JavaType?> = ThreadLocal.withInitial { null }
     open fun objectMapper(): ObjectMapper {

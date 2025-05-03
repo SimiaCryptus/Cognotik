@@ -264,6 +264,78 @@
         .api-key-group input {
             flex-grow: 1;
         }
+        /* Settings Tabs */
+        .settings-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background-color: #f1f1f1;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: 0.3s;
+            font-size: 16px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab-button:hover {
+            background-color: #ddd;
+        }
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 15px 0;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Local Tools */
+        #local-tools-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        #local-tools-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .tool-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .tool-item:last-child {
+            border-bottom: none;
+        }
+        .tool-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .tool-actions input {
+            flex-grow: 1;
+            padding: 8px;
+        }
+        .remove-tool {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+        .remove-tool:hover {
+            background-color: #c0392b;
+        }
+
 
         .task-toggle {
             display: flex;
@@ -473,57 +545,82 @@
     </div>
     <div style="width: inherit;"></div>
     <button class="menu-button" id="open-basic-chat">Basic Chat</button>
-<!-- Modal for Basic Chat Settings -->
-<div class="modal" id="basic-chat-settings-modal">
-    <div class="modal-content">
-        <span class="close" id="close-basic-chat-modal">&times;</span>
-        <h3>Basic Chat Settings</h3>
-        <form id="basic-chat-settings-form">
-            <div class="form-group">
-                <label for="basic-chat-model">Model:</label>
-                <select id="basic-chat-model" required>
-                    <option value="GPT4o">GPT-4o</option>
-                    <option value="GPT4">GPT-4</option>
-                    <option value="GPT35Turbo">GPT-3.5 Turbo</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="basic-chat-parsing-model">Parsing Model:</label>
-                <select id="basic-chat-parsing-model" required>
-                    <option value="GPT4oMini">GPT-4o Mini</option>
-                    <option value="GPT35Turbo">GPT-3.5 Turbo</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
-                <input id="basic-chat-temperature" type="range" min="0" max="1" step="0.01" value="0.3">
-                <span id="basic-chat-temperature-value">0.3</span>
-            </div>
-            <div class="form-group">
-                <label for="basic-chat-budget">Budget ($):</label>
-                <input id="basic-chat-budget" type="number" min="0" max="1000" step="0.01" value="2.0" required>
-            </div>
-            <div class="button-group">
-                <button type="button" class="button secondary" id="cancel-basic-chat-settings">Cancel</button>
-                <button type="submit" class="button" id="submit-basic-chat-settings">Continue to Chat</button>
-            </div>
-        </form>
+    <!-- Modal for Basic Chat Settings -->
+    <div class="modal" id="basic-chat-settings-modal">
+        <div class="modal-content">
+            <span class="close" id="close-basic-chat-modal">&times;</span>
+            <h3>Basic Chat Settings</h3>
+            <form id="basic-chat-settings-form">
+                <div class="form-group">
+                    <label for="basic-chat-model">Model:</label>
+                    <select id="basic-chat-model" required>
+                        <option value="GPT4o">GPT-4o</option>
+                        <option value="GPT4">GPT-4</option>
+                        <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="basic-chat-parsing-model">Parsing Model:</label>
+                    <select id="basic-chat-parsing-model" required>
+                        <option value="GPT4oMini">GPT-4o Mini</option>
+                        <option value="GPT35Turbo">GPT-3.5 Turbo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
+                    <input id="basic-chat-temperature" type="range" min="0" max="1" step="0.01" value="0.3">
+                    <span id="basic-chat-temperature-value">0.3</span>
+                </div>
+                <div class="form-group">
+                    <label for="basic-chat-budget">Budget ($):</label>
+                    <input id="basic-chat-budget" type="number" min="0" max="1000" step="0.01" value="2.0" required>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="button secondary" id="cancel-basic-chat-settings">Cancel</button>
+                    <button type="submit" class="button" id="submit-basic-chat-settings">Continue to Chat</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-    <button class="menu-button" id="api-settings-btn">Configure API Keys</button>
+    <button class="menu-button" id="user-settings-btn">User Settings</button>
 </div>
 
-<div class="modal" id="api-settings-modal">
+<div class="modal" id="user-settings-modal">
     <div class="modal-content">
-        <span class="close" id="close-api-modal">&times;</span>
-        <h3>API Configuration</h3>
-        <p>Configure your API keys for different AI providers:</p>
-        <div id="api-keys-container">
-            <!-- API keys will be populated here -->
+        <span class="close" id="close-user-settings-modal">&times;</span>
+        <h3>User Settings</h3>
+        
+        <div class="settings-tabs">
+            <button class="tab-button active" data-tab="api-keys">API Keys</button>
+            <button class="tab-button" data-tab="local-tools">Local Tools</button>
         </div>
+        
+        <div id="api-keys-tab" class="tab-content active">
+            <p>Configure your API keys for different AI providers:</p>
+            <div id="api-keys-container">
+                <!-- API keys will be populated here -->
+            </div>
+        </div>
+        
+        <div id="local-tools-tab" class="tab-content">
+            <p>Configure local tools that can be used by the AI:</p>
+            <div class="form-group">
+                <label for="local-tools-list">Local Tools:</label>
+                <div id="local-tools-container">
+                    <div id="local-tools-list">
+                        <!-- Local tools will be listed here -->
+                    </div>
+                    <div class="tool-actions">
+                        <input type="text" id="new-tool-path" placeholder="Enter tool path or command">
+                        <button class="button" id="add-local-tool">Add Tool</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="button-group">
-            <button class="button secondary" id="reset-api-settings">Reset</button>
-            <button class="button" id="save-api-settings">Save API Settings</button>
+            <button class="button secondary" id="reset-user-settings">Reset</button>
+            <button class="button" id="save-user-settings">Save Settings</button>
         </div>
     </div>
 </div>
@@ -533,13 +630,13 @@
         <div class="step-number">1</div>
         <div class="step-text">Choose Mode</div>
     </div>
-    <div class="wizard-step" data-step="task-selection">
-        <div class="step-number">2</div>
-        <div class="step-text">Select Tasks</div>
-    </div>
     <div class="wizard-step" data-step="task-settings">
-        <div class="step-number">3</div>
+        <div class="step-number">2</div>
         <div class="step-text">Configure Settings</div>
+    </div>
+    <div class="wizard-step" data-step="task-selection">
+        <div class="step-number">3</div>
+        <div class="step-text">Select Tasks</div>
     </div>
     <div class="wizard-step" data-step="launch">
         <div class="step-number">4</div>
@@ -596,22 +693,11 @@
     </div>
     <div class="wizard-buttons">
         <div></div> <!-- Empty div for spacing -->
-        <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
-    </div>
-</div>
-<div class="wizard-content" id="task-selection">
-    <h3>Step 2: Select Tasks</h3>
-    <p>Choose which tasks you want to enable:</p>
-    <div class="form-group" id="task-toggles">
-        <!-- Task toggles will be populated here -->
-    </div>
-    <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-cognitive-mode">Back</button>
         <button class="button" id="next-to-task-settings">Next: Configure Settings</button>
     </div>
 </div>
 <div class="wizard-content" id="task-settings">
-    <h3>Step 3: Configure Settings</h3>
+    <h3>Step 2: Configure Settings</h3>
     <p>Configure model and environment settings:</p>
 
     <div class="form-group">
@@ -660,17 +746,33 @@
     </div>
 
     <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-task-selection">Back</button>
+        <button class="button secondary" id="back-to-cognitive-mode">Back</button>
+        <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
+    </div>
+</div>
+<div class="wizard-content" id="task-selection">
+    <h3>Step 3: Select Tasks</h3>
+    <p>Choose which tasks you want to enable:</p>
+    <div class="form-group" id="task-toggles">
+        <!-- Task toggles will be populated here -->
+    </div>
+    <div class="wizard-buttons">
+        <button class="button secondary" id="back-to-task-settings">Back</button>
         <button class="button" id="next-to-launch">Next: Review & Launch</button>
     </div>
 </div>
+
+
+
+
+
 
 <div class="wizard-content" id="launch">
     <h3>Step 4: Review & Launch</h3>
     <p>Review your configuration and launch your AI development session:</p>
 
     <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-task-settings">Back</button>
+        <button class="button secondary" id="back-to-task-selection">Back</button>
         <button class="button" id="launch-session">Launch AI Session</button>
     </div>
 
@@ -719,7 +821,7 @@
     let taskSettings = {
         defaultModel: localStorage.getItem('defaultModel') || 'GPT4o',
         parsingModel: localStorage.getItem('parsingModel') || 'GPT4oMini',
-        workingDir: localStorage.getItem('workingDir') || '.',
+        workingDir: localStorage.getItem('workingDir') || generateTimestampedDirectory(),
         autoFix: localStorage.getItem('autoFix') === 'true',
         maxTaskHistoryChars: 20000,
         maxTasksPerIteration: 3,
@@ -749,10 +851,16 @@
             tooltip: 'Executes shell commands in a controlled environment.',
         },
         {
-          id: 'CommandAutoFixTask',
-          name: 'Command Auto Fix Task',
-          description: 'Run a command and automatically fix any issues that arise',
-          tooltip: 'Executes a command and automatically fixes any issues that arise.',
+            id: 'RunCodeTask',
+            name: 'Run Code Task',
+            description: 'Execute code snippets with AI assistance',
+            tooltip: 'Executes code snippets with AI assistance while maintaining code quality.',
+        },
+        {
+            id: 'CommandAutoFixTask',
+            name: 'Command Auto Fix Task',
+            description: 'Run a command and automatically fix any issues that arise',
+            tooltip: 'Executes a command and automatically fixes any issues that arise.',
         },
         {
             id: 'FileSearchTask',
@@ -849,6 +957,17 @@
         {id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com'},
         {id: 'GoogleSearch', name: 'Google Search', baseUrl: ''},
     ];
+
+    function generateTimestampedDirectory() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `sessions/${year}${month}${day}${hours}${minutes}${seconds}`;
+    }
 
     const availableModels = {
         OpenAI: [
@@ -1001,6 +1120,27 @@
                                 }
                             }
                         }
+                        // Populate local tools
+                        if (settings.localTools && Array.isArray(settings.localTools)) {
+                            const toolsList = document.getElementById('local-tools-list');
+                            toolsList.innerHTML = '';
+                            settings.localTools.forEach(toolPath => {
+                                const toolItem = document.createElement('div');
+                                toolItem.className = 'tool-item';
+                                toolItem.dataset.path = toolPath;
+                                const toolText = document.createElement('span');
+                                toolText.textContent = toolPath;
+                                const removeBtn = document.createElement('button');
+                                removeBtn.className = 'remove-tool';
+                                removeBtn.textContent = '×';
+                                removeBtn.addEventListener('click', function() {
+                                    toolItem.remove();
+                                });
+                                toolItem.appendChild(toolText);
+                                toolItem.appendChild(removeBtn);
+                                toolsList.appendChild(toolItem);
+                            });
+                        }
 
                         populateModelSelections();
                     } catch (e) {
@@ -1013,6 +1153,7 @@
             });
         // Removed reference to basicChatBtn here (was causing error)
     }
+
     function populateWorkingDirFromHash() {
         if (window.location.hash) {
 
@@ -1145,7 +1286,7 @@
                 basicChatModal.style.display = "none";
             }
         });
-            // Save to localStorage for convenience
+        // Save to localStorage for convenience
         basicChatForm.addEventListener('submit', function (e) {
             e.preventDefault();
             // Gather settings
@@ -1183,26 +1324,26 @@
                     })
                 })
             })
-            .then(response => {
-                if (response.ok) {
-                    basicChatModal.style.display = "none";
-                    window.location.href = `/chat/#${chatSessionId}`;
-                } else {
-                    showNotification('Failed to save chat settings.', 'error');
-                }
-            })
-            .catch(error => {
-                showNotification('Error saving chat settings: ' + error.message, 'error');
-            });
+                .then(response => {
+                    if (response.ok) {
+                        basicChatModal.style.display = "none";
+                        window.location.href = `/chat/#${chatSessionId}`;
+                    } else {
+                        showNotification('Failed to save chat settings.', 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error saving chat settings: ' + error.message, 'error');
+                });
         });
     });
 
 
     function setupWizard() {
 
-        const modal = document.getElementById('api-settings-modal');
-        const btn = document.getElementById('api-settings-btn');
-        const closeBtn = document.getElementById('close-api-modal');
+        const modal = document.getElementById('user-settings-modal');
+        const btn = document.getElementById('user-settings-btn');
+        const closeBtn = document.getElementById('close-user-settings-modal');
 
         btn.onclick = function () {
             modal.style.display = "block";
@@ -1217,29 +1358,47 @@
                 modal.style.display = "none";
             }
         }
+        // Tab functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                // Add active class to clicked tab
+                button.classList.add('active');
+                document.getElementById(`${button.dataset.tab}-tab`).classList.add('active');
+            });
+        });
 
-        document.getElementById('next-to-task-selection').addEventListener('click', () => {
-            navigateToStep('task-selection');
+
+        document.getElementById('next-to-task-settings').addEventListener('click', () => {
+            navigateToStep('task-settings');
         });
 
         document.getElementById('back-to-cognitive-mode').addEventListener('click', () => {
             navigateToStep('cognitive-mode');
         });
 
+        document.getElementById('next-to-task-selection').addEventListener('click', () => {
+            navigateToStep('task-selection');
+        });
+
+
         document.getElementById('next-to-task-settings').addEventListener('click', () => {
             navigateToStep('task-settings');
         });
 
-        document.getElementById('back-to-task-selection').addEventListener('click', () => {
-            navigateToStep('task-selection');
-        });
 
         document.getElementById('next-to-launch').addEventListener('click', () => {
             updateLaunchSummaries();
             navigateToStep('launch');
         });
 
-        document.getElementById('back-to-task-settings').addEventListener('click', () => {
+        document.getElementById('back-to-task-selection').addEventListener('click', () => {
             navigateToStep('task-settings');
         });
     }
@@ -1321,6 +1480,7 @@
             tooltip.appendChild(tooltipText);
             toggleContent.appendChild(checkbox);
             toggleContent.appendChild(label);
+            toggleContent.appendChild(tooltip);
 
             const description = document.createElement('span');
             description.className = 'sr-only';
@@ -1344,8 +1504,9 @@
 
     function setupEventListeners() {
 
-        document.getElementById('save-api-settings').addEventListener('click', saveApiSettings);
-        document.getElementById('reset-api-settings').addEventListener('click', resetApiSettings);
+        document.getElementById('save-user-settings').addEventListener('click', saveUserSettings);
+        document.getElementById('reset-user-settings').addEventListener('click', resetUserSettings);
+        document.getElementById('add-local-tool').addEventListener('click', addLocalTool);
 
         apiProviders.forEach(provider => {
             const keyInput = document.getElementById(`api-key-${provider.id}`);
@@ -1390,12 +1551,11 @@
         });
 
 
-        document.getElementById('next-to-task-selection').addEventListener('click', saveCognitiveMode);
-        document.getElementById('next-to-task-settings').addEventListener('click', saveTaskSelection);
-        document.getElementById('next-to-launch').addEventListener('click', saveTaskSettings);
+        document.getElementById('next-to-task-settings').addEventListener('click', saveCognitiveMode);
+        document.getElementById('next-to-task-selection').addEventListener('click', saveTaskSettings);
+        document.getElementById('next-to-launch').addEventListener('click', saveTaskSelection);
 
         document.getElementById('launch-session').addEventListener('click', launchSession);
-
 
 
         document.addEventListener('keydown', function (e) {
@@ -1429,7 +1589,7 @@
         document.querySelector(`.wizard-step[data-step="${stepId}"]`).classList.add('active');
     }
 
-    function saveApiSettings() {
+    function saveUserSettings() {
         const apiKeys = {};
         const apiBase = {};
         apiProviders.forEach(provider => {
@@ -1447,7 +1607,14 @@
                 apiBase[provider.id] = provider.baseUrl;
             }
         });
-        apiSettings = {apiKeys, apiBase};
+        
+        // Get local tools
+        const localTools = [];
+        document.querySelectorAll('.tool-item').forEach(item => {
+            localTools.push(item.dataset.path);
+        });
+        
+        apiSettings = {apiKeys, apiBase, localTools};
 
         populateModelSelections();
 
@@ -1464,17 +1631,17 @@
             .then(response => {
                 if (response.ok) {
 
-                    showNotification('API settings saved successfully!');
+                    showNotification('User settings saved successfully!');
 
 
-                    document.getElementById('api-settings-modal').style.display = "none";
+                    document.getElementById('user-settings-modal').style.display = "none";
                 } else {
-                    showNotification('Failed to save API settings.', 'error');
+                    showNotification('Failed to save user settings.', 'error');
                 }
             })
             .catch(error => {
-                console.error('Error saving API settings:', error);
-                showNotification('Error saving API settings: ' + error.message, 'error');
+                console.error('Error saving user settings:', error);
+                showNotification('Error saving user settings: ' + error.message, 'error');
             });
     }
 
@@ -1549,11 +1716,46 @@
         }, 3000);
     }
 
-    function resetApiSettings() {
+    function resetUserSettings() {
         apiProviders.forEach(provider => {
             document.getElementById(`api-key-${provider.id}`).value = '';
         });
-        showNotification('API settings reset', 'warning');
+        
+        // Clear local tools
+        document.getElementById('local-tools-list').innerHTML = '';
+        
+        showNotification('User settings reset', 'warning');
+    }
+    
+    function addLocalTool() {
+        const toolPath = document.getElementById('new-tool-path').value.trim();
+        if (!toolPath) {
+            showNotification('Please enter a tool path or command', 'warning');
+            return;
+        }
+        
+        // Create new tool item
+        const toolItem = document.createElement('div');
+        toolItem.className = 'tool-item';
+        toolItem.dataset.path = toolPath;
+        
+        const toolText = document.createElement('span');
+        toolText.textContent = toolPath;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-tool';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', function() {
+            toolItem.remove();
+        });
+        
+        toolItem.appendChild(toolText);
+        toolItem.appendChild(removeBtn);
+        
+        document.getElementById('local-tools-list').appendChild(toolItem);
+        document.getElementById('new-tool-path').value = '';
+        
+        showNotification('Tool added successfully');
     }
 
     function saveTaskSettings() {
@@ -1628,11 +1830,10 @@
         if (savedParsingModel) {
             taskSettings.parsingModel = savedParsingModel;
         }
-
-        const savedWorkingDir = localStorage.getItem('workingDir');
-        if (savedWorkingDir) {
-            document.getElementById('working-dir').value = savedWorkingDir;
-            taskSettings.workingDir = savedWorkingDir;
+        // Set default working directory if not already set
+        if (!taskSettings.workingDir || taskSettings.workingDir === '') {
+            taskSettings.workingDir = generateTimestampedDirectory();
+            document.getElementById('working-dir').value = taskSettings.workingDir;
         }
 
         if (localStorage.getItem('temperature')) {

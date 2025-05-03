@@ -1,12 +1,17 @@
 #!/bin/sh
 set -e
+
 # Stop the running Cognotik server if any
 if [ -x "/opt/cognotik/bin/Cognotik" ]; then
   "/opt/cognotik/bin/Cognotik" --stop || true
 fi
-# Remove desktop files
-rm -f /usr/share/applications/cognotik.desktop
-rm -f /usr/share/applications/cognotik-folder-action.desktop
+# Remove symlink created by postinst
+# dpkg handles removal of files installed by the package (like .desktop files and the icon)
+rm -f /usr/local/bin/cognotik
+
 # Update desktop database
 update-desktop-database /usr/share/applications || true
+# Update icon cache (needed because dpkg removed our icon)
+gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+
 exit 0

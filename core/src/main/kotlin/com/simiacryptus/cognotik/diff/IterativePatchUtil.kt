@@ -749,25 +749,6 @@ object IterativePatchUtil {
       This is useful when the patch is small and can be applied directly, when creating the delete lines is cumbersome, or when creating a new file.
       """.trimIndent()
 
-    private fun findNextMatchingLine(
-        start: LineRecord?,
-        skipAdd: Boolean = false,
-        skipDelete: Boolean = false
-    ): LineRecord? {
-        var current = start
-        while (current != null) {
-            if ((skipAdd && current.type == ADD) ||
-                (skipDelete && current.type == DELETE) ||
-                current.matchingLine == null
-            ) {
-                current = current.nextLine
-            } else {
-                return current
-            }
-        }
-        return null
-    }
-
     private fun findPreviousValidLine(
         start: LineRecord?,
         skipAdd: Boolean = false,

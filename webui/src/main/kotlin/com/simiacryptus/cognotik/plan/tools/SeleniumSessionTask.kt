@@ -13,8 +13,8 @@ import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.devtools.HasDevTools
-import org.openqa.selenium.devtools.v131.log.Log
-import org.openqa.selenium.devtools.v131.network.Network
+import org.openqa.selenium.devtools.v136.log.Log
+import org.openqa.selenium.devtools.v136.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.slf4j.LoggerFactory
 import java.util.*

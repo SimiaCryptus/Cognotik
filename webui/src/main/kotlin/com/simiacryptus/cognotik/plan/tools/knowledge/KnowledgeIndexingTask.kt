@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -107,6 +106,5 @@ class KnowledgeIndexingTask(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(KnowledgeIndexingTask::class.java)
     }
 }

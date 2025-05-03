@@ -211,6 +211,3 @@ object MarkdownUtil {
     private val log = org.slf4j.LoggerFactory.getLogger(MarkdownUtil::class.java)
 }
 
-private fun String.htmlDecode(): String {
-    return StringEscapeUtils.unescapeHtml4(this)
-}

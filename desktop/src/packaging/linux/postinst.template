@@ -1,12 +1,23 @@
 #!/bin/sh
 set -e
-# Create desktop files directory if it doesn't exist
-mkdir -p /usr/share/applications
+# Remove any auto-generated desktop file if it exists
+# This prevents duplicate entries in the applications menu
+if [ -f "/usr/share/applications/Cognotik.desktop" ]; then
+  rm -f "/usr/share/applications/Cognotik.desktop"
+fi
 
-# Copy desktop files from resources
-cp "{{resourcesDir}}/cognotik.desktop" /usr/share/applications/cognotik.desktop
-cp "{{resourcesDir}}/cognotik-folder-action.desktop" /usr/share/applications/cognotik-folder-action.desktop
 
-# Update desktop database
+# Update desktop database after jpackage/dpkg installs the .desktop files
+# from the resource-dir into /usr/share/applications.
 update-desktop-database /usr/share/applications || true
+# Update icon cache after dpkg installs the icon file
+# into /usr/share/icons/hicolor/*/apps/cognotik.png
+gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+
+# Create /usr/local/bin if it doesn't exist
+mkdir -p /usr/local/bin
+# Create symlink for the executable
+# This makes 'cognotik' available in the system PATH.
+ln -sf /opt/cognotik/bin/Cognotik /usr/local/bin/cognotik
+
 exit 0

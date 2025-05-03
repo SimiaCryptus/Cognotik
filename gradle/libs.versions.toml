@@ -1,32 +1,61 @@
 [versions]
 # libraries
 jetty = "11.0.25"
+junit4 = "4.13.2"
 slf4j = "2.0.16"
-logback = "1.5.16"
-jackson = "2.17.2"
-aws = "2.27.23"
+logback = "1.5.18"
+jackson = "2.19.0"
+aws = "2.31.35"
 kotlin = "2.1.20"
-commons-text = "1.11.0"
-commons-io = "2.15.0"
-httpclient5 = "5.3.1"
-guava = "32.1.3-jre"
-gson = "2.10.1"
-hsqldb = "2.7.2"
+commons-text = "1.13.1"
+commons-io = "2.19.0"
+httpclient5 = "5.4.4"
+guava = "33.4.8-jre"
+gson = "2.13.1"
+hsqldb = "2.7.4"
 antlr = "4.13.2"
-asm = "9.6"
-kotlinx-coroutines = "1.8.0"
-mockito = "5.7.0"
+asm = "9.8"
+kotlinx-coroutines = "1.10.2"
+kotlinx-collections-immutable = "0.3.8"
+mockito = "5.17.0"
 flexmark = "0.64.8"
-h2 = "2.2.224"
-scala = "2.13.12"
+h2 = "2.3.232"
+scala = "2.13.16"
+groovy = "4.0.26"
+jsoup = "1.20.1"
+monteMedia = "17.2.1"
+selenium = "4.32.0"
+webdrivermanager = "6.1.0"
+remoterobot = "0.11.24.506"
+okhttp = "4.12.0"
+batik = "1.18"
+openjfx = "25-ea+14"
+awsSso = "2.31.35"
+commonsLang3 = "3.17.0"
+diffutils = "1.3.0"
+swaggerAnnotations = "1.6.15"
+jsr305 = "3.0.2"
+jacksonDatabindNullable = "0.2.6"
+jakartaAnnotationsApi = "3.0.0"
+jtransforms = "1.3.10"
+scalaJava8Compat = "1.0.2"
+graalvm = "24.2.1"
+eclipseJdtCore = "3.41.0"
+pdfbox = "3.0.5"
+zxing = "3.5.3"
+googleApiClient = "2.7.2"
+googleOauthClientJetty = "1.39.0"
+googleApiServicesOauth2 = "v2-rev20200213-2.0.0"
+googleHttpClientGson = "1.47.0"
+commonsCodec = "1.18.0"
 
 # plugins
 changelog = "2.2.1"
 intelliJPlatform = "2.5.0"
 kover = "0.9.1"
-qodana = "2024.3.4"
+qodana = "2025.1.0"
 shadow = "8.1.1"
-junit-jupiter = "5.10.2"
+junitJupiter = "5.12.2"
 
 [libraries]
 jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
@@ -42,6 +71,8 @@ logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = 
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
+jackson-jaxrs-json = { group = "com.fasterxml.jackson.jaxrs", name = "jackson-jaxrs-json-provider", version.ref = "jackson" }
+jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
 aws-sdk = { group = "software.amazon.awssdk", name = "aws-sdk-java", version.ref = "aws" }
 aws-bedrock = { group = "software.amazon.awssdk", name = "bedrock", version.ref = "aws" }
 aws-bedrockruntime = { group = "software.amazon.awssdk", name = "bedrockruntime", version.ref = "aws" }
@@ -55,24 +86,65 @@ gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 hsqldb = { group = "org.hsqldb", name = "hsqldb", version.ref = "hsqldb" }
 antlr-runtime = { group = "org.antlr", name = "antlr4-runtime", version.ref = "antlr" }
 asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
+antlr-tool = { group = "org.antlr", name = "antlr4", version.ref = "antlr" } # For antlr plugin
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
 mockito = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 flexmark-all = { group = "com.vladsch.flexmark", name = "flexmark-all", version.ref = "flexmark" }
 flexmark-core = { group = "com.vladsch.flexmark", name = "flexmark", version.ref = "flexmark" }
+flexmark-ext-tables = { group = "com.vladsch.flexmark", name = "flexmark-ext-tables", version.ref = "flexmark" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 scala-library = { group = "org.scala-lang", name = "scala-library", version.ref = "scala" }
 scala-compiler = { group = "org.scala-lang", name = "scala-compiler", version.ref = "scala" }
 scala-reflect = { group = "org.scala-lang", name = "scala-reflect", version.ref = "scala" }
-# Add JUnit BOM for consistent test dependencies
-junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-jupiter" }
+groovy-all = { group = "org.apache.groovy", name = "groovy-all", version.ref = "groovy" }
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+monte-media-screenrecorder = { group = "ch.randelshofer", name = "org.monte.media.screenrecorder", version.ref = "monteMedia" }
+monte-media = { group = "ch.randelshofer", name = "org.monte.media", version.ref = "monteMedia" }
+monte-media-swing = { group = "ch.randelshofer", name = "org.monte.media.swing", version.ref = "monteMedia" }
+selenium-java = { group = "org.seleniumhq.selenium", name = "selenium-java", version.ref = "selenium" }
+webdrivermanager = { group = "io.github.bonigarcia", name = "webdrivermanager", version.ref = "webdrivermanager" }
+remoterobot-fixtures = { group = "com.intellij.remoterobot", name = "remote-fixtures", version.ref = "remoterobot" }
+remoterobot-robot = { group = "com.intellij.remoterobot", name = "remote-robot", version.ref = "remoterobot" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+batik-transcoder = { group = "org.apache.xmlgraphics", name = "batik-transcoder", version.ref = "batik" }
+batik-codec = { group = "org.apache.xmlgraphics", name = "batik-codec", version.ref = "batik" }
+openjfx-swing = { group = "org.openjfx", name = "javafx-swing", version.ref = "openjfx" }
+openjfx-graphics = { group = "org.openjfx", name = "javafx-graphics", version.ref = "openjfx" }
+openjfx-base = { group = "org.openjfx", name = "javafx-base", version.ref = "openjfx" }
+httpclient5-fluent = { group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version.ref = "httpclient5" }
+aws-sso = { group = "software.amazon.awssdk", name = "sso", version.ref = "awsSso" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commonsLang3" }
+diffutils = { group = "com.googlecode.java-diff-utils", name = "diffutils", version.ref = "diffutils" }
+swagger-annotations = { group = "io.swagger", name = "swagger-annotations", version.ref = "swaggerAnnotations" }
+jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "jsr305" }
+jackson-databind-nullable = { group = "org.openapitools", name = "jackson-databind-nullable", version.ref = "jacksonDatabindNullable" }
+jakarta-annotations-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakartaAnnotationsApi" }
+aws-auth = { group = "software.amazon.awssdk", name = "auth", version.ref = "aws" }
+jtransforms = { group = "org.openimaj", name = "JTransforms", version.ref = "jtransforms" }
+scala-java8-compat = { group = "org.scala-lang.modules", name = "scala-java8-compat_2.13", version.ref = "scalaJava8Compat" }
+graalvm-js = { group = "org.graalvm.js", name = "js", version.ref = "graalvm" }
+graalvm-js-language = { group = "org.graalvm.js", name = "js-language", version.ref = "graalvm" }
+eclipse-jdt-core = { group = "org.eclipse.jdt", name = "org.eclipse.jdt.core", version.ref = "eclipseJdtCore" }
+pdfbox = { group = "org.apache.pdfbox", name = "pdfbox", version.ref = "pdfbox" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+zxing-javase = { group = "com.google.zxing", name = "javase", version.ref = "zxing" }
+google-api-client = { group = "com.google.api-client", name = "google-api-client", version.ref = "googleApiClient" }
+google-oauth-client-jetty = { group = "com.google.oauth-client", name = "google-oauth-client-jetty", version.ref = "googleOauthClientJetty" }
+google-api-services-oauth2 = { group = "com.google.apis", name = "google-api-services-oauth2", version.ref = "googleApiServicesOauth2" }
+google-http-client-gson = { group = "com.google.http-client", name = "google-http-client-gson", version.ref = "googleHttpClientGson" }
+commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commonsCodec" }
+junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitJupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
+junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junit4" }
+kotlin-test-junit5 = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit5" }
 aws-bom = { group = "software.amazon.awssdk", name = "bom", version.ref = "aws" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
 intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intelliJPlatform" }
-kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }

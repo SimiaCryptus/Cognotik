@@ -2,24 +2,15 @@ import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-fun properties(key: String) = providers.gradleProperty(key).getOrElse("")
-
 plugins {
-    id("java")
-    alias(libs.plugins.kotlin)
-
     alias(libs.plugins.intelliJPlatform)
-
     alias(libs.plugins.changelog)
-
     alias(libs.plugins.qodana)
-
     alias(libs.plugins.kover)
-
 }
 
 group = "com.simiacryptus"
-version = properties("pluginVersion")
+version = providers.gradleProperty("libraryVersion").get()
 
 repositories {
     mavenCentral()
@@ -30,19 +21,8 @@ repositories {
 
 dependencies {
 
-    implementation(libs.aws.bedrockruntime)
-    implementation(libs.aws.s3)
-    implementation(libs.aws.kms)
-
-    implementation(libs.commons.text)
-    implementation("org.apache.commons:commons-lang3:3.15.0")
-    implementation("com.vladsch.flexmark:flexmark:0.64.8")
-    implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
-    implementation(libs.httpclient5)
-
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
-
         exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
@@ -54,36 +34,43 @@ dependencies {
     implementation(project(":webui")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.slf4j")
+        exclude(group = "org.seleniumhq.selenium")
+        exclude(group = "io.github.bonigarcia")
+        exclude(group = "com.google.api-client")
+        exclude(group = "com.google.oauth-client")
     }
 
+    implementation(libs.aws.bedrockruntime)
+    implementation(libs.aws.s3)
+    implementation(libs.aws.kms)
+    implementation(libs.commons.text)
+    implementation(libs.commons.lang3)
+    implementation(libs.flexmark.core)
+    implementation(libs.diffutils)
+    implementation(libs.httpclient5)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
-
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlet)
     implementation(libs.jetty.annotations)
     implementation(libs.jetty.websocket.servlet)
     implementation(libs.jetty.websocket.server)
     implementation(libs.jetty.websocket.client)
-
     implementation(libs.slf4j.api)
     implementation(libs.logback.classic)
 
-    testImplementation(platform("org.junit:junit-bom:5.11.2"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine")
-    testImplementation("org.junit.vintage:junit-vintage-engine")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.kotlin.test.junit5)
+    // Add JUnit 4 explicitly as it seems required by the IntelliJ test framework runtime for some tests/runners
+    testRuntimeOnly(libs.junit.junit)
 
     intellijPlatform {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
-
         bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
-
         plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
-
-
     }
 
 }
@@ -93,7 +80,7 @@ kotlin {
 }
 
 tasks {
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    withType<KotlinCompile> {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
@@ -131,7 +118,7 @@ tasks {
 intellijPlatform {
     pluginConfiguration {
         name = providers.gradleProperty("pluginName")
-        version = providers.gradleProperty("pluginVersion")
+        version = providers.gradleProperty("libraryVersion")
 
         description = providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
             val start = "<!-- Plugin description -->"
@@ -148,10 +135,10 @@ intellijPlatform {
         val changelog = project.changelog
 
 
-        changeNotes = providers.gradleProperty("pluginVersion").map { pluginVersion ->
+        changeNotes = providers.gradleProperty("libraryVersion").map { libraryVersion ->
             with(changelog) {
                 renderItem(
-                    (getOrNull(pluginVersion) ?: getUnreleased())
+                    (getOrNull(libraryVersion) ?: getUnreleased())
                         .withHeader(false)
                         .withEmptySections(false),
                     Changelog.OutputType.HTML,
@@ -173,10 +160,7 @@ intellijPlatform {
 
     publishing {
         token = providers.environmentVariable("PUBLISH_TOKEN")
-
-
-
-        channels = providers.gradleProperty("pluginVersion")
+        channels = providers.gradleProperty("libraryVersion")
             .map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 
@@ -185,56 +169,4 @@ intellijPlatform {
             recommended()
         }
     }
-}
-
-intellijPlatformTesting {
-    testIdeUi {
-
-    }
-}
-
-tasks {
-
-    patchPluginXml {
-        sinceBuild.set(properties("pluginSinceBuild"))
-        untilBuild.set(properties("pluginUntilBuild"))
-
-        pluginDescription.set(providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
-            val start = "<!-- Plugin description -->"
-            val end = "<!-- Plugin description end -->"
-
-            with(it.lines()) {
-                if (!containsAll(listOf(start, end))) {
-                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
-                }
-                subList(indexOf(start) + 1, indexOf(end)).joinToString("\n").let(::markdownToHTML)
-            }
-        })
-
-        val changelog = project.changelog
-        changeNotes.set(providers.gradleProperty("pluginVersion").map { pluginVersion ->
-            with(changelog) {
-                renderItem(
-                    (getOrNull(pluginVersion) ?: getUnreleased())
-                        .withHeader(false)
-                        .withEmptySections(false),
-                    Changelog.OutputType.HTML,
-                )
-            }
-        })
-    }
-
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
-    publishPlugin {
-        dependsOn("patchChangelog")
-        token.set(System.getenv("PUBLISH_TOKEN"))
-        channels.set(
-            properties("pluginVersion").split('-').drop(1).take(1)
-                .map { it.substringBefore('.').ifEmpty { "default" } })
-    }
-
 }

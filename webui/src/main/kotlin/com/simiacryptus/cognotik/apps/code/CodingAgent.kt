@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.apps.code
 
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.actors.CodingActor.CodeResult
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -10,6 +11,7 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
@@ -35,25 +37,17 @@ open class CodingAgent<T : Interpreter>(
     val details: String? = null,
     val model: TextModel,
     private val mainTask: SessionTask,
+    val retryable : Boolean = true,
 ) {
-    val actors = mapOf(
-        ActorTypes.CodingActor to CodingActor(
-            interpreter,
-            symbols = symbols,
-            temperature = temperature,
-            details = details,
-            model = model,
-            fallbackModel = model as ChatModel
-        )
-    ).map { it.key.name to it.value }.toMap()
 
-    enum class ActorTypes {
-        CodingActor
-    }
-
-    open val actor by lazy {
-        actors.get(ActorTypes.CodingActor.name)!! as CodingActor
-    }
+    open val actor by lazy { CodingActor(
+        interpreter,
+        symbols = symbols,
+        temperature = temperature,
+        details = details,
+        model = model,
+        fallbackModel = model as ChatModel
+    ) }
 
     open val canPlay by lazy {
         ApplicationServices.authorizationManager.isAuthorized(
@@ -79,17 +73,36 @@ open class CodingAgent<T : Interpreter>(
         task: SessionTask = mainTask,
     ) {
         val task = ui.newTask(root = false).apply { task.complete(placeholder) }
-        Retryable(ui, task) {
-            val task = ui.newTask(root = false)
-            ui.socketManager?.scheduledThreadPoolExecutor!!.schedule({
-                ui.socketManager.pool.submit {
+        if(retryable) {
+            Retryable(ui, task) {
+                val task = ui.newTask(root = false)
+                ui.socketManager?.scheduledThreadPoolExecutor!!.schedule({
+                    ui.socketManager.pool.submit {
+                        try {
+                            val statusSB = task.add("Running...")
+                            displayCode(task, codeRequest)
+                            statusSB?.clear()
+                        } catch (e: Throwable) {
+                            log.warn("Error", e)
+                            task.error(ui, e)
+                        } finally {
+                            task.complete()
+                        }
+                    }
+                }, 100, TimeUnit.MILLISECONDS)
+                task.placeholder
+            }
+        } else {
+                try {
                     val statusSB = task.add("Running...")
                     displayCode(task, codeRequest)
                     statusSB?.clear()
+                } catch (e: Throwable) {
+                    log.warn("Error", e)
+                    task.error(ui, e)
+                } finally {
                     task.complete()
                 }
-            }, 100, TimeUnit.MILLISECONDS)
-            task.placeholder
         }
     }
 
@@ -141,11 +154,11 @@ open class CodingAgent<T : Interpreter>(
     fun displayCode(
         task: SessionTask, response: CodeResult
     ) {
-        task.hideable(
-            ui, renderMarkdown(
-                response.renderedResponse ?:
-
-                "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```", ui = ui
+        task.expanded(
+            "Code",
+            renderMarkdown(
+                response.renderedResponse ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```",
+                ui = ui
             )
         )
     }
@@ -156,11 +169,17 @@ open class CodingAgent<T : Interpreter>(
         val formText = StringBuilder()
         var formHandle: StringBuilder? = null
         formHandle = task.add(
-            "<div style=\"display: flex;flex-direction: column;\">\n${
+            "<div>\n${
                 if (!canPlay) "" else playButton(
                     task, request, response, formText
                 ) { formHandle!! }
-            }\n</div>\n${reviseMsg(task, request, response, formText) { formHandle!! }}",
+            }\n</div>\n${
+                ui.textInput { feedback ->
+                    responseAction(task, "Revising...", formHandle!!, formText) {
+                        feedback(task, feedback, request, response)
+                    }
+                }
+            }",
             additionalClasses = "reply-message"
         )
         formText.append(formHandle.toString())
@@ -168,33 +187,17 @@ open class CodingAgent<T : Interpreter>(
         task.complete()
     }
 
-    protected fun reviseMsg(
-        task: SessionTask,
-        request: CodingActor.CodeRequest,
-        response: CodeResult,
-        formText: StringBuilder,
-        formHandle: () -> StringBuilder
-    ) = ui.textInput { feedback ->
-        responseAction(task, "Revising...", formHandle(), formText) {
-            feedback(task, feedback, request, response)
-        }
-    }
-
-    protected fun regenButton(
-        task: SessionTask, request: CodingActor.CodeRequest, formText: StringBuilder, formHandle: () -> StringBuilder
-    ) = ""
-
     protected fun playButton(
         task: SessionTask,
         request: CodingActor.CodeRequest,
         response: CodeResult,
         formText: StringBuilder,
         formHandle: () -> StringBuilder
-    ) = if (!canPlay) "" else ui.hrefLink("▶", "href-link play-button") {
+    ) = if (!canPlay) "" else ui.hrefLink("▶ Run", "href-link play-button") {
         responseAction(task, "Running...", formHandle(), formText) {
             execute(task, response, request)
         }
-    }
+    }.replace("<a class", """<a style="font-size: xxx-large;" class""")
 
     protected open fun responseAction(
         task: SessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}
@@ -205,20 +208,13 @@ open class CodingAgent<T : Interpreter>(
             fn()
         } finally {
             header?.clear()
-            revertButton(task, formHandle, formText)
+            var revertButton: StringBuilder? = null
+            task.complete(ui.hrefLink("↩", "href-link regen-button") {
+                revertButton?.clear()
+                formHandle?.append(formText)
+                task.complete()
+            })
         }
-    }
-
-    protected open fun revertButton(
-        task: SessionTask, formHandle: StringBuilder?, formText: StringBuilder
-    ): StringBuilder? {
-        var revertButton: StringBuilder? = null
-        revertButton = task.complete(ui.hrefLink("↩", "href-link regen-button") {
-            revertButton?.clear()
-            formHandle?.append(formText)
-            task.complete()
-        })
-        return revertButton
     }
 
     protected open fun feedback(
@@ -239,7 +235,7 @@ open class CodingAgent<T : Interpreter>(
         }
     }
 
-    protected open fun execute(
+    protected fun execute(
         task: SessionTask,
         response: CodeResult,
         request: CodingActor.CodeRequest,
@@ -266,7 +262,6 @@ open class CodingAgent<T : Interpreter>(
                 "**Failed to Implement** \n\n${e.message}\n\n",
                 ui = ui
             )
-
             else -> renderMarkdown(
                 "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n",
                 ui = ui
@@ -282,17 +277,19 @@ open class CodingAgent<T : Interpreter>(
         )
     }
 
-    fun execute(
+    protected open fun execute(
         task: SessionTask, response: CodeResult
     ): String {
         val resultValue = response.result.resultValue
         val resultOutput = response.result.resultOutput
-        val result = when {
+        val tabs = TabbedDisplay(task)
+        tabs["Result"] = "```text\n$resultValue\n```".renderMarkdown()
+        tabs["Output"] = "```text\n$resultOutput\n```".renderMarkdown()
+        return when {
             resultValue.isBlank() || resultValue.trim().lowercase() == "null" -> "# Output\n```text\n$resultOutput\n```"
             else -> "# Result\n```\n$resultValue\n```\n\n# Output\n```text\n$resultOutput\n```"
         }
-        task.add(renderMarkdown(result, ui = ui))
-        return result
+
     }
 
     companion object {

@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory
 
 open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
     companion object {
-        private val log = LoggerFactory.getLogger(DynamicEnum::class.java)
         private val registries = mutableMapOf<Class<*>, MutableList<Pair<String, DynamicEnum<*>>>>()
 
         internal fun <T> getRegistry(clazz: Class<T>): MutableList<Pair<String, T>> {
