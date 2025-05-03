@@ -13,6 +13,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.Any
 import kotlin.String
 import kotlin.reflect.KClass
@@ -53,6 +54,7 @@ class RunCodeTask<T : Interpreter>(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
+        val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
         val codingAgent = object : CodingAgent<T>(
             api = api,
@@ -77,6 +79,7 @@ class RunCodeTask<T : Interpreter>(
             model = taskSettings.task_type?.let { planSettings.getTaskSettings(TaskType.valueOf(it)).model }
                 ?: planSettings.defaultModel,
             mainTask = task,
+            retryable = false,
         ) {
             override fun displayFeedback(
                 task: SessionTask,
@@ -85,14 +88,9 @@ class RunCodeTask<T : Interpreter>(
             ) {
                 val formText = StringBuilder()
                 var formHandle: StringBuilder? = null
-                formHandle = task.add(
+                if(!planSettings.autoFix) formHandle = task.add(
                     "<div>\n${
-                        if (!super.canPlay) "" else super.playButton(
-                            task,
-                            request,
-                            response,
-                            formText
-                        ) { formHandle!! }
+                        if (!super.canPlay) "" else super.playButton(task, request, response, formText) { formHandle!! }
                     }\n${
                         ui.hrefLink("Continue", "href-link play-button") {
                             response.let {
@@ -102,23 +100,33 @@ class RunCodeTask<T : Interpreter>(
                         }
                     }\n</div>\n${
                         super.ui.textInput { feedback ->
-                            super.responseAction(
-                                task,
-                                "Revising...", formHandle!!, formText
-                            ) {
-                                super.feedback(
-                                    task, feedback, request,
-                                    response
-                                )
+                            super.responseAction(task, "Revising...", formHandle!!, formText) {
+                                super.feedback(task, feedback, request, response)
                             }
                         }
                     }", additionalClasses = "reply-message"
-                )
+                ) else if(autoRunCounter.incrementAndGet() <= 1) {
+                    responseAction(task, "Running...", formHandle, formText) {
+                        execute(task, response, request)
+                    }
+                }
                 formText.append(formHandle.toString())
                 formHandle.toString()
                 task.complete()
             }
-
+            override fun execute(
+                task: SessionTask,
+                response: CodingActor.CodeResult
+            ): String {
+                val result = super.execute(task, response)
+                if(planSettings.autoFix) {
+                    response.let {
+                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
+                    }.apply { resultFn(this) }
+                    semaphore.release()
+                }
+                return result
+            }
         }
         codingAgent.start(
             codingAgent.codeRequest(

@@ -113,7 +113,10 @@ open class TaskChatMode(
                     append("Given the following input, choose ONE task to execute. Select the most appropriate task type for the given input and provide all required details.\n")
                     append("Available task types:\n")
                     append(TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
-                        "* ${TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent().indent("  ")}"
+                        "* ${
+                            TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent()
+                                .indent("  ")
+                        }"
                     })
                     append("\nChoose the most suitable task type and provide details of how it should be executed.")
                 },
@@ -123,19 +126,21 @@ open class TaskChatMode(
                 describer = describer,
                 parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
                     .joinToString("\n\n") { taskType ->
-                        "${taskType.name}:\n  ${describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")}".trim()
+                        "${taskType.name}:\n  ${
+                            describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                        }".trim()
                     })
             )
-            
+
             val input = getConversationContext() +
                     listOf(
                         "Please choose a single task to execute based on the current conversation."
                     )
-            
+
             val answer = parsedActor.answer(input, apiClient)
-            val chosenTasks = answer.obj.tasks?.firstOrNull() 
+            val chosenTasks = answer.obj.tasks?.firstOrNull()
                 ?: throw IllegalStateException("No task was selected")
-            
+
             val taskImpl = TaskType.getImpl(planSettings, chosenTasks)
             task.verbose("Executing task:\n```json\n${JsonUtil.toJson(chosenTasks)}\n```".renderMarkdown())
 
@@ -149,7 +154,9 @@ open class TaskChatMode(
                     tabs["Task"] = placeholder
                 },
                 api = apiClient,
-                resultFn = { result.append(it) },
+                resultFn = {
+                    result.append(it)
+                },
                 api2 = api2,
                 planSettings = planSettings,
             )

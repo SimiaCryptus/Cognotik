@@ -193,7 +193,7 @@ open class CodingAgent<T : Interpreter>(
         response: CodeResult,
         formText: StringBuilder,
         formHandle: () -> StringBuilder
-    ) = if (!canPlay) "" else ui.hrefLink("▶", "href-link play-button") {
+    ) = if (!canPlay) "" else ui.hrefLink("▶ Run", "href-link play-button") {
         responseAction(task, "Running...", formHandle(), formText) {
             execute(task, response, request)
         }
@@ -235,7 +235,7 @@ open class CodingAgent<T : Interpreter>(
         }
     }
 
-    protected open fun execute(
+    protected fun execute(
         task: SessionTask,
         response: CodeResult,
         request: CodingActor.CodeRequest,
@@ -277,7 +277,7 @@ open class CodingAgent<T : Interpreter>(
         )
     }
 
-    fun execute(
+    protected open fun execute(
         task: SessionTask, response: CodeResult
     ): String {
         val resultValue = response.result.resultValue
