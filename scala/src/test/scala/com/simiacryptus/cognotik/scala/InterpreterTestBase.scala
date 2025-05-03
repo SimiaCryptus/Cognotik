@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertNull, assertThrows}
 import org.junit.jupiter.api.Test
 
 import java.util
+import com.simiacryptus.cognotik.scala.InterpreterTestBase.FooBar
 import scala.jdk.CollectionConverters._
 
 abstract class InterpreterTestBase {
@@ -52,10 +53,6 @@ abstract class InterpreterTestBase {
     assertNull(result)
   }
 
-  class FooBar {
-    // In Scala, methods need explicit definition. Assuming a 'bar' method based on Kotlin test.
-    def bar(): String = "Foo says Hello World"
-  }
 
   @Test
   def testRunWithToolAny(): Unit = {
@@ -99,4 +96,9 @@ abstract class InterpreterTestBase {
   // but the internal logic uses Scala maps converted to Java maps for testing convenience.
   // The specific implementation (ScalaLocalInterpreterTest) handles the cast to Map[String, Object].
   def newInterpreter(map: util.Map[String, _]): Interpreter
+}
+object InterpreterTestBase {
+  class FooBar {
+    def bar(): String = "Foo says Hello World"
+  }
 }
