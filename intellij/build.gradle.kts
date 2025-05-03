@@ -63,6 +63,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.kotlin.test.junit5)
     // Add JUnit 4 explicitly as it seems required by the IntelliJ test framework runtime for some tests/runners
     testRuntimeOnly(libs.junit.junit)
 
