@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcognotik_ui=self.webpackChunkcognotik_ui||[]).push([[4929],{4929:(e,c,a)=>{a.d(c,{createRadarServices:()=>i.f});var i=a(2502);a(1584)}}]);

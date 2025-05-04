@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcognotik_ui=self.webpackChunkcognotik_ui||[]).push([[987],{987:(e,c,i)=>{i.d(c,{createArchitectureServices:()=>t.S});var t=i(1438);i(1584)}}]);
