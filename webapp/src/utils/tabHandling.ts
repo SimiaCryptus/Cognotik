@@ -329,7 +329,7 @@ export const updateTabs = debounce(() => {
             logTabCacheState('before-update');
         }
 
-        initNewCollapsibleElements()
+        initNewCollapsibleElements(); // Initialize any new collapsibles
         const currentStates = getAllTabStates();
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));

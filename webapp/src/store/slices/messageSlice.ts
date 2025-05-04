@@ -31,37 +31,9 @@ mermaid.initialize({
              'data-message-id', 'data-id', 'data-message-action', 'data-action', 'data-ref-id', 'data-version', 'role', 'message-id'],
      });
  };
- const debouncedUpdate = debounce(() => {
-     restoreTabStates(getAllTabStates());
-     updateTabs();
-     Prism.highlightAll();
-     try {
 
-        const mermaidElements = document.querySelectorAll('.mermaid:not(.mermaid-processed)');
-        if (mermaidElements.length > 0) {
-            mermaidElements.forEach(el => {
-                try {
 
-                    if (el.getBoundingClientRect().height > 0) {
-                        mermaid.render(`mermaid-${Date.now()}-${Math.floor(Math.random() * 10000)}`, el.textContent || '')
-                            .then(({ svg }) => {
-                                el.innerHTML = svg;
-                                el.classList.add('mermaid-processed');
-                            })
-                            .catch(err => {
-                                console.warn('[Mermaid] Failed to render diagram:', err?.message);
-                                el.classList.add('mermaid-error');
-                            });
-                    }
-                } catch (err) {
-                    console.warn('[Mermaid] Error processing diagram:', err);
-                }
-            });
-        }
-     } catch (error) {
-         console.error('Failed to render mermaid diagram:', error);
-     }
- }, 100);
+
  const messageSlice = createSlice({
      name: 'messages',
      initialState,
@@ -83,7 +55,6 @@ mermaid.initialize({
                  const existingIndex = state.messages.findIndex(msg => msg.id === messageId);
                  if (existingIndex !== -1) {
                      if (action.payload.isHtml && action.payload.rawHtml && !action.payload.sanitized) {
-                         debouncedUpdate();
 
                          action.payload.content = typeof action.payload.rawHtml === 'string'
 
@@ -103,7 +74,6 @@ mermaid.initialize({
              if (action.payload.isHtml && action.payload.rawHtml && !action.payload.sanitized) {
                  action.payload.content = sanitizeHtmlContent(action.payload.rawHtml);
                  action.payload.sanitized = true;
-                 debouncedUpdate();
              }
              state.messages.push(action.payload);
          },
