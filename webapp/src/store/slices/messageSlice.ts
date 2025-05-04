@@ -1,9 +1,7 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
- import {Message, MessageState} from '../../types/messages';
- import DOMPurify from 'dompurify';
- import {debounce, getAllTabStates, restoreTabStates, updateTabs} from '../../utils/tabHandling';
- import Prism from "prismjs";
- import mermaid from "mermaid";
+import {Message, MessageState} from '../../types/messages';
+import DOMPurify from 'dompurify';
+import mermaid from "mermaid";
 
 mermaid.initialize({
   startOnLoad: false,
@@ -23,6 +21,10 @@ mermaid.initialize({
 
  };
  const sanitizeHtmlContent = (content: string): string => {
+     if (!content || typeof content !== 'string') {
+         console.warn('[MessageSlice] Attempted to sanitize invalid content:', content);
+         return '';
+     }
 
      return DOMPurify.sanitize(content, {
          ALLOWED_TAGS: ['div', 'span', 'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 'code', 'pre', 'table', 'tr', 'td', 'th', 'thead', 'tbody',

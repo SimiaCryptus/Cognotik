@@ -3,13 +3,13 @@ import {useSelector} from 'react-redux';
 import {useTheme} from '../hooks/useTheme';
 import {RootState} from '../store';
 
-import { isArchive } from '../services/appConfig';
+import {isArchive} from '../services/appConfig';
 
-import { debounce, updateTabs, restoreTabStates, getAllTabStates, initNewCollapsibleElements } from '../utils/tabHandling';
+import {debounce, getAllTabStates, initNewCollapsibleElements, restoreTabStates, updateTabs} from '../utils/tabHandling';
 import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
 import mermaid from 'mermaid';
-import { Message } from "../types/messages";
+import {Message} from "../types/messages";
 import Spinner from './common/Spinner';
 import './MessageList.css';
 
@@ -41,7 +41,7 @@ const handleClick = (e: React.MouseEvent) => {
     const {messageId, action} = extractMessageAction(target);
     if (messageId && action) {
         if (DEBUG_LOGGING) {
-            console.debug('[MessageList] Action clicked:', {messageId, action});
+            console.debug('[MessageList] Action clicked:', action, 'for message:', messageId);
         }
         e.preventDefault();
         e.stopPropagation();
@@ -51,7 +51,7 @@ const handleClick = (e: React.MouseEvent) => {
 
 export const handleMessageAction = (messageId: string, action: string) => {
     if (DEBUG_LOGGING) {
-        console.debug('[MessageList] Processing action:', {messageId, action});
+        console.debug('[MessageList] Processing action:', action, 'for message:', messageId);
     }
 
     if (action === 'text-submit') {
@@ -98,7 +98,16 @@ export const expandMessageReferences = (
     processedRefs: Set<string> = new Set<string>()
 ): string => {
 
-    if (!content) return '';
+    if (!content || typeof content !== 'string') {
+        console.warn('[MessageList] Invalid content passed to expandMessageReferences:', content);
+        return '';
+    }
+
+    if (!Array.isArray(messages)) {
+        console.warn('[MessageList] Invalid messages array passed to expandMessageReferences');
+        return content;
+    }
+    
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
 
@@ -112,11 +121,22 @@ export const expandMessageReferences = (
             const referencedMessage = messages.find(m => m.id === messageID);
             if (referencedMessage) {
 
-                currentNode.innerHTML = referencedMessage.content;
+                try {
+                    if (referencedMessage.content) {
+                        currentNode.innerHTML = referencedMessage.content;
+                    } else {
+                        console.warn('[MessageList] Referenced message has no content. ID:', messageID);
+                        currentNode.innerHTML = '<span class="reference-error">Referenced content unavailable</span>';
+                    }
+                } catch (error) {
+                    console.error('[MessageList] Error expanding message reference:', error, {messageID});
+                    currentNode.innerHTML = '<span class="reference-error">Error expanding reference</span>';
+                }
             } else {
                 if (DEBUG_LOGGING) {
-                    console.warn('[MessageList] Referenced message not found:', messageID);
+                    console.warn('[MessageList] Referenced message not found. ID:', messageID);
                 }
+                currentNode.innerHTML = '<span class="reference-error">Referenced message not found</span>';
             }
         }
 
@@ -133,12 +153,17 @@ const renderMermaidDiagrams = (container: HTMLElement | null) => {
     try {
         const mermaidElements = container.querySelectorAll('.mermaid:not(.mermaid-processed)');
         if (mermaidElements.length > 0) {
-            if (DEBUG_LOGGING) console.debug(`[Mermaid] Found ${mermaidElements.length} diagrams to render.`);
+            if (DEBUG_LOGGING) console.debug('[Mermaid] Found diagrams to render:', mermaidElements.length);
             mermaidElements.forEach((el, index) => {
                 // Check if element is visible (basic check)
                 if (el instanceof HTMLElement && el.offsetParent !== null) {
                     const id = `mermaid-${Date.now()}-${index}`;
-                    const source = el.textContent || '';
+                    const source = el.textContent?.trim() || '';
+                    if (!source) {
+                        console.warn('[Mermaid] Empty diagram source, skipping render');
+                        el.classList.add('mermaid-error', 'mermaid-empty');
+                        return;
+                    }
                     // Clear existing content before rendering
                     el.innerHTML = '';
                     mermaid.render(id, source)
@@ -147,8 +172,10 @@ const renderMermaidDiagrams = (container: HTMLElement | null) => {
                             el.classList.add('mermaid-processed');
                         })
                         .catch(err => {
-                            console.warn('[Mermaid] Failed to render diagram:', err?.message, el);
+                            console.warn('[Mermaid] Failed to render diagram:', err?.message || 'Unknown error', el);
                             el.classList.add('mermaid-error');
+                            // Restore original content for debugging
+                            el.textContent = source;
                         });
                 }
             });
@@ -277,7 +304,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             try {
                 if (!messageListRef.current) return;
                 if (DEBUG_TAB_SYSTEM) {
-                    console.debug(`[MessageList ${CONTAINER_ID}] Running debounced post-render update`);
+                    console.debug('[MessageList] Running debounced post-render update. Container:', CONTAINER_ID);
                 }
                 restoreTabStates(getAllTabStates());
                 updateTabs();
@@ -294,7 +321,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                 });
                 renderMermaidDiagrams(messageListRef.current);
             } catch (updateError) {
-                console.error(`[MessageList ${CONTAINER_ID}] Error during debounced post-render update:`, updateError);
+                console.error('[MessageList] Error during post-render update:', updateError, 'Container:', CONTAINER_ID);
             }
         }, 250),
         []
@@ -307,7 +334,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
 
     React.useEffect(() => {
         if (DEBUG_LOGGING) {
-             console.debug(`[MessageList ${CONTAINER_ID}] Scheduling post-render update due to finalMessages change`, {
+            console.debug('[MessageList] Scheduling post-render update due to messages change. Container:', CONTAINER_ID, {
                  messageCount: finalMessages.length
              });
         }
@@ -331,7 +358,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             });
             if (tabsAdded) {
                 if (DEBUG_TAB_SYSTEM) {
-                    console.debug(`[MessageList ${CONTAINER_ID}] Tabs added via DOM mutation, scheduling post-render update`);
+                    console.debug('[MessageList] Tabs added via DOM mutation, scheduling update. Container:', CONTAINER_ID);
                 }
                 debouncedPostRenderUpdate();
             }
