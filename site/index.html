@@ -20,8 +20,7 @@
 
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
@@ -36,15 +35,6 @@
             <div class="hero-content">
                 <div class="hero-text fade-in delay-1">
                     <h1>Cognotik: Your AI Co-Pilot for Software Development</h1>
-                    <p class="subtitle">Accelerate your development workflow with intelligent AI planning and code generation.</p>
-                    <ul class="hero-details" style="margin:1.5em 0 1em 1em; color:#e0e7ef; font-size:1.08em; line-height:1.6;">
-                        <li><strong>Open Source &amp; BYOK:</strong> 100% open source under Apache 2.0. Bring your own API key for privacy and flexibility.</li>
-                        <li><strong>Cross-Platform:</strong> Available for Windows, macOS, Linux, IntelliJ, and web browsers.</li>
-                        <li><strong>AI Planning &amp; Code Generation:</strong> Break down complex tasks and generate high-quality code with advanced AI models.</li>
-                        <li><strong>Interactive UI:</strong> Refine AI-generated plans and code in real time.</li>
-                        <li><strong>Supports Multiple AI Providers:</strong> Use OpenAI, Anthropic, and more via JOpenAI integration.</li>
-                    </ul>
-                    <!-- Download UI (consolidated) -->
                     <div class="download-ui-simple">
                         <div id="download-info-simple">
                             <span id="detected-os">Detected OS: Checking...</span>
@@ -63,8 +53,10 @@
                     </div>
                 </div>
                 <div class="hero-image fade-in delay-2">
-                    <div class="hero-logo-container" style="position: relative;">
-                        <svg id="hero-logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 588 586" width="300" height="300" style="display:block;max-width:100%;height:auto;cursor:pointer;">
+                    <div class="hero-logo-container" style="position: relative;width: -webkit-fill-available;">
+                        <svg id="hero-logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 588 586"
+                             width="300" height="300"
+                             style="display:block;max-width:100%;height:auto;cursor:pointer;width: -webkit-fill-available;">
                             <!-- SVG paths from logo.svg -->
                             <path d="M430.84,8.1l4.61,26.91,1.07.86c11.66-3.14,22.9,4.07,33.8,6.94l17.25-21.69c5.04,2.36,30.06,11.35,31.23,15.57,1.55,5.56-13.62,22.97-10.37,28.28.64,1.05,4.51,2.74,5.98,4.03,6.84,6,11.81,13.73,17.11,21.03l26.26-9.92,17.01,28.55c.61,4.01-19.55,15.73-22.44,19.23-2.87,3.47.85,11.13,1.44,15.71.91,7.04.86,14.2,2.33,21.15l26.66,6.34-4.04,34.19c-.18.82-.81,1.15-1.42,1.6-3.13,2.33-23.46-1.98-28.75-.77l-15.33,28.33,16.46,22.15c.2,2.13-15.95,24.55-18.5,25.21-4.48,1.16-19.54-14.23-25.71-13.86-4.49.27-23.44,18.87-30.49,20.12l10,26.24-26.62,14.63c-.93.13-1.36-.43-1.95-.99-3.49-3.29-7.93-17.15-11.93-20.08-5.24-3.83-24.62,6.82-30.42,9.21-2.23,3.51,9,22.88,10.75,27.37-9.41,5.08-18.71,11.5-29.2,14.36-2.9-.73-10.35-17.99-12.48-21.6-.48-.82.3-1.67-1.69-1.26-12.05,9.22-24.33,18.12-34.5,29.48,2.63,4.16,16.6,13.06,17.01,17.04.34,3.26-13.22,22.15-16.57,22.49-4.8.37-24.38-13.01-26.33-11.89-6.41,10.11-14.66,19.46-18,31.26l23.83,14.09-16.97,25.07c-3.58,1.84-17.92-8.92-21.49-11.21-7.73-.49-18.11,23.97-22.06,29.58-1.93,2.74-9.18,8.56-9.49,11.61-.23,2.23,10.28,13.43,12.46,16.54.96,1.36,3.71,4.85,3.44,6.26-3.9,4.29-20.13,24.23-25.12,23.51-4.31-.62-13.62-14.71-20.47-15.7-3.19-.46-10.89,5.43-14.58,7.01-2.76,1.18-17.51,5.72-18.22,6.78-1.35,4.5-.47,26.59-2.43,28.57-1.39,1.41-7.35,1.92-9.69,2.31-5.69.93-14.24,2.05-19.85,2.17-1.38.03-3.77-.45-4.55-1.68-3.38-5.34-3.1-20.57-6.14-26.61-1.88-3.73-7.28-2.33-10.84-3.16-4.93-1.15-17.04-6.97-20.2-6.4-6.41,1.15-15.66,19.14-21.14,18.86-2.72-.14-24.81-19.25-25.46-21.72-.9-3.45,12.73-19.4,14.54-23.79l-13.62-24.04-2.57-1.46-29.48,2-4.87-31.28c.99-3.7,23.37-8.51,27.73-10.85l1.69-34.92c-1.68-5.05-23.33-11.25-24.44-14.61l5.82-30.88,32.07.07c17.94-32.96,40.77-65.09,69.5-89.48,15.56-13.21,33.01-24.17,48.48-37.51,10.55-9.09,19.84-19.82,30.46-28.46l3.23,1.27c3.54,6.51,12.52,12.58,16.35,18.15.61.88,1.43,1.35.5,2.52l-71.56,61.49c-33.73,33.42-65.92,69.19-75.51,117.46-10.75,54.12,13.73,111.74,77.56,99.56,47.98-9.16,63.92-58.4,86.54-94.44,21.7-34.58,59.51-76.71,93.09-99.89,42.91-29.62,100.28-42.35,134.81-82.16,48.28-55.65,23.63-133.21-46.51-152.49-38.33-10.54-81.18,6.57-110,31.98-11.17,9.85-24.13,23-32,35.5-1.45.39-1.66-.39-2.5-.97-1.72-1.19-17.16-16.44-17.37-17.66,26.33-36.94,61.55-72.65,106.44-85.29l1.58-27.92c11.71-4.2,24.42-4.47,36.75-4.03Z"/>
                             <path d="M197.95,47.05l-4.03,24.49c-.13,1.21.27,2.08.97,3.02.79,1.06,22.13,12.51,23.42,12.25l17.65-13.4,19.82,20.05-10.37,16.42c-.75,3.4,10.85,11.02,13.56,13.57,29.16,27.41,54.6,58.86,83.45,86.53,8.87,8.51,19.93,16.13,28.54,24.45,1.07,1.04,2.33,1.75,1.98,3.5l-30.97,14.57c-9.73-10.98-18.79-22.59-28.51-33.57-31.26-35.33-84.12-99.16-126.14-117.83C86.01,56.11,17.54,204.26,91.51,268.93c5.95,5.2,12.69,9.24,19.28,13.51l-35.34,46.52c-.78,1.25-1.35.88-2.49.6-3.09-.77-24.78-18.49-24.79-20.09,2.78-5.3,15.75-18.79,15.75-24.01,0-3.84-14.58-21.42-17.64-25.34l-27.66,6.77-10.53-29.26,23.97-15.08c.88-.85.83-1.92.98-3.02.64-4.72-.6-29.46-3.3-32.3-3.51-3.68-18.38-6.47-23.64-8.35-.97-1.13,3.8-27.17,5.05-29.24,1.32-2.2,2.98-1.78,5.35-1.72,5.6.14,20.07,5.64,23.95,1.03l13.26-28.48-16.52-19.99,17.8-22.05,23.49,15.23c1.27,0,20.36-13,21.2-13.96.72-.82,1.18-1.93,1.04-3.03l-6.66-24.6,29.26-8.98c4.24,1.21,4.53,21.83,10.15,22.9,4.02.76,7.48-.82,11.01-.99,4.19-.19,12.49,1.06,15.46-1.54,3.54-3.1,4.88-23.85,7.69-24.53,10.5.87,20.56,4.52,30.32,8.12Z"/>
@@ -96,8 +88,9 @@
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
                         </svg>
                     </div>
-                    <h3>AI-Powered Task Planning</h3>
-                    <p>Break down complex software tasks into actionable subtasks with advanced AI. Cognotik intelligently manages dependencies and generates step-by-step implementation plans for you or your team.</p>
+                    <h3>General-Purpose AI Agents</h3>
+                    <p>Leverage versatile AI agents that can handle a wide range of development tasks. From code generation to debugging, these agents adapt to your needs and learn from interactions to become more effective over time.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -105,8 +98,9 @@
                             <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z"/>
                         </svg>
                     </div>
-                    <h3>AI Code Generation &amp; Refactoring</h3>
-                    <p>Generate high-quality code, refactor existing codebases, and automate repetitive tasks with AI. Supports multiple languages and frameworks. Integrates with your IDE and CI/CD pipeline.</p>
+                    <h3>Free & Open Source</h3>
+                    <p>Enjoy complete transparency with our Apache 2.0 licensed codebase. Contribute to the project, customize it for your needs, or inspect the code for security. No hidden costs or proprietary restrictions—just powerful, community-driven software.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -114,8 +108,9 @@
                             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                         </svg>
                     </div>
-                    <h3>Interactive Real-Time Collaboration</h3>
-                    <p>Collaborate with teammates or AI in real time. Review, refine, and approve AI-generated plans and code interactively. All changes are tracked and auditable.</p>
+                    <h3>Choose Any LLM Model</h3>
+                    <p>Freedom to select the AI model that best fits your needs. Connect to OpenAI, Anthropic Claude, Google Gemini, or any other compatible LLM. Switch between models seamlessly to optimize for cost, performance, or specialized capabilities.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -124,7 +119,8 @@
                         </svg>
                     </div>
                     <h3>Cross-Platform &amp; Extensible</h3>
-                    <p>Works on Windows, macOS, Linux, IntelliJ, and web. Easily extensible with plugins and APIs. Integrates with your favorite tools and workflows.</p>
+                    <p>Use Cognotik anywhere—Windows, macOS, Linux, IntelliJ plugin, or web app. The extensible architecture allows for custom plugins and integrations with your existing development tools, version control systems, and CI/CD pipelines.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -132,30 +128,10 @@
                             <path d="M12 4.44l4.95 9.9c.32.65-.15 1.41-.87 1.41H7.92c-.72 0-1.19-.76-.87-1.41l4.95-9.9c.36-.72 1.38-.72 1.74 0zM12 2c-.55 0-1.05.3-1.3.77l-6.6 13.2c-.36.72.15 1.53.97 1.53h13.86c.82 0 1.33-.81.97-1.53l-6.6-13.2C13.05 2.3 12.55 2 12 2z"/>
                         </svg>
                     </div>
-                    <h3>Bring Your Own Key (BYOK) &amp; Privacy</h3>
-                    <p>Use your own API keys for OpenAI, Anthropic, Google, and more. Your data and API usage stay under your control. No vendor lock-in, no forced cloud, and no hidden costs.</p>
+                    <h3>Bring Your Own Key (BYOK) Cost Model</h3>
+                    <p>Maintain complete control over your AI costs and data privacy by using your own API keys. Set budgets, monitor usage, and ensure sensitive code never leaves your environment without your knowledge. No intermediary servers or additional markups.</p>
+                    <button class="read-more-btn">Read More</button>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
-                    </div>
-                    <h3>Enterprise-Grade Security &amp; Compliance</h3>
-                    <p>Designed for teams and organizations. Supports on-premises deployment, SSO, audit logs, and granular access control. Meets privacy and compliance requirements.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-                        </svg>
-                    </div>
-                    <h3>Knowledge Management &amp; Documentation</h3>
-                    <p>Index, search, and visualize project knowledge. Extract structured data from documentation, generate docs from code, and keep your team aligned.</p>
-                </div>
-            </div>
-            <div style="margin:2em 0 0 0; text-align:center;">
-                <strong>Ready to transform your development workflow?</strong> <a href="#hero" class="btn btn-primary btn-lg" style="margin-left:1em;">Download Cognotik</a>
             </div>
         </div>
     </section>
@@ -184,46 +160,26 @@
         </div>
     </section>
 
-    <!-- Open Source Section (SEO-optimized and detailed) -->
-    <section id="open-source" class="open-source-section">
-        <div class="container">
-            <h2>Open Source, Secure, and Flexible</h2>
-            <div class="open-source-content">
-                <div class="open-source-info">
-                    <h3>Apache 2.0 License</h3>
-                    <p>
-                        Cognotik is fully open-source under the permissive Apache 2.0 license. Use, modify, and distribute it freely for personal, educational, or commercial projects. No vendor lock-in, no hidden fees.
-                    </p>
-                    <a href="https://github.com/SimiaCryptus/Cognotik/blob/main/LICENSE" target="_blank" rel="noopener" class="text-link">View License</a>
-                </div>
-                <div class="open-source-info">
-                    <h3>Bring Your Own Key (BYOK) Model</h3>
-                    <p>
-                        Use your own API keys for maximum privacy, cost control, and flexibility. Cognotik never shares your data or API usage with third parties.
-                    </p>
-                    <ul style="margin:0.5em 0 0 1em; color:#666; font-size:1em; line-height:1.5;">
-                        <li>Supports OpenAI, Anthropic, Google, and more via JOpenAI integration</li>
-                        <li>No forced cloud usage—run on-premises or in your own cloud</li>
-                        <li>All data and API usage stays under your control</li>
-                        <li>Granular access control for teams and organizations</li>
-                    </ul>
-                </div>
+    <section>
+        <div class="open-source-extra" style="color:#666; font-size:1.08em;">
+            <div style="margin:2em 0 0 0; text-align:center;">
+                <strong>Ready to transform your development workflow?</strong> <a href="#hero"
+                                                                                  class="btn btn-primary btn-lg"
+                                                                                  style="margin-left:1em;">Download
+                Cognotik</a>
             </div>
-            <div class="github-cta">
-                <a href="https://github.com/SimiaCryptus/Cognotik" target="_blank" rel="noopener" class="btn btn-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                    View on GitHub
-                </a>
-            </div>
-            <div class="open-source-extra" style="margin-top:2em; color:#666; text-align:center; font-size:1.08em;">
-                <strong>Want to learn more?</strong> See the <a href="https://github.com/SimiaCryptus/Cognotik#readme" target="_blank" rel="noopener">full feature list, documentation, and API reference</a> on GitHub.<br>
-                <span style="font-size:0.95em;">Cognotik is ideal for developers, teams, enterprises, educators, and anyone seeking a secure, extensible AI development platform.</span>
-            </div>
+            <span style="font-size:0.95em;">Cognotik is ideal for developers, teams, enterprises, educators, and anyone seeking a secure, extensible AI development platform.</span>
         </div>
     </section>
 </main>
+<!-- Feature Details Modal -->
+<div id="feature-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 id="modal-title"></h2>
+        <div id="modal-content"></div>
+    </div>
+</div>
 
 
 <!-- Scripts -->
@@ -231,6 +187,7 @@
 <script src="scripts/github-api.js"></script>
 <script src="scripts/download-ui.js"></script>
 <script src="scripts/logo-animation.js"></script>
+<script src="scripts/feature-modal.js"></script>
 <script src="scripts/main.js"></script>
 <!--
 SEO: Cognotik - Open Source AI Development Platform, AI planning, AI code generation, cross-platform, secure, extensible, BYOK, OpenAI, Anthropic, Google, JetBrains, desktop, web, IDE, developer productivity, software teams, enterprise AI, privacy-first, AI workflow automation, AI for developers, AI for teams, AI for education, AI for enterprises, AI for startups, AI-powered IDE, AI co-pilot, AI chat, AI code review, AI refactoring, AI integrations, secure AI, extensible AI platform, open source AI tools, SimiaCryptus

@@ -766,3 +766,105 @@ code {
 .loading .loading-text {
   visibility: visible;
 }
+
+/* Add this at the end of your existing CSS file */
+
+/* Feature Card Read More Button */
+.read-more-btn {
+  background-color: transparent;
+  border: 1px solid #3498db;
+  color: #3498db;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: all 0.3s ease;
+}
+
+.read-more-btn:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 80%;
+  max-width: 800px;
+  position: relative;
+  animation: modalFadeIn 0.3s ease-in-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-modal:hover {
+  color: #333;
+}
+
+#modal-title {
+  margin-top: 0;
+  color: #2c3e50;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+#modal-content {
+  line-height: 1.6;
+}
+
+#modal-content ul {
+  margin-left: 20px;
+  margin-bottom: 20px;
+}
+
+#modal-content li {
+  margin-bottom: 10px;
+}
+
+#modal-content a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+#modal-content a:hover {
+  text-decoration: underline;
+}
+
