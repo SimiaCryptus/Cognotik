@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.jopenai.models.OpenAIModel
 import com.simiacryptus.jopenai.util.ClientUtil
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ScheduledThreadPoolExecutor
@@ -64,11 +66,19 @@ open class ClientManager {
             val userSettings = userSettingsManager.getUserSettings(user)
             val userApi =
                 if (userSettings.apiKeys.isNotEmpty()) {
-                    ChatClient(
+                    object : ChatClient(
                         key = userSettings.apiKeys,
                         apiBase = userSettings.apiBase,
                         workPool = getPool(session, user),
-                    ).apply {
+                    ){
+                        override fun onUsage(
+                            model: OpenAIModel?,
+                            tokens: ApiModel.Usage
+                        ) {
+                            super.onUsage(model, tokens)
+                            ApplicationServices.usageManager.incrementUsage(session, user, model!!, tokens)
+                        }
+                    }.apply {
                         this.session = session
                         this.user = user
                         logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
@@ -81,10 +91,18 @@ open class ClientManager {
         )
         if (!canUseGlobalKey) throw RuntimeException("No API key")
         return (if (ClientUtil.keyMap.isNotEmpty()) {
-            ChatClient(
+            object : ChatClient(
                 key = ClientUtil.keyMap.mapKeys { APIProvider.valueOf(it.key) },
                 workPool = getPool(session, user),
-            ).apply {
+            ){
+                override fun onUsage(
+                    model: OpenAIModel?,
+                    tokens: ApiModel.Usage
+                ) {
+                    super.onUsage(model, tokens)
+                    ApplicationServices.usageManager.incrementUsage(session, user, model!!, tokens)
+                }
+            }.apply {
                 this.session = session
                 this.user = user
                 logStreams += sessionDir.resolve("openai.log").outputStream().buffered()

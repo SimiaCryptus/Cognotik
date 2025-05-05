@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcognotik_ui=self.webpackChunkcognotik_ui||[]).push([[6974],{6974:(e,c,k)=>{k.d(c,{createPacketServices:()=>i.$});var i=k(8062);k(1584)}}]);

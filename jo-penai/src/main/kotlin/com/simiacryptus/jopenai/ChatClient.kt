@@ -71,14 +71,20 @@ open class ChatClient(
             super.log(level, msg)
             this@ChatClient.log(level, msg)
         }
+
+        override fun onUsage(
+            model: OpenAIModel?,
+            tokens: Usage
+        ) {
+            this@ChatClient.onUsage(model, tokens)
+            super.onUsage(model, tokens)
+        }
     }
 
     open fun getChildClient(): ChatClient = ChildClient()
 
     protected open fun onUsage(model: OpenAIModel?, tokens: Usage) {
-        log.debug(
-            "Usage recorded for session: {}, user: {}, model: {}, tokens: {}", session, user, model, tokens
-        )
+        log.debug("Usage recorded for session: {}, user: {}, model: {}, tokens: {}", session, user, model, tokens)
         if (null != budget) budget = budget!!.toDouble() - (tokens.cost ?: 0.0)
     }
 

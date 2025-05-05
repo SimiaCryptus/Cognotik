@@ -72,8 +72,8 @@ open class IdeaChatClient(
     private val isInRequest = AtomicBoolean(false)
 
     override fun onUsage(model: OpenAIModel?, tokens: Usage) {
-
         ApplicationServices.usageManager.incrementUsage(currentSession, localUser, model!!, tokens)
+        super.onUsage(model, tokens)
     }
 
     override fun authorize(request: HttpRequest, apiProvider: APIProvider) {

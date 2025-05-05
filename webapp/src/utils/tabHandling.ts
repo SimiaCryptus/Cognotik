@@ -41,7 +41,7 @@ const tabContentCache = new Map<string, HTMLElement>();
 
 function logTabCacheState(context: string): void {
     if (DEBUG_TAB_SYSTEM) {
-        console.debug('[TabSystem] Cache state: ' + context, {
+        console.debug('[TabSystem] Cache state:', context, {
             context,
             cacheSize: tabContentCache.size,
 
@@ -83,7 +83,7 @@ export function saveTabState(containerId: string, activeTab: string) {
         tabStates.set(containerId, state);
         trackTabStateHistory(containerId, activeTab);
         if (DEBUG_TAB_SYSTEM) {
-            console.debug('[TabSystem] Saved tab state for ' + containerId, {
+            console.debug('[TabSystem] Saved tab state for:', containerId, {
                 containerId,
                 activeTab,
                 version: currentStateVersion
@@ -91,7 +91,7 @@ export function saveTabState(containerId: string, activeTab: string) {
         }
     } catch (error) {
         errors.saveErrors++;
-        console.error(`Failed to save tab state:`, {
+        console.error('[TabSystem] Failed to save tab state:', {
             error,
             containerId,
             activeTab,
@@ -106,7 +106,7 @@ export const getAllTabStates = (): Map<string, TabState> => {
 
 export const restoreTabStates = (states: Map<string, TabState>): void => {
     if (DEBUG_TAB_SYSTEM) {
-        console.debug('[TabSystem] Restoring ' + states.size + ' tab states', {
+        console.debug('[TabSystem] Restoring tab states:', states.size, {
             containerIds: Array.from(states.keys())
         });
     }
@@ -128,34 +128,38 @@ export const restoreTabStates = (states: Map<string, TabState>): void => {
 export function setActiveTab(button: Element, container: Element) {
     const forTab = button.getAttribute('data-for-tab');
     if (!forTab) {
-        console.warn('[TabSystem] No "data-for-tab" attribute found on button:', button);
+        console.warn('[TabSystem] Missing "data-for-tab" attribute on button:', button);
         return;
     }
-    // Check if this tab is already active
+    if (!container || !container.id) {
+        console.error('[TabSystem] Invalid container or missing container ID');
+        return;
+    }
     const currentActiveTab = getActiveTab(container.id);
     if (currentActiveTab === forTab && container.querySelector(`.tab-content[data-tab="${forTab}"].active`)) {
         if (DEBUG_TAB_SYSTEM) {
-            console.debug('[TabSystem] Tab already active, ignoring click:', forTab);
+            console.debug('[TabSystem] Tab already active, ignoring click. Tab:', forTab);
         }
         return;
     }
-
     if (DEBUG_TAB_SYSTEM) {
-        console.debug('[TabSystem] Setting active tab: ' + forTab + ' in ' + container.id);
+        console.debug('[TabSystem] Setting active tab:', forTab, 'in container:', container.id);
     }
-    // Update state first
-
     setActiveTabState(container.id, forTab);
     saveTabState(container.id, forTab);
 
     const tabsGroup = button.closest('.tabs');
-    if (!tabsGroup) return;
-
+    if (!tabsGroup) {
+        console.warn('[TabSystem] Button is not within a .tabs element:', button);
+        return;
+    }
     tabsGroup.querySelectorAll('.tabs-container').forEach(nestedContainer => {
-        setupTabContainer(nestedContainer);
+        try {
+            setupTabContainer(nestedContainer);
+        } catch (error) {
+            console.error('[TabSystem] Error setting up nested tab container:', error);
+        }
     });
-    // Update button styles
-
     const tabButtons = tabsGroup.querySelectorAll('.tab-button');
     tabButtons.forEach(btn => {
         if (btn.getAttribute('data-for-tab') === forTab) {
@@ -170,20 +174,20 @@ export function setActiveTab(button: Element, container: Element) {
     Array.from(container.children || [])
         .forEach(content => {
             if (!content.matches('.tab-content')) return;
-
             const contentElement = content as HTMLElement;
             const contentTabId = content.getAttribute('data-tab');
-
             if (contentTabId === forTab) {
                 content.classList.add('active');
-                contentElement.style.display = ''; // Or 'flex', 'block' if needed, default is usually block
-
+                contentElement.style.display = '';
                 requestAnimationFrame(() => {
-                    // Ensure nested tabs within the newly active tab are also initialized/restored
-                    contentElement.querySelectorAll('.tabs-container').forEach(nestedContainer => {
-                        setupTabContainer(nestedContainer);
-                        restoreTabState(nestedContainer); // Restore state for nested tabs
-                    });
+                    try {
+                        contentElement.querySelectorAll('.tabs-container').forEach(nestedContainer => {
+                            setupTabContainer(nestedContainer);
+                            restoreTabState(nestedContainer); // Restore state for nested tabs
+                        });
+                    } catch (error) {
+                        console.error('[TabSystem] Error initializing nested tabs:', error);
+                    }
                 });
             } else {
                 content.classList.remove('active');
@@ -192,28 +196,27 @@ export function setActiveTab(button: Element, container: Element) {
         });
 }
 
-function restoreTabState(container: Element) {
+export function restoreTabState(container: Element) {
     try {
         diagnostics.restoreCount++;
         const containerId = container.id;
-        // Find the correct tab to activate
-
+        if (!containerId) {
+            console.error('[TabSystem] Cannot restore tab state: container has no ID');
+            diagnostics.restoreFail++;
+            return;
+        }
         const savedTab = getActiveTab(containerId);
         if (DEBUG_TAB_SYSTEM) {
-            console.debug('[TabSystem] Restoring state: ' + savedTab + ' for ' + containerId);
+            console.debug('[TabSystem] Restoring state:', savedTab, 'for container:', containerId);
         }
 
         if (savedTab) {
-            // Find the button corresponding to the saved tab *within this container's scope*
             const button = container.querySelector(`.tabs > .tab-button[data-for-tab="${savedTab}"]`) as HTMLElement;
 
             if (button) {
                 if (DEBUG_TAB_SYSTEM) {
-                    console.debug('[TabSystem] Found button for: ' + savedTab);
+                    console.debug('[TabSystem] Found button for tab:', savedTab);
                 }
-                // Use setActiveTab to handle button styling and content visibility
-                // Avoid calling setActiveTab directly if it might trigger redundant updates via its own updateTabs call
-
                 setActiveTab(button, container);
                 diagnostics.restoreSuccess++;
             } else {
@@ -255,11 +258,13 @@ function restoreTabState(container: Element) {
             }
         }
     } catch (error) {
+        errors.restoreErrors++;
         console.error('[TabSystem] Failed to restore tab state', {
             containerId: container.id,
             error: error,
             stack: error instanceof Error ? error.stack : new Error().stack,
-            diagnostics: {restoreSuccess: diagnostics.restoreSuccess, restoreFail: diagnostics.restoreFail}
+            diagnostics: {restoreSuccess: diagnostics.restoreSuccess, restoreFail: diagnostics.restoreFail},
+            totalErrors: errors.restoreErrors
         });
         diagnostics.restoreFail++;
     }
@@ -287,18 +292,14 @@ export function initCollapsibleElements() {
 }
 
 export function initNewCollapsibleElements() {
-    // Select all headers, allowing re-initialization if needed after DOM changes (like theme swaps)
     document.querySelectorAll('.expandable-header').forEach(header => {
-        // Check if a listener is already attached to avoid duplicates if the element persists
-        // Using a simple custom property check
         if ((header as any).__collapsibleListenerAttached) {
-            // Optional: Update icon state just in case it got out of sync
             const content = header.nextElementSibling;
             const icon = header.querySelector('.expand-icon');
             if (content && icon) {
-                 icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
+                icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
             }
-            return; // Skip adding listener again
+            return;
         }
 
         header.addEventListener('click', (event) => {
@@ -311,7 +312,6 @@ export function initNewCollapsibleElements() {
                 icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
             }
         });
-        // Mark that we've attached the listener
         (header as any).__collapsibleListenerAttached = true;
     });
 }
@@ -319,7 +319,7 @@ export function initNewCollapsibleElements() {
 export const updateTabs = debounce(() => {
     if (isMutating) {
         if (DEBUG_TAB_SYSTEM) {
-            console.debug('[TabSystem] Skip update: mutation in progress');
+            console.debug('[TabSystem] Skipping update: DOM mutation in progress');
         }
         return;
     }
@@ -328,57 +328,43 @@ export const updateTabs = debounce(() => {
         if (DEBUG_TAB_SYSTEM) {
             logTabCacheState('before-update');
         }
-
-        initNewCollapsibleElements()
+        initNewCollapsibleElements(); // Initialize any new collapsibles
         const currentStates = getAllTabStates();
         const processed = new Set<string>();
         const tabsContainers = Array.from(document.querySelectorAll('.tabs-container'));
         if (DEBUG_TAB_SYSTEM) {
-            console.debug('[TabSystem] Found ' + tabsContainers.length + ' tab containers');
+            console.debug('[TabSystem] Found tab containers:', tabsContainers.length);
         }
-
-        if (tabsContainers.length === 0) {
-            return;
-        }
-
+        if (tabsContainers.length === 0) return;
         isMutating = true;
-
         tabsContainers.forEach(container => {
             if (processed.has(container.id)) return;
             processed.add(container.id);
             setupTabContainer(container);
-            // Determine the tab that *should* be active
-
             const activeTab = getActiveTab(container.id) ||
                 currentStates.get(container.id)?.activeTab ||
                 container.querySelector('.tabs .tab-button.active')?.getAttribute('data-for-tab');
             if (DEBUG_TAB_SYSTEM) {
-                console.debug('[TabSystem] Processing: ' + container.id +
-
-                    (activeTab ? ' (active: ' + activeTab + ')' : ' (no active tab)'));
+                console.debug(
+                    '[TabSystem] Processing container:', container.id,
+                    activeTab ? `(active: ${activeTab})` : '(no active tab)'
+                );
             }
-
             if (activeTab) {
-                // Ensure state map is consistent
                 tabStates.set(container.id, {containerId: container.id, activeTab});
-                // Restore the visual state (buttons, content visibility)
                 restoreTabState(container);
             } else {
                 const firstButton = container.querySelector('.tabs .tab-button');
                 if (firstButton instanceof HTMLElement) {
                     const firstTabId = firstButton.getAttribute('data-for-tab');
-
                     if (firstTabId) {
                         if (DEBUG_TAB_SYSTEM) {
-                            console.debug('[TabSystem] Using first tab: ' + firstTabId);
+                            console.debug('[TabSystem] Using first tab:', firstTabId);
                         }
-
                         setActiveTab(firstButton, container);
-
-                        // State is saved within setActiveTab
                     }
                 } else {
-                    console.warn(`[TabSystem] No active tab or buttons found for container`, {
+                    console.warn('[TabSystem] No active tab or buttons found for container', {
                         containerId: container.id,
                         childrenCount: container.children.length,
                         childrenTypes: Array.from(container.children).map(c => c.nodeName)
@@ -394,8 +380,7 @@ export const updateTabs = debounce(() => {
         processed.clear();
     } catch (error) {
         errors.updateErrors++;
-        console.error(`Error during tab update:`, {error, totalErrors: errors.updateErrors});
-
+        console.error('[TabSystem] Error during tab update:', {error, totalErrors: errors.updateErrors});
         isMutating = false;
     } finally {
         isMutating = false;
@@ -409,7 +394,7 @@ export function setupTabContainer(container: Element) {
             const timestamp = Date.now();
             const randomId = Math.random().toString(36).substring(2, 6);
             container.id = `tab-container-${timestamp}-${randomId}`;
-            console.warn(`[TabSystem] Generated missing container ID: ${container.id}`);
+            console.warn('[TabSystem] Generated missing container ID:', container.id);
         }
 
         const HTMLElementContainer = container as HTMLElement;
@@ -417,72 +402,54 @@ export function setupTabContainer(container: Element) {
             return;
         }
 
-        if (VERBOSE_LOGGING || DEBUG_TAB_SYSTEM) console.debug(`[TabSystem] Initializing container`, {
+        if (VERBOSE_LOGGING || DEBUG_TAB_SYSTEM) console.debug('[TabSystem] Initializing container', {
             existingActiveTab: getActiveTab(container.id),
             containerId: container.id
         })
-         // --- Start: Set initial visual state ---
-         // Determine the tab that should be active initially. Prioritize saved state, then fallback to the first button.
-         const initialActiveTabId = getActiveTab(container.id) || container.querySelector('.tabs > .tab-button')?.getAttribute('data-for-tab');
-         const tabButtons = container.querySelectorAll('.tabs > .tab-button');
-         const contentPanes = Array.from(container.children).filter(el => el.matches('.tab-content')) as HTMLElement[];
-         if (initialActiveTabId) {
-             // Ensure state map reflects this initial setup if it wasn't already set
-             // This helps if setup runs before a restore operation populates the state map
-             if (!getActiveTab(container.id)) {
-                  setActiveTabState(container.id, initialActiveTabId);
-                  // Note: We don't call saveTabState here to avoid potential loops or premature version bumps.
-                  // The regular update/restore flow will handle saving state later if needed.
-             }
-             tabButtons.forEach(btn => {
-                 const btnTabId = btn.getAttribute('data-for-tab');
-                 btn.classList.toggle('active', btnTabId === initialActiveTabId);
-             });
-             contentPanes.forEach(content => {
-                 const contentTabId = content.getAttribute('data-tab');
-                 const isActive = contentTabId === initialActiveTabId;
-                 content.classList.toggle('active', isActive);
-                 // Explicitly set display style to ensure correct initial visibility
-                 content.style.display = isActive ? '' : 'none';
-             });
-         } else if (contentPanes.length > 0) {
-              // If no active tab could be determined (e.g., no buttons, no state), hide all panes initially.
-              // The updateTabs logic might later activate the first tab if one appears.
-              contentPanes.forEach(content => {
-                  content.classList.remove('active');
-                  content.style.display = 'none';
-              });
-              tabButtons.forEach(btn => btn.classList.remove('active'));
-         }
-         // --- End: Set initial visual state ---
+        const initialActiveTabId = getActiveTab(container.id) || container.querySelector('.tabs > .tab-button')?.getAttribute('data-for-tab');
+        const tabButtons = container.querySelectorAll('.tabs > .tab-button');
+        const contentPanes = Array.from(container.children).filter(el => el.matches('.tab-content')) as HTMLElement[];
+        if (initialActiveTabId) {
+            if (!getActiveTab(container.id)) {
+                setActiveTabState(container.id, initialActiveTabId);
+            }
+            tabButtons.forEach(btn => {
+                const btnTabId = btn.getAttribute('data-for-tab');
+                btn.classList.toggle('active', btnTabId === initialActiveTabId);
+            });
+            contentPanes.forEach(content => {
+                const contentTabId = content.getAttribute('data-tab');
+                const isActive = contentTabId === initialActiveTabId;
+                content.classList.toggle('active', isActive);
+                content.style.display = isActive ? '' : 'none';
+            });
+        } else if (contentPanes.length > 0) {
+            contentPanes.forEach(content => {
+                content.classList.remove('active');
+                content.style.display = 'none';
+            });
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+        }
 
- 
         container.addEventListener('click', (event: Event) => {
             const button = (event.target as HTMLElement).closest('.tab-button');
             if (button && container.contains(button) && !button.classList.contains('active')) {
-
- 
                 const tabsGroup = button.closest('.tabs');
                 if (!tabsGroup) return;
                 if (DEBUG_TAB_SYSTEM) {
-                    console.debug('[TabSystem] Tab clicked: ' + button.getAttribute('data-for-tab'));
+                    console.debug('[TabSystem] Tab clicked:', button.getAttribute('data-for-tab'));
                 }
-
                 setActiveTab(button, container);
-
-
-
-                // Button active state is handled within setActiveTab
                 updateTabs();
                 event.stopPropagation();
                 event.preventDefault();
-             }
+            }
 
         });
         HTMLElementContainer.dataset.tabSystemInitialized = 'true';
     } catch (error) {
         errors.setupErrors++;
-        console.error(`Failed to setup tab container`, {
+        console.error('[TabSystem] Failed to setup tab container', {
             error,
             containerId: container.id,
             totalErrors: errors.setupErrors

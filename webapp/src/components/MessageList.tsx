@@ -2,11 +2,13 @@ import React, {useEffect, useRef} from 'react';
 import {useSelector} from 'react-redux';
 import {useTheme} from '../hooks/useTheme';
 import {RootState} from '../store';
+
 import {isArchive} from '../services/appConfig';
 
-import {debounce, updateTabs} from '../utils/tabHandling';
+import {debounce, getAllTabStates, initNewCollapsibleElements, restoreTabStates, updateTabs} from '../utils/tabHandling';
 import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
+import mermaid from 'mermaid';
 import {Message} from "../types/messages";
 import Spinner from './common/Spinner';
 import './MessageList.css';
@@ -15,10 +17,6 @@ const DEBUG_LOGGING = process.env.NODE_ENV === 'development';
 const DEBUG_TAB_SYSTEM = process.env.NODE_ENV === 'development';
 const CONTAINER_ID = 'message-list-' + Math.random().toString(36).substr(2, 9);
 
-/**
- * Extracts message ID and action from clicked elements
- * Supports both data attributes and class-based detection
- */
 const extractMessageAction = (target: HTMLElement): { messageId: string | undefined, action: string | undefined } => {
     const messageId = target.getAttribute('data-message-id') ??
         target.closest('[data-message-id]')?.getAttribute('data-message-id') ?? // Check parents
@@ -43,7 +41,7 @@ const handleClick = (e: React.MouseEvent) => {
     const {messageId, action} = extractMessageAction(target);
     if (messageId && action) {
         if (DEBUG_LOGGING) {
-            console.debug('[MessageList] Action clicked:', {messageId, action});
+            console.debug('[MessageList] Action clicked:', action, 'for message:', messageId);
         }
         e.preventDefault();
         e.stopPropagation();
@@ -53,7 +51,7 @@ const handleClick = (e: React.MouseEvent) => {
 
 export const handleMessageAction = (messageId: string, action: string) => {
     if (DEBUG_LOGGING) {
-        console.debug('[MessageList] Processing action:', {messageId, action});
+        console.debug('[MessageList] Processing action:', action, 'for message:', messageId);
     }
 
     if (action === 'text-submit') {
@@ -71,10 +69,6 @@ export const handleMessageAction = (messageId: string, action: string) => {
         }
         return;
     }
-    /**
-     * Recursively expands referenced messages within content
-     * Prevents infinite loops using processedRefs Set
-     */
     if (action === 'link') {
         WebSocketService.send(`!${messageId},link`);
         return;
@@ -104,7 +98,16 @@ export const expandMessageReferences = (
     processedRefs: Set<string> = new Set<string>()
 ): string => {
 
-    if (!content) return '';
+    if (!content || typeof content !== 'string') {
+        console.warn('[MessageList] Invalid content passed to expandMessageReferences:', content);
+        return '';
+    }
+
+    if (!Array.isArray(messages)) {
+        console.warn('[MessageList] Invalid messages array passed to expandMessageReferences');
+        return content;
+    }
+    
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
 
@@ -118,11 +121,22 @@ export const expandMessageReferences = (
             const referencedMessage = messages.find(m => m.id === messageID);
             if (referencedMessage) {
 
-                currentNode.innerHTML = referencedMessage.content;
+                try {
+                    if (referencedMessage.content) {
+                        currentNode.innerHTML = referencedMessage.content;
+                    } else {
+                        console.warn('[MessageList] Referenced message has no content. ID:', messageID);
+                        currentNode.innerHTML = '<span class="reference-error">Referenced content unavailable</span>';
+                    }
+                } catch (error) {
+                    console.error('[MessageList] Error expanding message reference:', error, {messageID});
+                    currentNode.innerHTML = '<span class="reference-error">Error expanding reference</span>';
+                }
             } else {
                 if (DEBUG_LOGGING) {
-                    console.warn('[MessageList] Referenced message not found:', messageID);
+                    console.warn('[MessageList] Referenced message not found. ID:', messageID);
                 }
+                currentNode.innerHTML = '<span class="reference-error">Referenced message not found</span>';
             }
         }
 
@@ -134,6 +148,43 @@ export const expandMessageReferences = (
     }
     return tempDiv.innerHTML;
 };
+const renderMermaidDiagrams = (container: HTMLElement | null) => {
+    if (!container) return;
+    try {
+        const mermaidElements = container.querySelectorAll('.mermaid:not(.mermaid-processed)');
+        if (mermaidElements.length > 0) {
+            if (DEBUG_LOGGING) console.debug('[Mermaid] Found diagrams to render:', mermaidElements.length);
+            mermaidElements.forEach((el, index) => {
+                // Check if element is visible (basic check)
+                if (el instanceof HTMLElement && el.offsetParent !== null) {
+                    const id = `mermaid-${Date.now()}-${index}`;
+                    const source = el.textContent?.trim() || '';
+                    if (!source) {
+                        console.warn('[Mermaid] Empty diagram source, skipping render');
+                        el.classList.add('mermaid-error', 'mermaid-empty');
+                        return;
+                    }
+                    // Clear existing content before rendering
+                    el.innerHTML = '';
+                    mermaid.render(id, source)
+                        .then(({ svg }) => {
+                            el.innerHTML = svg;
+                            el.classList.add('mermaid-processed');
+                        })
+                        .catch(err => {
+                            console.warn('[Mermaid] Failed to render diagram:', err?.message || 'Unknown error', el);
+                            el.classList.add('mermaid-error');
+                            // Restore original content for debugging
+                            el.textContent = source;
+                        });
+                }
+            });
+        }
+    } catch (error) {
+        console.error('[Mermaid] Failed to render mermaid diagrams:', error);
+    }
+};
+
 
 const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
 
@@ -218,7 +269,10 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
 
                             requestIdleCallback(() => {
                                 if (!mounted) return;
-                                Prism.highlightElement(element);
+                                // Check if already highlighted to avoid double processing
+                                if (!element.classList.contains('language-none') && !element.closest('.token')) {
+                                    Prism.highlightElement(element);
+                                }
                             });
                         }
                         if (observer) {
@@ -227,7 +281,6 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                     }
                 });
             });
-
             messageListRef.current.querySelectorAll('pre code').forEach(block => {
                 if (observer) {
                     observer.observe(block);
@@ -244,28 +297,31 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         return () => {
             mounted = false;
         };
-    }, [messages, verboseMode]);
-    const debouncedUpdateTabs = React.useCallback(
+    }, [finalMessages]);
+
+    const debouncedPostRenderUpdate = React.useCallback(
         debounce(() => {
             try {
+                if (!messageListRef.current) return;
                 if (DEBUG_TAB_SYSTEM) {
-                    console.debug(`[MessageList ${CONTAINER_ID}] Updating tabs after content change`);
+                    console.debug('[MessageList] Running debounced post-render update. Container:', CONTAINER_ID);
                 }
+                restoreTabStates(getAllTabStates());
                 updateTabs();
-
+                initNewCollapsibleElements();
+                requestIdleCallback(() => {
+                    if (messageListRef.current) {
+                        messageListRef.current.querySelectorAll('pre code:not(.prismjs-processed)').forEach(block => {
+                             if (block instanceof HTMLElement && block.offsetParent !== null) {
+                                 Prism.highlightElement(block);
+                                 block.classList.add('prismjs-processed'); // Mark as processed
+                             }
+                        });
+                    }
+                });
+                renderMermaidDiagrams(messageListRef.current);
             } catch (updateError) {
-                console.error(`[MessageList ${CONTAINER_ID}] Failed during initial updateTabs call. Attempting recovery.`, updateError);
-                // Don't reset state immediately, try updating again first.
-
-                try {
-                    // Small delay before retry might help if it was a timing issue
-                    // await new Promise(resolve => setTimeout(resolve, 50)); // Optional delay
-                    console.info(`[MessageList ${CONTAINER_ID}] Retrying tab update after error.`);
-                    updateTabs();
-                } catch (retryError) {
-                    console.error(`[MessageList ${CONTAINER_ID}] Failed to update tabs on retry. Tab system may be unstable. Consider resetting state as last resort.`, retryError);
-                    // resetTabState(); // Uncomment this line if resetting state is desired after failed retry
-                }
+                console.error('[MessageList] Error during post-render update:', updateError, 'Container:', CONTAINER_ID);
             }
         }, 250),
         []
@@ -277,23 +333,13 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     }
 
     React.useEffect(() => {
-
-        const timer = setTimeout(() => {
-            if (DEBUG_TAB_SYSTEM) {
-                console.debug(`[MessageList ${CONTAINER_ID}] Scheduling tab update after messages changed`, {
-                    messageCount: finalMessages.length
-                });
-            }
-
-            const tabContainers = document.querySelectorAll('.tabs-container');
-            if (tabContainers.length > 0) {
-                debouncedUpdateTabs();
-            } else if (DEBUG_TAB_SYSTEM) {
-                console.debug(`[MessageList ${CONTAINER_ID}] No tab containers found, skipping update`);
-            }
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [finalMessages, debouncedUpdateTabs]);
+        if (DEBUG_LOGGING) {
+            console.debug('[MessageList] Scheduling post-render update due to messages change. Container:', CONTAINER_ID, {
+                 messageCount: finalMessages.length
+             });
+        }
+        debouncedPostRenderUpdate();
+    }, [finalMessages, debouncedPostRenderUpdate]);
 
     React.useEffect(() => {
         if (!messageListRef.current) return;
@@ -312,9 +358,9 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             });
             if (tabsAdded) {
                 if (DEBUG_TAB_SYSTEM) {
-                    console.debug(`[MessageList ${CONTAINER_ID}] Tabs added to DOM, updating tabs`);
+                    console.debug('[MessageList] Tabs added via DOM mutation, scheduling update. Container:', CONTAINER_ID);
                 }
-                debouncedUpdateTabs();
+                debouncedPostRenderUpdate();
             }
         });
         observer.observe(messageListRef.current, {
@@ -322,8 +368,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             subtree: true
         });
         return () => observer.disconnect();
-   }, [debouncedUpdateTabs]);
-    // Prevent click event bubbling for tab buttons to avoid double-handling
+   }, [debouncedPostRenderUpdate]);
     const handleMessageClick = React.useCallback((e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target.closest('.tab-button') && target.closest('.tabs')) {
