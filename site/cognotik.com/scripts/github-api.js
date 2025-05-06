@@ -5,7 +5,7 @@
 
 // Cache constants
 const CACHE_KEY = 'cognotik_release_data';
-const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds
+const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds (Consider localStorage for longer persistence)
 
 /**
  * Fetches the latest release information from GitHub
@@ -15,7 +15,7 @@ const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds
 async function fetchLatestRelease() {
   try {
     // Check cache first
-    const cachedData = checkCache();
+    const cachedData = checkCache(CACHE_KEY, CACHE_EXPIRY);
     if (cachedData) {
       console.log('Using cached release data');
       return cachedData;
@@ -32,6 +32,7 @@ async function fetchLatestRelease() {
       console.log('Latest endpoint failed, trying releases list');
       response = await fetch('https://api.github.com/repos/SimiaCryptus/Cognotik/releases');
       
+
       if (!response.ok) {
         throw new Error(`GitHub API error: ${response.status}`);
       }
@@ -41,15 +42,15 @@ async function fetchLatestRelease() {
         throw new Error('No releases found');
       }
       
-      // Cache the data
-      cacheData(releases[0]);
+      // Cache the first release from the list
+      cacheData(CACHE_KEY, releases[0]);
       return releases[0];
     }
     
     const latestRelease = await response.json();
     
     // Cache the data
-    cacheData(latestRelease);
+    cacheData(CACHE_KEY, latestRelease);
     return latestRelease;
   } catch (error) {
     console.error('Error fetching release data:', error);
@@ -122,11 +123,13 @@ function findDownloadAsset(release, os) {
 
 /**
  * Checks if there is valid cached release data
+ * @param {string} key - The cache key (e.g., CACHE_KEY)
+ * @param {number} expiry - The cache expiry time in milliseconds (e.g., CACHE_EXPIRY)
  * @returns {Object|null} The cached release data or null if no valid cache
  */
-function checkCache() {
+function checkCache(key, expiry) {
   try {
-    const cachedItem = sessionStorage.getItem(CACHE_KEY);
+    const cachedItem = localStorage.getItem(key); // Use localStorage for persistence across sessions
     if (!cachedItem) {
       return null;
     }
@@ -135,9 +138,9 @@ function checkCache() {
     const now = new Date().getTime();
     
     // Check if cache is expired
-    if (now - timestamp > CACHE_EXPIRY) {
+    if (now - timestamp > expiry) {
       console.log('Cache expired');
-      sessionStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(key);
       return null;
     }
     
@@ -150,16 +153,17 @@ function checkCache() {
 
 /**
  * Caches the release data with a timestamp
+ * @param {string} key - The cache key (e.g., CACHE_KEY)
  * @param {Object} data - The release data to cache
  */
-function cacheData(data) {
+function cacheData(key, data) {
   try {
     const cacheItem = {
       timestamp: new Date().getTime(),
       data: data
     };
     
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheItem));
+    localStorage.setItem(key, JSON.stringify(cacheItem)); // Use localStorage
     console.log('Release data cached');
   } catch (error) {
     console.error('Error caching release data:', error);

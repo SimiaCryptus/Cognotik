@@ -24,11 +24,20 @@ document.addEventListener('DOMContentLoaded', function() {
         menuToggle.addEventListener('click', function() {
             mainNav.classList.toggle('active');
             menuToggle.classList.toggle('active');
+            // Toggle ARIA attributes for accessibility
+            const isExpanded = mainNav.classList.contains('active');
+            menuToggle.setAttribute('aria-expanded', isExpanded);
         });
+        // Set initial ARIA state
+        menuToggle.setAttribute('aria-expanded', 'false');
+        menuToggle.setAttribute('aria-controls', 'main-nav-list'); // Assuming mainNav ul has id="main-nav-list"
+        mainNav.setAttribute('id', 'main-nav-list');
+
         document.addEventListener('click', function(e) {
             if (!mainNav.contains(e.target) && !menuToggle.contains(e.target)) {
                 mainNav.classList.remove('active');
                 menuToggle.classList.remove('active');
+                menuToggle.setAttribute('aria-expanded', 'false');
             }
         });
     }

@@ -1,10 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Get the modal
     const modal = document.getElementById('feature-modal');
+    if (!modal) return; // Exit if modal doesn't exist
+
     const modalTitle = document.getElementById('modal-title');
     const modalContent = document.getElementById('modal-content');
     const closeModal = document.querySelector('.close-modal');
+    let previouslyFocusedElement = null; // To restore focus later
     
+
     // Feature details content
     const featureDetails = {
         'General-Purpose AI Agents': {
@@ -98,25 +102,73 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Close modal when clicking the close button
-    closeModal.addEventListener('click', function() {
+    // Function to close the modal
+    function closeModalHandler() {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto'; // Re-enable scrolling
+        if (previouslyFocusedElement) {
+            previouslyFocusedElement.focus(); // Restore focus
+            previouslyFocusedElement = null;
+        }
+    }
+
+    // Add focus trapping inside the modal
+    function trapFocus(event) {
+        if (event.key !== 'Tab') return;
+
+        const focusableElements = modal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey) { // Shift + Tab
+            if (document.activeElement === firstElement) {
+                lastElement.focus();
+                event.preventDefault();
+            }
+        } else { // Tab
+            if (document.activeElement === lastElement) {
+                firstElement.focus();
+                event.preventDefault();
+            }
+        }
+    }
+
+    // Open modal logic
+    document.querySelectorAll('.read-more-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const featureTitle = this.parentElement.querySelector('h3').textContent;
+            const details = featureDetails[featureTitle];
+
+            if (details && modalTitle && modalContent && closeModal) {
+                previouslyFocusedElement = document.activeElement; // Store focus
+                modalTitle.textContent = details.title;
+                modalContent.innerHTML = details.content;
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+                closeModal.focus(); // Set initial focus to the close button
+                modal.addEventListener('keydown', trapFocus); // Add focus trap listener
+            }
+        });
     });
+
+    // Close modal when clicking the close button
+    if (closeModal) {
+        closeModal.addEventListener('click', closeModalHandler);
+    }
     
     // Close modal when clicking outside the modal content
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto'; // Re-enable scrolling
+            closeModalHandler();
         }
     });
     
     // Close modal with Escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape' && modal.style.display === 'block') {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto'; // Re-enable scrolling
+            closeModalHandler();
         }
     });
 });

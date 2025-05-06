@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-          content="Cognotik is the all-in-one open-source AI development platform for software teams and individual developers. Accelerate your workflow with advanced AI planning, code generation, and real-time collaboration. Supports OpenAI, Anthropic, Google, and more. Cross-platform: Windows, macOS, Linux, IntelliJ, and web. Bring your own API key for privacy and cost control.">
+          content="Cognotik is the ultimate open-source general-purpose AI agent platform empowering everyone—from developers and businesses to educators and individuals. Enhance productivity with intelligent AI assistance, seamless collaboration, and versatile automation. Compatible with OpenAI, Anthropic, Google Gemini, and more. Cross-platform support: Windows, macOS, Linux, IntelliJ, and web. Secure BYOK model ensures privacy and cost control.">
     <meta name="keywords" content="Cognotik, AI development platform, AI software development, code generation, AI planning, open source, IntelliJ plugin, desktop app, web app, BYOK, Apache 2.0, AI co-pilot, developer productivity, code assistant, AI coding assistant, SimiaCryptus, JetBrains, JOpenAI, Anthropic, OpenAI, LLM, generative AI, software tools, IDE plugin, cross-platform, AI workflow automation, AI task planning, AI code review, AI refactoring, AI code assistant, AI-powered IDE, AI chat, AI code suggestions, developer AI tools, AI for programmers, AI for teams, secure AI, privacy-first AI, extensible AI platform, AI integrations, AI for enterprises, AI for startups, AI for education">
     <meta name="author" content="SimiaCryptus">
     <meta property="og:title" content="Cognotik - The Ultimate Open-Source AI Development Platform">
@@ -18,43 +18,42 @@
     <meta name="twitter:image" content="https://cognotik.com/assets/og-image.png">
     <link rel="canonical" href="https://cognotik.com/">
 
-
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="logo.svg">
 
+</head>
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="styles/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
 <main>
-    <!-- Hero + Download Section (Combined) -->
     <section id="hero" class="hero-section fade-in">
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text fade-in delay-1">
-                    <h1>Cognotik: Your AI Co-Pilot for Software Development</h1>
+                    <h1>Cognotik: The Ultimate General-Purpose AI Agent Platform</h1>
                     <div class="download-ui-simple">
-                        <div id="download-info-simple">
-                            <span id="detected-os">Detected OS: Checking...</span>
-                            <span id="latest-version" style="margin-left:1em;">Latest Version: Checking...</span>
+                        <div id="download-info-simple" role="status" aria-live="polite">
+                            <span id="detected-os" aria-label="Detected Operating System status">Detected OS: Checking...</span>
+                            <span id="latest-version" style="margin-left:1em;" aria-label="Latest Cognotik version status">Latest Version: Checking...</span>
                         </div>
                         <div style="margin-top:1em;">
-                            <a href="#" id="download-button" class="btn btn-primary btn-large download-btn" disabled>
-                                Checking for updates...
+                            <a href="#" id="download-button" class="btn btn-primary btn-large download-btn" disabled aria-label="Download Cognotik">
+                                Preparing your download...
                             </a>
                         </div>
                         <div class="download-alternatives" style="margin-top:0.5em;">
-                            <a href="https://github.com/SimiaCryptus/Cognotik/releases" target="_blank" rel="noopener">
-                                View all releases on GitHub
+                            <a href="https://github.com/SimiaCryptus/Cognotik/releases" target="_blank" rel="noopener"
+                               aria-label="View all Cognotik releases on GitHub">
+                                Browse all versions on GitHub
                             </a>
                         </div>
                     </div>
                 </div>
                 <div class="hero-image fade-in delay-2">
                     <div class="hero-logo-container" style="position: relative;width: -webkit-fill-available;">
-                        <svg id="hero-logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 588 586"
+                        <svg id="hero-logo" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Cognotik Logo" version="1.1" viewBox="0 0 588 586"
                              width="300" height="300"
                              style="display:block;max-width:100%;height:auto;cursor:pointer;width: -webkit-fill-available;">
                             <!-- SVG paths from logo.svg -->
@@ -77,15 +76,21 @@
     <!-- Features Section (Expanded for SEO and detail) -->
     <section id="features" class="features-section">
         <div class="container">
-            <h2>Why Choose Cognotik?</h2>
+            <h2>Unlock Your Potential with Cognotik</h2>
             <p class="section-subtitle" style="max-width:700px;margin:0 auto 2em auto;color:#666;">
-                Cognotik is the most comprehensive open-source AI-powered development platform for modern software teams and individual developers. It combines intelligent planning, AI code generation, real-time collaboration, and secure extensibility to streamline your workflow, boost productivity, and keep you in control of your data and costs.
+                Cognotik empowers everyone—developers, businesses, educators, and individuals—with versatile AI agents that streamline tasks, enhance
+                productivity, and foster seamless collaboration. Open-source, secure, and privacy-first—take control of your workflow, data, and costs.
             </p>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                        <!-- Updated Brain/AI icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.5 3A5.5 5.5 0 0 0 4 8.5V15a6 6 0 0 0 6 6h4a6 6 0 0 0 6-6V8.5A5.5 5.5 0 0 0 14.5 3zM4 15V8.5A5.5 5.5 0 0 1 9.5 3M20 15V8.5A5.5 5.5 0 0 0 14.5 3"/>
+                            <path d="M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                            <path d="M12 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                            <path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
                         </svg>
                     </div>
                     <h3>General-Purpose AI Agents</h3>
@@ -94,8 +99,11 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z"/>
+                        <!-- Updated Open Source/Code icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+                            <path d="M9 18c-4.51 2-5-2-7-2"/>
                         </svg>
                     </div>
                     <h3>Free & Open Source</h3>
@@ -104,8 +112,15 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        <!-- Updated LLM/Model icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 8V4H8"/>
+                            <rect width="16" height="12" x="4" y="8" rx="2"/>
+                            <path d="M2 14h2"/>
+                            <path d="M20 14h2"/>
+                            <path d="M15 13v2"/>
+                            <path d="M9 13v2"/>
                         </svg>
                     </div>
                     <h3>Choose Any LLM Model</h3>
@@ -114,8 +129,11 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7.04-3.85-7.45-7.93h2.02c.39 3.06 2.99 5.5 6.08 5.93v2zm6.45-7.93c-.41 4.08-3.5 7.44-7.45 7.93v-2c3.09-.43 5.69-2.87 6.08-5.93h2.02z"/>
+                        <!-- Updated Cross-platform/Devices icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
                         </svg>
                     </div>
                     <h3>Cross-Platform &amp; Extensible</h3>
@@ -124,8 +142,12 @@
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                            <path d="M12 4.44l4.95 9.9c.32.65-.15 1.41-.87 1.41H7.92c-.72 0-1.19-.76-.87-1.41l4.95-9.9c.36-.72 1.38-.72 1.74 0zM12 2c-.55 0-1.05.3-1.3.77l-6.6 13.2c-.36.72.15 1.53.97 1.53h13.86c.82 0 1.33-.81.97-1.53l-6.6-13.2C13.05 2.3 12.55 2 12 2z"/>
+                        <!-- Updated Key/Security icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="7.5" cy="15.5" r="5.5"/>
+                            <path d="m21 2-9.6 9.6"/>
+                            <path d="m15.5 7.5 3 3L22 7l-3-3"/>
                         </svg>
                     </div>
                     <h3>Bring Your Own Key (BYOK) Cost Model</h3>
@@ -139,22 +161,23 @@
     <!-- Video Section (SEO-optimized) -->
     <section id="video" class="video-section">
         <div class="container">
-            <h2>See Cognotik in Action</h2>
+            <h2>Experience the Future of AI-Enhanced Development</h2>
             <div class="video-container">
                 <video controls poster="assets/video-poster.jpg" preload="none" title="Cognotik AI Development Platform Demo">
                     <source src="assets/demo.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             </div>
+            <h2>Experience the Future of AI Assistance</h2>
             <p class="video-description">
-                Watch how Cognotik revolutionizes software development with AI-powered planning, code generation, and interactive collaboration.<br>
-                <strong>Demo highlights:</strong>
+                Discover how Cognotik transforms your workflow through intelligent task automation, versatile AI assistance, and seamless collaboration.<br/>
+                <strong>Key highlights include:</strong>
                 <ul style="max-width:600px;margin:1em auto 0 auto;text-align:left;">
-                    <li>Automatic task breakdown and dependency management</li>
-                    <li>Real-time AI code suggestions and refactoring</li>
-                    <li>Live collaboration between developers and AI</li>
-                    <li>Integration with multiple AI providers (OpenAI, Anthropic, Google, and more)</li>
-                    <li>Secure, privacy-first workflow with BYOK</li>
+                    <li>Intelligent task automation and workflow optimization</li>
+                    <li>Instant AI-driven suggestions and improvements</li>
+                    <li>Real-time human-AI collaboration</li>
+                    <li>Flexible integration with OpenAI, Anthropic, Google Gemini, and more</li>
+                    <li>Privacy-focused, secure BYOK infrastructure</li>
                 </ul>
             </p>
         </div>
@@ -163,20 +186,47 @@
     <section>
         <div class="open-source-extra" style="color:#666; font-size:1.08em;">
             <div style="margin:2em 0 0 0; text-align:center;">
-                <strong>Ready to transform your development workflow?</strong> <a href="#hero"
+                <strong>Ready to supercharge your software development?</strong><a href="#hero"
                                                                                   class="btn btn-primary btn-lg"
                                                                                   style="margin-left:1em;">Download
                 Cognotik</a>
             </div>
-            <span style="font-size:0.95em;">Cognotik is ideal for developers, teams, enterprises, educators, and anyone seeking a secure, extensible AI development platform.</span>
+            <span style="font-size:0.95em;">Ideal for developers, businesses, educators, individuals, startups, and anyone seeking a secure, extensible, and powerful general-purpose AI experience.</span>
+            <div style="margin:2em 0 0 0; text-align:center;">
+                <strong>Want to contribute?</strong>
+                <a href="contribute.html" class="btn btn-secondary btn-lg scroll-link" style="margin-left:1em;">
+                    Contribute to Cognotik
+                </a>
+            </div>
+            <div style="margin:2em 0 0 0; text-align:center;">
+                <strong>Want to invest?</strong>
+                <a href="monetization.html" class="btn btn-secondary btn-lg" style="margin-left:1em;">
+                    Invest in Cognotik
+                </a>
+            </div>
         </div>
     </section>
 </main>
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="footer-content">
+            <p>&copy; 2025 Cognotik by <a href="https://simia.net/" target="_blank" rel="noopener">SimiaCryptus</a>. All rights reserved.</p>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+                <li><a href="monetization.html">Invest</a></li>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik" target="_blank" rel="noopener">GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
 <!-- Feature Details Modal -->
 <div id="feature-modal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
-        <h2 id="modal-title"></h2>
+        <h2 id="modal-title" tabindex="-1"></h2> <!-- Add tabindex for potential focus management -->
         <div id="modal-content"></div>
     </div>
 </div>
