@@ -63,36 +63,31 @@ function initLogoAnimation() {
 
         // Plasma field helper: returns a value between 0 and 1 using a recursive, randomized infilling algorithm (Diamond–Square)
         function generatePlasmaGrid(size) {
-            // Ensure size is 2^n + 1 for Diamond-Square
-            if (((size - 1) & (size - 2)) !== 0 || size <= 1) {
-                console.error("Plasma grid size must be 2^n + 1");
-                size = 129; // Default to a valid size
-            }
             const grid = [];
             for (let i = 0; i < size; i++) {
                 grid[i] = new Array(size).fill(0);
             }
             // Initialize corners
-            grid[0][0] = Math.random();
-            grid[0][size - 1] = Math.random();
-            grid[size - 1][0] = Math.random();
-            grid[size - 1][size - 1] = Math.random();
+            grid[0][0] = Math.random() * 0.8 + 0.1; // Keep values away from extremes for smoother transitions
+            grid[0][size - 1] = Math.random() * 0.8 + 0.1;
+            grid[size - 1][0] = Math.random() * 0.8 + 0.1;
+            grid[size - 1][size - 1] = Math.random() * 0.8 + 0.1;
 
             let step = size - 1;
             let offset = 1;
             while(step > 1) {
                 const half = step / 2;
                 // Diamond step
-                for (let x = 0; x < size - 1; x += step) {
-                    for (let y = 0; y < size - 1; y += step) {
+                for (let y = 0; y < size - 1; y += step) { // Iterate y outer for cache coherency (minor)
+                    for (let x = 0; x < size - 1; x += step) {
                         const avg = (grid[x][y] + grid[x][y + step] +
                                      grid[x + step][y] + grid[x + step][y + step]) / 4;
                         grid[x + half][y + half] = avg + rnd() * offset;
                     }
                 }
                 // Square step
-                for (let x = 0; x < size; x += half) {
-                    for (let y = (x + half) % step; y < size; y += step) {
+                for (let y = 0; y < size; y += half) { // Iterate y outer
+                    for (let x = (y + half) % step; x < size; x += step) {
                         let sum = 0, count = 0;
                         if (x - half >= 0) { sum += grid[x - half][y]; count++; }
                         if (x + half < size) { sum += grid[x + half][y]; count++; }
@@ -106,8 +101,8 @@ function initLogoAnimation() {
             }
             // Normalize grid values to [0,1]
             let min = Infinity, max = -Infinity;
-            for (let i = 0; i < size; i++) {
-                for (let j = 0; j < size; j++) {
+            for (let i = 0; i < size; i++) { // Iterate y outer
+                for (let j = 0; j < size; j++) { // Iterate x inner
                     if (grid[i][j] < min) min = grid[i][j];
                     if (grid[i][j] > max) max = grid[i][j];
                 }
@@ -140,7 +135,7 @@ function initLogoAnimation() {
         }
 
         // Generate the plasma grid once (size 129 = 2^7 + 1 for sufficient detail)
-        const plasmaGrid = generatePlasmaGrid(128 + 1); // Reduced size for potentially better performance
+        const plasmaGrid = generatePlasmaGrid(64 + 1); // Further reduced size for performance, 2^6 + 1
 
         // Plasma field function using the generated plasma grid.
         // The time parameter z is used to shift the sampling, creating animation.
@@ -163,8 +158,15 @@ function initLogoAnimation() {
                // Animate gradient center (cx,cy) in a Lissajous curve path for more visual interest
                const cx = 50 + 25 * Math.sin(t * 0.8);
                const cy = 50 + 25 * Math.cos(t * 1.1);
+               // Animate focal point (fx,fy) and radius (r) for more dynamism
+               const fx = 50 + 20 * Math.cos(t * 0.65 + Math.PI / 3); // Different speeds and phases
+               const fy = 50 + 20 * Math.sin(t * 0.95 + Math.PI / 1.5);
+               const radius = 65 + 15 * Math.sin(t * 0.45); // Pulsating radius
                grad.setAttribute('cx', `${cx}%`);
                grad.setAttribute('cy', `${cy}%`);
+               grad.setAttribute('fx', `${fx}%`);
+               grad.setAttribute('fy', `${fy}%`);
+               grad.setAttribute('r', `${radius}%`);
            }
 
             // Update each color stop based on a 2D slice of a 3D plasma field.
@@ -175,7 +177,7 @@ function initLogoAnimation() {
                 const yCoord = offsetVal / 100; // for this example, using the same value for x and y
 
                 // Compute plasma field value for the (x,y) slice at depth = t.
-                const plasmaValue = plasma(xCoord, yCoord, t / 15); // Adjusted speed
+                const plasmaValue = plasma(xCoord, yCoord, t / 12); // Slightly faster plasma evolution
 
                 // Map the plasma value [0,1] to a hue angle [0,360]
                 const hue = Math.floor(plasmaValue * 360 * 2);
@@ -198,8 +200,13 @@ function initLogoAnimation() {
             // Clamp to [0,100]
             x = Math.max(0, Math.min(100, x));
             y = Math.max(0, Math.min(100, y));
+            // Make the interactive focal point also move
+            const fxInteractive = 50 + (x - 50) * 0.8; // Focal point follows cursor but less extremely
+            const fyInteractive = 50 + (y - 50) * 0.8;
             grad.setAttribute('cx', `${x}%`);
             grad.setAttribute('cy', `${y}%`);
+            grad.setAttribute('fx', `${fxInteractive}%`);
+            grad.setAttribute('fy', `${fyInteractive}%`);
         }
         function onPointerLeave() {
            // Delay setting isUserInteracting to false for a smoother transition back to auto-animation

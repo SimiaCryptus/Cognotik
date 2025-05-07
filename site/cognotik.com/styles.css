@@ -60,7 +60,6 @@
 
 /* Reset and base styles */
 * {
-  margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
@@ -194,6 +193,8 @@ code {
 /* Section styling */
 .section {
   padding: var(--spacing-xxl) 0;
+  position: relative; /* Useful for child element positioning or pseudo-elements */
+  border-top: 1px solid var(--border-color);
 }
 
 .section-title {
@@ -210,6 +211,10 @@ code {
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+}
+/* Remove top border from the first section within main, typically following a hero section */
+main > .section:first-of-type {
+  border-top: none;
 }
 .open-source-extra {
   margin-top: 2em;
@@ -314,15 +319,18 @@ code {
 /* Align hero background with README: use hero-pattern.svg */
 .hero-section::before {
   content: '';
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
- background-image: url('assets/hero-pattern.svg'); /* As per README */
-  opacity: 0.15; /* Opacity for the pattern */
+  background-image: url('assets/hero-pattern.svg');
+  background-size: cover; /* Ensure pattern covers the area */
+  opacity: 0.15;
   pointer-events: none;
   z-index: 0;
+  animation: pulsePattern 10s ease-in-out infinite alternate; /* Subtle pulse */
 }
 
 .hero-content {
@@ -483,9 +491,9 @@ code {
 }
 
 /* ===== FEATURES SECTION ===== */
-.features {
+.features-section { /* Corrected selector from .features to .features-section */
   background-color: var(--background-white);
-  padding: var(--spacing-xl) 0;
+  /* padding is now handled by the .section class (var(--spacing-xxl) 0) */
 }
 
 .features-grid {
@@ -506,24 +514,17 @@ code {
   z-index: 1;
   border: 2.5px solid transparent;
 }
+.feature-card:hover .feature-icon svg,
+.feature-card:hover .feature-icon i {
+  transform: scale(1.15) rotate(-5deg);
+}
+
 
 .feature-card:hover {
   /* The following properties are the effectively applied styles from the original malformed block */
   transform: translateY(-8px) scale(1.03);
   box-shadow: 0 16px 48px rgba(37,99,235,0.18), 0 4px 24px rgba(0,0,0,0.10);
   border-color: var(--primary-color); /* Use primary color for border highlight */
-}
-.feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0; /* Start with no width */
-  height: 6px;
-  background: var(--gradient-primary);
-  z-index: 2;
-  border-top-left-radius: var(--border-radius-xl); /* Match card radius */
-  border-top-right-radius: var(--border-radius-lg);
 }
 
 .feature-icon {
@@ -533,10 +534,25 @@ code {
   padding: 0.4em;
   box-shadow: 0 2px 8px rgba(37,99,235,0.07);
   display: inline-block;
+  transition: transform 0.3s ease-in-out; /* For icon animation */
 }
+
+.feature-card::before { /* Animated top border */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%; /* Start from center */
+  transform: translateX(-50%);
+  width: 0; /* Start with no width */
+  height: 5px; /* Thicker highlight */
+  background: var(--gradient-accent); /* Use accent gradient */
+  z-index: 2;
+  border-radius: 5px 5px 0 0; /* Rounded top corners for the bar */
+  transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smoother transition */
+}
+
 .feature-card:hover::before {
-  width: 100%; /* Animate width on hover */
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 80%; /* Animate width on hover, not full width for style */
 }
 
 
@@ -822,6 +838,14 @@ footer {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+@keyframes pulsePattern { /* For hero background pattern */
+  0% {
+    opacity: 0.12;
+  }
+  100% {
+    opacity: 0.18;
   }
 }
 
