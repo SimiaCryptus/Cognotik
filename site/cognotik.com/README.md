@@ -225,6 +225,7 @@ Since this is a static website (HTML, CSS, JS), you don't need a complex build p
   *   Applies this gradient fill (`url(#animated-gradient)`) to all `<path>` elements within the logo SVG.
 *   **Plasma Effect:**
   *   Uses a `generatePlasmaGrid()` function (implementing the Diamond-Square algorithm) to create a 2D grid of noise values.
+  *   This process utilizes a helper function (`rnd()`) to introduce controlled, pseudo-normal randomness for the displacement in the Diamond-Square algorithm.
   *   Uses `samplePlasma()` for bilinear interpolation to get a smooth value from the grid at given coordinates.
   *   The `plasma(x, y, z)` function samples this grid, using the `z` (time) parameter to shift the sampling coordinates, creating the animation effect.
 *   **Animation Loop (`animateGradient()`):**
@@ -263,5 +264,3 @@ Deployment details are not specified within this codebase. However, as a static 
 1.  Copying the contents of the `site/cognotik.com` directory (HTML, CSS, JS, assets) to a web server or static hosting provider.
 2.  Common providers include GitHub Pages, Netlify, Vercel, AWS S3, etc.
 3.  A CI/CD pipeline could be set up (e.g., using GitHub Actions) to automatically deploy changes merged into the main branch.
-
-

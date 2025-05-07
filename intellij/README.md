@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <!-- Plugin description -->
-![Cognotik Logo](https://simiacryptus.github.io/intellij_plugins/aicoder/icon.png)
+![Cognotik Logo](https://raw.githubusercontent.com/SimiaCryptus/Cognotik/refs/heads/main/images/logo.svg)
 
 **Cognotik** is an open-source AI coding assistant plugin for IntelliJ IDEs, focusing on powerful, high-level agentic tools rather than just code completion. Leverage generative AI directly within your IDE using a "Bring Your Own Key" (BYOK) model for maximum control over data, costs, and model choice. Enhance your development workflow with AI-powered code editing, file manipulation, complex task automation via AI agents, and voice-to-text capabilities.
 <!-- Plugin description end -->

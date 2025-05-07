@@ -213,12 +213,10 @@ open class ChatSocketManager(
         }
     }
 
-    protected open fun chatMessages() = messages.let {
-        synchronized(messagesLock) {
-            listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it
-                .drop(1)
-        }
-    }.toList()
+    protected open fun chatMessages(): List<ApiModel.ChatMessage> = synchronized(messagesLock) {
+        // Return a snapshot of messages, ensuring the system prompt is first
+        listOf(messages.first()) + messages.drop(1)
+    }
 
     data class Topics(
         val topics: Map<String, List<String>>? = emptyMap()
@@ -230,13 +228,17 @@ open class ChatSocketManager(
      */
     protected open fun applyTopicAutoexpansion(userMessage: String): String {
         val topicReferencePattern = Regex("""\{([^}|]+)}""")
-        return topicReferencePattern.replace(userMessage) { matchResult ->
-            val topicType = matchResult.groupValues[1]
-            val entities = aggregateTopics[topicType]?.toList()
 
-            if (entities != null && entities.isNotEmpty()) {
 
-                "{${entities.joinToString("|")}}"
+        return topicReferencePattern.replace(userMessage) { matchResult -> // Read access needs synchronization
+            val topicType = matchResult.groupValues[1] // Synchronize read access to aggregateTopics
+            val topicList = aggregateTopics[topicType]
+            val entities = synchronized(topicList ?: Any()) { // Synchronize on the list if it exists, or a dummy object
+                topicList?.toList() // Create copy while holding lock
+            }
+
+            if (!entities.isNullOrEmpty()) { // Check if the copied list is not null or empty
+                "{${entities.joinToString("|")}}" // Use the copied list
             } else {
 
                 matchResult.value
