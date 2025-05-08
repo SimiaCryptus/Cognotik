@@ -645,6 +645,10 @@
 </div>
 
 <div class="wizard-content active" id="cognitive-mode">
+    <div class="wizard-buttons">
+        <div></div> <!-- Empty div for spacing -->
+        <button class="button" id="next-to-task-settings">Next: Configure Settings</button>
+    </div>
     <h3>Step 1: Choose Cognitive Mode</h3>
     <p>Select how you want the AI to approach your tasks:</p>
     <div class="form-group">
@@ -691,12 +695,12 @@
             </div>
         </div>
     </div>
-    <div class="wizard-buttons">
-        <div></div> <!-- Empty div for spacing -->
-        <button class="button" id="next-to-task-settings">Next: Configure Settings</button>
-    </div>
 </div>
 <div class="wizard-content" id="task-settings">
+    <div class="wizard-buttons">
+        <button class="button secondary" id="back-to-cognitive-mode">Back</button>
+        <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
+    </div>
     <h3>Step 2: Configure Settings</h3>
     <p>Configure model and environment settings:</p>
 
@@ -745,20 +749,16 @@
         </div>
     </div>
 
-    <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-cognitive-mode">Back</button>
-        <button class="button" id="next-to-task-selection">Next: Select Tasks</button>
-    </div>
 </div>
 <div class="wizard-content" id="task-selection">
+    <div class="wizard-buttons">
+        <button class="button secondary" id="back-to-task-settings">Back</button>
+        <button class="button" id="next-to-launch">Next: Review & Launch</button>
+    </div>
     <h3>Step 3: Select Tasks</h3>
     <p>Choose which tasks you want to enable:</p>
     <div class="form-group" id="task-toggles">
         <!-- Task toggles will be populated here -->
-    </div>
-    <div class="wizard-buttons">
-        <button class="button secondary" id="back-to-task-settings">Back</button>
-        <button class="button" id="next-to-launch">Next: Review & Launch</button>
     </div>
 </div>
 
@@ -768,13 +768,13 @@
 
 
 <div class="wizard-content" id="launch">
-    <h3>Step 4: Review & Launch</h3>
-    <p>Review your configuration and launch your AI development session:</p>
-
     <div class="wizard-buttons">
         <button class="button secondary" id="back-to-task-selection">Back</button>
         <button class="button" id="launch-session">Launch AI Session</button>
     </div>
+    <h3>Step 4: Review & Launch</h3>
+    <p>Review your configuration and launch your AI development session:</p>
+
 
     <div class="form-group">
         <h4>Cognitive Mode</h4>
@@ -1373,16 +1373,14 @@
                 document.getElementById(`${button.dataset.tab}-tab`).classList.add('active');
             });
         });
+       document.getElementById('back-to-cognitive-mode').addEventListener('click', () => {
+           navigateToStep('cognitive-mode');
+       });
 
 
-        document.getElementById('next-to-task-settings').addEventListener('click', () => {
+      document.getElementById('back-to-task-settings').addEventListener('click', () => {
             navigateToStep('task-settings');
         });
-
-        document.getElementById('back-to-cognitive-mode').addEventListener('click', () => {
-            navigateToStep('cognitive-mode');
-        });
-
         document.getElementById('next-to-task-selection').addEventListener('click', () => {
             navigateToStep('task-selection');
         });
@@ -1399,7 +1397,7 @@
         });
 
         document.getElementById('back-to-task-selection').addEventListener('click', () => {
-            navigateToStep('task-settings');
+            navigateToStep('task-selection');
         });
     }
 

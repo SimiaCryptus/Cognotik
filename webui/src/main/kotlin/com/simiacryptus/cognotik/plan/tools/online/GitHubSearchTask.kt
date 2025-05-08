@@ -67,16 +67,28 @@ class GitHubSearchTask(
     }
 
     private fun performGitHubSearch(planSettings: PlanSettings, githubToken: String): String {
+        val currentTaskConfig = this.taskConfig
+        val searchQuery = currentTaskConfig?.search_query
+        if (searchQuery.isNullOrBlank()) {
+            throw IllegalArgumentException("GitHub search query is required and cannot be empty.")
+        }
+        // Use defaults from GitHubSearchTaskConfigData if currentTaskConfig or specific fields are null
+        val searchType = currentTaskConfig?.search_type ?: GitHubSearchTaskConfigData().search_type
+        val perPage = currentTaskConfig?.per_page ?: GitHubSearchTaskConfigData().per_page
+
         val client = HttpClient.newBuilder().build()
         val uriBuilder = URI("https://api.github.com")
-            .resolve("/search/${taskConfig?.search_type}")
+            .resolve("/search/$searchType") // Use resolved searchType
             .toURL()
             .toString()
+
         val queryParams = mutableListOf<String>()
-        queryParams.add("q=${java.net.URLEncoder.encode(taskConfig?.search_query ?: "", "UTF-8")}")
-        queryParams.add("per_page=${taskConfig?.per_page}")
-        taskConfig?.sort?.let { queryParams.add("sort=${java.net.URLEncoder.encode(it, "UTF-8")}") }
-        taskConfig?.order?.let { queryParams.add("order=${java.net.URLEncoder.encode(it, "UTF-8")}") }
+        // searchQuery is guaranteed non-blank here by the check above.
+        queryParams.add("q=${java.net.URLEncoder.encode(searchQuery, "UTF-8")}")
+        queryParams.add("per_page=$perPage") // perPage is now guaranteed non-null
+
+        currentTaskConfig?.sort?.let { queryParams.add("sort=${java.net.URLEncoder.encode(it, "UTF-8")}") }
+        currentTaskConfig?.order?.let { queryParams.add("order=${java.net.URLEncoder.encode(it, "UTF-8")}") }
         val finalUrl = "$uriBuilder?${queryParams.joinToString("&")}"
         val request = HttpRequest.newBuilder()
             .uri(URI.create(finalUrl))
@@ -96,6 +108,9 @@ class GitHubSearchTask(
     private fun formatSearchResults(results: String): String {
         val mapper = ObjectMapper()
         val searchResults: Map<String, Any> = mapper.readValue(results)
+        // Use the same logic for determining search_type as in performGitHubSearch
+        // to ensure formatting matches the query made.
+        val effectiveSearchType = this.taskConfig?.search_type ?: GitHubSearchTaskConfigData().search_type
         return buildString {
             appendLine("# GitHub Search Results")
             appendLine()
@@ -104,8 +119,8 @@ class GitHubSearchTask(
             appendLine("## Top Results:")
             appendLine()
             val items = searchResults["items"] as List<Map<String, Any>>
-            items.take(10).forEach { item ->
-                when (taskConfig?.search_type) {
+            items.take(minOf(10, items.size)).forEach { item -> // Ensure we don't go over items.size
+                when (effectiveSearchType) { // Use the resolved effectiveSearchType
                     "repositories" -> formatRepositoryResult(item)
                     "code" -> formatCodeResult(item)
                     "commits" -> formatCommitResult(item)

@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TRIPLE_TILDE
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -12,6 +13,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
 class RunShellCommandTask(
@@ -73,6 +75,7 @@ class RunShellCommandTask(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
+        val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
         val codingAgent = object : CodingAgent<ProcessInterpreter>(
             api = api,
@@ -86,47 +89,74 @@ class RunShellCommandTask(
             details = shellCommandActor.details,
             model = shellCommandActor.model,
             mainTask = task,
+            retryable = false,
         ) {
+            override fun execute(
+                task: SessionTask,
+                response: CodingActor.CodeResult
+            ): String {
+                val result = super.execute(task, response) // Runs the interpreter, updates response.result
+                if (planSettings.autoFix) {
+                    val resultString =
+                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
+                        "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" + // STDOUT
+                        "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n" // STDERR
+                    resultFn(resultString)
+                    semaphore.release()
+                }
+                return result
+            }
+
             override fun displayFeedback(
                 task: SessionTask,
                 request: CodingActor.CodeRequest,
                 response: CodingActor.CodeResult
             ) {
-                val formText = StringBuilder()
-                var formHandle: StringBuilder? = null
-                formHandle = task.add(
-                    "<div>\n${
-                        if (!super.canPlay) "" else super.playButton(
-                            task,
-                            request,
-                            response,
-                            formText
-                        ) { formHandle!! }
-                    }\n${acceptButton(response)}\n</div>\n${
-                        super.ui.textInput { feedback ->
-                            super.responseAction(
+                if (planSettings.autoFix && autoRunCounter.incrementAndGet() <= 1) {
+                    super.responseAction(task, "Running...", null, StringBuilder()) {
+                        this.execute(task, response, request) // Calls the overridden execute
+                    }
+                } else if (!planSettings.autoFix) {
+                    // Manual feedback UI
+                    val formText = StringBuilder()
+                    var formHandle: StringBuilder? = null
+                    formHandle = task.add(
+                        "<div>\n${
+                            if (!super.canPlay) "" else super.playButton(
                                 task,
-                                "Revising...", formHandle!!, formText
-                            ) {
-                                super.feedback(
-                                    task, feedback, request,
-                                    response
-                                )
+                                request,
+                                response,
+                                formText
+                            ) { formHandle!! }
+                        }\n${acceptButton(response, task)}\n</div>\n${ // Pass task to acceptButton if needed for consistency, or ensure response is sufficient
+                            super.ui.textInput { feedback ->
+                                super.responseAction(
+                                    task,
+                                    "Revising...", formHandle!!, formText
+                                ) {
+                                    super.feedback(
+                                        task, feedback, request, response
+                                    )
+                                }
                             }
-                        }
-                    }", additionalClasses = "reply-message"
-                )
-                formText.append(formHandle.toString())
-                formHandle.toString()
+                        }", additionalClasses = "reply-message"
+                    )
+                    // Omitted potentially problematic lines:
+                    // formText.append(formHandle.toString())
+                    // formHandle.toString()
+                }
                 task.complete()
             }
 
             fun acceptButton(
-                response: CodingActor.CodeResult
+                response: CodingActor.CodeResult,
+                @Suppress("UNUSED_PARAMETER") task: SessionTask // Added task param for potential future use or consistency
             ): String {
                 return ui.hrefLink("Accept", "href-link play-button") {
                     response.let {
-                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
+                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
+                        "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" +
+                        "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
                     }.apply { resultFn(this) }
                     semaphore.release()
                 }
@@ -134,7 +164,10 @@ class RunShellCommandTask(
         }
         codingAgent.start(
             codingAgent.codeRequest(
-                messages.map { it to ApiModel.Role.user }
+                messages.map { it to ApiModel.Role.user } +
+                listOfNotNull(
+                    this.taskConfig?.command?.takeIf { it.isNotBlank() }?.let { it to ApiModel.Role.user }
+                )
             )
         )
         try {

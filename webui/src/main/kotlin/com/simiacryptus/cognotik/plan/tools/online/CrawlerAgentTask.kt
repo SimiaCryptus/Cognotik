@@ -142,33 +142,6 @@ class CrawlerAgentTask(
         val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
         val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
 
-        val header = buildString {
-            appendLine("# Analysis of Search Results")
-            appendLine()
-
-            when (seedMethod) {
-                SeedMethod.GoogleSearch -> {
-                    appendLine("**Search Query:** ${taskConfig?.search_query}")
-                }
-
-                SeedMethod.DirectUrls -> {
-                    appendLine("**Direct URLs:**")
-                    pageQueue.filter { it.completed }.map { it.link }.forEach { url ->
-                        appendLine("- $url")
-                    }
-                }
-            }
-            appendLine()
-            appendLine("**URLs Analyzed:**")
-            seedItems?.forEach { item ->
-                appendLine("- [${item["title"]}](${item["link"]})")
-            }
-            appendLine()
-            appendLine("---")
-            appendLine()
-        }
-        task.add(header.renderMarkdown())
-
         val tabs = TabbedDisplay(task)
         val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
         val futureMap = mutableMapOf<String, Future<*>>()
@@ -309,20 +282,18 @@ class CrawlerAgentTask(
         } finally {
             log.info("Processing completed")
         }
-        val analysisResults = header + (1..processedCount.get()).asSequence().mapNotNull {
+        val analysisResults = (1..processedCount.get()).asSequence().mapNotNull {
             analysisResultsMap[it]
         }.joinToString("\n")
         val finalOutput =
-            if (/*taskConfig?.*/create_final_summary != false && analysisResults.length > (/*taskConfig?.*/max_final_output_size
-                    ?: max_final_output_size)
-            ) {
+            if (create_final_summary != false && analysisResults.length > max_final_output_size) {
                 createFinalSummary(analysisResults, api)
             } else {
                 analysisResults
             }
         agent.ui.newTask(false).apply {
             tabs["Final Summary"] = placeholder
-            add(MarkdownUtil.renderMarkdown(finalOutput, ui = agent.ui))
+            add(finalOutput.renderMarkdown())
         }
         resultFn(finalOutput)
     }
