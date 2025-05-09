@@ -157,15 +157,23 @@ open class AutoPlanMode(
                     log.debug("Retrieved next tasks: ${nextTask.size}")
 
                     val taskResults = mutableListOf<Pair<TaskConfigBase, Future<String>>>()
-                    for ((index, currentTask: TaskConfigBase) in nextTask.withIndex()) {
+                    for ((index, currentTask: TaskData) in nextTask.withIndex()) {
                         val currentTaskId = "task_${index + 1}"
                         log.debug("Executing task $currentTaskId")
                         val taskExecutionTask = ui.newTask(false)
-                        taskExecutionTask.add(
+                        val taskConfig = currentTask.task.tasks?.get(index)
+                        val taskDescription = taskConfig?.task_description ?: "No description provided for this task item."
+                        taskExecutionTask.add(currentTask.actorResponse.renderMarkdown)
+                        val fullTaskDataJson = JsonUtil.toJson(currentTask)
+                        taskExecutionTask.verbose(
                             renderMarkdown(
-                                "Executing task: `$currentTaskId` - ${currentTask.task_description}\n```json\n${
-                                    JsonUtil.toJson(currentTask)
-                                }\n```", tabs = false
+                                """
+Executing task: `$currentTaskId` - $taskDescription
+Full TaskData JSON:
+```json
+$fullTaskDataJson
+```
+""".trimIndent(), tabs = false
                             )
                         )
                         iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
@@ -173,7 +181,7 @@ open class AutoPlanMode(
                         val future = executor.submit<String> {
                             try {
                                 if (coordinator != null) {
-                                    runTask(iterationApi, coordinator, currentTask, userMessage, taskExecutionTask)
+                                    runTask(iterationApi, coordinator, currentTask.task.tasks?.get(index)!!, userMessage, taskExecutionTask)
                                 } else {
                                     log.error("Coordinator is null, cannot run task")
                                     ""
@@ -184,7 +192,7 @@ open class AutoPlanMode(
                                 "Error executing task: ${e.message}"
                             }
                         }
-                        taskResults.add(Pair(currentTask, future))
+                        taskResults.add(Pair(currentTask.task.tasks?.get(index)!!, future))
                     }
 
                     val completedTasks = taskResults.map { (task, future) ->
@@ -290,7 +298,7 @@ open class AutoPlanMode(
         userMessage: String,
         thinkingStatus: ThinkingStatus,
         task: SessionTask
-    ): List<TaskConfigBase>? {
+    ): List<TaskData>? {
         val describer = coordinator.describer
 
         val parsedActor = ParsedActor(
@@ -347,32 +355,21 @@ open class AutoPlanMode(
         val expandedTasks = processTaskExpansionRecursive(
             currentText = answer.text,
             task = task,
-
             api = api,
             parsedActor = parsedActor,
             processor = processor
         )
-        /*
 
+        val tasks = expandedTasks.map { taskData ->
+            taskData.task.tasks?.map { taskConfigBase ->
+                TaskData(Tasks(mutableListOf(taskConfigBase)), taskData.actorResponse) to (if (taskConfigBase.task_type == null) {
+                    null
+                } else {
+                    TaskType.getImpl(coordinator.planSettings, taskConfigBase)
+                })?.taskConfig
+            } ?: emptyList()
+        }.flatten()
 
-        val chosenTasks = parsedActor.getParser(api).apply(answer.text) /*answer.obj*/
-        val tasks = chosenTasks.tasks?.map { task ->
-          task to (if (task.task_type == null) {
-            null
-          } else {
-            TaskType.getImpl(coordinator.planSettings, task)
-          })?.taskConfig
-        }
-        */
-
-        val allChosenTasks = expandedTasks.flatMap { it.tasks ?: emptyList() }
-        val tasks = allChosenTasks.map { taskConfigBase ->
-            taskConfigBase to (if (taskConfigBase.task_type == null) {
-                null
-            } else {
-                TaskType.getImpl(coordinator.planSettings, taskConfigBase)
-            })?.taskConfig
-        }
 
         if (tasks.isNullOrEmpty()) {
             log.info("No tasks selected")
@@ -381,9 +378,19 @@ open class AutoPlanMode(
             log.warn("No valid tasks selected from: ${tasks.map { it.first }}")
             return null
         } else {
-            return tasks.mapNotNull { it.second }.take(maxTasksPerIteration)
+            return tasks.take(maxTasksPerIteration).map {
+                TaskData(
+                    task = Tasks(tasks.toList().flatMap { it.first.task.tasks ?: listOf() }.toMutableList()),
+                    actorResponse = it.first.actorResponse
+                )
+            }
         }
     }
+
+    data class TaskData(
+        val task: Tasks,
+        val actorResponse: String,
+    )
 
     /**
      * Recursively processes task selection text containing expansion expressions {option1|option2}.
@@ -392,43 +399,32 @@ open class AutoPlanMode(
     private fun processTaskExpansionRecursive(
         currentText: String,
         task: SessionTask,
-
         api: ChatClient,
         parsedActor: ParsedActor<Tasks>,
         processor: FixedConcurrencyProcessor
-    ): List<Tasks> {
+    ): List<TaskData> {
         val match = expansionExpressionPattern.find(currentText)
         if (match == null) {
-
-            task.add(currentText.renderMarkdown)
-
             return try {
                 val chosenTasks = parsedActor.getParser(api).apply(currentText)
-                listOf(chosenTasks)
+                listOf(TaskData(chosenTasks, currentText))
             } catch (e: Exception) {
                 log.error("Error parsing task text: $currentText", e)
                 task.error(ui, e)
                 emptyList()
-
             }
         } else {
-
             val expression = match.groupValues[1]
             val options = expression.split('|')
             val tabs = TabbedDisplay(task)
-
             val futures = options.map { option ->
-                processor.submit<List<Tasks>> {
-
+                processor.submit {
                     val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
-
                     val nextText = currentText.replaceFirst(match.value, option)
-
                     processTaskExpansionRecursive(nextText, subTask, api, parsedActor, processor)
                 }
             }
             return futures.flatMap { it.get() }
-
         }
     }
 
