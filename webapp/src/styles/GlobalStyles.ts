@@ -44,36 +44,56 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     }
 
     :root {
-        /* Theme variables are now set dynamically in ThemeProvider */
-        /* Font weights */
-        --font-weight-light: 300;
-        --font-weight-regular: 400;
-        --font-weight-medium: 500;
-        --font-weight-semibold: 600;
-        --font-weight-bold: 700;
-        --font-weight-extrabold: 800;
+        /* Fallback Theme variables - these will be overridden by ThemeProvider */
+        /* Color related fallbacks (can be minimal as ThemeProvider sets them) */
+    /* Font weights */
+    --font-weight-light: 300; /* Fallback */
+    --font-weight-regular: 400; /* Fallback */
+    --font-weight-medium: 500; /* Fallback */
+    --font-weight-semibold: 600; /* Fallback */
+    --font-weight-bold: 700; /* Fallback */
+    --font-weight-extrabold: 800; /* Fallback */
+
         /* Font families */
-        --font-primary: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        --font-heading: 'Space Grotesk', system-ui, sans-serif;
-        --font-mono: 'IBM Plex Mono', 'Fira Code', monospace;
-        --font-display: 'Syne', system-ui, sans-serif;
+    --font-primary: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Fallback to match baseTheme */
+    --font-heading: 'Space Grotesk', system-ui, sans-serif; /* Fallback to match baseTheme */
+    --font-mono: 'IBM Plex Mono', 'Fira Code', monospace; /* Fallback to match baseTheme */
+    --font-display: 'Syne', system-ui, sans-serif; /* Fallback to match baseTheme */
+
         /* Font sizes */
-        --font-size-xs: clamp(0.75rem, 1.5vw, 0.875rem);
-        --font-size-sm: clamp(0.875rem, 1.75vw, 1rem);
-        --font-size-md: clamp(1rem, 2vw, 1.125rem);
-        --font-size-lg: clamp(1.25rem, 2.5vw, 1.75rem);
-        --font-size-xl: clamp(1.75rem, 3.5vw, 2.5rem);
-        --font-size-2xl: clamp(2.5rem, 5vw, 3.5rem);
+    --font-size-xs: 0.75rem; /* Fallback */
+    --font-size-sm: 0.875rem; /* Fallback */
+    --font-size-md: 1rem; /* Fallback */
+    --font-size-lg: 1.125rem; /* Fallback */
+    --font-size-xl: 1.25rem; /* Fallback */
+    --font-size-2xl: 1.5rem; /* Fallback */
+
         /* Line heights */
-        --line-height-tight: 1.15;
-        --line-height-normal: 1.65;
-        --line-height-relaxed: 1.85;
+    --line-height-tight: 1.2; /* Fallback */
+    --line-height-normal: 1.6; /* Fallback */
+    --line-height-relaxed: 1.8; /* Fallback */
+
         /* Letter spacing */
-        --letter-spacing-tight: -0.04em;
-        --letter-spacing-normal: -0.02em;
-        --letter-spacing-wide: 0.04em;
-        --letter-spacing-wider: 0.08em;
+    --letter-spacing-tight: -0.02em; /* Fallback */
+    --letter-spacing-normal: normal; /* Fallback */
+    --letter-spacing-wide: 0.02em; /* Fallback */
+    --letter-spacing-wider: 0.04em; /* Fallback */
+
+    /* Sizing */
+    --spacing-xs: 0.25rem; /* Fallback */
+    --spacing-sm: 0.5rem; /* Fallback */
+    --spacing-md: 1rem; /* Fallback */
+    --spacing-lg: 1.5rem; /* Fallback */
+    --spacing-xl: 2rem; /* Fallback */
+    --border-radius-sm: 0.25rem; /* Fallback */
+    --border-radius-md: 0.5rem; /* Fallback */
+    --border-radius-lg: 1rem; /* Fallback */
     }
+    /*
+       The :root variables above serve as fallbacks.
+       ThemeProvider.tsx will inject a <style> tag that overrides these with the selected layout theme's values.
+    */
+
 
     ${() => {
     logStyleChange('Fonts', 'font-load', 'Web fonts loaded');
@@ -85,7 +105,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     .token.prolog,
     .token.doctype,
     .token.cdata {
-        color: var(--theme-text-secondary);
+        color: var(--theme-text-secondary-color);
     }
 
     .token.punctuation {
@@ -440,7 +460,7 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
     .message-content pre,
     .message-content code {
         background: var(--theme-surface);
-        color: var(--theme-text);
+        color: var(--theme-text); /* Ensure code text color also uses a theme variable */
     }
 
     /* Universal code block styles using CSS variables */

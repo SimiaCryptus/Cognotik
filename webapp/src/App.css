@@ -7,30 +7,29 @@
 
 /* Dark mode improvements */
 /* Improve dark mode media query placement */
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
     :root {
     }
 
-    /* List styles */
     ol li::before {
-        color: var(--primary-color);
+        color: var(--theme-primary);
     }
 
     ol ol li::before {
-        color: var(--hover-color);
+        color: var(--theme-hover);
     }
 
     .App {
-        background-color: var(--background-color);
-        color: var(--text-color);
+        background-color: var(--theme-background);
+        color: var(--theme-text);
     }
 
     .tab-button {
-        color: var(--primary-color);
+        color: var(--theme-primary);
     }
 
     .tab-button:hover {
-        background: var(--hover-background);
+        background: var(--theme-surface);
     }
 
     .cmd-button {
@@ -40,7 +39,7 @@
     .cmd-button:hover {
         background-color: var(--hover-color);
     }
-}
+} */ /* Commenting out prefers-color-scheme as theme provider handles it */
 
 /* Improve tab button accessibility */
 .tab-button {
@@ -52,8 +51,8 @@
     background: transparent;
     cursor: pointer;
     position: relative;
-    font-weight: var(--font-weight-semibold);
-    color: var(--primary-color);
+    font-weight: var(--font-weight-semibold); /* Uses global style var */
+    color: var(--theme-primary);
     font-size: var(--font-size-md);
     letter-spacing: var(--letter-spacing-wide);
     text-transform: uppercase;
@@ -67,20 +66,20 @@
 
 /* Active tab state */
 .tab-button.active {
-    background-color: var(--color-primary-alpha);
-    color: var(--color-light);
+    background-color: var(--theme-primary); /* Or a semi-transparent primary */
+    color: var(--theme-text-on-primary, #fff); /* Assuming text on primary is light */
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     position: relative;
     z-index: 1;
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold); /* Uses global style var */
     letter-spacing: var(--letter-spacing-wider);
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .tab-button:hover {
     transform: translateY(-.5em);
-    background-color: var(--color-primary-alpha);
+    background-color: var(--theme-primary); /* Or a semi-transparent primary on hover */
     transition: all .5s cubic-bezier(0.1, 0, 0.5, 1);
 }
 
@@ -88,14 +87,13 @@
 .cmd-button {
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--theme-shadow-small); /* Use theme shadow */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-block;
     padding: 8px 15px;
     font-size: 14px;
     cursor: pointer;
     text-align: center;
-    text-decoration: none;
     outline: none;
     color: #fff;
     background-color: var(--primary-color);
@@ -190,7 +188,7 @@
 }
 
 .cmd-button:hover {
-    background-color: var(--hover-color);
+    background-color: var(--theme-hover); /* Use theme hover color */
 }
 
 /* Loading state styles */
@@ -211,14 +209,14 @@
 /* Loading state with text */
 .loading-container .loading-text {
     margin-left: 1rem;
-    color: var(--text-color);
+    color: var(--theme-text);
     font-size: 0.9rem;
 }
 
 /* Focus states */
 .tab-button:focus,
 .tab-button:focus-visible {
-    outline: 2px solid var(--primary-color);
+    outline: 2px solid var(--theme-primary);
     outline-offset: 2px;
     box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.2);
 }
@@ -230,19 +228,19 @@
 
 /* CSS variables for consistent theming */
 :root {
-    /* Color palette */
-    --color-gradient-start: var(--color-primary);
-    --color-gradient-end: var(--color-secondary);
+    /* Color palette - These should be derived from theme variables if possible or removed if not used */
+    /* --color-gradient-start: var(--theme-primary); */
+    /* --color-gradient-end: var(--theme-secondary); */
     /* Semantic variables */
     /* Shadows */
-    --shadow-text: 0 2px 4px rgba(0, 0, 0, 0.15);
-    --shadow-heading: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* --shadow-text: 0 2px 4px rgba(0, 0, 0, 0.15); */ /* Use theme shadows */
+    /* --shadow-heading: 0 4px 8px rgba(0, 0, 0, 0.2); */ /* Use theme shadows */
     /* Typography */
     /* Gradients */
-    --gradient-heading: linear-gradient(135deg,
-    var(--color-gradient-start),
-    var(--color-gradient-end)
-    );
+    /* --gradient-heading: linear-gradient(135deg,
+    var(--theme-primary),
+    var(--theme-secondary)
+    ); */ /* This is handled in GlobalStyles for h1-h6 */
 }
 
 /* Add loading and error container styles */
@@ -255,12 +253,12 @@
     height: 100vh;
     padding: 2rem;
     text-align: center;
-    background: var(--background-color, #fff);
-    color: var(--text-color, #333);
+    background: var(--theme-background);
+    color: var(--theme-text);
 }
 
 .error-container {
-    color: var(--error-color, #dc3545);
+    color: var(--theme-error);
 }
 
 /* Query Expansion Syntax Guide Styles */
@@ -379,12 +377,12 @@
     border: none;
     white-space: nowrap; /* Prevent buttons breaking line */
     background-color: var(--primary-color);
-    color: white;
-    box-shadow: var(--shadow-sm);
+    color: var(--theme-text-on-primary, #fff);
+    box-shadow: var(--theme-shadow-small);
 }
 .action-button:hover,
 .feedback-controls .button:hover {
-    background-color: var(--hover-color);
+    background-color: var(--theme-hover);
     transform: translateY(-1px);
 }
 .action-status {

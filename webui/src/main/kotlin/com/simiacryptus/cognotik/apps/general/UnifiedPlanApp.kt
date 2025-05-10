@@ -51,7 +51,6 @@ open class UnifiedPlanApp(
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{]+)+)}""")
     private val expansionPool = Executors.newFixedThreadPool(4)
-
     override val stickyInput = true
     override val singleInput = cognitiveStrategy.singleInput
 
@@ -66,12 +65,17 @@ open class UnifiedPlanApp(
         api: API
     ) {
         try {
+            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
             ui.newTask(true).expandable("Session Info", """
                 Session ID: `${session.sessionId}`
                 
-                Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-                
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+                
+                Enabled Tasks: `${settings.taskSettings.filter { it.value.enabled }.keys.joinToString(", ")}`
+                
+                Root: `${settings.absoluteWorkingDir}`
+                
+                Location: `${dataStorage.getDataDir(user, session).absolutePath}`
             """.trimIndent().renderMarkdown())
             log.debug("Received user message: $userMessage")
 
@@ -81,7 +85,6 @@ open class UnifiedPlanApp(
             }
 
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-                val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
                 user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)

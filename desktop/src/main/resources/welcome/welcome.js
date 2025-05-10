@@ -29,56 +29,47 @@ let cognitiveMode = localStorage.getItem('cognitiveMode') || 'single-task';
 console.log('[Global] Initial taskSettings:', JSON.parse(JSON.stringify(taskSettings))); // Deep copy for logging
 console.log('[Global] Initial cognitiveMode:', cognitiveMode);
 
-const taskTypes = [
-    {
-        id: 'InsightTask',
-        name: 'Insight Task',
-        description: 'Analyze code and provide detailed explanations of implementation patterns',
-        tooltip: 'Provides detailed answers and insights about code implementation by analyzing specified files.',
-    },
-    {
-        id: 'FileModificationTask',
-        name: 'File Modification Task',
-        description: 'Create new files or modify existing code with AI-powered assistance',
-        tooltip: 'Creates or modifies source files with AI assistance while maintaining code quality.',
-    },
-    {
-        id: 'RunShellCommandTask',
-        name: 'Run Shell Command Task',
-        description: 'Execute shell commands safely',
-        tooltip: 'Executes shell commands in a controlled environment.',
-    },
-    {
-        id: 'RunCodeTask',
-        name: 'Run Code Task',
-        description: 'Execute code snippets with AI assistance',
-        tooltip: 'Executes code snippets with AI assistance while maintaining code quality.',
-    },
-    {
-        id: 'CommandAutoFixTask',
-        name: 'Command Auto Fix Task',
-        description: 'Run a command and automatically fix any issues that arise',
-        tooltip: 'Executes a command and automatically fixes any issues that arise.',
-    },
-    {
-        id: 'FileSearchTask',
-        name: 'File Search Task',
-        description: 'Search project files using patterns with contextual results',
-        tooltip: 'Performs pattern-based searches across project files with context.',
-    },
-    {
-        id: 'CrawlerAgentTask',
-        name: 'Web Search Task',
-        description: 'Search Google, fetch top results, and analyze content',
-        tooltip: 'Searches Google for specified queries and analyzes the top results.',
-    },
-    {
-        id: 'GitHubSearchTask',
-        name: 'GitHub Search Task',
-        description: 'Search GitHub repositories, code, issues and users',
-        tooltip: 'Performs comprehensive searches across GitHub\'s content.',
-    },
-    /*
+const taskTypes = [{
+    id: 'InsightTask',
+    name: 'Insight Task',
+    description: 'Analyze code and provide detailed explanations of implementation patterns',
+    tooltip: 'Provides detailed answers and insights about code implementation by analyzing specified files.',
+}, {
+    id: 'FileModificationTask',
+    name: 'File Modification Task',
+    description: 'Create new files or modify existing code with AI-powered assistance',
+    tooltip: 'Creates or modifies source files with AI assistance while maintaining code quality.',
+}, {
+    id: 'RunShellCommandTask',
+    name: 'Run Shell Command Task',
+    description: 'Execute shell commands safely',
+    tooltip: 'Executes shell commands in a controlled environment.',
+}, {
+    id: 'RunCodeTask',
+    name: 'Run Code Task',
+    description: 'Execute code snippets with AI assistance',
+    tooltip: 'Executes code snippets with AI assistance while maintaining code quality.',
+}, {
+    id: 'CommandAutoFixTask',
+    name: 'Command Auto Fix Task',
+    description: 'Run a command and automatically fix any issues that arise',
+    tooltip: 'Executes a command and automatically fixes any issues that arise.',
+}, {
+    id: 'FileSearchTask',
+    name: 'File Search Task',
+    description: 'Search project files using patterns with contextual results',
+    tooltip: 'Performs pattern-based searches across project files with context.',
+}, {
+    id: 'CrawlerAgentTask',
+    name: 'Web Search Task',
+    description: 'Search Google, fetch top results, and analyze content',
+    tooltip: 'Searches Google for specified queries and analyzes the top results.',
+}, {
+    id: 'GitHubSearchTask',
+    name: 'GitHub Search Task',
+    description: 'Search GitHub repositories, code, issues and users',
+    tooltip: 'Performs comprehensive searches across GitHub\'s content.',
+}, /*
         {
           id: 'TaskPlanningTask',
           name: 'Task Planning Task',
@@ -139,20 +130,15 @@ const taskTypes = [
           description: 'Compile structured data tables from multiple files',
           tooltip: 'Extracts and compiles structured data from multiple files into a unified table.',
         },
-    */
-];
+    */];
 
-const apiProviders = [
-    {id: 'OpenAI', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1'},
-    {id: 'Anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1'},
-    {id: 'Google', name: 'Google', baseUrl: 'https://generativelanguage.googleapis.com'},
-    {id: 'Groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1'},
-    {id: 'Mistral', name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1'},
-    {id: 'AWS', name: 'AWS', baseUrl: 'https://api.openai.aws'},
-    {id: 'DeepSeek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com'},
-    {id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com'},
-    {id: 'GoogleSearch', name: 'Google Search', baseUrl: ''},
-];
+const apiProviders = [{id: 'OpenAI', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1'}, {
+    id: 'Anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1'
+}, {id: 'Google', name: 'Google', baseUrl: 'https://generativelanguage.googleapis.com'}, {
+    id: 'Groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1'
+}, {id: 'Mistral', name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1'}, {id: 'AWS', name: 'AWS', baseUrl: 'https://api.openai.aws'}, {
+    id: 'DeepSeek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com'
+}, {id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com'}, {id: 'GoogleSearch', name: 'Google Search', baseUrl: ''},];
 
 function generateTimestampedDirectory() {
     console.log('[generateTimestampedDirectory] Called');
@@ -169,57 +155,48 @@ function generateTimestampedDirectory() {
 }
 
 const availableModels = {
-    OpenAI: [
-        {id: 'GPT4o', name: 'GPT-4o', description: 'OpenAI\'s capable vision model'},
-        {id: 'GPT4oMini', name: 'GPT-4o Mini', description: 'Smaller, faster version of GPT-4o'},
-        {id: 'O1', name: 'o1', description: 'OpenAI\'s reasoning-focused model'},
-        {id: 'O1Mini', name: 'o1-mini', description: 'Smaller version of o1'},
-        {id: 'O1Preview', name: 'o1-preview', description: 'Preview version of o1'},
-        {id: 'O3', name: 'o3', description: 'OpenAI\'s advanced reasoning model'},
-        {id: 'O3Mini', name: 'o3-mini', description: 'Smaller version of o3'},
-        {id: 'O4Mini', name: 'o4-mini', description: 'Latest mini reasoning model'},
-        {id: 'GPT41', name: 'GPT-4.1', description: 'Latest GPT-4 series model'},
-        {id: 'GPT41Mini', name: 'GPT-4.1 Mini', description: 'Smaller version of GPT-4.1'},
-        {id: 'GPT41Nano', name: 'GPT-4.1 Nano', description: 'Smallest version of GPT-4.1'},
-        {id: 'GPT45', name: 'GPT-4.5', description: 'Advanced preview model'},
-    ],
-    Anthropic: [
-        {id: 'Claude35Sonnet', name: 'Claude 3.5 Sonnet', description: 'Anthropic\'s advanced model'},
-        {id: 'Claude37Sonnet', name: 'Claude 3.7 Sonnet', description: 'Anthropic\'s latest model'},
-        {id: 'Claude35Haiku', name: 'Claude 3.5 Haiku', description: 'Smaller, faster Claude model'},
-        {id: 'Claude3Opus', name: 'Claude 3 Opus', description: 'Anthropic\'s most capable model'},
-        {id: 'Claude3Sonnet', name: 'Claude 3 Sonnet', description: 'Balanced Claude model'},
-        {id: 'Claude3Haiku', name: 'Claude 3 Haiku', description: 'Fast, efficient Claude model'},
-    ],
-    Groq: [
-        {id: 'Llama33_70bVersatile', name: 'Llama 3.3 70B Versatile', description: 'Fast Llama 3.3 inference'},
-        {id: 'Llama33_70bSpecDec', name: 'Llama 3.3 70B SpecDec', description: 'Specialized Llama 3.3 model'},
-        {id: 'Llama31_8bInstant', name: 'Llama 3.1 8B Instant', description: 'Fast, small Llama model'},
-        {id: 'Gemma2_9b', name: 'Gemma 2 9B', description: 'Google\'s Gemma model on Groq'},
-        {id: 'MistralSaba24b', name: 'Mistral Saba 24B', description: 'Mistral\'s Saba model'},
-        {id: 'Qwen25_32b', name: 'Qwen 2.5 32B', description: 'Qwen model on Groq'},
-    ],
-    Mistral: [
-        {id: 'Mistral7B', name: 'Mistral 7B', description: 'Mistral\'s base model'},
-        {id: 'MistralSmall', name: 'Mistral Small', description: 'Mistral\'s small model'},
-        {id: 'MistralMedium', name: 'Mistral Medium', description: 'Mistral\'s medium model'},
-        {id: 'MistralLarge', name: 'Mistral Large', description: 'Mistral\'s large model'},
-        {id: 'Mixtral8x7B', name: 'Mixtral 8x7B', description: 'Mistral\'s Mixtral model'},
-        {id: 'Mixtral8x22B', name: 'Mixtral 8x22B', description: 'Mistral\'s larger Mixtral model'},
-        {id: 'Codestral', name: 'Codestral', description: 'Mistral\'s code-focused model'},
-    ],
-    DeepSeek: [
-        {id: 'DeepSeekChat', name: 'DeepSeek Chat', description: 'DeepSeek\'s general chat model'},
-        {id: 'DeepSeekCoder', name: 'DeepSeek Coder', description: 'DeepSeek\'s code-focused model'},
-        {id: 'DeepSeekReasoner', name: 'DeepSeek Reasoner', description: 'DeepSeek\'s reasoning model'},
-    ],
-    AWS: [
-        {id: 'AWSLLaMA31_405bChat', name: 'Llama 3.1 405B', description: 'Largest Llama model on AWS'},
-        {id: 'AWSLLaMA31_70bChat', name: 'Llama 3.1 70B', description: 'Large Llama model on AWS'},
-        {id: 'Claude35SonnetAWS', name: 'Claude 3.5 Sonnet (AWS)', description: 'Claude on AWS'},
-        {id: 'Claude37SonnetAWS', name: 'Claude 3.7 Sonnet (AWS)', description: 'Latest Claude on AWS'},
-        {id: 'MistralLarge2407', name: 'Mistral Large 2407', description: 'Latest Mistral Large on AWS'},
-    ],
+    OpenAI: [{id: 'GPT4o', name: 'GPT-4o', description: 'OpenAI\'s capable vision model'}, {
+        id: 'GPT4oMini', name: 'GPT-4o Mini', description: 'Smaller, faster version of GPT-4o'
+    }, {id: 'O1', name: 'o1', description: 'OpenAI\'s reasoning-focused model'}, {
+        id: 'O1Mini', name: 'o1-mini', description: 'Smaller version of o1'
+    }, {id: 'O1Preview', name: 'o1-preview', description: 'Preview version of o1'}, {
+        id: 'O3', name: 'o3', description: 'OpenAI\'s advanced reasoning model'
+    }, {id: 'O3Mini', name: 'o3-mini', description: 'Smaller version of o3'}, {
+        id: 'O4Mini', name: 'o4-mini', description: 'Latest mini reasoning model'
+    }, {id: 'GPT41', name: 'GPT-4.1', description: 'Latest GPT-4 series model'}, {
+        id: 'GPT41Mini', name: 'GPT-4.1 Mini', description: 'Smaller version of GPT-4.1'
+    }, {id: 'GPT41Nano', name: 'GPT-4.1 Nano', description: 'Smallest version of GPT-4.1'}, {
+        id: 'GPT45', name: 'GPT-4.5', description: 'Advanced preview model'
+    },],
+    Anthropic: [{id: 'Claude35Sonnet', name: 'Claude 3.5 Sonnet', description: 'Anthropic\'s advanced model'}, {
+        id: 'Claude37Sonnet', name: 'Claude 3.7 Sonnet', description: 'Anthropic\'s latest model'
+    }, {id: 'Claude35Haiku', name: 'Claude 3.5 Haiku', description: 'Smaller, faster Claude model'}, {
+        id: 'Claude3Opus', name: 'Claude 3 Opus', description: 'Anthropic\'s most capable model'
+    }, {id: 'Claude3Sonnet', name: 'Claude 3 Sonnet', description: 'Balanced Claude model'}, {
+        id: 'Claude3Haiku', name: 'Claude 3 Haiku', description: 'Fast, efficient Claude model'
+    },],
+    Groq: [{id: 'Llama33_70bVersatile', name: 'Llama 3.3 70B Versatile', description: 'Fast Llama 3.3 inference'}, {
+        id: 'Llama33_70bSpecDec', name: 'Llama 3.3 70B SpecDec', description: 'Specialized Llama 3.3 model'
+    }, {id: 'Llama31_8bInstant', name: 'Llama 3.1 8B Instant', description: 'Fast, small Llama model'}, {
+        id: 'Gemma2_9b', name: 'Gemma 2 9B', description: 'Google\'s Gemma model on Groq'
+    }, {id: 'MistralSaba24b', name: 'Mistral Saba 24B', description: 'Mistral\'s Saba model'}, {
+        id: 'Qwen25_32b', name: 'Qwen 2.5 32B', description: 'Qwen model on Groq'
+    },],
+    Mistral: [{id: 'Mistral7B', name: 'Mistral 7B', description: 'Mistral\'s base model'}, {
+        id: 'MistralSmall', name: 'Mistral Small', description: 'Mistral\'s small model'
+    }, {id: 'MistralMedium', name: 'Mistral Medium', description: 'Mistral\'s medium model'}, {
+        id: 'MistralLarge', name: 'Mistral Large', description: 'Mistral\'s large model'
+    }, {id: 'Mixtral8x7B', name: 'Mixtral 8x7B', description: 'Mistral\'s Mixtral model'}, {
+        id: 'Mixtral8x22B', name: 'Mixtral 8x22B', description: 'Mistral\'s larger Mixtral model'
+    }, {id: 'Codestral', name: 'Codestral', description: 'Mistral\'s code-focused model'},],
+    DeepSeek: [{id: 'DeepSeekChat', name: 'DeepSeek Chat', description: 'DeepSeek\'s general chat model'}, {
+        id: 'DeepSeekCoder', name: 'DeepSeek Coder', description: 'DeepSeek\'s code-focused model'
+    }, {id: 'DeepSeekReasoner', name: 'DeepSeek Reasoner', description: 'DeepSeek\'s reasoning model'},],
+    AWS: [{id: 'AWSLLaMA31_405bChat', name: 'Llama 3.1 405B', description: 'Largest Llama model on AWS'}, {
+        id: 'AWSLLaMA31_70bChat', name: 'Llama 3.1 70B', description: 'Large Llama model on AWS'
+    }, {id: 'Claude35SonnetAWS', name: 'Claude 3.5 Sonnet (AWS)', description: 'Claude on AWS'}, {
+        id: 'Claude37SonnetAWS', name: 'Claude 3.7 Sonnet (AWS)', description: 'Latest Claude on AWS'
+    }, {id: 'MistralLarge2407', name: 'Mistral Large 2407', description: 'Latest Mistral Large on AWS'},],
 };
 
 function populateModelSelections() {
@@ -571,18 +548,11 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('[DOMContentLoaded] Generated chatSessionId for basic chat:', chatSessionId);
         // Post settings to chat app endpoint
         fetch(`/chat/settings`, {
-            method: 'POST',
-            headers: {
+            method: 'POST', headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                sessionId: chatSessionId,
-                action: 'save',
-                settings: JSON.stringify({
-                    model: model,
-                    parsingModel: parsingModel,
-                    temperature: temperature,
-                    budget: budget
+            }, body: new URLSearchParams({
+                sessionId: chatSessionId, action: 'save', settings: JSON.stringify({
+                    model: model, parsingModel: parsingModel, temperature: temperature, budget: budget
                 })
             })
         })
@@ -603,6 +573,38 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 });
+
+// Function to save session settings to the server, similar to welcome_old.html's saveSessionSettings
+function saveSessionSettingsToServer() {
+    console.log('[saveSessionSettingsToServer] Called. Saving session settings to server.');
+    console.log('[saveSessionSettingsToServer] Current cognitiveMode:', cognitiveMode);
+    // Ensure taskSettings reflects the latest from UI elements if not already handled by individual listeners
+    // For example, workingDir is directly read by launch button, but good to ensure it's in taskSettings
+    // The workingDir input listener already updates taskSettings.workingDir and localStorage.
+    // taskSettings.workingDir = document.getElementById('working-dir').value;
+    // Other settings like defaultModel, parsingModel, temperature, autoFix, auto-plan settings, graphFile
+    // are expected to be up-to-date in the global taskSettings object and localStorage
+    // due to their respective event listeners.
+    // saveTaskSelection() should be called before this if task selections need to be included and are changing.
+    console.log('[saveSessionSettingsToServer] Current taskSettings:', JSON.parse(JSON.stringify(taskSettings)));
+    return fetch(`/taskChat/settings`, { // Using the endpoint from old code for session settings
+        method: 'POST', headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }, body: new URLSearchParams({
+            sessionId: sessionId, action: 'save', settings: JSON.stringify(taskSettings), cognitiveMode: cognitiveMode,
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                console.error('[saveSessionSettingsToServer] Failed to save session settings. Status:', response.status);
+                return response.text().then(text => {
+                    throw new Error(`Failed to save session settings: ${response.status} ${text}`);
+                });
+            }
+            console.log('[saveSessionSettingsToServer] Session settings saved successfully to server.');
+            return response;
+        });
+}
 
 
 function setupWizard() {
@@ -648,30 +650,48 @@ function setupWizard() {
     });
     document.getElementById('back-to-cognitive-mode').addEventListener('click', () => {
         console.log('[setupWizard] back-to-cognitive-mode clicked.');
+        // No specific save action needed here as per old logic flow for "Back"
         navigateToStep('cognitive-mode');
     });
 
 
     document.getElementById('back-to-task-settings').addEventListener('click', () => {
         console.log('[setupWizard] back-to-task-settings clicked.');
+        // No specific save action needed here as per old logic flow for "Back"
         navigateToStep('task-settings');
     });
     document.getElementById('next-to-task-selection').addEventListener('click', () => {
         console.log('[setupWizard] next-to-task-selection clicked.');
-        navigateToStep('task-selection');
+        saveSessionSettingsToServer()
+            .then(() => {
+                navigateToStep('task-selection');
+            })
+            .catch(error => {
+                showNotification('Error saving task settings to server: ' + error.message, 'error');
+                // Allow navigation even if server save fails, localStorage is primary for client.
+                navigateToStep('task-selection');
+            });
     });
-
 
     document.getElementById('next-to-task-settings').addEventListener('click', () => {
         console.log('[setupWizard] next-to-task-settings clicked.');
         navigateToStep('task-settings');
     });
 
-
     document.getElementById('next-to-launch').addEventListener('click', () => {
         console.log('[setupWizard] next-to-launch clicked.');
-        updateLaunchSummaries();
-        navigateToStep('launch');
+        saveTaskSelection(); // Updates taskSettings.taskSettings and localStorage for enabled tasks.
+        saveSessionSettingsToServer()
+            .then(() => {
+                updateLaunchSummaries();
+                navigateToStep('launch');
+            })
+            .catch(error => {
+                showNotification('Error saving task selections to server: ' + error.message, 'error');
+                // Allow navigation even if server save fails.
+                updateLaunchSummaries();
+                navigateToStep('launch');
+            });
     });
 
     document.getElementById('back-to-task-selection').addEventListener('click', () => {
@@ -819,33 +839,18 @@ function setupEventListeners() {
     if (launchButton) {
         launchButton.addEventListener('click', function () {
             console.log('[launch-session] Clicked.');
-            // 1. Ensure all settings are captured/updated in global variables
             taskSettings.workingDir = document.getElementById('working-dir').value;
-            // autoFix, models, temperature, cognitiveMode, auto-plan settings are updated by their respective event listeners.
-            // graphFile is also updated by its event listener if/when that mode is active.
             saveTaskSelection(); // This updates taskSettings.taskSettings and localStorage
             console.log('[launch-session] Current cognitiveMode:', cognitiveMode);
             console.log('[launch-session] Current taskSettings:', JSON.parse(JSON.stringify(taskSettings)));
             console.log('[launch-session] Current apiSettings (relevant parts might be on server):', Object.keys(apiSettings.apiKeys || {}));
-            // 2. Validate configuration
             if (!validateConfiguration()) {
                 console.log('[launch-session] Validation failed.');
                 return;
             }
             console.log('[launch-session] Validation passed.');
-            // 3. Prepare payload
-            const payload = {
-                sessionId: sessionId,
-                cognitiveMode: cognitiveMode,
-                taskSettings: taskSettings,
-                // apiSettings are primarily managed server-side.
-                // If specific client-side API choices (e.g. base URLs if overridable per session) are needed:
-                // clientApiPreferences: { apiBase: apiSettings.apiBase, localTools: apiSettings.localTools }
-            };
-            // console.log('[launch-session] Payload to send (formerly):', JSON.parse(JSON.stringify(payload)));
-
-            // 3. Determine target path based on cognitiveMode
             let targetPath;
+            cognitiveMode = document.querySelector('input[name="cognitive-mode"]:checked')?.value || cognitiveMode;
             switch (cognitiveMode) {
                 case 'single-task':
                     targetPath = '/taskChat'; // Maps to TaskChatMode in UnifiedPlanApp
@@ -869,21 +874,28 @@ function setupEventListeners() {
                     return;
             }
 
-            // 4. Redirect to the target application URL with sessionId in hash
-            // Settings are expected to be picked up by the target app from localStorage
-            const targetUrl = `${targetPath}/#${sessionId}`;
-            console.log('[launch-session] Redirecting to:', targetUrl);
             document.getElementById('loading').style.display = 'block';
 
-            // Simulate a slight delay for loading text to be visible, then redirect
-            // The target application will be responsible for loading its settings from localStorage
-            // using the shared keys and potentially the sessionId from the hash if needed.
-            setTimeout(() => {
-                window.location.href = targetUrl;
-                // No need to hide loading indicator, as the page will navigate away.
-                // If navigation fails, the loading indicator might remain.
-                // Consider adding a timeout to hide it if navigation doesn't occur.
-            }, 100); // Small delay for UI update
+            // 4. Save session settings to server (replicating old launchSession's call to saveSessionSettings)
+            //    and then redirect.
+            saveSessionSettingsToServer()
+                .then(() => {
+                    console.log('[launch-session] Session settings successfully saved to server before launch.');
+                    const targetUrl = `${targetPath}/#${sessionId}`;
+                    console.log('[launch-session] Redirecting to:', targetUrl);
+                    window.location.href = targetUrl;
+                    // No need to hide loading, page navigates.
+                })
+                .catch(error => {
+                    console.error('[launch-session] Failed to save session settings to server before launch:', error);
+                    showNotification('Error saving session settings before launch: ' + error.message, 'error');
+                    document.getElementById('loading').style.display = 'none';
+                });
+
+            // The old code had a setTimeout for redirect, which is now handled after the async fetch.
+            // setTimeout(() => {
+            //     window.location.href = targetUrl;
+            // }, 100);
 
         });
         console.log('[setupEventListeners] Attached launch-session click listener.');
@@ -897,7 +909,6 @@ function setupEventListeners() {
         taskSettings.workingDir = newDir;
         localStorage.setItem('workingDir', newDir);
         console.log('[setupEventListeners] New working directory generated and set:', newDir);
-        showNotification('New working directory generated!');
     });
 
     document.getElementById('save-user-settings').addEventListener('click', saveUserSettings);
@@ -1048,28 +1059,21 @@ function saveUserSettings() {
     }
     // Compose settings object
     const settings = {
-        apiKeys,
-        apiBase,
-        localTools
+        apiKeys, apiBase, localTools
     };
     console.log('[saveUserSettings] Settings to save:', JSON.stringify(settings)); // Avoid logging actual keys if sensitive
     // Save to server
     fetch('/userSettings/', {
-        method: 'POST',
-        headers: {
+        method: 'POST', headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-            action: 'save',
-            settings: JSON.stringify(settings)
+        }, body: new URLSearchParams({
+            action: 'save', settings: JSON.stringify(settings)
         })
     })
         .then(response => {
             console.log('[saveUserSettings] Server response:', response);
             if (response.ok) {
                 console.log('[saveUserSettings] User settings saved successfully.');
-                showNotification('User settings saved!', 'success');
-                // Update apiSettings in memory and refresh model selections
                 console.log('[saveUserSettings] Updated apiSettings in memory.');
                 apiSettings = settings;
                 populateModelSelections();
@@ -1136,7 +1140,6 @@ function addLocalTool() {
     }
 }
 
-// --- MISSING FUNCTION: showNotification ---
 function showNotification(message, type = 'info') {
     console.log(`[showNotification] Called with message: "${message}", type: "${type}"`);
     // Simple notification using alert, can be replaced with a fancier UI
@@ -1152,7 +1155,6 @@ function showNotification(message, type = 'info') {
     }
 }
 
-// --- MISSING FUNCTION: navigateToStep ---
 function navigateToStep(stepId) {
     console.log(`[navigateToStep] Called with stepId: ${stepId}`);
     // Hide all wizard-content
@@ -1177,11 +1179,7 @@ function updateLaunchSummaries() {
     // Cognitive Mode
     const mode = localStorage.getItem('cognitiveMode') || 'single-task';
     const modeMap = {
-        'single-task': 'Chat',
-        'auto-plan': 'Autonomous',
-        'plan-ahead': 'Plan Ahead',
-        'goal-oriented': 'Goal Oriented',
-        'graph': 'Graph Mode'
+        'single-task': 'Chat', 'auto-plan': 'Autonomous', 'plan-ahead': 'Plan Ahead', 'goal-oriented': 'Goal Oriented', 'graph': 'Graph Mode'
     };
     document.getElementById('cognitive-mode-summary').textContent = modeMap[mode] || mode;
     console.log(`[updateLaunchSummaries] Cognitive Mode Summary: ${modeMap[mode] || mode}`);
@@ -1292,9 +1290,7 @@ function loadSavedSettings() {
     }
     // Auto-plan settings
     const autoPlanFields = {
-        'maxTaskHistoryChars': 'max-task-history',
-        'maxTasksPerIteration': 'max-tasks-per-iteration',
-        'maxIterations': 'max-iterations'
+        'maxTaskHistoryChars': 'max-task-history', 'maxTasksPerIteration': 'max-tasks-per-iteration', 'maxIterations': 'max-iterations'
     };
     for (const [key, id] of Object.entries(autoPlanFields)) {
         const input = document.getElementById(id);
@@ -1335,7 +1331,10 @@ function saveTaskSelection() {
     console.log('[saveTaskSelection] Called');
     const currentEnabledTasks = {};
     document.querySelectorAll('#task-toggles .task-toggle input[type="checkbox"]').forEach(checkbox => {
-        currentEnabledTasks[checkbox.value] = {enabled: checkbox.checked};
+        currentEnabledTasks[checkbox.value] = {
+            enabled: checkbox.checked,
+            task_type: checkbox.value // Add task_type, which is the task ID
+        };
     });
     taskSettings.taskSettings = currentEnabledTasks;
     localStorage.setItem('enabledTasks', JSON.stringify(currentEnabledTasks));

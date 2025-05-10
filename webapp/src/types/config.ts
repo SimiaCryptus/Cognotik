@@ -1,4 +1,4 @@
-import {ThemeName} from './theme';
+import {ColorThemeName, LayoutThemeName} from './theme';
 import {ConsoleStyle} from "../types";
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
@@ -42,7 +42,8 @@ export interface LoggingConfig {
 }
 
 export interface ThemeConfig {
-    current: ThemeName;
+    currentTheme: ColorThemeName; // Renamed from 'current'
+    currentLayout: LayoutThemeName;
     autoSwitch: boolean;
 }
 
