@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ChatModel
 import org.openqa.selenium.remote.RemoteWebDriver
+import java.io.File
 
 open class PlanSettings(
     var defaultModel: ChatModel,
@@ -37,6 +38,12 @@ open class PlanSettings(
     var maxIterations: Int = 10,
 
 ) {
+
+    val absoluteWorkingDir get() = when {
+        this.workingDir == null -> null//throw IllegalStateException("Working directory not set")
+        this.workingDir.startsWith("~") -> File(this.workingDir.replaceFirst("~", System.getProperty("user.home"))).absolutePath
+        else -> File(this.workingDir).absolutePath
+    }
 
     fun getTaskSettings(taskType: TaskType<*, *>): TaskSettingsBase =
         taskSettings[taskType.name] ?: TaskSettingsBase(taskType.name)

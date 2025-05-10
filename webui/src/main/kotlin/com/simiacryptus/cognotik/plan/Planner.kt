@@ -46,7 +46,7 @@ open class Planner {
                 },
                 outputFn = {
                     try {
-                        com.simiacryptus.cognotik.plan.PlanUtil.render(
+                        PlanUtil.render(
                             withPrompt = TaskBreakdownWithPrompt(
                                 prompt = userMessage,
                                 plan = it.obj,
@@ -72,7 +72,7 @@ open class Planner {
             ).call().let {
                 TaskBreakdownWithPrompt(
                     prompt = userMessage,
-                    plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { it.obj } ?: emptyMap(),
+                    plan = PlanUtil.filterPlan { it.obj } ?: emptyMap(),
                     planText = it.text
                 )
             }
@@ -85,7 +85,7 @@ open class Planner {
             ).let {
                 TaskBreakdownWithPrompt(
                     prompt = userMessage,
-                    plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { it.obj } ?: emptyMap(),
+                    plan = PlanUtil.filterPlan { it.obj } ?: emptyMap(),
                     planText = it.text
                 )
             }
@@ -98,7 +98,7 @@ open class Planner {
         inStrings: List<String>,
         describer: TypeDescriber
     ): ParsedResponse<Map<String, TaskConfigBase>> {
-        planSettings.workingDir?.apply { File(this).mkdirs() }
+        planSettings.absoluteWorkingDir?.apply { File(this).mkdirs() }
         val planningActor = planSettings.planningActor(describer)
         return planningActor.respond(
             messages = planningActor.chatMessages(inStrings),

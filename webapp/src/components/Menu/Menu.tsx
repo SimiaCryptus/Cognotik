@@ -278,9 +278,7 @@ export const Menu: React.FC = () => {
                     </DropButton>
                     <DropdownContent>
                         <DropdownItem onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
-                        {/*
                         <DropdownItem onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
-*/}
                         <DropdownItem onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
                         <DropdownItem onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
                         {/*
@@ -320,18 +318,18 @@ export const Menu: React.FC = () => {
                 )}
             </ToolbarLeft>
 
-            <Dropdown>
+            {/*<Dropdown>
                 <DropButton>
                     <FontAwesomeIcon icon={faSignInAlt}/>User
                 </DropButton>
                 <DropdownContent>
                     <DropdownItem onClick={() => handleMenuClick('/userSettings')}>Settings</DropdownItem>
                     <DropdownItem onClick={() => handleMenuClick('/usage')}>Usage</DropdownItem>
-                    {/*<DropdownItem onClick={handleLogout}>
+                    <DropdownItem onClick={handleLogout}>
                         <FontAwesomeIcon icon={faSignOutAlt}/> Logout
-                    </DropdownItem>*/}
+                    </DropdownItem>
                 </DropdownContent>
-            </Dropdown>
+            </Dropdown>*/}
         </MenuContainer>
     );
 };

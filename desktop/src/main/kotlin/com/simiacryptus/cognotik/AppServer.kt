@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
 import com.simiacryptus.cognotik.plan.cognitive.PlanAheadMode
 import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
+import com.simiacryptus.cognotik.plan.cognitive.GoalOrientedMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -76,6 +77,10 @@ open class AppServer(
         }
 
         private var server: AppServer? = null
+
+
+
+
         private fun handleServer(vararg args: String) {
             log.info("Parsing server options...")
             val options = parseServerOptions(*args)
@@ -83,7 +88,6 @@ open class AppServer(
 
             var actualPort = options.port
             try {
-
                 ServerSocket(actualPort).use {
                     log.debug("Port $actualPort is available")
                 }
@@ -94,8 +98,8 @@ open class AppServer(
                 log.info("Using alternative port $actualPort")
                 println("Using alternative port $actualPort")
             }
-            scheduledExecutorService.scheduleAtFixedRate({checkUpdate()},
-                0, 7*24, TimeUnit.HOURS)
+            scheduledExecutorService.scheduleAtFixedRate({ checkUpdate() },
+                0, 7 * 24, TimeUnit.HOURS)
             server = AppServer(
                 localName = options.host,
                 publicName = options.publicName,
@@ -104,12 +108,16 @@ open class AppServer(
             server?.initSystemTray()
             server?.startSocketServer(actualPort + 1)
 
-
             Runtime.getRuntime().addShutdownHook(Thread {
                 log.info("Shutdown hook triggered, stopping server...")
                 server?.stopServer()
             })
-            server?._main(*args)
+            // Call _main with NO server options (strip out --port/--host/--public-name and their values)
+            val filteredArgs = args.filterIndexed { i, arg ->
+                arg in listOf("--port", "--host", "--public-name") ||
+                        (i > 0 && args[i - 1] in listOf("--port", "--host", "--public-name"))
+            }.toTypedArray()
+            server?._main(*filteredArgs)
         }
 
         private fun findAvailablePort(startPort: Int): Int {
@@ -250,7 +258,7 @@ open class AppServer(
             workingDir = "."
         )
         listOf(
-            ChildWebApp("/chat", BasicChatApp(".".toFile(), model, parsingModel)),
+            ChildWebApp("/chat", BasicChatApp(File("."), model, parsingModel)),
             ChildWebApp(
                 "/taskChat", UnifiedPlanApp(
                     path = "/taskChat",
@@ -284,6 +292,18 @@ open class AppServer(
                     parsingModel = parsingModel,
                     api2 = api2,
                     cognitiveStrategy = PlanAheadMode,
+                    describer = describer
+                )
+            ),
+            ChildWebApp(
+                "/goalOriented", UnifiedPlanApp(
+                    path = "/goalOriented",
+                    applicationName = "Goal-Oriented",
+                    planSettings = planSettings,
+                    model = model,
+                    parsingModel = parsingModel,
+                    api2 = api2,
+                    cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 )
             )
@@ -402,14 +422,13 @@ open class AppServer(
 
 }
 
-private fun String.toFile(): File = File(this)
+
+
 
 fun String?.urlEncode(): String {
     return this?.let {
-        URLEncoder.encode(it, "UTF-8")
+        URLEncoder.encode(it, Charsets.UTF_8.name())
             .replace("+", "%20")
-
             .replace("%7E", "~")
-
     } ?: ""
 }

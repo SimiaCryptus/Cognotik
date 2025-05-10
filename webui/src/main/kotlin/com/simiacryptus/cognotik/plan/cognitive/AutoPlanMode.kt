@@ -47,7 +47,7 @@ open class AutoPlanMode(
     private val executionRecords = mutableListOf<ExecutionRecord>()
     private val thinkingStatus = AtomicReference<ThinkingStatus?>(null)
     private var isRunning = false
-    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{]+)+)}""")
+    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+)+)}""")
 
     override fun initialize() {
         log.debug("Initializing AutoPlanMode")
@@ -74,8 +74,9 @@ open class AutoPlanMode(
         task.echo(renderMarkdown(userMessage))
 
         var continueLoop = true
-        lateinit var stopLink: StringBuilder
         val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
+
+        lateinit var stopLink: StringBuilder
         stopLink = task.add(ui.hrefLink("Stop") {
             log.debug("Stop button clicked - terminating execution")
             continueLoop = false
@@ -103,7 +104,7 @@ open class AutoPlanMode(
                         session = session,
                         dataStorage = it,
                         ui = ui,
-                        root = planSettings.workingDir?.let { File(it).toPath() }
+                        root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
                             ?: socketManager.dataStorage.getDataDir(user, session).toPath() ?: File(".").toPath(),
                         planSettings = planSettings
                     )
@@ -127,12 +128,22 @@ open class AutoPlanMode(
 
                     ui.newTask(false).apply {
                         iterationTabbedDisplay["Inputs"] = placeholder
-                        header("Project Info", 1)
-                        contextData().forEach { add(renderMarkdown(it)) }
-                        header("Evaluation Records", 1)
-                        formatEvalRecords().forEach { add(renderMarkdown(it)) }
-                        header("Current Thinking Status", 1)
-                        add(renderMarkdown(formatThinkingStatus(currentThinkingStatus)))
+                        val inputTabs = TabbedDisplay(this)
+                        ui.newTask(false).apply {
+                            inputTabs["Project Info"] = placeholder
+                            contextData().forEach { add(renderMarkdown(it)) }
+                        }
+                        formatEvalRecords().forEachIndexed { index, it ->
+                            ui.newTask(false).apply {
+                                inputTabs["Task ${index+1}"] = placeholder
+                                add(renderMarkdown(it))
+                            }
+                            add(renderMarkdown(it))
+                        }
+                        ui.newTask(false).apply {
+                            inputTabs["Thinking Status"] = placeholder
+                            add(renderMarkdown(formatThinkingStatus(currentThinkingStatus)))
+                        }
                     }
 
                     val nextTask = try {
@@ -371,7 +382,7 @@ $fullTaskDataJson
         }.flatten()
 
 
-        if (tasks.isNullOrEmpty()) {
+        if (tasks.isEmpty()) {
             log.info("No tasks selected")
             return null
         } else if (tasks.mapNotNull { it.second }.isEmpty()) {

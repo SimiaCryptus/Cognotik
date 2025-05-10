@@ -47,7 +47,7 @@ class RunShellCommandTask(
             symbols = mapOf<String, Any>(
                 "env" to (planSettings.env ?: emptyMap()),
                 "workingDir" to (planTask?.workingDir?.let { File(it).absolutePath } ?: File(
-                    planSettings.workingDir
+                    planSettings.absoluteWorkingDir
                 ).absolutePath),
                 "language" to (planSettings.language ?: "bash"),
                 "command" to (planSettings.shellCmd),

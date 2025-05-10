@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -41,15 +42,17 @@ open class PlanAheadMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val apiClient = api as ChatClient
-            apiClient.budget = planSettings.budget ?: 2.0
+            val chatApi = api as? ChatClient
+                ?: throw IllegalStateException("PlanAheadMode requires a ChatClient API implementation.")
+            val apiClient = chatApi.getChildClient(task) // Create a task-specific child client
+            apiClient.budget = planSettings.budget ?: 2.0 // Set budget on the child client
 
             val coordinator = PlanCoordinator(
                 user = user,
                 session = session,
                 dataStorage = ui.socketManager?.dataStorage!!,
                 ui = ui,
-                root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getDataDir(
+                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getDataDir(
                     user,
                     session
                 )?.toPath() ?: File(".").toPath(),
@@ -64,14 +67,20 @@ open class PlanAheadMode(
                 userMessage = userMessage,
                 ui = coordinator.ui,
                 planSettings = coordinator.planSettings,
-                api = api,
+                api = apiClient, // Use the budgeted and task-specific client
                 contextFn = { contextData() },
                 describer = describer
             )
 
-            coordinator.executePlan(plan.plan, task, userMessage = userMessage, api = api, api2 = api2)
+            coordinator.executePlan(
+                plan = plan.plan,
+                task = task,
+                userMessage = userMessage,
+                api = apiClient, // Use the budgeted and task-specific client
+                api2 = api2
+            )
         } catch (e: Throwable) {
-            ui.newTask().error(ui, e)
+            task.error(ui, e) // Report error on the current task
             log.error("Error in execute", e)
         }
     }

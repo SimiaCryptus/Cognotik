@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -20,6 +21,8 @@ import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ChatModel
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -42,7 +45,7 @@ open class UnifiedPlanApp(
     applicationName = applicationName,
     path = path,
     showMenubar = showMenubar,
-    root = planSettings.workingDir?.let { File(it) } ?: dataStorageRoot,
+    root = planSettings.absoluteWorkingDir?.let { File(it) } ?: dataStorageRoot,
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
@@ -63,6 +66,13 @@ open class UnifiedPlanApp(
         api: API
     ) {
         try {
+            ui.newTask(true).expandable("Session Info", """
+                Session ID: `${session.sessionId}`
+                
+                Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+                
+                Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+            """.trimIndent().renderMarkdown())
             log.debug("Received user message: $userMessage")
 
             if (expansionExpressionPattern.find(userMessage) != null) {

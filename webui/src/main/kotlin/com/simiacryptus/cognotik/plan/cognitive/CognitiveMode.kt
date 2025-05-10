@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
+// Register the new mode in the package
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -34,6 +35,17 @@ interface CognitiveMode {
     fun contextData(): List<String>
 }
 
+// Optionally, you can add a static registry for all available modes
+object CognitiveModes {
+    val allModes: Map<String, CognitiveModeStrategy> = mapOf(
+        "AutoPlan" to AutoPlanMode,
+        "PlanAhead" to PlanAheadMode,
+        "TaskChat" to TaskChatMode,
+        "GoalOriented" to GoalOrientedMode,
+        // Add others as needed
+    )
+}
+
 interface CognitiveModeStrategy {
     val singleInput: Boolean
 
@@ -46,5 +58,4 @@ interface CognitiveModeStrategy {
         user: User?,
         describer: TypeDescriber
     ): CognitiveMode
-
 }

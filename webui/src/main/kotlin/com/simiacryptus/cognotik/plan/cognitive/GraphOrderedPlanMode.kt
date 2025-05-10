@@ -77,7 +77,7 @@ open class GraphOrderedPlanMode(
                         session = session,
                         dataStorage = ui.socketManager?.dataStorage!!,
                         ui = ui,
-                        root = planSettings.workingDir?.let { File(it).toPath() }
+                        root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
                             ?: ui.socketManager!!.dataStorage?.getDataDir(
                                 user,
                                 session
@@ -203,7 +203,7 @@ open class GraphOrderedPlanMode(
      * Read and return the content of the graph file.
      */
     private fun readGraphFile(planSettings: PlanSettings): String {
-        val workingDirectory = planSettings.workingDir ?: "."
+        val workingDirectory = planSettings.absoluteWorkingDir ?: "."
         val file = File(workingDirectory).resolve(graphFile)
         if (!file.exists()) {
             log.error("Graph file does not exist at: ${file.absolutePath}")
