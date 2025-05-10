@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.plan
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
@@ -148,7 +149,6 @@ class PlanningTask(
                     }
             )
         ).executePlan(
-            task = subPlanTask,
             diagramBuffer = subPlanTask.add(
                 com.simiacryptus.cognotik.plan.PlanUtil.diagram(
                     coordinator.ui,
@@ -156,7 +156,7 @@ class PlanningTask(
                 )
             ),
             subTasks = subPlan,
-            diagramTask = subPlanTask,
+            task = subPlanTask,
             planProcessingState = planProcessingState,
             taskIdProcessingQueue = com.simiacryptus.cognotik.plan.PlanUtil.executionOrder(subPlan).toMutableList(),
             pool = coordinator.pool,
@@ -164,6 +164,7 @@ class PlanningTask(
             plan = subPlan,
             api = api,
             api2 = api2,
+            tabs = TabbedDisplay(subPlanTask),
         )
         subPlanTask.complete()
     }

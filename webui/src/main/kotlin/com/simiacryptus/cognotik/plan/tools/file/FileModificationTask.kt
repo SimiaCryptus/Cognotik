@@ -210,11 +210,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"
                     }
-                    task.complete()
                     onComplete()
-                    markdown
+                    task.complete(markdown)
                 } else {
-                    renderMarkdown(codeResult, ui = agent.ui) {
+                    task.complete(renderMarkdown(codeResult, ui = agent.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
                             agent.ui.socketManager,
                             root = agent.root,
@@ -232,8 +231,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             task.complete()
                             onComplete()
                         }
-                    }
-                }.apply { task.add(this) }
+                    })
+                }
             }
             task.placeholder
         }

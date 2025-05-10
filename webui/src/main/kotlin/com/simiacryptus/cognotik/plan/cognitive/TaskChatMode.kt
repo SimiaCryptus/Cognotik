@@ -91,7 +91,7 @@ open class TaskChatMode(
             session = session,
             dataStorage = ui.socketManager?.dataStorage!!,
             ui = ui,
-            root = planSettings.workingDir?.let { File(it).toPath() } ?: ui.socketManager?.dataStorage?.getDataDir(
+            root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.socketManager?.dataStorage?.getDataDir(
                 user,
                 session
             )?.toPath() ?: File(".").toPath(),
@@ -141,28 +141,31 @@ open class TaskChatMode(
             val chosenTasks = answer.obj.tasks?.firstOrNull()
                 ?: throw IllegalStateException("No task was selected")
 
-            val taskImpl = TaskType.getImpl(planSettings, chosenTasks)
-            task.verbose("Executing task:\n```json\n${JsonUtil.toJson(chosenTasks)}\n```".renderMarkdown())
-
             val result = StringBuilder()
 
             val tabs = TabbedDisplay(task)
-            taskImpl.run(
-                agent = coordinator,
-                messages = listOf(userMessage),
-                task = ui.newTask(false).apply {
-                    tabs["Task"] = placeholder
-                },
-                api = apiClient,
-                resultFn = {
-                    result.append(it)
-                },
-                api2 = api2,
-                planSettings = planSettings,
-            )
+            ui.newTask(false).apply {
+                tabs["Plan"] = placeholder
+                add(answer.text.renderMarkdown())
+                complete("Executing task:\n```json\n${JsonUtil.toJson(chosenTasks)}\n```".renderMarkdown())
+            }
+            ui.newTask(false).apply {
+                tabs["Run"] = placeholder
+                TaskType.getImpl(planSettings, chosenTasks).run(
+                    agent = coordinator,
+                    messages = listOf(userMessage),
+                    task = this,
+                    api = apiClient,
+                    resultFn = {
+                        result.append(it)
+                    },
+                    api2 = api2,
+                    planSettings = planSettings,
+                )
+            }
             ui.newTask(false).apply {
                 tabs["Output"] = placeholder
-                complete(renderMarkdown("Task completed. Result:\n${result}"))
+                complete(result.toString().renderMarkdown())
             }
 
             val assistantResponse = "Task executed: ${chosenTasks.task_type}\n${result}"

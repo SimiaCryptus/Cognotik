@@ -1,5 +1,7 @@
 // Core theme types
-export type ThemeName = 'default' | 'main' | 'night' | 'forest' | 'pony' | 'alien' | 'sunset' | 'ocean' | 'cyberpunk';
+export type ColorThemeName = 'default' | 'main' | 'night' | 'forest' | 'pony' | 'alien' | 'sunset' | 'ocean' | 'cyberpunk' | 'synthwave' | 'paper';
+export type LayoutThemeName = 'default' | 'compact' | 'spacious' | 'ultra-compact' | 'content-focused';
+export type ThemeName = ColorThemeName; // This might need to be re-evaluated or used specifically for color theme contexts.
 
 export interface ThemeColors {
     primary: string;
@@ -21,7 +23,7 @@ export interface ThemeColors {
     secondaryDark?: string;
     errorDark?: string;
     successDark?: string;
-    hover?: string;
+    hover: string;
 }
 
 export interface ThemeSizing {
@@ -46,24 +48,46 @@ export interface ThemeSizing {
 
 export interface ThemeTypography {
     fontFamily: string;
-    monoFontFamily?: string;
+    families: {
+        primary: string;
+        secondary?: string; // Optional secondary body font
+        heading: string;
+        mono: string;
+        display: string;
+    };
     fontSize: {
         xs: string;
         sm: string;
         md: string;
         lg: string;
         xl: string;
+        '2xl'?: string; // Added for larger heading
     };
     fontWeight: {
+        light: number;
         regular: number;
         medium: number;
+        semibold: number;
         bold: number;
+        extrabold?: number;
+    };
+    lineHeight: {
+        tight: string;
+        normal: string;
+        relaxed: string;
+    };
+    letterSpacing: {
+        tight: string;
+        normal: string;
+        wide: string;
+        wider?: string;
     };
     console: {
         fontFamily: string;
         fontSize: string;
         lineHeight: string;
     };
+    monoFontFamily?: string; // Retained for specific mono font usage if needed outside families.mono
 }
 
 export interface ThemeLogging {
@@ -123,7 +147,7 @@ export interface ThemeConfig {
 }
 
 export interface BaseTheme {
-    name: string;
+    name: ThemeName | LayoutThemeName; // Can be a color theme name or layout theme name
     colors: ThemeColors;
     sizing: ThemeSizing;
     typography: ThemeTypography;
@@ -140,4 +164,10 @@ export interface BaseTheme {
         slow: string;
     };
     _init?: () => void;
+}
+
+export interface LayoutTheme {
+    name: LayoutThemeName;
+    sizing: ThemeSizing;
+    typography: ThemeTypography;
 }

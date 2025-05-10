@@ -31,11 +31,9 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
         ((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf()))
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                FileSelectionUtils.filteredWalk(root.toFile()) { path ->
+                listOf(FileSelectionUtils.filteredWalkAsciiTree(root.toFile()) { path ->
                     matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
-                }.map { it.toPath() }.map { path ->
-                        root.relativize(path).toString()
-                }.toList()
+                })
             }
             .distinct()
             .sortedBy { it }

@@ -66,8 +66,8 @@ class RunCodeTask<T : Interpreter>(
             symbols = mapOf<String, Any>(
                 "env" to (planSettings.env ?: emptyMap()),
                 "workingDir" to (
-                        planSettings.workingDir?.let { File(it).absolutePath }
-                            ?: planSettings.workingDir?.let { File(it).absolutePath }
+                        planSettings.absoluteWorkingDir?.let { File(it).absolutePath }
+                            ?: planSettings.absoluteWorkingDir?.let { File(it).absolutePath }
                             ?: File(".").absolutePath
                 ),
                 "language" to "kotlin",

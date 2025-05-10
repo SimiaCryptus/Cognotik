@@ -39,7 +39,7 @@ class SoftwareGraphPlanningTask(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
-        val inputFile = (planSettings.workingDir?.let { File(it) } ?: File(".")).resolve(
+        val inputFile = (planSettings.absoluteWorkingDir?.let { File(it) } ?: File(".")).resolve(
             when {
                 !taskConfig?.input_graph_file.isNullOrBlank() -> taskConfig?.input_graph_file!!
                 else -> throw IllegalArgumentException("Input graph file not specified")

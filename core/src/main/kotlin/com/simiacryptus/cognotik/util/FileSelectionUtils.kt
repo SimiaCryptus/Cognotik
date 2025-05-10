@@ -5,11 +5,91 @@ import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.*
+import kotlin.text.StringBuilder
 import kotlin.io.path.name
 
 class FileSelectionUtils {
     companion object {
         val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
+        /**
+         * Creates an ASCII-art formatted compact tree listing of files and directories
+         * starting from the given root file, subject to filtering and depth constraints.
+         *
+         * @param rootFile The starting file or directory.
+         * @param maxFilesPerDir The maximum number of entries to process in any single directory.
+         * @param fn A filter function that determines whether a file or directory should be included in the tree.
+         * @return A string representing the ASCII tree of matching files.
+         */
+        fun filteredWalkAsciiTree(
+            rootFile: File,
+            maxFilesPerDir: Int = 20,
+            fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
+        ): String {
+            val sb = StringBuilder()
+            if (!fn(rootFile)) {
+                log.debug("Skipping root file for tree: ${rootFile.absolutePath}")
+                return "" // Root itself doesn't match, so empty tree
+            }
+            sb.append(rootFile.name)
+            if (rootFile.isDirectory) {
+                sb.append("/")
+            }
+            sb.appendLine()
+            if (rootFile.isDirectory) {
+                val children = rootFile.listFiles()?.toList() ?: emptyList()
+                val entriesToConsider = children.take(maxFilesPerDir)
+                entriesToConsider.forEachIndexed { index, child ->
+                    buildAsciiSubTree(
+                        child,
+                        "", // Initial parentContinuationPrefix for children of the root
+                        index == entriesToConsider.size - 1,
+                        maxFilesPerDir,
+                        fn,
+                        sb
+                    )
+                }
+            }
+            return sb.toString()
+        }
+        private fun buildAsciiSubTree(
+            currentFile: File,
+            parentContinuationPrefix: String, // Prefix like "│   " or "    "
+            isLastInSiblings: Boolean,
+            maxFilesPerDir: Int,
+            filterFn: (File) -> Boolean,
+            sb: StringBuilder
+        ) {
+            if (!filterFn(currentFile)) {
+                // If the current file is filtered out, do not display it or its children.
+                // log.debug("Skipping in tree (sub): ${currentFile.absolutePath}") // Optional: for more verbose logging
+                return
+            }
+            sb.append(parentContinuationPrefix)
+            sb.append(if (isLastInSiblings) "└── " else "├── ")
+            sb.append(currentFile.name)
+            if (currentFile.isDirectory) {
+                sb.append("/")
+            }
+            sb.appendLine()
+            if (currentFile.isDirectory) {
+                val children = currentFile.listFiles()?.toList() ?: emptyList()
+                val entriesToConsider = children.take(maxFilesPerDir)
+                // The new continuation prefix for the children of currentFile
+                val childContinuationPrefix = parentContinuationPrefix + (if (isLastInSiblings) "    " else "│   ")
+                entriesToConsider.forEachIndexed { index, child ->
+                    buildAsciiSubTree(
+                        child,
+                        childContinuationPrefix,
+                        index == entriesToConsider.size - 1,
+                        maxFilesPerDir,
+                        filterFn,
+                        sb
+                    )
+                }
+            }
+        }
+
+
         fun filteredWalk(
             file: File,
             maxFilesPerDir: Int = 20,
@@ -139,6 +219,7 @@ class FileSelectionUtils {
                 path.name == "node_modules" -> return true
                 path.name == "target" -> return true
                 path.name == "build" -> return true
+                path.name == ".git" -> return true
             }
             var currentDir = path.toFile().parentFile
             currentDir ?: return false

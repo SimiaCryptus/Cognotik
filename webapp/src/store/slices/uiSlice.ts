@@ -1,5 +1,5 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
-import {ThemeName} from '../../themes/themes';
+import {ColorThemeName, LayoutThemeName} from '../../themes/themes';
 
 const safeStorage = {
     setItem(key: string, value: string) {
@@ -25,18 +25,28 @@ const safeStorage = {
         }
     },
     clearOldItems() {
-        const themeKey = 'theme';
 
-        const currentTheme = localStorage.getItem(themeKey);
+        // Preserve essential settings like theme, layoutTheme, and verboseMode
+        const keysToPreserve = ['theme', 'layoutTheme', 'verboseMode'];
+        const preservedItems: Record<string, string | null> = {};
+
+        keysToPreserve.forEach(key => {
+            preservedItems[key] = localStorage.getItem(key);
+        });
+
         localStorage.clear();
-        if (currentTheme) {
-            localStorage.setItem(themeKey, currentTheme);
-        }
+
+        keysToPreserve.forEach(key => {
+            if (preservedItems[key] !== null) {
+                localStorage.setItem(key, preservedItems[key]!);
+            }
+        });
     }
 };
 
 interface UiState {
-    theme: ThemeName;
+    theme: ColorThemeName;
+    layoutTheme: LayoutThemeName;
     modalOpen: boolean;
     modalType: string | null;
     modalContent: string;
@@ -46,7 +56,8 @@ interface UiState {
 }
 
 const initialState: UiState = {
-    theme: 'main',
+    theme: (localStorage.getItem('theme') as ColorThemeName | null) || 'main',
+    layoutTheme: (localStorage.getItem('layoutTheme') as LayoutThemeName | null) || 'default',
     modalOpen: false,
     modalType: null,
     modalContent: '',
@@ -58,8 +69,8 @@ const initialState: UiState = {
 
 const logStateChange = (action: string, payload: any = null, prevState: any = null) => {
 
-    const criticalChanges = ['theme', 'verboseMode'];
-    if (!criticalChanges.includes(action.toLowerCase())) {
+    const criticalActions = ['theme', 'verbosemode', 'layouttheme']; // Use consistent casing for comparison
+    if (!criticalActions.includes(action.toLowerCase().replace(/\s+/g, ''))) {
         return;
     }
     if (prevState !== null && JSON.stringify(payload) !== JSON.stringify(prevState)) {
@@ -73,10 +84,15 @@ export const uiSlice = createSlice({
     name: 'ui',
     initialState,
     reducers: {
-        setTheme: (state, action: PayloadAction<ThemeName>) => {
+        setTheme: (state, action: PayloadAction<ColorThemeName>) => {
             logStateChange('Theme', action.payload, state.theme);
             state.theme = action.payload;
             safeStorage.setItem('theme', action.payload);
+        },
+        setLayoutTheme: (state, action: PayloadAction<LayoutThemeName>) => {
+            logStateChange('LayoutTheme', action.payload, state.layoutTheme);
+            state.layoutTheme = action.payload;
+            safeStorage.setItem('layoutTheme', action.payload);
         },
         showModal: (state, action: PayloadAction<string>) => {
             state.modalOpen = true;
@@ -92,7 +108,7 @@ export const uiSlice = createSlice({
         },
         toggleVerbose: (state) => {
             const newVerboseState = !state.verboseMode;
-            logStateChange('Verbose mode', newVerboseState, state.verboseMode);
+            logStateChange('VerboseMode', newVerboseState, state.verboseMode); // Matched to criticalActions
             safeStorage.setItem('verboseMode', newVerboseState.toString());
 
             if (typeof document !== 'undefined') {
@@ -103,6 +119,6 @@ export const uiSlice = createSlice({
     },
 });
 
-export const {setTheme, showModal, hideModal, toggleVerbose, setModalContent} = uiSlice.actions;
+export const {setTheme, setLayoutTheme, showModal, hideModal, toggleVerbose, setModalContent} = uiSlice.actions;
 
 export default uiSlice.reducer;

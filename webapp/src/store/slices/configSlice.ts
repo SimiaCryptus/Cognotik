@@ -1,14 +1,14 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {AppConfig, WebSocketConfig} from '../../types/config';
-import {ThemeName} from '../../types/theme';
+import {ColorThemeName, LayoutThemeName} from '../../types/theme';
 
-const isValidTheme = (theme: string | null): theme is ThemeName => {
+const isValidTheme = (theme: string | null): theme is ColorThemeName => {
     return theme === 'default' || theme === 'main' || theme === 'night' ||
         theme === 'forest' || theme === 'pony' || theme === 'alien' ||
         theme === 'sunset' || theme === 'ocean' || theme === 'cyberpunk';
 };
 
-const loadSavedTheme = (): ThemeName => {
+const loadSavedTheme = (): ColorThemeName => {
     const savedTheme = localStorage.getItem('theme');
     return isValidTheme(savedTheme) ? savedTheme : 'main';
 };
@@ -74,7 +74,8 @@ const initialState: AppConfig = {
         }
     },
     theme: {
-        current: loadSavedTheme(),
+        currentTheme: loadSavedTheme(),
+        currentLayout: (localStorage.getItem('layoutTheme') as LayoutThemeName | null) || 'default',
         autoSwitch: false
     }
 };
@@ -107,8 +108,8 @@ const configSlice = createSlice({
                 }
             }
         },
-        setTheme: (state, action: PayloadAction<ThemeName>) => {
-            state.theme.current = action.payload;
+        setTheme: (state, action: PayloadAction<ColorThemeName>) => {
+            state.theme.currentTheme = action.payload;
             localStorage.setItem('theme', action.payload);
         },
         updateWebSocketConfig: (state, action: PayloadAction<Partial<WebSocketConfig>>) => {

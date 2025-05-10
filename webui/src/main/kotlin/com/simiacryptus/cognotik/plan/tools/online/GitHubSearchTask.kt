@@ -41,12 +41,12 @@ class GitHubSearchTask(
     )
 
     override fun promptSegment() = """
-    GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics, or users
-    ** Specify the search query
-    ** Specify the type of search (code, commits, issues, repositories, topics, users)
-    ** Specify the number of results to return (max 100)
-    ** Optionally specify sort order (e.g. stars, forks, updated)
-    ** Optionally specify sort direction (asc or desc)
+GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics, or users
+    * Specify the search query
+    * Specify the type of search (code, commits, issues, repositories, topics, users)
+    * Specify the number of results to return (max 100)
+    * Optionally specify sort order (e.g. stars, forks, updated)
+    * Optionally specify sort direction (asc or desc)
     """.trimIndent()
 
     override fun run(
@@ -58,44 +58,56 @@ class GitHubSearchTask(
         api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
-        val searchResults = performGitHubSearch(planSettings, agent.user?.let {
+        val searchResults = performGitHubSearch(agent.user?.let {
             ApplicationServices.userSettingsManager.getUserSettings(it)
         }?.apiKeys?.get(APIProvider.Github) ?: throw RuntimeException("GitHub API token is required"))
-        val formattedResults = formatSearchResults(searchResults)
-        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
-        resultFn(formattedResults)
+        // formattedResults is the "actor answer text" that will be passed to the task chooser (PlanCoordinator)
+        val actorAnswerText = formatSearchResults(searchResults)
+        // Output the actor answer text to the task execution's SessionTask (UI tab)
+        val displayText = MarkdownUtil.renderMarkdown(actorAnswerText, ui = agent.ui)
+        task.add(displayText)
+        // Pass the actor answer text to the result function for the PlanCoordinator
+        resultFn(actorAnswerText)
     }
 
-    private fun performGitHubSearch(planSettings: PlanSettings, githubToken: String): String {
-        val client = HttpClient.newBuilder().build()
-        val uriBuilder = URI("https://api.github.com")
-            .resolve("/search/${taskConfig?.search_type}")
-            .toURL()
-            .toString()
+    private fun performGitHubSearch(githubToken: String): String {
         val queryParams = mutableListOf<String>()
-        queryParams.add("q=${java.net.URLEncoder.encode(taskConfig?.search_query ?: "", "UTF-8")}")
-        queryParams.add("per_page=${taskConfig?.per_page}")
+
+        var searchQuery = taskConfig?.search_query
+        //if (searchQuery.isNullOrBlank()) throw IllegalArgumentException("GitHub search query is required and cannot be empty.")
+        if (searchQuery.isNullOrBlank()) {
+            searchQuery = ""
+        }
+        queryParams.add("q=${java.net.URLEncoder.encode(searchQuery, "UTF-8")}")
+
+        queryParams.add("per_page=${taskConfig?.per_page}") // perPage is now guaranteed non-null
         taskConfig?.sort?.let { queryParams.add("sort=${java.net.URLEncoder.encode(it, "UTF-8")}") }
         taskConfig?.order?.let { queryParams.add("order=${java.net.URLEncoder.encode(it, "UTF-8")}") }
-        val finalUrl = "$uriBuilder?${queryParams.joinToString("&")}"
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(finalUrl))
-            .header("Accept", "application/vnd.github+json")
-            .header("Authorization", "Bearer ${githubToken}")
-            .header("X-GitHub-Api-Version", "2022-11-28")
-            .GET()
-            .build()
-
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() != 200) {
-            throw RuntimeException("GitHub API request failed with status ${response.statusCode()}: ${response.body()}")
-        }
-        return response.body()
+        return HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder()
+                .uri(
+                    URI.create(
+                        URI("https://api.github.com")
+                          .resolve("/search/${taskConfig?.search_type}")
+                          .toURL().toString() + "?" + queryParams.joinToString("&")
+                    )
+                )
+                .header("Accept", "application/vnd.github+json")
+                .header("Authorization", "Bearer ${githubToken}")
+                .header("X-GitHub-Api-Version", "2022-11-28")
+                .GET()
+                .build(), HttpResponse.BodyHandlers.ofString()
+        ).apply {
+            if (statusCode() != 200) {
+                throw RuntimeException("GitHub API request failed with status ${statusCode()}: ${body()}")
+            }
+        }.body()
     }
 
     private fun formatSearchResults(results: String): String {
         val mapper = ObjectMapper()
         val searchResults: Map<String, Any> = mapper.readValue(results)
+        val effectiveSearchType = this.taskConfig?.search_type ?: GitHubSearchTaskConfigData().search_type
         return buildString {
             appendLine("# GitHub Search Results")
             appendLine()
@@ -104,8 +116,8 @@ class GitHubSearchTask(
             appendLine("## Top Results:")
             appendLine()
             val items = searchResults["items"] as List<Map<String, Any>>
-            items.take(10).forEach { item ->
-                when (taskConfig?.search_type) {
+            items.take(minOf(10, items.size)).forEach { item -> // Ensure we don't go over items.size
+                when (effectiveSearchType) { // Use the resolved effectiveSearchType
                     "repositories" -> formatRepositoryResult(item)
                     "code" -> formatCodeResult(item)
                     "commits" -> formatCommitResult(item)

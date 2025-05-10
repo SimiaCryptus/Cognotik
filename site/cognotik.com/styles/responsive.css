@@ -1,0 +1,41 @@
+/* Responsive styles for Cognotik website - consolidated & simplified */
+
+@media (max-width: 1199.98px) {
+  .container { max-width: 960px; }
+  h1 { font-size: 2.5rem; }
+  h2 { font-size: 2rem; }
+  body { padding-top: 60px; }
+}
+
+@media (max-width: 991.98px) {
+  .container { max-width: 720px; }
+  h1 { font-size: 2.1rem; }
+  h2 { font-size: 1.7rem; }
+  .hero-content { flex-direction: column; text-align: center; }
+  .hero-image { margin-top: 2rem; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  .nav-download-cta { display: none; }
+}
+
+@media (max-width: 767.98px) {
+  .container { max-width: 540px; }
+  h1 { font-size: 1.7rem; }
+  h2 { font-size: 1.2rem; }
+  .main-nav { display: none; }
+  .mobile-menu-toggle { display: block; }
+  .features-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .download-info { flex-direction: column; gap: 0.5rem; }
+  .footer-content { flex-direction: column; text-align: center; }
+  .footer-links { margin-top: 1.5rem; justify-content: center; }
+}
+
+@media (max-width: 575.98px) {
+  .container { padding: 0 1rem; }
+  h1 { font-size: 1.3rem; }
+  h2 { font-size: 1rem; }
+  .hero-section { padding: 2rem 0 1rem; }
+  .section { padding: 1rem 0; }
+  .download-button { width: 100%; }
+  .download-container { padding: 1rem; }
+  .video-description { font-size: 0.9rem; }
+}

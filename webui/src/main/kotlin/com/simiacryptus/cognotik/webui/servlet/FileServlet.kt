@@ -66,24 +66,31 @@ abstract class FileServlet : HttpServlet() {
             else -> {
                 log.info("Listing directory contents for: ${file.absolutePath}")
                 resp.contentType = "text/html"
+                resp.characterEncoding = "UTF-8"
                 resp.status = HttpServletResponse.SC_OK
+                val currentPathString = pathSegments.drop(1).joinToString("/")
+                val servletPathBase =
+                    req.contextPath + req.servletPath.removeSuffix("/*").removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
+
                 val files = file.listFiles()
                     ?.filter { it.isFile }
 
                     ?.sortedBy { it.name }
-                    ?.joinToString("<br/>\n") {
-                        """<a class="file-item" href="${it.name}">${it.name}</a>"""
+                    ?.joinToString("") {
+                        """<li><a class="item-link" href="${it.name}"><span class="icon">📄</span>${it.name}</a></li>"""
                     } ?: ""
                 val folders = file.listFiles()
                     ?.filter { !it.isFile }
 
                     ?.sortedBy { it.name }
-                    ?.joinToString("<br/>\n") {
-                        """<a class="folder-item" href="${it.name}/">${it.name}</a>"""
+                    ?.joinToString("") {
+                        """<li><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a></li>"""
                     } ?: ""
                 resp.writer.write(
                     directoryHTML(
-                        getZipLink(req, pathSegments.drop(1).joinToString("/")),
+                        currentPathString,
+                        servletPathBase,
+                        getZipLink(req, currentPathString),
                         folders,
                         files
                     )
@@ -91,6 +98,7 @@ abstract class FileServlet : HttpServlet() {
             }
         }
     }
+    // getFile should construct the file path using all pathSegments relative to the base dir
 
     open fun getFile(dir: File, pathSegments: List<String>, req: HttpServletRequest) =
         File(dir, pathSegments.drop(1).joinToString("/"))
@@ -178,80 +186,188 @@ abstract class FileServlet : HttpServlet() {
         filePath: String
     ): String = ""
 
-    private fun directoryHTML(zipLink: String, folders: String, files: String) = """
-                                |<html>
-                                |<head>
-                                |<title>Files</title>
-                                |<style>
-                                |    body {
-                                |        font-family: 'Arial', sans-serif;
-                                |        background-color: #f4f4f4;
-                                |        color: #333;
-                                |        margin: 0;
-                                |        padding: 20px;
-                                |    }
-                                |
-                                |    .archive-title, .folders-title, .files-title {
-                                |        font-size: 24px;
-                                |        font-weight: bold;
-                                |        margin-top: 0;
-                                |    }
-                                |
-                                |    .zip-link {
-                                |        color: #0056b3;
-                                |        text-decoration: none;
-                                |        font-size: 16px;
-                                |        background-color: #e7f3ff;
-                                |        padding: 10px 15px;
-                                |        border-radius: 5px;
-                                |        display: inline-block;
-                                |        margin-top: 10px;
-                                |    }
-                                |
-                                |    .zip-link:hover {
-                                |        background-color: #d1e7ff;
-                                |    }
-                                |
-                                |    .folders-container, .files-container {
-                                |        background-color: white;
-                                |        border: 1px solid #ddd;
-                                |        padding: 15px;
-                                |        border-radius: 5px;
-                                |        margin-top: 20px;
-                                |    }
-                                |
-                                |    .folder-item, .file-item {
-                                |        color: #0056b3;
-                                |        text-decoration: none;
-                                |        display: block;
-                                |        margin-bottom: 10px;
-                                |        padding: 5px 0;
-                                |    }
-                                |
-                                |    .folder-item:hover, .file-item:hover {
-                                |        text-decoration: underline;
-                                |    }
-                                |
-                                |    h1 {
-                                |        border-bottom: 2px solid #ddd;
-                                |        padding-bottom: 10px;
-                                |    }
-                                |</style>
-                                |</head>
-                                |<body>
-                                |<h1 class="archive-title">Archive</h1>
-                                |${if (zipLink.isNullOrBlank()) "" else """<a href="$zipLink" class="zip-link">ZIP</a>"""}
-                                |<h1 class="folders-title">Folders</h1>
-                                |<div class="folders-container">
-                                |$folders
-                                |</div>
-                                |<h1 class="files-title">Files</h1>
-                                |<div class="files-container">
-                                |$files
-                                |</div>
-                                |</body>
-                                |</html>
-                                """
+
+    private fun generateBreadcrumbs(currentPath: String, servletBaseHref: String): String {
+        val parts = currentPath.split("/").filter { it.isNotEmpty() }
+        val breadcrumbs = StringBuilder()
+        val rootLink = if (servletBaseHref.endsWith("/")) servletBaseHref else "$servletBaseHref/"
+
+        // Root breadcrumb
+        if (parts.isEmpty()) {
+            breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">Root</li>""")
+        } else {
+            breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink" style="color: #0d6efd; text-decoration:none;">Root</a></li>""")
+        }
+
+        var accumulatedPath = ""
+        for ((index, part) in parts.withIndex()) {
+            accumulatedPath += "$part/"
+            // Separator
+            if (index >= 0) { // Always add separator if there are parts after Root
+                breadcrumbs.append("""<li style="padding-right: .5rem; color: #6c757d;">/</li>""")
+            }
+
+            if (index < parts.size - 1) {
+                breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink$accumulatedPath" style="color: #0d6efd; text-decoration:none;">$part</a></li>""")
+            } else {
+                breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">$part</li>""")
+            }
+        }
+        return breadcrumbs.toString()
+    }
+
+    private fun directoryHTML(currentPath: String, servletBaseHref: String, zipLink: String, folders: String, files: String) = """
+    |<!DOCTYPE html>
+    |<html lang="en">
+    |<head>
+    |    <meta charset="UTF-8">
+    |    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    |    <title>Directory Listing: /$currentPath</title>
+    |    <style>
+    |        body {
+    |            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    |            background-color: #f0f2f5; /* Light gray background */
+    |            color: #1c1e21; /* Dark gray text */
+    |            margin: 0;
+    |            padding: 0;
+    |            line-height: 1.5;
+    |        }
+    |        .navbar {
+    |            background-color: #ffffff;
+    |            padding: 1rem 1.5rem;
+    |            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    |            margin-bottom: 1.5rem;
+    |            display: flex;
+    |            align-items: center;
+    |            justify-content: space-between;
+    |            flex-wrap: wrap; /* Allow wrapping for smaller screens */
+    |        }
+    |        .navbar-title {
+    |            font-size: 1.4rem;
+    |            font-weight: 600;
+    |            color: #343a40; /* Darker title color */
+    |            margin-right: 1rem; /* Space before ZIP link */
+    |        }
+    |        .zip-link {
+    |            display: inline-block;
+    |            padding: 0.5rem 1rem;
+    |            font-size: 0.9rem;
+    |            font-weight: 500;
+    |            color: #fff;
+    |            background-color: #0d6efd; /* Primary blue */
+    |            border: none;
+    |            border-radius: 0.25rem;
+    |            text-decoration: none;
+    |            transition: background-color 0.15s ease-in-out;
+    |            white-space: nowrap;
+    |        }
+    |        .zip-link:hover {
+    |            background-color: #0b5ed7; /* Darker blue on hover */
+    |        }
+    |        .container {
+    |            max-width: 960px;
+    |            margin: 0 auto;
+    |            padding: 0 1rem 1.5rem 1rem;
+    |        }
+    |        .breadcrumb-nav {
+    |            margin-bottom: 1.5rem;
+    |            padding: 0.75rem 1rem;
+    |            background-color: #ffffff;
+    |            border-radius: 0.25rem;
+    |            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    |        }
+    |        .breadcrumb {
+    |            padding: 0; margin:0; list-style:none; display:flex; flex-wrap:wrap;
+    |        }
+    |        .section {
+    |            background-color: #ffffff;
+    |            border: 1px solid #dee2e6; /* Light border */
+    |            border-radius: 0.375rem; /* Bootstrap-like radius */
+    |            margin-bottom: 1.5rem;
+    |            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    |        }
+    |        .section-header {
+    |            padding: 0.75rem 1.25rem;
+    |            margin-bottom: 0;
+    |            background-color: #f8f9fa; /* Very light gray for header */
+    |            border-bottom: 1px solid #dee2e6;
+    |            border-top-left-radius: calc(0.375rem - 1px);
+    |            border-top-right-radius: calc(0.375rem - 1px);
+    |        }
+    |        .section-title {
+    |            font-size: 1.2rem;
+    |            font-weight: 500;
+    |            color: #343a40; /* Darker text for titles */
+    |            margin: 0;
+    |        }
+    |        .section-content {
+    |            padding: 1.25rem;
+    |        }
+    |        .item-list {
+    |            list-style: none;
+    |            padding: 0;
+    |            margin: 0;
+    |        }
+    |        .item-list li {
+    |            margin-bottom: 0.25rem;
+    |        }
+    |        .item-list li:last-child { margin-bottom: 0; }
+    |        .item-link {
+    |            color: #0d6efd; /* Primary blue for links */
+    |            text-decoration: none;
+    |            display: flex;
+    |            align-items: center;
+    |            padding: 0.45rem 0.75rem; /* Slightly more padding */
+    |            border-radius: 0.25rem;
+    |            transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+    |        }
+    |        .item-link:hover {
+    |            background-color: #e9ecef; /* Light gray hover for links */
+    |            color: #0a58ca; /* Darker blue on hover */
+    |        }
+    |        .item-link .icon {
+    |            margin-right: 0.7em; /* More space for icon */
+    |            width: 1.2em; 
+    |            text-align: center;
+    |            color: #495057; /* Neutral icon color */
+    |        }
+    |        .item-link:hover .icon { color: #0a58ca; } /* Icon color on hover */
+    |        .empty-state {
+    |            color: #6c757d; /* Secondary text color */
+    |            padding: 0.5rem 0.75rem;
+    |            font-style: italic;
+    |        }
+    |    </style>
+    |</head>
+    |<body>
+    |    <div class="navbar">
+    |        <span class="navbar-title">File Browser</span>
+    |        ${if (zipLink.isNotBlank()) """<a href="$zipLink" class="zip-link">Download Current Directory as ZIP</a>""" else ""}
+    |    </div>
+    |    <div class="container">
+    |        <nav class="breadcrumb-nav" aria-label="breadcrumb">
+    |           <ol class="breadcrumb">
+    |               ${generateBreadcrumbs(currentPath, servletBaseHref)}
+    |           </ol>
+    |        </nav>
+    |
+    |        <div class="section">
+    |            <div class="section-header"><h2 class="section-title">Folders</h2></div>
+    |            <div class="section-content">
+    |                ${if (folders.isBlank()) "<p class=\"empty-state\">No sub-folders found.</p>" else "<ul class=\"item-list\">$folders</ul>"}
+    |            </div>
+    |        </div>
+    |
+    |        <div class="section">
+    |            <div class="section-header"><h2 class="section-title">Files</h2></div>
+    |            <div class="section-content">
+    |                ${if (files.isBlank()) "<p class=\"empty-state\">No files found.</p>" else "<ul class=\"item-list\">$files</ul>"}
+    |            </div>
+    |        </div>
+    |    </div>
+    |</body>
+    |</html>
+    """.trimMargin()
 
     companion object {
         val log = LoggerFactory.getLogger(FileServlet::class.java)

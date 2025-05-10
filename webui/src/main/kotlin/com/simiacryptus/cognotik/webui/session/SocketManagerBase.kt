@@ -141,13 +141,16 @@ abstract class SocketManagerBase(
                             try {
                                 while (deque.isNotEmpty()) {
                                     var msg = deque.poll() ?: break
+                                    if (msg.length > 100000) {
+                                        log.warn("Message too long - Key: {}, Value: {} bytes", messageID, msg.length)
+                                        msg = msg.substring(0, 100000)
+                                    }
                                     try {
                                         val (messageID, _, _) = msg.split(',', ignoreCase = false, limit = 3)
                                         val ver = messageVersions[messageID]?.get()
                                         val v = messageStates[messageID]
                                         msg = "$messageID,$ver,$v"
                                     } finally {
-
                                         synchronized(chatSocket) {
                                             chatSocket.remote.sendString(msg)
                                         }

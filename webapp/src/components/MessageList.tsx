@@ -2,9 +2,7 @@ import React, {useEffect, useRef} from 'react';
 import {useSelector} from 'react-redux';
 import {useTheme} from '../hooks/useTheme';
 import {RootState} from '../store';
-
 import {isArchive} from '../services/appConfig';
-
 import {debounce, getAllTabStates, initNewCollapsibleElements, restoreTabStates, updateTabs} from '../utils/tabHandling';
 import WebSocketService from "../services/websocket";
 import Prism from 'prismjs';
@@ -107,7 +105,7 @@ export const expandMessageReferences = (
         console.warn('[MessageList] Invalid messages array passed to expandMessageReferences');
         return content;
     }
-    
+
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
 
@@ -167,7 +165,7 @@ const renderMermaidDiagrams = (container: HTMLElement | null) => {
                     // Clear existing content before rendering
                     el.innerHTML = '';
                     mermaid.render(id, source)
-                        .then(({ svg }) => {
+                        .then(({svg}) => {
                             el.innerHTML = svg;
                             el.classList.add('mermaid-processed');
                         })
@@ -215,7 +213,9 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         if (Array.isArray(storeMessages)) return storeMessages;
         return [];
     }, [propMessages, storeMessages]);
+
     const messageListRef = useRef<HTMLDivElement>(null);
+
     const referencesVersions = React.useMemo(() => {
         const versions: Record<string, number> = {};
         messages.forEach(msg => {
@@ -257,9 +257,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     useEffect(() => {
         let mounted = true;
         let observer: IntersectionObserver | null = null;
-
         if (messageListRef.current) {
-
             observer = new IntersectionObserver((entries) => {
                 if (!mounted) return;
                 entries.forEach(entry => {
@@ -312,10 +310,10 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                 requestIdleCallback(() => {
                     if (messageListRef.current) {
                         messageListRef.current.querySelectorAll('pre code:not(.prismjs-processed)').forEach(block => {
-                             if (block instanceof HTMLElement && block.offsetParent !== null) {
-                                 Prism.highlightElement(block);
-                                 block.classList.add('prismjs-processed'); // Mark as processed
-                             }
+                            if (block instanceof HTMLElement && block.offsetParent !== null) {
+                                Prism.highlightElement(block);
+                                block.classList.add('prismjs-processed'); // Mark as processed
+                            }
                         });
                     }
                 });
@@ -335,8 +333,8 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
     React.useEffect(() => {
         if (DEBUG_LOGGING) {
             console.debug('[MessageList] Scheduling post-render update due to messages change. Container:', CONTAINER_ID, {
-                 messageCount: finalMessages.length
-             });
+                messageCount: finalMessages.length
+            });
         }
         debouncedPostRenderUpdate();
     }, [finalMessages, debouncedPostRenderUpdate]);
@@ -368,7 +366,8 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
             subtree: true
         });
         return () => observer.disconnect();
-   }, [debouncedPostRenderUpdate]);
+    }, [debouncedPostRenderUpdate]);
+
     const handleMessageClick = React.useCallback((e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target.closest('.tab-button') && target.closest('.tabs')) {
@@ -376,7 +375,6 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         }
         handleClick(e);
     }, []);
-
 
     return (
         <div

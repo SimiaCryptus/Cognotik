@@ -80,12 +80,12 @@ class PlanCoordinator(
         api2: OpenAIClient,
     ): PlanProcessingState {
         val api = (api as ChatClient).getChildClient(task)
+        val tabs = TabbedDisplay(task)
         val planProcessingState = newState(plan)
         this.planProcessingState = planProcessingState
         try {
-            val diagramTask = ui.newTask(false).apply { task.add(placeholder) }
+            val diagramTask = ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
-                task = task,
                 diagramBuffer = diagramTask.add(
                     renderMarkdown(
                         "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE",
@@ -93,7 +93,7 @@ class PlanCoordinator(
                     ), additionalClasses = "flow-chart"
                 ),
                 subTasks = planProcessingState.subTasks,
-                diagramTask = diagramTask,
+                task = diagramTask,
                 planProcessingState = planProcessingState,
                 taskIdProcessingQueue = planProcessingState.taskIdProcessingQueue,
                 pool = pool,
@@ -101,6 +101,7 @@ class PlanCoordinator(
                 plan = plan,
                 api = api,
                 api2 = api2,
+                tabs = tabs
             )
         } catch (e: Throwable) {
             log.warn("Error during incremental code generation process", e)
@@ -116,10 +117,9 @@ class PlanCoordinator(
         )
 
     fun executePlan(
-        task: SessionTask,
         diagramBuffer: StringBuilder?,
         subTasks: Map<String, TaskConfigBase>,
-        diagramTask: SessionTask,
+        task: SessionTask,
         planProcessingState: PlanProcessingState,
         taskIdProcessingQueue: MutableList<String>,
         pool: ExecutorService,
@@ -127,9 +127,10 @@ class PlanCoordinator(
         plan: Map<String, TaskConfigBase>,
         api: API,
         api2: OpenAIClient,
+        tabs: TabbedDisplay,
     ) {
-        val sessionTask = ui.newTask(false).apply { task.add(placeholder) }
-        val api = (api as ChatClient).getChildClient(task)
+        val sessionTask = ui.newTask(false).apply { tabs["Session"] = placeholder }
+        val api = (api as ChatClient).getChildClient(sessionTask)
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
@@ -138,7 +139,7 @@ class PlanCoordinator(
                         ui = ui
                     )
                 )
-                diagramTask.complete()
+                task.complete()
                 return buildString {
                     append("<div class='tabs'>\n")
                     super.tabs.withIndex().forEach { (idx, t) ->
@@ -206,7 +207,7 @@ class PlanCoordinator(
                                     "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }, ui = ui
                         )
                     )
-                    val api = api.getChildClient(task)
+                    val api = api.getChildClient(sessionTask)
                     val impl = getImpl(planSettings, subTask)
                     val messages = listOf(
                         userMessage,

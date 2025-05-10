@@ -119,7 +119,7 @@ class SoftwareGraphGenerationTask(
             api = api
         )
 
-        val outputFile = File(planSettings.workingDir ?: ".").resolve(taskConfig?.output_file.let {
+        val outputFile = File(planSettings.absoluteWorkingDir ?: ".").resolve(taskConfig?.output_file.let {
             when {
                 it.isNullOrBlank() -> "software_graph.json"
                 else -> it

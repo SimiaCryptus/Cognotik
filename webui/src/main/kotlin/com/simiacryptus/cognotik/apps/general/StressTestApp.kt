@@ -18,6 +18,7 @@ class StressTestApp(
     path = path,
     showMenubar = true
 ) {
+    var wasRun = false
     override fun userMessage(
         session: Session,
         user: User?,
@@ -25,23 +26,23 @@ class StressTestApp(
         ui: ApplicationInterface,
         api: API
     ) {
+        if (wasRun) {
+            return
+        }
+        wasRun = true
         val task = ui.newTask()
         task.add(MarkdownUtil.renderMarkdown("# UI Stress Test", ui = ui))
-
         createNestedTabs(task, ui, 3)
-
     }
 
     private fun createNestedTabs(task: SessionTask, ui: ApplicationInterface, depth: Int) {
         if (depth <= 0) {
-
             createComplexDiagram(task, ui)
-
             createAndUpdatePlaceholders(task, ui)
             return
         }
 
-        val tabDisplay = object : TabbedDisplay(task) {
+        val tabDisplay = /*object :*/ TabbedDisplay(task) /*{
             override fun renderTabButtons(): String {
                 return buildString {
                     append("<div class='tabs'>\n")
@@ -51,13 +52,14 @@ class StressTestApp(
                     append("</div>")
                 }
             }
-        }
+        }*/
 
         (1..2).forEach { i ->
             val subTask = ui.newTask(false)
             tabDisplay["Tab $i"] = subTask.placeholder
             createNestedTabs(subTask, ui, depth - 1)
         }
+        tabDisplay.update()
     }
 
     private fun createComplexDiagram(task: SessionTask, ui: ApplicationInterface) {
@@ -71,7 +73,6 @@ class StressTestApp(
                 B ---->|No| E[End]
             ```
         """.trimIndent()
-
         task.add(MarkdownUtil.renderMarkdown("## Complex Diagram\n$mermaidDiagram", ui = ui))
     }
 
@@ -90,8 +91,7 @@ class StressTestApp(
             }
         }
         placeholders.forEach { it.complete() }
+        task.complete()
     }
 
-    companion object {
-    }
 }

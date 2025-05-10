@@ -16,7 +16,7 @@ abstract class AbstractTask<T : TaskConfigBase>(
     protected val codeFiles = mutableMapOf<Path, String>()
 
     protected open val root: Path
-        get() = planSettings.workingDir?.let { File(it).toPath() }
+        get() = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
             ?: throw IllegalStateException("Working directory not set")
 
     open val taskSettings: TaskSettingsBase

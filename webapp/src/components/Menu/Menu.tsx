@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import {useDispatch, useSelector} from 'react-redux';
 import {useModal} from '../../hooks/useModal';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faCog, faHome, faSignInAlt, faSignOutAlt} from '@fortawesome/free-solid-svg-icons';
+import {faCog, faHome} from '@fortawesome/free-solid-svg-icons';
 import {ThemeMenu} from "./ThemeMenu";
 import {WebSocketMenu} from "./WebSocketMenu";
 import {RootState} from "../../store/index";
@@ -81,6 +81,7 @@ const MenuContainer = styled.div<MenuContainerProps>`
 
 const ToolbarLeft = styled.div`
     display: flex;
+    align-items: center; /* Ensure all items are vertically centered and don't stretch unevenly */
     gap: ${({theme}) => theme.sizing.spacing.md};
 `;
 
@@ -272,15 +273,13 @@ export const Menu: React.FC = () => {
                     </DropdownContent>
                 </Dropdown>*/}
 
-                <Dropdown>
+                <Dropdown> {/* Removed style={{display: 'contents'}} */}
                     <DropButton>
                         <FontAwesomeIcon icon={faCog}/> Session
                     </DropButton>
                     <DropdownContent>
                         <DropdownItem onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
-                        {/*
                         <DropdownItem onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
-*/}
                         <DropdownItem onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
                         <DropdownItem onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
                         {/*
@@ -309,7 +308,7 @@ export const Menu: React.FC = () => {
 */}
 
                 {isDevelopment && (
-                    <Dropdown>
+                    <Dropdown> {/* Removed style={{display: 'contents'}} if it was there, ensure consistency */}
                         <DropButton>
                             Config
                         </DropButton>
@@ -320,18 +319,18 @@ export const Menu: React.FC = () => {
                 )}
             </ToolbarLeft>
 
-            <Dropdown>
+            {/*<Dropdown>
                 <DropButton>
                     <FontAwesomeIcon icon={faSignInAlt}/>User
                 </DropButton>
                 <DropdownContent>
                     <DropdownItem onClick={() => handleMenuClick('/userSettings')}>Settings</DropdownItem>
                     <DropdownItem onClick={() => handleMenuClick('/usage')}>Usage</DropdownItem>
-                    {/*<DropdownItem onClick={handleLogout}>
+                    <DropdownItem onClick={handleLogout}>
                         <FontAwesomeIcon icon={faSignOutAlt}/> Logout
-                    </DropdownItem>*/}
+                    </DropdownItem>
                 </DropdownContent>
-            </Dropdown>
+            </Dropdown>*/}
         </MenuContainer>
     );
 };

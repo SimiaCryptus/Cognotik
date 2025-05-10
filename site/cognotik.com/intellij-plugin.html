@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik IntelliJ Plugin - AI Coding Assistant</title>
+    <meta name="description"
+          content="Learn about the Cognotik AI Coding Assistant plugin for IntelliJ IDEA and other JetBrains IDEs. Features, installation, configuration, and usage guide.">
+    <meta name="keywords"
+          content="Cognotik, IntelliJ plugin, JetBrains, AI coding assistant, open source, BYOK, code generation, refactoring, voice coding, developer tools, SimiaCryptus">
+    <meta name="author" content="SimiaCryptus">
+    <meta property="og:title" content="Cognotik IntelliJ Plugin - AI Coding Assistant">
+    <meta property="og:description" content="Discover the Cognotik AI plugin for IntelliJ: agentic tools, BYOK model, voice control, and more.">
+    <meta property="og:image" content="https://cognotik.com/assets/og-image.png"> <!-- Assuming you have an OG image -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cognotik.com/intellij-plugin.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cognotik IntelliJ Plugin - AI Coding Assistant">
+    <meta name="twitter:description" content="Discover the Cognotik AI plugin for IntelliJ: agentic tools, BYOK model, voice control, and more.">
+    <meta name="twitter:image" content="https://cognotik.com/assets/og-image.png"> <!-- Assuming you have an OG image -->
+    <link rel="canonical" href="https://cognotik.com/intellij-plugin.html">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+<main>
+    <section class="hero-section fade-in" style="padding-top:3em;padding-bottom:2em;">
+        <div class="container">
+            <div class="hero-content" style="
+    flex-flow: row;
+">
+                <div class="hero-text fade-in delay-1">
+                    <h1>Cognotik IntelliJ Plugin</h1>
+                    <p style="font-size:1.2em;max-width:650px;">
+                        Bring the power of Cognotik's generative AI and agentic tools directly into your JetBrains IDE. Enhance your workflow with intelligent code editing, file manipulation, complex task automation, and voice control.
+                    </p>
+                    <!-- JetBrains Marketplace Widget Container -->
+                    <div id="jetbrains-marketplace-widget" style="margin-top:1em; display: inline-block;">
+                        <!-- Widget will be rendered here -->
+                    </div>
+                    <a href="https://github.com/SimiaCryptus/intellij-aicoder" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top:1em; margin-left: 0.5em;">
+                        <i class="fab fa-github"></i> View on GitHub
+                    </a>
+                </div>
+                <div class="hero-image fade-in delay-2">
+                    <!-- Placeholder for an image/screenshot of the plugin -->
+                    <div style="background: #e0e6ed; border-radius: var(--border-radius-lg); width: 300px; height: 250px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-light); font-style: italic;">
+                        Plugin Screenshot Placeholder
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="features-section">
+        <div class="container">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-magic"></i></div>
+                    <h3>Editor Actions</h3>
+                    <p>Edit, paste, and chat about code directly within the editor to streamline your workflow and get instant AI assistance.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                    <h3>File Actions</h3>
+                    <p>Create new files, edit existing ones, or perform mass operations across your project with AI guidance.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-cogs"></i></div>
+                    <h3>Agentic Tools</h3>
+                    <p>Leverage powerful AI agents for complex tasks like refactoring, documentation generation, test creation, and multi-step workflow automation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-microphone-alt"></i></div>
+                    <h3>Voice to Text</h3>
+                    <p>Dictate code, comments, and commands using your voice for a hands-free coding experience.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-key"></i></div>
+                    <h3>BYOK Model</h3>
+                    <p>Use your own API keys (OpenAI, Anthropic, etc.) for full control over data privacy, costs, and model choice.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fab fa-osi"></i></div>
+                    <h3>Open Source</h3>
+                    <p>Inspect, modify, and contribute to the plugin under the permissive Apache 2.0 license.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section" style="background:#fafbfc;">
+        <div class="container container-narrow">
+            <h2>Getting Started</h2>
+            <h3>Installation</h3>
+            <ol>
+                <li>Open IntelliJ IDEA, GoLand, PyCharm, or other compatible JetBrains IDE.</li>
+                <li>Go to `Settings/Preferences` > `Plugins`.</li>
+                <li>Select the `Marketplace` tab.</li>
+                <li>Search for "AI Coding Assistant" or "Cognotik".</li>
+                <li>Click `Install` and restart the IDE when prompted.</li>
+            </ol>
+            <h3>Configuration</h3>
+            <ol>
+                <li>After installation, open `Settings/Preferences`.</li>
+                <li>Navigate to `Tools` > `Cognotik`.</li>
+                <li>Enter your API keys for the desired AI service providers (e.g., OpenAI API Key).</li>
+                <li>Configure other settings like preferred models and agent behavior as needed.</li>
+            </ol>
+            <h3>Basic Usage</h3>
+            <ul>
+                <li><strong>Editor Actions:</strong> Right-click in the editor or select code, then use the `AI Tools` context menu.</li>
+                <li><strong>File Actions:</strong> Right-click on files/folders in the Project view, then use the `AI Tools` menu.</li>
+                <li><strong>Agentic Tools:</strong> Access via the `AI Tools` menu or dedicated tool windows. Follow prompts, potentially in a browser window for complex tasks.</li>
+                <li><strong>Voice Control:</strong> Activate voice input (check settings for activation method) and speak commands or dictate.</li>
+            </ul>
+        </div>
+    </section>
+</main>
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="footer-content">
+            <p>© 2025 Cognotik by <a href="https://simia.net/" target="_blank" rel="noopener">SimiaCryptus</a>. All rights reserved.</p>
+            <ul class="footer-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="intellij-plugin.html">IntelliJ Plugin</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+                <li><a href="monetization.html">Invest</a></li>
+                <li><a href="https://github.com/SimiaCryptus/Cognotik" target="_blank" rel="noopener">GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</footer>
+<!-- JetBrains Marketplace Widget Script -->
+<script src="https://plugins.jetbrains.com/assets/scripts/mp-widget.js"></script>
+<script>
+  // Setup the widget for the Cognotik plugin (ID: 20724) in the specified container
+  MarketplaceWidget.setupMarketplaceWidget('install', 20724, "#jetbrains-marketplace-widget");
+</script>
+<script src="scripts/logo-animation.js"></script> <!-- If logo is in header/footer -->
+<script src="scripts/main.js"></script> <!-- For potential mobile menu, etc. -->
+</body>
+</html>

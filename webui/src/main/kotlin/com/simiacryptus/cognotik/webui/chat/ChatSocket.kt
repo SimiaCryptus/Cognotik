@@ -21,7 +21,7 @@ class ChatSocket(
             try {
                 remote.sendString(it)
             } catch (e: Exception) {
-                e.printStackTrace()
+                log.warn("Error replaying message to ${session.remoteAddress}", e)
             }
         }
     }
@@ -37,5 +37,7 @@ class ChatSocket(
         sessionState.removeSocket(this)
     }
 
-    companion object
+    companion object {
+        private val log = org.slf4j.LoggerFactory.getLogger(ChatSocket::class.java)
+    }
 }
