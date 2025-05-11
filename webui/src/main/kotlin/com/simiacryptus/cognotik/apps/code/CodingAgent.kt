@@ -59,7 +59,7 @@ open class CodingAgent<T : Interpreter>(
         userMessage: String,
     ) {
         try {
-            mainTask.echo(renderMarkdown(userMessage, ui = ui))
+            mainTask.echo(userMessage.renderMarkdown)
             val codeRequest = codeRequest(listOf(userMessage to ApiModel.Role.user))
             start(codeRequest, mainTask)
         } catch (e: Throwable) {
@@ -156,10 +156,7 @@ open class CodingAgent<T : Interpreter>(
     ) {
         task.expanded(
             "Code",
-            renderMarkdown(
-                response.renderedResponse ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```",
-                ui = ui
-            )
+          response.renderedResponse ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```".renderMarkdown
         )
     }
 
@@ -221,7 +218,7 @@ open class CodingAgent<T : Interpreter>(
         task: SessionTask, feedback: String, request: CodingActor.CodeRequest, response: CodeResult
     ) {
         try {
-            task.echo(renderMarkdown(feedback, ui = ui))
+            task.echo(feedback.renderMarkdown)
             start(
                 codeRequest = codeRequest(
                     messages = request.messages + listOf(
@@ -257,15 +254,9 @@ open class CodingAgent<T : Interpreter>(
         e: Throwable, task: SessionTask, request: CodingActor.CodeRequest, response: CodeResult
     ) {
         val message = when {
-            e is ValidatedObject.ValidationError -> renderMarkdown(e.message ?: "", ui = ui)
-            e is CodingActor.FailedToImplementException -> renderMarkdown(
-                "**Failed to Implement** \n\n${e.message}\n\n",
-                ui = ui
-            )
-            else -> renderMarkdown(
-                "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n",
-                ui = ui
-            )
+          e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
+          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
+          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
         }
         task.add(message, true, "div", "error")
         displayCode(

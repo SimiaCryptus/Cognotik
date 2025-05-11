@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.test
 
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -39,9 +40,9 @@ open class SimpleActorTestApp(
         val message = ui.newTask()
         try {
             val actor = getSettings<Settings>(session, user)?.actor ?: actor
-            message.echo(renderMarkdown(userMessage, ui = ui))
+            message.echo(userMessage.renderMarkdown)
             val response = actor.answer(listOf(userMessage), api = api)
-            message.complete(renderMarkdown(response, ui = ui))
+            message.complete(response.renderMarkdown)
         } catch (e: Throwable) {
             log.warn("Error", e)
             message.error(ui, e)

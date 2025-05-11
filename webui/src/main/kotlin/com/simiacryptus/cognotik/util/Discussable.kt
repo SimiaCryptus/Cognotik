@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -147,8 +148,8 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
         var history = history
         history = history + (userResponse to Role.user)
         val newValue = (tabContent.toString()
-                + "<div class=\"user-message\">"
-                + renderMarkdown(userResponse, ui = ui)
+            + "<div class=\"user-message\">"
+            + userResponse.renderMarkdown
                 + "</div>")
         tabContent.set(newValue)
         val stringBuilder = task.add("Processing...")

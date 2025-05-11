@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
@@ -225,11 +226,8 @@ class TestResultAutofixAction : BaseAction() {
                     task.add(
                         AgentPatterns.displayMapInTabs(
                             mapOf(
-                                "Text" to renderMarkdown(plan.text, ui = ui),
-                                "JSON" to renderMarkdown(
-                                    "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde",
-                                    ui = ui
-                                ),
+                              "Text" to plan.text.renderMarkdown,
+                              "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
                             )
                         )
                     )

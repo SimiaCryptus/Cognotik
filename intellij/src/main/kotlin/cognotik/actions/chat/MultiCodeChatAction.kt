@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
@@ -166,7 +167,7 @@ class MultiCodeChatAction : BaseAction() {
             }
         }</div>"""
 
-        override fun respond(api: ChatClient, task: SessionTask, userMessage: String): String {
+        override fun respond(api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
 
             val codex = GPT4Tokenizer()
             task.verbose((codeFiles.joinToString("\n") { path ->
@@ -176,7 +177,7 @@ class MultiCodeChatAction : BaseAction() {
             val settings = MultiStepPatchAction.AutoDevApp.Settings()
             api.budget = settings.budget ?: 2.00
 
-            return super.respond(api, task, userMessage)
+            return super.respond(api, task, userMessage, currentChatMessages)
         }
     }
 

@@ -24,6 +24,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
@@ -183,7 +184,7 @@ open class MultiDiffChatAction(
             )
         }
 
-        override fun respond(api: ChatClient, task: SessionTask, userMessage: String): String {
+        override fun respond(api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
 
             val codex = GPT4Tokenizer()
             task.verbose((getCodeFiles().joinToString("\n") { path ->
@@ -193,7 +194,7 @@ open class MultiDiffChatAction(
             val settings = Settings()
             api.budget = settings.budget ?: 2.00
 
-            return super.respond(api, task, userMessage)
+            return super.respond(api, task, userMessage, currentChatMessages)
         }
     }
 

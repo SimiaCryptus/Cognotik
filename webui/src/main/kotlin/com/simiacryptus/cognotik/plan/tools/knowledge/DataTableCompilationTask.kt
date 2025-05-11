@@ -76,7 +76,7 @@ class DataTableCompilationTask(
 
         task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns", ui = agent.ui))
         val result = mutableListOf<Path>()
-        val basePath = Paths.get(planSettings.workingDir ?: ".")
+        val basePath = Paths.get(planSettings.absoluteWorkingDir ?: ".")
         taskConfig?.file_patterns?.forEach { pattern ->
             val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
             Files.walk(basePath).use { paths ->
@@ -243,8 +243,8 @@ class DataTableCompilationTask(
         task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table", ui = agent.ui))
 
         val outputPath = taskConfig?.output_file ?: "compiled_data.json"
-        val outputFile = if (planSettings.workingDir != null) {
-            File(planSettings.workingDir, outputPath)
+        val outputFile = if (planSettings.absoluteWorkingDir != null) {
+            File(planSettings.absoluteWorkingDir, outputPath)
         } else {
             File(outputPath)
         }

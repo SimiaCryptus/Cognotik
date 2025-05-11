@@ -138,9 +138,9 @@ class OutlineAgent(
         val api = (api as ChatClient).getChildClient(task)
         tabbedDisplay["Content"] = task.placeholder
         val outlineManager = try {
-            task.echo(renderMarkdown(this.userMessage, ui = ui))
+            task.echo(this.userMessage.renderMarkdown)
             val root = initial.answer(listOf(this.userMessage), api = api)
-            task.add(renderMarkdown(root.text, ui = ui))
+            task.add(root.text.renderMarkdown)
             task.verbose("```json\n${JsonUtil.toJson(root.obj)}\n```".renderMarkdown())
             task.complete()
             OutlineManager(OutlineManager.OutlinedText(root.text, root.obj))
@@ -182,7 +182,7 @@ class OutlineAgent(
         val finalOutline = outlineManager.buildFinalOutline()
         finalOutlineMessage.verbose("```json\n${JsonUtil.toJson(finalOutline)}\n```".renderMarkdown())
         val textOutline = NodeList(finalOutline).getTextOutline()
-        finalOutlineMessage.complete(renderMarkdown(textOutline, ui = ui))
+        finalOutlineMessage.complete(textOutline.renderMarkdown)
         sessionDir.resolve("finalOutline.json").writeText(JsonUtil.toJson(finalOutline))
         sessionDir.resolve("textOutline.md").writeText(textOutline)
         return finalOutline
@@ -224,7 +224,7 @@ class OutlineAgent(
         try {
             val finalEssay = buildFinalEssay(NodeList(finalOutline), outlineManager)
             sessionDir.resolve("finalEssay.md").writeText(finalEssay)
-            finalRenderMessage.complete(renderMarkdown(finalEssay, ui = ui))
+            finalRenderMessage.complete(finalEssay.renderMarkdown)
         } catch (e: Exception) {
             log.warn("Error", e)
             finalRenderMessage.error(ui, e)
@@ -299,7 +299,7 @@ class OutlineAgent(
         }
         message.header("Expand $sectionName", 3)
         val answer = expand.withModel(model).answer(listOf(this.userMessage, parent.text, sectionName), api = api)
-        message.add(renderMarkdown(answer.text, ui = ui))
+        message.add(answer.text.renderMarkdown)
         message.verbose("```json\n${JsonUtil.toJson(answer.obj)}\n```".renderMarkdown(), false)
         val newNode = OutlineManager.OutlinedText(answer.text, answer.obj)
         outlineManager.nodes.add(newNode)

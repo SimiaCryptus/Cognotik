@@ -8,4 +8,5 @@ interface SocketManager {
     fun addSocket(socket: ChatSocket, session: Session)
     fun getReplay(since: Long = 0): List<String>
     fun onWebSocketText(socket: ChatSocket, message: String)
+    fun getActiveSockets(): List<ChatSocket>
 }

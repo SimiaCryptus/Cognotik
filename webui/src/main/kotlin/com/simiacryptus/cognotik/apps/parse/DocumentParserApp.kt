@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.google.common.util.concurrent.Futures
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -243,10 +244,7 @@ open class DocumentParserApp(
                         }.fold(parsingModel.newDocument())
                         { runningDocument, it -> parsingModel.merge(runningDocument, it) }
                         docTask.add(
-                            MarkdownUtil.renderMarkdown(
-                                "## Document JSON\n\n```json\n${JsonUtil.toJson(finalDocument)}\n```\n\nExtracted files are saved in: ${outputDir.absolutePath}",
-                                ui = ui
-                            )
+                            "## Document JSON\n\n```json\n${JsonUtil.toJson(finalDocument)}\n```\n\nExtracted files are saved in: ${outputDir.absolutePath}".renderMarkdown
                         )
                         if (settings.saveFinalJson) {
                             val finalJsonFile =
@@ -256,10 +254,7 @@ open class DocumentParserApp(
                                 )
                             finalJsonFile.writeText(JsonUtil.toJson(finalDocument))
                             docTask.add(
-                                MarkdownUtil.renderMarkdown(
-                                    "Final JSON saved to: ${finalJsonFile.absolutePath}",
-                                    ui = ui
-                                )
+                                "Final JSON saved to: ${finalJsonFile.absolutePath}".renderMarkdown
                             )
                         }
                     }
@@ -293,19 +288,13 @@ open class DocumentParserApp(
             ui.newTask(false).apply<SessionTask> {
                 pageTabs["Text"] = placeholder
                 add(
-                    MarkdownUtil.renderMarkdown(
-                        generateMarkdownCodeBlock("text", text, settings),
-                        ui = ui
-                    )
+                  generateMarkdownCodeBlock("text", text, settings).renderMarkdown
                 )
             }
             ui.newTask(false).apply<SessionTask> {
                 pageTabs["JSON"] = placeholder
                 add(
-                    MarkdownUtil.renderMarkdown(
-                        generateMarkdownCodeBlock("json", JsonUtil.toJson(jsonResult), settings),
-                        ui = ui
-                    )
+                  generateMarkdownCodeBlock("json", JsonUtil.toJson(jsonResult), settings).renderMarkdown
                 )
             }
             jsonResult

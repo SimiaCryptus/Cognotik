@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -12,37 +13,29 @@ object PlanUtil {
 
     fun diagram(
         ui: ApplicationInterface,
-        taskMap: Map<String, com.simiacryptus.cognotik.plan.TaskConfigBase>
-    ) = MarkdownUtil.renderMarkdown(
-        "## Sub-Plan Task Dependency Graph\n${com.simiacryptus.cognotik.plan.TRIPLE_TILDE}mermaid\n${
-            com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph(
-                taskMap
-            )
-        }\n${com.simiacryptus.cognotik.plan.TRIPLE_TILDE}",
-        ui = ui
-    )
+        taskMap: Map<String, TaskConfigBase>
+    ) = "## Sub-Plan Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${
+        buildMermaidGraph(
+            taskMap
+        )
+    }\n${TRIPLE_TILDE}".renderMarkdown
 
     fun render(
-        withPrompt: com.simiacryptus.cognotik.plan.TaskBreakdownWithPrompt,
+        withPrompt: TaskBreakdownWithPrompt,
         ui: ApplicationInterface
     ) = AgentPatterns.displayMapInTabs(
         mapOf(
-            "Text" to MarkdownUtil.renderMarkdown(withPrompt.planText, ui = ui),
-            "JSON" to MarkdownUtil.renderMarkdown(
-                "${com.simiacryptus.cognotik.plan.TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${com.simiacryptus.cognotik.plan.TRIPLE_TILDE}",
-                ui = ui
-            ),
-            "Diagram" to MarkdownUtil.renderMarkdown(
-                "```mermaid\n" + com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph(
-                    (com.simiacryptus.cognotik.plan.PlanUtil.filterPlan {
-                        withPrompt.plan
-                    } ?: emptyMap()).toMutableMap()
-                ) + "\n```\n", ui = ui
-            )
+            "Text" to withPrompt.planText.renderMarkdown,
+            "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown,
+            "Diagram" to ("```mermaid\n" + buildMermaidGraph(
+              (filterPlan {
+                withPrompt.plan
+              } ?: emptyMap()).toMutableMap()
+            ) + "\n```\n".renderMarkdown)
         )
     )
 
-    fun executionOrder(tasks: Map<String, com.simiacryptus.cognotik.plan.TaskConfigBase>): List<String> {
+    fun executionOrder(tasks: Map<String, TaskConfigBase>): List<String> {
         val taskIds: MutableList<String> = mutableListOf()
         val taskMap = tasks.toMutableMap()
         while (taskMap.isNotEmpty()) {
@@ -78,19 +71,19 @@ object PlanUtil {
     private val mermaidGraphCache = ConcurrentHashMap<String, String>()
     private val mermaidExceptionCache = ConcurrentHashMap<String, Exception>()
 
-    fun buildMermaidGraph(subTasks: Map<String, com.simiacryptus.cognotik.plan.TaskConfigBase>): String {
+    fun buildMermaidGraph(subTasks: Map<String, TaskConfigBase>): String {
 
         val cacheKey = JsonUtil.toJson(subTasks)
 
-        com.simiacryptus.cognotik.plan.PlanUtil.mermaidGraphCache[cacheKey]?.let { return it }
-        com.simiacryptus.cognotik.plan.PlanUtil.mermaidExceptionCache[cacheKey]?.let { throw it }
+        mermaidGraphCache[cacheKey]?.let { return it }
+        mermaidExceptionCache[cacheKey]?.let { throw it }
         try {
             val graphBuilder = StringBuilder("graph TD;\n")
             subTasks.forEach { (taskId, task) ->
-                val sanitizedTaskId = com.simiacryptus.cognotik.plan.PlanUtil.sanitizeForMermaid(taskId)
+                val sanitizedTaskId = sanitizeForMermaid(taskId)
                 val taskType = task.task_type ?: "Unknown"
                 val escapedDescription =
-                    com.simiacryptus.cognotik.plan.PlanUtil.escapeMermaidCharacters(task.task_description ?: "")
+                    escapeMermaidCharacters(task.task_description ?: "")
                 val style = when (task.state) {
                     TaskState.Completed -> ":::completed"
                     TaskState.InProgress -> ":::inProgress"
@@ -98,7 +91,7 @@ object PlanUtil {
                 }
                 graphBuilder.append("    ${sanitizedTaskId}[$escapedDescription]$style;\n")
                 task.task_dependencies?.forEach { dependency ->
-                    val sanitizedDependency = com.simiacryptus.cognotik.plan.PlanUtil.sanitizeForMermaid(dependency)
+                    val sanitizedDependency = sanitizeForMermaid(dependency)
                     graphBuilder.append("    $sanitizedDependency --> ${sanitizedTaskId};\n")
                 }
             }
@@ -111,32 +104,32 @@ object PlanUtil {
             graphBuilder.append("    classDef completed fill:#90EE90,stroke:#333,stroke-width:2px;\n")
             graphBuilder.append("    classDef inProgress fill:#FFA500,stroke:#333,stroke-width:2px;\n")
             val graph = graphBuilder.toString()
-            com.simiacryptus.cognotik.plan.PlanUtil.mermaidGraphCache[cacheKey] = graph
+            mermaidGraphCache[cacheKey] = graph
             return graph
         } catch (e: Exception) {
-            com.simiacryptus.cognotik.plan.PlanUtil.mermaidExceptionCache[cacheKey] = e
+            mermaidExceptionCache[cacheKey] = e
             throw e
         }
     }
 
     fun filterPlan(
         retries: Int = 3,
-        fn: () -> Map<String, com.simiacryptus.cognotik.plan.TaskConfigBase>?
-    ): Map<String, com.simiacryptus.cognotik.plan.TaskConfigBase>? {
+        fn: () -> Map<String, TaskConfigBase>?
+    ): Map<String, TaskConfigBase>? {
         val obj = fn() ?: emptyMap()
         val tasksByID = obj.filter { (k, v) ->
             when {
-                v.task_type == com.simiacryptus.cognotik.plan.TaskType.Companion.TaskPlanningTask.name && v.task_dependencies.isNullOrEmpty() ->
+                v.task_type == TaskType.Companion.TaskPlanningTask.name && v.task_dependencies.isNullOrEmpty() ->
                     if (retries <= 0) {
-                        com.simiacryptus.cognotik.plan.PlanUtil.log.warn(
+                        log.warn(
                             "TaskPlanning task $k has no dependencies: " + JsonUtil.toJson(
                                 obj
                             )
                         )
                         true
                     } else {
-                        com.simiacryptus.cognotik.plan.PlanUtil.log.info("TaskPlanning task $k has no dependencies")
-                        return com.simiacryptus.cognotik.plan.PlanUtil.filterPlan(retries - 1, fn)
+                        log.info("TaskPlanning task $k has no dependencies")
+                        return filterPlan(retries - 1, fn)
                     }
 
                 else -> true
@@ -147,26 +140,26 @@ object PlanUtil {
             it.value.state = TaskState.Pending
         }
         try {
-            com.simiacryptus.cognotik.plan.PlanUtil.executionOrder(tasksByID)
+            executionOrder(tasksByID)
         } catch (e: RuntimeException) {
             if (retries <= 0) {
-                com.simiacryptus.cognotik.plan.PlanUtil.log.warn("Error filtering plan: " + JsonUtil.toJson(obj), e)
+                log.warn("Error filtering plan: " + JsonUtil.toJson(obj), e)
                 throw e
             } else {
-                com.simiacryptus.cognotik.plan.PlanUtil.log.info("Circular dependency detected in task breakdown")
-                return com.simiacryptus.cognotik.plan.PlanUtil.filterPlan(retries - 1, fn)
+                log.info("Circular dependency detected in task breakdown")
+                return filterPlan(retries - 1, fn)
             }
         }
         return if (tasksByID.size == obj.size) {
             obj
-        } else com.simiacryptus.cognotik.plan.PlanUtil.filterPlan {
+        } else filterPlan {
             tasksByID
         }
     }
 
     fun getAllDependencies(
-        subPlanTask: com.simiacryptus.cognotik.plan.TaskConfigBase,
-        subTasks: Map<String, com.simiacryptus.cognotik.plan.TaskConfigBase>,
+        subPlanTask: TaskConfigBase,
+        subTasks: Map<String, TaskConfigBase>,
         visited: MutableSet<String>
     ): List<String> {
         val dependencies = subPlanTask.task_dependencies?.toMutableList() ?: mutableListOf()
@@ -176,7 +169,7 @@ object PlanUtil {
             if (subTask != null) {
                 visited.add(dep)
                 dependencies.addAll(
-                    com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies(
+                    getAllDependencies(
                         subTask,
                         subTasks,
                         visited
@@ -187,6 +180,6 @@ object PlanUtil {
         return dependencies
     }
 
-    val log = org.slf4j.LoggerFactory.getLogger(com.simiacryptus.cognotik.plan.PlanUtil::class.java)
+    val log = org.slf4j.LoggerFactory.getLogger(PlanUtil::class.java)
 
 }

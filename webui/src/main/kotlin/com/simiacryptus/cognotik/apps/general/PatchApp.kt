@@ -294,15 +294,9 @@ abstract class PatchApp(
             fixTask.add(
                 AgentPatterns.displayMapInTabs(
                     mapOf(
-                        "Text" to renderMarkdown(plan.text, ui = ui),
-                        "JSON" to renderMarkdown(
-                            "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde",
-                            ui = ui
-                        ),
-                        "Process Details" to renderMarkdown(
-                            "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde",
-                            ui = ui
-                        )
+                      "Text" to plan.text.renderMarkdown,
+                      "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown,
+                      "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown
                     ).filter { it.value.isNotBlank() },
                 )
             )

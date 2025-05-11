@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.actors.CodingActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
@@ -204,8 +205,7 @@ abstract class SessionTask(
     ) = hideable(
         ui,
         when {
-            e is ValidatedObject.ValidationError -> renderMarkdown(
-                """
+          e is ValidatedObject.ValidationError -> """
         **Data Validation Error**
 
         """.trimIndent() + e.message + """
@@ -214,17 +214,11 @@ abstract class SessionTask(
         ```text
         """.trimIndent() + e.stackTraceTxt + """
         ```
-      """, ui = ui
-            )
+      """.renderMarkdown
 
-            e is CodingActor.FailedToImplementException -> renderMarkdown(
-                "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n",
-                ui = ui
-            )
+          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n".renderMarkdown
 
-            else -> renderMarkdown(
-                "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n", ui = ui
-            )
+          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
         }, showSpinner, tag, "error"
     )
 

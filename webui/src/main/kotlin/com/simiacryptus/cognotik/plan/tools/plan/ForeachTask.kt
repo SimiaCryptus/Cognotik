@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.plan
 
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
@@ -56,8 +57,8 @@ ForeachTask - Execute a task for each item in a list
                 subTaskPlan
             }
             val itemPlanProcessingState = PlanProcessingState(itemSubTasks)
+            val tabs = TabbedDisplay(task)
             agent.executePlan(
-                task = subPlanTask,
                 diagramBuffer = subPlanTask.add(
                     com.simiacryptus.cognotik.plan.PlanUtil.diagram(
                         agent.ui,
@@ -65,7 +66,7 @@ ForeachTask - Execute a task for each item in a list
                     )
                 ),
                 subTasks = itemSubTasks,
-                diagramTask = subPlanTask,
+                task = subPlanTask,
                 planProcessingState = itemPlanProcessingState,
                 taskIdProcessingQueue = com.simiacryptus.cognotik.plan.PlanUtil.executionOrder(itemSubTasks)
                     .toMutableList(),
@@ -74,6 +75,7 @@ ForeachTask - Execute a task for each item in a list
                 plan = itemSubTasks,
                 api = api,
                 api2 = api2,
+                tabs = tabs
             )
         }
         subPlanTask.complete("Completed ForeachTask for ${items.size} items")

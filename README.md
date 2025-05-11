@@ -285,3 +285,5 @@ Cognotik uses a "Bring Your Own Key" (BYOK) model for all AI service integration
 - OpenAI, Anthropic, and other AI providers for their powerful models
 - JetBrains for the IntelliJ platform
 - The open-source community for various libraries and tools used in the project
+## Improvements
+This is a small improvement to the documentation.

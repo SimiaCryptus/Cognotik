@@ -1,9 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useTheme} from '../../hooks/useTheme';
-import {themes} from '../../themes/themes';
-import {useDispatch} from 'react-redux';
-import {setModalContent, showModal} from '../../store/slices/uiSlice';
+import {themes, layoutThemes, LayoutThemeName} from '../../themes/themes';
+import {useDispatch, useSelector} from 'react-redux';
+import {setModalContent, showModal, setLayoutTheme} from '../../store/slices/uiSlice';
+import { RootState } from '../../store';
 
 const LOG_PREFIX = '[ThemeMenu Component]';
 const logWithPrefix = (message: string, ...args: any[]) => {
@@ -162,6 +163,7 @@ const ThemeOption = styled.button`
 export const ThemeMenu: React.FC = () => {
     const [currentTheme, setTheme] = useTheme();
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isLayoutOpen, setIsLayoutOpen] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
     const menuRef = React.useRef<HTMLDivElement>(null);
     const firstOptionRef = React.useRef<HTMLButtonElement>(null);
@@ -169,23 +171,27 @@ export const ThemeMenu: React.FC = () => {
 
     React.useEffect(() => {
         if (isOpen && firstOptionRef.current) {
+            // This needs to be smarter if both menus can be open
             firstOptionRef.current.focus();
         }
     }, [isOpen]);
 
     React.useEffect(() => {
         const handleEscapeKey = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && isOpen) {
+            if (event.key === 'Escape') {
+              if (isOpen) {
                 setIsOpen(false);
+              }
+              if (isLayoutOpen) setIsLayoutOpen(false);
             }
         };
-        if (isOpen) {
+        if (isOpen || isLayoutOpen) {
             document.addEventListener('keydown', handleEscapeKey);
         }
         return () => {
             document.removeEventListener('keydown', handleEscapeKey);
         };
-    }, [isOpen]);
+    }, [isOpen, isLayoutOpen]);
 
     React.useEffect(() => {
         const handleKeyboardShortcut = (event: KeyboardEvent) => {
@@ -196,61 +202,46 @@ export const ThemeMenu: React.FC = () => {
                 : (event.altKey && event.key.toLowerCase() === 't');
             if (isShortcutTriggered) {
                 event.preventDefault();
-                const themeContent = `
-                <div>
-                    ${Object.keys(themes).map(themeName => `
+                const themeSelectorContent = Object.keys(themes).map(themeName => `
                         <button
 
                             onclick="window.dispatchEvent(new CustomEvent('themeChange', {detail: '${themeName}'}))"
-                            style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; ${themeName === currentTheme ? 'background: #eee;' : ''}"
+                            style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; background-color: ${themeName === currentTheme ? '#ddd;' : 'transparent'}; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
                         >
                             ${themeName}
                         </button>
-                    `).join('')}
+                    `).join('');
+
+                const layoutSelectorContent = Object.keys(layoutThemes).map(layoutName => `
+                        <button
+                            onclick="window.dispatchEvent(new CustomEvent('layoutThemeChange', {detail: '${layoutName}'}))"
+                            style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; background-color: ${layoutName === currentLayoutThemeName ? '#ddd;' : 'transparent'}; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                        >
+                            ${layoutName}
+                        </button>
+                    `).join('');
+
+                const modalContent = `
+                <div style="padding: 10px;">
+                    <h3 style="margin-top: 0; margin-bottom: 10px;">Color Theme</h3>
+                    ${themeSelectorContent}
+                    <h3 style="margin-top: 20px; margin-bottom: 10px;">Layout Theme</h3>
+                    ${layoutSelectorContent}
                 </div>
             `;
-                dispatch(showModal('Theme Selection'));
-                dispatch(setModalContent(themeContent));
+                dispatch(showModal('Theme & Layout Selection'));
+                dispatch(setModalContent(modalContent));
                 const shortcutKey = isMac ? 'Ctrl+T' : 'Alt+T';
-                logDebug(`Theme modal opened via keyboard shortcut (${shortcutKey})`);
+                logDebug(`Theme & Layout modal opened via keyboard shortcut (${shortcutKey})`);
             }
         };
         document.addEventListener('keydown', handleKeyboardShortcut);
         return () => {
             document.removeEventListener('keydown', handleKeyboardShortcut);
         };
-    }, [currentTheme, dispatch]);
-    React.useEffect(() => {
-        const handleThemeChangeEvent = (event: CustomEvent<string>) => {
-            handleThemeChange(event.detail as keyof typeof themes);
-        };
-        window.addEventListener('themeChange', handleThemeChangeEvent as EventListener);
-        return () => {
-            window.removeEventListener('themeChange', handleThemeChangeEvent as EventListener);
-        };
-    }, []);
-    React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
+    }, [currentTheme, dispatch]); // Added currentLayoutThemeName
 
-    React.useEffect(() => {
-        logDebug('Theme changed:', {
-            theme: currentTheme,
-            timestamp: new Date().toISOString()
-        });
-    }, [currentTheme]);
-
-    const handleThemeChange = async (themeName: keyof typeof themes) => {
+    const handleThemeChange = React.useCallback(async (themeName: keyof typeof themes) => {
         logDebug('Theme change initiated', {
             from: currentTheme,
             to: themeName,
@@ -270,7 +261,56 @@ export const ThemeMenu: React.FC = () => {
             loadTime: '300ms',
             timestamp: new Date().toISOString()
         });
-    };
+    }, [currentTheme, setTheme, setIsLoading, setIsOpen]);
+
+    React.useEffect(() => {
+        const handleThemeChangeEvent = (event: CustomEvent<string>) => {
+            handleThemeChange(event.detail as keyof typeof themes);
+        };
+        window.addEventListener('themeChange', handleThemeChangeEvent as EventListener);
+        return () => {
+            window.removeEventListener('themeChange', handleThemeChangeEvent as EventListener);
+        };
+    }, [handleThemeChange]);
+
+    React.useEffect(() => {
+        const handleLayoutThemeChangeEvent = (event: CustomEvent<string>) => {
+            const layoutName = event.detail as LayoutThemeName;
+            dispatch(setLayoutTheme(layoutName));
+            // Modal remains open for further changes unless explicitly closed
+            logDebug('Layout theme changed via modal', { layout: layoutName });
+        };
+        window.addEventListener('layoutThemeChange', handleLayoutThemeChangeEvent as EventListener);
+        return () => {
+            window.removeEventListener('layoutThemeChange', handleLayoutThemeChangeEvent as EventListener);
+        };
+    }, [dispatch]);
+
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                if (isOpen) setIsOpen(false);
+                if (isLayoutOpen) setIsLayoutOpen(false);
+            }
+        };
+        if (isOpen || isLayoutOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen, isLayoutOpen]);
+
+    React.useEffect(() => {
+        logDebug('Theme changed:', {
+            theme: currentTheme,
+            timestamp: new Date().toISOString()
+        });
+    }, [currentTheme]);
+
+
+
+
 
     const handleMenuToggle = () => {
         logDebug('Menu state changing', {
@@ -280,39 +320,79 @@ export const ThemeMenu: React.FC = () => {
         });
         setIsOpen(!isOpen);
     };
+    const handleLayoutMenuToggle = () => {
+        setIsLayoutOpen(!isLayoutOpen);
+    };
+    const handleLayoutThemeChange = (layoutName: LayoutThemeName) => {
+        dispatch(setLayoutTheme(layoutName));
+        setIsLayoutOpen(false);
+        logDebug('Layout theme changed', { layout: layoutName });
+    };
+    const currentLayoutThemeName = useSelector((state: RootState) => state.ui.layoutTheme);
+
 
     return (
         <ThemeMenuContainer ref={menuRef}>
-            <ThemeButton
-                onClick={handleMenuToggle}
-                aria-expanded={isOpen}
-                aria-haspopup="true"
-                disabled={isLoading}
-            >
-                Theme: {currentTheme}
-            </ThemeButton>
-            {isOpen && (
-                <ThemeList role="menu">
-                    {Object.keys(themes).map((themeName, index) => {
-                        logDebug('Rendering theme option', {
-                            theme: themeName,
-                            isCurrentTheme: themeName === currentTheme
-                        });
-                        return (
+            {/* Color Theme Selector */}
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+                <ThemeButton
+                    onClick={handleMenuToggle}
+                    aria-expanded={isOpen}
+                    aria-haspopup="true"
+                    disabled={isLoading}
+                >
+                    Theme: {currentTheme}
+                </ThemeButton>
+                {isOpen && (
+                    <ThemeList role="menu" style={{ right: 0 }}> {/* Position relative to this new div */}
+                        {Object.keys(themes).map((themeName, index) => {
+                            logDebug('Rendering theme option', {
+                                theme: themeName,
+                                isCurrentTheme: themeName === currentTheme
+                            });
+                            return (
+                                <ThemeOption
+                                    key={themeName}
+                                    onClick={() => handleThemeChange(themeName as keyof typeof themes)}
+                                    role="menuitem"
+                                    aria-current={themeName === currentTheme}
+                                    ref={index === 0 ? firstOptionRef : null}
+                                    tabIndex={0}
+                                >
+                                    {themeName}
+                                </ThemeOption>
+                            );
+                        })}
+                    </ThemeList>
+                )}
+            </div>
+
+            {/* Layout Theme Selector */}
+            <div style={{ position: 'relative', display: 'inline-block', marginLeft: '0.5rem' }}>
+                <ThemeButton
+                    onClick={handleLayoutMenuToggle}
+                    aria-expanded={isLayoutOpen}
+                    aria-haspopup="true"
+                >
+                    Layout: {currentLayoutThemeName}
+                </ThemeButton>
+                {isLayoutOpen && (
+                    <ThemeList role="menu" style={{ left: 0, right: 'auto' }}> {/* Position relative to this new div */}
+                        {Object.keys(layoutThemes).map((layoutName, index) => (
                             <ThemeOption
-                                key={themeName}
-                                onClick={() => handleThemeChange(themeName as keyof typeof themes)}
+                                key={layoutName}
+                                onClick={() => handleLayoutThemeChange(layoutName as LayoutThemeName)}
                                 role="menuitem"
-                                aria-current={themeName === currentTheme}
-                                ref={index === 0 ? firstOptionRef : undefined}
+                                aria-current={layoutName === currentLayoutThemeName}
+                                ref={index === 0 && !isOpen ? firstOptionRef : null} // Focus if color theme menu is closed
                                 tabIndex={0}
                             >
-                                {themeName}
+                                {layoutName}
                             </ThemeOption>
-                        );
-                    })}
-                </ThemeList>
-            )}
+                        ))}
+                    </ThemeList>
+                )}
+            </div>
         </ThemeMenuContainer>
     );
 };

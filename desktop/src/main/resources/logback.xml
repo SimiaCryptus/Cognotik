@@ -34,8 +34,27 @@
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+    <!-- Chat Traffic Log File Appender -->
+    <appender name="CHAT_TRAFFIC_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>chat_traffic.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover, keep 30 days -->
+            <fileNamePattern>chat_traffic.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
 
     <logger name="com.simiacryptus" level="DEBUG"/>
+    <!-- Chat Traffic Logger -->
+    <logger name="TRAFFIC.com.simiacryptus.cognotik.webui.chat" level="INFO" additivity="false">
+        <appender-ref ref="CHAT_TRAFFIC_FILE"/>
+    </logger>
+
 
     <root level="WARN">
 <!--        <appender-ref ref="STDOUT"/>-->

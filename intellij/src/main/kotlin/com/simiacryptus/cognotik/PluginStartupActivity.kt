@@ -42,6 +42,7 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
+        setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
         try {
 
@@ -193,6 +194,20 @@ class PluginStartupActivity : ProjectActivity {
                     when (this) {
                         is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.INFO)
                         is ch.qos.logback.classic.Logger -> setLevel(Level.INFO)
+                        else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
+                    }
+                }
+            } catch (e: Exception) {
+                log.error("Error setting log level for $name", e)
+            }
+        }
+
+        private fun setLogDebug(name: String) {
+            try {
+                LoggerFactory.getLogger(name).apply {
+                    when (this) {
+                        is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.DEBUG)
+                        is ch.qos.logback.classic.Logger -> setLevel(Level.DEBUG)
                         else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
                     }
                 }

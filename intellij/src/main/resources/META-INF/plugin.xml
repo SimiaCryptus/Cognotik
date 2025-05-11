@@ -41,7 +41,7 @@
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
             </action>
-            <action class="cognotik.actions.agent.OutlineAction"
+            <!--<action class="cognotik.actions.agent.OutlineAction"
                     id="OutlineAction"
                     text="🗂️ Outline Tool"
                     description="Create and expand outlines using Cognotik assistance">
@@ -50,7 +50,7 @@
                     id="EnhancedOutlineAction"
                     text="📝 Enhanced Outline Tool"
                     description="Create and expand outlines with customizable phases using Cognotik assistance">
-            </action>
+            </action>-->
         </group>
         <group id="cognotik.ui.EditorMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -95,7 +95,7 @@
                    description="Recent code edits"
                    popup="true">
             </group>
-            <action class="cognotik.actions.markdown.MarkdownListAction"
+            <!--<action class="cognotik.actions.markdown.MarkdownListAction"
                     text="📝 Add _List Items"
                     description="Intelligently extend Markdown lists by generating contextually relevant new items">
             </action>
@@ -116,7 +116,7 @@
                     description="Print PSI Tree">
                 <keyboard-shortcut keymap="$default" first-keystroke="control alt A"/>
                 <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt A"/>
-            </action>
+            </action>-->
         </group>
         <group id="cognotik.ui.ProjectMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -138,6 +138,7 @@
                         text="📝 Modify Files"
                         description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
                 </action>
+<!--
                 <action class="cognotik.actions.chat.MultiDiffChatWithLineNumbersAction"
                         text="📝 Modify Files (with Line Numbers)"
                         description="Analyze and generate patches for multiple files with line numbers displayed for easier reference">
@@ -146,6 +147,7 @@
                         text="🎯 Smart Code Change"
                         description="Intelligently analyze and modify code files using a two-stage approach with optimized model selection">
                 </action>
+-->
                 <action class="cognotik.actions.dev.ApplyPatchAction"
                         text="🔧 Apply Patch"
                         description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
@@ -194,6 +196,7 @@
                         text="✓ Validate Code"
                         description="Validate code syntax and structure using Cognotik-powered analysis">
                 </action>
+<!--
                 <action class="cognotik.actions.agent.SimpleCommandAction"
                         text="✨ Do Something"
                         description="Execute custom coding tasks with intelligent assistance, analyzing project structure and context">
@@ -202,16 +205,22 @@
                         text="📝 Multi-Step Editor"
                         description="Break down complex code modifications into a series of manageable steps, with intelligent suggestions for each stage">
                 </action>
+-->
+<!--
                 <action id="CognotikShellCommand"
                         class="cognotik.actions.agent.ShellCommandAction"
                         text="🐚 Shell Agent"
                         description="Execute shell commands in the selected directory via a coding agent">
                 </action>
+-->
+<!--
                 <action class="cognotik.actions.agent.WebDevelopmentAssistantAction"
                         text="🌐 Web Dev"
                         description="Comprehensive tool for web application development, assisting with file generation, code writing, and project structure">
                 </action>
+-->
             </group>
+<!--
             <group id="cognotik.ui.ProjectMenu.Knowledge"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
@@ -231,6 +240,7 @@
                         description="Convert selected parsed JSON files into an optimized binary index for efficient querying and data retrieval">
                 </action>
             </group>
+-->
         </group>
 
         <group id="cognotik.ui.VcsMenu"

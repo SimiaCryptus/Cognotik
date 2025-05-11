@@ -97,8 +97,7 @@ open class ChatSocketManager(
         try {
             if (!retriable) {
                 task.add("")
-                val responseString = respond(api, task, expandedUserMessage)
-
+                val responseString = respond(api, task, expandedUserMessage, this@ChatSocketManager.chatMessages())
                 synchronized(messagesLock) {
 
                     if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
@@ -106,18 +105,16 @@ open class ChatSocketManager(
                     }
                     messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
                 }
-
                 task.complete()
             } else {
+                val currentChatMessages = this@ChatSocketManager.chatMessages()
                 Retryable(ui, task) { it: StringBuilder ->
                     val task = ui.newTask(false)
                     pool.submit {
                         try {
                             task.add("")
-                            val responseString = respond(api, task, expandedUserMessage)
-
+                            val responseString = respond(api, task, expandedUserMessage, currentChatMessages)
                             synchronized(messagesLock) {
-
                                 if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
                                     messages.removeAt(messages.size - 1)
                                 }
@@ -126,7 +123,6 @@ open class ChatSocketManager(
                                     responseString.toContentList()
                                 )
                             }
-
                             task.complete()
                         } catch (e: Throwable) {
                             log.warn("Exception occurred while processing chat message", e)
@@ -148,8 +144,9 @@ open class ChatSocketManager(
 
     private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""")
 
-    protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
-        val currentChatMessages = chatMessages()
+    protected open fun respond(
+        api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>
+    ) = buildString {
         val function1List = processMsgRecursive(api, userMessage, task, currentChatMessages)
         runAll(function1List, this)
     }.let { response ->
@@ -213,12 +210,10 @@ open class ChatSocketManager(
         }
     }
 
-    protected open fun chatMessages() = messages.let {
-        synchronized(messagesLock) {
-            listOf(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())) + it
-                .drop(1)
-        }
-    }.toList()
+    protected open fun chatMessages(): List<ApiModel.ChatMessage> = synchronized(messagesLock) {
+        // Return a snapshot of messages, ensuring the system prompt is first
+        listOf(messages.first()) + messages.drop(1)
+    }
 
     data class Topics(
         val topics: Map<String, List<String>>? = emptyMap()
@@ -230,13 +225,17 @@ open class ChatSocketManager(
      */
     protected open fun applyTopicAutoexpansion(userMessage: String): String {
         val topicReferencePattern = Regex("""\{([^}|]+)}""")
-        return topicReferencePattern.replace(userMessage) { matchResult ->
-            val topicType = matchResult.groupValues[1]
-            val entities = aggregateTopics[topicType]?.toList()
 
-            if (entities != null && entities.isNotEmpty()) {
 
-                "{${entities.joinToString("|")}}"
+        return topicReferencePattern.replace(userMessage) { matchResult -> // Read access needs synchronization
+            val topicType = matchResult.groupValues[1] // Synchronize read access to aggregateTopics
+            val topicList = aggregateTopics[topicType]
+            val entities = synchronized(topicList ?: Any()) { // Synchronize on the list if it exists, or a dummy object
+                topicList?.toList() // Create copy while holding lock
+            }
+
+            if (!entities.isNullOrEmpty()) { // Check if the copied list is not null or empty
+                "{${entities.joinToString("|")}}" // Use the copied list
             } else {
 
                 matchResult.value
@@ -278,7 +277,8 @@ open class ChatSocketManager(
                         model = model.modelName,
                     ), model
                 )
-                responseRef.set(chatResponse.choices.firstOrNull()?.message?.content.orEmpty())
+                val newValue = chatResponse.choices.firstOrNull()?.message?.content.orEmpty()
+                responseRef.set(newValue)
             } catch (e: Exception) {
                 log.error("Error in API call", e)
                 responseRef.set("Error: ${e.message}")

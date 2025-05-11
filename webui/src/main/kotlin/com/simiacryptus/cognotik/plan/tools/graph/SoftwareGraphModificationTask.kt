@@ -88,7 +88,7 @@ class SoftwareGraphModificationTask(
             describer = agent.describer,
         )
 
-        val inputFile = (planSettings.workingDir?.let { File(it) } ?: File("."))
+        val inputFile = (planSettings.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(taskConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
         val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
@@ -107,7 +107,7 @@ class SoftwareGraphModificationTask(
         val deltaGraph = response.obj
         val newGraph = originalGraph + deltaGraph
 
-        val outputFile = (planSettings.workingDir?.let { File(it) } ?: File("."))
+        val outputFile = (planSettings.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(
                 when {
                     !taskConfig.output_graph_file.isNullOrBlank() -> taskConfig.output_graph_file
