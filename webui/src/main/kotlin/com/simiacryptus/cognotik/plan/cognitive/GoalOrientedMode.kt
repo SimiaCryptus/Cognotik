@@ -134,10 +134,7 @@ open class GoalOrientedMode(
       iteration++
       logToSession("\n## Iteration $iteration / $maxIterations")
       goalTreeTask.add(renderMarkdown(renderGoalTreeText(goalTree.values.toList()), ui = ui))
-
-
-      updateAllStatuses() // Crucial: update statuses based on dependencies and completions
-
+      updateAllStatuses()
       val decomposableGoals = goalTree.values.filter {
         it.status == GoalStatus.ACTIVE && !it.decompositionAttempted && it.subgoals.isEmpty() && it.tasks.isEmpty()
       }
@@ -233,10 +230,8 @@ open class GoalOrientedMode(
           }
           try {
 
-            val taskOutputResult = future.get() // This will throw ExecutionException if the lambda threw
-            // If we reach here, the lambda completed successfully (or returned null)
-            // Status should not be FAILED if lambda succeeded
-            if (taskInstance.status != TaskStatus.FAILED) { // Double check, though lambda should handle failure
+            val taskOutputResult = future.get()
+            if (taskInstance.status != TaskStatus.FAILED) {
               taskInstance.status = TaskStatus.COMPLETED
               taskInstance.result = taskOutputResult
               logToSession(
@@ -439,6 +434,7 @@ open class GoalOrientedMode(
       planSettings = planSettings
     )
     // Use LLM to select the most appropriate TaskType and config for this task
+    val availableTaskTypes = TaskType.getAvailableTaskTypes(planSettings)
     val parsedActor = ParsedActor(
       name = "TaskTypeChooser",
       resultClass = AutoPlanMode.Tasks::class.java,
@@ -453,13 +449,13 @@ open class GoalOrientedMode(
                 Given the following task description, choose the most appropriate task type and provide all required details.
                 Task Description: ${taskDefinition.description}
                 Available task types:
-                ${TaskType.getAvailableTaskTypes(planSettings).joinToString("\n") { it.name }}
+                ${availableTaskTypes.joinToString("\n") { it.name }}
             """.trimIndent(),
       model = planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
       describer = describer,
-      parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(planSettings)
+      parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes
         .joinToString("\n\n") { taskType ->
           "${taskType.name}:\n  ${
             describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
@@ -526,19 +522,30 @@ open class GoalOrientedMode(
           val tasksOfGoal = goal.tasks.mapNotNull { taskMap[it] }
 
           // Check for conditions that lead to BLOCKED
-          if (goal.dependencies.any { depId -> goalTree[depId]?.status == GoalStatus.BLOCKED }) {
+          val blockingDependency = goal.dependencies.firstOrNull { depId -> goalTree[depId]?.status == GoalStatus.BLOCKED }
+          if (blockingDependency != null) {
             newStatus = GoalStatus.BLOCKED
-            goal.result = goal.result ?: "Blocked by a dependency."
-          } else if (dependenciesMet && (subGoals.any { it.status == GoalStatus.BLOCKED } || tasksOfGoal.any { it.status == TaskStatus.FAILED })) {
-            newStatus = GoalStatus.BLOCKED
-            goal.result = goal.result ?: "Blocked by a sub-goal or failed task."
-          } else if (dependenciesMet && goal.decompositionAttempted && subGoals.isEmpty() && tasksOfGoal.isEmpty()) {
-            // Decomposed into nothing, and no tasks are running/pending for it
-            newStatus = GoalStatus.BLOCKED
-            goal.result = goal.result ?: "Decomposition yielded no actionable sub-goals or tasks."
+            goal.result = goal.result ?: "Blocked by dependency Goal ID: $blockingDependency (${goalTree[blockingDependency]?.description?.take(50)}...)"
+          } else {
+            val blockingSubGoal = subGoals.firstOrNull { it.status == GoalStatus.BLOCKED }
+            val failedTask = tasksOfGoal.firstOrNull { it.status == TaskStatus.FAILED }
+            if (dependenciesMet && (blockingSubGoal != null || failedTask != null)) {
+              newStatus = GoalStatus.BLOCKED
+              val reason = if (blockingSubGoal != null) {
+                "sub-goal ID: ${blockingSubGoal.id} (${blockingSubGoal.description.take(50)}...) is BLOCKED"
+              } else { // failedTask must be non-null
+                "task ID: ${failedTask!!.id} (${failedTask.description.take(50)}...) is FAILED"
+              }
+              goal.result = goal.result ?: "Blocked because $reason."
+            } else if (dependenciesMet && goal.decompositionAttempted && subGoals.isEmpty() && tasksOfGoal.isEmpty()) {
+              // Decomposed into nothing, and no tasks are running/pending for it
+              newStatus = GoalStatus.BLOCKED
+              goal.result = goal.result ?: "Decomposition yielded no actionable sub-goals or tasks, and dependencies are met."
+            }
           }
           // Check for conditions that lead to COMPLETED (only if not already decided to be BLOCKED)
-          else if (newStatus != GoalStatus.BLOCKED && dependenciesMet &&
+          // newStatus check ensures we don't override a BLOCKED status decided above in this pass
+          if (newStatus != GoalStatus.BLOCKED && dependenciesMet &&
             (goal.decompositionAttempted || subGoals.isNotEmpty() || tasksOfGoal.isNotEmpty()) && // Must have content or tried
             subGoals.all { it.status == GoalStatus.COMPLETED } &&
             tasksOfGoal.all { it.status == TaskStatus.COMPLETED }

@@ -97,8 +97,7 @@ open class ChatSocketManager(
         try {
             if (!retriable) {
                 task.add("")
-                val responseString = respond(api, task, expandedUserMessage)
-
+                val responseString = respond(api, task, expandedUserMessage, this@ChatSocketManager.chatMessages())
                 synchronized(messagesLock) {
 
                     if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
@@ -106,18 +105,16 @@ open class ChatSocketManager(
                     }
                     messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
                 }
-
                 task.complete()
             } else {
+                val currentChatMessages = this@ChatSocketManager.chatMessages()
                 Retryable(ui, task) { it: StringBuilder ->
                     val task = ui.newTask(false)
                     pool.submit {
                         try {
                             task.add("")
-                            val responseString = respond(api, task, expandedUserMessage)
-
+                            val responseString = respond(api, task, expandedUserMessage, currentChatMessages)
                             synchronized(messagesLock) {
-
                                 if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
                                     messages.removeAt(messages.size - 1)
                                 }
@@ -126,7 +123,6 @@ open class ChatSocketManager(
                                     responseString.toContentList()
                                 )
                             }
-
                             task.complete()
                         } catch (e: Throwable) {
                             log.warn("Exception occurred while processing chat message", e)
@@ -148,8 +144,9 @@ open class ChatSocketManager(
 
     private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""")
 
-    protected open fun respond(api: ChatClient, task: SessionTask, userMessage: String) = buildString {
-        val currentChatMessages = chatMessages()
+    protected open fun respond(
+        api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>
+    ) = buildString {
         val function1List = processMsgRecursive(api, userMessage, task, currentChatMessages)
         runAll(function1List, this)
     }.let { response ->
@@ -280,7 +277,8 @@ open class ChatSocketManager(
                         model = model.modelName,
                     ), model
                 )
-                responseRef.set(chatResponse.choices.firstOrNull()?.message?.content.orEmpty())
+                val newValue = chatResponse.choices.firstOrNull()?.message?.content.orEmpty()
+                responseRef.set(newValue)
             } catch (e: Exception) {
                 log.error("Error in API call", e)
                 responseRef.set("Error: ${e.message}")
