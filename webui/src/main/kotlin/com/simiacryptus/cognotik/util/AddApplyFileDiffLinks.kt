@@ -407,7 +407,7 @@ open class AddApplyFileDiffLinks {
         val echoDiff = try {
             IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
         } catch (e: Throwable) {
-            renderMarkdown("\n```\n${e.stackTraceToString()}\n```\n", ui = ui)
+          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown
         }
 
         fun createRevertButton(filepath: Path, originalCode: String, handle: (Map<Path, String>) -> Unit): String {
@@ -459,7 +459,7 @@ open class AddApplyFileDiffLinks {
         }
 
         val diffTask = ui.newTask(root = false)
-        diffTask.complete(renderMarkdown("\n```diff\n$diffVal\n```\n", ui = ui))
+        diffTask.complete("\n```diff\n$diffVal\n```\n".renderMarkdown)
 
         val prevCodeTask = ui.newTask(root = false)
         val prevCodeTaskSB = prevCodeTask.add("")
@@ -534,7 +534,7 @@ open class AddApplyFileDiffLinks {
                         val echoDiff = try {
                             IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
                         } catch (e: Throwable) {
-                            renderMarkdown("\n```\n${e.stackTraceToString()}\n```\n", ui = ui)
+                          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown
                         }
                         var answer = patchFixer.answer(
                             listOf(
@@ -612,9 +612,7 @@ open class AddApplyFileDiffLinks {
         val echoDiff2 = try {
             IterativePatchUtil.generatePatch(prevCode, newCode2)
         } catch (e: Throwable) {
-            renderMarkdown(
-                "\n```\n${e.stackTraceToString()}\n```", ui = ui
-            )
+          "\n```\n${e.stackTraceToString()}\n```".renderMarkdown
         }
         newCode2TaskSB?.set(
             renderMarkdown(

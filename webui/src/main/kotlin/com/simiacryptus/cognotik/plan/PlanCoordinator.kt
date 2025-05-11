@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
 import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
@@ -87,10 +88,7 @@ class PlanCoordinator(
             val diagramTask = ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
                 diagramBuffer = diagramTask.add(
-                    renderMarkdown(
-                        "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE",
-                        ui = ui
-                    ), additionalClasses = "flow-chart"
+                  "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown, additionalClasses = "flow-chart"
                 ),
                 subTasks = planProcessingState.subTasks,
                 task = diagramTask,
@@ -134,10 +132,7 @@ class PlanCoordinator(
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
-                    renderMarkdown(
-                        "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE",
-                        ui = ui
-                    )
+                  "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
                 )
                 task.complete()
                 return buildString {
@@ -200,12 +195,10 @@ class PlanCoordinator(
                     )
 
                     task1.add(
-                        renderMarkdown(
-                            """
+                      """
               ## Task `""".trimIndent() + taskId + "`" + (subTask.task_description ?: "") + "\n" +
-                                    TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
-                                    "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }, ui = ui
-                        )
+                          TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
+                          "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
                     )
                     val api = api.getChildClient(sessionTask)
                     val impl = getImpl(planSettings, subTask)

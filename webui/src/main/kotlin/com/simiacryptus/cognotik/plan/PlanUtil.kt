@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -13,32 +14,24 @@ object PlanUtil {
     fun diagram(
         ui: ApplicationInterface,
         taskMap: Map<String, TaskConfigBase>
-    ) = MarkdownUtil.renderMarkdown(
-        "## Sub-Plan Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${
-            buildMermaidGraph(
-                taskMap
-            )
-        }\n${TRIPLE_TILDE}",
-        ui = ui
-    )
+    ) = "## Sub-Plan Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${
+        buildMermaidGraph(
+            taskMap
+        )
+    }\n${TRIPLE_TILDE}".renderMarkdown
 
     fun render(
         withPrompt: TaskBreakdownWithPrompt,
         ui: ApplicationInterface
     ) = AgentPatterns.displayMapInTabs(
         mapOf(
-            "Text" to MarkdownUtil.renderMarkdown(withPrompt.planText, ui = ui),
-            "JSON" to MarkdownUtil.renderMarkdown(
-                "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}",
-                ui = ui
-            ),
-            "Diagram" to MarkdownUtil.renderMarkdown(
-                "```mermaid\n" + buildMermaidGraph(
-                    (filterPlan {
-                        withPrompt.plan
-                    } ?: emptyMap()).toMutableMap()
-                ) + "\n```\n", ui = ui
-            )
+            "Text" to withPrompt.planText.renderMarkdown,
+            "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown,
+            "Diagram" to ("```mermaid\n" + buildMermaidGraph(
+              (filterPlan {
+                withPrompt.plan
+              } ?: emptyMap()).toMutableMap()
+            ) + "\n```\n".renderMarkdown)
         )
     )
 

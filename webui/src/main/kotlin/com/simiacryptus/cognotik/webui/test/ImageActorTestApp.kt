@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.test
 
 import com.simiacryptus.cognotik.actors.ImageActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -38,7 +39,7 @@ open class ImageActorTestApp(
         val message = ui.newTask()
         try {
             val actor = getSettings<Settings>(session, user)?.actor ?: actor
-            message.echo(renderMarkdown(userMessage, ui = ui))
+            message.echo(userMessage.renderMarkdown)
             val response = actor.answer(
                 listOf(userMessage), api = api
             )

@@ -61,7 +61,7 @@ open class AutoPlanMode(
             startAutoPlanChat(userMessage)
         } else {
             log.debug("Injecting user message into ongoing chat")
-            task.echo(renderMarkdown("User: $userMessage", ui = ui))
+            task.echo("User: $userMessage".renderMarkdown)
             currentUserMessage.set(userMessage)
         }
     }

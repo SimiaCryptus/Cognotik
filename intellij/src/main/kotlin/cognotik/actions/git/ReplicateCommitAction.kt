@@ -248,11 +248,8 @@ class ReplicateCommitAction : BaseAction() {
                 task.add(
                     AgentPatterns.displayMapInTabs(
                         mapOf(
-                            "Text" to renderMarkdown(plan.text, ui = ui),
-                            "JSON" to renderMarkdown(
-                                "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde",
-                                ui = ui
-                            ),
+                          "Text" to plan.text.renderMarkdown,
+                          "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
                         )
                     )
                 )

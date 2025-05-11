@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.test
 
 import com.simiacryptus.cognotik.actors.CodingActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
@@ -28,7 +29,7 @@ open class CodingActorTestApp(
         (api as ChatClient).budget = 2.00
         val message = ui.newTask()
         try {
-            message.echo(renderMarkdown(userMessage, ui = ui))
+            message.echo(userMessage.renderMarkdown)
             val response = actor.answer(CodingActor.CodeRequest(listOf(userMessage to ApiModel.Role.user)), api = api)
             val canPlay =
                 ApplicationServices.authorizationManager.isAuthorized(this::class.java, user, OperationType.Execute)
@@ -42,10 +43,7 @@ open class CodingActorTestApp(
                 }
             }
             message.complete(
-                renderMarkdown(
-                    "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim(),
-                    ui = ui
-                )
+              "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim().renderMarkdown
             )
         } catch (e: Throwable) {
             log.warn("Error", e)

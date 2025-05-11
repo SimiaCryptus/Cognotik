@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.test
 
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
@@ -49,7 +50,7 @@ open class FilePatchTestApp(
             ui = ui,
             api = api
         )
-        task.complete(renderMarkdown(newPatch, ui = ui))
+        task.complete(newPatch.renderMarkdown)
 
         return socketManager
     }

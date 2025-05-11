@@ -254,11 +254,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
 
                     AgentPatterns.displayMapInTabs(
                         mapOf(
-                            "Text" to renderMarkdown(design.text, ui = ui),
-                            "JSON" to renderMarkdown(
-                                "```json\n${JsonUtil.toJson(design.obj)/*.indent("  ")*/}\n```",
-                                ui = ui
-                            ),
+                          "Text" to design.text.renderMarkdown,
+                          "JSON" to "```json\n${JsonUtil.toJson(design.obj)/*.indent("  ")*/}\n```".renderMarkdown,
                         )
                     )
                 },
@@ -282,10 +279,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 var messageWithTools = userMessage
 
                 task.echo(
-                    renderMarkdown(
-                        "```json\n${JsonUtil.toJson(architectureResponse.obj)/*.indent("  ")*/}\n```",
-                        ui = ui
-                    )
+                  "```json\n${JsonUtil.toJson(architectureResponse.obj)/*.indent("  ")*/}\n```".renderMarkdown
                 )
                 val fileTabs = TabbedDisplay(task)
                 architectureResponse.obj.files.filter {
@@ -458,14 +452,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
 
                     },
                     outputFn = { img ->
-                        renderMarkdown(
-                            "<img src='${
-                                task.saveFile(
-                                    path.toString(),
-                                    write(img, path)
-                                )
-                            }' style='max-width: 100%;'/>", ui = ui
+                      "<img src='${
+                        task.saveFile(
+                          path.toString(),
+                          write(img, path)
                         )
+                      }' style='max-width: 100%;'/>".renderMarkdown
                     },
                     ui = ui,
                     reviseResponse = { userMessages: List<Pair<String, Role>> ->
@@ -490,14 +482,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     },
                 ).call()
                 task.complete(
-                    renderMarkdown(
-                        "<img src='${
-                            task.saveFile(
-                                path.toString(),
-                                write(code, path)
-                            )
-                        }' style='max-width: 100%;'/>", ui = ui
+                  "<img src='${
+                    task.saveFile(
+                      path.toString(),
+                      write(code, path)
                     )
+                  }' style='max-width: 100%;'/>".renderMarkdown
                 )
             } catch (e: Throwable) {
                 val error = task.error(ui, e)
@@ -543,13 +533,13 @@ class WebDevelopmentAssistantAction : BaseAction() {
                         )
                     },
                     outputFn = { design: String ->
-                        var design = design
-                        languages.forEach { language ->
-                            if (design.contains("```$language")) {
-                                design = design.substringAfter("```$language").substringBefore("```")
-                            }
+                      var design = design
+                      languages.forEach { language ->
+                        if (design.contains("```$language")) {
+                          design = design.substringAfter("```$language").substringBefore("```")
                         }
-                        renderMarkdown("```${languages.first()}\n${design.let { it }}\n```", ui = ui)
+                      }
+                      "```${languages.first()}\n${design.let { it }}\n```".renderMarkdown
                     },
                     ui = ui,
                     reviseResponse = { userMessages: List<Pair<String, Role>> ->

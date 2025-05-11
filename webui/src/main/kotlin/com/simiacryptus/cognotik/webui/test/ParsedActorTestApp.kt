@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.test
 
 import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -29,12 +30,10 @@ open class ParsedActorTestApp<T : Any>(
         (api as ChatClient).budget = 2.00
         val message = ui.newTask()
         try {
-            message.echo(renderMarkdown(userMessage, ui = ui))
+            message.echo(userMessage.renderMarkdown)
             val response = actor.answer(listOf(userMessage), api = api)
             message.complete(
-                renderMarkdown(
-                    "${response.text}\n```\n${JsonUtil.toJson(response.obj)}\n```".trim(), ui = ui
-                )
+              "${response.text}\n```\n${JsonUtil.toJson(response.obj)}\n```".trim().renderMarkdown
             )
         } catch (e: Throwable) {
             log.warn("Error", e)
