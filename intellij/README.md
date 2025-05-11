@@ -9,11 +9,6 @@
 ![Cognotik Logo](https://share.simiacrypt.us/cognotik/images/public/icons/icon-512x512.png)
 
 **Cognotik** is an open-source AI coding assistant plugin for IntelliJ IDEs, focusing on powerful, high-level agentic tools rather than just code completion. Leverage generative AI directly within your IDE using a "Bring Your Own Key" (BYOK) model for maximum control over data, costs, and model choice. Enhance your development workflow with AI-powered code editing, file manipulation, complex task automation via AI agents, and voice-to-text capabilities.
-<!-- Plugin description end -->
-
-## ✨ Overview
-
-Welcome to **Cognotik**, your open-source gateway to advanced AI capabilities directly within the IntelliJ ecosystem. Licensed under Apache 2.0, Cognotik empowers developers with sophisticated agentic tools designed to tackle complex coding tasks.
 
 ### 🔑 Open Source & Bring Your Own Key (BYOK)
 
@@ -37,6 +32,7 @@ Cognotik differentiates itself by focusing on **high-level agentic capabilities*
 * Agentic tools - Leverage AI agents to perform complex tasks like refactoring, documentation generation, test creation, and workflow automation across multiple files.
 * Voice to Text - Dictate code, comments, and commands using your voice for hands-free coding.
 * Voice to Text - Dictate code and comments using voice commands
+<!-- Plugin description end -->
 
 ## 🚀 Getting Started
 
@@ -61,15 +57,6 @@ Cognotik differentiates itself by focusing on **high-level agentic capabilities*
 *   **File Actions:** Right-click on files or folders in the Project view and look for the `AI Tools` menu for operations like "Generate Documentation", "Create Unit Tests", etc.
 *   **Agentic Tools:** Access agentic features through the `AI Tools` menu or dedicated tool windows. Follow the prompts, which may involve interaction in a separate browser window for complex tasks.
 *   **Voice Control:** Activate voice input (check settings for keybindings/activation method) and speak commands or dictate code.
-
-## 🤝 Contributing
-
-Cognotik is an open-source project, and contributions are welcome! Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file (if available) or the GitHub repository's guidelines for details on how to contribute code, report issues, or suggest features.
-
-## ❓ Support
-
-*   **Issues:** Report bugs or suggest features via the [GitHub Issues](https://github.com/SimiaCryptus/intellij-aicoder/issues) page.
-*   **Discussions:** Join the conversation on the [GitHub Discussions](https://github.com/SimiaCryptus/intellij-aicoder/discussions) page.
 
 ---
 
