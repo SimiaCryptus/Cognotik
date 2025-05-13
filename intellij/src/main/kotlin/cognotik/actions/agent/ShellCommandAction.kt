@@ -90,7 +90,8 @@ class ShellCommandAction : BaseAction() {
                     symbols = mapOf(
                         "workingDir" to selectedFolder.absolutePath,
                         "language" to if (isWindows) "powershell" else "bash",
-                        "command" to listOf(AppSettingsState.instance.shellCommand)
+                        "command" to listOf(AppSettingsState.instance.shellCommand),
+                        "timeoutMinutes" to 15L // Longer timeout for IDE shell commands
                     ),
                     temperature = AppSettingsState.instance.temperature,
                     details = """

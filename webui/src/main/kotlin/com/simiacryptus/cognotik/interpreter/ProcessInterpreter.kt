@@ -17,6 +17,9 @@ open class ProcessInterpreter(
 
     final override fun getLanguage(): String = defs["language"]?.toString() ?: "bash"
     override fun getSymbols() = defs
+    // Default timeout in minutes, can be overridden via defs
+    private val timeoutMinutes: Long
+        get() = defs["timeoutMinutes"]?.toString()?.toLongOrNull() ?: 15L
 
     override fun validate(code: String): Throwable? {
 
@@ -36,10 +39,10 @@ open class ProcessInterpreter(
         val output = process.inputStream.bufferedReader().readText()
         val error = process.errorStream.bufferedReader().readText()
 
-        val waitFor = process.waitFor(5, TimeUnit.MINUTES)
+        val waitFor = process.waitFor(timeoutMinutes, TimeUnit.MINUTES)
         if (!waitFor) {
             process.destroy()
-            throw RuntimeException("Timeout; output: $output; error: $error")
+            throw RuntimeException("Process execution timed out after $timeoutMinutes minutes; output: $output; error: $error")
         } else if (error.isNotEmpty()) {
 
             return "ERROR:\n```text\n$error\n```\n\nOUTPUT:\n```text\n$output\n```"

@@ -5,6 +5,7 @@ version = properties("libraryVersion")
 subprojects {
     apply(plugin = "java")
     apply(plugin = "kotlin")
+    apply(plugin = "jacoco")
     repositories {
         mavenCentral()
     }
@@ -19,6 +20,15 @@ subprojects {
             javaParameters = true
         }
     }
+    // Configure JaCoCo for code coverage
+    tasks.withType<JacocoReport> {
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+        }
+    }
+    
     tasks.register("analyzeDependencies") {
         description = "Analyzes project dependencies for potential issues"
         doLast {
@@ -92,24 +102,6 @@ repositories {
 plugins {
     kotlin("jvm") // Version is applied globally via settings.gradle.kts
     id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
-}
-// Configure the dependency updates plugin
-tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
-    // Configure resolution strategy to only recommend stable releases
-    // Other options include: ReleaseCandidate, Milestone, Integration
-    resolutionStrategy {
-        componentSelection {
-            all {
-                if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
-                    reject("Release candidate")
-                }
-            }
-        }
-    }
-    // Optional: Output results to a file (e.g., JSON, XML, plain text)
-    // outputFormatter = "json"
-    // outputDir = "build/dependencyUpdates"
-    // reportfileName = "report"
 }
 // Helper function to check for non-stable versions (adjust keywords as needed)
 fun isNonStable(version: String): Boolean {

@@ -26,6 +26,8 @@ class RunShellCommandTask(
         val command: String? = null,
         @Description("The relative file path of the working directory")
         val workingDir: String? = null,
+    @Description("Timeout in minutes for command execution (default: 15)")
+        val timeoutMinutes: Long? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
@@ -51,6 +53,7 @@ class RunShellCommandTask(
                 ).absolutePath),
                 "language" to (planSettings.language ?: "bash"),
                 "command" to (planSettings.shellCmd),
+                "timeoutMinutes" to (planTask?.timeoutMinutes ?: 15L),
             ),
             model = planTask?.task_type?.let { planSettings.getTaskSettings(TaskType.valueOf(it)).model }
                 ?: planSettings.defaultModel,
@@ -64,6 +67,7 @@ class RunShellCommandTask(
     RunShellCommandTask - Execute ${planSettings.language ?: "bash"} shell commands and provide the output
       ** Specify the command to be executed, or describe the task to be performed
       ** Optionally specify a working directory for the command execution
+      ** Optionally specify a timeout in minutes (default: 15)
     """.trimIndent()
 
     override fun run(
