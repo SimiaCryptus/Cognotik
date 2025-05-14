@@ -45,11 +45,10 @@ class RunShellCommandTask(
         Execute the following shell command(s) and provide the output. Ensure to handle any errors or exceptions gracefully.
         Note: This task is for running simple and safe commands. Avoid executing commands that can cause harm to the system or compromise security.
         """.trimIndent(),
-      symbols = mapOf<String, Any>(
+      symbols = mapOf(
         "env" to (planSettings.env ?: emptyMap()),
-        "workingDir" to (planTask?.workingDir?.let { File(it).absolutePath } ?: File(
-          planSettings.absoluteWorkingDir
-        ).absolutePath),
+        "workingDir" to ((planTask?.workingDir?.let { File(it).absolutePath } ?: File(planSettings.absoluteWorkingDir ?: ".").absolutePath)
+          ?.let { a -> planSettings.absoluteWorkingDir?.let { b -> File(b).resolve(a) } } ?: planSettings.absoluteWorkingDir ?: "."),
         "language" to (planSettings.language ?: "bash"),
         "command" to (planSettings.shellCmd),
         "timeoutMinutes" to (planTask?.timeoutMinutes ?: 15L),
