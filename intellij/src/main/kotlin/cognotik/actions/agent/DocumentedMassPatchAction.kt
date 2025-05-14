@@ -10,7 +10,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -79,7 +79,7 @@ class DocumentedMassPatchAction : BaseAction() {
             showMenubar = false
         )
 
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
         Thread {
             Thread.sleep(500)
             try {

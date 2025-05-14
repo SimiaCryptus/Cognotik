@@ -1,0 +1,45 @@
+{
+  "name": "cognotik-task-tester",
+  "version": "1.0.0",
+  "description": "Automated testing framework for Cognotik AI platform task types",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "cognotik",
+    "ai",
+    "testing",
+    "automation",
+    "playwright"
+  ],
+  "dependencies": {
+    "commander": "^9.4.1",
+    "dotenv": "^16.0.3",
+    "fs-extra": "^11.1.0",
+    "html-pdf": "^3.0.1",
+    "playwright": "^1.30.0",
+    "puppeteer": "^21.0.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.1",
+    "@types/html-pdf": "^3.0.0",
+    "@types/jest": "^29.4.0",
+    "@types/node": "^18.13.0",
+    "@types/uuid": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.51.0",
+    "eslint": "^8.33.0",
+    "jest": "^29.4.2",
+    "prettier": "^2.8.4",
+    "ts-jest": "^29.0.5",
+    "typescript": "^4.9.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

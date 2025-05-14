@@ -6,7 +6,7 @@ import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -266,7 +266,7 @@ class UnifiedPlanAction : BaseAction() {
                 }
             })
         progress.text = "Starting server..."
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
         openBrowser(server, session.toString())
     }
 
@@ -323,7 +323,7 @@ class UnifiedPlanAction : BaseAction() {
         )
     }
 
-    private fun openBrowser(server: AppServer, session: String) {
+    private fun openBrowser(server: CognotikAppServer, session: String) {
         Thread {
             Thread.sleep(500)
             try {

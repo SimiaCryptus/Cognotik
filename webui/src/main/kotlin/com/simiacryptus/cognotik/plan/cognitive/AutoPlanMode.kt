@@ -105,7 +105,7 @@ open class AutoPlanMode(
                         dataStorage = it,
                         ui = ui,
                         root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: socketManager.dataStorage.getDataDir(user, session).toPath() ?: File(".").toPath(),
+                            ?: socketManager.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath(),
                         planSettings = planSettings
                     )
                 }

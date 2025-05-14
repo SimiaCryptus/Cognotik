@@ -11,7 +11,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -150,7 +150,7 @@ class MassPatchAction : BaseAction() {
                 showMenubar = false
             )
 
-            val server = AppServer.getServer(event.project)
+            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(project, "Opening browser") {
                 Thread.sleep(500)
                 try {

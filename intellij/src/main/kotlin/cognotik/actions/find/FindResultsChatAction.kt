@@ -13,7 +13,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -81,7 +81,7 @@ class FindResultsChatAction(
                 showMenubar = false
             )
 
-            val server = AppServer.getServer(event.project)
+            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {

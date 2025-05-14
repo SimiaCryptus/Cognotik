@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -49,7 +50,7 @@ open class UnifiedPlanApp(
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
-    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{]+)+)}""")
+    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^\n|}{)(\]\[]+)+)}""")
     private val expansionPool = Executors.newFixedThreadPool(4)
     override val stickyInput = true
     override val singleInput = cognitiveStrategy.singleInput
@@ -66,6 +67,7 @@ open class UnifiedPlanApp(
     ) {
         try {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+            settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             ui.newTask(true).expandable("Session Info", """
                 Session ID: `${session.sessionId}`
                 
@@ -75,7 +77,9 @@ open class UnifiedPlanApp(
                 
                 Root: `${settings.absoluteWorkingDir}`
                 
-                Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+                Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+                
+                Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
             """.trimIndent().renderMarkdown())
             log.debug("Received user message: $userMessage")
 

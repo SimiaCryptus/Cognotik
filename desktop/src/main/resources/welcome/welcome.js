@@ -209,8 +209,10 @@ function populateModelSelections() {
     }
     console.log('[populateModelSelections] Current taskSettings.defaultModel:', taskSettings.defaultModel, 'taskSettings.parsingModel:', taskSettings.parsingModel);
 
-    const savedDefaultModel = taskSettings.defaultModel;
-    const savedParsingModel = taskSettings.parsingModel;
+    // Get saved values from localStorage directly to ensure we're using the latest values
+    const savedDefaultModel = localStorage.getItem('defaultModel') || taskSettings.defaultModel;
+    const savedParsingModel = localStorage.getItem('parsingModel') || taskSettings.parsingModel;
+    console.log('[populateModelSelections] Retrieved from localStorage - defaultModel:', savedDefaultModel, 'parsingModel:', savedParsingModel);
 
     modelSelect.innerHTML = '';
     parsingModelSelect.innerHTML = '';
@@ -258,12 +260,16 @@ function populateModelSelections() {
 
     if (savedDefaultModel && Array.from(modelSelect.options).some(opt => opt.value === savedDefaultModel)) {
         modelSelect.value = savedDefaultModel;
-        console.log('[populateModelSelections] Restored savedDefaultModel:', savedDefaultModel);
+        console.log('[populateModelSelections] Set modelSelect.value to savedDefaultModel:', savedDefaultModel);
+        // Ensure taskSettings is updated with the restored value
+        taskSettings.defaultModel = savedDefaultModel;
+        // No need to set localStorage here as it should already have the value
     } else if (modelSelect.options.length > 0) {
 
         modelSelect.selectedIndex = 0;
 
         taskSettings.defaultModel = modelSelect.value;
+        localStorage.setItem('defaultModel', modelSelect.value);
         console.log('[populateModelSelections] Set defaultModel to first option:', modelSelect.value);
     } else {
         console.log('[populateModelSelections] No options in modelSelect, defaultModel remains:', taskSettings.defaultModel);
@@ -271,12 +277,16 @@ function populateModelSelections() {
 
     if (savedParsingModel && Array.from(parsingModelSelect.options).some(opt => opt.value === savedParsingModel)) {
         parsingModelSelect.value = savedParsingModel;
-        console.log('[populateModelSelections] Restored savedParsingModel:', savedParsingModel);
+        console.log('[populateModelSelections] Set parsingModelSelect.value to savedParsingModel:', savedParsingModel);
+        // Ensure taskSettings is updated with the restored value
+        taskSettings.parsingModel = savedParsingModel;
+        // No need to set localStorage here as it should already have the value
     } else if (parsingModelSelect.options.length > 0) {
 
         parsingModelSelect.selectedIndex = 0;
 
         taskSettings.parsingModel = parsingModelSelect.value;
+        localStorage.setItem('parsingModel', parsingModelSelect.value);
         console.log('[populateModelSelections] Set parsingModel to first option:', parsingModelSelect.value);
     } else {
         console.log('[populateModelSelections] No options in parsingModelSelect, parsingModel remains:', taskSettings.parsingModel);
@@ -386,6 +396,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     initializeTaskToggles();
     console.log('[DOMContentLoaded] initializeTaskToggles called.');
+    // Load settings from localStorage first
+    loadSavedSettings(); // Now defined
+    console.log('[DOMContentLoaded] loadSavedSettings called.');
+
 
     setupEventListeners();
     console.log('[DOMContentLoaded] setupEventListeners called.');
@@ -396,11 +410,9 @@ document.addEventListener('DOMContentLoaded', function () {
     populateWorkingDirFromHash();
     console.log('[DOMContentLoaded] populateWorkingDirFromHash called.');
 
-    populateModelSelections();
-    console.log('[DOMContentLoaded] populateModelSelections called.');
+    // populateModelSelections() is now called from loadSettingsFromServer after API keys are loaded
+    // This ensures model selections are populated with the correct available models
 
-    loadSavedSettings(); // Now defined
-    console.log('[DOMContentLoaded] loadSavedSettings called.');
 
     if (!taskSettings.taskSettings || Object.keys(taskSettings.taskSettings).length === 0) {
         saveTaskSelection();
@@ -840,6 +852,19 @@ function setupEventListeners() {
         launchButton.addEventListener('click', function () {
             console.log('[launch-session] Clicked.');
             taskSettings.workingDir = document.getElementById('working-dir').value;
+            // Ensure model selections are up-to-date in taskSettings
+            const modelSelect = document.getElementById('model-selection');
+            const parsingModelSelect = document.getElementById('parsing-model');
+            if (modelSelect) {
+                taskSettings.defaultModel = modelSelect.value;
+                localStorage.setItem('defaultModel', modelSelect.value);
+                console.log('[launch-session] Updated taskSettings.defaultModel and localStorage:', modelSelect.value);
+            }
+            if (parsingModelSelect) {
+                taskSettings.parsingModel = parsingModelSelect.value;
+                localStorage.setItem('parsingModel', parsingModelSelect.value);
+                console.log('[launch-session] Updated taskSettings.parsingModel and localStorage:', parsingModelSelect.value);
+            }
             saveTaskSelection(); // This updates taskSettings.taskSettings and localStorage
             console.log('[launch-session] Current cognitiveMode:', cognitiveMode);
             console.log('[launch-session] Current taskSettings:', JSON.parse(JSON.stringify(taskSettings)));
@@ -1264,11 +1289,9 @@ function loadSavedSettings() {
             console.log('[loadSavedSettings] Restored cognitiveMode:', savedCognitiveMode);
         }
     }
-    const modelSelect = document.getElementById('model-selection');
-    if (modelSelect && localStorage.getItem('defaultModel')) modelSelect.value = localStorage.getItem('defaultModel');
-    // taskSettings.defaultModel is already initialized from localStorage or default
-    const parsingModelSelect = document.getElementById('parsing-model');
-    if (parsingModelSelect && localStorage.getItem('parsingModel')) parsingModelSelect.value = localStorage.getItem('parsingModel');
+    // Note: Model selections will be handled in populateModelSelections
+    // after API keys are loaded, as they depend on available models
+    
     // taskSettings.parsingModel is already initialized
     const workingDirInput = document.getElementById('working-dir');
     if (workingDirInput && localStorage.getItem('workingDir')) workingDirInput.value = localStorage.getItem('workingDir');

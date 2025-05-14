@@ -32,7 +32,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-open class AppServer(
+open class CognotikApps(
     localName: String, publicName: String, port: Int
 ) : ApplicationDirectory(
     localName = localName, publicName = publicName, port = port
@@ -42,7 +42,7 @@ open class AppServer(
     private var socketThread: Thread? = null
 
     companion object {
-        private val log = LoggerFactory.getLogger(AppServer::class.java.name)
+        private val log = LoggerFactory.getLogger(CognotikApps::class.java.name)
         private const val MAX_PORT_ATTEMPTS = 10
         val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
 
@@ -76,7 +76,7 @@ open class AppServer(
             }
         }
 
-        private var server: AppServer? = null
+        private var server: CognotikApps? = null
 
 
 
@@ -100,7 +100,7 @@ open class AppServer(
             }
             scheduledExecutorService.scheduleAtFixedRate({ checkUpdate() },
                 0, 7 * 24, TimeUnit.HOURS)
-            server = AppServer(
+            server = CognotikApps(
                 localName = options.host,
                 publicName = options.publicName,
                 port = actualPort

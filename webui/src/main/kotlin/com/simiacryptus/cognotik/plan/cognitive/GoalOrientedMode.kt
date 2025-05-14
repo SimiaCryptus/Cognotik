@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
@@ -76,15 +75,7 @@ open class GoalOrientedMode(
   }
 
   private fun startGoalOrientedSession(userMessage: String, task: SessionTask) {
-    val mainTab = TabbedDisplay(task)
     task.echo("User: $userMessage".renderMarkdown())
-
-    val goalTreeTask = ui.newTask(false).apply { mainTab["Goal Tree"] = placeholder }
-    val goalTreeElement = goalTreeTask.add("Loading...".renderMarkdown())
-    fun updateGoalTreeUI() = goalTreeElement?.set(renderGoalTreeText(goalTree.values.toList()).renderMarkdown)
-    val goalsTab = TabbedDisplay(ui.newTask(false).apply { mainTab["Goals"] = placeholder })
-    val tasksTab = TabbedDisplay(ui.newTask(false).apply { mainTab["Tasks"] = placeholder })
-
 
     val stopLinkRef = AtomicReference<StringBuilder>()
     val stopLink = task.add(ui.hrefLink("Stop Goal-Oriented Processing") {
@@ -93,6 +84,18 @@ open class GoalOrientedMode(
       stopLinkRef.get()?.set("Stop signal sent. Waiting for current iteration to finish...")
     })
     stopLinkRef.set(stopLink!!)
+
+    val mainTab = TabbedDisplay(task)
+
+    val goalTreeTask = ui.newTask(false).apply { mainTab["Goal Tree"] = placeholder }
+    val goalTreeElement = goalTreeTask.add("Loading...".renderMarkdown())
+    fun updateGoalTreeUI() {
+      goalTreeElement?.set(renderGoalTreeText(goalTree.values.toList()).renderMarkdown())
+      goalTreeTask.update()
+    }
+    val goalsTab = TabbedDisplay(ui.newTask(false).apply { mainTab["Goals"] = placeholder })
+    val tasksTab = TabbedDisplay(ui.newTask(false).apply { mainTab["Tasks"] = placeholder })
+
 
     val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
     val processor = FixedConcurrencyProcessor(executor, maxConcurrency)
@@ -112,7 +115,7 @@ open class GoalOrientedMode(
       dataStorage = ui.socketManager?.dataStorage!!,
       ui = ui,
       root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: ui.socketManager!!.dataStorage?.getDataDir(user, session)?.toPath() ?: File(".").toPath(),
+        ?: ui.socketManager!!.dataStorage?.getSessionDir(user, session)?.toPath() ?: File(".").toPath(),
       planSettings = planSettings
     )
 
@@ -159,7 +162,7 @@ open class GoalOrientedMode(
         goalTab.add("# Goal: ${goal.description}\n\nID: ${goal.id}".renderMarkdown())
         
         try {
-          val (subgoals, tasksForGoal) = decomposeGoal(goal, apiClient, planSettings)
+          val (subgoals, tasksForGoal) = decomposeGoal(goal, apiClient, coordinator)
           goal.decompositionAttempted = true
           if (subgoals.isEmpty() && tasksForGoal.isEmpty()) {
             logToSession("Goal ID ${goal.id} (${goal.description}) decomposed into no subgoals or tasks.")
@@ -168,7 +171,7 @@ open class GoalOrientedMode(
           } else {
             val subgoalsList = StringBuilder("## Subgoals:\n")
             val tasksList = StringBuilder("## Tasks:\n")
-            
+
             subgoals.forEach { subgoal ->
 
               if (!goalTree.containsKey(subgoal.id)) {
@@ -359,10 +362,10 @@ open class GoalOrientedMode(
 
   private fun parseInitialGoals(userMessage: String, api: ChatClient): List<Goal> {
     val parsedActor = ParsedActor(
-      name = "GoalParser",
+      name = "InitialGoalParser",
       resultClass = GoalList::class.java,
       exampleInstance = GoalList(
-        listOf(
+        goals = listOf(
           Goal(
             id = "G1",
             description = "Implement a file upload feature",
@@ -419,13 +422,13 @@ open class GoalOrientedMode(
 
   private fun decomposeGoal(
     goal: Goal,
-    api: ChatClient,
-    planSettings: PlanSettings
+    api: ChatClient, // This should be the iteration-specific API client
+    coordinator: PlanCoordinator
   ): Pair<List<Goal>, List<Task>> {
     val parsedActor = ParsedActor(
       name = "GoalDecomposer",
       resultClass = GoalDecomposition::class.java,
-      exampleInstance = GoalDecomposition(
+      exampleInstance = GoalDecomposition( // Example should match the structure and intent
         subgoals = listOf(
           Goal(
             id = "G2",
@@ -446,14 +449,14 @@ open class GoalOrientedMode(
         )
       ),
       prompt = run {
-        val availableTaskTypes = TaskType.getAvailableTaskTypes(planSettings)
+        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
           .joinToString("\n                ") { "- ${it.name}" }
         val relatedTasksContext = goal.tasks?.mapNotNull { taskMap[it] }
           ?.filter { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.FAILED }
           ?.takeIf { it.isNotEmpty() }
           ?.joinToString("\n                ") {
             "  - Task ${it.id} (${it.description?.take(50)}...): ${it.status}, Result: ${it.result?.take(100)?.replace("\n", " ") ?: "N/A"}..."
-          }
+          }?.indent("  ") // Indent the context block
         var promptStr = """
                 Given the following goal, decide whether it can be directly addressed by a task, or if it should be broken down into subgoals.
                 If the goal is sufficiently concrete, identify the next executable task(s) for this goal.
@@ -465,18 +468,21 @@ open class GoalOrientedMode(
                 Available task types for direct execution:
                 $availableTaskTypes
             """.trimIndent()
-        if (relatedTasksContext != null) {
-          promptStr += "\n                Consider the following results from previously attempted tasks for this goal:\n                $relatedTasksContext"
+        if (!relatedTasksContext.isNullOrBlank()) {
+          promptStr += "\nConsider the following results from previously attempted tasks for this goal:\n$relatedTasksContext"
         }
         promptStr
       },
-      model = planSettings.defaultModel,
-      parsingModel = planSettings.parsingModel,
-      temperature = planSettings.temperature,
+      model = coordinator.planSettings.defaultModel,
+      parsingModel = coordinator.planSettings.parsingModel,
+      temperature = coordinator.planSettings.temperature,
       describer = describer
     )
-    // TODO: Include task execution results in query
-    val answer = parsedActor.answer(listOf(goal.description ?: ""), api)
+    val inputMessages = mutableListOf(goal.description ?: "")
+    // Add context data including the focus goal
+    inputMessages.addAll(contextData(goal.id, null))
+
+    val answer = parsedActor.answer(inputMessages, api)
     val subgoals = answer.obj.subgoals?.map { sg ->
       sg.copy(
         id = sg.id?.takeIf { it.isNotBlank() } ?: "G${goalIdCounter.getAndIncrement()}",
@@ -511,11 +517,11 @@ open class GoalOrientedMode(
     uiTask: SessionTask,
     coordinator: PlanCoordinator
   ): String {
-
-    val availableTaskTypes = TaskType.getAvailableTaskTypes(planSettings)
+    val api = api.getChildClient(uiTask)
+    val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
     val parsedActor = ParsedActor(
       name = "TaskTypeChooser",
-      resultClass = AutoPlanMode.Tasks::class.java,
+      resultClass = AutoPlanMode.Tasks::class.java, // Parse directly into TaskConfigBase
       exampleInstance = AutoPlanMode.Tasks(
         mutableListOf(
           TaskType.getAvailableTaskTypes(planSettings).firstOrNull()?.let {
@@ -524,12 +530,12 @@ open class GoalOrientedMode(
         ).filterNotNull().toMutableList()
       ),
       prompt = """
-                Given the following task description, choose the most appropriate task type and provide all required details.
+                Given the following task description and context, choose the single most appropriate task type and provide all required details.
                 Task Description: ${taskDefinition.description}
                 Available task types (and their schemas):
                 ${availableTaskTypes.joinToString("\n") { it.name }}
             """.trimIndent(),
-      model = planSettings.defaultModel,
+      model = coordinator.planSettings.defaultModel,
       parsingModel = planSettings.parsingModel,
       temperature = planSettings.temperature,
       describer = describer,
@@ -541,20 +547,17 @@ open class GoalOrientedMode(
         })
     )
     val answer = parsedActor.answer(
-      listOf(taskDefinition.description ?: "") + contextData(taskDefinition.parentGoalId, taskDefinition.id),
+      listOf(taskDefinition.description ?: "") + contextData(taskDefinition.parentGoalId, taskDefinition.id), // Pass focused context
       api
     )
-    val chosenTaskConfig = answer.obj.tasks?.firstOrNull()
-      ?: throw IllegalStateException("No task config selected for: ${taskDefinition.description}")
-
     val result = StringBuilder()
 
-    TaskType.getImpl(planSettings, chosenTaskConfig).run(
+    TaskType.getImpl(planSettings, planTask= answer.obj.tasks?.firstOrNull()).run(
       agent = coordinator,
       messages = listOf(taskDefinition.description ?: "") + contextData(),
       task = uiTask,
       api = api,
-      resultFn = { result.append(it) },
+      resultFn = { result.append(it) }, // Capture task output
       api2 = api2,
       planSettings = planSettings,
     )
@@ -574,10 +577,10 @@ open class GoalOrientedMode(
       taskMap.values.forEach { task ->
         if (task.status!! != TaskStatus.COMPLETED && task.status!! != TaskStatus.FAILED && task.status!! != TaskStatus.RUNNING) {
           val newStatus = if (areDependenciesMet(task)) {
-            TaskStatus.PENDING
+            TaskStatus.PENDING // Dependencies met, ready to run
           } else {
 
-            TaskStatus.ACTIVE_DEPENDENCY_WAIT
+            TaskStatus.ACTIVE_DEPENDENCY_WAIT // Waiting for dependencies
           }
           if (task.status!! != newStatus) {
             task.status = newStatus
@@ -590,46 +593,45 @@ open class GoalOrientedMode(
       goalTree.values.forEach { goal ->
         var newStatus = goal.status
 
-        if (goal.status!! == GoalStatus.COMPLETED || goal.status!! == GoalStatus.BLOCKED) {
-
-        } else {
+        if (goal.status!! != GoalStatus.COMPLETED && goal.status!! != GoalStatus.BLOCKED) {
           val dependenciesMet = areDependenciesMet(goal)
           val subGoals = goal.subgoals!!.mapNotNull { goalTree[it] }
-          val tasksOfGoal = goal.tasks!!.mapNotNull { taskMap[it] }
+          val directTasks = goal.tasks!!.mapNotNull { taskMap[it] }
 
           val blockingDependency = goal.dependencies!!.firstOrNull { depId -> goalTree[depId]?.status == GoalStatus.BLOCKED }
-          if (blockingDependency != null) {
+          val blockingSubGoal = subGoals.firstOrNull { it.status!! == GoalStatus.BLOCKED }
+          if (blockingDependency != null || blockingSubGoal != null) {
             newStatus = GoalStatus.BLOCKED
             goal.result =
               goal.result ?: "Blocked by dependency Goal ID: $blockingDependency (${goalTree[blockingDependency]?.description?.take(50) ?: "N/A"}...)"
           } else {
             val blockingSubGoal = subGoals.firstOrNull { it.status!! == GoalStatus.BLOCKED }
-            val failedTask = tasksOfGoal.firstOrNull { it.status!! == TaskStatus.FAILED }
+            val failedTask = directTasks.firstOrNull { it.status!! == TaskStatus.FAILED }
             if (dependenciesMet && (blockingSubGoal != null || failedTask != null)) {
-              newStatus = GoalStatus.BLOCKED
+              newStatus = GoalStatus.BLOCKED // Blocked by a failed/blocked child
               val reason = if (blockingSubGoal != null) {
                 "sub-goal ID: ${blockingSubGoal.id!!} (${blockingSubGoal.description?.take(50) ?: "N/A"}...) is BLOCKED"
               } else {
                 "task ID: ${failedTask!!.id!!} (${failedTask.description?.take(50) ?: "N/A"}...) is FAILED"
               }
               goal.result = goal.result ?: "Blocked because $reason."
-            } else if (dependenciesMet && goal.decompositionAttempted!! && subGoals.isEmpty() && tasksOfGoal.isEmpty()) {
 
-              newStatus = GoalStatus.BLOCKED
+            } else if (dependenciesMet && goal.decompositionAttempted!! && subGoals.isEmpty() && directTasks.isEmpty()) {
+              newStatus = GoalStatus.BLOCKED // Decomposed into nothing actionable
               goal.result = goal.result ?: "Decomposition yielded no actionable sub-goals or tasks, and dependencies are met."
             }
           }
 
           if (newStatus!! != GoalStatus.BLOCKED && dependenciesMet &&
-            (goal.decompositionAttempted!! || subGoals.isNotEmpty() || tasksOfGoal.isNotEmpty()) &&
+            (goal.decompositionAttempted!! || subGoals.isNotEmpty() || directTasks.isNotEmpty()) &&
             subGoals.all { it.status!! == GoalStatus.COMPLETED } &&
-            tasksOfGoal.all { it.status!! == TaskStatus.COMPLETED }
+            directTasks.all { it.status!! == TaskStatus.COMPLETED }
           ) {
             newStatus = GoalStatus.COMPLETED
             goal.result = goal.result ?: "All sub-goals and tasks completed."
-          } else if (newStatus!! != GoalStatus.BLOCKED && newStatus!! != GoalStatus.COMPLETED && !dependenciesMet) {
-            newStatus = GoalStatus.ACTIVE_DEPENDENCY_WAIT
-          } else if (newStatus != GoalStatus.BLOCKED && newStatus != GoalStatus.COMPLETED) {
+          } else if (newStatus != GoalStatus.BLOCKED && newStatus != GoalStatus.COMPLETED && !dependenciesMet) { // Still waiting for external dependencies
+           newStatus = GoalStatus.ACTIVE_DEPENDENCY_WAIT
+          } else if (newStatus != GoalStatus.BLOCKED && newStatus != GoalStatus.COMPLETED) { // Dependencies met, not blocked, not completed
             newStatus = GoalStatus.ACTIVE
           }
 
@@ -640,28 +642,30 @@ open class GoalOrientedMode(
         }
       }
       if (!changed && goalTree.any { initialGoalStatuses[it.key] != it.value.status }) changed = true
+      if (!changed && taskMap.any { initialTaskStatuses[it.key] != it.value.status }) changed = true // Re-check task status changes
 
     } while (changed)
   }
 
   private fun areDependenciesMet(item: Goal): Boolean {
     if (item.dependencies!!.isEmpty()) return true
-    return item.dependencies!!.all { depId ->
+    return item.dependencies.all { depId ->
       goalTree[depId]?.status!! == GoalStatus.COMPLETED
     }
   }
 
   private fun areDependenciesMet(item: Task): Boolean {
     if (item.dependencies!!.isEmpty()) return true
-    return item.dependencies!!.all { depId ->
-      (goalTree[depId]?.status!! == GoalStatus.COMPLETED) || (taskMap[depId]?.status!! == TaskStatus.COMPLETED)
+    return item.dependencies.all { depId ->
+      (goalTree[depId]?.status == GoalStatus.COMPLETED) || (taskMap[depId]?.status == TaskStatus.COMPLETED) // Dependency can be a Goal or a Task
     }
   }
 
 
   private fun renderGoalTreeText(goals: List<Goal>): String {
     val sb = StringBuilder("### Goal Tree Status\n")
-    fun renderNode(goal: Goal, indentStr: String) {
+
+    fun renderNode(goal: Goal, indentStr: String, visited: MutableSet<String>) {
       val statusEmoji = when (goal.status!!) {
         GoalStatus.ACTIVE -> "🟢 Active"
         GoalStatus.BLOCKED -> "🧱 Blocked"
@@ -688,16 +692,17 @@ open class GoalOrientedMode(
         }
       }
       goal.subgoals!!.mapNotNull { goalTree[it] }.forEach { subGoal ->
-        renderNode(subGoal, indentStr + "  ")
+        renderNode(subGoal, indentStr + "  ", visited)
       }
     }
 
-    val rootGoalIds = goals.map { it.id }.toSet()
+
+    val rootGoalIds = goals.mapNotNull { it.id }.toSet()
     val roots = goals.filter { it.parentGoalId == null || !rootGoalIds.contains(it.parentGoalId) }.sortedBy { it.id }
     if (roots.isEmpty() && goals.isNotEmpty()) {
-      goals.sortedBy { it.id!! }.forEach { renderNode(it, "") }
+      goals.sortedBy { it.id!! }.forEach { renderNode(it, "", mutableSetOf()) } // Start new traversal for each potential root in fallback
     } else {
-      roots.sortedBy { it.id!! }.forEach { renderNode(it, "") }
+      roots.sortedBy { it.id!! }.forEach { renderNode(it, "", mutableSetOf()) } // Start new traversal for each root
     }
     return sb.toString()
   }
@@ -706,7 +711,7 @@ open class GoalOrientedMode(
     val contextLines = mutableListOf<String>()
     contextLines.add("Current Goal-Oriented Plan State:")
     val llmContextSb = StringBuilder()
-    fun renderNodeForLlm(goal: Goal, indent: Int) {
+    fun renderNodeForLlm(goal: Goal, indent: Int, visited: MutableSet<String>) {
       val goalDeps = goal.dependencies!!.joinToString(",")
       llmContextSb.append("${"  ".repeat(indent)}- G(${goal.id!!}): ${goal.description ?: "N/A"} [${goal.status!!}] (Deps: $goalDeps)\n")
       goal.tasks!!.mapNotNull { taskMap[it] }.forEach { t ->
@@ -714,12 +719,16 @@ open class GoalOrientedMode(
         llmContextSb.append("${"  ".repeat(indent + 1)}- T(${t.id!!}): ${t.description ?: "N/A"} [${t.status!!}] (Deps: $taskDeps)\n")
       }
       goal.subgoals!!.mapNotNull { goalTree[it] }.forEach { subGoal ->
-        renderNodeForLlm(subGoal, indent + 1)
+
+        if (visited.add(subGoal.id!!)) { // Prevent infinite loops in case of cycles (though cycles aren't explicitly handled)
+          renderNodeForLlm(subGoal, indent + 1, visited)
+        } else {
+          llmContextSb.append("${"  ".repeat(indent + 1)}- G(${subGoal.id}): ... (cycle detected or already rendered)\n")
+        }
       }
     }
-
-    val rootsForLlm = goalTree.values.filter { it.parentGoalId == null }.sortedBy { it.id!! }
-    rootsForLlm.forEach { renderNodeForLlm(it, 0) }
+    val rootsForLlm = goalTree.values.filter { it.parentGoalId == null || !goalTree.containsKey(it.parentGoalId) }.sortedBy { it.id!! } // Consider nodes without known parents as roots
+    rootsForLlm.forEach { renderNodeForLlm(it, 0, mutableSetOf()) }
     contextLines.add(llmContextSb.toString())
     return contextLines
   }
@@ -740,6 +749,9 @@ open class GoalOrientedMode(
       llmContextSb.append("${"  ".repeat(indent)}- G(${goal.id!!}): ${goal.description ?: "N/A"} [${goal.status!!}] (Deps: $goalDeps)\n")
       goal.tasks!!.mapNotNull { taskMap[it] }.forEach { t ->
         val taskDeps = t.dependencies!!.joinToString(",")
+        // Add task result if available and relevant (e.g., for completed/failed tasks)
+        val taskResultSnippet = t.result?.take(50)?.replace("\n", " ")
+        if (!taskResultSnippet.isNullOrBlank()) llmContextSb.append("${"  ".repeat(indent + 1)}  Result: $taskResultSnippet...\n")
         llmContextSb.append("${"  ".repeat(indent + 1)}- T(${t.id!!}): ${t.description ?: "N/A"} [${t.status!!}] (Deps: $taskDeps)\n")
       }
       goal.subgoals!!.mapNotNull { goalTree[it] }.forEach { subGoal ->
@@ -747,7 +759,7 @@ open class GoalOrientedMode(
       }
     }
 
-    val rootsForLlm = goalTree.values.filter { it.parentGoalId == null }.sortedBy { it.id!! }
+    val rootsForLlm = goalTree.values.filter { it.parentGoalId == null || !goalTree.containsKey(it.parentGoalId) }.sortedBy { it.id!! } // Consider nodes without known parents as roots
     rootsForLlm.forEach { renderNodeForLlm(it, 0) }
     contextLines.add(llmContextSb.toString())
     return contextLines
