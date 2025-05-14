@@ -199,7 +199,7 @@ export class ResultCollector {
       const metrics = await page.evaluate(() => {
         const perfEntries = performance.getEntriesByType('navigation');
         if (perfEntries.length > 0) {
-          const navEntry = perfEntries[0] as PerformanceNavigationTiming;
+        const navEntry = perfEntries[0] as PerformanceNavigationTiming;
           return {
             domContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart,
             load: navEntry.loadEventEnd - navEntry.loadEventStart,
