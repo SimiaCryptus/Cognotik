@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.plan
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
@@ -83,6 +84,7 @@ open class PlanSettings(
 
 ) {
 
+    @get:JsonIgnore
     val absoluteWorkingDir get() = when {
         this.workingDir == null -> null//throw IllegalStateException("Working directory not set")
         this.workingDir.startsWith("~") -> File(this.workingDir.replaceFirst("~", System.getProperty("user.home"))).absolutePath
@@ -171,25 +173,6 @@ open class PlanSettings(
             describer = describer,
             parserPrompt = parserPrompt
         )
-    }
-
-    /*
-      open fun describer() = object : AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "aicoder.actions"
-      ) {
-        override val includeMethods: Boolean get() = false
-
-        override fun getEnumValues(clazz: Class<*>): List<String> {
-          return if (clazz == TaskType::class.java) {
-            taskSettings.filter { it.value.enabled }.map { it.key }
-          } else {
-            super.getEnumValues(clazz)
-          }
-        }
-      }
-      */
-    fun driver(): RemoteWebDriver {
-        return chromeDriver()
     }
 
     companion object {
