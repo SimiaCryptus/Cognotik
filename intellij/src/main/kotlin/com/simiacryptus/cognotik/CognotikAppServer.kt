@@ -14,7 +14,7 @@ import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerI
 import java.net.InetSocketAddress
 import java.util.*
 
-class AppServer(
+class CognotikAppServer(
     private val localName: String,
     private val port: Int
 ) {
@@ -42,7 +42,7 @@ class AppServer(
         val context = WebAppContext()
         JettyWebSocketServletContainerInitializer.configure(context, null)
         context.baseResource = server.baseResource
-        context.classLoader = AppServer::class.java.classLoader
+        context.classLoader = CognotikAppServer::class.java.classLoader
         context.contextPath = path
         context.welcomeFiles = arrayOf("index.html")
         server.configure(context)
@@ -55,14 +55,14 @@ class AppServer(
 
     companion object {
         @Transient
-        private var server: AppServer? = null
+        private var server: CognotikAppServer? = null
         fun isRunning(): Boolean {
             return server?.server?.isRunning ?: false
         }
 
-        fun getServer(project: Project?): AppServer {
+        fun getServer(project: Project?): CognotikAppServer {
             if (null == server || !server!!.server.isRunning) {
-                server = AppServer(
+                server = CognotikAppServer(
                     AppSettingsState.instance.listeningEndpoint,
                     AppSettingsState.instance.listeningPort
                 )

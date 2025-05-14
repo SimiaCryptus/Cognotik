@@ -14,7 +14,7 @@ import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.openapi.vcs.changes.TextRevisionNumber
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
@@ -84,7 +84,7 @@ class ChatWithCommitDiffAction : BaseAction(
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
 
         IntellijAppManager.getApplication().executeOnPooledThread {
             Thread.sleep(500)

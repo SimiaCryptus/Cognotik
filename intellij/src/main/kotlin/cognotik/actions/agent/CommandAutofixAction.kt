@@ -16,7 +16,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.CommandConfig
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -140,7 +140,7 @@ class CommandAutofixAction : BaseAction() {
                 val dateFormat = SimpleDateFormat("HH:mm:ss")
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
                 SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
-                val server = AppServer.getServer(e.project)
+                val server = CognotikAppServer.getServer(e.project)
                 Thread {
                     Thread.sleep(500)
                     try {

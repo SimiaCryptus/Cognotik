@@ -4,7 +4,7 @@ import cognotik.actions.BaseAction
 import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -71,7 +71,7 @@ class ValidateCodeAction : BaseAction() {
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
                 SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
 
-                val server = AppServer.getServer(event.project)
+                val server = CognotikAppServer.getServer(event.project)
                 Thread {
                     Thread.sleep(500)
                     try {

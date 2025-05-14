@@ -115,7 +115,7 @@ open class GoalOrientedMode(
       dataStorage = ui.socketManager?.dataStorage!!,
       ui = ui,
       root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: ui.socketManager!!.dataStorage?.getDataDir(user, session)?.toPath() ?: File(".").toPath(),
+        ?: ui.socketManager!!.dataStorage?.getSessionDir(user, session)?.toPath() ?: File(".").toPath(),
       planSettings = planSettings
     )
 

@@ -30,7 +30,7 @@ object DaemonClient {
             exitProcess(0)
         }
         if (args.isNotEmpty() && args[0].equals("server", ignoreCase = true)) {
-            AppServer.main(args)
+            CognotikApps.main(args)
         } else {
             val port = DEFAULT_PORT
             val host = DEFAULT_HOST

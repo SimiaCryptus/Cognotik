@@ -111,7 +111,7 @@ abstract class SocketManagerBase(
         override fun createFile(relativePath: String): Pair<String, File?> {
             log.debug("Saving file at path: {}", relativePath)
             trafficLog.debug("Creating file at path: {}", relativePath)
-            return Pair("fileIndex/$session/$relativePath", dataStorage?.getDataDir(owner, session)?.let { dir ->
+            return Pair("fileIndex/$session/$relativePath", dataStorage?.getSessionDir(owner, session)?.let { dir ->
                 dir.mkdirs()
                 val resolve = dir.resolve(relativePath)
                 resolve.parentFile.mkdirs()

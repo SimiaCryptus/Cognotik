@@ -18,7 +18,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.IdeaChatClient
@@ -120,7 +120,7 @@ class AnalyzeProblemAction : AnAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = AppServer.getServer(project)
+        val server = CognotikAppServer.getServer(project)
 
         Thread {
             Thread.sleep(500)

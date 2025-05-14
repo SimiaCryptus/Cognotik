@@ -7,7 +7,7 @@ import com.intellij.execution.testframework.sm.runner.SMTestProxy
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.IdeaChatClient
@@ -160,7 +160,7 @@ class TestResultAutofixAction : BaseAction() {
             showMenubar = false
         )
 
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
 
         Thread {
             Thread.sleep(500)

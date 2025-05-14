@@ -5,7 +5,7 @@ import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -145,7 +145,7 @@ class ShellCommandAction : BaseAction() {
         }
         progress.text = "Opening browser interface..."
 
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
 
         Thread {
             Thread.sleep(500)

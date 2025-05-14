@@ -4,7 +4,7 @@ import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -54,7 +54,7 @@ class GenericChatAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = AppServer.getServer(project)
+                val server = CognotikAppServer.getServer(project)
 
                 val uri = server.server.uri.resolve("/#$session")
                 ApplicationManager.getApplication().executeOnPooledThread {

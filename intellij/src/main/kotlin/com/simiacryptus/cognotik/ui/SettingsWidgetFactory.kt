@@ -11,7 +11,7 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -157,17 +157,17 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val startButton = JButton(getMessage("server.start"))
             val stopButton = JButton(getMessage("server.stop"))
 
-            startButton.isEnabled = !AppServer.isRunning()
-            stopButton.isEnabled = AppServer.isRunning()
+            startButton.isEnabled = !CognotikAppServer.isRunning()
+            stopButton.isEnabled = CognotikAppServer.isRunning()
 
             startButton.addActionListener {
-                AppServer.getServer(project)
+                CognotikAppServer.getServer(project)
                 startButton.isEnabled = false
                 stopButton.isEnabled = true
                 updateSessionsList()
             }
             stopButton.addActionListener {
-                AppServer.getServer(project).server.stop()
+                CognotikAppServer.getServer(project).server.stop()
                 startButton.isEnabled = true
                 stopButton.isEnabled = false
                 updateSessionsList()
@@ -384,7 +384,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getTooltipText(): String {
-            val serverStatus = if (AppServer.isRunning()) {
+            val serverStatus = if (CognotikAppServer.isRunning()) {
                 "Server running on ${AppSettingsState.instance.listeningEndpoint}:${AppSettingsState.instance.listeningPort}"
             } else {
                 "Server stopped"

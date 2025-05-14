@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
@@ -52,7 +52,7 @@ class CodeChatAction : BaseAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
 
         Thread {
             Thread.sleep(500)
