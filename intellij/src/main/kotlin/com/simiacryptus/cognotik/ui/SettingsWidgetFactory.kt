@@ -37,11 +37,28 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
     class SettingsWidget : StatusBarWidget, StatusBarWidget.MultipleTextValuesPresentation {
 
         private var statusBar: StatusBar? = null
-        private val smartModelTree by lazy { createModelTree("Smart Model", AppSettingsState.instance.smartModel) }
-        private val fastModelTree by lazy { createModelTree("Fast Model", AppSettingsState.instance.fastModel) }
+        private var smartModelTree: Tree? = null
+        private var fastModelTree: Tree? = null
         private var project: Project? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
+        private fun getSmartModelTree(): Tree {
+            if (smartModelTree == null) {
+                smartModelTree = createModelTree("Smart Model", AppSettingsState.instance.smartModel)
+            }
+            return smartModelTree!!
+        }
+        private fun getFastModelTree(): Tree {
+            if (fastModelTree == null) {
+                fastModelTree = createModelTree("Fast Model", AppSettingsState.instance.fastModel)
+            }
+            return fastModelTree!!
+        }
+        private fun recreateModelTrees() {
+            smartModelTree = null
+            fastModelTree = null
+        }
+
         private fun createModelTree(title: String, selectedModel: String?): Tree {
             val root = DefaultMutableTreeNode(title)
 
@@ -87,7 +104,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tree.addTreeSelectionListener {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
-
                     val modelName = selectedPath.lastPathComponent.toString()
                     when (title) {
                         "Smart Model" -> AppSettingsState.instance.smartModel = modelName
@@ -107,15 +123,11 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         private val temperatureSlider by lazy {
             val slider = JSlider(0, 100, (AppSettingsState.instance.temperature * 100).toInt())
-
             slider.accessibleContext.accessibleDescription = getMessage("slider.description")
-
             slider.majorTickSpacing = 10
             slider.minorTickSpacing = 1
             slider.snapToTicks = true
             val panel = JPanel(BorderLayout(5, 5))
-
-
             val reasoningPanel = JPanel(FlowLayout(FlowLayout.LEFT))
             val reasoningLabel = JLabel(getMessage("label.reasoningEffort"))
             val reasoningCombo = JComboBox(arrayOf("Low", "Medium", "High"))
@@ -266,18 +278,28 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         init {
-            AppSettingsState.instance.onSettingsLoadedListeners.add {
+            AppSettingsState.Companion.onSettingsLoadedListeners.add {
                 statusBar?.updateWidget(ID())
+                // Recreate model trees when settings are loaded
+                recreateModelTrees()
+               SwingUtilities.invokeLater {
+                   if (AppSettingsState.instance.smartModel.isNotEmpty()) {
+                       setSelectedModel(getSmartModelTree(), AppSettingsState.instance.smartModel)
+                   }
+                   if (AppSettingsState.instance.fastModel.isNotEmpty()) {
+                       setSelectedModel(getFastModelTree(), AppSettingsState.instance.fastModel)
+                   }
+               }
             }
 
             if (AppSettingsState.instance.smartModel.isNotEmpty()) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(smartModelTree, AppSettingsState.instance.smartModel)
+                    setSelectedModel(getSmartModelTree(), AppSettingsState.instance.smartModel)
                 }
             }
             if (AppSettingsState.instance.fastModel.isNotEmpty()) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(fastModelTree, AppSettingsState.instance.fastModel)
+                    setSelectedModel(getFastModelTree(), AppSettingsState.instance.fastModel)
                 }
             }
         }
@@ -351,10 +373,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tabbedPane.accessibleContext.accessibleDescription = getMessage("tabs.description")
 
             val smartModelPanel = JPanel(BorderLayout())
-            smartModelPanel.add(JScrollPane(smartModelTree), BorderLayout.CENTER)
+            smartModelPanel.add(JScrollPane(getSmartModelTree()), BorderLayout.CENTER)
 
             val fastModelPanel = JPanel(BorderLayout())
-            fastModelPanel.add(JScrollPane(fastModelTree), BorderLayout.CENTER)
+            fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
 
             val usagePanel = JPanel(BorderLayout())
             usagePanel.add(UsageTable(ApplicationServices.usageManager), BorderLayout.CENTER)

@@ -22,3 +22,4 @@ metadata.script
 node_modules/
 metadata.*
 .DS_Store
+test_config.json

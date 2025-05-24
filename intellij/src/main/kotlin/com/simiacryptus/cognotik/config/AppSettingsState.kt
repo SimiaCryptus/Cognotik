@@ -96,8 +96,6 @@ data class AppSettingsState(
     val recentArguments: MutableList<String>? = mutableListOf(),
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
 ) : PersistentStateComponent<SimpleEnvelope> {
-    @JsonIgnore
-    var onSettingsLoadedListeners = mutableListOf<() -> Unit>()
 
     @JsonIgnore
     override fun getState(): SimpleEnvelope {
@@ -195,10 +193,6 @@ data class AppSettingsState(
             apiKeys?.set(key, value)
         }
         notifySettingsLoaded()
-    }
-
-    private fun notifySettingsLoaded() {
-        onSettingsLoadedListeners.forEach { it() }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -300,6 +294,12 @@ data class AppSettingsState(
         }
 
         fun getDefaultShell() = if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
+
+        @JsonIgnore
+        var onSettingsLoadedListeners = mutableListOf<() -> Unit>()
+        fun notifySettingsLoaded() {
+            onSettingsLoadedListeners.forEach { it() }
+        }
     }
 
     data class UserSuppliedModel(

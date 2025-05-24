@@ -25,7 +25,7 @@ import org.eclipse.jetty.webapp.WebAppContext
 import java.io.File
 import java.util.concurrent.Executors
 
-object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.ApplicationDirectory(port = 8082) {
+object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.ApplicationDirectory(port = 7092) {
 
     data class TestJokeDataStructure(
         val setup: String? = null,

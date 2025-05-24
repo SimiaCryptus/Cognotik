@@ -39,7 +39,7 @@ data class RecordingConfig(
     val preferredSoundInput: String = "Primary Sound Driver",
     val splashScreenDuration: Long = 5000,
     val splashScreenDelay: Long = 10000,
-    val fileFormat: String = FormatKeys.MIME_AVI,
+    val fileFormat: String = MIME_AVI,
     val videoEncoding: String = VideoFormatKeys.ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
     val mousePointerColor: String = "black",
     val outputFileNamePattern: String = "%s.%s.avi",
@@ -72,26 +72,7 @@ open class ScreenRec(
         log.info("Audio Mixer: ${mixerInfo}")
         var hasValidLine = false
         AudioSystem.getMixer(mixerInfo).use { mixer ->
-            mixer.sourceLineInfo.map { sourceLineInfo: Line.Info ->
-                /*log.info(" Audio Mixer Source Line: $sourceLineInfo (${sourceLineInfo.javaClass.canonicalName})")
-                if (sourceLineInfo is DataLine.Info) {
-                  sourceLineInfo.lineClass?.let { lineClass ->
-                    log.info("  Source Line Class: $lineClass")
-                  }
-                  sourceLineInfo.formats.forEach { format ->
-                    log.info("  Audio Mixer Source Line Format: $format; Channels: ${format.channels}; Sample Rate: ${format.sampleRate}")
-                  }
-                  hasValidLine = true
-                }
-                if (sourceLineInfo is Port.Info) {
-                  sourceLineInfo.lineClass?.let { lineClass ->
-                    log.info("  Source Line Class: $lineClass")
-                  }
-                  sourceLineInfo.isSource?.let { isSource ->
-                    log.info("  Source Line is Source: $isSource")
-                  }
-                }*/
-            }.firstOrNull() ?: log.warn("No audio source line found")
+            mixer.sourceLineInfo.firstOrNull() ?: log.warn("No audio source line found")
             mixer.targetLineInfo.map { targetLineInfo: Line.Info ->
                 log.info(" Audio Mixer Target Line: $targetLineInfo (${targetLineInfo.javaClass.canonicalName})")
                 if (targetLineInfo is DataLine.Info) {
@@ -124,34 +105,34 @@ open class ScreenRec(
 
                 val fileFormat = Format(
                     MediaTypeKey, MediaType.FILE,
-                    FormatKeys.MimeTypeKey, recordingConfig.fileFormat,
+                    MimeTypeKey, recordingConfig.fileFormat,
                 )
                 val screenFormat = Format(
                     MediaTypeKey,
                     MediaType.VIDEO,
-                    FormatKeys.EncodingKey, recordingConfig.videoEncoding,
+                    EncodingKey, recordingConfig.videoEncoding,
                     VideoFormatKeys.CompressorNameKey, recordingConfig.videoEncoding,
                     VideoFormatKeys.DepthKey, recordingConfig.videoDepth,
-                    FormatKeys.FrameRateKey, recordingConfig.frameRate,
+                    FrameRateKey, recordingConfig.frameRate,
                     VideoFormatKeys.QualityKey, recordingConfig.videoQuality,
-                    FormatKeys.KeyFrameIntervalKey, recordingConfig.keyFrameInterval
+                    KeyFrameIntervalKey, recordingConfig.keyFrameInterval
                 )
                 val mouseFormat = Format(
                     MediaTypeKey, MediaType.VIDEO,
-                    FormatKeys.EncodingKey, recordingConfig.mousePointerColor,
-                    FormatKeys.FrameRateKey, recordingConfig.frameRate
+                    EncodingKey, recordingConfig.mousePointerColor,
+                    FrameRateKey, recordingConfig.frameRate
                 )
                 val audioFormat = try {
                     if (recordingConfig.enableAudio) {
                         Format(
                             MediaTypeKey, MediaType.AUDIO,
-                            FormatKeys.EncodingKey, AudioFormatKeys.ENCODING_AVI_PCM,
+                            EncodingKey, ENCODING_AVI_PCM,
                             SampleRateKey, Rational.valueOf(44100.0),
 
                             SampleSizeInBitsKey, recordingConfig.sampleSize,
                             ChannelsKey, recordingConfig.audioChannels,
-                            AudioFormatKeys.FrameSizeKey, 2,
-                            AudioFormatKeys.SignedKey, true,
+                            FrameSizeKey, 2,
+                            SignedKey, true,
                             ByteOrderKey, java.nio.ByteOrder.BIG_ENDIAN,
                         )
                     } else {
