@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.ui
+package com.simiacryptus.cognotik
 
 import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.project.Project
@@ -11,26 +11,42 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.UsageTable
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.jopenai.models.ChatModel
 import icons.MyIcons
-import java.awt.*
+import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.FlowLayout
+import java.awt.GridLayout
+import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
 import java.net.URI
-import java.util.*
+import java.util.ResourceBundle
 import javax.accessibility.AccessibleContext
-import javax.swing.*
+import javax.swing.DefaultListModel
+import javax.swing.JButton
+import javax.swing.JComboBox
+import javax.swing.JLabel
+import javax.swing.JList
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JSlider
+import javax.swing.JTabbedPane
+import javax.swing.JTree
+import javax.swing.KeyStroke
+import javax.swing.ListCellRenderer
+import javax.swing.SwingUtilities
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
+import kotlin.collections.iterator
 
 class SettingsWidgetFactory : StatusBarWidgetFactory {
 
@@ -44,13 +60,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private val sessionsListModel = DefaultListModel<Session>()
         private fun getSmartModelTree(): Tree {
             if (smartModelTree == null) {
-                smartModelTree = createModelTree("Smart Model", AppSettingsState.instance.smartModel)
+                smartModelTree = createModelTree("Smart Model", AppSettingsState.Companion.instance.smartModel)
             }
             return smartModelTree!!
         }
         private fun getFastModelTree(): Tree {
             if (fastModelTree == null) {
-                fastModelTree = createModelTree("Fast Model", AppSettingsState.instance.fastModel)
+                fastModelTree = createModelTree("Fast Model", AppSettingsState.Companion.instance.fastModel)
             }
             return fastModelTree!!
         }
@@ -65,7 +81,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val providers = models()
                 .filter { model ->
                     val providerName = model.second.provider.name
-                    AppSettingsState.instance.apiKeys?.get(providerName)?.isNotEmpty() == true
+                    AppSettingsState.Companion.instance.apiKeys?.get(providerName)?.isNotEmpty() == true
                 }
                 .groupBy { it.second.provider }
 
@@ -106,8 +122,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
                     when (title) {
-                        "Smart Model" -> AppSettingsState.instance.smartModel = modelName
-                        "Fast Model" -> AppSettingsState.instance.fastModel = modelName
+                        "Smart Model" -> AppSettingsState.Companion.instance.smartModel = modelName
+                        "Fast Model" -> AppSettingsState.Companion.instance.fastModel = modelName
                     }
                     statusBar?.updateWidget(ID())
                 }
@@ -122,7 +138,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         private val temperatureSlider by lazy {
-            val slider = JSlider(0, 100, (AppSettingsState.instance.temperature * 100).toInt())
+            val slider = JSlider(0, 100, (AppSettingsState.Companion.instance.temperature * 100).toInt())
             slider.accessibleContext.accessibleDescription = getMessage("slider.description")
             slider.majorTickSpacing = 10
             slider.minorTickSpacing = 1
@@ -131,14 +147,14 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val reasoningPanel = JPanel(FlowLayout(FlowLayout.LEFT))
             val reasoningLabel = JLabel(getMessage("label.reasoningEffort"))
             val reasoningCombo = JComboBox(arrayOf("Low", "Medium", "High"))
-            reasoningCombo.selectedItem = AppSettingsState.instance.reasoningEffort
+            reasoningCombo.selectedItem = AppSettingsState.Companion.instance.reasoningEffort
             reasoningCombo.addActionListener {
-                AppSettingsState.instance.reasoningEffort = reasoningCombo.selectedItem as String
+                AppSettingsState.Companion.instance.reasoningEffort = reasoningCombo.selectedItem as String
             }
             reasoningPanel.add(reasoningLabel)
             reasoningPanel.add(reasoningCombo)
 
-            val label = JLabel(String.format("%.2f", AppSettingsState.instance.temperature))
+            val label = JLabel(String.format("%.2f", AppSettingsState.Companion.instance.temperature))
             label.accessibleContext.accessibleDescription = getMessage("label.temperature")
             slider.addChangeListener {
                 slider.accessibleContext.firePropertyChange(
@@ -146,7 +162,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     null,
                     getMessage("slider.value", slider.value / 100.0)
                 )
-                AppSettingsState.instance.temperature = slider.value / 100.0
+                AppSettingsState.Companion.instance.temperature = slider.value / 100.0
                 label.text = String.format("%.2f", slider.value / 100.0)
             }
 
@@ -218,7 +234,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             openButton.addActionListener {
                 val session = sessionsList.selectedValue
                 if (session != null) {
-                    browse(URI(getSessionLink(session)))
+                    BrowseUtil.browse(URI(getSessionLink(session)))
                 }
             }
             actionPanel.add(copyButton)
@@ -230,7 +246,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         fun updateSessionsList() {
             sessionsListModel.clear()
-            (SessionProxyServer.chats.keys + SessionProxyServer.agents.keys).distinct().forEach {
+            (SessionProxyServer.Companion.chats.keys + SessionProxyServer.Companion.agents.keys).distinct().forEach {
                 sessionsListModel.addElement(it)
             }
         }
@@ -247,7 +263,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 label.text = if (value != null) {
                     try {
                         val sessionName =
-                            ApplicationServices.metadataStorageFactory(dataStorageRoot).getSessionName(null, value)
+                            ApplicationServices.metadataStorageFactory(ApplicationServicesConfig.dataStorageRoot).getSessionName(null, value)
                         when {
                             sessionName.isNullOrBlank() -> getDefaultSessionLabel(value)
                             else -> "$sessionName (${value.sessionId.take(8)})"
@@ -283,28 +299,28 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 // Recreate model trees when settings are loaded
                 recreateModelTrees()
                SwingUtilities.invokeLater {
-                   if (AppSettingsState.instance.smartModel.isNotEmpty()) {
-                       setSelectedModel(getSmartModelTree(), AppSettingsState.instance.smartModel)
+                   if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
+                       setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
                    }
-                   if (AppSettingsState.instance.fastModel.isNotEmpty()) {
-                       setSelectedModel(getFastModelTree(), AppSettingsState.instance.fastModel)
+                   if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
+                       setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
                    }
                }
             }
 
-            if (AppSettingsState.instance.smartModel.isNotEmpty()) {
+            if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getSmartModelTree(), AppSettingsState.instance.smartModel)
+                    setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
                 }
             }
-            if (AppSettingsState.instance.fastModel.isNotEmpty()) {
+            if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getFastModelTree(), AppSettingsState.instance.fastModel)
+                    setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
                 }
             }
         }
 
-        fun models() = ChatModel.values().filter { it.value != null && isVisible(it.value!!) }.toList()
+        fun models() = ChatModel.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
             .sortedBy { "${it.second.provider.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
@@ -402,19 +418,19 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getSelectedValue(): String {
-            return AppSettingsState.instance.smartModel
+            return AppSettingsState.Companion.instance.smartModel
         }
 
         override fun getTooltipText(): String {
             val serverStatus = if (CognotikAppServer.isRunning()) {
-                "Server running on ${AppSettingsState.instance.listeningEndpoint}:${AppSettingsState.instance.listeningPort}"
+                "Server running on ${AppSettingsState.Companion.instance.listeningEndpoint}:${AppSettingsState.Companion.instance.listeningPort}"
             } else {
                 "Server stopped"
             }
             return """
-        Smart Model: ${AppSettingsState.instance.smartModel}<br/>
-        Fast Model: ${AppSettingsState.instance.fastModel}<br/>
-        Temperature: ${AppSettingsState.instance.temperature}<br/>
+        Smart Model: ${AppSettingsState.Companion.instance.smartModel}<br/>
+        Fast Model: ${AppSettingsState.Companion.instance.fastModel}<br/>
+        Temperature: ${AppSettingsState.Companion.instance.temperature}<br/>
         $serverStatus
         """.trimIndent().trim()
         }
@@ -429,7 +445,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 String.format(messages.getString(key), *args)
 
             fun getSessionLink(session: Session) =
-                "http://${AppSettingsState.instance.listeningEndpoint}:${AppSettingsState.instance.listeningPort}/#${session.sessionId}"
+                "http://${AppSettingsState.Companion.instance.listeningEndpoint}:${AppSettingsState.Companion.instance.listeningPort}/#${session.sessionId}"
         }
 
     }

@@ -12,8 +12,8 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.UITools.getIndent
 import com.simiacryptus.cognotik.util.UITools.insertString
-import com.simiacryptus.cognotik.util.psi.PsiUtil.getAll
-import com.simiacryptus.cognotik.util.psi.PsiUtil.getSmallestIntersecting
+import com.simiacryptus.cognotik.util.PsiUtil.getAll
+import com.simiacryptus.cognotik.util.PsiUtil.getSmallestIntersecting
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import com.simiacryptus.util.StringUtil

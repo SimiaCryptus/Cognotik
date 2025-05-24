@@ -1,4 +1,4 @@
-﻿package com.simiacryptus.cognotik.util.psi
+package com.simiacryptus.cognotik.util
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -6,7 +6,9 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.simiacryptus.util.StringUtil
-import java.util.*
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.HashSet
 import java.util.concurrent.atomic.AtomicReference
 import java.util.stream.Collectors
 import java.util.stream.Stream
