@@ -9,6 +9,7 @@ describe('Cognotik App Launcher', () => {
         // Step 1: Configure API Settings
         cy.loadTestConfig().then((config) => {
             cy.get('#user-settings-btn').click();
+            cy.get('#api-key-Anthropic').clear()
             cy.get('#api-key-Anthropic').type(config.apiKeys?.Anthropic || 'test-anthropic-key');
             cy.get('#save-user-settings').click();
             cy.get('.modal').should('not.be.visible');

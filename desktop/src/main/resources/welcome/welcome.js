@@ -19,7 +19,7 @@ function generateSessionIdWithDate(date) {
 class AppState {
     constructor(dependencies = {}) {
         this.localStorage = dependencies.localStorage || window.localStorage;
-        this.sessionId = dependencies.sessionId || generateSessionId();
+        this.sessionId = dependencies.sessionId || null; // Don't generate here, let it be set when needed
         this.apiSettings = {};
         this.taskSettings = this.initializeTaskSettings();
         this.cognitiveMode = this.localStorage.getItem('cognitiveMode') || 'single-task';
@@ -562,8 +562,8 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem('basicChatTemperature', temperature);
         localStorage.setItem('basicChatBudget', budget);
         console.log('[DOMContentLoaded] Saved basic chat settings to localStorage.');
-        // Generate session id
-        const chatSessionId = generateSessionId();
+        // Use the global session id to ensure consistency
+        const chatSessionId = sessionId;
         console.log('[DOMContentLoaded] Generated chatSessionId for basic chat:', chatSessionId);
         // Post settings to chat app endpoint
         fetch(`/chat/settings`, {
@@ -600,6 +600,10 @@ function saveSessionSettingsToServer(dependencies = {}) {
 
     console.log('[saveSessionSettingsToServer] Called. Saving session settings to server.');
     console.log('[saveSessionSettingsToServer] Current cognitiveMode:', state.cognitiveMode);
+    // Ensure we're using the global sessionId consistently
+    const currentSessionId = state.sessionId || sessionId;
+    console.log('[saveSessionSettingsToServer] Using sessionId:', currentSessionId);
+    
     // Ensure taskSettings reflects the latest from UI elements if not already handled by individual listeners
     // For example, workingDir is directly read by launch button, but good to ensure it's in taskSettings
     // The workingDir input listener already updates taskSettings.workingDir and localStorage.
@@ -609,7 +613,7 @@ function saveSessionSettingsToServer(dependencies = {}) {
     // due to their respective event listeners.
     // saveTaskSelection() should be called before this if task selections need to be included and are changing.
     console.log('[saveSessionSettingsToServer] Current taskSettings:', JSON.parse(JSON.stringify(state.taskSettings)));
-    return http.saveSessionSettings(state.sessionId, state.taskSettings, state.cognitiveMode)
+    return http.saveSessionSettings(currentSessionId, state.taskSettings, state.cognitiveMode)
         .then(response => {
             if (!response.ok) {
                 console.error('[saveSessionSettingsToServer] Failed to save session settings. Status:', response.status);
@@ -772,6 +776,7 @@ function initializeTaskToggles() {
         temperatureValue.textContent = this.value;
 
         taskSettings.temperature = parseFloat(this.value);
+        appState.taskSettings.temperature = parseFloat(this.value);
         localStorage.setItem('temperature', this.value);
         console.log('[initializeTaskToggles] Temperature changed to:', this.value, 'Updated taskSettings.temperature and localStorage.');
     });
@@ -859,22 +864,44 @@ function setupEventListeners() {
     if (launchButton) {
         launchButton.addEventListener('click', function () {
             console.log('[launch-session] Clicked.');
-            taskSettings.workingDir = document.getElementById('working-dir').value;
+            // Ensure all current UI values are captured in taskSettings
+            const workingDirInput = document.getElementById('working-dir');
+            if (workingDirInput) {
+                taskSettings.workingDir = workingDirInput.value;
+                appState.taskSettings.workingDir = workingDirInput.value;
+            }
+            
             // Ensure model selections are up-to-date in taskSettings
             const modelSelect = document.getElementById('model-selection');
             const parsingModelSelect = document.getElementById('parsing-model');
             if (modelSelect) {
                 taskSettings.defaultModel = modelSelect.value;
+                appState.taskSettings.defaultModel = modelSelect.value;
                 localStorage.setItem('defaultModel', modelSelect.value);
                 console.log('[launch-session] Updated taskSettings.defaultModel and localStorage:', modelSelect.value);
             }
             if (parsingModelSelect) {
                 taskSettings.parsingModel = parsingModelSelect.value;
+                appState.taskSettings.parsingModel = parsingModelSelect.value;
                 localStorage.setItem('parsingModel', parsingModelSelect.value);
                 console.log('[launch-session] Updated taskSettings.parsingModel and localStorage:', parsingModelSelect.value);
             }
+            // Ensure temperature is up-to-date
+            const temperatureSlider = document.getElementById('temperature');
+            if (temperatureSlider) {
+                taskSettings.temperature = parseFloat(temperatureSlider.value);
+                appState.taskSettings.temperature = parseFloat(temperatureSlider.value);
+                localStorage.setItem('temperature', temperatureSlider.value);
+            }
+            // Ensure autoFix is up-to-date
+            const autoFixCheckbox = document.getElementById('auto-fix');
+            if (autoFixCheckbox) {
+                taskSettings.autoFix = autoFixCheckbox.checked;
+                appState.taskSettings.autoFix = autoFixCheckbox.checked;
+                localStorage.setItem('autoFix', autoFixCheckbox.checked);
+            }
+            
             saveTaskSelection(); // This updates taskSettings.taskSettings and localStorage
-            console.log('[launch-session] Current cognitiveMode:', cognitiveMode);
             console.log('[launch-session] Current taskSettings:', JSON.parse(JSON.stringify(taskSettings)));
             console.log('[launch-session] Current apiSettings (relevant parts might be on server):', Object.keys(apiSettings.apiKeys || {}));
             if (!validateConfiguration()) {
@@ -883,7 +910,7 @@ function setupEventListeners() {
             }
             console.log('[launch-session] Validation passed.');
             let targetPath;
-            cognitiveMode = document.querySelector('input[name="cognitive-mode"]:checked')?.value || cognitiveMode;
+            let cognitiveMode = document.querySelector('input[name="cognitive-mode"]:checked')?.value || cognitiveMode;
             switch (cognitiveMode) {
                 case 'single-task':
                     targetPath = '/taskChat'; // Maps to TaskChatMode in UnifiedPlanApp
@@ -967,6 +994,7 @@ function setupEventListeners() {
         console.log('[setupEventListeners] Adding change listener for model-selection.');
         modelSelect.addEventListener('change', function () {
             taskSettings.defaultModel = this.value;
+            appState.taskSettings.defaultModel = this.value;
             localStorage.setItem('defaultModel', this.value);
             console.log('[setupEventListeners] defaultModel changed to:', this.value, 'Updated taskSettings and localStorage.');
         });
@@ -976,6 +1004,7 @@ function setupEventListeners() {
         console.log('[setupEventListeners] Adding change listener for parsing-model.');
         parsingModelSelect.addEventListener('change', function () {
             taskSettings.parsingModel = this.value;
+            appState.taskSettings.parsingModel = this.value;
             localStorage.setItem('parsingModel', this.value);
             console.log('[setupEventListeners] parsingModel changed to:', this.value, 'Updated taskSettings and localStorage.');
         });
@@ -985,6 +1014,7 @@ function setupEventListeners() {
         console.log('[setupEventListeners] Adding change listener for auto-fix.');
         autoFixCheckbox.addEventListener('change', function () {
             taskSettings.autoFix = this.checked;
+            appState.taskSettings.autoFix = this.checked;
             localStorage.setItem('autoFix', this.checked);
             console.log('[setupEventListeners] autoFix changed to:', this.checked, 'Updated taskSettings and localStorage.');
         });
@@ -1009,6 +1039,7 @@ function setupEventListeners() {
                 }
                 if (keyInTaskSettings && !isNaN(value)) {
                     taskSettings[keyInTaskSettings] = value;
+                    appState.taskSettings[keyInTaskSettings] = value;
                     if (localStorageKey) {
                         localStorage.setItem(localStorageKey, String(value));
                     }
@@ -1022,6 +1053,7 @@ function setupEventListeners() {
         console.log('[setupEventListeners] Adding change listener for graph-file.');
         graphFileInput.addEventListener('change', function () {
             taskSettings.graphFile = this.value;
+            appState.taskSettings.graphFile = this.value;
             localStorage.setItem('graphFile', this.value);
             console.log('[setupEventListeners] graphFile changed to:', this.value, 'Updated taskSettings and localStorage.');
         });
@@ -1032,6 +1064,7 @@ function setupEventListeners() {
         // Using 'change' instead of 'input' for file paths is usually better
         workingDirInput.addEventListener('change', function () {
             taskSettings.workingDir = this.value;
+            appState.taskSettings.workingDir = this.value;
             localStorage.setItem('workingDir', this.value);
             console.log('[setupEventListeners] workingDir changed to:', this.value, 'Updated taskSettings and localStorage.');
         });
@@ -1051,6 +1084,7 @@ function setupEventListeners() {
                 document.getElementById('auto-plan-settings').style.display = 'block';
             }
             cognitiveMode = this.value; // Update global cognitiveMode variable
+            appState.cognitiveMode = this.value;
             localStorage.setItem('cognitiveMode', this.value);
         });
     });
@@ -1419,8 +1453,12 @@ function saveTaskSelection(dependencies = {}) {
     console.log('[saveTaskSelection] Saved enabledTasks to localStorage and taskSettings.taskSettings:', JSON.stringify(currentEnabledTasks));
 }
 
+// Initialize sessionId globally - this will be used consistently throughout the app
 let sessionId = generateSessionId();
 console.log('[Global] Initial sessionId:', sessionId);
+// Update appState to use the global sessionId
+appState.sessionId = sessionId;
+
 let apiSettings = {
     apiKeys: {},
     apiBase: {},
