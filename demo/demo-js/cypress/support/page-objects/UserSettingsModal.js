@@ -1,4 +1,3 @@
-// cypress/support/page-objects/UserSettingsModal.js
 class UserSettingsModal {
     // Selectors
     get modal() { return cy.get('#user-settings-modal'); }
@@ -16,9 +15,27 @@ class UserSettingsModal {
         return this;
     }
 
+    setApiKeyFromConfig(provider) {
+        cy.loadTestConfig().then((config) => {
+            const key = config.apiKeys?.[provider] || `test-${provider.toLowerCase()}-key`;
+            this.setApiKey(provider, key);
+        });
+        return this;
+    }
+
     setMultipleApiKeys(keys) {
         Object.entries(keys).forEach(([provider, key]) => {
             this.setApiKey(provider, key);
+        });
+        return this;
+    }
+
+    setMultipleApiKeysFromConfig(providers) {
+        cy.loadTestConfig().then((config) => {
+            providers.forEach(provider => {
+                const key = config.apiKeys?.[provider] || `test-${provider.toLowerCase()}-key`;
+                this.setApiKey(provider, key);
+            });
         });
         return this;
     }

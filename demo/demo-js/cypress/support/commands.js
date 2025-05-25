@@ -1,4 +1,15 @@
 // cypress/support/commands.js
+// Custom command to load test config
+Cypress.Commands.add('loadTestConfig', () => {
+    return cy.readFile('/home/andrew/code/Cognotik/demo/test_config.json');
+});
+// Custom command to get API key from test config
+Cypress.Commands.add('getApiKey', (provider) => {
+    return cy.loadTestConfig().then((config) => {
+        return config.apiKeys?.[provider] || '';
+    });
+});
+
 
 // Custom command to clear all application data
 Cypress.Commands.add('clearAppData', () => {
@@ -11,6 +22,19 @@ Cypress.Commands.add('clearAppData', () => {
 
 // Custom command to setup API keys
 Cypress.Commands.add('setupApiKeys', (providers = ['OpenAI']) => {
+    cy.loadTestConfig().then((config) => {
+        cy.get('#user-settings-btn').click();
+        providers.forEach(provider => {
+            const apiKey = config.apiKeys?.[provider] || `test-${provider.toLowerCase()}-key`;
+            cy.get(`#api-key-${provider}`).clear().type(apiKey);
+        });
+        cy.get('#save-user-settings').click();
+        cy.get('.modal').should('not.be.visible');
+    });
+});
+
+// Legacy version for backwards compatibility
+Cypress.Commands.add('setupApiKeysLegacy', (providers = ['OpenAI']) => {
     cy.get('#user-settings-btn').click();
     providers.forEach(provider => {
         cy.get(`#api-key-${provider}`).clear().type(`test-${provider.toLowerCase()}-key`);

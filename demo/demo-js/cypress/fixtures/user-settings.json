@@ -18,19 +18,5 @@
     },
     "localTools": []
   },
-  "testUserSettings": {
-    "apiKeys": {
-      "OpenAI": "sk-test-openai-key",
-      "Anthropic": "sk-ant-test-anthropic-key",
-      "Google": "test-google-key"
-    },
-    "apiBase": {
-      "GoogleSearch": "test-search-engine-id"
-    },
-    "localTools": [
-      "/usr/bin/git",
-      "/usr/bin/docker",
-      "/usr/local/bin/node"
-    ]
-  }
+  "note": "Test user settings are now loaded from /home/andrew/code/Cognotik/demo/test_config.json"
 }

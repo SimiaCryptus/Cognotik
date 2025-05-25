@@ -52,8 +52,6 @@ class AppState {
 
 // Global instance - can be replaced for testing
 let appState = new AppState();
-console.log('[Global] Initial taskSettings:', JSON.parse(JSON.stringify(taskSettings))); // Deep copy for logging
-console.log('[Global] Initial cognitiveMode:', cognitiveMode);
 
 const taskTypes = [{
     id: 'InsightTask',
@@ -177,7 +175,7 @@ function populateModelSelections(apiSettingsParam = null, taskSettingsParam = nu
     console.log('[populateModelSelections] Called');
     const currentApiSettings = apiSettingsParam || apiSettings;
     const currentTaskSettings = taskSettingsParam || taskSettings;
-    
+
     const modelSelect = document.getElementById('model-selection');
     const parsingModelSelect = document.getElementById('parsing-model');
     if (!modelSelect || !parsingModelSelect) {
@@ -274,16 +272,16 @@ function populateModelSelections(apiSettingsParam = null, taskSettingsParam = nu
 // HTTP service for better testability
 class HttpService {
     constructor(dependencies = {}) {
-        this.fetch = dependencies.fetch || window.fetch;
+      this.fetch = dependencies.fetch || window.fetch;
     }
 
     async getUserSettings() {
-        const response = await this.fetch('/userSettings/');
+        const response = await fetch('/userSettings/');
         return response.text();
     }
 
     async saveSessionSettings(sessionId, settings, cognitiveMode) {
-        return this.fetch(`/taskChat/settings`, {
+        return fetch(`/taskChat/settings`, {
             method: 'POST', headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             }, body: new URLSearchParams({
@@ -305,7 +303,7 @@ function loadSettingsFromServer(dependencies = {}) {
     http.getUserSettings()
         .then(response => {
             console.log('[loadSettingsFromServer] Received response:', response);
-            return html;
+            return response;
         })
         .then(html => {
             const parser = new DOMParser();
@@ -315,6 +313,7 @@ function loadSettingsFromServer(dependencies = {}) {
                 try {
                     const settings = JSON.parse(textarea.textContent);
                     state.apiSettings = settings;
+                    apiSettings = settings;
                     console.log('[loadSettingsFromServer] Parsed settings:', JSON.parse(JSON.stringify(apiSettings)));
 
                     if (apiSettings.apiKeys) {
@@ -364,6 +363,8 @@ function loadSettingsFromServer(dependencies = {}) {
                 } catch (e) {
                     console.error('[loadSettingsFromServer] Error parsing API settings:', e);
                 }
+            } else {
+                console.warn('[loadSettingsFromServer] No textarea found in response.');
             }
         })
         .catch(error => {
@@ -1056,14 +1057,11 @@ function setupEventListeners() {
 }
 
 // --- MISSING FUNCTION: saveUserSettings ---
-function saveUserSettings(fetchFunction = fetch) {
+function saveUserSettings() {
     console.log('[saveUserSettings] Called');
-
     const settings = gatherUserSettings();
     console.log('[saveUserSettings] Settings to save:', JSON.stringify(settings)); // Avoid logging actual keys if sensitive
-
-    // Save to server
-    return fetchFunction('/userSettings/', {
+    return fetch('/userSettings/', {
         method: 'POST', headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         }, body: new URLSearchParams({
@@ -1077,14 +1075,22 @@ function saveUserSettings(fetchFunction = fetch) {
                 console.log('[saveUserSettings] Updated apiSettings in memory.');
                 apiSettings = settings;
                 populateModelSelections();
+               showNotification('User settings saved successfully!', 'success');
+               // Close the modal
+               const modal = document.getElementById('user-settings-modal');
+               if (modal) {
+                   modal.style.display = 'none';
+               }
                 return settings;
             } else {
                 console.error('[saveUserSettings] Failed to save user settings. Status:', response.status);
+               showNotification(`Failed to save user settings: ${response.status}`, 'error');
                 throw new Error(`Failed to save user settings: ${response.status}`);
             }
         })
         .catch(error => {
             console.error('[saveUserSettings] Error saving user settings:', error);
+           showNotification('Error saving user settings: ' + error.message, 'error');
             throw error;
         });
 }
@@ -1098,12 +1104,20 @@ function gatherUserSettings() {
         if (keyInput && keyInput.value && keyInput.value !== '********') {
             console.log(`[gatherUserSettings] Saving API key for provider: ${provider.id}`);
             apiKeys[provider.id] = keyInput.value;
+       } else if (keyInput && keyInput.value === '********') {
+           // Keep existing key if showing masked value
+           if (apiSettings.apiKeys && apiSettings.apiKeys[provider.id]) {
+               apiKeys[provider.id] = apiSettings.apiKeys[provider.id];
+           }
         }
         // For GoogleSearch, also save the Search Engine ID as "apiBase"
         const baseInput = document.getElementById(`api-base-${provider.id}`);
         if (baseInput && baseInput.value) {
             console.log(`[gatherUserSettings] Saving API base for provider: ${provider.id}, value: ${baseInput.value}`);
             apiBase[provider.id] = baseInput.value;
+       } else if (apiSettings.apiBase && apiSettings.apiBase[provider.id]) {
+           // Keep existing base URL if not changed
+           apiBase[provider.id] = apiSettings.apiBase[provider.id];
         }
     });
     // Gather local tools

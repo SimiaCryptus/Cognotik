@@ -1,4 +1,3 @@
-
 // cypress/e2e/error-handling.cy.js
 describe('Error Handling', () => {
     beforeEach(() => {
@@ -21,10 +20,12 @@ describe('Error Handling', () => {
 
     it('should prevent launch without enabled tasks', () => {
         // Configure API key but no tasks
-        cy.get('#user-settings-btn').click();
-        cy.get('#api-key-OpenAI').type('test-key');
-        cy.get('#save-user-settings').click();
-        cy.get('.modal').should('not.be.visible');
+        cy.loadTestConfig().then((config) => {
+            cy.get('#user-settings-btn').click();
+            cy.get('#api-key-OpenAI').type(config.apiKeys?.OpenAI || 'test-key');
+            cy.get('#save-user-settings').click();
+            cy.get('.modal').should('not.be.visible');
+        });
 
         // Navigate to launch without selecting tasks
         cy.get('#next-to-task-settings').click();
@@ -39,10 +40,12 @@ describe('Error Handling', () => {
 
     it('should handle server errors gracefully', () => {
         // Configure valid settings
-        cy.get('#user-settings-btn').click();
-        cy.get('#api-key-OpenAI').type('test-key');
-        cy.get('#save-user-settings').click();
-        cy.get('.modal').should('not.be.visible');
+        cy.loadTestConfig().then((config) => {
+            cy.get('#user-settings-btn').click();
+            cy.get('#api-key-OpenAI').type(config.apiKeys?.OpenAI || 'test-key');
+            cy.get('#save-user-settings').click();
+            cy.get('.modal').should('not.be.visible');
+        });
 
         cy.get('#next-to-task-settings').click();
         cy.get('#next-to-task-selection').click();

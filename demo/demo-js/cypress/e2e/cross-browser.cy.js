@@ -8,9 +8,11 @@ describe('Cross-Browser Compatibility', () => {
                 cy.visit('/welcome');
 
                 // Test basic functionality
-                cy.get('#user-settings-btn').click();
-                cy.get('#api-key-OpenAI').type('test-key');
-                cy.get('#save-user-settings').click();
+                cy.loadTestConfig().then((config) => {
+                    cy.get('#user-settings-btn').click();
+                    cy.get('#api-key-OpenAI').type(config.apiKeys?.OpenAI || 'test-key');
+                    cy.get('#save-user-settings').click();
+                });
 
                 // Test localStorage
                 cy.window().its('localStorage').invoke('getItem', 'defaultModel')
