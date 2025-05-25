@@ -1,6 +1,10 @@
 function generateSessionId() {
     console.log('[generateSessionId] Called');
-    const now = new Date();
+    return generateSessionIdWithDate(new Date());
+}
+
+function generateSessionIdWithDate(date) {
+    const now = date;
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -11,21 +15,43 @@ function generateSessionId() {
     return sessionId;
 }
 
-let sessionId = generateSessionId();
-console.log('[Global] Initial sessionId:', sessionId);
-let apiSettings = {};
-let taskSettings = {
-    defaultModel: localStorage.getItem('defaultModel') || 'GPT4o',
-    parsingModel: localStorage.getItem('parsingModel') || 'GPT4oMini',
-    workingDir: localStorage.getItem('workingDir') || generateTimestampedDirectory(),
-    autoFix: localStorage.getItem('autoFix') === 'true',
-    maxTaskHistoryChars: 20000,
-    maxTasksPerIteration: 3,
-    maxIterations: 100,
-    graphFile: '',
-    taskSettings: {},
-};
-let cognitiveMode = localStorage.getItem('cognitiveMode') || 'single-task';
+// State management class for better testability
+class AppState {
+    constructor(dependencies = {}) {
+        this.localStorage = dependencies.localStorage || window.localStorage;
+        this.sessionId = dependencies.sessionId || generateSessionId();
+        this.apiSettings = {};
+        this.taskSettings = this.initializeTaskSettings();
+        this.cognitiveMode = this.localStorage.getItem('cognitiveMode') || 'single-task';
+    }
+
+    initializeTaskSettings() {
+        return {
+            defaultModel: this.localStorage.getItem('defaultModel') || 'GPT4o',
+            parsingModel: this.localStorage.getItem('parsingModel') || 'GPT4oMini',
+            workingDir: this.localStorage.getItem('workingDir') || generateTimestampedDirectory(),
+            autoFix: this.localStorage.getItem('autoFix') === 'true',
+            maxTaskHistoryChars: 20000,
+            maxTasksPerIteration: 3,
+            maxIterations: 100,
+            graphFile: '',
+            taskSettings: {},
+        };
+    }
+
+    updateTaskSetting(key, value) {
+        this.taskSettings[key] = value;
+        this.localStorage.setItem(key, value);
+    }
+
+    updateCognitiveMode(mode) {
+        this.cognitiveMode = mode;
+        this.localStorage.setItem('cognitiveMode', mode);
+    }
+}
+
+// Global instance - can be replaced for testing
+let appState = new AppState();
 console.log('[Global] Initial taskSettings:', JSON.parse(JSON.stringify(taskSettings))); // Deep copy for logging
 console.log('[Global] Initial cognitiveMode:', cognitiveMode);
 
@@ -69,80 +95,28 @@ const taskTypes = [{
     name: 'GitHub Search Task',
     description: 'Search GitHub repositories, code, issues and users',
     tooltip: 'Performs comprehensive searches across GitHub\'s content.',
-}, /*
-        {
-          id: 'TaskPlanningTask',
-          name: 'Task Planning Task',
-          description: 'Break down and coordinate complex development tasks with dependency management',
-          tooltip: 'Orchestrates complex development tasks by breaking them down into manageable subtasks.',
-        },
-        {
-          id: 'ForeachTask',
-          name: 'Foreach Task',
-          description: 'Execute subtasks for each item in a list',
-          tooltip: 'Executes a set of subtasks for each item in a given list.',
-        },
-        {
-          id: 'KnowledgeIndexingTask',
-          name: 'Knowledge Indexing Task',
-          description: 'Index content for semantic search capabilities',
-          tooltip: 'Indexes documents and code for semantic search capabilities.',
-        },
-        {
-          id: 'EmbeddingSearchTask',
-          name: 'Embedding Search Task',
-          description: 'Perform semantic search using AI embeddings',
-          tooltip: 'Performs semantic search using AI embeddings across indexed content.',
-        },
-        {
-          id: 'SeleniumSessionTask',
-          name: 'Selenium Session Task',
-          description: 'Automate browser interactions with Selenium',
-          tooltip: 'Automates browser interactions using Selenium WebDriver.',
-        },
-        {
-          id: 'CommandSessionTask',
-          name: 'Command Session Task',
-          description: 'Manage interactive command-line sessions',
-          tooltip: 'Manages interactive command-line sessions with state persistence.',
-        },
-        {
-          id: 'SoftwareGraphPlanningTask',
-          name: 'Software Graph Planning Task',
-          description: 'Generate and execute task plans based on software graph structure',
-          tooltip: 'Creates task plans using software graph context.',
-        },
-        {
-          id: 'SoftwareGraphModificationTask',
-          name: 'Software Graph Modification Task',
-          description: 'Modify an existing software graph representation',
-          tooltip: 'Loads, modifies and saves software graph representations.',
-        },
-        {
-          id: 'SoftwareGraphGenerationTask',
-          name: 'Software Graph Generation Task',
-          description: 'Generate a SoftwareGraph representation of the codebase',
-          tooltip: 'Generates a comprehensive SoftwareGraph representation of the codebase.',
-        },
-        {
-          id: 'DataTableCompilationTask',
-          name: 'Data Table Compilation Task',
-          description: 'Compile structured data tables from multiple files',
-          tooltip: 'Extracts and compiles structured data from multiple files into a unified table.',
-        },
-    */];
+},
+];
 
 const apiProviders = [{id: 'OpenAI', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1'}, {
     id: 'Anthropic', name: 'Anthropic', baseUrl: 'https://api.anthropic.com/v1'
 }, {id: 'Google', name: 'Google', baseUrl: 'https://generativelanguage.googleapis.com'}, {
     id: 'Groq', name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1'
-}, {id: 'Mistral', name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1'}, {id: 'AWS', name: 'AWS', baseUrl: 'https://api.openai.aws'}, {
+}, {id: 'Mistral', name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1'}, {
+    id: 'AWS', name: 'AWS', baseUrl: 'https://api.openai.aws'
+}, {
     id: 'DeepSeek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com'
-}, {id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com'}, {id: 'GoogleSearch', name: 'Google Search', baseUrl: ''},];
+}, {id: 'Github', name: 'GitHub', baseUrl: 'https://api.github.com'}, {
+    id: 'GoogleSearch', name: 'Google Search', baseUrl: ''
+},];
 
 function generateTimestampedDirectory() {
     console.log('[generateTimestampedDirectory] Called');
-    const now = new Date();
+    return generateTimestampedDirectoryWithDate(new Date());
+}
+
+function generateTimestampedDirectoryWithDate(date) {
+    const now = date;
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -199,19 +173,22 @@ const availableModels = {
     }, {id: 'MistralLarge2407', name: 'Mistral Large 2407', description: 'Latest Mistral Large on AWS'},],
 };
 
-function populateModelSelections() {
+function populateModelSelections(apiSettingsParam = null, taskSettingsParam = null) {
     console.log('[populateModelSelections] Called');
+    const currentApiSettings = apiSettingsParam || apiSettings;
+    const currentTaskSettings = taskSettingsParam || taskSettings;
+    
     const modelSelect = document.getElementById('model-selection');
     const parsingModelSelect = document.getElementById('parsing-model');
     if (!modelSelect || !parsingModelSelect) {
         console.warn('[populateModelSelections] modelSelect or parsingModelSelect element not found.');
         return;
     }
-    console.log('[populateModelSelections] Current taskSettings.defaultModel:', taskSettings.defaultModel, 'taskSettings.parsingModel:', taskSettings.parsingModel);
+    console.log('[populateModelSelections] Current taskSettings.defaultModel:', currentTaskSettings.defaultModel, 'taskSettings.parsingModel:', currentTaskSettings.parsingModel);
 
     // Get saved values from localStorage directly to ensure we're using the latest values
-    const savedDefaultModel = localStorage.getItem('defaultModel') || taskSettings.defaultModel;
-    const savedParsingModel = localStorage.getItem('parsingModel') || taskSettings.parsingModel;
+    const savedDefaultModel = localStorage.getItem('defaultModel') || currentTaskSettings.defaultModel;
+    const savedParsingModel = localStorage.getItem('parsingModel') || currentTaskSettings.parsingModel;
     console.log('[populateModelSelections] Retrieved from localStorage - defaultModel:', savedDefaultModel, 'parsingModel:', savedParsingModel);
 
     modelSelect.innerHTML = '';
@@ -219,8 +196,8 @@ function populateModelSelections() {
 
     const addedModels = new Set();
 
-    if (apiSettings && apiSettings.apiKeys) {
-        for (const [provider, key] of Object.entries(apiSettings.apiKeys)) {
+    if (currentApiSettings && currentApiSettings.apiKeys) {
+        for (const [provider, key] of Object.entries(currentApiSettings.apiKeys)) {
             console.log(`[populateModelSelections] Checking provider: ${provider}, key exists: ${!!key}`);
             if (key && availableModels[provider]) {
 
@@ -294,12 +271,41 @@ function populateModelSelections() {
     console.log('[populateModelSelections] Finished. Final modelSelect.value:', modelSelect.value, 'parsingModelSelect.value:', parsingModelSelect.value);
 }
 
-function loadSettingsFromServer() {
+// HTTP service for better testability
+class HttpService {
+    constructor(dependencies = {}) {
+        this.fetch = dependencies.fetch || window.fetch;
+    }
+
+    async getUserSettings() {
+        const response = await this.fetch('/userSettings/');
+        return response.text();
+    }
+
+    async saveSessionSettings(sessionId, settings, cognitiveMode) {
+        return this.fetch(`/taskChat/settings`, {
+            method: 'POST', headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }, body: new URLSearchParams({
+                sessionId: sessionId, action: 'save', settings: JSON.stringify(settings), cognitiveMode: cognitiveMode,
+            })
+        });
+    }
+
+}
+
+// Global instance - can be replaced for testing
+let httpService = new HttpService();
+
+function loadSettingsFromServer(dependencies = {}) {
+    const http = dependencies.httpService || httpService;
+    const state = dependencies.appState || appState;
+
     console.log('[loadSettingsFromServer] Called');
-    fetch('/userSettings/')
+    http.getUserSettings()
         .then(response => {
             console.log('[loadSettingsFromServer] Received response:', response);
-            return response.text();
+            return html;
         })
         .then(html => {
             const parser = new DOMParser();
@@ -308,7 +314,7 @@ function loadSettingsFromServer() {
             if (textarea) {
                 try {
                     const settings = JSON.parse(textarea.textContent);
-                    apiSettings = settings;
+                    state.apiSettings = settings;
                     console.log('[loadSettingsFromServer] Parsed settings:', JSON.parse(JSON.stringify(apiSettings)));
 
                     if (apiSettings.apiKeys) {
@@ -587,9 +593,12 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Function to save session settings to the server, similar to welcome_old.html's saveSessionSettings
-function saveSessionSettingsToServer() {
+function saveSessionSettingsToServer(dependencies = {}) {
+    const http = dependencies.httpService || httpService;
+    const state = dependencies.appState || appState;
+
     console.log('[saveSessionSettingsToServer] Called. Saving session settings to server.');
-    console.log('[saveSessionSettingsToServer] Current cognitiveMode:', cognitiveMode);
+    console.log('[saveSessionSettingsToServer] Current cognitiveMode:', state.cognitiveMode);
     // Ensure taskSettings reflects the latest from UI elements if not already handled by individual listeners
     // For example, workingDir is directly read by launch button, but good to ensure it's in taskSettings
     // The workingDir input listener already updates taskSettings.workingDir and localStorage.
@@ -598,14 +607,8 @@ function saveSessionSettingsToServer() {
     // are expected to be up-to-date in the global taskSettings object and localStorage
     // due to their respective event listeners.
     // saveTaskSelection() should be called before this if task selections need to be included and are changing.
-    console.log('[saveSessionSettingsToServer] Current taskSettings:', JSON.parse(JSON.stringify(taskSettings)));
-    return fetch(`/taskChat/settings`, { // Using the endpoint from old code for session settings
-        method: 'POST', headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        }, body: new URLSearchParams({
-            sessionId: sessionId, action: 'save', settings: JSON.stringify(taskSettings), cognitiveMode: cognitiveMode,
-        })
-    })
+    console.log('[saveSessionSettingsToServer] Current taskSettings:', JSON.parse(JSON.stringify(state.taskSettings)));
+    return http.saveSessionSettings(state.sessionId, state.taskSettings, state.cognitiveMode)
         .then(response => {
             if (!response.ok) {
                 console.error('[saveSessionSettingsToServer] Failed to save session settings. Status:', response.status);
@@ -820,7 +823,11 @@ function initializeTaskToggles() {
 
 function generateCognotikWorkingDir() {
     console.log('[generateCognotikWorkingDir] Called');
-    const now = new Date();
+    return generateCognotikWorkingDirWithDate(new Date(), navigator.platform);
+}
+
+function generateCognotikWorkingDirWithDate(date, platform) {
+    const now = date;
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -828,18 +835,18 @@ function generateCognotikWorkingDir() {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
     const timestamp = `${year}${month}${day}-${hours}${minutes}${seconds}`;
-    const platform = navigator.platform.toLowerCase();
+    const platformLower = platform.toLowerCase();
     let baseDir;
-    console.log(`[generateCognotikWorkingDir] Detected platform: ${platform}`);
-    if (platform.includes('win')) {
+    console.log(`[generateCognotikWorkingDirWithDate] Detected platform: ${platformLower}`);
+    if (platformLower.includes('win')) {
         baseDir = '~\\Documents\\Cognotik';
-    } else if (platform.includes('mac')) {
+    } else if (platformLower.includes('mac')) {
         baseDir = '~/Documents/Cognotik';
     } else {
         baseDir = '~/Cognotik';
     }
     const dir = `${baseDir}/session-${timestamp}`;
-    console.log(`[generateCognotikWorkingDir] Generated Cognotik working directory: ${dir}`);
+    console.log(`[generateCognotikWorkingDirWithDate] Generated Cognotik working directory: ${dir}`);
     return dir;
 }
 
@@ -1049,46 +1056,14 @@ function setupEventListeners() {
 }
 
 // --- MISSING FUNCTION: saveUserSettings ---
-function saveUserSettings() {
+function saveUserSettings(fetchFunction = fetch) {
     console.log('[saveUserSettings] Called');
-    // Gather API keys
-    const apiKeys = {};
-    const apiBase = {};
-    apiProviders.forEach(provider => {
-        const keyInput = document.getElementById(`api-key-${provider.id}`);
-        if (keyInput && keyInput.value && keyInput.value !== '********') {
-            console.log(`[saveUserSettings] Saving API key for provider: ${provider.id}`);
-            apiKeys[provider.id] = keyInput.value;
-        }
-        // For GoogleSearch, also save the Search Engine ID as "apiBase"
-        const baseInput = document.getElementById(`api-base-${provider.id}`);
-        if (baseInput && baseInput.value) {
-            console.log(`[saveUserSettings] Saving API base for provider: ${provider.id}, value: ${baseInput.value}`);
-            apiBase[provider.id] = baseInput.value;
-        }
-    });
-    // Gather local tools
-    const localTools = [];
-    const toolsList = document.getElementById('local-tools-list');
-    if (toolsList) {
-        toolsList.querySelectorAll('.tool-item').forEach(item => {
-            if (item.dataset.path) {
-                console.log(`[saveUserSettings] Adding local tool from dataset.path: ${item.dataset.path}`);
-                localTools.push(item.dataset.path);
-            } else if (item.textContent) {
-                // fallback if dataset not set
-                console.log(`[saveUserSettings] Adding local tool from textContent: ${item.textContent.trim()}`);
-                localTools.push(item.textContent.trim());
-            }
-        });
-    }
-    // Compose settings object
-    const settings = {
-        apiKeys, apiBase, localTools
-    };
+
+    const settings = gatherUserSettings();
     console.log('[saveUserSettings] Settings to save:', JSON.stringify(settings)); // Avoid logging actual keys if sensitive
+
     // Save to server
-    fetch('/userSettings/', {
+    return fetchFunction('/userSettings/', {
         method: 'POST', headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         }, body: new URLSearchParams({
@@ -1102,15 +1077,56 @@ function saveUserSettings() {
                 console.log('[saveUserSettings] Updated apiSettings in memory.');
                 apiSettings = settings;
                 populateModelSelections();
+                return settings;
             } else {
                 console.error('[saveUserSettings] Failed to save user settings. Status:', response.status);
-                showNotification('Failed to save user settings.', 'error');
+                throw new Error(`Failed to save user settings: ${response.status}`);
             }
         })
         .catch(error => {
             console.error('[saveUserSettings] Error saving user settings:', error);
-            showNotification('Error saving user settings: ' + error.message, 'error');
+            throw error;
         });
+}
+
+function gatherUserSettings() {
+    // Gather API keys
+    const apiKeys = {};
+    const apiBase = {};
+    apiProviders.forEach(provider => {
+        const keyInput = document.getElementById(`api-key-${provider.id}`);
+        if (keyInput && keyInput.value && keyInput.value !== '********') {
+            console.log(`[gatherUserSettings] Saving API key for provider: ${provider.id}`);
+            apiKeys[provider.id] = keyInput.value;
+        }
+        // For GoogleSearch, also save the Search Engine ID as "apiBase"
+        const baseInput = document.getElementById(`api-base-${provider.id}`);
+        if (baseInput && baseInput.value) {
+            console.log(`[gatherUserSettings] Saving API base for provider: ${provider.id}, value: ${baseInput.value}`);
+            apiBase[provider.id] = baseInput.value;
+        }
+    });
+    // Gather local tools
+    const localTools = gatherLocalTools();
+    return {apiKeys, apiBase, localTools};
+}
+
+function gatherLocalTools() {
+    const localTools = [];
+    const toolsList = document.getElementById('local-tools-list');
+    if (toolsList) {
+        toolsList.querySelectorAll('.tool-item').forEach(item => {
+            if (item.dataset.path) {
+                console.log(`[gatherLocalTools] Adding local tool from dataset.path: ${item.dataset.path}`);
+                localTools.push(item.dataset.path);
+            } else if (item.textContent) {
+                // fallback if dataset not set
+                console.log(`[gatherLocalTools] Adding local tool from textContent: ${item.textContent.trim()}`);
+                localTools.push(item.textContent.trim());
+            }
+        });
+    }
+    return localTools;
 }
 
 // --- MISSING FUNCTION: resetUserSettings ---
@@ -1204,7 +1220,11 @@ function updateLaunchSummaries() {
     // Cognitive Mode
     const mode = localStorage.getItem('cognitiveMode') || 'single-task';
     const modeMap = {
-        'single-task': 'Chat', 'auto-plan': 'Autonomous', 'plan-ahead': 'Plan Ahead', 'goal-oriented': 'Goal Oriented', 'graph': 'Graph Mode'
+        'single-task': 'Chat',
+        'auto-plan': 'Autonomous',
+        'plan-ahead': 'Plan Ahead',
+        'goal-oriented': 'Goal Oriented',
+        'graph': 'Graph Mode'
     };
     document.getElementById('cognitive-mode-summary').textContent = modeMap[mode] || mode;
     console.log(`[updateLaunchSummaries] Cognitive Mode Summary: ${modeMap[mode] || mode}`);
@@ -1231,49 +1251,66 @@ function updateLaunchSummaries() {
     console.log(`[updateLaunchSummaries] API Settings Summary:\n${apiSummary || 'No API keys configured.'}`);
 }
 
-function validateConfiguration() {
-    console.log('[validateConfiguration] Called');
+// Validation service for better testability
+class ValidationService {
+    constructor(dependencies = {}) {
+        this.appState = dependencies.appState || appState;
+        this.notificationService = dependencies.notificationService || {showNotification};
+    }
 
-    let hasApiKey = false;
-    if (apiSettings.apiKeys) {
-        console.log('[validateConfiguration] Checking API keys:', Object.keys(apiSettings.apiKeys));
-        for (const key of Object.values(apiSettings.apiKeys)) {
-            if (key) {
-                hasApiKey = true;
-                break;
+    validateConfiguration() {
+        console.log('[validateConfiguration] Called');
+
+        let hasApiKey = false;
+        if (this.appState.apiSettings.apiKeys) {
+            console.log('[validateConfiguration] Checking API keys:', Object.keys(this.appState.apiSettings.apiKeys));
+            for (const key of Object.values(this.appState.apiSettings.apiKeys)) {
+                if (key) {
+                    hasApiKey = true;
+                    break;
+                }
             }
         }
-    }
-    if (!hasApiKey) {
-        console.warn('[validateConfiguration] No API key configured.');
-        showNotification('Please configure at least one API key before launching', 'error');
+        if (!hasApiKey) {
+            console.warn('[validateConfiguration] No API key configured.');
+            this.notificationService.showNotification('Please configure at least one API key before launching', 'error');
 
-        document.getElementById('api-settings-btn').click();
-        console.log('[validateConfiguration] Clicked api-settings-btn due to missing API key.');
-        return false;
-    }
-    console.log('[validateConfiguration] API key check passed.');
+            const apiSettingsBtn = document.getElementById('api-settings-btn');
+            if (apiSettingsBtn) apiSettingsBtn.click();
+            console.log('[validateConfiguration] Clicked api-settings-btn due to missing API key.');
+            return false;
+        }
+        console.log('[validateConfiguration] API key check passed.');
 
-    let hasEnabledTask = false;
-    if (taskSettings.taskSettings) {
-        console.log('[validateConfiguration] Checking enabled tasks:', taskSettings.taskSettings);
-        for (const settings of Object.values(taskSettings.taskSettings)) {
-            if (settings.enabled) {
-                hasEnabledTask = true;
-                break;
+        let hasEnabledTask = false;
+        if (this.appState.taskSettings.taskSettings) {
+            console.log('[validateConfiguration] Checking enabled tasks:', this.appState.taskSettings.taskSettings);
+            for (const settings of Object.values(this.appState.taskSettings.taskSettings)) {
+                if (settings.enabled) {
+                    hasEnabledTask = true;
+                    break;
+                }
             }
         }
-    }
-    if (!hasEnabledTask) {
-        console.warn('[validateConfiguration] No task enabled.');
-        showNotification('Please enable at least one task before launching', 'error');
+        if (!hasEnabledTask) {
+            console.warn('[validateConfiguration] No task enabled.');
+            this.notificationService.showNotification('Please enable at least one task before launching', 'error');
 
-        navigateToStep('task-selection');
-        console.log('[validateConfiguration] Navigated to task-selection due to no enabled tasks.');
-        return false;
+            navigateToStep('task-selection');
+            console.log('[validateConfiguration] Navigated to task-selection due to no enabled tasks.');
+            return false;
+        }
+        console.log('[validateConfiguration] Enabled task check passed. Configuration is valid.');
+        return true;
     }
-    console.log('[validateConfiguration] Enabled task check passed. Configuration is valid.');
-    return true;
+}
+
+// Global instance - can be replaced for testing
+let validationService = new ValidationService();
+
+function validateConfiguration(dependencies = {}) {
+    const validator = dependencies.validationService || validationService;
+    return validator.validateConfiguration();
 
 }
 
@@ -1291,7 +1328,7 @@ function loadSavedSettings() {
     }
     // Note: Model selections will be handled in populateModelSelections
     // after API keys are loaded, as they depend on available models
-    
+
     // taskSettings.parsingModel is already initialized
     const workingDirInput = document.getElementById('working-dir');
     if (workingDirInput && localStorage.getItem('workingDir')) workingDirInput.value = localStorage.getItem('workingDir');
@@ -1313,7 +1350,9 @@ function loadSavedSettings() {
     }
     // Auto-plan settings
     const autoPlanFields = {
-        'maxTaskHistoryChars': 'max-task-history', 'maxTasksPerIteration': 'max-tasks-per-iteration', 'maxIterations': 'max-iterations'
+        'maxTaskHistoryChars': 'max-task-history',
+        'maxTasksPerIteration': 'max-tasks-per-iteration',
+        'maxIterations': 'max-iterations'
     };
     for (const [key, id] of Object.entries(autoPlanFields)) {
         const input = document.getElementById(id);
@@ -1350,16 +1389,59 @@ function loadSavedSettings() {
     console.log('[loadSavedSettings] Finished. Initial taskSettings after load:', JSON.parse(JSON.stringify(taskSettings)));
 }
 
-function saveTaskSelection() {
+function saveTaskSelection(dependencies = {}) {
+    const state = dependencies.appState || appState;
+    const doc = dependencies.document || document;
+
     console.log('[saveTaskSelection] Called');
     const currentEnabledTasks = {};
-    document.querySelectorAll('#task-toggles .task-toggle input[type="checkbox"]').forEach(checkbox => {
+    doc.querySelectorAll('#task-toggles .task-toggle input[type="checkbox"]').forEach(checkbox => {
         currentEnabledTasks[checkbox.value] = {
-            enabled: checkbox.checked,
-            task_type: checkbox.value // Add task_type, which is the task ID
+            enabled: checkbox.checked, task_type: checkbox.value // Add task_type, which is the task ID
         };
     });
-    taskSettings.taskSettings = currentEnabledTasks;
-    localStorage.setItem('enabledTasks', JSON.stringify(currentEnabledTasks));
+    state.taskSettings.taskSettings = currentEnabledTasks;
+    state.localStorage.setItem('enabledTasks', JSON.stringify(currentEnabledTasks));
     console.log('[saveTaskSelection] Saved enabledTasks to localStorage and taskSettings.taskSettings:', JSON.stringify(currentEnabledTasks));
+}
+
+let sessionId = generateSessionId();
+console.log('[Global] Initial sessionId:', sessionId);
+let apiSettings = {
+    apiKeys: {},
+    apiBase: {},
+    localTools: []
+};
+let taskSettings = {};
+
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        AppState,
+        HttpService,
+        UIManager,
+        ValidationService,
+        apiProviders,
+        availableModels,
+        checkApiKeysConfigured,
+        checkTasksEnabled,
+        createLocalToolElement,
+        gatherLocalTools,
+        gatherUserSettings,
+        generateCognotikWorkingDir,
+        generateCognotikWorkingDirWithDate,
+        generateSessionId,
+        generateSessionIdWithDate,
+        generateTimestampedDirectory,
+        generateTimestampedDirectoryWithDate,
+        loadSettingsFromServer,
+        populateApiKeyInputs,
+        populateLocalTools,
+        processServerSettings,
+        saveSessionSettingsToServer,
+        saveTaskSelection,
+        showNotification,
+        taskTypes,
+        validateConfiguration
+    };
 }

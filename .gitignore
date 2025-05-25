@@ -7,6 +7,11 @@ build/
 .idea/
 openai.key
 *.log
+# Cypress
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+cypress.env.json
 *.log.*
 client_secret_google_oauth.json
 *.data
@@ -20,6 +25,7 @@ metadata.script
 .websearch/
 .intellijPlatform/
 node_modules/
+.env
 metadata.*
 .DS_Store
 test_config.json

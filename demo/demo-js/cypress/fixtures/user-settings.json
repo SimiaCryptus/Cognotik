@@ -1,0 +1,36 @@
+{
+  "defaultUserSettings": {
+    "apiKeys": {
+      "OpenAI": "",
+      "Anthropic": "",
+      "Google": "",
+      "Groq": "",
+      "xAI": "",
+      "Mistral": "",
+      "Cohere": "",
+      "Perplexity": "",
+      "OpenRouter": "",
+      "DeepSeek": "",
+      "Cerebras": ""
+    },
+    "apiBase": {
+      "GoogleSearch": ""
+    },
+    "localTools": []
+  },
+  "testUserSettings": {
+    "apiKeys": {
+      "OpenAI": "sk-test-openai-key",
+      "Anthropic": "sk-ant-test-anthropic-key",
+      "Google": "test-google-key"
+    },
+    "apiBase": {
+      "GoogleSearch": "test-search-engine-id"
+    },
+    "localTools": [
+      "/usr/bin/git",
+      "/usr/bin/docker",
+      "/usr/local/bin/node"
+    ]
+  }
+}

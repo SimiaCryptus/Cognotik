@@ -5,3 +5,4 @@ test-screenshots/
 .kotlin
 .idea
 .tts_cache/
+.env

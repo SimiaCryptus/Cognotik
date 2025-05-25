@@ -1,4 +1,11 @@
 {
+  "name": "cognotik-demo",
+  "version": "1.0.0",
+  "description": "Cognotik AI Assistant Demo Application",
+  "main": "server.js",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
