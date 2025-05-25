@@ -1,8 +1,8 @@
-
 describe('Cognotik App Launcher', () => {
     beforeEach(() => {
         cy.visit('/');
         cy.clearLocalStorage();
+        cy.enableAudioCapture();
     });
 
 

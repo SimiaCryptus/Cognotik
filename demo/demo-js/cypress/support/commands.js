@@ -9,6 +9,19 @@ Cypress.Commands.add('getApiKey', (provider) => {
         return config.apiKeys?.[provider] || '';
     });
 });
+// Custom command to enable audio capture
+Cypress.Commands.add('enableAudioCapture', () => {
+    cy.window().then((win) => {
+        // Enable autoplay for audio elements
+        win.document.addEventListener('DOMContentLoaded', () => {
+            const audioElements = win.document.querySelectorAll('audio');
+            audioElements.forEach(audio => {
+                audio.muted = false;
+                audio.volume = 1.0;
+            });
+        });
+    });
+});
 
 
 // Custom command to clear all application data

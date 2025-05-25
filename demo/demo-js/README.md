@@ -224,6 +224,12 @@ npm run test:e2e:firefox
 npm run test:e2e -- --browser chrome,firefox,edge
 ```
 
+
+#### Running a demo for recording
+```shell
+npx cypress run --browser chrome --spec "cypress/e2e/tool_demo.cy.js" --headed --no-runner-ui 
+```
+
 ## 📊 Test Categories
 
 ### 1. User Settings Tests (`user-settings.cy.js`)
