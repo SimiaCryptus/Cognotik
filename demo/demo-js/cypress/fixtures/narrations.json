@@ -1,0 +1,50 @@
+{
+  "demo_start": {
+    "text": "Welcome to the Cognotik App demonstration. Today we will show you how to create and run a file modification task using our AI powered interface.",
+    "audio": "demo_start.mp3"
+  },
+  "select_single_task": {
+    "text": "First, we will select single task mode to focus on one specific operation.",
+    "audio": "select_single_task.mp3"
+  },
+  "configure_model": {
+    "text": "Next, we will configure our AI model settings. We are selecting Claude three point five Haiku for both the main model and parsing model.",
+    "audio": "configure_model.mp3"
+  },
+  "set_temperature": {
+    "text": "We will set the temperature to zero point two for more consistent and focused responses.",
+    "audio": "set_temperature.mp3"
+  },
+  "enable_autofix": {
+    "text": "Auto fix is enabled to automatically correct any issues that might arise during task execution.",
+    "audio": "enable_autofix.mp3"
+  },
+  "select_task_type": {
+    "text": "Now we will select the File Modification Task, which allows the AI to create, edit, and manage files in our project.",
+    "audio": "select_task_type.mp3"
+  },
+  "launch_session": {
+    "text": "With our settings configured, we can now launch the task session.",
+    "audio": "launch_session.mp3"
+  },
+  "enter_command": {
+    "text": "we will enter our command. Create a new file called test.txt and write a short story in it. This demonstrates the AIs ability to understand natural language instructions.",
+    "audio": "enter_command.mp3"
+  },
+  "view_plan": {
+    "text": "The AI has generated a plan for our task. Let us review what it intends to do.",
+    "audio": "view_plan.mp3"
+  },
+  "execute_task": {
+    "text": "Now we will execute the task and watch as the AI carries out the file creation and writing process.",
+    "audio": "execute_task.mp3"
+  },
+  "view_output": {
+    "text": "Finally, we can see the output showing that test.txt has been successfully created and updated with our short story.",
+    "audio": "view_output.mp3"
+  },
+  "demo_complete": {
+    "text": "This completes our demonstration of the Cognotik file modification task. The AI successfully understood our request, planned the execution, and created the file with content as requested.",
+    "audio": "demo_complete.mp3"
+  }
+}

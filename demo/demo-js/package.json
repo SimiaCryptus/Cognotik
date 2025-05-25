@@ -18,5 +18,8 @@
     "cypress": "^14.4.0",
     "eslint": "^9.27.0",
     "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "@cypress/webpack-preprocessor": "^6.0.4"
   }
 }

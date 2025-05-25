@@ -6,3 +6,5 @@ test-screenshots/
 .idea
 .tts_cache/
 .env
+demo-js/asset/
+*.mp4

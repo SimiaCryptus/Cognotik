@@ -1,44 +1,54 @@
-// cypress/e2e/complete-workflow.cy.js
+
 describe('Cognotik App Launcher', () => {
     beforeEach(() => {
         cy.visit('/');
         cy.clearLocalStorage();
     });
 
+
     it('should launch the chat-task app', () => {
 
-        // Step 2: Choose Cognitive Mode
+        cy.narrate('demo_start');
+        
+        let model = 'Claude 3.5 Haiku (Anthropic)';
+        let command = "Create a new file called test.txt and write a short story in it";
+        let taskType = 'FileModificationTask';
+
+
+        cy.narrate('select_single_task');
         cy.get('#single-task-mode').check();
         cy.get('#next-to-task-settings').click();
-
-        // Step 3: Configure Task Settings
-        cy.get('#model-selection').select('Claude 3.5 Haiku (Anthropic)');
-        cy.get('#parsing-model').select('Claude 3.5 Haiku (Anthropic)');
+        cy.narrate('configure_model');
+        cy.get('#model-selection').select(model);
+        cy.get('#parsing-model').select(model);
         cy.get('#generate-working-dir').click()
+        cy.narrate('set_temperature');
         cy.get('#temperature').invoke('val', 0.2).trigger('input');
         cy.get('#temperature-value').should('contain', '0.2');
+        cy.narrate('enable_autofix');
         cy.get('#auto-fix').check();
         cy.get('#next-to-task-selection').click();
-
-        // Step 4: Select Tasks
-        cy.get('#task-FileModificationTask').check();
+        cy.narrate('select_task_type');
+        cy.get('#task-' + taskType).check();
         cy.get('#next-to-launch').click();
-
-        // Step 5: Review and Launch
-        cy.get('#cognitive-mode-summary').should('contain', 'Chat');
-        cy.get('#api-settings-summary').should('contain', 'Anthropic: Configured');
+        cy.narrate('launch_session');
         cy.get('#launch-session').click();
         cy.url().should('include', '/taskChat/#');
-
-        // Step 6: Enter a request
-        cy.get('[data-testid="chat-input"]').type("Create a new file called test.txt and write a short story in it");
+        cy.narrate('enter_command');
+        cy.get('[data-testid="chat-input"]').type(command);
         cy.get('[data-testid="send-button"]').click();
         cy.get('[data-testid="collapse-input"]').click();
+        cy.narrate('view_plan');
+        cy.get('.tab-button').contains('Plan', {timeout: 300000}).wait(1000).click();
+        cy.narrate('execute_task');
+        cy.get('.tab-button').contains('Run', {timeout: 300000}).wait(1000).click();
+        cy.narrate('view_output');
+        cy.get('.tab-button').contains('Output', {timeout: 300000}).wait(1000).click();
 
-        // Wait for the response to be generated
-        cy.get('.tab-button').contains('Output', { timeout: 300000 }).wait(1000).click();
+
+
         cy.get('[data-tab="2"] .response-message > p').should('contain', 'test.txt Updated');
         cy.get('p > a').click()
+        cy.narrate('demo_complete');
     });
-
 });

@@ -1,5 +1,6 @@
 // cypress/support/e2e.js
 import './commands';
+import './narration';
 
 // Hide fetch/XHR requests from command log
 const app = window.top;
