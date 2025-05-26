@@ -26,7 +26,7 @@ import javax.swing.JFrame
 import javax.swing.SwingUtilities
 
 data class RecordingConfig(
-    val enableAudio: Boolean = false,
+    val enableAudio: Boolean = true,
     val outputFolder: File = File("test-recordings"),
     val captureSize: Rectangle = defaultResolution(),
     val frameRate: Rational = Rational(30, 1),

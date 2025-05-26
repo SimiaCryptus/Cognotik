@@ -10,11 +10,6 @@ import com.intellij.remoterobot.launcher.IdeLauncher
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.AudioModels
-import com.simiacryptus.util.toJson
 import io.github.bonigarcia.wdm.WebDriverManager
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.*
@@ -32,12 +27,9 @@ import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.security.MessageDigest
 import java.time.Duration
 import java.time.LocalDateTime
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import kotlin.math.absoluteValue
+
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class DemoTestBase(
@@ -45,10 +37,10 @@ abstract class DemoTestBase(
     splashScreenConfig: SplashScreenConfig = SplashScreenConfig(),
     val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.5.zip",
     protected val narrationFile: String? = null
-) : ScreenRec(
-    recordingConfig = recordingConfig,
-    splashScreenConfig = splashScreenConfig
-) {
+) :
+    //ScreenRec(recordingConfig = recordingConfig, splashScreenConfig = splashScreenConfig)
+    NoScreenRec()
+{
     protected lateinit var remoteRobot: RemoteRobot
     protected val robot: Robot = Robot()
     private var testStartTime: LocalDateTime? = null
@@ -146,8 +138,12 @@ abstract class DemoTestBase(
 
     override fun sleepForSplash() {
         val startTime = System.currentTimeMillis()
-        if (super.recordingConfig.splashNarration.isNotBlank()) {
-            tts(super.recordingConfig.splashNarration)?.play()
+        val splashNarration = super.recordingConfig.splashNarration
+        if (splashNarration.isNotBlank()) {
+            log.info("Playing splash narration: $splashNarration")
+            playNarration(splashNarration, 1000)
+        } else {
+            log.info("No splash narration configured, skipping playback")
         }
         val sleep = super.recordingConfig.splashScreenDelay - (System.currentTimeMillis() - startTime)
         if (sleep > 0) sleep(sleep)
@@ -155,13 +151,13 @@ abstract class DemoTestBase(
 
     @AfterAll
     fun tearDown() {
-        ideaProcess?.destroy()
-        ideaProcess = null
         if (driverInitialized) {
             driver.quit()
         }
         stopScreenRecording()
         UDPClient.clearMessageBuffer()
+        ideaProcess?.destroy()
+        ideaProcess = null
         cleanupTestProject()
     }
 
@@ -326,9 +322,6 @@ abstract class DemoTestBase(
         return aiCoderMenu
     }
 
-    val voices = arrayOf("alloy", "echo", "fable", "onyx", "nova", "shimmer")
-    open val voice: String =
-        this::class.java.simpleName.lowercase().let { voices[it.hashCode().absoluteValue % voices.size] }
     fun playNarration(key: String, delay: Long = 2000): SpokenText? {
         val narration = narrationManager?.getNarration(key)
         if (narration == null) {
@@ -341,56 +334,22 @@ abstract class DemoTestBase(
             log.info("Playing pre-recorded audio for: $key")
             return SpokenText(narration.text ?: "", audioStream, 0).apply { play(delay) }
         }
-        // Fall back to TTS
-        log.info("Using TTS for narration: $key")
-        return tts(narration.text ?: "")?.apply { play(delay) }
-    }
-    fun playNarrationText(text: String, delay: Long = 2000): SpokenText? {
-        return tts(text)?.apply { play(delay) }
+        log.warn("No pre-recorded audio found for key: $key, using TTS")
+        return null
     }
 
-
+    @Deprecated("Use playNarration instead")
     fun tts(
         text: String,
         voice: String? = null,
         speed: Double = 1.0
-    ): SpokenText? {
-        if (!recordingConfig.enableAudio) return null
-        val cacheDir = File("./.tts_cache")
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs()
-        }
-        @Suppress("NAME_SHADOWING") val voice = voice ?: this.voice
-        val cacheKey = "${text}_${voice}_${speed}".toByteArray()
-        val cacheFileName = MessageDigest.getInstance("SHA-256").digest(cacheKey).joinToString("") { "%02x".format(it) }
-        val cacheFile = File(cacheDir, "$cacheFileName.wav")
-        if (cacheFile.exists()) {
-            log.info("Using cached TTS for text: $text")
-            return SpokenText(text, cacheFile.readBytes().inputStream(), 0)
-        }
-        val startTime = System.currentTimeMillis()
-        val speechWavBytes = OpenAIClient(workPool = Executors.newCachedThreadPool()).createSpeech(
-            ApiModel.SpeechRequest(
-                input = text,
-                model = AudioModels.TTS.modelName,
-                voice = voice,
-                speed = speed,
-                response_format = "wav"
-            )
-        ) ?: throw RuntimeException("No response")
-
-        cacheFile.writeBytes(speechWavBytes)
-
-        val renderTime = System.currentTimeMillis() - startTime
-        log.info("Received speech response in $renderTime ms")
-        return SpokenText(text, speechWavBytes.inputStream(), renderTime)
-    }
+    ): SpokenText? = null
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(this.javaClass)
 
         const val PROJECT_TREE_XPATH: String = "//div[@class='MyProjectViewTree']"
-        const val AI_CODER_MENU_XPATH: String = "//div[contains(@class, 'ActionMenu') and contains(@text, 'AI Coder')]"
+        const val AI_CODER_MENU_XPATH: String = "//div[contains(@class, 'ActionMenu') and contains(@text, 'Cognotik')]"
         val LONG_TIMEOUT = Duration.ofSeconds(300)
 
         fun clickElement(driver: WebDriver, wait: WebDriverWait, selector: String) = runElement(

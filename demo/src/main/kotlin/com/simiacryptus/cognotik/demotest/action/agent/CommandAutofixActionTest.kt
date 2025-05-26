@@ -2,9 +2,12 @@ package com.simiacryptus.cognotik.demotest.action.agent
 
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.JCheckboxFixture
+import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.fixtures.JTreeFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.component
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.simiacryptus.cognotik.demotest.DemoTestBase
 import com.simiacryptus.cognotik.demotest.SplashScreenConfig
@@ -15,6 +18,9 @@ import org.openqa.selenium.JavascriptExecutor
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.slf4j.LoggerFactory
+import java.awt.Point
+import java.awt.event.KeyEvent.VK_CONTROL
+import java.awt.event.KeyEvent.VK_V
 import java.lang.Thread.sleep
 import java.time.Duration
 import kotlin.io.path.name
@@ -68,6 +74,30 @@ class CommandAutofixActionTest : DemoTestBase(
                 openProjectView()
             }
 
+
+            // Step 1: Copy the location of gradlew
+            step("Copy gradlew path") {
+                playNarration("copy_gradlew_path")
+                val path = arrayOf(testProjectDir.name)
+                remoteRobot.find(JTreeFixture::class.java, byXpath(PROJECT_TREE_XPATH)).apply {
+                    expandAll(path)
+                    sleep(100)
+                    val rowNumber = collectRows().mapIndexed { index, row ->
+                        if (row.endsWith("gradlew")) {
+                            index
+                        } else {
+                            null
+                        }
+                    }.filterNotNull().firstOrNull() ?: throw RuntimeException("gradlew not found in project tree")
+                    rightClickRow(rowNumber = rowNumber)
+                }
+                component("//div[@accessiblename='Copy Path/Reference…']")
+                    .click(Point(73, 16))
+                component("//div[@accessiblename='Copy' and @class='MyList']")
+                    .click(Point(172, 17))
+                log.info("Gradlew path copied to clipboard")
+            }
+
             step("Select a directory") {
                 playNarration("select_directory")
                 val path = arrayOf(testProjectDir.name)
@@ -77,10 +107,10 @@ class CommandAutofixActionTest : DemoTestBase(
             }
 
             step("Click 'Auto-Fix' action") {
+                playNarration("access_menu")
+                playNarration("navigate_agents")
                 waitFor(Duration.ofSeconds(30)) {
                     try {
-                        playNarration("access_menu")
-                        playNarration("navigate_agents")
                         val aiCoderMenu = selectAICoderMenu()
                         val agentsMenu = aiCoderMenu.find(
                             CommonContainerFixture::class.java,
@@ -101,14 +131,9 @@ class CommandAutofixActionTest : DemoTestBase(
                         true
                     } catch (e: Exception) {
                         log.warn("Failed to navigate Auto-Fix menu: ${e.message}")
-
-                        playNarration("analysis_process")
+//                        playNarration("analysis_process")
                         sleep(5000)
-
-                        sleep(10000)
-
-                        sleep(5000)
-                        playNarration("retry_attempts")
+//                        playNarration("retry_attempts")
                         false
                     }
                 }
@@ -122,6 +147,33 @@ class CommandAutofixActionTest : DemoTestBase(
                         byXpath("//div[@class='MyDialog' and @title='Command Autofix Settings']")
                     )
                     if (dialog.isShowing) {
+                        // Step 2: Paste the location of gradlew into the tool selection input
+                        step("Configure tool selection") {
+                            playNarration("configure_tool_selection")
+                            val toolSelectionField = dialog.find(
+                                JTextFieldFixture::class.java,
+                                byXpath("//div[@class='CommandPanel']/div[@class='JPanel'][2]/div[@class='JPanel'][1]/div[@class='ComboBox']/div[@class='BorderlessTextField']")
+                            )
+                            toolSelectionField.click()
+                            keyboard {
+                                hotKey(VK_CONTROL, VK_V) // Paste gradlew path
+                            }
+                            log.info("Gradlew path pasted into tool selection field")
+                        }
+                        // Step 3: Add 'clean build' as the tool execution arguments
+                        step("Configure tool arguments") {
+                            playNarration("configure_tool_arguments")
+                            val argumentsField = dialog.find(
+                                JTextFieldFixture::class.java,
+                                byXpath("//div[@class='CommandPanel']/div[@class='JPanel'][2]/div[@class='JPanel'][2]/div[@class='ComboBox']/div[@class='BorderlessTextField']")
+                            )
+                            argumentsField.click()
+                            keyboard {
+                                enterText("clean build")
+                            }
+                            log.info("Tool arguments set to 'clean build'")
+                        }
+
                         val autoFixCheckbox = dialog.find(
                             JCheckboxFixture::class.java,
                             byXpath("//div[@class='JCheckBox' and @text='Auto-apply fixes']")
