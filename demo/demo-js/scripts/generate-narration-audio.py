@@ -4,21 +4,27 @@ Audio generation script for Cypress test narrations.
 This script processes the narrations.json file and generates audio files using ChatTTS.
 """
 
+import argparse
+import json
 import os
 import sys
-import json
-import argparse
 from pathlib import Path
 from typing import Dict, Any
-import ChatTTS
+
 import numpy as np
 import soundfile as sf
+
+import ChatTTS
 from tools.audio import pcm_arr_to_mp3_view
 
+
 class NarrationAudioGenerator:
-    def __init__(self, chattts_path: str = None, output_format: str = "mp3"):
+    def __init__(self, chattts_path: str = None, output_format: str = "mp3",
+                 speaker_vector: str = None, normalize_volume: bool = True):
         self.chattts_path = chattts_path
         self.output_format = output_format.lower()
+        self.speaker_vector_path = speaker_vector
+        self.normalize_volume = normalize_volume
         self.chat = None
         self.speaker = None
 
@@ -37,14 +43,47 @@ class NarrationAudioGenerator:
                 print("Failed to load ChatTTS models")
                 return False
 
-            # Sample a speaker
-            self.speaker = self.chat.sample_random_speaker()
-            print("ChatTTS initialized successfully")
+            # Load or sample a speaker
+            if self.speaker_vector_path and os.path.exists(self.speaker_vector_path):
+                try:
+                    self.speaker = np.load(self.speaker_vector_path)
+                    print(f"Loaded speaker vector from: {self.speaker_vector_path}")
+                except Exception as e:
+                    print(f"Failed to load speaker vector: {e}, using random speaker")
+                    self.speaker = self.chat.sample_random_speaker()
+            else:
+                self.speaker = self.chat.sample_random_speaker()
+                print(f"Using random speaker vector")
+
+            print(f"ChatTTS initialized successfully!")
             return True
 
         except Exception as e:
             print(f"Error initializing ChatTTS: {e}")
             return False
+
+    def normalize_audio_volume(self, audio_data: np.ndarray, target_db: float = -20.0) -> np.ndarray:
+        """Normalize audio volume to target dB level."""
+        try:
+            # Calculate RMS
+            rms = np.sqrt(np.mean(audio_data ** 2))
+            if rms == 0:
+                return audio_data
+
+            # Convert target dB to linear scale
+            target_rms = 10 ** (target_db / 20.0)
+
+            # Calculate scaling factor
+            scale_factor = target_rms / rms
+
+            # Apply scaling and clip to prevent distortion
+            normalized_audio = audio_data * scale_factor
+            normalized_audio = np.clip(normalized_audio, -1.0, 1.0)
+
+            return normalized_audio
+        except Exception as e:
+            print(f"Warning: Volume normalization failed: {e}")
+            return audio_data
 
     def generate_audio(self, text: str, output_path: str) -> bool:
         """Generate audio file from text."""
@@ -57,18 +96,26 @@ class NarrationAudioGenerator:
 
             # Generate audio
             wavs = self.chat.infer(
-                [text],
+                ["[Stts] " + text + " [Ptts]"],
                 params_infer_code=ChatTTS.Chat.InferCodeParams(
                     spk_emb=self.speaker,
+                    temperature=0.3,
+                    prompt="[speed_2] [pure]"
                 ),
+                split_text=False,
+                skip_refine_text=True,
             )
 
             if wavs and len(wavs) > 0:
                 wav_data = wavs[0]
+                # Apply volume normalization if enabled
+                if self.normalize_volume:
+                    wav_data = self.normalize_audio_volume(wav_data)
+                    print("Applied volume normalization")
 
                 # Save to file
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                
+
                 if self.output_format == "mp3":
                     # Convert to MP3
                     mp3_data = pcm_arr_to_mp3_view(wav_data)
@@ -135,6 +182,15 @@ def main():
         help="Output audio format (default: mp3)"
     )
     parser.add_argument(
+        "--speaker-vector",
+        help="Path to speaker vector file (.npy format)"
+    )
+    parser.add_argument(
+        "--no-normalize",
+        action="store_true",
+        help="Disable volume normalization"
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Regenerate existing audio files"
@@ -163,7 +219,12 @@ def main():
         return 1
 
     # Initialize audio generator
-    generator = NarrationAudioGenerator(args.chattts_path, args.format)
+    generator = NarrationAudioGenerator(
+        args.chattts_path,
+        args.format,
+        args.speaker_vector,
+        not args.no_normalize
+    )
     if not generator.initialize_chattts():
         print("Skipping audio generation - ChatTTS not available")
         return 0

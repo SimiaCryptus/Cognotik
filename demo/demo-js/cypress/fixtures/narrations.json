@@ -1,50 +1,178 @@
 {
-  "demo_start": {
-    "text": "Welcome to the Cognotik App demonstration. Today we will show you how to create and run a file modification task using our AI powered interface.",
-    "audio": "demo_start.mp3"
+  "api_keys_explanation": {
+    "text": "The API Keys tab is where you configure access to different AI providers like OpenAI, Anthropic, Google, and others. Each provider offers different models with unique capabilities.",
+    "audio": "api_keys_explanation.mp3"
   },
-  "select_single_task": {
-    "text": "First, we will select single task mode to focus on one specific operation.",
-    "audio": "select_single_task.mp3"
+  "api_providers_overview": {
+    "text": "Cognotik supports multiple AI providers including OpenAI for GPT models, Anthropic for Claude, Google for Gemini, Groq for fast inference, and many others.",
+    "audio": "api_providers_overview.mp3"
+  },
+  "auto_fix_explanation": {
+    "text": "Auto Fix enables the AI to automatically attempt to correct errors that occur during code execution, making the development process more robust and self-healing.",
+    "audio": "auto_fix_explanation.mp3"
+  },
+  "auto_fix_task_explanation": {
+    "text": "Auto Fix Task combines command execution with automatic error correction, running commands and fixing any issues that arise during execution.",
+    "audio": "auto_fix_task_explanation.mp3"
+  },
+  "autonomous_mode_explanation": {
+    "text": "Autonomous mode lets the AI automatically plan and execute complex development tasks with minimal guidance. It can break down large objectives into smaller tasks and execute them independently.",
+    "audio": "autonomous_mode_explanation.mp3"
+  },
+  "autonomous_settings_explanation": {
+    "text": "Autonomous mode includes settings for task history limits, maximum tasks per iteration, and total iteration limits to control the AI's execution scope.",
+    "audio": "autonomous_settings_explanation.mp3"
+  },
+  "basic_chat_alternative": {
+    "text": "Alternatively, the Basic Chat button provides quick access to a simple chat interface for immediate AI assistance without the full configuration process.",
+    "audio": "basic_chat_alternative.mp3"
+  },
+  "chat_mode_explanation": {
+    "text": "Chat mode provides interactive task execution where you work directly with the AI, giving it specific instructions and seeing immediate results. This is ideal for focused, individual tasks.",
+    "audio": "chat_mode_explanation.mp3"
+  },
+  "code_execution_task_explanation": {
+    "text": "Code Execution Task lets the AI run code snippets and scripts, testing functionality and debugging issues in real-time.",
+    "audio": "code_execution_task_explanation.mp3"
+  },
+  "cognitive_model_overview": {
+    "text": "Cognotik uses a cognitive task mode model where you first choose how the AI should approach your work, then configure the specific tools and settings it will use.",
+    "audio": "cognitive_model_overview.mp3"
   },
   "configure_model": {
     "text": "Next, we will configure our AI model settings. We are selecting Claude three point five Haiku for both the main model and parsing model.",
     "audio": "configure_model.mp3"
   },
-  "set_temperature": {
-    "text": "We will set the temperature to zero point two for more consistent and focused responses.",
-    "audio": "set_temperature.mp3"
+  "demo_complete": {
+    "text": "This completes our demonstration of the Cognotik file modification task. The AI successfully understood our request, planned the execution, and created the file with content as requested.",
+    "audio": "demo_complete.mp3"
+  },
+  "demo_start": {
+    "text": "Welcome to the Cognotik App demonstration. Today we will show you how to create and run a file modification task using our AI powered interface.",
+    "audio": "demo_start.mp3"
   },
   "enable_autofix": {
     "text": "Auto fix is enabled to automatically correct any issues that might arise during task execution.",
     "audio": "enable_autofix.mp3"
   },
-  "select_task_type": {
-    "text": "Now we will select the File Modification Task, which allows the AI to create, edit, and manage files in our project.",
-    "audio": "select_task_type.mp3"
-  },
-  "launch_session": {
-    "text": "With our settings configured, we can now launch the task session.",
-    "audio": "launch_session.mp3"
-  },
   "enter_command": {
     "text": "we will enter our command. Create a new file called test.txt and write a short story in it. This demonstrates the AIs ability to understand natural language instructions.",
     "audio": "enter_command.mp3"
-  },
-  "view_plan": {
-    "text": "The AI has generated a plan for our task. Let us review what it intends to do.",
-    "audio": "view_plan.mp3"
   },
   "execute_task": {
     "text": "Now we will execute the task and watch as the AI carries out the file creation and writing process.",
     "audio": "execute_task.mp3"
   },
+  "file_modification_task_explanation": {
+    "text": "File Modification Task allows the AI to create new files or modify existing code with intelligent assistance, maintaining code quality and consistency.",
+    "audio": "file_modification_task_explanation.mp3"
+  },
+  "file_search_task_explanation": {
+    "text": "File Search Task performs pattern-based searches across project files with contextual results, helping the AI understand and navigate large codebases.",
+    "audio": "file_search_task_explanation.mp3"
+  },
+  "generate_directory_demo": {
+    "text": "The generate directory button creates a new timestamped directory in your Documents folder, keeping each session organized and separate.",
+    "audio": "generate_directory_demo.mp3"
+  },
+  "github_search_task_explanation": {
+    "text": "GitHub Search Task performs comprehensive searches across GitHub repositories, code, issues, and users to find relevant examples and solutions.",
+    "audio": "github_search_task_explanation.mp3"
+  },
+  "goal_oriented_mode_explanation": {
+    "text": "Goal Oriented mode focuses on achieving specific outcomes through iterative planning and execution, adapting the approach based on results and feedback.",
+    "audio": "goal_oriented_mode_explanation.mp3"
+  },
+  "insight_task_explanation": {
+    "text": "Insight Task analyzes code and provides detailed explanations of implementation patterns, helping you understand complex codebases and architectural decisions.",
+    "audio": "insight_task_explanation.mp3"
+  },
+  "intro_welcome": {
+    "text": "Welcome to Cognotik, an advanced AI development platform. This introduction will guide you through all the features and capabilities of the launcher interface.",
+    "audio": "intro_welcome.mp3"
+  },
+  "introduction_conclusion": {
+    "text": "This completes the introduction to Cognotik's launcher. You now understand the cognitive modes, task settings, available task types, and how to configure and launch your AI development sessions.",
+    "audio": "introduction_conclusion.mp3"
+  },
+  "launch_button_explanation": {
+    "text": "The Launch AI Session button starts your configured development environment, taking you to the appropriate interface based on your chosen cognitive mode.",
+    "audio": "launch_button_explanation.mp3"
+  },
+  "launch_session": {
+    "text": "With our settings configured, we can now launch the task session.",
+    "audio": "launch_session.mp3"
+  },
+  "local_tools_explanation": {
+    "text": "The Local Tools tab allows you to register command-line tools and scripts that the AI can use during task execution, extending its capabilities beyond built-in functions.",
+    "audio": "local_tools_explanation.mp3"
+  },
+  "model_selection_explanation": {
+    "text": "Model selection lets you choose which AI model to use for main tasks and which for parsing and analysis. Different models have different strengths, costs, and capabilities.",
+    "audio": "model_selection_explanation.mp3"
+  },
+  "plan_ahead_mode_explanation": {
+    "text": "Plan Ahead mode works with you to create detailed plans before execution, giving you more control over the process while still leveraging AI planning capabilities.",
+    "audio": "plan_ahead_mode_explanation.mp3"
+  },
+  "review_configuration": {
+    "text": "The launch page shows a summary of your cognitive mode, task settings, and API configuration, allowing you to verify everything is set up correctly.",
+    "audio": "review_configuration.mp3"
+  },
+  "select_single_task": {
+    "text": "First, we will select single task mode to focus on one specific operation.",
+    "audio": "select_single_task.mp3"
+  },
+  "select_task_type": {
+    "text": "Now we will select the File Modification Task, which allows the AI to create, edit, and manage files in our project.",
+    "audio": "select_task_type.mp3"
+  },
+  "set_temperature": {
+    "text": "We will set the temperature to zero point two for more consistent and focused responses.",
+    "audio": "set_temperature.mp3"
+  },
+  "shell_command_task_explanation": {
+    "text": "Shell Command Task enables the AI to execute command-line operations safely, allowing it to run builds, tests, and other development tools.",
+    "audio": "shell_command_task_explanation.mp3"
+  },
+  "step1_cognitive_modes": {
+    "text": "Step one is choosing your cognitive mode. This determines how the AI will approach and execute your tasks.",
+    "audio": "step1_cognitive_modes.mp3"
+  },
+  "step2_task_settings": {
+    "text": "Step two is configuring your task settings. These control how the AI models behave and where they operate.",
+    "audio": "step2_task_settings.mp3"
+  },
+  "step3_task_types": {
+    "text": "Step three is selecting which task types to enable. Each task type gives the AI different capabilities for interacting with your development environment.",
+    "audio": "step3_task_types.mp3"
+  },
+  "step4_launch": {
+    "text": "Step four is the final launch step where you review your configuration and start your AI development session.",
+    "audio": "step4_launch.mp3"
+  },
+  "temperature_explanation": {
+    "text": "Temperature controls the creativity and randomness of AI responses. Lower values like zero point two give more consistent results, while higher values like zero point eight encourage more creative solutions.",
+    "audio": "temperature_explanation.mp3"
+  },
+  "user_settings_intro": {
+    "text": "Before we explore the main workflow, let's look at the user settings where you configure API keys and local tools.",
+    "audio": "user_settings_intro.mp3"
+  },
   "view_output": {
     "text": "Finally, we can see the output showing that test.txt has been successfully created and updated with our short story.",
     "audio": "view_output.mp3"
   },
-  "demo_complete": {
-    "text": "This completes our demonstration of the Cognotik file modification task. The AI successfully understood our request, planned the execution, and created the file with content as requested.",
-    "audio": "demo_complete.mp3"
+  "view_plan": {
+    "text": "The AI has generated a plan for our task. Let us review what it intends to do.",
+    "audio": "view_plan.mp3"
+  },
+  "web_search_task_explanation": {
+    "text": "Web Search Task searches Google for information, fetches top results, and analyzes content to provide the AI with current information and documentation.",
+    "audio": "web_search_task_explanation.mp3"
+  },
+  "working_directory_explanation": {
+    "text": "The working directory is where the AI will read and write files. You can specify an existing directory or generate a new timestamped session directory.",
+    "audio": "working_directory_explanation.mp3"
   }
 }
