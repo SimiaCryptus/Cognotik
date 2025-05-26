@@ -1,0 +1,58 @@
+{
+  "welcome": {
+    "text": "Welcome to the Command Autofix feature demonstration. This powerful tool automatically detects and resolves build and compilation issues across your entire project.",
+    "audio": "welcome.wav"
+  },
+  "open_project_view": {
+    "text": "Let's start by opening our project view. We'll be working with a sample project that has some build issues to fix.",
+    "audio": "open_project_view.wav"
+  },
+  "select_directory": {
+    "text": "We'll select the project root directory to analyze the entire codebase. Command Autofix works recursively through all project files.",
+    "audio": "select_directory.wav"
+  },
+  "access_menu": {
+    "text": "Now we'll access the Auto-Fix feature through the AI Coder menu.",
+    "audio": "access_menu.wav"
+  },
+  "navigate_agents": {
+    "text": "Navigate to the Agents submenu, where you'll find various automated assistance tools.",
+    "audio": "navigate_agents.wav"
+  },
+  "configure_settings": {
+    "text": "Let's configure the Command Autofix settings. The tool offers several options to customize how fixes are applied.",
+    "audio": "configure_settings.wav"
+  },
+  "enable_auto_apply": {
+    "text": "We'll enable the 'Auto-apply fixes' option, which allows Command Autofix to automatically implement suggested fixes without manual confirmation.",
+    "audio": "enable_auto_apply.wav"
+  },
+  "browser_interface": {
+    "text": "The Command Autofix interface opens in your browser, providing a detailed view of the analysis process and any fixes being applied.",
+    "audio": "browser_interface.wav"
+  },
+  "analysis_process": {
+    "text": "Watch as Command Autofix analyzes your build output, identifies issues, and applies appropriate fixes. The AI considers your project's context and build configuration.",
+    "audio": "analysis_process.wav"
+  },
+  "success_completion": {
+    "text": "Excellent! Command Autofix has successfully resolved the build issues. Notice how the build now completes without errors, demonstrating the effectiveness of the automated fixes.",
+    "audio": "success_completion.wav"
+  },
+  "retry_attempts": {
+    "text": "Sometimes multiple attempts may be needed for complex issues. Command Autofix will automatically retry with different approaches until the build succeeds.",
+    "audio": "retry_attempts.wav"
+  },
+  "refresh_interface": {
+    "text": "Refreshing Command Autofix interface.",
+    "audio": "refresh_interface.wav"
+  },
+  "troubleshooting": {
+    "text": "If you encounter any issues accessing the interface, ensure your IDE has permission to open browser windows.",
+    "audio": "troubleshooting.wav"
+  },
+  "demo_conclusion": {
+    "text": "And that concludes our demonstration of Command Autofix. This powerful feature saves time by automatically resolving build issues, allowing you to focus on writing code rather than fixing build problems.",
+    "audio": "demo_conclusion.wav"
+  }
+}
