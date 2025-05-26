@@ -6,6 +6,7 @@ module.exports = defineConfig({
         baseUrl: 'http://localhost:7682/',
         supportFile: 'cypress/support/e2e.js',
         specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+        watchForFileChanges: false, // Disable watching for file changes to avoid unnecessary reloads
         // viewportWidth: 1280,
         // viewportHeight: 720,
         viewportWidth: 2560,

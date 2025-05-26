@@ -269,6 +269,38 @@ function populateModelSelections(apiSettingsParam = null, taskSettingsParam = nu
     console.log('[populateModelSelections] Finished. Final modelSelect.value:', modelSelect.value, 'parsingModelSelect.value:', parsingModelSelect.value);
 }
 
+function setupTooltips() {
+    console.log('[setupTooltips] Called');
+    
+    // Add click handlers to all tooltip elements
+    document.querySelectorAll('.tooltip').forEach(tooltip => {
+        tooltip.addEventListener('click', function(e) {
+            e.stopPropagation();
+            console.log('[setupTooltips] Tooltip clicked');
+            
+            // Close all other tooltips
+            document.querySelectorAll('.tooltip.active').forEach(activeTooltip => {
+                if (activeTooltip !== tooltip) {
+                    activeTooltip.classList.remove('active');
+                }
+            });
+            
+            // Toggle this tooltip
+            tooltip.classList.toggle('active');
+        });
+    });
+    
+    // Close tooltips when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.tooltip')) {
+            console.log('[setupTooltips] Clicked outside tooltip, closing all');
+            document.querySelectorAll('.tooltip.active').forEach(tooltip => {
+                tooltip.classList.remove('active');
+            });
+        }
+    });
+}
+
 // HTTP service for better testability
 class HttpService {
     constructor(dependencies = {}) {
@@ -410,6 +442,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setupEventListeners();
     console.log('[DOMContentLoaded] setupEventListeners called.');
+    setupTooltips();
+    console.log('[DOMContentLoaded] setupTooltips called.');
+
 
     loadSettingsFromServer();
     console.log('[DOMContentLoaded] loadSettingsFromServer called.');

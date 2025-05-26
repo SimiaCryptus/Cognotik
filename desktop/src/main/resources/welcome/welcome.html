@@ -38,7 +38,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
+                    <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span
+                            class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span></label>
                     <input id="basic-chat-temperature" type="range" min="0" max="1" step="0.01" value="0.3">
                     <span id="basic-chat-temperature-value">0.3</span>
                 </div>
@@ -127,18 +128,34 @@
             <div>
                 <input checked id="single-task-mode" name="cognitive-mode" type="radio" value="single-task">
                 <label for="single-task-mode">Chat</label>
-                <span class="tooltip">?
-          <span class="tooltiptext">Execute individual tasks with AI assistance. Best for focused, specific tasks.</span>
-        </span>
+                <span class="tooltip">?<span class="tooltiptext">
+                    <div>
+                        <h2>Interactive Conversation with AI Assistance</h2>
+                        <ul class="features-list">
+                            <li>Execute individual tasks</li>
+                            <li>Direct Q&A format</li>
+                            <li>Best for focused, specific questions</li>
+                            <li>Real-time collaboration</li>
+                        </ul>
+                    </div>
+                </span></span>
             </div>
         </div>
         <div class="task-toggle">
             <div>
                 <input id="auto-plan-mode" name="cognitive-mode" type="radio" value="auto-plan">
                 <label for="auto-plan-mode">Autonomous</label>
-                <span class="tooltip">?
-          <span class="tooltiptext">Let AI automatically plan and execute complex development tasks with minimal guidance.</span>
-        </span>
+                <span class="tooltip">?<span class="tooltiptext">
+                    <div>
+                        <h2>AI-Driven Feedback Loop</h2>
+                        <ul class="features-list">
+                            <li>Automatic task breakdown</li>
+                            <li>Self-directed execution</li>
+                            <li>Minimal human intervention</li>
+                            <li>Best for complex, multi-step projects</li>
+                        </ul>
+                    </div>
+                </span></span>
             </div>
         </div>
         <div class="task-toggle">
@@ -146,7 +163,17 @@
                 <input id="plan-ahead-mode" name="cognitive-mode" type="radio" value="plan-ahead">
                 <label for="plan-ahead-mode">Plan Ahead</label>
                 <span class="tooltip">?
-          <span class="tooltiptext">Work with AI to create detailed plans before execution, with more control over the process.</span>
+          <span class="tooltiptext">
+              <div>
+                  <h2>Structured Planning with AI Guidance</h2>
+                  <ul class="features-list">
+                      <li>Iterative planning and execution</li>
+                      <li>AI assists in task breakdown</li>
+                      <li>Focus on achieving specific goals</li>
+                      <li>Best for projects requiring detailed planning</li>
+                  </ul>
+              </div>
+          </span>
         </span>
             </div>
         </div>
@@ -209,7 +236,7 @@
         </div>
     </div>
     <div class="form-group">
-        <label for="temperature">Temperature: <span class="tooltip">?<span class="tooltiptext">Controls randomness in AI responses. Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.</span></span></label>
+        <label for="temperature">Temperature: <span class="tooltip">?<span class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span></label>
         <input id="temperature" max="1" min="0" step="0.1" type="range" value="0.2">
         <span id="temperature-value">0.2</span>
     </div>
