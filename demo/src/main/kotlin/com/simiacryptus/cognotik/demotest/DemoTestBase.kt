@@ -43,7 +43,8 @@ import kotlin.math.absoluteValue
 abstract class DemoTestBase(
     recordingConfig: RecordingConfig = RecordingConfig(),
     splashScreenConfig: SplashScreenConfig = SplashScreenConfig(),
-    val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.5.zip"
+    val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.5.zip",
+    protected val narrationFile: String? = null
 ) : ScreenRec(
     recordingConfig = recordingConfig,
     splashScreenConfig = splashScreenConfig
@@ -54,6 +55,10 @@ abstract class DemoTestBase(
     protected lateinit var testProjectDir: Path
     private var driverInitialized = false
     protected val driver: WebDriver by lazy { initializeWebDriver() }
+    protected val narrationManager: NarrationManager? by lazy {
+        narrationFile?.let { NarrationManager(it) }
+    }
+    
     private fun initializeWebDriver(): RemoteWebDriver {
         try {
             val driver = getChrome()
@@ -246,12 +251,8 @@ abstract class DemoTestBase(
             progressPath: String = "//div[@class='JProgressBar']"
         ): Boolean = try {
             remoteRobot.find(CommonContainerFixture::class.java, byXpath(progressPath))
-            sleep(1000)
-            remoteRobot.find(CommonContainerFixture::class.java, byXpath(progressPath))
             true
         } catch (e: Exception) {
-            log.error("Failed to open project: ${e.message}", e)
-            log.debug("Stack trace: ", e)
             false
         }
         waitFor(Duration.ofSeconds(300)) { -> isProcessing() }
@@ -265,6 +266,7 @@ abstract class DemoTestBase(
                 false
             }
         }
+        sleep(1000)
         waitFor(Duration.ofSeconds(300)) { -> !isProcessing() }
     }
 
@@ -327,6 +329,26 @@ abstract class DemoTestBase(
     val voices = arrayOf("alloy", "echo", "fable", "onyx", "nova", "shimmer")
     open val voice: String =
         this::class.java.simpleName.lowercase().let { voices[it.hashCode().absoluteValue % voices.size] }
+    fun playNarration(key: String, delay: Long = 2000): SpokenText? {
+        val narration = narrationManager?.getNarration(key)
+        if (narration == null) {
+            log.warn("No narration found for key: $key")
+            return null
+        }
+        // Try to use pre-recorded audio first
+        val audioStream = narrationManager?.getAudioStream(key)
+        if (audioStream != null) {
+            log.info("Playing pre-recorded audio for: $key")
+            return SpokenText(narration.text ?: "", audioStream, 0).apply { play(delay) }
+        }
+        // Fall back to TTS
+        log.info("Using TTS for narration: $key")
+        return tts(narration.text ?: "")?.apply { play(delay) }
+    }
+    fun playNarrationText(text: String, delay: Long = 2000): SpokenText? {
+        return tts(text)?.apply { play(delay) }
+    }
+
 
     fun tts(
         text: String,
@@ -367,7 +389,7 @@ abstract class DemoTestBase(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(this.javaClass)
 
-        const val PROJECT_TREE_XPATH: String = "//div[@class='ProjectViewTree']"
+        const val PROJECT_TREE_XPATH: String = "//div[@class='MyProjectViewTree']"
         const val AI_CODER_MENU_XPATH: String = "//div[contains(@class, 'ActionMenu') and contains(@text, 'AI Coder')]"
         val LONG_TIMEOUT = Duration.ofSeconds(300)
 

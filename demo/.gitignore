@@ -8,3 +8,4 @@ test-screenshots/
 .env
 demo-js/asset/
 *.mp4
+*.wav

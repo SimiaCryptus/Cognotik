@@ -12,11 +12,13 @@ from pathlib import Path
 from typing import Dict, Any
 import ChatTTS
 import numpy as np
+import soundfile as sf
 from tools.audio import pcm_arr_to_mp3_view
 
 class NarrationAudioGenerator:
-    def __init__(self, chattts_path: str = None):
+    def __init__(self, chattts_path: str = None, output_format: str = "mp3"):
         self.chattts_path = chattts_path
+        self.output_format = output_format.lower()
         self.chat = None
         self.speaker = None
 
@@ -62,14 +64,22 @@ class NarrationAudioGenerator:
             )
 
             if wavs and len(wavs) > 0:
-                # Convert to MP3
                 wav_data = wavs[0]
-                mp3_data = pcm_arr_to_mp3_view(wav_data)
 
                 # Save to file
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                with open(output_path, 'wb') as f:
-                    f.write(mp3_data)
+                
+                if self.output_format == "mp3":
+                    # Convert to MP3
+                    mp3_data = pcm_arr_to_mp3_view(wav_data)
+                    with open(output_path, 'wb') as f:
+                        f.write(mp3_data)
+                elif self.output_format == "wav":
+                    # Save as WAV
+                    sf.write(output_path, wav_data, 24000)
+                else:
+                    print(f"Unsupported output format: {self.output_format}")
+                    return False
 
                 print(f"Audio saved to: {output_path}")
                 return True
@@ -119,6 +129,12 @@ def main():
         help="Custom path to ChatTTS models"
     )
     parser.add_argument(
+        "--format",
+        choices=["mp3", "wav"],
+        default="mp3",
+        help="Output audio format (default: mp3)"
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Regenerate existing audio files"
@@ -147,7 +163,7 @@ def main():
         return 1
 
     # Initialize audio generator
-    generator = NarrationAudioGenerator(args.chattts_path)
+    generator = NarrationAudioGenerator(args.chattts_path, args.format)
     if not generator.initialize_chattts():
         print("Skipping audio generation - ChatTTS not available")
         return 0
@@ -167,7 +183,7 @@ def main():
             continue
 
         # Generate filename
-        audio_filename = f"{key}.mp3"
+        audio_filename = f"{key}.{args.format}"
         audio_path = audio_dir / audio_filename
 
         # Skip if file exists and not forcing
@@ -195,4 +211,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

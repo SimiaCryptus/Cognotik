@@ -47,7 +47,8 @@ import kotlin.io.path.name
 class CommandAutofixActionTest : DemoTestBase(
     splashScreenConfig = SplashScreenConfig(
         titleText = "Command Autofix Demo",
-    )
+    ),
+    narrationFile = "narrations/command-autofix.json"
 ) {
     override fun getTemplateProjectPath(): String {
         return "demo_projects/DataGnome"
@@ -60,17 +61,15 @@ class CommandAutofixActionTest : DemoTestBase(
     @Test
     fun testCommandAutofixAction() {
         with(remoteRobot) {
-            tts("Welcome to the Command Autofix feature demonstration. This powerful tool automatically detects and resolves build and compilation issues across your entire project.")?.play(
-                2000
-            )
+            playNarration("welcome", 2000)
 
             step("Open project view") {
-                tts("Let's start by opening our project view. We'll be working with a sample project that has some build issues to fix.")?.play()
+                playNarration("open_project_view")
                 openProjectView()
             }
 
             step("Select a directory") {
-                tts("We'll select the project root directory to analyze the entire codebase. Command Autofix works recursively through all project files.")?.play()
+                playNarration("select_directory")
                 val path = arrayOf(testProjectDir.name)
                 val tree =
                     remoteRobot.find(JTreeFixture::class.java, byXpath(PROJECT_TREE_XPATH)).apply { expandAll(path) }
@@ -78,11 +77,10 @@ class CommandAutofixActionTest : DemoTestBase(
             }
 
             step("Click 'Auto-Fix' action") {
-                tts("Now we'll launch the Command Autofix feature through the AI Coder menu. This tool integrates seamlessly with your IDE's build system.")?.play()
                 waitFor(Duration.ofSeconds(30)) {
                     try {
-                        tts("Now we'll access the Auto-Fix feature through the AI Coder menu.")?.play()
-                        tts("Navigate to the Agents submenu, where you'll find various automated assistance tools.")?.play()
+                        playNarration("access_menu")
+                        playNarration("navigate_agents")
                         val aiCoderMenu = selectAICoderMenu()
                         val agentsMenu = aiCoderMenu.find(
                             CommonContainerFixture::class.java,
@@ -104,21 +102,20 @@ class CommandAutofixActionTest : DemoTestBase(
                     } catch (e: Exception) {
                         log.warn("Failed to navigate Auto-Fix menu: ${e.message}")
 
-                        tts("The AI is now analyzing your codebase and build configuration. This may take a few moments.")?.play()
+                        playNarration("analysis_process")
                         sleep(5000)
 
                         sleep(10000)
-                        tts("The AI is now processing the request and making necessary code changes. Let's review the modifications as they happen.")?.play()
 
                         sleep(5000)
-                        tts("If the menu doesn't appear immediately, the IDE will automatically retry. This ensures reliable access to the feature.")?.play()
+                        playNarration("retry_attempts")
                         false
                     }
                 }
             }
 
             step("Configure Command Autofix") {
-                tts("Let's configure the Command Autofix settings. The tool offers several options to customize how fixes are applied.")?.play()
+                playNarration("configure_settings")
                 waitFor(Duration.ofSeconds(15)) {
                     val dialog = find(
                         CommonContainerFixture::class.java,
@@ -130,7 +127,7 @@ class CommandAutofixActionTest : DemoTestBase(
                             byXpath("//div[@class='JCheckBox' and @text='Auto-apply fixes']")
                         )
                         autoFixCheckbox.select()
-                        tts("We'll enable the 'Auto-apply fixes' option, which allows Command Autofix to automatically implement suggested fixes without manual confirmation.")?.play()
+                        playNarration("enable_auto_apply")
 
                         val okButton =
                             dialog.find(
@@ -156,7 +153,7 @@ class CommandAutofixActionTest : DemoTestBase(
                 }
                 if (url != null) {
                     log.info("Retrieved URL: $url")
-                    tts("The Command Autofix interface opens in your browser, providing a detailed view of the analysis process and any fixes being applied.")?.play()
+                    playNarration("browser_interface")
                     try {
                         this@CommandAutofixActionTest.driver.get(url.toString())
 
@@ -170,24 +167,24 @@ class CommandAutofixActionTest : DemoTestBase(
                     while (attempt <= 5) {
                         val wait = WebDriverWait(this@CommandAutofixActionTest.driver, Duration.ofSeconds(600))
                         try {
-                            tts("Watch as Command Autofix analyzes your build output, identifies issues, and applies appropriate fixes. The AI considers your project's context and build configuration.")?.play()
+                            playNarration("analysis_process")
 
                             wait.until(ExpectedConditions.presenceOfElementLocated(By.className("response-message")))
 
                             sleep(5000)
 
 
-                            tts("Excellent! Command Autofix has successfully resolved the build issues. Notice how the build now completes without errors, demonstrating the effectiveness of the automated fixes.")?.play()
+                            playNarration("success_completion")
                             break
                         } catch (e: Exception) {
                             attempt++
                             log.warn("Error interacting with Command Autofix interface", e)
-                            tts("Sometimes multiple attempts may be needed for complex issues. Command Autofix will automatically retry with different approaches until the build succeeds.")?.play()
+                            playNarration("retry_attempts")
                             (driver as JavascriptExecutor).executeScript("window.scrollTo(0, 0)")
                             val refreshButton = driver.findElement(By.xpath("//a[@class='href-link' and text()='♻']"))
                             refreshButton.click()
                             log.info("Refresh button clicked")
-                            tts("Refreshing Command Autofix interface.")?.play()
+                            playNarration("refresh_interface")
                             driver.findElements(By.cssSelector(".tabs-container > .tabs > .tab-button"))
                                 .get(attempt - 1).click()
                         }
@@ -195,12 +192,12 @@ class CommandAutofixActionTest : DemoTestBase(
                     this@CommandAutofixActionTest.driver.quit()
                 } else {
                     log.error("No URL found in UDP messages")
-                    tts("If you encounter any issues accessing the interface, ensure your IDE has permission to open browser windows.")?.play()
+                    playNarration("troubleshooting")
                 }
                 clearMessageBuffer()
             }
 
-            tts("And that concludes our demonstration of Command Autofix. This powerful feature saves time by automatically resolving build issues, allowing you to focus on writing code rather than fixing build problems.")?.play()
+            playNarration("demo_conclusion")
             Unit
         }
     }
