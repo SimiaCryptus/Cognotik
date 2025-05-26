@@ -15,7 +15,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
     private val connection: Connection by lazy {
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
         val connection =
-            DriverManager.getConnection("jdbc:hsqldb:mem", "SA", "")
+            DriverManager.getConnection("jdbc:hsqldb:mem:metadata", "SA", "")
         createSchema(connection)
         connection
     }

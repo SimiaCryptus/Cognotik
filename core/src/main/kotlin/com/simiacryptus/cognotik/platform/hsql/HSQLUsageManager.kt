@@ -16,7 +16,7 @@ class HSQLUsageManager() : UsageInterface {
     private val connection: Connection by lazy {
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
         val connection =
-            DriverManager.getConnection("jdbc:hsqldb:mem", "SA", "")
+            DriverManager.getConnection("jdbc:hsqldb:mem:usage", "SA", "")
         log.debug("Database connection established: $connection")
         createSchema(connection)
         connection
