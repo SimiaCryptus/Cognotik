@@ -28,6 +28,7 @@ open class HttpClientManager(
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     private val workPool: ExecutorService,
 ) : API() {
+    val createdBy = Thread.currentThread().stackTrace
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpClientManager::class.java)

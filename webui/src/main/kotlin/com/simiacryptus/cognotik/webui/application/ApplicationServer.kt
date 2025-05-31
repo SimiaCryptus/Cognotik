@@ -16,6 +16,8 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
@@ -28,6 +30,7 @@ abstract class ApplicationServer(
     open val root: File = dataStorageRoot,
     val showMenubar: Boolean = true,
 ) : ChatServer(resourceBase) {
+    private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     open val description: String = ""
     open val singleInput = true
@@ -60,6 +63,7 @@ abstract class ApplicationServer(
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
     override fun newSession(user: User?, session: Session): SocketManager {
+        logger.info("Creating new session: {} for user: {} in application: {}", session, user?.email ?: "anonymous", applicationName)
         dataStorage.setJson(
             user, session, "info.json", mapOf(
                 "session" to session.toString(),
@@ -68,6 +72,7 @@ abstract class ApplicationServer(
                 "startTime" to System.currentTimeMillis(),
             )
         )
+        logger.debug("Session info saved for session: {}", session)
         return object : ApplicationSocketManager(
             session = session,
             owner = user,
@@ -88,6 +93,7 @@ abstract class ApplicationServer(
                 api = api
             )
         }
+        logger.info("New session created successfully: {}", session)
     }
 
     open fun userMessage(
@@ -96,7 +102,11 @@ abstract class ApplicationServer(
         userMessage: String,
         ui: ApplicationInterface,
         api: API
-    ): Unit = throw UnsupportedOperationException()
+    ): Unit {
+        logger.warn("userMessage not implemented for application: {} - session: {} user: {}", 
+                   applicationName, session, user?.email ?: "anonymous")
+        throw UnsupportedOperationException("userMessage not implemented for $applicationName")
+    }
 
     open val settingsClass: Class<*> get() = Map::class.java
 
@@ -107,16 +117,24 @@ abstract class ApplicationServer(
         userId: User?,
         @Suppress("UNCHECKED_CAST") clazz: Class<T> = settingsClass as Class<T>
     ): T? {
+        logger.debug("Getting settings for session: {} user: {} class: {}", session, userId?.email ?: "anonymous", clazz.simpleName)
         val settingsFile = getSettingsFile(session, userId)
+        logger.debug("Settings file path: {}", settingsFile.absolutePath)
         var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(settingsFile.readText(), clazz) else null
+        
         if (null == settings) {
+            logger.debug("No existing settings found, initializing default settings")
             val initSettings = initSettings<T>(session)
             if (null != initSettings) {
+                logger.debug("Writing initial settings to file")
                 settingsFile.writeText(JsonUtil.toJson(initSettings))
             }
             if (settingsFile.exists()) {
                 settings = JsonUtil.fromJson(settingsFile.readText(), clazz)
+                logger.debug("Loaded initial settings from file")
             }
+        } else {
+            logger.debug("Loaded existing settings from file")
         }
         return settings
     }
@@ -125,9 +143,11 @@ abstract class ApplicationServer(
         session: Session,
         userId: User?
     ): File {
+        logger.debug("Getting settings file for session: {} user: {}", session, userId?.email ?: "anonymous")
         val settingsFile =
             dataStorage.getDataDir(userId, session).resolve("settings.json")
                 .apply { parentFile.mkdirs() }
+        logger.debug("Settings file resolved to: {}", settingsFile.absolutePath)
         return settingsFile
     }
 
@@ -135,42 +155,67 @@ abstract class ApplicationServer(
         ServletHolder("sessionList", SessionListServlet(this.dataStorage, path, this))
 
     override fun configure(webAppContext: WebAppContext) {
+        logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
 
         webAppContext.addFilter(
             FilterHolder { request, response, chain ->
+                val requestPath = (request as HttpServletRequest).requestURI
+                logger.debug("Processing request: {} for application: {}", requestPath, applicationName)
                 val user = authenticationManager.getUser((request as HttpServletRequest).getCookie())
+                logger.debug("Authenticated user: {} for request: {}", user?.email ?: "anonymous", requestPath)
                 val canRead = authorizationManager.isAuthorized(
                     applicationClass = this@ApplicationServer.javaClass,
                     user = user,
                     operationType = OperationType.Read
                 )
+                logger.debug("Authorization check result: {} for user: {} on path: {}", canRead, user?.email ?: "anonymous", requestPath)
                 if (canRead) {
+                    logger.debug("Access granted for request: {}", requestPath)
                     chain?.doFilter(request, response)
                 } else {
+                    logger.warn("Access denied for user: {} on path: {} in application: {}", user?.email ?: "anonymous", requestPath, applicationName)
                     response?.writer?.write("Access Denied")
                     (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
                 }
             }, "/*", null
         )
+        logger.debug("Adding servlets for application: {}", applicationName)
 
         webAppContext.addServlet(appInfoServlet, "/appInfo")
+        logger.debug("Added appInfo servlet")
         webAppContext.addServlet(userInfo, "/userInfo")
+        logger.debug("Added userInfo servlet")
         webAppContext.addServlet(usageServlet, "/usage")
+        logger.debug("Added usage servlet")
         webAppContext.addServlet(fileIndex, "/fileIndex/*")
+        logger.debug("Added fileIndex servlet")
         webAppContext.addServlet(fileZip, "/fileZip")
+        logger.debug("Added fileZip servlet")
         webAppContext.addServlet(sessionsServlet(path), "/sessions")
+        logger.debug("Added sessions servlet")
         webAppContext.addServlet(sessionSettingsServlet, "/settings")
+        logger.debug("Added sessionSettings servlet")
         webAppContext.addServlet(sessionThreadsServlet, "/threads")
+        logger.debug("Added sessionThreads servlet")
         webAppContext.addServlet(sessionShareServlet, "/share")
+        logger.debug("Added sessionShare servlet")
         webAppContext.addServlet(deleteSessionServlet, "/delete")
+        logger.debug("Added deleteSession servlet")
         webAppContext.addServlet(cancelSessionServlet, "/cancel")
+        logger.debug("Added cancelSession servlet")
+        logger.info("Web application context configuration completed for: {}", applicationName)
     }
 
     companion object {
 
+        @JvmStatic
+        val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
+
         fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
-            cookies?.find { it.name == name }?.value
+            cookies?.find { it.name == name }?.value.also { cookie ->
+                log.debug("Retrieved cookie '{}': {}", name, if (cookie != null) "[PRESENT]" else "[NOT_FOUND]")
+            }
 
         val appInfoMap = mutableMapOf<Session, AppInfoData>()
     }

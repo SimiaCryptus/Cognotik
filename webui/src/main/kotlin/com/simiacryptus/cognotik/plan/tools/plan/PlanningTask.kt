@@ -54,7 +54,6 @@ class PlanningTask(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         val userMessage = messages.joinToString("\n")
@@ -92,7 +91,7 @@ class PlanningTask(
             com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { subPlan.tasksByID } ?: emptyMap(),
             task,
             api,
-            api2)
+            )
     }
 
     private fun createSubPlanDiscussable(
@@ -135,7 +134,6 @@ class PlanningTask(
         subPlan: Map<String, TaskConfigBase>,
         parentTask: SessionTask,
         api: API,
-        api2: OpenAIClient,
     ) {
         val subPlanTask = coordinator.ui.newTask(false)
         parentTask.add(subPlanTask.placeholder)
@@ -163,7 +161,6 @@ class PlanningTask(
             userMessage = userMessage,
             plan = subPlan,
             api = api,
-            api2 = api2,
             tabs = TabbedDisplay(subPlanTask),
         )
         subPlanTask.complete()

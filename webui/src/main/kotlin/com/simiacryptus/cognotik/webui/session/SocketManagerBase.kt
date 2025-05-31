@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.clientManager
 import com.simiacryptus.cognotik.platform.Session
@@ -26,33 +25,77 @@ abstract class SocketManagerBase(
     protected val owner: User? = null,
     private val applicationClass: Class<*>,
 ) : SocketManager {
-    private val messageStates: LinkedHashMap<String, String> = dataStorage?.getMessages(owner, session) ?: LinkedHashMap()
+    private val messageStates = Collections.synchronizedMap(
+        try {
+            dataStorage?.getMessages(owner, session) ?: LinkedHashMap()
+        } catch (e: Exception) {
+            log.error("Failed to load messages from storage for session: {}, using empty map", session, e)
+            LinkedHashMap()
+        }
+    )
     private val messageTimestamps = HashMap<String, Long>()
-    // messageStates is initialized from dataStorage or as a new LinkedHashMap. Access needs synchronization.
     private val sockets: MutableMap<ChatSocket, org.eclipse.jetty.websocket.api.Session> = ConcurrentHashMap()
     private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
-    private val messageVersions = ConcurrentHashMap<String, AtomicInteger>() // Thread-safe for its own operations
+    private val queueProcessing: MutableSet<ChatSocket> = ConcurrentHashMap.newKeySet()
+    private val messageVersions = ConcurrentHashMap<String, AtomicInteger>()
     val pool get() = clientManager.getPool(session, owner)
     val scheduledThreadPoolExecutor get() = clientManager.getScheduledPool(session, owner, dataStorage)
 
     override fun removeSocket(socket: ChatSocket) {
-        log.debug("Removing socket: {}", socket)
-        trafficLog.info("Removing socket: {}, user: {}", socket, socket.user?.name ?: "anonymous")
-        sockets.remove(socket)?.close()
+        log.debug("Removing socket: {} (id: {})", socket, System.identityHashCode(socket))
+        trafficLog.info(
+            "Removing socket: {} (id: {}), user: {}",
+            socket,
+            System.identityHashCode(socket),
+            socket.user?.name ?: "anonymous"
+        )
+
+        try {
+            cleanupSocketTriggers(socket)
+
+            sendQueues.remove(socket) // Clean up the send queue
+            sockets.remove(socket)
+            queueProcessing.remove(socket)
+        } catch (e: Exception) {
+            log.error("Error during socket cleanup for socket: {}", socket, e)
+            trafficLog.error("Error during socket cleanup: {}", e.message)
+        }
         trafficLog.debug("Socket removed, remaining connections: {}", sockets.size)
     }
 
     override fun addSocket(socket: ChatSocket, session: org.eclipse.jetty.websocket.api.Session) {
+        
         val user = getUser(session)
-        log.debug("Adding socket: {} for user: {}", socket, user)
-        trafficLog.info("Adding socket: {}, user: {}, remote: {}", socket, user?.name ?: "anonymous", session.remoteAddress)
+        log.debug("Adding socket: {} (id: {}) for user: {}", socket, System.identityHashCode(socket), user)
+        trafficLog.info(
+            "Adding socket: {} (id: {}), user: {}, remote: {}",
+            socket,
+            System.identityHashCode(socket),
+            user?.name ?: "anonymous",
+            session.remoteAddress
+        )
+
         if (!ApplicationServices.authorizationManager.isAuthorized(
                 applicationClass = applicationClass,
                 user = user,
                 operationType = OperationType.Read
             )
-        ) throw IllegalArgumentException("Unauthorized")
-        sockets[socket] = session
+        ) {
+            log.warn(
+                "Unauthorized access attempt from user: {}, remote: {}",
+                user?.name ?: "anonymous",
+                session.remoteAddress
+            )
+            throw IllegalArgumentException("Unauthorized")
+        }
+        
+        try {
+            sockets[socket] = session
+            sendQueues[socket] = ConcurrentLinkedDeque()
+        } catch (e: Exception) {
+            log.error("Error adding socket for user: {}", user?.name ?: "anonymous", e)
+            throw e
+        }
         trafficLog.debug("Socket added, active connections: {}", sockets.size)
     }
 
@@ -60,12 +103,19 @@ abstract class SocketManagerBase(
         cancelable: Boolean = false,
         root: Boolean = true
     ): SessionTask {
-        val operationID = randomID(root)
-        var responseContents = divInitializer(operationID, cancelable)
-        log.debug("Creating new task with operationID: {}", operationID)
-        trafficLog.debug("Creating new task with operationID: {}", operationID)
-        send(responseContents)
-        return SessionTaskImpl(operationID, responseContents, SessionTask.spinner)
+        try {
+            val operationID = randomID(root)
+            val responseContents = divInitializer(operationID, cancelable)
+            log.debug("Creating new task with operationID: {}\n\t{}",
+                operationID, Thread.currentThread().stackTrace.joinToString("\n\t"))
+            trafficLog.debug("Creating new task with operationID: {}", operationID)
+            send(responseContents)
+            return SessionTaskImpl(operationID, responseContents, SessionTask.spinner)
+        } catch (e: Exception) {
+            log.error("Failed to create new task", e)
+            trafficLog.error("Failed to create new task: {}", e.message)
+            throw e
+        }
     }
 
     private inner class SessionTaskImpl(
@@ -97,131 +147,222 @@ abstract class SocketManagerBase(
 
         override fun send(html: String) = this@SocketManagerBase.send(html)
         override fun saveFile(relativePath: String, data: ByteArray): String {
+            require(relativePath.isNotBlank()) { "File path cannot be blank" }
+            require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+            
+            if (data.isEmpty()) {
+                log.warn("Saving empty file at path: {}", relativePath)
+            }
+            
             log.debug("Saving file at path: {}", relativePath)
             trafficLog.debug("Saving file at path: {}", relativePath)
+            
             dataStorage?.getSessionDir(owner, session)?.let { dir ->
-                dir.mkdirs()
+                if (!dir.exists() && !dir.mkdirs()) {
+                    throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
+                }
                 val resolve = dir.resolve(relativePath)
-                resolve.parentFile.mkdirs()
+                resolve.parentFile?.let { parent ->
+                    if (!parent.exists() && !parent.mkdirs()) {
+                        throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+                    }
+                }
                 resolve.writeBytes(data)
+                log.info("Successfully saved file: {} ({} bytes)", relativePath, data.size)
             }
             return "fileIndex/$session/$relativePath"
         }
 
         override fun createFile(relativePath: String): Pair<String, File?> {
-            log.debug("Saving file at path: {}", relativePath)
+            require(relativePath.isNotBlank()) { "File path cannot be blank" }
+            require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+            
+            log.debug("Creating file at path: {}", relativePath)
             trafficLog.debug("Creating file at path: {}", relativePath)
+            
             return Pair("fileIndex/$session/$relativePath", dataStorage?.getSessionDir(owner, session)?.let { dir ->
-                dir.mkdirs()
+                if (!dir.exists() && !dir.mkdirs()) {
+                    throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
+                }
                 val resolve = dir.resolve(relativePath)
-                resolve.parentFile.mkdirs()
+                resolve.parentFile?.let { parent ->
+                    if (!parent.exists() && !parent.mkdirs()) {
+                        throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+                    }
+                }
+                log.debug("Successfully created file path: {}", resolve.absolutePath)
                 resolve
             })
-        }
+            }
     }
 
     fun send(out: String) {
+        if (out.isBlank()) {
+            log.debug("Skipping blank message")
+            return
+        }
+        
         try {
+            log.debug("Processing send message ({} bytes)", out.length)
+            trafficLog.trace(
+                "Processing send message ({} bytes): {}...",
+                out.length,
+                out.take(100) + (if (out.length > 100) "..." else "")
+            )
+
 
             val split = out.split(',', ignoreCase = false, limit = 2)
-            val messageID = split[0]
-            var newValue = split[1]
-            if (newValue == "null") {
-                newValue = ""
-            }
-            if (setMessage(messageID, newValue) < 0) {
-                log.debug("Skipping duplicate message - Key: {}, Value: {} bytes", messageID, newValue.length)
-                trafficLog.trace("Skipping duplicate message - Key: {}, Value: {} bytes", messageID, newValue.length)
-                return
-            }
-            if (out.isEmpty()) {
-                log.debug("Skipping empty message - Key: {}, Value: {} bytes", messageID, newValue.length)
-                trafficLog.trace("Skipping empty message - Key: {}, Value: {} bytes", messageID, newValue.length)
-                return
-            }
-            try {
-                val ver = messageVersions[messageID]?.get()
-                val v = messageStates[messageID]
-                trafficLog.debug(
-                    //"Sending message - Key: {}, Version: {}, Size: {} bytes\n\t{}", messageID, ver, v?.length ?: 0, v?.indent("\t") ?: ""
-                    String.format(
-                        "Sending message - Key: %s, Version: %d, Size: %d bytes\n\t%s",
-                        messageID,
-                        ver,
-                        v?.length ?: 0,
-                        v?.indent("\t") ?: ""
-                    ), RuntimeException()
+            if (split.size < 2) {
+                log.warn(
+                    "Invalid message format ({} bytes), expected 'id,content' but got: {}",
+                    out.length,
+                    out.take(100)
                 )
+                trafficLog.warn("Invalid message format received, length: {} bytes", out.length)
+                return
+            }
+            val messageID = split[0]
+            if (messageID.isBlank()) {
+                log.warn("Message ID cannot be blank")
+                return
+            }
+            var newValue = split[1]
+            if (newValue == "null") newValue = ""
+            
+            log.debug("Setting message - Key: {}, Content size: {} bytes", messageID, newValue.length)
+            val version = setMessage(messageID, newValue)
+            if (version < 0) {
+                log.debug("Skipping duplicate message - Key: {}, Content size: {} bytes", messageID, newValue.length)
+                return
+            }
+            if (newValue.isEmpty()) {
+                log.debug("Skipping empty message - Key: {}, Content size: {} bytes", messageID, newValue.length)
+                return
+            }
+            
+            val (ver, v) = synchronized(stateLock) {
+                val version = messageVersions[messageID]?.get()
+                val value = messageStates[messageID]
+                Pair(version, value)
+            }
+            
+            trafficLog.debug(
+                "Sending message - Key: {}, Version: {}, Content size: {} bytes",
+                messageID, ver, v?.length ?: 0
+            )
 
-                sockets.keys.toTypedArray<ChatSocket>().forEach<ChatSocket> { chatSocket ->
-                    try {
-                        val deque = sendQueues.computeIfAbsent(chatSocket) { ConcurrentLinkedDeque() }
-                        deque.add("$messageID,$ver,$v")
-                        ioPool.submit {
-                            try {
-                                while (deque.isNotEmpty()) {
-                                    var msg = deque.poll() ?: break
-                                    if (msg.length > 100000) {
-                                        log.warn("Message too long - Key: {}, Value: {} bytes", messageID, msg.length)
-                                        trafficLog.warn("Message too long - Key: {}, Value: {} bytes", messageID, msg.length)
-                                        msg = msg.substring(0, 100000)
-                                    }
-                                    // The message 'msg' from the deque is already in the format "messageID,version,value"
-                                    // and represents the state at the time of queuing.
-                                    synchronized(chatSocket) {
-                                        trafficLog.trace(
-                                            "Sending to socket: {}, message: {}...",
-                                            chatSocket,
-                                            msg.take(100) + (if (msg.length > 100) "..." else "")
-                                        )
-                                        chatSocket.remote.sendString(msg)
-                                    }
-                                }
-                                chatSocket.remote.flush()
-                            } catch (e: Exception) {
-                                log.info("Error sending message", e)
-                                trafficLog.error("Error sending message to socket: {}, error: {}", chatSocket, e.message)
-                                trafficLog.error("Error sending message to socket: {}, error: {}", chatSocket, e.message)
-                            }
+            sockets.keys.forEach { chatSocket ->
+                try {
+                    val deque = sendQueues.computeIfAbsent(chatSocket) { ConcurrentLinkedDeque() }
+                    val queueMessage = "$messageID,$ver,$v"
+                    deque.add(queueMessage)
+                    
+                    log.trace(
+                        "Queuing message for socket {} (id: {}): Key: {}, Queue message size: {} bytes",
+                        chatSocket, System.identityHashCode(chatSocket), messageID, queueMessage.length
+                    )
+                    
+                    if (queueProcessing.add(chatSocket)) {
+                        try {
+                            ioPool.submit { processQueue(chatSocket) }
+                        } catch (e: Exception) {
+                            log.error(
+                                "Failed to submit queue processing task for socket: {} (id: {})",
+                                chatSocket, System.identityHashCode(chatSocket), e
+                            )
+                            queueProcessing.remove(chatSocket)
                         }
-                    } catch (e: Exception) {
-                        log.info("Error sending message", e)
-                        trafficLog.error("Error preparing message for socket: {}, error: {}", chatSocket, e.message)
                     }
+                } catch (e: Exception) {
+                    log.error(
+                        "Error preparing message for socket: {} (id: {})",
+                        chatSocket, System.identityHashCode(chatSocket), e
+                    )
                 }
-            } catch (e: Exception) {
-                log.info("$session - $out", e)
-                trafficLog.error("Error in send process for session: {}, error: {}", session, e.message)
             }
         } catch (e: Exception) {
-            log.info("$session - $out", e)
+            log.error("Error in send method for session: {}", session, e)
             trafficLog.error("Error in send method for session: {}, error: {}", session, e.message)
         }
     }
-    private val stateLock = Any() // Lock for messageStates, messageTimestamps, and related version logic
+
+    private fun processQueue(chatSocket: ChatSocket) {
+        try {
+            val deque = sendQueues[chatSocket] ?: return
+            var msg: String?
+            while (deque.poll().also { msg = it } != null) {
+                val message = msg!!
+                if (message.isBlank()) {
+                    continue
+                }
+
+                val messageID = message.substringBefore(',')
+                var processedMsg = message
+
+                val maxMessageSize = 100000
+                if (message.length > maxMessageSize) {
+                    log.warn(
+                        "Message too long - Key: {}, Content size: {} bytes, truncating to {} bytes",
+                        messageID, message.length, maxMessageSize
+                    )
+                    processedMsg = message.substring(0, maxMessageSize)
+                }
+
+                try {
+                    synchronized(chatSocket) {
+                        if (!sockets.containsKey(chatSocket)) {
+                            return
+                        }
+                        chatSocket.remote.sendString(processedMsg)
+                    }
+                } catch (e: Exception) {
+                    log.error(
+                        "Error sending message to socket: {} (id: {})",
+                        chatSocket, System.identityHashCode(chatSocket), e
+                    )
+                    removeSocket(chatSocket)
+                    return
+                }
+            }
+
+            try {
+                chatSocket.remote.flush()
+            } catch (e: Exception) {
+                log.error("Error flushing socket: {} (id: {})", chatSocket, System.identityHashCode(chatSocket), e)
+                removeSocket(chatSocket)
+            }
+        } finally {
+            queueProcessing.remove(chatSocket)
+        }
+    }
+    private val stateLock = Any()
 
 
     final override fun getReplay(since: Long): List<String> {
-        log.debug("Getting replay messages")
+        log.debug("Getting replay messages since: {}", since)
         trafficLog.debug("Getting replay messages since: {}", since)
         return synchronized(stateLock) {
             messageStates.entries
                 .filter { (messageTimestamps[it.key] ?: 0L) > since }
-                // computeIfAbsent on ConcurrentHashMap is safe. Initial version for replay is 1.
-                .map { "${it.key},${messageVersions.computeIfAbsent(it.key) { AtomicInteger(1) }.get()},${it.value}" }
-        }.also { trafficLog.debug("Returning {} replay messages", it.size) }
+                .map {
+                    val version = messageVersions[it.key]?.get() ?: 1
+                    "${it.key},$version,${it.value}"
+                }
+        }.also {
+            val totalSize = it.sumOf { msg -> msg.length }
+            trafficLog.debug("Returning {} replay messages, total size: {} bytes", it.size, totalSize)
+        }
     }
 
-    private fun setMessage(key: String, value: String): Int {
-
-
-        return synchronized(stateLock) {
-            if (messageStates.containsKey(key)) {
-                if (messageStates[key] == value) {
-                    return@synchronized -1 // Message content is identical, do not update version or timestamp
-                }
-            }
+    private fun setMessage(key: String, value: String) = synchronized(stateLock) {
+        val existingValue = messageStates[key]
+        if (existingValue == value) {
+            log.debug("Skipping update for key: {}, content is identical ({} bytes)", key, value.length)
+            return@synchronized -1 // Message content is identical, do not update version or timestamp
+        }
+        try {
             // Persist first, then update in-memory state
+            log.debug("Updating message - Key: {}, Content size: {} bytes", key, value.length)
             dataStorage?.updateMessage(owner, session, key, value)
             messageStates[key] = value // Using [] syntax for put
             messageTimestamps[key] = System.currentTimeMillis()
@@ -229,58 +370,127 @@ abstract class SocketManagerBase(
             // This ensures the version is incremented for new or changed messages.
             val newVersion = messageVersions.getOrPut(key) { AtomicInteger(0) }.incrementAndGet()
             newVersion
+        } catch (e: Exception) {
+            log.error("Error updating message state for key: $key", e)
+            trafficLog.error("Error updating message state for key: {}, error: {}", key, e.message)
+            -1 // Return error code
         }
     }
 
-    final override fun onWebSocketText(socket: ChatSocket, message: String) {
+    override fun onWebSocketText(socket: ChatSocket, message: String) {
 
-        log.debug("Received WebSocket message: {} from socket: {}", message, socket)
-        trafficLog.debug(
-            "Received WebSocket message from socket: {}, user: {}, message: {}...",
-            socket, socket.user?.name ?: "anonymous", message.take(100) + (if (message.length > 100) "..." else "")
+        log.debug(
+            "Received WebSocket message ({} bytes): {} from socket: {} (id: {})",
+            message.length,
+            message,
+            socket,
+            System.identityHashCode(socket)
         )
+        
+        val maxMessageLength = 1000000
+        if (message.length > maxMessageLength) {
+            log.warn(
+                "Message too long from socket: {}, length: {} bytes, limit: {} bytes",
+                socket, message.length, maxMessageLength
+            )
+            send("""${randomID()},<div class="error">Message too long (${message.length} bytes). Maximum allowed: $maxMessageLength bytes.</div>""")
+            return
+        }
+
 
         val trimmed = message.trim()
         if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
             if (trimmed.contains("\"type\":\"pong\"")) {
                 log.debug("Received heartbeat pong - updating heartbeat timestamp.")
-                trafficLog.trace("Received heartbeat pong from socket: {}", socket)
 
                 return
             }
             if (trimmed.contains("\"type\":\"ping\"") || trimmed.contains("\"type\":\"heartbeat\"")) {
                 log.debug("Received heartbeat ping - sending pong response.")
-                trafficLog.trace("Received heartbeat ping from socket: {}, sending pong", socket)
                 try {
                     socket.remote.sendString("{\"type\":\"pong\"}")
                 } catch (e: Exception) {
-                    log.info("Error sending pong response", e)
-                    trafficLog.error("Error sending pong to socket: {}, error: {}", socket, e.message)
+                    log.error(
+                        "Error sending pong response to socket: {} (id: {})",
+                        socket, System.identityHashCode(socket), e
+                    )
+                    removeSocket(socket)
                 }
                 return
             }
         }
-        if (canWrite(socket.user)) pool.submit {
-            try {
-                val opCmdPattern = """![a-z]{3,7},.*""".toRegex()
-                if (opCmdPattern.matches(message)) {
-                    val id = message.substring(1, message.indexOf(","))
-                    val code = message.substring(id.length + 2)
-                    trafficLog.debug("Processing command - ID: {}, Code: {}", id, code)
-                    onCmd(id, code)
-                } else {
-                    trafficLog.debug("Processing user message from socket: {}, length: {}", socket, message.length)
-                    onRun(message, socket)
-                }
-            } catch (e: Throwable) {
-                log.error("$session - Error processing message: $message", e)
-                trafficLog.error("Error processing message from socket: {}, error: {}", socket, e.message)
-                send("""${randomID()},<div class="error">${MarkdownUtil.renderMarkdown(e.message ?: "")}</div>""")
-            }
-        } else {
-            log.warn("$session - Unauthorized message: $message")
-            trafficLog.warn("Unauthorized message from socket: {}, user: {}", socket, socket.user?.name ?: "anonymous")
+
+        if (!canWrite(socket.user)) {
+            log.warn(
+                "Unauthorized message from socket: {} (id: {}), user: {}",
+                socket, System.identityHashCode(socket), socket.user?.name ?: "anonymous"
+            )
             send("""${randomID()},<div class="error">Unauthorized message</div>""")
+            return
+        }
+
+        try {
+            pool.submit { processUserMessage(message, socket) }
+        } catch (e: Exception) {
+            log.error(
+                "Failed to submit message processing task for socket: {} (id: {})",
+                socket, System.identityHashCode(socket), e
+            )
+            send("""${randomID()},<div class="error">Failed to process message: ${e.message}</div>""")
+        }
+    }
+
+    private fun processUserMessage(message: String, socket: ChatSocket) {
+        try {
+            log.debug(
+                "Processing user message from socket: {} (id: {}), size: {} bytes",
+                socket,
+                System.identityHashCode(socket),
+                message.length
+            )
+            val opCmdPattern = """![a-z]{3,7},.*""".toRegex()
+            if (opCmdPattern.matches(message)) {
+                val commaIndex = message.indexOf(",")
+                if (commaIndex == -1 || commaIndex == message.length - 1) {
+                    log.warn("Invalid command format from socket: {} (id: {})", socket, System.identityHashCode(socket))
+                    return
+                }
+                val id = message.substring(1, commaIndex)
+                val code = message.substring(commaIndex + 1)
+                if (id.isBlank()) {
+                    log.warn("Empty command ID from socket: {} (id: {})", socket, System.identityHashCode(socket))
+                    return
+                }
+                trafficLog.debug("Processing command - ID: {}, Code size: {} bytes, Code: {}", id, code.length, code)
+                onCmd(id, code)
+            } else {
+                trafficLog.debug(
+                    "Processing user message from socket: {} (id: {}), size: {} bytes",
+                    socket,
+                    System.identityHashCode(socket),
+                    message.length
+                )
+                onRun(message, socket)
+            }
+        } catch (e: Throwable) {
+            log.error(
+                "Error processing message from socket: {} (id: {}), message: {}",
+                socket,
+                System.identityHashCode(socket),
+                message.take(100),
+                e
+            )
+            trafficLog.error(
+                "Error processing message from socket: {} (id: {}), error: {}",
+                socket,
+                System.identityHashCode(socket),
+                e.message
+            )
+            try {
+                send("""${randomID()},<div class="error">${MarkdownUtil.renderMarkdown(e.message ?: "Unknown error")}</div>""")
+            } catch (sendError: Exception) {
+                log.error("Failed to send error message", sendError)
+            }
         }
     }
 
@@ -292,23 +502,67 @@ abstract class SocketManagerBase(
 
     private val linkTriggers = mutableMapOf<String, Consumer<Unit>>()
     private val txtTriggers = mutableMapOf<String, Consumer<String>>()
+
+    // Add cleanup method
+    private fun cleanupTriggers(operationID: String) {
+        linkTriggers.remove(operationID)
+        txtTriggers.remove(operationID)
+    }
+
+    private fun cleanupSocketTriggers(socket: ChatSocket) {
+        // Remove triggers that might be associated with this socket
+        // This is a basic cleanup - in a more sophisticated implementation,
+        // you might track which triggers belong to which socket
+        val triggersToRemove = mutableListOf<String>()
+        linkTriggers.keys.forEach { key ->
+            // Add logic here to determine if trigger belongs to this socket
+            // For now, we'll do a basic cleanup of old triggers
+        }
+        triggersToRemove.forEach { key ->
+            linkTriggers.remove(key)
+            txtTriggers.remove(key)
+        }
+    }
+
+    private fun cleanupAllTriggers() {
+        linkTriggers.clear()
+        txtTriggers.clear()
+    }
     private fun onCmd(id: String, code: String) {
-        log.debug("Processing command - ID: {}, Code: {}", id, code)
-        if (code == "link") {
-            val consumer = linkTriggers[id]
-            consumer ?: throw IllegalArgumentException("No link handler found")
-            trafficLog.debug("Executing link handler for ID: {}", id)
-            consumer.accept(Unit)
-        } else if (code.startsWith("userTxt,")) {
-            val consumer = txtTriggers[id]
-            consumer ?: throw IllegalArgumentException("No input handler found")
-            val text = code.substringAfter("userTxt,")
-            val unencoded = URLDecoder.decode(text, "UTF-8")
-            trafficLog.debug("Executing text input handler for ID: {}, text length: {}", id, unencoded.length)
-            consumer.accept(unencoded)
-        } else {
-            trafficLog.warn("Unknown command received: {}", code)
-            throw IllegalArgumentException("Unknown command: $code")
+        require(id.isNotBlank()) { "Command ID cannot be blank" }
+        require(code.isNotBlank()) { "Command code cannot be blank" }
+
+        log.debug("Processing command - ID: {}, Code size: {} bytes, Code: {}", id, code.length, code)
+        
+        when {
+            code == "link" -> {
+                val consumer = linkTriggers.remove(id) 
+                    ?: throw IllegalArgumentException("No link handler found for ID: $id")
+                trafficLog.debug("Executing link handler for ID: {}", id)
+                consumer.accept(Unit)
+            }
+
+            code.startsWith("userTxt,") -> {
+                val consumer = txtTriggers.remove(id) 
+                    ?: throw IllegalArgumentException("No input handler found for ID: $id")
+                val text = code.substringAfter("userTxt,")
+                val unencoded = try {
+                    URLDecoder.decode(text, "UTF-8")
+                } catch (e: Exception) {
+                    log.error("Failed to decode user text for ID: {}", id, e)
+                    text
+                }
+                trafficLog.debug(
+                    "Executing text input handler for ID: {}, text size: {} bytes",
+                    id, unencoded.length
+                )
+                consumer.accept(unencoded)
+            }
+
+            else -> {
+                log.warn("Unknown command received: {} for ID: {}", code, id)
+                throw IllegalArgumentException("Unknown command: $code")
+            }
         }
     }
 
@@ -331,6 +585,7 @@ abstract class SocketManagerBase(
     }
 
     fun textInput(handler: Consumer<String>): String {
+        
         log.debug("Creating text input")
         trafficLog.trace("Creating text input field")
         val operationID = randomID()
@@ -349,7 +604,12 @@ abstract class SocketManagerBase(
     override fun getActiveSockets(): List<ChatSocket> {
         log.debug("Getting active sockets, count: {}", sockets.size)
         trafficLog.debug("Getting active sockets, count: {}", sockets.size)
-        return sockets.keys.toList()
+        return try {
+            sockets.keys.filterNotNull().toList()
+        } catch (e: Exception) {
+            log.error("Error getting active sockets", e)
+            emptyList()
+        }
     }
 
 
@@ -374,8 +634,14 @@ abstract class SocketManagerBase(
         fun getUser(session: org.eclipse.jetty.websocket.api.Session): User? {
             log.debug("Getting user from session: {}", session)
             trafficLog.trace("Getting user from session: {}", session.remoteAddress)
-            return session.upgradeRequest.cookies?.find { it.name == AuthenticationInterface.AUTH_COOKIE }?.value.let {
-                ApplicationServices.authenticationManager.getUser(it)
+            return try {
+                ApplicationServices.authenticationManager.getUser(
+                    session.upgradeRequest?.cookies
+                        ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
+                        ?.value)
+            } catch (e: Exception) {
+                log.error("Error getting user from session", e)
+                null
             }
         }
     }

@@ -29,7 +29,6 @@ open class GraphOrderedPlanMode(
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
-    private val api2: OpenAIClient,
     private val graphFile: String,
     val describer: TypeDescriber,
 ) : CognitiveMode {
@@ -87,8 +86,7 @@ open class GraphOrderedPlanMode(
                         plan = plan,
                         task = task,
                         userMessage = userMessage,
-                        api = apiClient,
-                        api2 = api2
+                        api = apiClient
                     )).let(::renderMarkdown))
             task.add("Plan execution completed")
         } catch (e: Exception) {
@@ -334,13 +332,12 @@ open class GraphOrderedPlanMode(
         override fun getCognitiveMode(
             ui: ApplicationInterface,
             api: API,
-            api2: OpenAIClient,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
         ): CognitiveMode {
-            return GraphOrderedPlanMode(ui, api, planSettings, session, user, api2, graphFile, describer)
+            return GraphOrderedPlanMode(ui, api, planSettings, session, user, graphFile, describer)
         }
     }
 }

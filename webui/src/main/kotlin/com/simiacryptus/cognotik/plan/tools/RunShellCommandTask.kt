@@ -69,13 +69,12 @@ class RunShellCommandTask(
     """.trimIndent()
 
   override fun run(
-    agent: PlanCoordinator,
-    messages: List<String>,
-    task: SessionTask,
-    api: ChatClient,
-    resultFn: (String) -> Unit,
-    api2: OpenAIClient,
-    planSettings: PlanSettings
+      agent: PlanCoordinator,
+      messages: List<String>,
+      task: SessionTask,
+      api: ChatClient,
+      resultFn: (String) -> Unit,
+      planSettings: PlanSettings
   ) {
     val autoRunCounter = AtomicInteger(0)
     val semaphore = Semaphore(0)

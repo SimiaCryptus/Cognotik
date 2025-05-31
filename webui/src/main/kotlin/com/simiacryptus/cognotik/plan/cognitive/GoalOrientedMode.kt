@@ -34,7 +34,6 @@ open class GoalOrientedMode(
   override val planSettings: PlanSettings,
   override val session: Session,
   override val user: User?,
-  private val api2: OpenAIClient,
   val describer: TypeDescriber,
   private val maxConcurrency: Int = 4,
   private val maxIterations: Int = 20
@@ -558,7 +557,6 @@ open class GoalOrientedMode(
       task = uiTask,
       api = api,
       resultFn = { result.append(it) }, // Capture task output
-      api2 = api2,
       planSettings = planSettings,
     )
     taskDefinition.result = result.toString()
@@ -837,11 +835,10 @@ open class GoalOrientedMode(
     override fun getCognitiveMode(
       ui: ApplicationInterface,
       api: API,
-      api2: OpenAIClient,
       planSettings: PlanSettings,
       session: Session,
       user: User?,
       describer: TypeDescriber
-    ) = GoalOrientedMode(ui, api, planSettings, session, user, api2, describer)
+    ) = GoalOrientedMode(ui, api, planSettings, session, user, describer)
   }
 }

@@ -1,7 +1,6 @@
 package com.simiacryptus.jopenai
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.jopenai.exceptions.ModerationException
@@ -9,8 +8,6 @@ import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.ApiModel.*
 import com.simiacryptus.jopenai.util.ClientUtil.allowedCharset
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
-import com.simiacryptus.jopenai.util.ClientUtil.defaultApiProvider
-import com.simiacryptus.jopenai.util.ClientUtil.keyMap
 import com.simiacryptus.text.TextCompressor
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.StringUtil
@@ -35,8 +32,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Semaphore
 
 open class ChatClient(
-    protected var key: Map<APIProvider, String> = keyMap.mapKeys { APIProvider.valueOf(it.key) },
-    protected val apiBase: Map<APIProvider, String> = APIProvider.values().associate { it to (it.base ?: "") },
+    protected var key: Map<APIProvider, String>,
+    protected val apiBase: Map<APIProvider, String>,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
@@ -89,10 +86,6 @@ open class ChatClient(
     }
 
     fun moderate(text: String) = withReliability {
-        when (defaultApiProvider) {
-            APIProvider.Groq -> return@withReliability
-            APIProvider.ModelsLab -> return@withReliability
-        }
         withPerformanceLogging {
             val body: String = try {
                 JsonUtil.objectMapper().writeValueAsString(
@@ -104,7 +97,7 @@ open class ChatClient(
                 throw RuntimeException(e)
             }
             val result: String = try {
-                this.post("${apiBase[defaultApiProvider]}/moderations", body, defaultApiProvider)
+                this.post("${apiBase[APIProvider.OpenAI]}/moderations", body, APIProvider.OpenAI)
             } catch (e: IOException) {
                 throw RuntimeException(e)
             } catch (e: InterruptedException) {
@@ -988,9 +981,9 @@ open class ChatClient(
                 )
                 fromModelsLab(
                     post(
-                        "${apiBase[defaultApiProvider]}/llm/get_queued_response",
+                        "${apiBase[APIProvider.ModelsLab]}/llm/get_queued_response",
                         postCheck,
-                        defaultApiProvider,
+                        APIProvider.ModelsLab,
                     )
                 )
             }

@@ -4,9 +4,9 @@ import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
+import com.simiacryptus.cognotik.plan.cognitive.GoalOrientedMode
 import com.simiacryptus.cognotik.plan.cognitive.PlanAheadMode
 import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
-import com.simiacryptus.cognotik.plan.cognitive.GoalOrientedMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.jopenai.models.OpenAIModels
+import com.simiacryptus.jopenai.models.AnthropicModels
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import java.awt.Desktop
@@ -217,8 +217,6 @@ open class CognotikApps(
         stopSocketServer()
     }
 
-    open val api2 = OpenAIClient(workPool = Executors.newCachedThreadPool())
-
     override fun authenticatedWebsite() = object : OAuthBase("") {
         override fun configure(context: WebAppContext, addFilter: Boolean) = context
     }
@@ -249,9 +247,9 @@ open class CognotikApps(
     val describer = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "com.simiacryptus"
     )
+    val model = AnthropicModels.Claude35Haiku
     override val childWebApps by lazy {
-        val model = OpenAIModels.GPT4o
-        val parsingModel = OpenAIModels.GPT4oMini
+        val parsingModel = model
         val planSettings = PlanSettings(
             defaultModel = model,
             parsingModel = parsingModel,
@@ -266,7 +264,6 @@ open class CognotikApps(
                     planSettings = planSettings,
                     model = model,
                     parsingModel = parsingModel,
-                    api2 = api2,
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
                 )
@@ -278,7 +275,6 @@ open class CognotikApps(
                     planSettings = planSettings,
                     model = model,
                     parsingModel = parsingModel,
-                    api2 = api2,
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
                 )
@@ -290,7 +286,6 @@ open class CognotikApps(
                     planSettings = planSettings,
                     model = model,
                     parsingModel = parsingModel,
-                    api2 = api2,
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
                 )
@@ -302,7 +297,6 @@ open class CognotikApps(
                     planSettings = planSettings,
                     model = model,
                     parsingModel = parsingModel,
-                    api2 = api2,
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 )

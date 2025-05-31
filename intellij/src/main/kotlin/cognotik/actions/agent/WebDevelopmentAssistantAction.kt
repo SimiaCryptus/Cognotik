@@ -6,22 +6,17 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.*
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.AgentPatterns
-import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -34,7 +29,6 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
@@ -141,8 +135,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel = OpenAIModels.GPT4o,
-            val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
+            val model: ChatModel,
+            val parsingModel: ChatModel,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java

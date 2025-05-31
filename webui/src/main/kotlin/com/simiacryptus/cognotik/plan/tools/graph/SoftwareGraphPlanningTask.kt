@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan.tools.graph
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.util.JsonUtil
 import java.io.File
@@ -36,7 +35,6 @@ class SoftwareGraphPlanningTask(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         val inputFile = (planSettings.absoluteWorkingDir?.let { File(it) } ?: File(".")).resolve(
@@ -62,7 +60,7 @@ class SoftwareGraphPlanningTask(
             appendLine("```")
         }
         val planProcessingState = agent.executePlan(
-            plan = plan, task = task, userMessage = taskConfig.instruction, api = api, api2 = api2
+            plan = plan, task = task, userMessage = taskConfig.instruction, api = api
         )
         val executionSummary = buildString {
             appendLine("## Plan Execution Summary")

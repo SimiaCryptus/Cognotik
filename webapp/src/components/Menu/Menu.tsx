@@ -187,6 +187,8 @@ const DropdownContent = styled.div`
     backdrop-filter: blur(12px);
     transform-origin: top;
     animation: dropdownSlide 0.2s ease-out;
+    /* Prevent clicks from bubbling up */
+    pointer-events: auto;
 
 
     @keyframes dropdownSlide {
@@ -207,12 +209,11 @@ const Dropdown = styled.div`
     text-decoration: none;
     cursor: pointer;
     position: relative;
+    /* Ensure dropdown container doesn't interfere with clicks */
+    pointer-events: auto;
 
     &:hover {
         color: white;
-    }
-    &:hover ${DropdownContent} {
-        display: block;
     }
 `;
 
@@ -222,12 +223,16 @@ const DropdownItem = styled.a`
     text-decoration: none;
     display: block;
     cursor: pointer;
+    /* Ensure dropdown items are clickable */
+    pointer-events: auto;
+    user-select: none;
 
     &:hover {
         background-color: ${({theme}) => theme.colors.primary};
         color: white;
     }
 `;
+
 export const Menu: React.FC = () => {
     useSelector((state: RootState) => state.config.websocket);
     const showMenubar = useSelector((state: RootState) => state.config.showMenubar);
@@ -241,15 +246,22 @@ export const Menu: React.FC = () => {
         dispatch(toggleVerbose());
     };
 
-    const handleMenuClick = (modalType: string) => {
+    const handleMenuClick = (modalType: string, event?: React.MouseEvent) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         console.debug('[Menu] Opening modal:', modalType);
+        setOpenDropdown(null); // Close dropdown when opening modal
         openModal(modalType);
+        setOpenDropdown(null); // Close dropdown after action
     };
 
-    const handleLogout = () => {
-        console.log('[Menu] User initiated logout');
-    };
-    const toggleDropdown = (dropdownId: string) => {
+    const toggleDropdown = (dropdownId: string, event?: React.MouseEvent) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
     };
     const closeDropdowns = () => {
@@ -278,60 +290,42 @@ export const Menu: React.FC = () => {
                     <FontAwesomeIcon icon={faHome}/> Home
                 </DropButton>
 
-                {/*<Dropdown
-                    data-testid="app-menu-button"
-                    id="app-menu-button">
-                    <DropButton
-                        data-testid="sessions-button"
-                        id="sessions-button">App</DropButton>
-                    <DropdownContent>
-                        <DropdownItem onClick={() => openModal('sessions')}>Session List</DropdownItem>
-                        <DropdownItem as="a" href={"./#" + newGlobalID()}>New</DropdownItem>
-                    </DropdownContent>
-                </Dropdown>*/}
-
                 <Dropdown> {/* Removed style={{display: 'contents'}} */}
                     <DropButton 
                         id="session-menu-button"
-                        onClick={() => toggleDropdown('session')}
+                       onClick={() => toggleDropdown('session')}
                         data-dropdown="session"
                     >
                         <FontAwesomeIcon icon={faCog}/> Session
                     </DropButton>
-                    <DropdownContent style={{ display: openDropdown === 'session' ? 'block' : 'none' }}>
-                        <DropdownItem id="settings-menu-button" onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
-                        <DropdownItem id="files-menu-button" onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
-                        <DropdownItem id="usage-menu-button" onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
-                        <DropdownItem id="threads-menu-button" onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
+                    <DropdownContent 
+                        style={{ display: openDropdown === 'session' ? 'block' : 'none' }}
+                        data-dropdown="session"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <DropdownItem id="settings-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('settings'); }}>Settings</DropdownItem>
+                        <DropdownItem id="files-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('fileIndex/'); }}>Files</DropdownItem>
+                        <DropdownItem id="usage-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('usage'); }}>Usage</DropdownItem>
+                        <DropdownItem id="threads-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('threads'); }}>Threads</DropdownItem>
                         {/*
                         <DropdownItem onClick={() => handleMenuClick('share')}>Share</DropdownItem>
 */}
-                        <DropdownItem id="cancel-menu-button" onClick={() => handleMenuClick('cancel')}>Cancel</DropdownItem>
+                        <DropdownItem id="cancel-menu-button" onClick={(e) => handleMenuClick('cancel', e)}>Cancel</DropdownItem>
                         {/*
                         <DropdownItem onClick={() => handleMenuClick('delete')}>Delete</DropdownItem>
 */}
-                        <DropdownItem id="verbose-menu-button" onClick={handleVerboseToggle}>
+                        <DropdownItem id="verbose-menu-button" onClick={(e) => { e.stopPropagation(); handleVerboseToggle(); setOpenDropdown(null); }}>
                             {verboseMode ? 'Hide Verbose' : 'Show Verbose'}
                         </DropdownItem>
                     </DropdownContent>
                 </Dropdown>
 
                 <ThemeMenu/>
-                {/*
-
-                <Dropdown>
-                    <DropButton>About</DropButton>
-                    <DropdownContent>
-                        <DropdownItem onClick={() => handleMenuClick('/privacy.html')}>Privacy Policy</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('/tos.html')}>Terms of Service</DropdownItem>
-                    </DropdownContent>
-                </Dropdown>
-*/}
 
                 {isDevelopment && (
                     <Dropdown> {/* Removed style={{display: 'contents'}} if it was there, ensure consistency */}
-                        <DropButton 
-                            onClick={() => toggleDropdown('config')}
+                        <DropButton
+                           onClick={() => toggleDropdown('config')}
                             data-dropdown="config"
                         >
                             Config
@@ -342,19 +336,6 @@ export const Menu: React.FC = () => {
                     </Dropdown>
                 )}
             </ToolbarLeft>
-
-            {/*<Dropdown>
-                <DropButton>
-                    <FontAwesomeIcon icon={faSignInAlt}/>User
-                </DropButton>
-                <DropdownContent>
-                    <DropdownItem onClick={() => handleMenuClick('/userSettings')}>Settings</DropdownItem>
-                    <DropdownItem onClick={() => handleMenuClick('/usage')}>Usage</DropdownItem>
-                    <DropdownItem onClick={handleLogout}>
-                        <FontAwesomeIcon icon={faSignOutAlt}/> Logout
-                    </DropdownItem>
-                </DropdownContent>
-            </Dropdown>*/}
         </MenuContainer>
     );
 };

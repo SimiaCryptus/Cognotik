@@ -144,28 +144,6 @@ object ClientUtil {
         }
     }
 
-    private var _keyTxt: String? = null
-    val defaultApiProvider: APIProvider = APIProvider.OpenAI
-    var keyTxt: String
-        get() {
-            if (null != _keyTxt) return _keyTxt!!
-            val resourceAsStream = OpenAIClient::class.java.getResourceAsStream("/openai.key.json")
-            if (null != resourceAsStream) return resourceAsStream.readAllBytes().toString(Charsets.UTF_8).trim()
-            val keyFile = File(File(System.getProperty("user.home")), "openai.key.json")
-            if (keyFile.exists()) return keyFile.readText().trim()
-            return ""
-        }
-        set(value) {
-            _keyTxt = value
-        }
-
-    val keyMap: Map<String, String>
-        get() = try {
-            fromJson(keyTxt, Map::class.java)
-        } catch (e: Exception) {
-            emptyMap()
-        }
-
     fun String.toContentList() = listOf(this).map { ApiModel.ContentPart(text = it, type = "text") }
     fun String.toChatMessage(role: ApiModel.Role = ApiModel.Role.user) =
         ApiModel.ChatMessage(role = role, content = toContentList())

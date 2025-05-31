@@ -34,7 +34,6 @@ open class TaskChatMode(
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
-    private val api2: OpenAIClient,
     val describer: TypeDescriber
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(TaskChatMode::class.java)
@@ -83,8 +82,8 @@ open class TaskChatMode(
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-        val apiClient = (api as ChatClient).getChildClient(task)
-        apiClient.budget = planSettings.budget
+        val api = (this@TaskChatMode.api as ChatClient).getChildClient(task)
+        api.budget = planSettings.budget
 
         val coordinator = PlanCoordinator(
             user = user,
@@ -137,7 +136,7 @@ open class TaskChatMode(
                         "Please choose a single task to execute based on the current conversation."
                     )
 
-            val answer = parsedActor.answer(input, apiClient)
+            val answer = parsedActor.answer(input, api)
             val chosenTasks = answer.obj.tasks?.firstOrNull()
                 ?: throw IllegalStateException("No task was selected")
 
@@ -155,11 +154,10 @@ open class TaskChatMode(
                     agent = coordinator,
                     messages = listOf(userMessage),
                     task = this,
-                    api = apiClient,
+                    api = api,
                     resultFn = {
                         result.append(it)
                     },
-                    api2 = api2,
                     planSettings = planSettings,
                 )
             }
@@ -237,11 +235,10 @@ open class TaskChatMode(
         override fun getCognitiveMode(
             ui: ApplicationInterface,
             api: API,
-            api2: OpenAIClient,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = TaskChatMode(ui, api, planSettings, session, user, api2, describer)
+        ) = TaskChatMode(ui, api, planSettings, session, user, describer)
     }
 }

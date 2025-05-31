@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
@@ -39,7 +40,6 @@ open class UnifiedPlanApp(
     val parsingModel: ChatModel,
     showMenubar: Boolean = true,
     val api: API? = null,
-    val api2: OpenAIClient,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
 ) : ApplicationServer(
@@ -58,17 +58,15 @@ open class UnifiedPlanApp(
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
 
-    override fun userMessage(
-        session: Session,
+    override fun newSession(
         user: User?,
-        userMessage: String,
-        ui: ApplicationInterface,
-        api: API
-    ) {
-        try {
-            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-            settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
-            ui.newTask(true).expandable("Session Info", """
+        session: Session
+    ): SocketManager {
+        val socketManager = super.newSession(user, session)
+        val ui = (socketManager as ApplicationSocketManager).applicationInterface
+        val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+        ui.newTask(true).expandable(
+            "Session Info", """
                 Session ID: `${session.sessionId}`
                 
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
@@ -80,14 +78,27 @@ open class UnifiedPlanApp(
                 Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
                 
                 Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-            """.trimIndent().renderMarkdown())
+            """.trimIndent().renderMarkdown()
+        )
+        return socketManager
+    }
+
+    override fun userMessage(
+        session: Session,
+        user: User?,
+        userMessage: String,
+        ui: ApplicationInterface,
+        api: API
+    ) {
+        try {
+            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+            settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
             if (expansionExpressionPattern.find(userMessage) != null) {
                 processMessageWithExpansions(session, user, userMessage, ui, api)
                 return
             }
-
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
@@ -98,7 +109,6 @@ open class UnifiedPlanApp(
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
                     api = api,
-                    api2 = api2,
                     planSettings = settings,
                     session = session,
                     user = user,
@@ -161,7 +171,6 @@ open class UnifiedPlanApp(
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
                     api = api,
-                    api2 = api2,
                     planSettings = settings,
                     session = session,
                     user = user,

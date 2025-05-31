@@ -20,7 +20,6 @@ import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
@@ -56,9 +55,9 @@ data class AppSettingsState(
     var channels: Int = 1,
     var temperature: Double = 0.1,
     var reasoningEffort: String = "Low",
-    var smartModel: String = OpenAIModels.GPT4o.modelName,
-    var fastModel: String = OpenAIModels.GPT4oMini.modelName,
-    var mainImageModel: String = ImageModels.DallE3.modelName,
+    var smartModel: String = "",
+    var fastModel: String = "",
+    var mainImageModel: String = "",
     var analyticsEnabled: Boolean = false,
     var listeningPort: Int = 8081,
     var listeningEndpoint: String = "localhost",

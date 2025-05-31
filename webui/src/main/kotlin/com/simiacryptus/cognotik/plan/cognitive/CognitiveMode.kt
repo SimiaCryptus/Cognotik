@@ -52,7 +52,6 @@ interface CognitiveModeStrategy {
     fun getCognitiveMode(
         ui: ApplicationInterface,
         api: API,
-        api2: OpenAIClient,
         planSettings: PlanSettings,
         session: Session,
         user: User?,

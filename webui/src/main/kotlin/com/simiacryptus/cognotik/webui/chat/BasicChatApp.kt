@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.OpenAIModels
 import java.io.File
 
 class BasicChatApp(
@@ -26,8 +25,8 @@ class BasicChatApp(
         get() = false
 
     data class Settings(
-        val model: ChatModel = OpenAIModels.GPT4o,
-        val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
+        val model: ChatModel,
+        val parsingModel: ChatModel,
         val temperature: Double = 0.3,
         val budget: Double = 2.0,
     )
@@ -35,7 +34,10 @@ class BasicChatApp(
     override val settingsClass: Class<*> get() = Settings::class.java
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+    override fun <T : Any> initSettings(session: Session): T? = Settings(
+        model = model,
+        parsingModel = parsingModel,
+    ) as T
 
     override fun newSession(user: User?, session: Session): ChatSocketManager {
         val settings = this.settings ?: getSettings(session, user)!!
