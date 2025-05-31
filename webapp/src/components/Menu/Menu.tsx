@@ -85,19 +85,6 @@ const ToolbarLeft = styled.div`
     gap: ${({theme}) => theme.sizing.spacing.md};
 `;
 
-const Dropdown = styled.div`
-    color: ${({theme}) => theme.colors.text.primary};
-    padding: ${({theme}) => theme.sizing.spacing.sm};
-    text-decoration: none;
-    cursor: pointer;
-    position: relative;
-
-    &:hover {
-        color: white;
-
-    }
-`;
-
 const DropButton = styled.button`
     color: ${({theme}) => theme.colors.text.primary};
     padding: ${({theme}) => theme.sizing.spacing.sm};
@@ -188,7 +175,6 @@ const DropButton = styled.button`
 `;
 
 const DropdownContent = styled.div`
-    display: none;
     position: absolute;
     background-color: ${({theme}) => theme.colors.surface};
     min-width: 160px;
@@ -202,9 +188,6 @@ const DropdownContent = styled.div`
     transform-origin: top;
     animation: dropdownSlide 0.2s ease-out;
 
-    ${Dropdown}:hover & {
-        display: block;
-    }
 
     @keyframes dropdownSlide {
         from {
@@ -215,6 +198,21 @@ const DropdownContent = styled.div`
             opacity: 1;
             transform: translateY(0);
         }
+    }
+`;
+
+const Dropdown = styled.div`
+    color: ${({theme}) => theme.colors.text.primary};
+    padding: ${({theme}) => theme.sizing.spacing.sm};
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+
+    &:hover {
+        color: white;
+    }
+    &:hover ${DropdownContent} {
+        display: block;
     }
 `;
 
@@ -236,6 +234,8 @@ export const Menu: React.FC = () => {
     const {openModal} = useModal();
     const dispatch = useDispatch();
     const verboseMode = useSelector((state: RootState) => state.ui.verboseMode);
+    const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
+
     const handleVerboseToggle = () => {
         console.log('[Menu] Verbose mode toggled to:', !verboseMode);
         dispatch(toggleVerbose());
@@ -249,6 +249,23 @@ export const Menu: React.FC = () => {
     const handleLogout = () => {
         console.log('[Menu] User initiated logout');
     };
+    const toggleDropdown = (dropdownId: string) => {
+        setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
+    };
+    const closeDropdowns = () => {
+        setOpenDropdown(null);
+    };
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Element;
+            if (!target.closest('[data-dropdown]')) {
+                closeDropdowns();
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
 
     return (
         <MenuContainer $hidden={!showMenubar}
@@ -274,22 +291,26 @@ export const Menu: React.FC = () => {
                 </Dropdown>*/}
 
                 <Dropdown> {/* Removed style={{display: 'contents'}} */}
-                    <DropButton>
+                    <DropButton 
+                        id="session-menu-button"
+                        onClick={() => toggleDropdown('session')}
+                        data-dropdown="session"
+                    >
                         <FontAwesomeIcon icon={faCog}/> Session
                     </DropButton>
-                    <DropdownContent>
-                        <DropdownItem onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
+                    <DropdownContent style={{ display: openDropdown === 'session' ? 'block' : 'none' }}>
+                        <DropdownItem id="settings-menu-button" onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
+                        <DropdownItem id="files-menu-button" onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
+                        <DropdownItem id="usage-menu-button" onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
+                        <DropdownItem id="threads-menu-button" onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
                         {/*
                         <DropdownItem onClick={() => handleMenuClick('share')}>Share</DropdownItem>
 */}
-                        <DropdownItem onClick={() => handleMenuClick('cancel')}>Cancel</DropdownItem>
+                        <DropdownItem id="cancel-menu-button" onClick={() => handleMenuClick('cancel')}>Cancel</DropdownItem>
                         {/*
                         <DropdownItem onClick={() => handleMenuClick('delete')}>Delete</DropdownItem>
 */}
-                        <DropdownItem onClick={handleVerboseToggle}>
+                        <DropdownItem id="verbose-menu-button" onClick={handleVerboseToggle}>
                             {verboseMode ? 'Hide Verbose' : 'Show Verbose'}
                         </DropdownItem>
                     </DropdownContent>
@@ -309,10 +330,13 @@ export const Menu: React.FC = () => {
 
                 {isDevelopment && (
                     <Dropdown> {/* Removed style={{display: 'contents'}} if it was there, ensure consistency */}
-                        <DropButton>
+                        <DropButton 
+                            onClick={() => toggleDropdown('config')}
+                            data-dropdown="config"
+                        >
                             Config
                         </DropButton>
-                        <DropdownContent>
+                        <DropdownContent style={{ display: openDropdown === 'config' ? 'block' : 'none' }}>
                             <WebSocketMenu/>
                         </DropdownContent>
                     </Dropdown>

@@ -83,7 +83,7 @@ class NarrationManager {
                     
                     // Play the audio
                     audio.play().catch((error) => {
-                        cy.log(`Failed to play audio for ${key}: ${error.message}`);
+                        //cy.log(`Failed to play audio for ${key}: ${error.message}`);
                         resolve();
                     });
                     
