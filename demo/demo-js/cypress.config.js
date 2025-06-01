@@ -37,6 +37,7 @@ module.exports = defineConfig({
             // Set browser launch options to hide Cypress UI elements
             on('before:browser:launch', (browser = {}, launchOptions) => {
                 if (browser.name === 'chrome') {
+                    launchOptions.args.push('--force-device-scale-factor=2')
                     launchOptions.args.push('--disable-web-security');
                     launchOptions.args.push('--disable-features=VizDisplayCompositor');
                     launchOptions.args.push('--autoplay-policy=no-user-gesture-required');

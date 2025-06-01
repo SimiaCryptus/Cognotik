@@ -227,7 +227,7 @@ npm run test:e2e -- --browser chrome,firefox,edge
 
 #### Running a demo for recording
 ```shell
-npx cypress run --browser chrome --spec "cypress/e2e/tool_demo.cy.js" --headed --no-runner-ui
+npx cypress run --browser chrome --spec "cypress/e2e/demos/demo_launcher_introduction.cy.js" --headed --no-runner-ui
 ```
 
 ## 📊 Test Categories
