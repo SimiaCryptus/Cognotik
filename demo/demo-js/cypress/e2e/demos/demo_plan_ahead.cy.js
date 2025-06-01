@@ -31,10 +31,12 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.get('#next-to-task-settings').click();
 
         cy.log('DEMO_FLOW: Phase 2 - Specifying technology and tools (6:45)');
-        cy.narrate('specify_tech_tools');
         cy.log('DEMO_FLOW: Setting working directory to /tmp/demo-webapp');
-        cy.get('#working-dir').clear().type('/tmp/demo-webapp');
+        cy.get('#working-dir').clear()
+        cy.get('#working-dir').type('/tmp/demo-webapp');
+        cy.narrate('specify_tech_tools');
         cy.log('DEMO_FLOW: Working directory set, proceeding to task selection');
+        cy.wait(500);
         cy.get('#next-to-task-selection').click();
 
         cy.log('DEMO_FLOW: Enabling web development tasks');
@@ -53,10 +55,11 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_FLOW: Session launched successfully');
 
         cy.log('DEMO_FLOW: Phase 3 - Specifying feature details (7:15)');
-        cy.narrate('specify_feature_details');
         cy.log('DEMO_FLOW: Entering React TypeScript web application requirements');
         cy.get('#chat-input').type('Create a React TypeScript web application using npm with the following features: user authentication, dashboard with charts, and responsive design. Use modern React hooks and TypeScript best practices.');
+        cy.narrate('specify_feature_details');
         cy.log('DEMO_FLOW: Requirements entered, sending message');
+        cy.wait(500);
         cy.get('[data-testid="send-button"]').click();
         cy.wait(6000);
         cy.log('DEMO_FLOW: Message sent, waiting for AI response');

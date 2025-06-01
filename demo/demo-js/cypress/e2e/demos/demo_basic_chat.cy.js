@@ -11,7 +11,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_FLOW: Beginning comprehensive Cognotik feature demonstration');
         cy.log('DEMO_SECTION: Basic Chat Setup - Opening chat interface');
 
-        cy.narrate('basic_chat_intro');
+        cy.narrate('basic_chat_welcome');
         cy.log('DEMO_ACTION: Clicking open basic chat button');
         cy.get('#open-basic-chat').click();
         cy.log('DEMO_ACTION: Submitting basic chat settings');
@@ -23,8 +23,10 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_ACTION: Entering initial machine learning question');
         cy.get('#chat-input').type('What is machine learning?');
         cy.narrate('parallel_expansion_example');
+        cy.wait(500);
         cy.log('DEMO_ACTION: Sending first message to trigger parallel expansion');
         cy.get('[data-testid="send-button"]').click();
+
         cy.log('DEMO_WAIT: Monitoring spinner appearance for processing indication');
         cy.get('.spinner-border').should('exist');
         cy.get('.spinner-border').scrollIntoView();
@@ -37,10 +39,13 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
 
         cy.narrate('sequential_expansion_intro');
         cy.log('DEMO_ACTION: Entering follow-up question for sequential expansion');
-        cy.get('#chat-input').clear().type('Can you give me specific examples?');
+        cy.get('#chat-input').clear()
+        cy.get('#chat-input').type('Can you give me specific examples?');
         cy.narrate('sequential_expansion_example');
+        cy.wait(500);
         cy.log('DEMO_ACTION: Sending follow-up message to trigger sequential expansion');
         cy.get('[data-testid="send-button"]').click();
+
         cy.log('DEMO_WAIT: Monitoring spinner for sequential processing indication');
         cy.get('.spinner-border').should('exist');
         cy.get('.spinner-border').scrollIntoView();
@@ -53,10 +58,13 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
 
         cy.narrate('mermaid_support_intro');
         cy.log('DEMO_ACTION: Requesting mermaid diagram creation');
-        cy.get('#chat-input').clear().type('Create a mermaid diagram showing the machine learning workflow');
+        cy.get('#chat-input').clear()
+        cy.get('#chat-input').type('Create a mermaid diagram showing the machine learning workflow');
         cy.log('DEMO_ACTION: Sending diagram request to demonstrate mermaid support');
-        cy.get('[data-testid="send-button"]').click();
         cy.narrate('mermaid_diagram_example');
+        cy.wait(500);
+        cy.get('[data-testid="send-button"]').click();
+
         cy.log('DEMO_WAIT: Monitoring spinner for diagram generation processing');
         cy.get('.spinner-border').should('exist');
         cy.get('.spinner-border').scrollIntoView();
@@ -72,7 +80,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.wait(200);
         cy.log('DEMO_ACTION: Clicking usage menu to display usage statistics');
         cy.get('#usage-menu-button').click();
-        cy.narrate('usage_reporting');
+        cy.narrate('usage_transparency');
         cy.log('DEMO_FLOW: Usage reporting modal displayed with session statistics');
         cy.wait(200);
         cy.log('DEMO_ACTION: Closing usage modal by clicking overlay');

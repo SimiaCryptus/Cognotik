@@ -21,24 +21,28 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         let webCrawlTimeout = 900000;
 
         cy.log('DEMO_FLOW: Starting chat mode demonstration (4:00 - 6:30)');
-        cy.narrate('chat_mode_intro');
+        cy.narrate('chat_mode_superpowers');
 
         cy.log('DEMO_FLOW: Explaining cognitive modes and selecting single-task mode (4:15)');
-        cy.narrate('cognitive_modes_explanation');
+        cy.narrate('cognitive_modes_overview');
         cy.get('#single-task-mode').check();
         cy.log('DEMO_FLOW: Single-task mode selected, proceeding to task settings');
         cy.get('#next-to-task-settings').click();
         cy.wait(2000);
 
         cy.log('DEMO_FLOW: Explaining working directory and model selection');
-        cy.narrate('working_directory_model_explanation');
+        cy.narrate('ai_workspace_configuration');
+        cy.narrate('workspace_configuration');
+        cy.narrate('working_directory_concept');
         cy.get('#working-dir').should('exist');
         cy.get('#model-selection').should('exist');
         cy.log('DEMO_FLOW: Selecting Claude 3.7 Sonnet as main model');
+        cy.narrate('ai_model_selection');
         cy.get('#model-selection').select("Claude 3.7 Sonnet (Anthropic)");
         cy.log('DEMO_FLOW: Selecting Claude 3.5 Haiku as parsing model');
         cy.get('#parsing-model').select("Claude 3.5 Haiku (Anthropic)");
         cy.log('DEMO_FLOW: Generating working directory');
+        cy.narrate('generate_directory_demo');
         cy.get('#generate-working-dir').click();
         cy.log('DEMO_FLOW: Proceeding to task selection');
         cy.get('#next-to-task-selection').click();
@@ -46,11 +50,14 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
 
         cy.log('DEMO_FLOW: Introducing task types and selecting research tasks (4:45)');
         cy.narrate('task_types_research_intro');
+        cy.narrate('file_modification_capabilities');
         cy.log('DEMO_FLOW: Selecting FileModificationTask for report generation');
         cy.get('#task-FileModificationTask').check();
+        cy.narrate('web_search_capabilities');
         cy.log('DEMO_FLOW: Selecting CrawlerAgentTask for web research');
         cy.get('#task-CrawlerAgentTask').check();
         cy.log('DEMO_FLOW: Proceeding to launch configuration');
+        cy.narrate('review_configuration');
         cy.get('#next-to-launch').click();
         cy.wait(2000);
 
@@ -61,16 +68,18 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.wait(2000);
         cy.log('DEMO_FLOW: Entering research query about sustainable energy');
 
-        cy.narrate('enter_research_query');
         cy.get('#chat-input').clear();
         cy.get('#chat-input').type('Research the latest trends in sustainable energy technology and provide a comprehensive analysis');
+        cy.narrate('enter_research_query');
         cy.log('DEMO_FLOW: Sending research query to start task execution');
+        cy.wait(500);
         cy.get('[data-testid="send-button"]').click();
         cy.log('DEMO_FLOW: Verifying spinner appears indicating task processing');
         cy.get('.spinner-border').should('exist');
         cy.get('.spinner-border').scrollIntoView();
 
         cy.log('DEMO_FLOW: Waiting for first processing tab to become available');
+        cy.narrate('auto_fix_debugging_capabilities');
         waitScrollAndGet(() =>
             cy.get('[data-testid="message-list"]').eq(0)
                 .find('> .response').eq(1)
@@ -87,8 +96,11 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                 .find('> div > .tabs-container > .tabs > [data-for-tab="1"]', {timeout: stdTimeout})
             , stdTimeout).click();
         cy.log('DEMO_FLOW: Second processing tab clicked - showing detailed task execution');
-        // for index 0 to 4
+
         for (let index = 0; index < 5; index++) {
+            if (index === 0) {
+                cy.narrate('insight_analysis_capabilities');
+            }
             waitScrollAndGet(() =>
                 cy.get('[data-testid="message-list"]').eq(0)
                     .find('> .response').eq(1)
@@ -119,6 +131,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_FLOW: Sending HTML generation request');
         cy.get('[data-testid="send-button"]').click();
         cy.log('DEMO_FLOW: Waiting for HTML generation task - first tab (overview)');
+        cy.narrate('file_modification_capabilities');
 
         waitScrollAndGet(() =>
             cy.get('[data-testid="message-list"]').eq(0)
@@ -134,6 +147,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                 .find('> div > .tabs-container > .tabs > [data-for-tab="1"]',
                     {timeout: stdTimeout}), stdTimeout).click();
         cy.log('DEMO_FLOW: Waiting for save file button and clicking to save HTML file');
+        cy.narrate('usage_transparency');
         waitScrollAndGet(() =>
                 cy.get('.cmd-button.href-link', {timeout: webCrawlTimeout}).eq(0)
             , webCrawlTimeout).click();
@@ -157,6 +171,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_FLOW: Scrolling to bottom to show final results');
         cy.get('[data-testid="message-list"]').scrollTo("bottom")
         cy.log('DEMO_FLOW: Opening generated file');
+        cy.narrate('demo_conclusion');
         waitScrollAndGet(() =>
                 cy.get('[data-testid="message-list"]').eq(0)
                     .find('> .response').eq(2)
@@ -164,6 +179,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                     .find('> div > .tabs-container > [data-tab="2"]', {timeout: stdTimeout})
                     .find('a').eq(0)
             , stdTimeout).click();
+
         cy.log('DEMO_FLOW: Narrating HTML slides generation completion');
         cy.narrate('html_slides_generated');
     });
