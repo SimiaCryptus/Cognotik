@@ -13,7 +13,7 @@ class GroqNarrationAudioGenerator {
     constructor(options = {}) {
         this.apiKey = options.apiKey || process.env.GROQ_API_KEY;
         this.outputFormat = (options.outputFormat || 'mp3').toLowerCase();
-        this.voice = options.voice || 'alloy';
+        this.voice = options.voice || 'Arista-PlayAI';
         this.speed = options.speed || 1.0;
         this.normalizeVolume = options.normalizeVolume !== false;
         
@@ -45,7 +45,7 @@ class GroqNarrationAudioGenerator {
     async callGroqTTS(text) {
         return new Promise((resolve, reject) => {
             const postData = JSON.stringify({
-                model: 'tts-1',
+                model: 'playai-tts',
                 input: text,
                 voice: this.voice,
                 response_format: this.outputFormat,
@@ -121,7 +121,7 @@ function parseArgs() {
         narrationsFile: 'cypress/fixtures/narrations.json',
         audioDir: 'cypress/fixtures/audio',
         format: 'mp3',
-        voice: 'alloy',
+        voice: 'Arista-PlayAI',
         speed: 1.0,
         force: false,
         keys: null,
