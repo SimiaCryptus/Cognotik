@@ -33,8 +33,9 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
             cy.get('#save-user-settings').click();
             cy.get('.modal').should('not.be.visible');
         });
-
         // Local Tools tab
+
+        cy.get('#user-settings-btn').click();
         cy.get('[data-tab="local-tools"]').click();
         cy.get('#local-tools-container').should('be.visible');
         cy.narrate('local_tools_explanation');

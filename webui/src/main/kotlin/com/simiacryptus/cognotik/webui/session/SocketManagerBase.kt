@@ -110,7 +110,9 @@ abstract class SocketManagerBase(
                 operationID, Thread.currentThread().stackTrace.joinToString("\n\t"))
             trafficLog.debug("Creating new task with operationID: {}", operationID)
             send(responseContents)
-            return SessionTaskImpl(operationID, responseContents, SessionTask.spinner)
+            return SessionTaskImpl(operationID, responseContents, SessionTask.spinner).apply {
+                add("")
+            }
         } catch (e: Exception) {
             log.error("Failed to create new task", e)
             trafficLog.error("Failed to create new task: {}", e.message)
@@ -198,7 +200,7 @@ abstract class SocketManagerBase(
 
     fun send(out: String) {
         if (out.isBlank()) {
-            log.debug("Skipping blank message")
+            log.warn("Attempted to send an empty message")
             return
         }
         
