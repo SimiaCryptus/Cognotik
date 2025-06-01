@@ -9,3 +9,4 @@ test-screenshots/
 demo-js/asset/
 *.mp4
 *.wav
+.env

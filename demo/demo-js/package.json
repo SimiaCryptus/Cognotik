@@ -12,7 +12,10 @@
     "test:e2e:firefox": "cypress run --browser firefox",
     "test:coverage": "jest --coverage",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "generate-audio": "node ./scripts/generate-narration-audio-groq.js",
+    "generate-audio:groq": "node ./scripts/generate-narration-audio-groq.js",
+    "generate-audio:chattts": "PYTHONPATH=../../../ChatTTS python3 ./scripts/generate-narration-audio.py"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

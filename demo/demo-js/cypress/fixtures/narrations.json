@@ -27,9 +27,17 @@
     "text": "Alternatively, the Basic Chat button provides quick access to a simple chat interface for immediate AI assistance without the full configuration process.",
     "audio": "basic_chat_alternative.mp3"
   },
+  "basic_chat_intro": {
+    "text": "Now, let's dive into the basic chat functionality. This provides immediate access to AI assistance with advanced features.",
+    "audio": "basic_chat_intro.mp3"
+  },
   "chat_mode_explanation": {
     "text": "Chat mode provides interactive task execution where you work directly with the AI, giving it specific instructions and seeing immediate results. This is ideal for focused, individual tasks.",
     "audio": "chat_mode_explanation.mp3"
+  },
+  "chat_mode_intro": {
+    "text": "Next, let's look at Chat Mode. This is where Cognotik acts as an intelligent development agent, capable of executing complex tasks.",
+    "audio": "chat_mode_intro.mp3"
   },
   "code_execution_task_explanation": {
     "text": "Code Execution Task lets the AI run code snippets and scripts, testing functionality and debugging issues in real-time.",
@@ -39,29 +47,17 @@
     "text": "Cognotik uses a cognitive task mode model where you first choose how the AI should approach your work, then configure the specific tools and settings it will use.",
     "audio": "cognitive_model_overview.mp3"
   },
-  "configure_model": {
-    "text": "Next, we will configure our AI model settings. We are selecting Claude three point five Haiku for both the main model and parsing model.",
-    "audio": "configure_model.mp3"
+  "cognitive_modes_explanation": {
+    "text": "There are different cognitive modes that influence how the AI interprets and responds to your requests. Today we'll focus on the single-task research mode.",
+    "audio": "cognitive_modes_explanation.mp3"
   },
-  "demo_complete": {
-    "text": "This completes our demonstration of the Cognotik file modification task. The AI successfully understood our request, planned the execution, and created the file with content as requested.",
-    "audio": "demo_complete.mp3"
+  "demo_conclusion": {
+    "text": "We'll be happy to schedule follow-up sessions to delve deeper into those aspects. Thank you for your time today. I'm happy to take any questions about Cognotik's capabilities.",
+    "audio": "demo_conclusion.mp3"
   },
-  "demo_start": {
-    "text": "Welcome to the Cognotik App demonstration. Today we will show you how to create and run a file modification task using our AI powered interface.",
-    "audio": "demo_start.mp3"
-  },
-  "enable_autofix": {
-    "text": "Auto fix is enabled to automatically correct any issues that might arise during task execution.",
-    "audio": "enable_autofix.mp3"
-  },
-  "enter_command": {
-    "text": "we will enter our command. Create a new file called test.txt and write a short story in it. This demonstrates the AIs ability to understand natural language instructions.",
-    "audio": "enter_command.mp3"
-  },
-  "execute_task": {
-    "text": "Now we will execute the task and watch as the AI carries out the file creation and writing process.",
-    "audio": "execute_task.mp3"
+  "enter_research_query": {
+    "text": "I'll enter a research query about sustainable energy technology. Watch as the AI gathers information and organizes it systematically.",
+    "audio": "enter_research_query.mp3"
   },
   "file_modification_task_explanation": {
     "text": "File Modification Task allows the AI to create new files or modify existing code with intelligent assistance, maintaining code quality and consistency.",
@@ -83,6 +79,10 @@
     "text": "Goal Oriented mode focuses on achieving specific outcomes through iterative planning and execution, adapting the approach based on results and feedback.",
     "audio": "goal_oriented_mode_explanation.mp3"
   },
+  "html_slides_generated": {
+    "text": "The AI has created a professional HTML slide presentation from the research data, which you can view, edit, or share as needed.",
+    "audio": "html_slides_generated.mp3"
+  },
   "insight_task_explanation": {
     "text": "Insight Task analyzes code and provides detailed explanations of implementation patterns, helping you understand complex codebases and architectural decisions.",
     "audio": "insight_task_explanation.mp3"
@@ -99,41 +99,69 @@
     "text": "The Launch AI Session button starts your configured development environment, taking you to the appropriate interface based on your chosen cognitive mode.",
     "audio": "launch_button_explanation.mp3"
   },
-  "launch_session": {
-    "text": "With our settings configured, we can now launch the task session.",
-    "audio": "launch_session.mp3"
+  "launch_research_session": {
+    "text": "Now I'm going to launch a research session to demonstrate the AI's analytical capabilities.",
+    "audio": "launch_research_session.mp3"
   },
   "local_tools_explanation": {
     "text": "The Local Tools tab allows you to register command-line tools and scripts that the AI can use during task execution, extending its capabilities beyond built-in functions.",
     "audio": "local_tools_explanation.mp3"
   },
+  "mermaid_diagram_example": {
+    "text": "Here you can see how the AI creates visual diagrams to illustrate concepts, making complex information more accessible and understandable.",
+    "audio": "mermaid_diagram_example.mp3"
+  },
+  "mermaid_support_intro": {
+    "text": "The system also supports Mermaid diagrams, which can visually represent complex information and workflows.",
+    "audio": "mermaid_support_intro.mp3"
+  },
   "model_selection_explanation": {
     "text": "Model selection lets you choose which AI model to use for main tasks and which for parsing and analysis. Different models have different strengths, costs, and capabilities.",
     "audio": "model_selection_explanation.mp3"
+  },
+  "parallel_expansion_example": {
+    "text": "As you can see, the AI provides a comprehensive answer while maintaining conversation efficiency through smart history management.",
+    "audio": "parallel_expansion_example.mp3"
+  },
+  "parallel_expansion_intro": {
+    "text": "First, we have Parallel Expansion, where conversation history is condensed intelligently, allowing for concise and relevant answers without losing context.",
+    "audio": "parallel_expansion_intro.mp3"
   },
   "plan_ahead_mode_explanation": {
     "text": "Plan Ahead mode works with you to create detailed plans before execution, giving you more control over the process while still leveraging AI planning capabilities.",
     "audio": "plan_ahead_mode_explanation.mp3"
   },
+  "plan_ahead_mode_intro": {
+    "text": "Now let's explore Plan Ahead Mode, where we can use Cognotik to assist in creating complete applications with detailed planning.",
+    "audio": "plan_ahead_mode_intro.mp3"
+  },
+  "request_html_report": {
+    "text": "Finally, I can request a report from the analysis. This can be generated as HTML slides for presentations or sharing.",
+    "audio": "request_html_report.mp3"
+  },
   "review_configuration": {
     "text": "The launch page shows a summary of your cognitive mode, task settings, and API configuration, allowing you to verify everything is set up correctly.",
     "audio": "review_configuration.mp3"
   },
-  "select_single_task": {
-    "text": "First, we will select single task mode to focus on one specific operation.",
-    "audio": "select_single_task.mp3"
+  "sequential_expansion_example": {
+    "text": "Notice how this follow-up question builds on the previous context, adding specific examples rather than repeating basic information.",
+    "audio": "sequential_expansion_example.mp3"
   },
-  "select_task_type": {
-    "text": "Now we will select the File Modification Task, which allows the AI to create, edit, and manage files in our project.",
-    "audio": "select_task_type.mp3"
-  },
-  "set_temperature": {
-    "text": "We will set the temperature to zero point two for more consistent and focused responses.",
-    "audio": "set_temperature.mp3"
+  "sequential_expansion_intro": {
+    "text": "Then, there's Sequential Expansion, where each response builds upon the previous one, creating a coherent thread of information.",
+    "audio": "sequential_expansion_intro.mp3"
   },
   "shell_command_task_explanation": {
     "text": "Shell Command Task enables the AI to execute command-line operations safely, allowing it to run builds, tests, and other development tools.",
     "audio": "shell_command_task_explanation.mp3"
+  },
+  "specify_feature_details": {
+    "text": "Now I'll specify the feature details for our web application, including user authentication, dashboard components, and responsive design requirements.",
+    "audio": "specify_feature_details.mp3"
+  },
+  "specify_tech_tools": {
+    "text": "We'll specify the technology stack and tools: npm for package management, React for the frontend, and TypeScript for type safety.",
+    "audio": "specify_tech_tools.mp3"
   },
   "step1_cognitive_modes": {
     "text": "Step one is choosing your cognitive mode. This determines how the AI will approach and execute your tasks.",
@@ -151,21 +179,29 @@
     "text": "Step four is the final launch step where you review your configuration and start your AI development session.",
     "audio": "step4_launch.mp3"
   },
+  "task_types_research_intro": {
+    "text": "There are several task types the AI can handle for research and analysis, including insight generation, file searching, and web crawling.",
+    "audio": "task_types_research_intro.mp3"
+  },
   "temperature_explanation": {
     "text": "Temperature controls the creativity and randomness of AI responses. Lower values like zero point two give more consistent results, while higher values like zero point eight encourage more creative solutions.",
     "audio": "temperature_explanation.mp3"
   },
+  "themes_customization": {
+    "text": "You can select different themes and control verbose elements if you want more details about the AI's reasoning and decision-making process.",
+    "audio": "themes_customization.mp3"
+  },
+  "themes_layout_intro": {
+    "text": "We also offer various themes and layout options to customize the interface according to your preferences.",
+    "audio": "themes_layout_intro.mp3"
+  },
+  "usage_reporting": {
+    "text": "Usage reporting provides insights into your API consumption, costs, and session statistics to help you manage your AI development efficiently.",
+    "audio": "usage_reporting.mp3"
+  },
   "user_settings_intro": {
     "text": "Before we explore the main workflow, let's look at the user settings where you configure API keys and local tools.",
     "audio": "user_settings_intro.mp3"
-  },
-  "view_output": {
-    "text": "Finally, we can see the output showing that test.txt has been successfully created and updated with our short story.",
-    "audio": "view_output.mp3"
-  },
-  "view_plan": {
-    "text": "The AI has generated a plan for our task. Let us review what it intends to do.",
-    "audio": "view_plan.mp3"
   },
   "web_search_task_explanation": {
     "text": "Web Search Task searches Google for information, fetches top results, and analyzes content to provide the AI with current information and documentation.",
@@ -175,124 +211,8 @@
     "text": "The working directory is where the AI will read and write files. You can specify an existing directory or generate a new timestamped session directory.",
     "audio": "working_directory_explanation.mp3"
   },
-  "demo_greeting": {
-    "text": "Hello everyone, and welcome. I'm excited to walk you through a demonstration of Cognotik today. We'll be covering its core features and how they can be used to enhance your development workflows.",
-    "audio": "demo_greeting.mp3"
-  },
-  "installation_intro": {
-    "text": "Let's begin with the installation and setup process. Getting started with Cognotik is straightforward.",
-    "audio": "installation_intro.mp3"
-  },
-  "installation_prerequisites": {
-    "text": "You'll need API keys from your preferred AI providers before running the system. The setup process guides you through configuring these credentials securely.",
-    "audio": "installation_prerequisites.mp3"
-  },
-  "initial_configuration": {
-    "text": "Once installed, you'll need to configure your API keys and optionally set up local tools. This is where you connect Cognotik to your AI providers and development environment.",
-    "audio": "initial_configuration.mp3"
-  },
-  "basic_chat_intro": {
-    "text": "Now, let's dive into the basic chat functionality. This provides immediate access to AI assistance with advanced features.",
-    "audio": "basic_chat_intro.mp3"
-  },
-  "parallel_expansion_intro": {
-    "text": "First, we have Parallel Expansion, where conversation history is condensed intelligently, allowing for concise and relevant answers without losing context.",
-    "audio": "parallel_expansion_intro.mp3"
-  },
-  "parallel_expansion_example": {
-    "text": "As you can see, the AI provides a comprehensive answer while maintaining conversation efficiency through smart history management.",
-    "audio": "parallel_expansion_example.mp3"
-  },
-  "sequential_expansion_intro": {
-    "text": "Then, there's Sequential Expansion, where each response builds upon the previous one, creating a coherent thread of information.",
-    "audio": "sequential_expansion_intro.mp3"
-  },
-  "sequential_expansion_example": {
-    "text": "Notice how this follow-up question builds on the previous context, adding specific examples rather than repeating basic information.",
-    "audio": "sequential_expansion_example.mp3"
-  },
-  "mermaid_support_intro": {
-    "text": "The system also supports Mermaid diagrams, which can visually represent complex information and workflows.",
-    "audio": "mermaid_support_intro.mp3"
-  },
-  "mermaid_diagram_example": {
-    "text": "Here you can see how the AI creates visual diagrams to illustrate concepts, making complex information more accessible and understandable.",
-    "audio": "mermaid_diagram_example.mp3"
-  },
-  "themes_layout_intro": {
-    "text": "We also offer various themes and layout options to customize the interface according to your preferences.",
-    "audio": "themes_layout_intro.mp3"
-  },
-  "themes_customization": {
-    "text": "You can select different themes and control verbose elements if you want more details about the AI's reasoning and decision-making process.",
-    "audio": "themes_customization.mp3"
-  },
-  "usage_reporting": {
-    "text": "Usage reporting provides insights into your API consumption, costs, and session statistics to help you manage your AI development efficiently.",
-    "audio": "usage_reporting.mp3"
-  },
-  "chat_mode_intro": {
-    "text": "Next, let's look at Chat Mode. This is where Cognotik acts as an intelligent development agent, capable of executing complex tasks.",
-    "audio": "chat_mode_intro.mp3"
-  },
-  "cognitive_modes_explanation": {
-    "text": "There are different cognitive modes that influence how the AI interprets and responds to your requests. Today we'll focus on the single-task research mode.",
-    "audio": "cognitive_modes_explanation.mp3"
-  },
   "working_directory_model_explanation": {
     "text": "You can see the working directory where files will be created and the AI model being used. These settings control where and how the AI operates.",
     "audio": "working_directory_model_explanation.mp3"
-  },
-  "task_types_research_intro": {
-    "text": "There are several task types the AI can handle for research and analysis, including insight generation, file searching, and web crawling.",
-    "audio": "task_types_research_intro.mp3"
-  },
-  "launch_research_session": {
-    "text": "Now I'm going to launch a research session to demonstrate the AI's analytical capabilities.",
-    "audio": "launch_research_session.mp3"
-  },
-  "enter_research_query": {
-    "text": "I'll enter a research query about sustainable energy technology. Watch as the AI gathers information and organizes it systematically.",
-    "audio": "enter_research_query.mp3"
-  },
-  "request_html_report": {
-    "text": "Finally, I can request a report from the analysis. This can be generated as HTML slides for presentations or sharing.",
-    "audio": "request_html_report.mp3"
-  },
-  "html_slides_generated": {
-    "text": "The AI has created a professional HTML slide presentation from the research data, which you can view, edit, or share as needed.",
-    "audio": "html_slides_generated.mp3"
-  },
-  "plan_ahead_mode_intro": {
-    "text": "Now let's explore Plan Ahead Mode, where we can use Cognotik to assist in creating complete applications with detailed planning.",
-    "audio": "plan_ahead_mode_intro.mp3"
-  },
-  "specify_tech_tools": {
-    "text": "We'll specify the technology stack and tools: npm for package management, React for the frontend, and TypeScript for type safety.",
-    "audio": "specify_tech_tools.mp3"
-  },
-  "specify_feature_details": {
-    "text": "Now I'll specify the feature details for our web application, including user authentication, dashboard components, and responsive design requirements.",
-    "audio": "specify_feature_details.mp3"
-  },
-  "build_validate_prompt": {
-    "text": "I can prompt the AI to create a detailed plan and validate the approach, but we'll review the planning without executing the build process.",
-    "audio": "build_validate_prompt.mp3"
-  },
-  "view_build_result": {
-    "text": "Let me show you what the final build output structure would look like, including the dist folder organization and deployment artifacts.",
-    "audio": "view_build_result.mp3"
-  },
-  "build_structure_explanation": {
-    "text": "Here you can see the complete project structure the AI would create, with proper organization of components, assets, and build outputs.",
-    "audio": "build_structure_explanation.mp3"
-  },
-  "features_not_covered": {
-    "text": "Due to time constraints, we won't be able to cover all features today. Areas we haven't explored include other cognitive modes, additional task types, and the IntelliJ plugin integration.",
-    "audio": "features_not_covered.mp3"
-  },
-  "demo_conclusion": {
-    "text": "We'll be happy to schedule follow-up sessions to delve deeper into those aspects. Thank you for your time today. I'm happy to take any questions about Cognotik's capabilities.",
-    "audio": "demo_conclusion.mp3"
   }
 }
