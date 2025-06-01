@@ -143,7 +143,7 @@ export interface ThemeLogging {
 
 export interface ThemeConfig {
     stickyInput: boolean;
-    singleInput: boolean;
+    inputCnt: number;
 }
 
 export interface BaseTheme {

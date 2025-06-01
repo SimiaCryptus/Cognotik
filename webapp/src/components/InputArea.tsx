@@ -256,7 +256,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         });
     }, []);
     const textAreaRef = React.useRef<HTMLTextAreaElement>(null);
-    const shouldHideInput = config.singleInput && messages.length > 0;
+    const shouldHideInput = config.inputCnt > 0 && messages.length > config.inputCnt;
 
     React.useEffect(() => {
         if (isPreviewMode) {

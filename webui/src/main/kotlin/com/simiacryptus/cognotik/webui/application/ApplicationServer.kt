@@ -33,12 +33,12 @@ abstract class ApplicationServer(
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     open val description: String = ""
-    open val singleInput = true
+    open val inputCnt = 1
     open val stickyInput = false
     open fun appInfo(session: Session) = appInfoMap.getOrPut(session) {
         AppInfoData(
             applicationName = applicationName,
-            singleInput = singleInput,
+            inputCnt = inputCnt,
             stickyInput = stickyInput,
             loadImages = false,
             showMenubar = showMenubar

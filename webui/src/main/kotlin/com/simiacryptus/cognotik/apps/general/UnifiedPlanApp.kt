@@ -53,7 +53,7 @@ open class UnifiedPlanApp(
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^\n|}{)(\]\[]+)+)}""")
     private val expansionPool = Executors.newFixedThreadPool(4)
     override val stickyInput = true
-    override val singleInput = cognitiveStrategy.singleInput
+    override val inputCnt = cognitiveStrategy.inputCnt
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T

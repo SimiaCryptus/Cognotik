@@ -67,7 +67,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
             SessionProxyServer.chats[session] = WebDevApp(root = selectedFile)
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Code Chat",
-                singleInput = true,
+                inputCnt = 1,
                 stickyInput = false,
                 loadImages = false,
                 showMenubar = false
@@ -91,7 +91,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
         applicationName: String = "Web Development Agent",
         val temperature: Double = 0.1,
         root: VirtualFile?,
-        override val singleInput: Boolean = false,
+        override val inputCnt: Int = 0,
     ) : ApplicationServer(
         applicationName = applicationName,
         path = "/webdev",

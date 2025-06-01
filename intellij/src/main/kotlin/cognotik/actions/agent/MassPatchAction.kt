@@ -144,7 +144,7 @@ class MassPatchAction : BaseAction() {
                 MassPatchServer(config = config!!, api = api, autoApply = config.settings?.autoApply ?: false)
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Code Chat",
-                singleInput = true,
+                inputCnt = 1,
                 stickyInput = false,
                 loadImages = false,
                 showMenubar = false
@@ -227,7 +227,7 @@ class MassPatchServer(
     private val log = org.slf4j.LoggerFactory.getLogger(MassPatchServer::class.java)
     private lateinit var _root: Path
 
-    override val singleInput = false
+    override val inputCnt = 0
     override val stickyInput = true
     private val mainActor: SimpleActor
         get() {

@@ -132,7 +132,7 @@ class CommandAutofixAction : BaseAction() {
                 SessionProxyServer.chats[session] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
-                    singleInput = true,
+                    inputCnt = 1,
                     stickyInput = false,
                     loadImages = false,
                     showMenubar = false

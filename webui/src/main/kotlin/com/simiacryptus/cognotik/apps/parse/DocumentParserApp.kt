@@ -45,7 +45,7 @@ open class DocumentParserApp(
     path = path,
     showMenubar = true
 ) {
-    override val singleInput: Boolean = true
+    override val inputCnt = 1
     override val stickyInput: Boolean = false
 
     override fun newSession(user: User?, session: Session): SocketManager {

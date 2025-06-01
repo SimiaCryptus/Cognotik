@@ -30,7 +30,7 @@ open class Planner {
     ): TaskBreakdownWithPrompt {
         val api = (api as ChatClient).getChildClient(task)
         val toInput = inputFn(codeFiles, files, root)
-        task.echo(userMessage.renderMarkdown)
+        task.echo(userMessage.renderMarkdown())
         return if (!planSettings.autoFix)
             Discussable(
                 task = task,

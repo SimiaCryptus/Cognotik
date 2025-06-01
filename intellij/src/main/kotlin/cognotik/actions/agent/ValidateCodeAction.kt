@@ -61,7 +61,7 @@ class ValidateCodeAction : BaseAction() {
                 SessionProxyServer.chats[session] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Validator",
-                    singleInput = true,
+                    inputCnt = 1,
                     stickyInput = false,
                     loadImages = false,
                     showMenubar = false

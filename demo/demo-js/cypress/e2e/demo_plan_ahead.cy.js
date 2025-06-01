@@ -5,7 +5,18 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.enableAudioCapture();
     });
 
+    const waitScrollAndGet = (selectorFn, timeout = 120000, waitTime = 2000) => {
+        selectorFn().should('exist', {timeout}); // Ensure the element does not exist initially
+        cy.wait(waitTime);
+        selectorFn().scrollIntoView({timeout})
+        cy.wait(waitTime);
+        return selectorFn()
+    };
+
     it('should provide a complete demonstration of Cognotik features', () => {
+
+        let stdTimeout = 120000;
+        let longTimeout = 900000;
 
         // (6:30 - 8:30) Plan Ahead Mode - Creating a Web Application
         cy.narrate('plan_ahead_mode_intro');
@@ -34,18 +45,41 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.get('[data-testid="send-button"]').click();
         cy.wait(6000);
 
-        // (7:45) Prompt to build/validate but do not start
-        cy.narrate('build_validate_prompt');
-        cy.get('#chat-input').clear().type('Please create a detailed plan for this application but do not execute it yet. Show me the project structure and key components.');
-        cy.get('[data-testid="send-button"]').click();
-        cy.wait(4000);
 
-        // (8:15) View built dist/build result
-        cy.narrate('view_build_result');
-        cy.get('#chat-input').clear().type('Show me what the final build output structure would look like in the dist folder');
-        cy.get('[data-testid="send-button"]').click();
-        cy.wait(3000);
-        cy.narrate('build_structure_explanation');
+        waitScrollAndGet(() =>
+                cy.get('[data-testid="message-list"]').eq(0)
+                    .find('> .response').eq(1)
+                    .find('> .message-body > .tabs-container').eq(0)
+                    .find('> [data-tab="0"]')
+                    .find('.cmd-button.href-link', {timeout: stdTimeout}).eq(0),
+            stdTimeout).click();
+
+
+        waitScrollAndGet(() =>
+                cy.get('[data-testid="message-list"]').eq(0)
+                    .find('> .response').eq(1)
+                    .find('> .message-body > .tabs-container').eq(1),
+            stdTimeout).scrollIntoView();
+        cy.wait(1000);
+        waitScrollAndGet(() =>
+                cy.get('[data-testid="message-list"]').eq(0)
+                    .find('> .response').eq(1)
+                    .find('> .message-body > .tabs-container').eq(1)
+                    .find('> .tabs > [data-for-tab="0"]'),
+            stdTimeout).click();
+        cy.wait(1000);
+        cy.get('[data-testid="message-list"]').eq(0)
+            .scrollTo('bottom')
+        cy.wait(5000);
+
+
+        waitScrollAndGet(() =>
+                cy.get('[data-testid="message-list"]').eq(0)
+                    .find('> .response').eq(1)
+                    .find('> .message-body > .tabs-container').eq(1)
+                    .find('> .tabs > [data-for-tab="1"]'),
+            stdTimeout).click();
+
 
         // (8:45 - 9:00) Conclusion
         cy.narrate('demo_conclusion');

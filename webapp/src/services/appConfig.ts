@@ -63,7 +63,7 @@ export const fetchAppConfig = async (sessionId: string, endpoint = 'appInfo'): P
         loadConfigPromise = null;
         return {
             applicationName: 'Chat App',
-            singleInput: false,
+            inputCnt: 0,
             stickyInput: true,
             loadImages: true,
             showMenubar: true

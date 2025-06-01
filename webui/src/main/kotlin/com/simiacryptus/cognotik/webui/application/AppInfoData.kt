@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.webui.application
 
 data class AppInfoData(
     val applicationName: String,
-    val singleInput: Boolean,
+    val inputCnt: Int,
     val stickyInput: Boolean,
     val loadImages: Boolean,
     val showMenubar: Boolean

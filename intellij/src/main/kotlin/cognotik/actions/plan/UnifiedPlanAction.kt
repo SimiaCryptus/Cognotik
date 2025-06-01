@@ -67,7 +67,7 @@ class UnifiedPlanAction : BaseAction() {
 
                 val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
                     "Plan Ahead" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = true
+                        override val inputCnt = 1
 
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
@@ -97,7 +97,7 @@ class UnifiedPlanAction : BaseAction() {
                     }
 
                     "Single Task" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = false
+                        override val inputCnt = 0
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
@@ -126,7 +126,7 @@ class UnifiedPlanAction : BaseAction() {
                     }
 
                     "Graph" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = true
+                        override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
@@ -164,11 +164,10 @@ class UnifiedPlanAction : BaseAction() {
                     }
 
                     "Auto Plan" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = true
+                        override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -311,7 +310,7 @@ class UnifiedPlanAction : BaseAction() {
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Unified Planning",
-            singleInput = true,
+            inputCnt = 1,
             stickyInput = true,
             loadImages = false,
             showMenubar = false

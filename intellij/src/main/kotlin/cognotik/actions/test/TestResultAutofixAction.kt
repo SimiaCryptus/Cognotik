@@ -154,7 +154,7 @@ class TestResultAutofixAction : BaseAction() {
             TestResultAutofixApp(session, testInfo, e.project?.basePath, projectStructure)
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
-            singleInput = false,
+            inputCnt = 0,
             stickyInput = true,
             loadImages = false,
             showMenubar = false
@@ -184,7 +184,7 @@ class TestResultAutofixAction : BaseAction() {
         path = "/fixTest",
         showMenubar = false,
     ) {
-        override val singleInput = true
+        override val inputCnt = 1
         override val stickyInput = false
         override fun newSession(user: User?, session: Session): SocketManager {
             val socketManager = super.newSession(user, session)

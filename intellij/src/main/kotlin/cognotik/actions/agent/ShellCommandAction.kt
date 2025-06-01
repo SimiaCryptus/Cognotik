@@ -52,7 +52,7 @@ class ShellCommandAction : BaseAction() {
         val session = Session.newGlobalID()
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
-            singleInput = true,
+            inputCnt = 1,
             stickyInput = false,
             loadImages = false,
             showMenubar = false
@@ -68,7 +68,7 @@ class ShellCommandAction : BaseAction() {
             path = "/shellAgent",
             showMenubar = false,
         ) {
-            override val singleInput = true
+            override val inputCnt = 1
             override val stickyInput = false
 
             override fun userMessage(

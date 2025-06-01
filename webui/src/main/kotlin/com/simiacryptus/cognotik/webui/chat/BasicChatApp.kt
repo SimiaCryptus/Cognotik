@@ -21,8 +21,7 @@ class BasicChatApp(
 ) {
     override val stickyInput: Boolean
         get() = true
-    override val singleInput: Boolean
-        get() = false
+    override val inputCnt get() = 0
 
     data class Settings(
         val model: ChatModel,

@@ -831,7 +831,7 @@ open class GoalOrientedMode(
   )
 
   companion object : CognitiveModeStrategy {
-    override val singleInput: Boolean = true
+    override val inputCnt = 1
     override fun getCognitiveMode(
       ui: ApplicationInterface,
       api: API,

@@ -326,7 +326,7 @@ open class GraphOrderedPlanMode(
 
     companion object : CognitiveModeStrategy {
 
-        override val singleInput: Boolean = true
+        override val inputCnt = 1
         var graphFile: String = "software_graph.json"
 
         override fun getCognitiveMode(

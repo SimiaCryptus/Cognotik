@@ -114,7 +114,7 @@ class ReplicateCommitAction : BaseAction() {
                 SessionProxyServer.chats[session] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
-                    singleInput = true,
+                    inputCnt = 1,
                     stickyInput = false,
                     loadImages = false,
                     showMenubar = false
@@ -189,7 +189,7 @@ class ReplicateCommitAction : BaseAction() {
     ) {
         abstract fun codeFiles(): Set<Path>
         abstract fun codeSummary(paths: List<Path>): String
-        override val singleInput = true
+        override val inputCnt = 1
         override val stickyInput = false
 
         override fun userMessage(

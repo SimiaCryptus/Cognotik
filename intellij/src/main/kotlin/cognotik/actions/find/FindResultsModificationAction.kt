@@ -79,7 +79,7 @@ class FindResultsModificationAction(
             )
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Code Chat",
-                singleInput = true,
+                inputCnt = 1,
                 stickyInput = false,
                 loadImages = false,
                 showMenubar = false
@@ -122,7 +122,7 @@ class FindResultsModificationAction(
         path = "/patchChat",
         showMenubar = false,
     ) {
-        override val singleInput = true
+        override val inputCnt = 1
         override val stickyInput = false
 
         override fun newSession(user: User?, session: Session): SocketManager {

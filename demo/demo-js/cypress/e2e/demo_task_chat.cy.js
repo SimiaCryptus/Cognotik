@@ -5,7 +5,6 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.enableAudioCapture();
     });
 
-    // Utility function to wait for element, scroll into view, and return it
     const waitScrollAndGet = (selectorFn, timeout = 120000, waitTime = 2000) => {
         selectorFn().should('exist', {timeout}); // Ensure the element does not exist initially
         cy.wait(waitTime);
@@ -13,7 +12,6 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.wait(waitTime);
         return selectorFn()
     };
-
 
     it('should provide a complete demonstration of Cognotik features', () => {
 
@@ -64,21 +62,24 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
             cy.get('[data-testid="message-list"]').eq(0)
                 .find('> .response').eq(1)
                 .find('> .message-body > .tabs-container > [data-tab="0"]')
-                .find('> div > .tabs-container > .tabs > [data-for-tab="0"]', {timeout: stdTimeout}), stdTimeout).click();
+                .find('> div > .tabs-container > .tabs > [data-for-tab="0"]',
+                    {timeout: stdTimeout}), stdTimeout).click();
 
         // Wait for and click the second tab (Processing)
         waitScrollAndGet(() =>
             cy.get('[data-testid="message-list"]').eq(0)
                 .find('> .response').eq(1)
                 .find('> .message-body > .tabs-container > [data-tab="0"]')
-                .find('> div > .tabs-container > .tabs > [data-for-tab="1"]', {timeout: stdTimeout}), stdTimeout).click();
+                .find('> div > .tabs-container > .tabs > [data-for-tab="1"]',
+                    {timeout: stdTimeout}), stdTimeout).click();
 
         // Wait for and click the third tab (Output - task complete)
         waitScrollAndGet(() =>
             cy.get('[data-testid="message-list"]').eq(0)
                 .find('> .response').eq(1)
                 .find('> .message-body > .tabs-container > [data-tab="0"]')
-                .find('> div > .tabs-container > .tabs > [data-for-tab="2"]', {timeout: webCrawlTimeout}), webCrawlTimeout).click();
+                .find('> div > .tabs-container > .tabs > [data-for-tab="2"]',
+                    {timeout: webCrawlTimeout}), webCrawlTimeout).click();
 
         // (6:00) Request report as HTML slides
         cy.narrate('request_html_report');
@@ -90,13 +91,15 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
             cy.get('[data-testid="message-list"]').eq(0)
                 .find('> .response').eq(2)
                 .find('> .message-body > .tabs-container > [data-tab="0"]')
-                .find('> div > .tabs-container > .tabs > [data-for-tab="0"]', {timeout: stdTimeout}), stdTimeout).click();
+                .find('> div > .tabs-container > .tabs > [data-for-tab="0"]',
+                    {timeout: stdTimeout}), stdTimeout).click();
         // Wait for and click the second tab for the HTML generation task
         waitScrollAndGet(() =>
             cy.get('[data-testid="message-list"]').eq(0)
                 .find('> .response').eq(2)
                 .find('> .message-body > .tabs-container > [data-tab="0"]')
-                .find('> div > .tabs-container > .tabs > [data-for-tab="1"]', {timeout: stdTimeout}), stdTimeout).click();
+                .find('> div > .tabs-container > .tabs > [data-for-tab="1"]',
+                    {timeout: stdTimeout}), stdTimeout).click();
         // Wait for 'save file' button and click it
         waitScrollAndGet(() =>
                 cy.get('.cmd-button.href-link', {timeout: stdTimeout}).eq(0),
@@ -112,7 +115,8 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
             cy.get('[data-testid="message-list"]').eq(0)
                 .find('> .response').eq(2)
                 .find('> .message-body > .tabs-container > [data-tab="0"]')
-                .find('> div > .tabs-container > .tabs > [data-for-tab="2"]', {timeout: stdTimeout}), stdTimeout).click();
+                .find('> div > .tabs-container > .tabs > [data-for-tab="2"]',
+                    {timeout: stdTimeout}), stdTimeout).click();
 
         cy.wait(500)
         cy.get('[data-testid="message-list"]').scrollTo("bottom")

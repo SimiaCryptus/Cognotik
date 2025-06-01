@@ -47,7 +47,7 @@ object CognitiveModes {
 }
 
 interface CognitiveModeStrategy {
-    val singleInput: Boolean
+    val inputCnt: Int
 
     fun getCognitiveMode(
         ui: ApplicationInterface,

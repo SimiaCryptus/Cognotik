@@ -109,7 +109,7 @@ class AnalyzeProblemAction : AnAction() {
         SessionProxyServer.chats[session] = ProblemAnalysisApp(session, problemInfo, gitRoot)
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
-            singleInput = false,
+            inputCnt = 0,
             stickyInput = true,
             loadImages = false,
             showMenubar = false
@@ -149,7 +149,7 @@ class AnalyzeProblemAction : AnAction() {
         path = "/analyzeProblem",
         showMenubar = false,
     ) {
-        override val singleInput = true
+        override val inputCnt = 1
         override val stickyInput = false
 
         override fun newSession(user: User?, session: Session): SocketManager {
