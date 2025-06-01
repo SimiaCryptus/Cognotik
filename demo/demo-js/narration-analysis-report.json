@@ -1,9 +1,9 @@
 {
-  "timestamp": "2025-06-01T20:25:39.454Z",
+  "timestamp": "2025-06-01T21:53:14.285Z",
   "summary": {
     "totalDefined": 54,
-    "totalUsed": 54,
-    "missing": 0,
+    "totalUsed": 58,
+    "missing": 4,
     "unused": 0,
     "duplicates": 0
   },
@@ -39,7 +39,7 @@
     "mermaid_diagram_example",
     "mermaid_support_intro",
     "parallel_expansion_example",
-    "parallel_expansion_intro",
+    "expansion_syntax_intro",
     "plan_ahead_mode_capabilities",
     "plan_ahead_mode_intro",
     "request_html_report",
@@ -65,7 +65,7 @@
   ],
   "usedKeys": [
     "basic_chat_welcome",
-    "parallel_expansion_intro",
+    "expansion_syntax_intro",
     "parallel_expansion_example",
     "sequential_expansion_intro",
     "sequential_expansion_example",
@@ -109,6 +109,9 @@
     "plan_ahead_mode_intro",
     "specify_tech_tools",
     "specify_feature_details",
+    "demo_plan_ahead_tabs_container",
+    "demo_plan_ahead_execution_graph",
+    "demo_plan_ahead_per_task_details",
     "chat_mode_superpowers",
     "cognitive_modes_overview",
     "ai_workspace_configuration",
@@ -117,15 +120,21 @@
     "launch_research_session",
     "enter_research_query",
     "request_html_report",
+    "accept_html_file_generation",
     "html_slides_generated"
   ],
-  "missingKeys": [],
+  "missingKeys": [
+    "demo_plan_ahead_tabs_container",
+    "demo_plan_ahead_execution_graph",
+    "demo_plan_ahead_per_task_details",
+    "accept_html_file_generation"
+  ],
   "unusedKeys": [],
   "duplicateKeys": {},
   "fileUsage": {
     "/home/andrew/code/Cognotik/demo/demo-js/cypress/e2e/demos/demo_basic_chat.cy.js": [
       "basic_chat_welcome",
-      "parallel_expansion_intro",
+      "expansion_syntax_intro",
       "parallel_expansion_example",
       "sequential_expansion_intro",
       "sequential_expansion_example",
@@ -173,6 +182,9 @@
       "plan_ahead_mode_intro",
       "specify_tech_tools",
       "specify_feature_details",
+      "demo_plan_ahead_tabs_container",
+      "demo_plan_ahead_execution_graph",
+      "demo_plan_ahead_per_task_details",
       "demo_conclusion"
     ],
     "/home/andrew/code/Cognotik/demo/demo-js/cypress/e2e/demos/demo_task_chat.cy.js": [
@@ -192,7 +204,7 @@
       "auto_fix_debugging_capabilities",
       "insight_analysis_capabilities",
       "request_html_report",
-      "usage_transparency",
+      "accept_html_file_generation",
       "demo_conclusion",
       "html_slides_generated"
     ]

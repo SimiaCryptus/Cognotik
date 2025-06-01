@@ -96,7 +96,7 @@ class NarrationManager {
                     }), {timeout: 35000}); // Set explicit timeout for cy.wrap
                 });
             } else if (options.readingDelay !== false) {
-                const readingTime = Math.max(2000, narration.text.length * 50); // ~50ms per character
+                const readingTime = Math.max(2000, narration.text.length * 5); // ~50ms per character
                 return cy.wait(readingTime);
             }
             return cy.wrap(null);

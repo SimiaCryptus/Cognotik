@@ -519,10 +519,12 @@ open class ChatClient(
     private fun mapToAnthropicChatRequest(chatRequest: ChatRequest, model: TextModel): AnthropicChatRequest {
         return AnthropicChatRequest(
             model = chatRequest.model,
-            system = chatRequest.messages.firstOrNull { it.role == Role.system }?.content?.joinToString("\n\n") {
-                it.text ?: ""
-            },
-            messages = alternateAnthropicRoles(chatRequest.messages.filter { it.role != Role.system }),
+            system = chatRequest.messages.firstOrNull {
+                it.role == Role.system
+            }?.content?.joinToString("\n\n")  { it.text ?: "" },
+            messages = alternateAnthropicRoles(chatRequest.messages.filter {
+                it.role != Role.system
+            }).filter { it.content?.isBlank() == false },
             max_tokens = chatRequest.max_tokens ?: model.maxOutTokens,
             temperature = chatRequest.temperature,
         )

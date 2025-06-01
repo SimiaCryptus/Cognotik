@@ -65,7 +65,6 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_FLOW: Message sent, waiting for AI response');
         cy.log('DEMO_FLOW: Interacting with first response tab - clicking href link');
 
-
         waitScrollAndGet(() =>
                 cy.get('[data-testid="message-list"]').eq(0)
                     .find('> .response').eq(1)
@@ -82,6 +81,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                     .find('> .response').eq(1)
                     .find('> .message-body > .tabs-container').eq(1),
             stdTimeout).scrollIntoView();
+        cy.narrate('demo_plan_ahead_tabs_container');
         cy.wait(1000);
         cy.log('DEMO_FLOW: Clicking first tab in second container');
         waitScrollAndGet(() =>
@@ -91,8 +91,9 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                     .find('> .tabs > [data-for-tab="0"]'),
             stdTimeout).click();
         cy.wait(1000);
-        cy.log('DEMO_FLOW: First tab clicked, scrolling to bottom of message list');
+        cy.log('DEMO_FLOW: First tab clicked; here we see a mermaid diagram of the planned execution graph');
         cy.get('[data-testid="message-list"]').eq(0).scrollTo('bottom')
+        cy.narrate('demo_plan_ahead_execution_graph');
         cy.wait(5000);
         cy.log('DEMO_FLOW: Scrolled to bottom, waiting before next interaction');
         cy.log('DEMO_FLOW: Clicking second tab in second container');
@@ -104,8 +105,8 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                     .find('> .message-body > .tabs-container').eq(1)
                     .find('> .tabs > [data-for-tab="1"]'),
             stdTimeout).click();
-        cy.log('DEMO_FLOW: Second tab clicked successfully');
-
+        cy.log('DEMO_FLOW: Second tab clicked successfully, showing per-task execution details');
+        cy.narrate('demo_plan_ahead_per_task_details');
 
         cy.log('DEMO_FLOW: Phase 4 - Demo conclusion (8:45-9:00)');
         cy.narrate('demo_conclusion');

@@ -124,9 +124,9 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_FLOW: Output tab clicked - research task completed successfully');
 
         cy.log('DEMO_FLOW: Requesting HTML slide presentation generation (6:00)');
-        cy.narrate('request_html_report');
         cy.get('#chat-input').clear()
         cy.log('DEMO_FLOW: Typing request for HTML slide generation');
+        cy.narrate('request_html_report');
         cy.get('#chat-input').type('Generate a self-contained HTML file containing a slide presentation from this research');
         cy.log('DEMO_FLOW: Sending HTML generation request');
         cy.get('[data-testid="send-button"]').click();
@@ -147,7 +147,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                 .find('> div > .tabs-container > .tabs > [data-for-tab="1"]',
                     {timeout: stdTimeout}), stdTimeout).click();
         cy.log('DEMO_FLOW: Waiting for save file button and clicking to save HTML file');
-        cy.narrate('usage_transparency');
+        cy.narrate('accept_html_file_generation');
         waitScrollAndGet(() =>
                 cy.get('.cmd-button.href-link', {timeout: webCrawlTimeout}).eq(0)
             , webCrawlTimeout).click();

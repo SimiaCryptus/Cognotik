@@ -35,7 +35,6 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.get('#api-keys-container').should('be.visible');
         cy.log('UI_VERIFICATION: API keys container is visible');
         cy.narrate('ai_provider_ecosystem');
-        cy.narrate('ai_provider_ecosystem');
         cy.log('NARRATION: Provided overview of API providers');
 
         cy.log('DEMO_SUBSECTION: Configuring API Settings');
@@ -110,7 +109,6 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.narrate('step2_task_settings');
         cy.log('NARRATION: Introduced task settings step');
 
-        // TODO: The models should be called smart / fast
         cy.log('DEMO_SUBSECTION: Model Selection');
         cy.narrate('ai_model_selection');
         cy.log('NARRATION: Explained model selection options');
@@ -132,8 +130,8 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.log('DEMO_SUBSECTION: Temperature Setting');
         cy.narrate('temperature_control');
         cy.log('NARRATION: Explained temperature parameter');
-        cy.get('#temperature').invoke('val', 0.2).trigger('input');
-        cy.log('UI_ACTION: Set temperature to 0.2');
+        cy.get('#temperature').invoke('val', 0.2)
+        cy.get('#temperature').trigger('input');
         cy.get('#temperature-value').should('contain', '0.2');
         cy.log('UI_VERIFICATION: Temperature value updated to 0.2');
         
