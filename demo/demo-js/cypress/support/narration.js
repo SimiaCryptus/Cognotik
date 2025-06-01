@@ -29,30 +29,25 @@ class NarrationManager {
     }
 
 
-    async playNarration(key, options = {}) {
+    playNarration(key, options = {}) {
         if (!this.audioEnabled) {
-            return;
-        }
-       // Ensure narrations are loaded before proceeding
-       if (!this.narrationsLoaded) {
-           await this.loadNarrations();
-       }
-
-
-        const narration = this.narrations[key];
-        if (!narration) {
-            cy.log(`Narration not found for key: ${key}`);
-            return;
+            return cy.wrap(null);
         }
 
-        // Log the narration text
-        cy.log(`🎙️ Narration: ${narration.text}`);
 
-        // If audio file exists, play it
-        if (narration.audio) {
-                
-            return cy.window().then((win) => {
-                return new Promise((resolve) => {
+        return this.loadNarrations().then(() => {
+            const narration = this.narrations[key];
+            if (!narration) {
+                cy.log(`Narration not found for key: ${key}`);
+                return cy.wrap(null);
+            }
+
+            // Log the narration text
+            cy.log(`🎙️ Narration: ${narration.text}`);
+
+            // If audio file exists, play it
+            if (narration.audio) {
+                return cy.window().then((win) => {
                     // Create audio element in the page context so it gets captured
                     const audio = win.document.createElement('audio');
                     audio.src = `/audio/${narration.audio}`;
@@ -63,9 +58,9 @@ class NarrationManager {
                     audio.style.display = 'none';
                     win.document.body.appendChild(audio);
                     this.audioElements.push(audio);
-                    
-                    audio.onended = () => {
-                        // Clean up
+
+                    // Set up cleanup function
+                    const cleanup = () => {
                         if (audio.parentNode) {
                             audio.parentNode.removeChild(audio);
                         }
@@ -73,31 +68,39 @@ class NarrationManager {
                         if (index > -1) {
                             this.audioElements.splice(index, 1);
                         }
-                        resolve();
                     };
-                    
-                    audio.onerror = (error) => {
-                        cy.log(`Failed to play audio for ${key}: ${error.message}`);
-                        resolve();
-                    };
-                    
-                    // Play the audio
-                    audio.play().catch((error) => {
-                        //cy.log(`Failed to play audio for ${key}: ${error.message}`);
-                        resolve();
-                    });
-                    
-                    // Fallback timeout
-                    setTimeout(resolve, 10000);
-                });
-            });
-        }
 
-        // Add delay for reading time if no audio
-        if (!narration.audio && options.readingDelay !== false) {
-            const readingTime = Math.max(2000, narration.text.length * 50); // ~50ms per character
-            cy.wait(readingTime);
-        }
+                    // Play the audio and handle completion
+                    audio.play().catch((error) => {
+                        cy.log(`Failed to play audio for ${key}: ${error.message}`);
+                        cleanup();
+                    });
+
+                    // Use cy.wrap with a promise that resolves when audio ends
+                    return cy.wrap(new Promise((resolve) => {
+                        audio.onended = () => {
+                            cleanup();
+                            resolve();
+                        };
+
+                        audio.onerror = () => {
+                            cleanup();
+                            resolve();
+                        };
+
+                        // Fallback timeout (reduced from 60s to 30s)
+                        setTimeout(() => {
+                            cleanup();
+                            resolve();
+                        }, 30000);
+                    }), {timeout: 35000}); // Set explicit timeout for cy.wrap
+                });
+            } else if (options.readingDelay !== false) {
+                const readingTime = Math.max(2000, narration.text.length * 50); // ~50ms per character
+                return cy.wait(readingTime);
+            }
+            return cy.wrap(null);
+        });
     }
     cleanup() {
         // Clean up any remaining audio elements
@@ -132,9 +135,7 @@ const narrationManager = new NarrationManager();
 
 // Add Cypress commands
 Cypress.Commands.add('narrate', (key, options = {}) => {
-   return narrationManager.loadNarrations().then(() => {
-       return narrationManager.playNarration(key, options);
-   });
+    return narrationManager.playNarration(key, options);
 });
 
 Cypress.Commands.add('logNarration', (key) => {

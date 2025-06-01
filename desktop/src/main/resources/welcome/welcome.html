@@ -212,19 +212,14 @@
     <p>Configure model and environment settings:</p>
 
     <div class="form-group">
-        <label for="model-selection">Default Model:</label>
+        <label for="model-selection">Smart Model:</label>
         <select id="model-selection">
-            <option value="GPT4o">GPT-4o</option>
-            <option value="GPT4">GPT-4</option>
-            <option value="GPT35Turbo">GPT-3.5 Turbo</option>
         </select>
     </div>
 
     <div class="form-group">
-        <label for="parsing-model">Parsing Model:</label>
+        <label for="parsing-model">Fast Model:</label>
         <select id="parsing-model">
-            <option value="GPT4oMini">GPT-4o Mini</option>
-            <option value="GPT35Turbo">GPT-3.5 Turbo</option>
         </select>
     </div>
 
@@ -244,9 +239,9 @@
         <div class="task-toggle">
             <div>
                 <input id="auto-fix" name="auto-fix" type="checkbox">
-                <label for="auto-fix">Enable Auto Fix</label>
+                <label for="auto-fix">Enable Full Automation</label>
                 <span class="tooltip">?<span
-                        class="tooltiptext">Automatically attempt to fix errors in code execution.</span></span>
+                        class="tooltiptext">Automatically accept actions and proceed with processing.</span></span>
             </div>
 
             <div id="graph-settings"
