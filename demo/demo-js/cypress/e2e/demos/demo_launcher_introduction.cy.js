@@ -8,7 +8,7 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
     });
 
     it('should provide a complete introduction to the Cognotik launcher', () => {
-        
+        cy.wait(15000)
         cy.log('DEMO_SECTION: Beginning Introduction Phase');
         cy.narrate('intro_welcome');
         cy.log('NARRATION: Delivered welcome introduction');
