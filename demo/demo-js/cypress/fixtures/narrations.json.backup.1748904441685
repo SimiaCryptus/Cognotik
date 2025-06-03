@@ -1,0 +1,234 @@
+{
+  "ai_model_selection": {
+    "text": "Select your AI dream team. Choose powerful models for complex reasoning and efficient models for quick analysis. Mix and match to optimize both capability and cost for your specific workflow.",
+    "audio": "ai_model_selection.mp3"
+  },
+  "ai_provider_ecosystem": {
+    "text": "Choose from an extensive ecosystem of AI providers - from OpenAI's GPT models to Anthropic's Claude, Google's Gemini, and emerging providers. Mix and match models to find the perfect combination for your needs.",
+    "audio": "ai_provider_ecosystem.mp3"
+  },
+  "ai_workspace_configuration": {
+    "text": "Configure your AI workspace with precision. Select the right models for your task complexity and set up your working environment - creating the perfect foundation for productive AI collaboration.",
+    "audio": "ai_workspace_configuration.mp3"
+  },
+  "auto_fix_automation": {
+    "text": "Unleash AI with full automation. Cognotik automatically analyzes problems, generates solutions, and retries - turning roadblocks into minor speed bumps.",
+    "audio": "auto_fix_automation.mp3"
+  },
+  "auto_fix_debugging_capabilities": {
+    "text": "Deploy AI-powered debugging. Auto-fix tasks automatically detect errors, analyze root causes, and implement solutions - like having an expert debugger working alongside you 24/7.",
+    "audio": "auto_fix_debugging_capabilities.mp3"
+  },
+  "autonomous_control_parameters": {
+    "text": "Fine-tune autonomous behavior to match your comfort level. Set limits and parameters - maintaining control while maximizing AI capability.",
+    "audio": "autonomous_control_parameters.mp3"
+  },
+  "autonomous_mode_capabilities": {
+    "text": "Autonomous mode unleashes AI's full potential. Set a goal, and watch as Cognotik independently plans, executes, and adapts - handling complex multi-step projects while you focus on higher-level strategy.",
+    "audio": "autonomous_mode_capabilities.mp3"
+  },
+  "basic_chat_option": {
+    "text": "Need something simpler? Basic Chat offers instant AI conversations without setup - perfect for quick questions, brainstorming, or when you just want to chat with advanced AI models.",
+    "audio": "basic_chat_option.mp3"
+  },
+  "basic_chat_welcome": {
+    "text": "Let's start with Cognotik's Basic Chat - This streamlined interface gives you immediate access to powerful AI models with enhanced features like expansion syntax and visual diagram support.",
+    "audio": "basic_chat_welcome.mp3"
+  },
+  "byok_approach_explanation": {
+    "text": "With Cognotik's 'Bring Your Own Key' approach, you stay in complete control. Connect directly to leading AI providers like OpenAI, Anthropic, and Google - no middleman, no markup, just transparent access to cutting-edge AI at cost.",
+    "audio": "byok_approach_explanation.mp3"
+  },
+  "chat_mode_capabilities": {
+    "text": "Chat mode delivers the familiar conversational experience, enhanced with Cognotik's task execution capabilities. Perfect for brainstorming, quick problem-solving, and exploring ideas through natural dialogue.",
+    "audio": "chat_mode_capabilities.mp3"
+  },
+  "chat_mode_superpowers": {
+    "text": "Enter Chat Mode with superpowers - where natural conversation meets advanced task execution. This isn't just chatting; it's collaborative problem-solving with AI that can actually get things done.",
+    "audio": "chat_mode_superpowers.mp3"
+  },
+  "code_execution_capabilities": {
+    "text": "Turn AI into a code execution engine. Run code directly through Cognotik - perfect for prototyping, testing, and iterative development.",
+    "audio": "code_execution_capabilities.mp3"
+  },
+  "cognitive_architecture_intro": {
+    "text": "At the heart of Cognotik lies our revolutionary cognitive model - AI that adapts to how you think and work. Unlike traditional chatbots, Cognotik offers specialized modes that match your workflow, from quick conversations to complex multi-step projects.",
+    "audio": "cognitive_architecture_intro.mp3"
+  },
+  "cognitive_modes_overview": {
+    "text": "Choose your AI's thinking style. Cognotik's cognitive modes aren't just different interfaces - they represent fundamentally different approaches to problem-solving, each optimized for specific workflows and outcomes.",
+    "audio": "cognitive_modes_overview.mp3"
+  },
+  "demo_conclusion": {
+    "text": "You've just witnessed the future of AI assistance. From simple conversations to complex project execution, Cognotik adapts to how you think and work - transforming AI from a tool into a true collaborative partner. Ready to revolutionize your workflow?",
+    "audio": "demo_conclusion.mp3"
+  },
+  "enter_research_query": {
+    "text": "Time for a real-world demonstration. We're asking Cognotik to research sustainable energy trends - watch as it conducts comprehensive web research and synthesizes findings into actionable insights.",
+    "audio": "enter_research_query.mp3"
+  },
+  "file_modification_capabilities": {
+    "text": "Give AI hands-on file control. From creating new documents to editing existing code, file modification tasks let Cognotik directly interact with your project files - like having an AI pair programmer.",
+    "audio": "file_modification_capabilities.mp3"
+  },
+  "file_search_capabilities": {
+    "text": "Navigate projects with AI intelligence. File search tasks help Cognotik understand your codebase structure, locate relevant files, and analyze project organization - essential for working with large codebases.",
+    "audio": "file_search_capabilities.mp3"
+  },
+  "generate_directory_demo": {
+    "text": "One click creates a perfectly organized workspace. Cognotik generates timestamped directories that keep each session's work separate and easily identifiable - no more hunting through cluttered folders.",
+    "audio": "generate_directory_demo.mp3"
+  },
+  "github_search_capabilities": {
+    "text": "Tap into the world's largest code repository. GitHub search tasks enable Cognotik to explore open-source projects, find implementation examples, and learn from millions of developers' solutions.",
+    "audio": "github_search_capabilities.mp3"
+  },
+  "goal_oriented_mode_capabilities": {
+    "text": "Goal Oriented mode transforms vague objectives into structured success. Define your target, and Cognotik creates measurable milestones, tracks progress, and adapts strategies to ensure you reach your destination.",
+    "audio": "goal_oriented_mode_capabilities.mp3"
+  },
+  "html_slides_generated": {
+    "text": "From question to presentation in minutes. Cognotik has transformed a simple research request into a professional, self-contained HTML presentation - showcasing the complete research-to-output pipeline that would typically take hours.",
+    "audio": "html_slides_generated.mp3"
+  },
+  "demo_plan_ahead_tabs_container": {
+    "text": "Plan Ahead mode organizes complex project information into clear, navigable sections. Each tab provides a different perspective on your project - from high-level overview to detailed execution steps.",
+    "audio": "demo_plan_ahead_tabs_container.mp3"
+  },
+  "demo_plan_ahead_execution_graph": {
+    "text": "Visualize your project's execution flow with automatically generated diagrams. This Mermaid chart shows the complete task dependency graph - how each step connects and builds upon the others.",
+    "audio": "demo_plan_ahead_execution_graph.mp3"
+  },
+  "demo_plan_ahead_per_task_details": {
+    "text": "Dive deep into individual task specifications. Each task shows detailed requirements, expected outputs, and dependencies - giving you complete transparency before execution begins.",
+    "audio": "demo_plan_ahead_per_task_details.mp3"
+  },
+  "accept_html_file_generation": {
+    "text": "Accept the generated HTML file to complete the creation process. Cognotik has prepared a professional presentation file that you can save and share immediately.",
+    "audio": "accept_html_file_generation.mp3"
+  },
+  "insight_analysis_capabilities": {
+    "text": "Insight tasks transform information into understanding. Perfect for analyzing complex data, extracting key insights from documents, and making sense of intricate situations with AI-powered analysis.",
+    "audio": "insight_analysis_capabilities.mp3"
+  },
+  "intro_welcome": {
+    "text": "Welcome to Cognotik - the AI platform that thinks like you do. Whether you're a developer, researcher, or creative professional, Cognotik transforms complex AI interactions into intuitive, powerful workflows. Let's discover how Cognotik can revolutionize your work.",
+    "audio": "intro_welcome.mp3"
+  },
+  "introduction_conclusion": {
+    "text": "You've just discovered Cognotik's foundation - a platform that adapts AI to your thinking style and workflow. Now let's see this revolutionary approach in action with real-world demonstrations.",
+    "audio": "introduction_conclusion.mp3"
+  },
+  "launch_research_session": {
+    "text": "Your research powerhouse is online. With web crawling and file modification enabled, Cognotik can now conduct comprehensive research, analyze findings, and generate professional reports - all in one seamless workflow.",
+    "audio": "launch_research_session.mp3"
+  },
+  "local_tools_integration": {
+    "text": "Transform your local environment into an AI-powered workspace. Cognotik securely integrates with your development tools, command line utilities, and file systems - giving AI the context it needs to truly assist your work.",
+    "audio": "local_tools_integration.mp3"
+  },
+  "mermaid_diagram_example": {
+    "text": "Watch as text becomes visual intelligence. AI automatically generates properly formatted diagrams that render instantly - perfect for documentation, presentations, or simply understanding complex workflows.",
+    "audio": "mermaid_diagram_example.mp3"
+  },
+  "mermaid_support_intro": {
+    "text": "Transform complex ideas into clear visuals. Cognotik's built-in Mermaid support lets AI create professional diagrams, flowcharts, and visualizations - turning abstract concepts into understandable graphics.",
+    "audio": "mermaid_support_intro.mp3"
+  },
+  "parallel_expansion_example": {
+    "text": "See how one question sparks multiple intelligent responses. Each perspective adds unique value - theoretical foundations, practical applications, real-world examples - giving you a complete understanding in one interaction.",
+    "audio": "parallel_expansion_example.mp3"
+  },
+  "expansion_syntax_intro": {
+    "text": "Cognotik's advanced chat syntax allows parallel thinking and unparalleled query flexibility. The response will be handled either in parallel or sequentially, allowing you to explore multiple perspectives and insights in a single interaction.",
+    "audio": "expansion_syntax_intro.mp3"
+  },
+  "plan_ahead_mode_capabilities": {
+    "text": "Plan Ahead mode brings transparency to complex projects. AI creates comprehensive, reviewable plans before execution - perfect for development projects, research initiatives, and any work requiring careful coordination.",
+    "audio": "plan_ahead_mode_capabilities.mp3"
+  },
+  "plan_ahead_mode_intro": {
+    "text": "Welcome to Plan Ahead Mode - where AI becomes your project architect. Instead of diving straight into execution, Cognotik first creates comprehensive, reviewable plans that give you complete visibility and control over complex projects.",
+    "audio": "plan_ahead_mode_intro.mp3"
+  },
+  "request_html_report": {
+    "text": "Transform research into presentation. Now we're asking Cognotik to create a professional HTML slide presentation from the research - demonstrating how AI can take raw information and create polished, shareable outputs.",
+    "audio": "request_html_report.mp3"
+  },
+  "review_configuration": {
+    "text": "Your AI assistant is configured and ready to go. Review your settings one final time - you're about to experience AI that truly understands and enhances your workflow.",
+    "audio": "review_configuration.mp3"
+  },
+  "sequential_expansion_example": {
+    "text": "Notice how context flows seamlessly between interactions. Each response builds intelligently on what came before, creating a natural progression from general concepts to specific, actionable insights.",
+    "audio": "sequential_expansion_example.mp3"
+  },
+  "sequential_expansion_intro": {
+    "text": "Now witness sequential expansion - where follow-up questions unlock deeper insights. Cognotik builds upon previous responses, creating layered understanding that evolves with your curiosity.",
+    "audio": "sequential_expansion_intro.mp3"
+  },
+  "shell_command_capabilities": {
+    "text": "Unleash command-line power through AI. Shell command tasks let Cognotik run terminal commands, execute scripts, and interact with system tools - bridging the gap between AI intelligence and system capabilities.",
+    "audio": "shell_command_capabilities.mp3"
+  },
+  "specify_feature_details": {
+    "text": "Paint the complete picture. We're providing comprehensive requirements for a React TypeScript application - user authentication, dashboard with charts, responsive design. Watch as Cognotik transforms these requirements into an actionable development plan.",
+    "audio": "specify_feature_details.mp3"
+  },
+  "specify_tech_tools": {
+    "text": "Define your project's foundation. In Plan Ahead Mode, we specify the exact technology stack, tools, and environment needed - ensuring AI understands your constraints and preferences before planning begins.",
+    "audio": "specify_tech_tools.mp3"
+  },
+  "step1_cognitive_modes": {
+    "text": "Step 1: Select your thinking style. Cognotik's cognitive modes aren't just different interfaces - they're fundamentally different ways of approaching problems, each optimized for specific workflows and outcomes.",
+    "audio": "step1_cognitive_modes.mp3"
+  },
+  "step2_task_settings": {
+    "text": "Step 2: Optimize your AI engine. These settings determine how Cognotik thinks and operates - from choosing the right AI models for your task to configuring the workspace where magic happens.",
+    "audio": "step2_task_settings.mp3"
+  },
+  "step3_task_types": {
+    "text": "Step 3: Unlock AI superpowers. Each task type grants Cognotik specific capabilities - from writing code and searching the web to analyzing files and running commands. Choose your AI's toolkit.",
+    "audio": "step3_task_types.mp3"
+  },
+  "step4_launch": {
+    "text": "Step 4: Launch into the future. Your AI workspace is configured and ready. Time to experience the power of truly intelligent, capable AI assistance tailored to your exact needs.",
+    "audio": "step4_launch.mp3"
+  },
+  "task_types_research_intro": {
+    "text": "Unlock research superpowers. We're enabling file modification for report generation and web crawling for comprehensive research - giving AI the tools to gather, analyze, and synthesize information like a research assistant.",
+    "audio": "task_types_research_intro.mp3"
+  },
+  "temperature_control": {
+    "text": "Fine-tune AI creativity with temperature control. Low values deliver precise, consistent results perfect for code and analysis. Higher values unlock creative potential for brainstorming and innovative solutions.",
+    "audio": "temperature_control.mp3"
+  },
+  "themes_customization": {
+    "text": "Instant personalization at your fingertips. Switch themes and layouts on the fly to create the perfect environment for any task - from focused coding sessions to creative brainstorming.",
+    "audio": "themes_customization.mp3"
+  },
+  "themes_layout_intro": {
+    "text": "Make Cognotik truly yours with extensive customization. Choose from multiple themes and layouts that match your style and optimize your workflow - because great AI deserves a great interface.",
+    "audio": "themes_layout_intro.mp3"
+  },
+  "usage_transparency": {
+    "text": "Stay in control with transparent usage reporting. Track API costs, monitor model performance, and optimize your AI spending - complete visibility into your AI investment with actionable insights.",
+    "audio": "usage_transparency.mp3"
+  },
+  "web_search_capabilities": {
+    "text": "Connect AI to the world's knowledge. Web search tasks let Cognotik research current information, gather technical documentation, and incorporate real-time data into solutions - keeping AI responses current and comprehensive.",
+    "audio": "web_search_capabilities.mp3"
+  },
+  "working_directory_concept": {
+    "text": "Define your project's home base. The working directory becomes Cognotik's workspace - where it creates files, runs code, and organizes outputs. Think of it as giving AI its own dedicated project folder.",
+    "audio": "working_directory_concept.mp3"
+  },
+  "workspace_configuration": {
+    "text": "Set up your AI workspace. Choose where Cognotik will work and which AI models will power your session - creating a personalized environment optimized for your specific needs and budget.",
+    "audio": "workspace_configuration.mp3"
+  },
+  "workspace_setup": {
+    "text": "First, let's set up your workspace. Cognotik's user settings give you complete control over your AI experience - from connecting your preferred AI providers to integrating your local development tools.",
+    "audio": "workspace_setup.mp3"
+  }
+}

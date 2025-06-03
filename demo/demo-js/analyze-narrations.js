@@ -69,6 +69,158 @@ function loadNarrationKeys(narrationsPath) {
     }
 }
 /**
+ * Load full narrations object
+ */
+function loadNarrations(narrationsPath) {
+    try {
+        const content = fs.readFileSync(narrationsPath, 'utf8');
+        return JSON.parse(content);
+    } catch (error) {
+        console.error(`Error loading narrations.json: ${error.message}`);
+        return {};
+    }
+}
+/**
+ * Generate markdown report with compiled narration scripts
+ */
+function generateMarkdownReport(narrations, usedKeys, unusedKeys, missingKeys, duplicateKeys, fileUsage, projectRoot) {
+    const timestamp = new Date().toISOString();
+    const usedKeysSet = new Set(usedKeys);
+    let markdown = `# Narration Analysis Report
+Generated on: ${timestamp}
+## Summary
+---
+## Demo Narration Scripts
+
+`;
+
+    // Group narrations by demo file
+    const sortedFiles = Object.keys(fileUsage).sort();
+    for (const file of sortedFiles) {
+        const relativePath = path.relative(projectRoot, file);
+        const keys = fileUsage[file];
+        
+        markdown += `### ${relativePath}\n\n`;
+        
+        // Add each narration used in this demo
+        for (const key of keys) {
+            if (narrations[key]) {
+                const content = narrations[key];
+                markdown += `<a id="${key}"></a>\n\n`;
+                
+                if (typeof content === 'string') {
+                    markdown += `${content}\n\n`;
+                } else if (typeof content === 'object') {
+                    // Convert object to readable text instead of JSON
+                    markdown += `${content['text'] || ''}\n\n`;
+                }
+            } else {
+                // Missing narration
+                markdown += `#### <a id="${key}"></a>\`${key}\` ❌ MISSING\n\n`;
+                markdown += `*This narration key is used but not defined in narrations.json*\n\n`;
+            }
+        }
+        
+        markdown += `\n\n`;
+    }
+
+    // Add unused narrations section
+    if (unusedKeys.length > 0) {
+        markdown += `### Unused Narrations (Non-displayed)\n\n`;
+        markdown += `<!-- UNUSED_NARRATION_IDS: ${unusedKeys.join(', ')} -->\n\n`;
+        const sortedUnusedKeys = unusedKeys.sort();
+        for (const key of sortedUnusedKeys) {
+            if (narrations[key]) {
+                const content = narrations[key];
+                markdown += `#### <a id="${key}"></a>\`${key}\` ⚠️ UNUSED\n\n`;
+                if (typeof content === 'string') {
+                    markdown += `${content}\n\n`;
+                } else if (typeof content === 'object') {
+                    const textContent = JSON.stringify(content).replace(/[{}",]/g, '').replace(/:/g, ': ');
+                    markdown += `${textContent}\n\n`;
+                }
+                markdown += `\n\n`;
+            }
+        }
+    }
+    // Add missing keys section
+    if (missingKeys.length > 0) {
+        markdown += `### Missing Narrations\n\n`;
+        markdown += `<!-- MISSING_NARRATION_IDS: ${missingKeys.join(', ')} -->\n\n`;
+        markdown += `The following narration keys are used in code but not defined in narrations.json:\n\n`;
+        for (const key of missingKeys) {
+            markdown += `#### <a id="${key}"></a>\`${key}\` ❌ MISSING\n\n`;
+            // Show where it's used
+            const filesUsingKey = [];
+            for (const [file, keys] of Object.entries(fileUsage)) {
+                if (keys.includes(key)) {
+                    filesUsingKey.push(path.relative(projectRoot, file));
+                }
+            }
+            if (filesUsingKey.length > 0) {
+                markdown += `*Used in:*\n`;
+                filesUsingKey.forEach(file => {
+                    markdown += `- ${file}\n`;
+                });
+                markdown += `\n`;
+            }
+            markdown += `\n\n`;
+        }
+    }
+    // Add duplicate values section
+    if (Object.keys(duplicateKeys).length > 0) {
+        markdown += `### Duplicate Values\n\n`;
+        markdown += `The following keys have identical content and could potentially be consolidated:\n\n`;
+        for (const [originalKey, duplicateGroup] of Object.entries(duplicateKeys)) {
+            markdown += `#### Duplicate Group\n\n`;
+            // Show the content once
+            if (narrations[originalKey]) {
+                const content = narrations[originalKey];
+                if (typeof content === 'string') {
+                    markdown += `**Content:** ${content}\n\n`;
+                } else if (typeof content === 'object') {
+                    const textContent = JSON.stringify(content).replace(/[{}",]/g, '').replace(/:/g, ': ');
+                    markdown += `**Content:** ${textContent}\n\n`;
+                }
+            }
+            markdown += `**Keys with this content:**\n`;
+            duplicateGroup.forEach(key => {
+                const isUsed = usedKeysSet.has(key);
+                const status = isUsed ? '✅ (used)' : '⚠️ (unused)';
+                markdown += `- [\`${key}\`](#${key}) ${status}\n`;
+            });
+            markdown += `\n\n\n`;
+        }
+    }
+    // Add file usage section
+    if (Object.keys(fileUsage).length > 0) {
+        markdown += `### Usage by File\n\n`;
+        for (const [file, keys] of Object.entries(fileUsage)) {
+            const relativePath = path.relative(projectRoot, file);
+            markdown += `#### ${relativePath}\n\n`;
+            markdown += `Uses ${keys.length} narration key(s):\n\n`;
+            keys.forEach(key => {
+                const isDefined = narrations[key] !== undefined;
+                const status = isDefined ? '✅' : '❌';
+                markdown += `- ${status} [\`${key}\`](#${key})\n`;
+            });
+            markdown += `\n`;
+        }
+    }
+    // Add metadata section
+    markdown += `---\n\n## Metadata\n\n`;
+    markdown += `<!-- NARRATION_METADATA\n`;
+    markdown += `TOTAL_DEFINED: ${Object.keys(narrations).length}\n`;
+    markdown += `TOTAL_USED: ${usedKeys.length}\n`;
+    markdown += `MISSING_COUNT: ${missingKeys.length}\n`;
+    markdown += `UNUSED_COUNT: ${unusedKeys.length}\n`;
+    markdown += `DUPLICATE_COUNT: ${Object.keys(duplicateKeys).length}\n`;
+    markdown += `GENERATED: ${timestamp}\n`;
+    markdown += `-->\n\n`;
+    return markdown;
+}
+
+/**
  * Find duplicate keys in narrations.json
  */
 function findDuplicateKeys(narrationsPath) {
@@ -111,6 +263,9 @@ function analyzeNarrationUsage() {
     // Load defined narration keys
     const definedKeys = loadNarrationKeys(narrationsPath);
     console.log(`📚 Found ${definedKeys.length} defined narration keys\n`);
+    // Load full narrations object for markdown report
+    const narrations = loadNarrations(narrationsPath);
+    
     // Find duplicate keys
     const duplicateKeys = findDuplicateKeys(narrationsPath);
     const duplicateCount = Object.keys(duplicateKeys).length;
@@ -259,6 +414,19 @@ function analyzeNarrationUsage() {
     const reportPath = path.join(projectRoot, 'narration-analysis-report.json');
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     console.log(`\n📄 Detailed report saved to: ${reportPath}`);
+    // Generate markdown report
+    const markdownReport = generateMarkdownReport(
+        narrations,
+        usedKeysArray,
+        unusedKeys,
+        missingKeys,
+        duplicateKeys,
+        fileUsage,
+        projectRoot
+    );
+    const markdownPath = path.join(projectRoot, 'narration-analysis-report.md');
+    fs.writeFileSync(markdownPath, markdownReport);
+    console.log(`📄 Markdown report saved to: ${markdownPath}`);
 }
 
 // Run the analysis
@@ -270,6 +438,8 @@ module.exports = {
     analyzeNarrationUsage,
     extractNarrationKeys,
     loadNarrationKeys,
+    loadNarrations,
+    generateMarkdownReport,
     findDuplicateKeys,
     findFiles
 };

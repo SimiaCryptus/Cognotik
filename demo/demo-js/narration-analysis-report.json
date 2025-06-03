@@ -1,9 +1,9 @@
 {
-  "timestamp": "2025-06-01T21:53:14.285Z",
+  "timestamp": "2025-06-02T21:34:46.228Z",
   "summary": {
-    "totalDefined": 54,
+    "totalDefined": 58,
     "totalUsed": 58,
-    "missing": 4,
+    "missing": 0,
     "unused": 0,
     "duplicates": 0
   },
@@ -31,6 +31,10 @@
     "github_search_capabilities",
     "goal_oriented_mode_capabilities",
     "html_slides_generated",
+    "demo_plan_ahead_tabs_container",
+    "demo_plan_ahead_execution_graph",
+    "demo_plan_ahead_per_task_details",
+    "accept_html_file_generation",
     "insight_analysis_capabilities",
     "intro_welcome",
     "introduction_conclusion",
@@ -123,12 +127,7 @@
     "accept_html_file_generation",
     "html_slides_generated"
   ],
-  "missingKeys": [
-    "demo_plan_ahead_tabs_container",
-    "demo_plan_ahead_execution_graph",
-    "demo_plan_ahead_per_task_details",
-    "accept_html_file_generation"
-  ],
+  "missingKeys": [],
   "unusedKeys": [],
   "duplicateKeys": {},
   "fileUsage": {
