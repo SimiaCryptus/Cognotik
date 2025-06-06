@@ -112,7 +112,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
             api: API
         ) {
             try {
-                val settings = getSettings(session, user) ?: Settings()
+                val settings = getSettings(session, user) ?: Settings(
+                    model = AppSettingsState.instance.smartModel
+                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured"),
+                    parsingModel = AppSettingsState.instance.fastModel
+                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured")
+                )
                 if (api is ChatClient) {
                     api.budget = settings.budget ?: DEFAULT_BUDGET
                 }
@@ -142,7 +147,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
         override val settingsClass: Class<*> get() = Settings::class.java
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+        override fun <T : Any> initSettings(session: Session): T? = Settings(
+            model = AppSettingsState.instance.smartModel
+                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+            parsingModel = AppSettingsState.instance.fastModel
+                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+        ) as T
     }
 
     class WebDevAgent(

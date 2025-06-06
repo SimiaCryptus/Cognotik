@@ -72,12 +72,11 @@ class UnifiedPlanAction : BaseAction() {
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : PlanAheadMode(ui, api, planSettings, session, user, api2, describer) {
+                        ) = object : PlanAheadMode(ui, api, planSettings, session, user,  describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -101,12 +100,11 @@ class UnifiedPlanAction : BaseAction() {
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : TaskChatMode(ui, api, planSettings, session, user, api2, describer) {
+                        ) = object : TaskChatMode(ui, api, planSettings, session, user, describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -130,7 +128,6 @@ class UnifiedPlanAction : BaseAction() {
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -141,7 +138,6 @@ class UnifiedPlanAction : BaseAction() {
                             planSettings,
                             session,
                             user,
-                            api2,
                             GraphOrderedPlanMode.graphFile,
                             describer
                         ) {
@@ -179,7 +175,6 @@ class UnifiedPlanAction : BaseAction() {
                                 planSettings = planSettings,
                                 session = session,
                                 user = user,
-                                api2 = api2,
                                 maxTaskHistoryChars = dialog.settings.maxTaskHistoryChars,
                                 maxTasksPerIteration = dialog.settings.maxTasksPerIteration,
                                 maxIterations = dialog.settings.maxIterations,
@@ -304,7 +299,6 @@ class UnifiedPlanAction : BaseAction() {
                 budget = apiBudget
 
             },
-            api2 = api2,
             cognitiveStrategy = cognitiveStrategy,
             describer = describer
         )
