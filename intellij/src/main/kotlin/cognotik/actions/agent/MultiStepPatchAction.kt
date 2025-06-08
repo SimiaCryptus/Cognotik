@@ -76,7 +76,7 @@ class MultiStepPatchAction : BaseAction() {
                 SessionProxyServer.chats[session] = AutoDevApp(event = e)
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
-                    singleInput = true,
+                    inputCnt = 1,
                     stickyInput = false,
                     loadImages = false,
                     showMenubar = false

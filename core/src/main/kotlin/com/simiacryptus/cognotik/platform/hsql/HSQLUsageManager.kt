@@ -6,19 +6,17 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModel
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.Timestamp
 
-class HSQLUsageManager(private val dbFile: File) : UsageInterface {
+class HSQLUsageManager() : UsageInterface {
 
     private val connection: Connection by lazy {
-        log.info("Initializing HSQLUsageManager with database file: ${dbFile.absolutePath}")
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
         val connection =
-            DriverManager.getConnection("jdbc:hsqldb:file:${dbFile.absolutePath}/usage;shutdown=true", "SA", "")
+            DriverManager.getConnection("jdbc:hsqldb:mem:usage", "SA", "")
         log.debug("Database connection established: $connection")
         createSchema(connection)
         connection

@@ -4,25 +4,18 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
-import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Timestamp
 import java.util.*
 
-class HSQLMetadataStorage(private val dbFile: File) : MetadataStorageInterface {
+class HSQLMetadataStorage() : MetadataStorageInterface {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    init {
-        log.info("Initializing HSQL Metadata Storage with ${dbFile.absolutePath}", RuntimeException("Stack trace"))
-    }
-
     private val connection: Connection by lazy {
-        require(dbFile.absoluteFile.exists() || dbFile.absoluteFile.mkdirs()) { "Unable to create database directory: ${dbFile.absolutePath}" }
-        log.info("Initializing HSQLMetadataStorage with database file: ${dbFile.absolutePath}")
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
         val connection =
-            DriverManager.getConnection("jdbc:hsqldb:file:${dbFile.absolutePath}/metadata;shutdown=true", "SA", "")
+            DriverManager.getConnection("jdbc:hsqldb:mem:metadata", "SA", "")
         createSchema(connection)
         connection
     }

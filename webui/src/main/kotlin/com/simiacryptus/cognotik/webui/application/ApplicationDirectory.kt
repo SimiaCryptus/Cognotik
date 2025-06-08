@@ -76,17 +76,6 @@ abstract class ApplicationDirectory(
             log.info("Starting application with args: ${args.joinToString(", ")}")
             init(args.contains("--server"))
             setupPlatform()
-            if (ClientUtil.keyTxt.isEmpty()) ClientUtil.keyTxt = run {
-                try {
-                    val encryptedData = javaClass.classLoader.getResourceAsStream("openai.key.json.kms")?.readAllBytes()
-                        ?: throw RuntimeException("Unable to load resource: ${"openai.key.json.kms"}")
-                    val decrypt = ApplicationServices.cloud!!.decrypt(encryptedData)
-                    JsonUtil.fromJson(decrypt, Map::class.java)
-                } catch (e: Throwable) {
-                    log.warn("Error loading key.txt", e)
-                    ""
-                }
-            }
             isLocked = true
             val server = start(port, "127.0.0.1", *(webAppContexts()))
             log.info("Server started successfully on port $port")

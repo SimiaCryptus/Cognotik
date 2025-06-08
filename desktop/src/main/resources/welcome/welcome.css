@@ -348,6 +348,8 @@ body {
     position: relative;
     display: inline-block;
     margin-left: 5px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .tooltip .tooltiptext {
@@ -368,6 +370,10 @@ body {
 }
 
 .tooltip:hover .tooltiptext {
+    /* Remove hover behavior */
+}
+
+.tooltip.active .tooltiptext {
     visibility: visible;
     opacity: 1;
 }

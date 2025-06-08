@@ -25,13 +25,13 @@ object PlanUtil {
         ui: ApplicationInterface
     ) = AgentPatterns.displayMapInTabs(
         mapOf(
-            "Text" to withPrompt.planText.renderMarkdown,
-            "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown,
-            "Diagram" to ("```mermaid\n" + buildMermaidGraph(
+            "Text" to withPrompt.planText.renderMarkdown(),
+            "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown(),
+            "Diagram" to (("```mermaid\n" + buildMermaidGraph(
               (filterPlan {
                 withPrompt.plan
               } ?: emptyMap()).toMutableMap()
-            ) + "\n```\n".renderMarkdown)
+            ) + "\n```\n").renderMarkdown())
         )
     )
 

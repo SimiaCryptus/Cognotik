@@ -29,7 +29,7 @@ open class ClientManager {
     ): ChatClient {
         log.debug("Fetching client for session: {}, user: {}", session, user)
         val key = SessionKey(session, user)
-        return chatCache.getOrPut(key) { createChatClient(session, user)!! }
+        return chatCache.getOrPut(key) { createChatClient(session, user) ?: throw RuntimeException("No API key") }
     }
 
     private val poolCache = mutableMapOf<SessionKey, ImmediateExecutorService>()
@@ -83,33 +83,15 @@ open class ClientManager {
                         this.user = user
                         logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
                     }
-                } else null
-            if (userApi != null) return userApi
-        }
-        val canUseGlobalKey = ApplicationServices.authorizationManager.isAuthorized(
-            null, user, OperationType.GlobalKey
-        )
-        if (!canUseGlobalKey) throw RuntimeException("No API key")
-        return (if (ClientUtil.keyMap.isNotEmpty()) {
-            object : ChatClient(
-                key = ClientUtil.keyMap.mapKeys { APIProvider.valueOf(it.key) },
-                workPool = getPool(session, user),
-            ){
-                override fun onUsage(
-                    model: OpenAIModel?,
-                    tokens: ApiModel.Usage
-                ) {
-                    super.onUsage(model, tokens)
-                    ApplicationServices.usageManager.incrementUsage(session, user, model!!, tokens)
+                } else {
+                    log.warn("No API key for user: $user in session: $session")
+                    return null
                 }
-            }.apply {
-                this.session = session
-                this.user = user
-                logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
-            }
+            return userApi
         } else {
-            null
-        })!!
+            log.warn("No user provided for session: $session")
+        }
+        return null
     }
 
     companion object {

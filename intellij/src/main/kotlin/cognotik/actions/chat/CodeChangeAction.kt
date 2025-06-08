@@ -86,7 +86,7 @@ class CodeChangeAction : BaseAction() {
             SessionProxyServer.chats[session] = PatchApp(root.toFile(), initialFiles)
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Code Change",
-                singleInput = true,
+                inputCnt = 1,
                 stickyInput = false,
                 loadImages = false,
                 showMenubar = false
@@ -131,7 +131,7 @@ class CodeChangeAction : BaseAction() {
     ) {
         private val log = LoggerFactory.getLogger(PatchApp::class.java)
 
-        override val singleInput = false
+        override val inputCnt = 0
         override val stickyInput = true
 
         private fun getCodeFiles(): Set<Path> {

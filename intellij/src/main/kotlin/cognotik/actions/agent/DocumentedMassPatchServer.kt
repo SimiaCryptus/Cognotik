@@ -37,7 +37,7 @@ class DocumentedMassPatchServer(
 ) {
     private lateinit var _root: Path
 
-    override val singleInput = false
+    override val inputCnt = 0
     override val stickyInput = true
 
     private val mainActor: SimpleActor

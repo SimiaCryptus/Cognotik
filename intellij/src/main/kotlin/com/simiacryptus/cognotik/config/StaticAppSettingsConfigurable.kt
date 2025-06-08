@@ -317,8 +317,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         val applyButton = JButton("Apply Configuration")
         applyButton.addActionListener {
             try {
-                val importedSettings = fromJson<AppSettingsState>(textArea.text, AppSettingsState::class.java)
-
                 val confirm = JOptionPane.showConfirmDialog(
                     dialog,
                     "Are you sure you want to apply this configuration? This will overwrite your current settings.",
@@ -326,25 +324,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE
                 )
+
                 if (confirm == JOptionPane.YES_OPTION) {
-                    importedSettings.apiKeys?.replaceAll { k, v -> EncryptionUtil.decrypt(v, password.text) ?: v }
-                    XmlSerializerUtil.copyBean(importedSettings, AppSettingsState.instance)
-                    addUserSuppliedModels(importedSettings.userSuppliedModels?.map {
-                        fromJson(
-                            it,
-                            UserSuppliedModel::class.java
-                        )
-                    } ?: emptyList())
-
-                    importedSettings.apiKeys?.forEach { (provider, key) ->
-                        AppSettingsState.instance.apiKeys?.put(provider, key)
-                    }
-                    importedSettings.apiBase?.forEach { (provider, base) ->
-                        AppSettingsState.instance.apiBase?.put(provider, base)
-                    }
-
+                    import(textArea.text)
                     write(AppSettingsState.instance, component!!)
-
                     JOptionPane.showMessageDialog(
                         dialog,
                         "Configuration applied successfully. Please restart the IDE for all changes to take effect.",
@@ -376,6 +359,25 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         dialog.pack()
         dialog.setLocationRelativeTo(null)
         dialog.isVisible = true
+    }
+
+    fun import(text: String) {
+        val importedSettings = fromJson<AppSettingsState>(text, AppSettingsState::class.java)
+        importedSettings.apiKeys?.replaceAll { k, v -> EncryptionUtil.decrypt(v, password.text) ?: v }
+        XmlSerializerUtil.copyBean(importedSettings, AppSettingsState.instance)
+        addUserSuppliedModels(importedSettings.userSuppliedModels?.map {
+            fromJson(
+                it,
+                UserSuppliedModel::class.java
+            )
+        } ?: emptyList())
+
+        importedSettings.apiKeys?.forEach { (provider, key) ->
+            AppSettingsState.instance.apiKeys?.put(provider, key)
+        }
+        importedSettings.apiBase?.forEach { (provider, base) ->
+            AppSettingsState.instance.apiBase?.put(provider, base)
+        }
     }
 
     override fun write(settings: AppSettingsState, component: AppSettingsComponent) {

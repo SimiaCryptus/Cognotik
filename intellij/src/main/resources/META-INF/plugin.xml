@@ -17,7 +17,7 @@
                 id="org.intellij.sdk.settings.AppSettingsConfigurable"
                 displayName="Cognotik"/>
         <statusBarWidgetFactory
-                implementation="com.simiacryptus.cognotik.ui.SettingsWidgetFactory"
+                implementation="com.simiacryptus.cognotik.SettingsWidgetFactory"
                 id="cognotik.ui.SettingsWidgetFactory"
                 order="first"/>
         <statusBarWidgetFactory

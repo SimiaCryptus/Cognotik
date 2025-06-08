@@ -73,7 +73,7 @@ class DocumentedMassPatchAction : BaseAction() {
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Documented Code Patch",
-            singleInput = true,
+            inputCnt = 1,
             stickyInput = false,
             loadImages = false,
             showMenubar = false

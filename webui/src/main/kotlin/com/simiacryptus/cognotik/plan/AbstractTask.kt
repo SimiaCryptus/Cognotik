@@ -56,7 +56,6 @@ abstract class AbstractTask<T : TaskConfigBase>(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings,
     )
 

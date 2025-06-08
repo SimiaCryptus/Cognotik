@@ -130,7 +130,7 @@ abstract class PatchApp(
     ): OutputResult
 
     abstract fun searchFiles(searchStrings: List<String>): Set<Path>
-    override val singleInput = true
+    override val inputCnt = 1
     override val stickyInput = false
     override fun newSession(user: User?, session: Session): SocketManager {
         log.info("Creating new session for user: ${user?.id ?: "anonymous"}")

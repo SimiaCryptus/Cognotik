@@ -85,7 +85,6 @@ class CommandSessionTask(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         requireNotNull(taskConfig) { "CommandSessionTaskData is required" }

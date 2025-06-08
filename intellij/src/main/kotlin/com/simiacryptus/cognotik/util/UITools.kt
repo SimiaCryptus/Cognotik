@@ -697,6 +697,9 @@ object UITools {
                                         APIProvider.OpenAI to apiKey
                                     ),
                                     workPool = Executors.newCachedThreadPool(),
+                                    apiBase = AppSettingsState.instance.apiBase
+                                        ?.mapKeys { APIProvider.valueOf(it.key) }
+                                        ?: throw IllegalStateException("API Base is not set")
                                 ).listModels()
                                 JOptionPane.showMessageDialog(
                                     null,

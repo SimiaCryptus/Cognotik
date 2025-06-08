@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
-import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
 import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isGitignore
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
@@ -407,7 +406,7 @@ open class AddApplyFileDiffLinks {
         val echoDiff = try {
             IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
         } catch (e: Throwable) {
-          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown
+          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
         }
 
         fun createRevertButton(filepath: Path, originalCode: String, handle: (Map<Path, String>) -> Unit): String {
@@ -459,7 +458,7 @@ open class AddApplyFileDiffLinks {
         }
 
         val diffTask = ui.newTask(root = false)
-        diffTask.complete("\n```diff\n$diffVal\n```\n".renderMarkdown)
+        diffTask.complete("\n```diff\n$diffVal\n```\n".renderMarkdown())
 
         val prevCodeTask = ui.newTask(root = false)
         val prevCodeTaskSB = prevCodeTask.add("")
@@ -468,20 +467,6 @@ open class AddApplyFileDiffLinks {
         val patchTask = ui.newTask(root = false)
         val patchTaskSB = patchTask.add("")
         val fixTask = ui.newTask(root = false)
-        val verifyFwdTabs = if (!newCode.isValid) displayMapInTabs(
-            mapOf(
-                "Echo" to patchTask.placeholder,
-                "Fix" to fixTask.placeholder,
-                "Code" to prevCodeTask.placeholder,
-                "Preview" to newCodeTask.placeholder,
-            )
-        ) else displayMapInTabs(
-            mapOf(
-                "Echo" to patchTask.placeholder,
-                "Code" to prevCodeTask.placeholder,
-                "Preview" to newCodeTask.placeholder,
-            )
-        )
 
         val prevCode2Task = ui.newTask(root = false)
         val prevCode2TaskSB = prevCode2Task.add("")
@@ -489,18 +474,10 @@ open class AddApplyFileDiffLinks {
         val newCode2TaskSB = newCode2Task.add("")
         val patch2Task = ui.newTask(root = false)
         val patch2TaskSB = patch2Task.add("")
-        val verifyRevTabs = displayMapInTabs(
-            mapOf(
-                "Echo" to patch2Task.placeholder,
-                "Code" to prevCode2Task.placeholder,
-                "Preview" to newCode2Task.placeholder,
-            )
-        )
 
         lateinit var revert: String
-
         var originalCode = prevCode
-        val apply1 = hrefLink("Apply Diff", classname = "href-link cmd-button") {
+        val applyDiff = applydiffTask.complete(hrefLink("Apply Diff", classname = "href-link cmd-button") {
             try {
                 val startTime = Instant.now()
                 originalCode = load(filepath)
@@ -519,13 +496,24 @@ open class AddApplyFileDiffLinks {
                 hrefLink.set("<div class=\"cmd-button\">Diff Applied</div>$revert")
                 applydiffTask.complete()
             } catch (e: Throwable) {
+                hrefLink.set("""<div class="cmd-button">Error: ${e.message}</div>""")
+                applydiffTask.error(null, e)
+            }
+        })!!
+        hrefLink = applyDiff
+        revert = hrefLink("Revert", classname = "href-link cmd-button") {
+            try {
+                filepath.toFile().writeText(originalCode, Charsets.UTF_8)
+                handle(mapOf(relativize to originalCode))
+                hrefLink.set("""<div class="cmd-button">Reverted</div>""" + applyDiff)
+                applydiffTask.complete()
+            } catch (e: Throwable) {
                 hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
                 applydiffTask.error(null, e)
             }
         }
 
         if (echoDiff.isNotBlank()) {
-
             if (!newCode.isValid) {
                 fixTask.complete(hrefLink("Fix Patch", classname = "href-link cmd-button") {
                     try {
@@ -534,7 +522,7 @@ open class AddApplyFileDiffLinks {
                         val echoDiff = try {
                             IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
                         } catch (e: Throwable) {
-                          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown
+                          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
                         }
                         var answer = patchFixer.answer(
                             listOf(
@@ -545,42 +533,12 @@ open class AddApplyFileDiffLinks {
                         )
                         answer = instrument(ui.socketManager!!, root, answer, handle, ui, api, model = model)
                         header?.clear()
-                        fixTask.complete(renderMarkdown(answer))
+                        fixTask.complete(answer.renderMarkdown())
                     } catch (e: Throwable) {
                         log.error("Error in fix patch", e)
                     }
                 })
             }
-
-            val applyReversed = hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
-                try {
-                    originalCode = load(filepath)
-                    val originalLines = originalCode.reverseLines()
-                    val diffLines = diffVal.reverseLines()
-                    val patch1 = diffApplier.apply(originalLines, "```diff\n$diffLines\n```", filename).patchResult
-                    val newCode2 = patch1.newCode.reverseLines()
-                    filepath.toFile().writeText(newCode2, Charsets.UTF_8)
-                    handle(mapOf(relativize to newCode2))
-                    hrefLink.set("""<div class="cmd-button">Diff Applied (Bottom to Top)</div>""" + revert)
-                    applydiffTask.complete()
-                } catch (e: Throwable) {
-                    hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                    applydiffTask.error(null, e)
-                }
-            }
-
-            revert = hrefLink("Revert", classname = "href-link cmd-button") {
-                try {
-                    filepath.toFile().writeText(originalCode, Charsets.UTF_8)
-                    handle(mapOf(relativize to originalCode))
-                    hrefLink.set("""<div class="cmd-button">Reverted</div>""" + apply1 + applyReversed)
-                    applydiffTask.complete()
-                } catch (e: Throwable) {
-                    hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                    applydiffTask.error(null, e)
-                }
-            }
-            hrefLink = applydiffTask.complete(apply1 + "\n" + applyReversed)!!
         }
 
         val lang = filename.split('.').lastOrNull() ?: ""
@@ -612,7 +570,7 @@ open class AddApplyFileDiffLinks {
         val echoDiff2 = try {
             IterativePatchUtil.generatePatch(prevCode, newCode2)
         } catch (e: Throwable) {
-          "\n```\n${e.stackTraceToString()}\n```".renderMarkdown
+          "\n```\n${e.stackTraceToString()}\n```".renderMarkdown()
         }
         newCode2TaskSB?.set(
             renderMarkdown(
@@ -632,24 +590,11 @@ open class AddApplyFileDiffLinks {
             )
         )
         patch2Task.complete("")
-
-        val mainTabs = displayMapInTabs(
-            mapOf(
-                "Diff" to diffTask.placeholder,
-                "Verify" to displayMapInTabs(
-                    mapOf(
-                        "Forward" to verifyFwdTabs,
-                        "Reverse" to verifyRevTabs,
-                    )
-                ),
-            )
-        )
-        val newValue = if (newCode.isValid) {
-            mainTabs + "\n" + applydiffTask.placeholder
+        return if (newCode.isValid) {
+            diffTask.placeholder + "\n" + applydiffTask.placeholder
         } else {
-            mainTabs + """<div class="warning">Warning: The patch is not valid: ${newCode.error?.renderMarkdown() ?: "???"}</div>""" + applydiffTask.placeholder
+            diffTask.placeholder + """<div class="warning">Warning: The patch is not valid: ${newCode.error?.renderMarkdown() ?: "???"}</div>""" + applydiffTask.placeholder
         }
-        return newValue
     }
 
     private val DiffApplicationResult.patchResult

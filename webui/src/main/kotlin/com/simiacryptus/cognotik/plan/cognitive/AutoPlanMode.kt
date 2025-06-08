@@ -35,7 +35,6 @@ open class AutoPlanMode(
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
-    private val api2: OpenAIClient,
     private val maxTaskHistoryChars: Int = planSettings.maxTaskHistoryChars,
     private val maxTasksPerIteration: Int = planSettings.maxTasksPerIteration,
     private val maxIterations: Int = planSettings.maxIterations,
@@ -296,7 +295,6 @@ $fullTaskDataJson
             task = task,
             api = taskApi,
             resultFn = { result.append(it) },
-            api2 = api2,
             planSettings = planSettings,
         )
 
@@ -718,15 +716,14 @@ $fullTaskDataJson
     )
 
     companion object : CognitiveModeStrategy {
-        override val singleInput: Boolean = true
+        override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
             api: API,
-            api2: OpenAIClient,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = AutoPlanMode(ui, api, planSettings, session, user, api2, describer = describer)
+        ) = AutoPlanMode(ui, api, planSettings, session, user, describer = describer)
     }
 }

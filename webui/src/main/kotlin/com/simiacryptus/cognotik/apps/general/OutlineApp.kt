@@ -19,7 +19,6 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.JsonDescriber
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
@@ -55,10 +54,8 @@ open class OutlineApp(
 
     data class Settings(
         val models: List<ChatModel> = listOf(
-            OpenAIModels.GPT4o,
-            OpenAIModels.GPT4oMini
         ),
-        val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
+        val parsingModel: ChatModel? = null,
         val temperature: Double = 0.3,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,
@@ -88,7 +85,7 @@ open class OutlineApp(
             temperature = settings.temperature,
             models = settings.models.drop(1),
             firstLevelModel = settings.models.first(),
-            parsingModel = settings.parsingModel,
+            parsingModel = settings.parsingModel!!,
             minSize = settings.minTokensForExpansion,
             writeFinalEssay = settings.writeFinalEssay,
             showProjector = settings.showProjector,

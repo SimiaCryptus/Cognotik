@@ -2,14 +2,16 @@ package com.simiacryptus.cognotik.demotest
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.JLabelFixture
 import com.intellij.remoterobot.fixtures.JTreeFixture
+import com.intellij.remoterobot.launcher.Ide
+import com.intellij.remoterobot.launcher.IdeDownloader
+import com.intellij.remoterobot.launcher.IdeLauncher
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.AudioModels
 import io.github.bonigarcia.wdm.WebDriverManager
+import okhttp3.OkHttpClient
 import org.junit.jupiter.api.*
 import org.openqa.selenium.*
 import org.openqa.selenium.chrome.ChromeDriver
@@ -19,32 +21,36 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.awt.Robot
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.security.MessageDigest
 import java.time.Duration
 import java.time.LocalDateTime
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import kotlin.math.absoluteValue
+
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class DemoTestBase(
     recordingConfig: RecordingConfig = RecordingConfig(),
-    splashScreenConfig: SplashScreenConfig = SplashScreenConfig()
-) : ScreenRec(
-    recordingConfig = recordingConfig,
-    splashScreenConfig = splashScreenConfig
-) {
+    splashScreenConfig: SplashScreenConfig = SplashScreenConfig(),
+    val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.5.zip",
+    protected val narrationFile: String? = null
+) :
+    //ScreenRec(recordingConfig = recordingConfig, splashScreenConfig = splashScreenConfig)
+    NoScreenRec()
+{
     protected lateinit var remoteRobot: RemoteRobot
-    protected val robot: java.awt.Robot = java.awt.Robot()
+    protected val robot: Robot = Robot()
     private var testStartTime: LocalDateTime? = null
     protected lateinit var testProjectDir: Path
     private var driverInitialized = false
     protected val driver: WebDriver by lazy { initializeWebDriver() }
+    protected val narrationManager: NarrationManager? by lazy {
+        narrationFile?.let { NarrationManager(it) }
+    }
+    
     private fun initializeWebDriver(): RemoteWebDriver {
         try {
             val driver = getChrome()
@@ -65,11 +71,56 @@ abstract class DemoTestBase(
         log.info("Starting test at ${testStartTime}")
     }
 
+    var ideaProcess: Process? = null
+    val robotPort: Int = 8082
+    val testConfigFile: File = File("test_config.json")
+    val ideDownloader = IdeDownloader(OkHttpClient())
+    val tmpDir: Path by lazy { Files.createTempDirectory("ide-launcher-") }
+    val pathToIde: Path by lazy {
+        ideDownloader.downloadAndExtractLatestEap(Ide.IDEA_COMMUNITY, tmpDir).apply {
+            log.info("IDE path: $this")
+        }
+    }
+    val robotPlugin: Path by lazy {
+        ideDownloader.downloadRobotPlugin(tmpDir)
+    }
+
     @BeforeAll
     fun setup() {
         log.info("Starting test setup")
-        remoteRobot = RemoteRobot("http://127.0.0.1:8082")
-        log.info("RemoteRobot initialized with endpoint http://127.0.0.1:8082")
+        ideaProcess = IdeLauncher.launchIde(
+            pathToIde,
+            mapOf(
+                "robot-server.port" to robotPort,
+                "idea.presentation.mode" to "true",
+                "idea.use.native.file.chooser" to "false",
+                "idea.suppress.no.launcher.warning" to "true",
+                "cognotik.config" to testConfigFile.absolutePath,
+            ),
+            listOf(
+                "-ea",
+            ),
+            listOf(
+                robotPlugin,
+                File(pluginPathname).toPath()
+            ),
+            tmpDir
+        )
+
+        remoteRobot = RemoteRobot("http://127.0.0.1:$robotPort", OkHttpClient())
+
+        waitFor(Duration.ofSeconds(120), Duration.ofSeconds(5)) {
+            try {
+                /* //div[@class='JRootPane'] */
+                remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@class='JRootPane']"))
+                true
+            } catch (e: Exception) {
+                log.error("Failed to connect to RemoteRobot: ${e.message}", e)
+                false
+            }
+        }
+
+        log.info("RemoteRobot initialized with endpoint http://127.0.0.1:$robotPort")
         UDPClient.startUdpServer()
         log.info("Setting Chrome driver system property")
         System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver")
@@ -87,8 +138,12 @@ abstract class DemoTestBase(
 
     override fun sleepForSplash() {
         val startTime = System.currentTimeMillis()
-        if (super.recordingConfig.splashNarration.isNotBlank()) {
-            tts(super.recordingConfig.splashNarration)?.play()
+        val splashNarration = super.recordingConfig.splashNarration
+        if (splashNarration.isNotBlank()) {
+            log.info("Playing splash narration: $splashNarration")
+            playNarration(splashNarration, 1000)
+        } else {
+            log.info("No splash narration configured, skipping playback")
         }
         val sleep = super.recordingConfig.splashScreenDelay - (System.currentTimeMillis() - startTime)
         if (sleep > 0) sleep(sleep)
@@ -96,12 +151,13 @@ abstract class DemoTestBase(
 
     @AfterAll
     fun tearDown() {
-
         if (driverInitialized) {
             driver.quit()
         }
         stopScreenRecording()
         UDPClient.clearMessageBuffer()
+        ideaProcess?.destroy()
+        ideaProcess = null
         cleanupTestProject()
     }
 
@@ -131,8 +187,10 @@ abstract class DemoTestBase(
         val txt = testProjectDir.toString()
         log.debug("Opening project in IDE with path: $txt")
         waitFor(Duration.ofSeconds(20)) {
+            ->
             try {
-                remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
+                remoteRobot.keyboard { for(_i in 0..2) escape() }
+                for(_i in 0..2) remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
                     .firstOrNull()?.apply {
                         click()
                         keyboard {
@@ -141,33 +199,30 @@ abstract class DemoTestBase(
                         }
                     }
 
-                remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
-                    .firstOrNull()?.apply {
-                        click()
-                        keyboard {
-                            enter()
-                            sleep(500)
-                        }
-                    }
-
-                remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@text='Cancel']")).firstOrNull()
-                    ?.click()
+                remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@text='Cancel']")).firstOrNull()?.click()
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JButton']")).apply {
                     if (size == 1) {
                         first().click()
                     }
                 }
+
                 log.debug("Attempting to find and click main menu")
-                val menu =
-                    remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@tooltiptext='Main Menu']"))
-                menu.click()
-                log.debug("Finding 'Open...' menu item")
-                val open = remoteRobot.find(
-                    CommonContainerFixture::class.java,
-                    byXpath("//div[@text='File']//div[@text='Open...']")
-                )
-                robot.mouseMove(menu.locationOnScreen.x, open.locationOnScreen.y)
-                open.click()
+                val openButton = remoteRobot.findAll(JLabelFixture::class.java, byXpath("//div[@defaulticon='open.svg']")).firstOrNull()
+                if(null != openButton) {
+                    log.debug("Found 'Open' button, clicking it")
+                    openButton.click()
+                } else {
+                    log.debug("'Open' button not found, trying to find main menu")
+                    val menu = remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@tooltiptext='Main Menu']"))
+                    menu.click()
+                    log.debug("Finding 'Open...' menu item")
+                    val open = remoteRobot.find(
+                        CommonContainerFixture::class.java,
+                        byXpath("//div[@text='File']//div[@text='Open...']")
+                    )
+                    robot.mouseMove(menu.locationOnScreen.x, open.locationOnScreen.y)
+                    open.click()
+                }
                 sleep(3000)
                 log.debug("Typing project path and pressing enter")
                 remoteRobot.keyboard {
@@ -181,7 +236,6 @@ abstract class DemoTestBase(
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@text='Trust Project']"))
                     .firstOrNull()?.click()
                 log.info("Project opened in IntelliJ IDEA")
-                waitAfterProjectOpen()
                 true
             } catch (e: Exception) {
                 log.error("Failed to open project: ${e.message}", e)
@@ -189,11 +243,27 @@ abstract class DemoTestBase(
                 false
             }
         }
-        sleep(TimeUnit.SECONDS.toMillis(30))
-    }
-
-    protected open fun waitAfterProjectOpen() {
-        sleep(15000)
+        fun isProcessing(
+            progressPath: String = "//div[@class='JProgressBar']"
+        ): Boolean = try {
+            remoteRobot.find(CommonContainerFixture::class.java, byXpath(progressPath))
+            true
+        } catch (e: Exception) {
+            false
+        }
+        waitFor(Duration.ofSeconds(300)) { -> isProcessing() }
+        waitFor(Duration.ofSeconds(20)) { ->
+            try {
+                remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@tooltiptext='Maximize']")).click()
+                log.info("Maximized IDE window")
+                true
+            } catch (e: Exception) {
+                log.error("Failed to maximize IDE window: ${e.message}", e)
+                false
+            }
+        }
+        sleep(1000)
+        waitFor(Duration.ofSeconds(300)) { -> !isProcessing() }
     }
 
     private fun cleanupTestProject() {
@@ -252,51 +322,34 @@ abstract class DemoTestBase(
         return aiCoderMenu
     }
 
-    val voices = arrayOf("alloy", "echo", "fable", "onyx", "nova", "shimmer")
-    open val voice: String =
-        this::class.java.simpleName.lowercase().let { voices[it.hashCode().absoluteValue % voices.size] }
+    fun playNarration(key: String, delay: Long = 2000): SpokenText? {
+        val narration = narrationManager?.getNarration(key)
+        if (narration == null) {
+            log.warn("No narration found for key: $key")
+            return null
+        }
+        // Try to use pre-recorded audio first
+        val audioStream = narrationManager?.getAudioStream(key)
+        if (audioStream != null) {
+            log.info("Playing pre-recorded audio for: $key")
+            return SpokenText(narration.text ?: "", audioStream, 0).apply { play(delay) }
+        }
+        log.warn("No pre-recorded audio found for key: $key, using TTS")
+        return null
+    }
 
+    @Deprecated("Use playNarration instead")
     fun tts(
         text: String,
         voice: String? = null,
         speed: Double = 1.0
-    ): SpokenText? {
-        if (!recordingConfig.enableAudio) return null
-        val cacheDir = File("./.tts_cache")
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs()
-        }
-        @Suppress("NAME_SHADOWING") val voice = voice ?: this.voice
-        val cacheKey = "${text}_${voice}_${speed}".toByteArray()
-        val cacheFileName = MessageDigest.getInstance("SHA-256").digest(cacheKey).joinToString("") { "%02x".format(it) }
-        val cacheFile = File(cacheDir, "$cacheFileName.wav")
-        if (cacheFile.exists()) {
-            log.info("Using cached TTS for text: $text")
-            return SpokenText(text, cacheFile.readBytes().inputStream(), 0)
-        }
-        val startTime = System.currentTimeMillis()
-        val speechWavBytes = OpenAIClient(workPool = Executors.newCachedThreadPool()).createSpeech(
-            ApiModel.SpeechRequest(
-                input = text,
-                model = AudioModels.TTS.modelName,
-                voice = voice,
-                speed = speed,
-                response_format = "wav"
-            )
-        ) ?: throw RuntimeException("No response")
-
-        cacheFile.writeBytes(speechWavBytes)
-
-        val renderTime = System.currentTimeMillis() - startTime
-        log.info("Received speech response in $renderTime ms")
-        return SpokenText(text, speechWavBytes.inputStream(), renderTime)
-    }
+    ): SpokenText? = null
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(this.javaClass)
 
-        const val PROJECT_TREE_XPATH: String = "//div[@class='ProjectViewTree']"
-        const val AI_CODER_MENU_XPATH: String = "//div[contains(@class, 'ActionMenu') and contains(@text, 'AI Coder')]"
+        const val PROJECT_TREE_XPATH: String = "//div[@class='MyProjectViewTree']"
+        const val AI_CODER_MENU_XPATH: String = "//div[contains(@class, 'ActionMenu') and contains(@text, 'Cognotik')]"
         val LONG_TIMEOUT = Duration.ofSeconds(300)
 
         fun clickElement(driver: WebDriver, wait: WebDriverWait, selector: String) = runElement(

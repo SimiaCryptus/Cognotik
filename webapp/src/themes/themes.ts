@@ -79,7 +79,7 @@ const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
     },
     config: {
         stickyInput: true,
-        singleInput: false
+        inputCnt: 0
     },
     logging: {
         colors: {

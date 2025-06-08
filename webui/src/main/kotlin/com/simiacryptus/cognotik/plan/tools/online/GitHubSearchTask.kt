@@ -55,7 +55,6 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         val searchResults = performGitHubSearch(agent.user?.let {

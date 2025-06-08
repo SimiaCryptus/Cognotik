@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 
 class ForeachTask(
@@ -41,7 +40,6 @@ ForeachTask - Execute a task for each item in a list
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         val userMessage = messages.joinToString("\n")
@@ -74,7 +72,6 @@ ForeachTask - Execute a task for each item in a list
                 userMessage = "$userMessage\nProcessing item $index: $item",
                 plan = itemSubTasks,
                 api = api,
-                api2 = api2,
                 tabs = tabs
             )
         }

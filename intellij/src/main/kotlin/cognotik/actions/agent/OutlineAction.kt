@@ -57,7 +57,7 @@ class OutlineAction : BaseAction() {
 
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "AI Outline Tool",
-                    singleInput = true,
+                    inputCnt = 1,
                     stickyInput = false,
                     loadImages = false,
                     showMenubar = false

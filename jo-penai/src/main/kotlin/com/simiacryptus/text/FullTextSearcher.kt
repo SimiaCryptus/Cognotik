@@ -19,20 +19,20 @@ class FullTextSearcher(
      * Returns all starting indices where [pattern] appears (in ascending order).
      */
     fun findAll(pattern: String): List<Int> {
-        log.debug("Finding all occurrences of pattern with length {}", pattern.length)
+//        log.debug("Finding all occurrences of pattern with length {}", pattern.length)
         val startTime = System.currentTimeMillis()
         val first = findFirst(pattern)
         if (first == -1) return emptyList()
-        log.debug("First occurrence found at index {} in {}ms", first, System.currentTimeMillis() - startTime)
+//        log.debug("First occurrence found at index {} in {}ms", first, System.currentTimeMillis() - startTime)
         val last = findLast(pattern)
 
 
 
         val result = suffixes.suffixArray.slice(first..last).sorted()
-        log.debug("Found {} occurrences in {}ms", result.size, System.currentTimeMillis() - startTime)
-        if (log.isTraceEnabled && result.isNotEmpty()) {
-            log.trace("Occurrences at positions: {}", result)
-        }
+//        log.debug("Found {} occurrences in {}ms", result.size, System.currentTimeMillis() - startTime)
+//        if (log.isTraceEnabled && result.isNotEmpty()) {
+//            log.trace("Occurrences at positions: {}", result)
+//        }
         return result
     }
 
@@ -44,15 +44,15 @@ class FullTextSearcher(
         val startTime = System.currentTimeMillis()
         val first = findFirst(pattern)
         if (first == -1) return 0
-        log.debug("First occurrence found at index {} in {}ms", first, System.currentTimeMillis() - startTime)
+//        log.debug("First occurrence found at index {} in {}ms", first, System.currentTimeMillis() - startTime)
         val last = findLast(pattern)
         val count = last - first + 1
-        log.debug("Found {} occurrences in {}ms", count, System.currentTimeMillis() - startTime)
+//        log.debug("Found {} occurrences in {}ms", count, System.currentTimeMillis() - startTime)
         return count
     }
 
     private fun findFirst(pattern: String): Int {
-        log.trace("Finding first occurrence of pattern with length {}", pattern.length)
+//        log.trace("Finding first occurrence of pattern with length {}", pattern.length)
         val startTime = System.currentTimeMillis()
         var low = 0
         var high = suffixes.suffixArray.lastIndex
@@ -69,15 +69,15 @@ class FullTextSearcher(
                 low = mid + 1
             }
         }
-        log.trace(
-            "First occurrence search completed in {}ms after {} iterations, result: {}",
-            System.currentTimeMillis() - startTime, iterations, result
-        )
+//        log.trace(
+//            "First occurrence search completed in {}ms after {} iterations, result: {}",
+//            System.currentTimeMillis() - startTime, iterations, result
+//        )
         return result
     }
 
     private fun findLast(pattern: String): Int {
-        log.trace("Finding last occurrence of pattern with length {}", pattern.length)
+//        log.trace("Finding last occurrence of pattern with length {}", pattern.length)
         val startTime = System.currentTimeMillis()
         var low = 0
         var high = suffixes.suffixArray.lastIndex
@@ -94,10 +94,10 @@ class FullTextSearcher(
                 high = mid - 1
             }
         }
-        log.trace(
-            "Last occurrence search completed in {}ms after {} iterations, result: {}",
-            System.currentTimeMillis() - startTime, iterations, result
-        )
+//        log.trace(
+//            "Last occurrence search completed in {}ms after {} iterations, result: {}",
+//            System.currentTimeMillis() - startTime, iterations, result
+//        )
         return result
     }
 
@@ -106,17 +106,17 @@ class FullTextSearcher(
      * @return negative if suffix < pattern, zero if pattern is prefix, positive if suffix > pattern.
      */
     private fun compareSuffixAt(idx: Int, pattern: String): Int {
-        if (log.isTraceEnabled) {
-            log.trace("Comparing suffix at index {} (position {}) with pattern", idx, suffixes.suffixArray[idx])
-        }
+//        if (log.isTraceEnabled) {
+//            log.trace("Comparing suffix at index {} (position {}) with pattern", idx, suffixes.suffixArray[idx])
+//        }
         val start = suffixes.suffixArray[idx]
         val textLen = text.length
         val minLen = minOf(textLen - start, pattern.length)
         for (i in 0 until minLen) {
             val diff = text[start + i] - pattern[i]
-            if (log.isTraceEnabled) {
-                log.trace("Comparison result: {} (different at position {})", diff, i)
-            }
+//            if (log.isTraceEnabled) {
+//                log.trace("Comparison result: {} (different at position {})", diff, i)
+//            }
             if (diff != 0) return diff
         }
 
@@ -126,13 +126,13 @@ class FullTextSearcher(
         } else {
             0
         }
-        if (log.isTraceEnabled) {
-            if (suffixLen < pattern.length) {
-                log.trace("Comparison result: {} (suffix shorter than pattern)", result)
-            } else {
-                log.trace("Comparison result: {} (pattern is prefix of suffix)", result)
-            }
-        }
+//        if (log.isTraceEnabled) {
+//            if (suffixLen < pattern.length) {
+//                log.trace("Comparison result: {} (suffix shorter than pattern)", result)
+//            } else {
+//                log.trace("Comparison result: {} (pattern is prefix of suffix)", result)
+//            }
+//        }
         return result
     }
 }

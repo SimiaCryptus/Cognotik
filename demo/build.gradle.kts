@@ -16,6 +16,9 @@ repositories {
 }
 
 dependencies {
+
+    implementation(project(":intellij"))
+
     implementation(kotlin("stdlib-jdk8"))
     implementation(libs.kotlinx.coroutines)
     implementation(libs.aws.bedrock)
@@ -52,6 +55,7 @@ dependencies {
     implementation(platform(libs.junit.bom))
     implementation(libs.junit.jupiter.api)
     runtimeOnly(libs.junit.jupiter.engine)
+    implementation("com.intellij.remoterobot:ide-launcher:${libs.versions.remoterobot.get()}")
 }
 
 java {
@@ -70,7 +74,11 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 tasks.test {
     enabled = false
     useJUnitPlatform()
-    jvmArgs = listOf("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+    jvmArgs = listOf(
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+        "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
+        "--add-opens", "java.base/java.util=ALL-UNNAMED"
+    )
 }
 
 tasks {
@@ -94,6 +102,15 @@ tasks {
                     ).joinToString("") { "$it\n" })
             }
         }
+    }
+
+    register<JavaExec>("run") {
+        jvmArgs = listOf(
+            // CLI arg: --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+            "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
+            "--add-opens", "java.base/java.util=ALL-UNNAMED"
+        )
     }
 
     jar {

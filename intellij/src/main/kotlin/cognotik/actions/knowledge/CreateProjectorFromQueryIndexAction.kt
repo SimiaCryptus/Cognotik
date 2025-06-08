@@ -60,7 +60,7 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
 
                 ApplicationServer.appInfoMap[config.sessionId] = AppInfoData(
                     applicationName = config.applicationName,
-                    singleInput = false,
+                    inputCnt = 0,
                     stickyInput = true,
                     loadImages = false,
                     showMenubar = false

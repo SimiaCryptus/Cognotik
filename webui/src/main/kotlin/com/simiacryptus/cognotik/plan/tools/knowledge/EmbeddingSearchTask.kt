@@ -63,10 +63,9 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
-        val searchResults = performEmbeddingSearch(api2)
+        val searchResults = performEmbeddingSearch(TODO())
         val formattedResults = formatSearchResults(searchResults)
         task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
         resultFn(formattedResults)

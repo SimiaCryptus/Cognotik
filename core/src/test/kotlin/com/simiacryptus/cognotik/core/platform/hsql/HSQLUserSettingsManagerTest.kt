@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.platform.hsql
 
-import java.nio.file.Files
-
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -163,4 +161,4 @@ abstract class UsageTest(private val impl: UsageInterface) {
         Assertions.assertTrue(userUsageSummary.isEmpty())
     }
 }
-class HSQLUsageManagerTest : UsageTest(HSQLUsageManager(Files.createTempDirectory("usageManager").toFile()))
+class HSQLUsageManagerTest : UsageTest(HSQLUsageManager())

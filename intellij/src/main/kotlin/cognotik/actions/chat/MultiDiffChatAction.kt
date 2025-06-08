@@ -73,7 +73,7 @@ open class MultiDiffChatAction(
             )
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Code Chat",
-                singleInput = false,
+                inputCnt = 0,
                 stickyInput = true,
                 loadImages = false,
                 showMenubar = false

@@ -14,12 +14,12 @@ class SessionProxyServer : ApplicationServer(
     path = "/",
     showMenubar = false,
 ) {
-    override val singleInput = true
+    override val inputCnt = 0
     override val stickyInput = false
     override fun appInfo(session: Session) = appInfoMap.getOrPut(session) {
         AppInfoData(
             applicationName = applicationName,
-            singleInput = singleInput,
+            inputCnt = inputCnt,
             stickyInput = stickyInput,
             loadImages = false,
             showMenubar = showMenubar

@@ -8,7 +8,7 @@ import javax.swing.JComponent
 
 abstract class UIAdapter<C : Any, S : Any>(
     protected val settingsInstance: S,
-    protected var component: C? = null,
+    var component: C? = null,
 ) : Configurable {
 
     companion object {

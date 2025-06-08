@@ -75,7 +75,7 @@ class FindResultsChatAction(
 
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Find Results Chat",
-                singleInput = false,
+                inputCnt = 0,
                 stickyInput = true,
                 loadImages = false,
                 showMenubar = false
@@ -122,7 +122,7 @@ class FindResultsChatAction(
         path = "/findChat",
         showMenubar = false,
     ) {
-        override val singleInput = false
+        override val inputCnt = 0
         override val stickyInput = true
         private fun formatLine(index: Int, line: String, isFocused: Boolean) = when {
             isFocused -> "/* L$index */ $line /* <<< */"

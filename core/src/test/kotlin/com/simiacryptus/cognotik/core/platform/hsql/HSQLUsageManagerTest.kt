@@ -1,6 +1,5 @@
 import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
 import org.junit.jupiter.api.TestInstance
-import java.nio.file.Files
 
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
@@ -164,5 +163,5 @@ abstract class UsageTest(private val impl: UsageInterface) {
     }
 }
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class HSQLUsageManagerTest : UsageTest(HSQLUsageManager(Files.createTempDirectory("usageManager").toFile()))
+class HSQLUsageManagerTest : UsageTest(HSQLUsageManager())
 
