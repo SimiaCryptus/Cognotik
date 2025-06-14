@@ -12,20 +12,20 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isLLMIncludableFile
+import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
+import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
@@ -263,7 +263,7 @@ class MassPatchServer(
                 socketManager.pool.submit {
                     try {
                         val codeSummary = listOf(path)
-                            .filter { isLLMIncludableFile(it.toFile()) }
+                            .filter { isLLMTextFile(it.toFile()) }
                             .associateWith { it.toFile().readText(Charsets.UTF_8) }
                             .entries.joinToString("\n\n") { (path, code) ->
                                 val extension = path.toString().split('.').lastOrNull()

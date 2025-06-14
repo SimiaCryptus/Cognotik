@@ -7,11 +7,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
@@ -20,13 +18,14 @@ import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.chatModel
@@ -54,9 +53,7 @@ class UnifiedPlanAction : BaseAction() {
                 workingDir = root,
             ),
             singleTaskMode = false,
-
             apiBudget = DEFAULT_API_BUDGET
-
         )
 
         if (dialog.showAndGet()) {

@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.util.IndentedText
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.proxy.ChatProxy
+import com.simiacryptus.util.StringUtil
 
 
 class DescribeAction : SelectionAction<String>() {
@@ -88,7 +89,7 @@ class DescribeAction : SelectionAction<String>() {
                 state.language?.name ?: state.editor?.virtualFile?.extension ?: "",
                 ""
             ).text ?: throw IllegalStateException("Failed to generate description")
-            val wrapping = com.simiacryptus.cognotik.util.StringUtil.lineWrapping(description.trim(), 120)
+            val wrapping = StringUtil.lineWrapping(description.trim(), 120)
             val numberOfLines = wrapping.trim().split("\n").reversed().dropWhile { it.isEmpty() }.size
             val commentStyle = if (numberOfLines == 1) {
                 state.language?.lineComment

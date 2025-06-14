@@ -28,13 +28,10 @@ abstract class ApplicationServer(
     val path: String,
     resourceBase: String = "application",
     open val root: File = dataStorageRoot,
-    val showMenubar: Boolean = true,
-) : ChatServer(resourceBase) {
+    showMenubar: Boolean = true,
+) : ChatServer(resourceBase, showMenubar) {
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
-    open val description: String = ""
-    open val inputCnt = 1
-    open val stickyInput = false
     open fun appInfo(session: Session) = appInfoMap.getOrPut(session) {
         AppInfoData(
             applicationName = applicationName,

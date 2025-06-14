@@ -8,16 +8,16 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -34,7 +34,7 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import kotlin.io.path.relativeTo
 
-open class MultiDiffChatAction(
+open class ModifyFilesAction(
     protected val showLineNumbers: Boolean = false
 ) : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -68,7 +68,7 @@ open class MultiDiffChatAction(
                 model = model,
                 parsingModel = parsingModel,
                 root = root.toFile(),
-                initialFiles = initialFiles,
+                files = initialFiles,
                 showLineNumbers = showLineNumbers
             )
             ApplicationServer.appInfoMap[session] = AppInfoData(
@@ -117,7 +117,7 @@ open class MultiDiffChatAction(
         model: ChatModel,
         parsingModel: ChatModel,
         val root: File,
-        private val initialFiles: Set<Path>,
+        private val files: Set<Path>,
         private val showLineNumbers: Boolean = false
     ) : ChatSocketManager(
         session = session,
@@ -143,7 +143,7 @@ open class MultiDiffChatAction(
                 log.warn("Root directory does not exist: $root")
                 return emptySet()
             }
-            return initialFiles.filter { path ->
+            return files.filter { path ->
                 val file = root.toPath().resolve(path).toFile()
                 val exists = file.exists()
                 if (!exists) log.warn("File does not exist: $file")
@@ -181,6 +181,9 @@ open class MultiDiffChatAction(
                 },
                 ui = ui,
                 api = api,
+                defaultFile = if (files.size == 1) files.first().let {
+                    root.toPath().resolve(it).toFile().absolutePath
+                } else null,
             )
         }
 
@@ -199,11 +202,11 @@ open class MultiDiffChatAction(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiDiffChatAction::class.java)
+        private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
 
     }
 }
 
-class MultiDiffChatWithLineNumbersAction : MultiDiffChatAction(showLineNumbers = true) {
+class ModifyFilesWithLineNumbersAction : ModifyFilesAction(showLineNumbers = true) {
     override fun getActionName(): String = "MultiDiffChatWithLineNumbers"
 }

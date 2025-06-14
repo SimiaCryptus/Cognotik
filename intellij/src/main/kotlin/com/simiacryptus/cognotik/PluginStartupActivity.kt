@@ -11,8 +11,6 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
-import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
@@ -23,6 +21,8 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +39,7 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
+        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
         System.getProperty("cognotik.config")?.let { configFile ->

@@ -51,7 +51,6 @@ abstract class SocketManagerBase(
         )
 
         try {
-            cleanupSocketTriggers(socket)
 
             sendQueues.remove(socket) // Clean up the send queue
             sockets.remove(socket)
@@ -505,31 +504,6 @@ abstract class SocketManagerBase(
     private val linkTriggers = mutableMapOf<String, Consumer<Unit>>()
     private val txtTriggers = mutableMapOf<String, Consumer<String>>()
 
-    // Add cleanup method
-    private fun cleanupTriggers(operationID: String) {
-        linkTriggers.remove(operationID)
-        txtTriggers.remove(operationID)
-    }
-
-    private fun cleanupSocketTriggers(socket: ChatSocket) {
-        // Remove triggers that might be associated with this socket
-        // This is a basic cleanup - in a more sophisticated implementation,
-        // you might track which triggers belong to which socket
-        val triggersToRemove = mutableListOf<String>()
-        linkTriggers.keys.forEach { key ->
-            // Add logic here to determine if trigger belongs to this socket
-            // For now, we'll do a basic cleanup of old triggers
-        }
-        triggersToRemove.forEach { key ->
-            linkTriggers.remove(key)
-            txtTriggers.remove(key)
-        }
-    }
-
-    private fun cleanupAllTriggers() {
-        linkTriggers.clear()
-        txtTriggers.clear()
-    }
     private fun onCmd(id: String, code: String) {
         require(id.isNotBlank()) { "Command ID cannot be blank" }
         require(code.isNotBlank()) { "Command code cannot be blank" }

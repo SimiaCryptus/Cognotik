@@ -7,14 +7,13 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isGitignore
+import com.simiacryptus.cognotik.util.FileSelectionUtils.fuzzyResolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ChatModel
-import org.apache.commons.text.similarity.LevenshteinDistance
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -179,7 +178,7 @@ open class AddApplyFileDiffLinks {
             val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
             val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
-            fun getFile(root: Path, header: String): File = root.resolve(resolve(root, header)).toFile()
+            fun getFile(root: Path, header: String): File = root.resolve(fuzzyResolveToRelativePath(root, header)).toFile()
 
             val codeblocks = resolvedMatches.filter { (header, block) ->
                 try {
@@ -202,7 +201,8 @@ open class AddApplyFileDiffLinks {
                 val diffValue = diffBlock.second.groupValues[2].trim()
                 val header =
                     headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
-                val filename = resolve(root, header)
+                val filename = fuzzyResolveToRelativePath(root, header)
+                if (filename.isNullOrBlank()) return@foldIndexed markdown
                 val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, api, shouldAutoApply)
                 markdown.replace(diffBlock.second.value, newValue)
             }
@@ -214,9 +214,10 @@ open class AddApplyFileDiffLinks {
                 if (codeValue.lines().all { it.startsWith('+') || it.startsWith('-') }) {
                     codeValue = codeValue.lines().joinToString("\n") { it.drop(1) }
                 }
-                val header =
-                    headers.lastOrNull { it.first.last < codeBlock.first.first }?.second ?: defaultFile ?: "Unknown"
-                val filename = resolve(root, header ?: "Unknown")
+                val header = headers.lastOrNull { it.first.last < codeBlock.first.first }?.second ?: defaultFile
+                if (header.isNullOrBlank()) return markdown
+                val filename = fuzzyResolveToRelativePath(root, header)
+                if (filename.isNullOrBlank()) return markdown
                 val newMarkdown = renderNewFile(root, filename, codeValue, handle, ui, lang, shouldAutoApply)
                 markdown.replace(codeBlock.second.value, newMarkdown)
             }
@@ -283,101 +284,6 @@ open class AddApplyFileDiffLinks {
             })!!
             return "\n```${codeLang}\n${codeValue}\n```\n\n${commandTask.placeholder}\n"
         }
-    }
-
-    private val pattern_backticks = "`(.*)`".toRegex()
-
-    /**
-     * Resolves a filename relative to a root path, handling various filename formats and path scenarios
-     * @param root The base directory path to resolve against
-     * @param filename The filename to resolve
-     * @return The resolved filename relative to the root path
-     */
-    private fun resolve(root: Path, filename: String): String {
-        log.debug("Resolving filename '{}' relative to root '{}'", filename, root)
-
-        var filename = filename.trim().split(" ").firstOrNull() ?: ""
-
-        if (filename.isEmpty()) {
-            log.warn("Empty filename provided")
-            return ""
-        }
-
-        if (pattern_backticks.containsMatchIn(filename)) {
-            filename = pattern_backticks.find(filename)!!.groupValues[1]
-            log.trace("Extracted filename from backticks: {}", filename)
-        }
-
-        try {
-            val path = File(filename).toPath()
-            if (path.startsWith(root)) {
-                filename = path.toString().relativizeFrom(root)
-                log.debug("Relativized path to: {}", filename)
-            }
-        } catch (e: Throwable) {
-            log.error("Error resolving filename '{}': {}", filename, e.message, e)
-        }
-
-        try {
-            val resolvedPath = root.resolve(filename)
-            if (!resolvedPath.toFile().exists() || !resolvedPath.toFile().isFile) {
-                log.debug("File not found directly under root, searching recursively")
-
-
-                root.toFile().listFilesRecursively()
-                    .filter { it.isFile }
-
-                    .find { it.toString().replace("\\", "/").endsWith(filename.replace("\\", "/")) }
-                    ?.toString()
-                    ?.apply {
-                        filename = relativizeFrom(root)
-                        log.debug("Found file recursively at: {}", filename)
-                    }
-            }
-        } catch (e: Throwable) {
-            log.error("Error searching for file '{}' recursively: {}", filename, e.message)
-            log.debug("Stack trace:", e)
-        }
-
-        try {
-            if (!root.resolve(filename).toFile().exists()) {
-                log.debug("File not found, attempting fuzzy match")
-                val levenshtein = LevenshteinDistance()
-                val files = root.toFile().listFilesRecursively()
-                val closest = files.minByOrNull { levenshtein.apply(it.toString(), filename) }
-                if (closest != null && levenshtein.apply(closest.toString(), filename) < 5) {
-                    filename = closest.toString().relativizeFrom(root)
-                    log.debug("Found closest match: {}", filename)
-                }
-            }
-        } catch (e: Throwable) {
-            log.error("Error finding fuzzy match for '{}': {}", filename, e.message, e)
-        }
-
-        return filename
-    }
-
-    private fun String.relativizeFrom(root: Path) = try {
-        root.relativize(File(this).toPath()).toString()
-    } catch (e: Throwable) {
-        this
-    }
-
-    private fun File.listFilesRecursively(): List<File> {
-        val files = mutableListOf<File>()
-        this.listFiles()?.filter {
-            !isGitignore(it.toPath()) &&
-                    !it.name.startsWith(".") &&
-
-                    !it.name.equals("node_modules")
-
-        }?.forEach {
-            files.add(it.absoluteFile)
-            if (it.isDirectory) {
-                files.addAll(it.listFilesRecursively())
-            }
-        }
-        return files
     }
 
     private fun SocketManagerBase.renderDiffBlock(
