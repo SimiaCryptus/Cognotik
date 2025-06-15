@@ -195,22 +195,18 @@ open class ModifyFilesAction(
         }
 
         override fun respond(api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
-
             val codex = GPT4Tokenizer()
             task.verbose((getCodeFiles().joinToString("\n") { path ->
                 "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
             }).renderMarkdown())
-
             val settings = Settings()
             api.budget = settings.budget ?: 2.00
-
             return super.respond(api, task, userMessage, currentChatMessages)
         }
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
-
     }
 }
 

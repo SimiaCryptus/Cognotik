@@ -138,16 +138,6 @@
                         text="📝 Modify Files"
                         description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
                 </action>
-<!--
-                <action class="cognotik.actions.chat.MultiDiffChatWithLineNumbersAction"
-                        text="📝 Modify Files (with Line Numbers)"
-                        description="Analyze and generate patches for multiple files with line numbers displayed for easier reference">
-                </action>
-                <action class="cognotik.actions.chat.CodeChangeAction"
-                        text="🎯 Smart Code Change"
-                        description="Intelligently analyze and modify code files using a two-stage approach with optimized model selection">
-                </action>
--->
                 <action class="cognotik.actions.dev.ApplyPatchAction"
                         text="🔧 Apply Patch"
                         description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
