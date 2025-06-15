@@ -11,15 +11,6 @@ import kotlin.io.path.name
 object FileSelectionUtils {
     val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
 
-    /**
-     * Creates an ASCII-art formatted compact tree listing of files and directories
-     * starting from the given root file, subject to filtering and depth constraints.
-     *
-     * @param rootFile The starting file or directory.
-     * @param maxFilesPerDir The maximum number of entries to process in any single directory.
-     * @param fn A filter function that determines whether a file or directory should be included in the tree.
-     * @return A string representing the ASCII tree of matching files.
-     */
     fun filteredWalkAsciiTree(
         rootFile: File,
         maxFilesPerDir: Int = 20,
@@ -90,7 +81,6 @@ object FileSelectionUtils {
         }
     }
 
-
     fun filteredWalk(
         file: File,
         maxFilesPerDir: Int = 20,
@@ -137,11 +127,6 @@ object FileSelectionUtils {
         }
     }
 
-    /**
-     * Checks if a file is likely to be binary by examining its content
-     * @param file The file to check
-     * @return true if the file appears to be binary, false otherwise
-     */
     fun isBinaryFile(file: File): Boolean {
         if (!file.exists() || file.isDirectory || file.length() == 0L) {
             return false
@@ -165,11 +150,6 @@ object FileSelectionUtils {
         }
     }
 
-    /**
-     * Checks if an input stream contains binary data by sampling the first bytes
-     * @param input The input stream to check
-     * @return true if the stream appears to contain binary data, false otherwise
-     */
     private fun isBinaryStream(input: InputStream): Boolean {
         val sampleSize = 1000
         val bytes = ByteArray(sampleSize)
@@ -327,6 +307,7 @@ object FileSelectionUtils {
         }
         return files
     }
+
     fun String.relativizeFrom(root: Path) = try {
         root.relativize(File(this).toPath()).toString()
     } catch (e: Throwable) {

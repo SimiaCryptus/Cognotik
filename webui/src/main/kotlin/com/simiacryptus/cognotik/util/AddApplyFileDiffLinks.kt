@@ -178,11 +178,11 @@ open class AddApplyFileDiffLinks {
             val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
             val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
-            fun getFile(root: Path, header: String): File = root.resolve(fuzzyResolveToRelativePath(root, header)).toFile()
+            fun getFile(root: Path, header: String) = fuzzyResolveToRelativePath(root, header)?.let { root.resolve(it) }?.toFile()
 
             val codeblocks = resolvedMatches.filter { (header, block) ->
                 try {
-                    !getFile(root, header ?: return@filter false).exists()
+                    true == getFile(root, header ?: return@filter false)?.exists()
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
                     false
@@ -190,7 +190,7 @@ open class AddApplyFileDiffLinks {
             }.flatMap { it.second }.map { it.range to it }.toList()
             val patchBlocks = resolvedMatches.filter { (header, block) ->
                 try {
-                    getFile(root, header ?: return@filter false).exists()
+                    true == getFile(root, header ?: return@filter false)?.exists()
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
                     false
@@ -210,7 +210,6 @@ open class AddApplyFileDiffLinks {
             val withSaveLinks = codeblocks.foldIndexed(withPatchLinks) { index, markdown, codeBlock ->
                 val lang = codeBlock.second.groupValues[1]
                 var codeValue = codeBlock.second.groupValues[2].trim().trimIndent()
-
                 if (codeValue.lines().all { it.startsWith('+') || it.startsWith('-') }) {
                     codeValue = codeValue.lines().joinToString("\n") { it.drop(1) }
                 }
