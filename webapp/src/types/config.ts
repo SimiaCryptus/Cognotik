@@ -48,7 +48,7 @@ export interface ThemeConfig {
 }
 
 export interface AppConfig {
-    singleInput: boolean;
+    inputCnt: number;
     stickyInput: boolean;
     loadImages: boolean;
     showMenubar: boolean;

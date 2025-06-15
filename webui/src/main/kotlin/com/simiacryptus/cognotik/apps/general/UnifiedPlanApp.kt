@@ -7,12 +7,14 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
@@ -38,7 +40,6 @@ open class UnifiedPlanApp(
     val parsingModel: ChatModel,
     showMenubar: Boolean = true,
     val api: API? = null,
-    val api2: OpenAIClient,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
 ) : ApplicationServer(
@@ -49,13 +50,38 @@ open class UnifiedPlanApp(
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
-    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{]+)+)}""")
+    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^\n|}{)(\]\[]+)+)}""")
     private val expansionPool = Executors.newFixedThreadPool(4)
     override val stickyInput = true
-    override val singleInput = cognitiveStrategy.singleInput
+    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it else it+1 }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
+
+    override fun newSession(
+        user: User?,
+        session: Session
+    ): SocketManager {
+        val socketManager = super.newSession(user, session)
+        val ui = (socketManager as ApplicationSocketManager).applicationInterface
+        val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+        ui.newTask(true).expandable(
+            "Session Info", """
+                Session ID: `${session.sessionId}`
+                
+                Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+                
+                Enabled Tasks: `${settings.taskSettings.filter { it.value.enabled }.keys.joinToString(", ")}`
+                
+                Root: `${settings.absoluteWorkingDir}`
+                
+                Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+                
+                Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+            """.trimIndent().renderMarkdown()
+        )
+        return socketManager
+    }
 
     override fun userMessage(
         session: Session,
@@ -66,24 +92,13 @@ open class UnifiedPlanApp(
     ) {
         try {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-            ui.newTask(true).expandable("Session Info", """
-                Session ID: `${session.sessionId}`
-                
-                Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-                
-                Enabled Tasks: `${settings.taskSettings.filter { it.value.enabled }.keys.joinToString(", ")}`
-                
-                Root: `${settings.absoluteWorkingDir}`
-                
-                Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-            """.trimIndent().renderMarkdown())
+            settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
             if (expansionExpressionPattern.find(userMessage) != null) {
                 processMessageWithExpansions(session, user, userMessage, ui, api)
                 return
             }
-
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
@@ -94,7 +109,6 @@ open class UnifiedPlanApp(
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
                     api = api,
-                    api2 = api2,
                     planSettings = settings,
                     session = session,
                     user = user,
@@ -157,7 +171,6 @@ open class UnifiedPlanApp(
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
                     api = api,
-                    api2 = api2,
                     planSettings = settings,
                     session = session,
                     user = user,

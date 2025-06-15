@@ -14,17 +14,23 @@ class SessionProxyServer : ApplicationServer(
     path = "/",
     showMenubar = false,
 ) {
-    override val singleInput = true
+    override val inputCnt = 0
     override val stickyInput = false
-    override fun appInfo(session: Session) = appInfoMap.getOrPut(session) {
+    override fun appInfo(session: Session): Map<String, Any> = ((chats.get(session)?.let { chatServer ->
         AppInfoData(
-            applicationName = applicationName,
-            singleInput = singleInput,
-            stickyInput = stickyInput,
+            applicationName = chatServer.applicationName,
+            inputCnt = chatServer.inputCnt,
+            stickyInput = chatServer.stickyInput,
             loadImages = false,
-            showMenubar = showMenubar
+            showMenubar = showMenubar,
         )
-    }.toMap()
+    }) ?: AppInfoData(
+        applicationName = "AI Coding Assistant",
+        inputCnt = 0,
+        stickyInput = false,
+        loadImages = false,
+        showMenubar = showMenubar,
+    )).toMap()
 
     override fun newSession(user: User?, session: Session) =
         chats[session]?.newSession(user, session) ?: agents[session]

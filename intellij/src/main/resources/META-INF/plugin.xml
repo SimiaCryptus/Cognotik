@@ -17,7 +17,7 @@
                 id="org.intellij.sdk.settings.AppSettingsConfigurable"
                 displayName="Cognotik"/>
         <statusBarWidgetFactory
-                implementation="com.simiacryptus.cognotik.ui.SettingsWidgetFactory"
+                implementation="com.simiacryptus.cognotik.SettingsWidgetFactory"
                 id="cognotik.ui.SettingsWidgetFactory"
                 order="first"/>
         <statusBarWidgetFactory
@@ -134,7 +134,7 @@
                    popup="true"
                    text="🔧 Modify"
                    description="File modification tools">
-                <action class="cognotik.actions.chat.MultiDiffChatAction"
+                <action class="cognotik.actions.chat.ModifyFilesAction"
                         text="📝 Modify Files"
                         description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
                 </action>

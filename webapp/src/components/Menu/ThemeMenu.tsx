@@ -339,12 +339,13 @@ export const ThemeMenu: React.FC = () => {
                     onClick={handleMenuToggle}
                     aria-expanded={isOpen}
                     aria-haspopup="true"
+                    id="theme-menu-button"
                     disabled={isLoading}
                 >
                     Theme: {currentTheme}
                 </ThemeButton>
                 {isOpen && (
-                    <ThemeList role="menu" style={{ right: 0 }}> {/* Position relative to this new div */}
+                    <ThemeList id="theme-list-select" role="menu" style={{ right: 0 }}> {/* Position relative to this new div */}
                         {Object.keys(themes).map((themeName, index) => {
                             logDebug('Rendering theme option', {
                                 theme: themeName,
@@ -353,6 +354,7 @@ export const ThemeMenu: React.FC = () => {
                             return (
                                 <ThemeOption
                                     key={themeName}
+                                    id={`theme-option-${themeName}`}
                                     onClick={() => handleThemeChange(themeName as keyof typeof themes)}
                                     role="menuitem"
                                     aria-current={themeName === currentTheme}
@@ -373,14 +375,16 @@ export const ThemeMenu: React.FC = () => {
                     onClick={handleLayoutMenuToggle}
                     aria-expanded={isLayoutOpen}
                     aria-haspopup="true"
+                    id="layout-menu-button"
                 >
                     Layout: {currentLayoutThemeName}
                 </ThemeButton>
                 {isLayoutOpen && (
-                    <ThemeList role="menu" style={{ left: 0, right: 'auto' }}> {/* Position relative to this new div */}
+                    <ThemeList id="layout-list-select" role="menu" style={{ left: 0, right: 'auto' }}> {/* Position relative to this new div */}
                         {Object.keys(layoutThemes).map((layoutName, index) => (
                             <ThemeOption
                                 key={layoutName}
+                                id={`layout-option-${layoutName}`}
                                 onClick={() => handleLayoutThemeChange(layoutName as LayoutThemeName)}
                                 role="menuitem"
                                 aria-current={layoutName === currentLayoutThemeName}

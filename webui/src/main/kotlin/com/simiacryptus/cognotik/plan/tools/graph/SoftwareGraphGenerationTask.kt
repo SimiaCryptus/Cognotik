@@ -99,7 +99,6 @@ class SoftwareGraphGenerationTask(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
 

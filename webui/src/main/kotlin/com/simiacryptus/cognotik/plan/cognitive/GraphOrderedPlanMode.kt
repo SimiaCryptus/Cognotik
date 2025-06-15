@@ -29,7 +29,6 @@ open class GraphOrderedPlanMode(
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
-    private val api2: OpenAIClient,
     private val graphFile: String,
     val describer: TypeDescriber,
 ) : CognitiveMode {
@@ -78,7 +77,7 @@ open class GraphOrderedPlanMode(
                         dataStorage = ui.socketManager?.dataStorage!!,
                         ui = ui,
                         root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: ui.socketManager!!.dataStorage?.getDataDir(
+                            ?: ui.socketManager!!.dataStorage?.getSessionDir(
                                 user,
                                 session
                             )?.toPath() ?: File(".").toPath(),
@@ -87,8 +86,7 @@ open class GraphOrderedPlanMode(
                         plan = plan,
                         task = task,
                         userMessage = userMessage,
-                        api = apiClient,
-                        api2 = api2
+                        api = apiClient
                     )).let(::renderMarkdown))
             task.add("Plan execution completed")
         } catch (e: Exception) {
@@ -328,19 +326,18 @@ open class GraphOrderedPlanMode(
 
     companion object : CognitiveModeStrategy {
 
-        override val singleInput: Boolean = true
+        override val inputCnt = 1
         var graphFile: String = "software_graph.json"
 
         override fun getCognitiveMode(
             ui: ApplicationInterface,
             api: API,
-            api2: OpenAIClient,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
         ): CognitiveMode {
-            return GraphOrderedPlanMode(ui, api, planSettings, session, user, api2, graphFile, describer)
+            return GraphOrderedPlanMode(ui, api, planSettings, session, user, graphFile, describer)
         }
     }
 }

@@ -50,6 +50,8 @@ class CommandSessionTask(
         val sessionId: String? = null,
         @Description("Timeout in milliseconds for commands")
         val timeout: Long = TIMEOUT_MS,
+        @Description("Process execution timeout in minutes (default: 15)")
+        val processTimeoutMinutes: Long = 15,
         @Description("Whether to close the session after execution")
         val closeSession: Boolean = false,
         task_description: String? = null,
@@ -83,7 +85,6 @@ class CommandSessionTask(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         requireNotNull(taskConfig) { "CommandSessionTaskData is required" }

@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -76,12 +76,12 @@ class MultiStepPatchAction : BaseAction() {
                 SessionProxyServer.chats[session] = AutoDevApp(event = e)
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
-                    singleInput = true,
+                    inputCnt = 1,
                     stickyInput = false,
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = AppServer.getServer(e.project)
+                val server = CognotikAppServer.getServer(e.project)
 
                 ApplicationManager.getApplication().invokeLater {
                     progress.text = "Opening browser..."

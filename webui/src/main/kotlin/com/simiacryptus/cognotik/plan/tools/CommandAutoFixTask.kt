@@ -63,7 +63,6 @@ class CommandAutoFixTask(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         val semaphore = Semaphore(0)

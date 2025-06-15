@@ -17,9 +17,15 @@ import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.time.Duration
 
-abstract class ChatServer(private val resourceBase: String = "application") {
+abstract class ChatServer(
+    private val resourceBase: String = "application",
+    val showMenubar: Boolean
+) {
 
     abstract val applicationName: String
+    open val description: String = ""
+    open val inputCnt = 1
+    open val stickyInput = false
     open val dataStorage: StorageInterface? = null
     val sessions: ConcurrentHashMap<Session, SocketManager> = ConcurrentHashMap()
 

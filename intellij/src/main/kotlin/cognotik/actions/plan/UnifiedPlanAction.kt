@@ -6,12 +6,10 @@ import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
-import com.simiacryptus.cognotik.AppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
@@ -20,13 +18,14 @@ import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.chatModel
@@ -54,9 +53,7 @@ class UnifiedPlanAction : BaseAction() {
                 workingDir = root,
             ),
             singleTaskMode = false,
-
             apiBudget = DEFAULT_API_BUDGET
-
         )
 
         if (dialog.showAndGet()) {
@@ -67,17 +64,16 @@ class UnifiedPlanAction : BaseAction() {
 
                 val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
                     "Plan Ahead" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = true
+                        override val inputCnt = 1
 
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : PlanAheadMode(ui, api, planSettings, session, user, api2, describer) {
+                        ) = object : PlanAheadMode(ui, api, planSettings, session, user,  describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -97,16 +93,15 @@ class UnifiedPlanAction : BaseAction() {
                     }
 
                     "Single Task" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = false
+                        override val inputCnt = 0
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : TaskChatMode(ui, api, planSettings, session, user, api2, describer) {
+                        ) = object : TaskChatMode(ui, api, planSettings, session, user, describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -126,11 +121,10 @@ class UnifiedPlanAction : BaseAction() {
                     }
 
                     "Graph" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = true
+                        override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -141,7 +135,6 @@ class UnifiedPlanAction : BaseAction() {
                             planSettings,
                             session,
                             user,
-                            api2,
                             GraphOrderedPlanMode.graphFile,
                             describer
                         ) {
@@ -164,11 +157,10 @@ class UnifiedPlanAction : BaseAction() {
                     }
 
                     "Auto Plan" -> object : CognitiveModeStrategy {
-                        override val singleInput: Boolean = true
+                        override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
                             api: API,
-                            api2: OpenAIClient,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -180,7 +172,6 @@ class UnifiedPlanAction : BaseAction() {
                                 planSettings = planSettings,
                                 session = session,
                                 user = user,
-                                api2 = api2,
                                 maxTaskHistoryChars = dialog.settings.maxTaskHistoryChars,
                                 maxTasksPerIteration = dialog.settings.maxTasksPerIteration,
                                 maxIterations = dialog.settings.maxIterations,
@@ -266,7 +257,7 @@ class UnifiedPlanAction : BaseAction() {
                 }
             })
         progress.text = "Starting server..."
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
         openBrowser(server, session.toString())
     }
 
@@ -305,13 +296,12 @@ class UnifiedPlanAction : BaseAction() {
                 budget = apiBudget
 
             },
-            api2 = api2,
             cognitiveStrategy = cognitiveStrategy,
             describer = describer
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Unified Planning",
-            singleInput = true,
+            inputCnt = 1,
             stickyInput = true,
             loadImages = false,
             showMenubar = false
@@ -323,7 +313,7 @@ class UnifiedPlanAction : BaseAction() {
         )
     }
 
-    private fun openBrowser(server: AppServer, session: String) {
+    private fun openBrowser(server: CognotikAppServer, session: String) {
         Thread {
             Thread.sleep(500)
             try {

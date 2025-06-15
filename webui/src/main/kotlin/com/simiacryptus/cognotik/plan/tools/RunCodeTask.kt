@@ -51,7 +51,6 @@ class RunCodeTask<T : Interpreter>(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         val autoRunCounter = AtomicInteger(0)

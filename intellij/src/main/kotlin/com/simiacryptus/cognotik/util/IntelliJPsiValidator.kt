@@ -7,8 +7,7 @@ import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.PsiFileFactory
 import com.intellij.testFramework.LightVirtualFile
 
-class IntelliJPsiValidator(private val project: Project, val extension: String, val filename: String) :
-    GrammarValidator {
+class IntelliJPsiValidator(private val project: Project, val extension: String, val filename: String) : GrammarValidator {
     override fun validateGrammar(code: String): List<GrammarValidator.ValidationError> {
         var errors: List<GrammarValidator.ValidationError>? = null
         WriteCommandAction.runWriteCommandAction(project) {

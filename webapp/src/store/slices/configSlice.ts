@@ -46,7 +46,7 @@ const loadWebSocketConfig = () => {
 };
 
 const initialState: AppConfig = {
-    singleInput: false,
+    inputCnt: 0,
     stickyInput: true,
     loadImages: true,
     showMenubar: true,
@@ -90,8 +90,8 @@ const configSlice = createSlice({
                     state.applicationName = action.payload.applicationName;
                     document.title = action.payload.applicationName;
                 }
-                if (action.payload.singleInput !== undefined) {
-                    state.singleInput = action.payload.singleInput;
+                if (action.payload.inputCnt !== undefined) {
+                    state.inputCnt = action.payload.inputCnt;
                 }
                 if (action.payload.stickyInput !== undefined) {
                     state.stickyInput = action.payload.stickyInput;

@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.online
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.util.HtmlSimplifier
 import com.simiacryptus.cognotik.util.Selenium2S3
+import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
 import java.io.File
 import java.net.URI
 import java.net.http.HttpRequest
@@ -83,7 +84,7 @@ enum class FetchMethod {
                     if (task.selenium == null) {
                         log.debug("Initializing Selenium driver")
                         task.selenium = Selenium2S3(
-                            pool = pool, cookies = null, driver = planSettings.driver()
+                            pool = pool, cookies = null, driver = chromeDriver()
                         )
                     }
                     try {

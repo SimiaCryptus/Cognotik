@@ -10,7 +10,7 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
@@ -83,7 +83,7 @@ class DiffChatAction : BaseAction() {
     private fun setupApplicationServer(session: Session) {
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
-            singleInput = false,
+            inputCnt = 0,
             stickyInput = true,
             loadImages = false,
             showMenubar = false
@@ -156,7 +156,7 @@ class DiffChatAction : BaseAction() {
 
     private fun openBrowserWindow(e: AnActionEvent, session: Session) {
         IntellijAppManager.getApplication().executeOnPooledThread {
-            val server = AppServer.getServer(e.project)
+            val server = CognotikAppServer.getServer(e.project)
             val uri = server.server.uri.resolve("/#$session")
             BaseAction.log.info("Opening browser to $uri")
             browse(uri)

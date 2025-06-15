@@ -85,19 +85,6 @@ const ToolbarLeft = styled.div`
     gap: ${({theme}) => theme.sizing.spacing.md};
 `;
 
-const Dropdown = styled.div`
-    color: ${({theme}) => theme.colors.text.primary};
-    padding: ${({theme}) => theme.sizing.spacing.sm};
-    text-decoration: none;
-    cursor: pointer;
-    position: relative;
-
-    &:hover {
-        color: white;
-
-    }
-`;
-
 const DropButton = styled.button`
     color: ${({theme}) => theme.colors.text.primary};
     padding: ${({theme}) => theme.sizing.spacing.sm};
@@ -188,7 +175,6 @@ const DropButton = styled.button`
 `;
 
 const DropdownContent = styled.div`
-    display: none;
     position: absolute;
     background-color: ${({theme}) => theme.colors.surface};
     min-width: 160px;
@@ -201,10 +187,9 @@ const DropdownContent = styled.div`
     backdrop-filter: blur(12px);
     transform-origin: top;
     animation: dropdownSlide 0.2s ease-out;
+    /* Prevent clicks from bubbling up */
+    pointer-events: auto;
 
-    ${Dropdown}:hover & {
-        display: block;
-    }
 
     @keyframes dropdownSlide {
         from {
@@ -218,37 +203,81 @@ const DropdownContent = styled.div`
     }
 `;
 
+const Dropdown = styled.div`
+    color: ${({theme}) => theme.colors.text.primary};
+    padding: ${({theme}) => theme.sizing.spacing.sm};
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    /* Ensure dropdown container doesn't interfere with clicks */
+    pointer-events: auto;
+
+    &:hover {
+        color: white;
+    }
+`;
+
 const DropdownItem = styled.a`
     color: ${({theme}) => theme.colors.text.primary};
     padding: ${({theme}) => theme.sizing.spacing.sm};
     text-decoration: none;
     display: block;
     cursor: pointer;
+    /* Ensure dropdown items are clickable */
+    pointer-events: auto;
+    user-select: none;
 
     &:hover {
         background-color: ${({theme}) => theme.colors.primary};
         color: white;
     }
 `;
+
 export const Menu: React.FC = () => {
     useSelector((state: RootState) => state.config.websocket);
     const showMenubar = useSelector((state: RootState) => state.config.showMenubar);
     const {openModal} = useModal();
     const dispatch = useDispatch();
     const verboseMode = useSelector((state: RootState) => state.ui.verboseMode);
+    const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
+
     const handleVerboseToggle = () => {
         console.log('[Menu] Verbose mode toggled to:', !verboseMode);
         dispatch(toggleVerbose());
     };
 
-    const handleMenuClick = (modalType: string) => {
+    const handleMenuClick = (modalType: string, event?: React.MouseEvent) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         console.debug('[Menu] Opening modal:', modalType);
+        setOpenDropdown(null); // Close dropdown when opening modal
         openModal(modalType);
+        setOpenDropdown(null); // Close dropdown after action
     };
 
-    const handleLogout = () => {
-        console.log('[Menu] User initiated logout');
+    const toggleDropdown = (dropdownId: string, event?: React.MouseEvent) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
     };
+    const closeDropdowns = () => {
+        setOpenDropdown(null);
+    };
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Element;
+            if (!target.closest('[data-dropdown]')) {
+                closeDropdowns();
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
 
     return (
         <MenuContainer $hidden={!showMenubar}
@@ -261,76 +290,52 @@ export const Menu: React.FC = () => {
                     <FontAwesomeIcon icon={faHome}/> Home
                 </DropButton>
 
-                {/*<Dropdown
-                    data-testid="app-menu-button"
-                    id="app-menu-button">
-                    <DropButton
-                        data-testid="sessions-button"
-                        id="sessions-button">App</DropButton>
-                    <DropdownContent>
-                        <DropdownItem onClick={() => openModal('sessions')}>Session List</DropdownItem>
-                        <DropdownItem as="a" href={"./#" + newGlobalID()}>New</DropdownItem>
-                    </DropdownContent>
-                </Dropdown>*/}
-
                 <Dropdown> {/* Removed style={{display: 'contents'}} */}
-                    <DropButton>
+                    <DropButton 
+                        id="session-menu-button"
+                       onClick={() => toggleDropdown('session')}
+                        data-dropdown="session"
+                    >
                         <FontAwesomeIcon icon={faCog}/> Session
                     </DropButton>
-                    <DropdownContent>
-                        <DropdownItem onClick={() => handleMenuClick('settings')}>Settings</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('fileIndex/')}>Files</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('usage')}>Usage</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('threads')}>Threads</DropdownItem>
+                    <DropdownContent 
+                        style={{ display: openDropdown === 'session' ? 'block' : 'none' }}
+                        data-dropdown="session"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <DropdownItem id="settings-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('settings'); }}>Settings</DropdownItem>
+                        <DropdownItem id="files-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('fileIndex/'); }}>Files</DropdownItem>
+                        <DropdownItem id="usage-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('usage'); }}>Usage</DropdownItem>
+                        <DropdownItem id="threads-menu-button" onClick={(e) => { e.stopPropagation(); handleMenuClick('threads'); }}>Threads</DropdownItem>
                         {/*
                         <DropdownItem onClick={() => handleMenuClick('share')}>Share</DropdownItem>
 */}
-                        <DropdownItem onClick={() => handleMenuClick('cancel')}>Cancel</DropdownItem>
+                        <DropdownItem id="cancel-menu-button" onClick={(e) => handleMenuClick('cancel', e)}>Cancel</DropdownItem>
                         {/*
                         <DropdownItem onClick={() => handleMenuClick('delete')}>Delete</DropdownItem>
 */}
-                        <DropdownItem onClick={handleVerboseToggle}>
+                        <DropdownItem id="verbose-menu-button" onClick={(e) => { e.stopPropagation(); handleVerboseToggle(); setOpenDropdown(null); }}>
                             {verboseMode ? 'Hide Verbose' : 'Show Verbose'}
                         </DropdownItem>
                     </DropdownContent>
                 </Dropdown>
 
                 <ThemeMenu/>
-                {/*
-
-                <Dropdown>
-                    <DropButton>About</DropButton>
-                    <DropdownContent>
-                        <DropdownItem onClick={() => handleMenuClick('/privacy.html')}>Privacy Policy</DropdownItem>
-                        <DropdownItem onClick={() => handleMenuClick('/tos.html')}>Terms of Service</DropdownItem>
-                    </DropdownContent>
-                </Dropdown>
-*/}
 
                 {isDevelopment && (
                     <Dropdown> {/* Removed style={{display: 'contents'}} if it was there, ensure consistency */}
-                        <DropButton>
+                        <DropButton
+                           onClick={() => toggleDropdown('config')}
+                            data-dropdown="config"
+                        >
                             Config
                         </DropButton>
-                        <DropdownContent>
+                        <DropdownContent style={{ display: openDropdown === 'config' ? 'block' : 'none' }}>
                             <WebSocketMenu/>
                         </DropdownContent>
                     </Dropdown>
                 )}
             </ToolbarLeft>
-
-            {/*<Dropdown>
-                <DropButton>
-                    <FontAwesomeIcon icon={faSignInAlt}/>User
-                </DropButton>
-                <DropdownContent>
-                    <DropdownItem onClick={() => handleMenuClick('/userSettings')}>Settings</DropdownItem>
-                    <DropdownItem onClick={() => handleMenuClick('/usage')}>Usage</DropdownItem>
-                    <DropdownItem onClick={handleLogout}>
-                        <FontAwesomeIcon icon={faSignOutAlt}/> Logout
-                    </DropdownItem>
-                </DropdownContent>
-            </Dropdown>*/}
         </MenuContainer>
     );
 };

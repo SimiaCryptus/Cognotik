@@ -13,7 +13,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -75,13 +75,13 @@ class FindResultsChatAction(
 
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Find Results Chat",
-                singleInput = false,
+                inputCnt = 0,
                 stickyInput = true,
                 loadImages = false,
                 showMenubar = false
             )
 
-            val server = AppServer.getServer(event.project)
+            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
@@ -122,7 +122,7 @@ class FindResultsChatAction(
         path = "/findChat",
         showMenubar = false,
     ) {
-        override val singleInput = false
+        override val inputCnt = 0
         override val stickyInput = true
         private fun formatLine(index: Int, line: String, isFocused: Boolean) = when {
             isFocused -> "/* L$index */ $line /* <<< */"

@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.filteredWalk
+import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -130,7 +130,7 @@ abstract class PatchApp(
     ): OutputResult
 
     abstract fun searchFiles(searchStrings: List<String>): Set<Path>
-    override val singleInput = true
+    override val inputCnt = 1
     override val stickyInput = false
     override fun newSession(user: User?, session: Session): SocketManager {
         log.info("Creating new session for user: ${user?.id ?: "anonymous"}")

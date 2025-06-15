@@ -169,6 +169,7 @@ export const WebSocketMenu: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        e.stopPropagation();
         console.log(`${LOG_PREFIX} Updating WebSocket configuration to ${config.protocol}//${config.url}:${config.port}`);
         dispatch(updateWebSocketConfig(config));
         WebSocketService.disconnect();
@@ -180,17 +181,21 @@ export const WebSocketMenu: React.FC = () => {
             timeout: 5000
         });
     };
-
-    const handleReconnect = () => {
+    const handleReconnect = (e: React.MouseEvent) => {
+        e?.stopPropagation();
+        e.preventDefault();
         setConnectionStatus('connecting');
         WebSocketService.reconnect();
         console.log(`${LOG_PREFIX} Manual reconnection initiated`);
     };
-    const handleDisconnect = () => {
+    const handleDisconnect = (e: React.MouseEvent) => {
+        e?.stopPropagation();
+        e.preventDefault();
         WebSocketService.disconnect();
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.stopPropagation();
         const {name, value} = e.target;
         if (name === 'port' && !/^\d*$/.test(value)) {
             console.warn(`${LOG_PREFIX} Invalid port value entered:`, value);
@@ -201,7 +206,7 @@ export const WebSocketMenu: React.FC = () => {
     };
 
     return (
-        <MenuContainer>
+        <MenuContainer onClick={(e) => e.stopPropagation()}>
             <h3>WebSocket Configuration</h3>
             <StatusContainer>
                 <StatusIndicator $status={connectionStatus}/>

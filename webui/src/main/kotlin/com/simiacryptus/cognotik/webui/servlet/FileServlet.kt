@@ -177,6 +177,7 @@ abstract class FileServlet : HttpServlet() {
         return when {
             fileName.endsWith(".js") -> "application/javascript"
             fileName.endsWith(".mjs") -> "application/javascript"
+            fileName.endsWith(".log") -> "text/plain"
             else -> MimeTypes.getDefaultMimeByExtension(fileName) ?: "application/octet-stream"
         }
     }
@@ -341,7 +342,7 @@ abstract class FileServlet : HttpServlet() {
     |</head>
     |<body>
     |    <div class="navbar">
-    |        <span class="navbar-title">File Browser</span>
+    |        <span class="navbar-title"> File Browser</span>
     |        ${if (zipLink.isNotBlank()) """<a href="$zipLink" class="zip-link">Download Current Directory as ZIP</a>""" else ""}
     |    </div>
     |    <div class="container">

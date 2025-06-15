@@ -5,3 +5,8 @@ test-screenshots/
 .kotlin
 .idea
 .tts_cache/
+.env
+demo-js/asset/
+*.mp4
+*.wav
+.env

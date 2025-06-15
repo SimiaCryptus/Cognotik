@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.Retryable.Companion.retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -15,6 +15,7 @@ import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
@@ -72,65 +73,47 @@ open class ChatSocketManager(
         }
     }
 
-    protected val messages by lazy {
-        val list = listOf(
-            ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList()),
-        ).toMutableList()
-        if (initialAssistantPrompt.isNotBlank()) list +=
-            ApiModel.ChatMessage(ApiModel.Role.assistant, initialAssistantPrompt.toContentList())
-        list
+    val sysMessage: ApiModel.ChatMessage
+        get() = ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())
+    protected val chatMessages = mutableListOf<ApiModel.ChatMessage>()
+    protected val messages: List<ApiModel.ChatMessage> get() = synchronized(messagesLock) {
+        // Ensure the system message is always first
+        if (chatMessages.isEmpty() || chatMessages.first().role != ApiModel.Role.system) {
+            listOf(sysMessage) + chatMessages
+        } else {
+            chatMessages
+        }
     }
     val ui = ApplicationInterface(this)
 
     override fun onRun(userMessage: String, socket: ChatSocket) {
 
-        val expandedUserMessage = applyTopicAutoexpansion(userMessage)
+        val expandedUserMessage = expandTopics(userMessage)
 
         val task = newTask()
         val api = api.getChildClient(task)
         task.echo(renderResponse(expandedUserMessage, task))
 
         synchronized(messagesLock) {
-            messages += ApiModel.ChatMessage(ApiModel.Role.user, expandedUserMessage.toContentList())
+            chatMessages += ApiModel.ChatMessage(ApiModel.Role.user, expandedUserMessage.toContentList())
         }
 
         try {
             if (!retriable) {
                 task.add("")
-                val responseString = respond(api, task, expandedUserMessage, this@ChatSocketManager.chatMessages())
+                val responseString = respond(api, task, expandedUserMessage, chatMessages())
                 synchronized(messagesLock) {
-
                     if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
-                        messages.removeAt(messages.size - 1)
+                        chatMessages.removeAt(messages.size - 1)
                     }
-                    messages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
+                    chatMessages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
                 }
                 task.complete()
             } else {
-                val currentChatMessages = this@ChatSocketManager.chatMessages()
-                Retryable(ui, task) { it: StringBuilder ->
-                    val task = ui.newTask(false)
-                    pool.submit {
-                        try {
-                            task.add("")
-                            val responseString = respond(api, task, expandedUserMessage, currentChatMessages)
-                            synchronized(messagesLock) {
-                                if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
-                                    messages.removeAt(messages.size - 1)
-                                }
-                                messages += ApiModel.ChatMessage(
-                                    ApiModel.Role.assistant,
-                                    responseString.toContentList()
-                                )
-                            }
-                            task.complete()
-                        } catch (e: Throwable) {
-                            log.warn("Exception occurred while processing chat message", e)
-                        }
-                    }
-                    task.placeholder
+                val currentChatMessages = chatMessages()
+                retryable(ui, pool, task) { task ->
+                    subquery(task, api, expandedUserMessage, currentChatMessages)
                 }
-
             }
         } catch (e: Exception) {
             log.info("Error in chat", e)
@@ -138,11 +121,36 @@ open class ChatSocketManager(
         }
     }
 
-    private val expansionExpressionPattern = Regex("""\{([^|\n,/\\;}{]+(?:\|[^|\n,/\\;}{]+)+)}""")
+    private fun subquery(
+        task: SessionTask,
+        api: ChatClient,
+        expandedUserMessage: String,
+        currentChatMessages: List<ApiModel.ChatMessage>
+    ) {
+        try {
+            task.add("")
+            val responseString = respond(api, task, expandedUserMessage, currentChatMessages)
+            synchronized(messagesLock) {
+                if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
+                    chatMessages.removeAt(messages.size - 1)
+                }
+                chatMessages += ApiModel.ChatMessage(
+                    ApiModel.Role.assistant,
+                    responseString.toContentList()
+                )
+            }
+            task.complete()
+        } catch (e: Throwable) {
+            log.warn("Exception occurred while processing chat message", e)
+        }
+    }
 
-    private val sequenceExpansionPattern = Regex("""<([^;><\n,/\\]+(?:;[^;><\n,/\\]+)+)>""")
+    private val idSubPattern = """[^|\n,/\\;}{\]\[><]+""" // Matches any valid identifier character except for special characters used in the expansion syntax
+    private val expansionExpressionPattern = Regex("""\{($idSubPattern(?:[|,]$idSubPattern)*)}""") // Matches
 
-    private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""")
+    private val sequenceExpansionPattern = Regex("""<($idSubPattern(?:$idSubPattern)+)>""") // Matches <item1;item2;item3>
+
+    private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""") // Matches [[start..end:step]] or [[start to end by step]]
 
     protected open fun respond(
         api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>
@@ -186,7 +194,7 @@ open class ChatSocketManager(
      * Executes a list of functions, each appending to the target StringBuilder, potentially in parallel.
      */
     private fun runAll(function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
-        val fixedConcurrencyProcessor = FixedConcurrencyProcessor(this@ChatSocketManager.pool, 4)
+        val fixedConcurrencyProcessor = FixedConcurrencyProcessor(pool, 4)
         function1s.map { function1 ->
             fixedConcurrencyProcessor.submit {
                 function1(target)
@@ -219,25 +227,17 @@ open class ChatSocketManager(
         val topics: Map<String, List<String>>? = emptyMap()
     )
 
-    /**
-     * Applies topic-based autoexpansion to the user message
-     * Looks for @topic syntax and replaces with expansion options
-     */
-    protected open fun applyTopicAutoexpansion(userMessage: String): String {
+    protected open fun expandTopics(userMessage: String): String {
         val topicReferencePattern = Regex("""\{([^}|]+)}""")
-
-
         return topicReferencePattern.replace(userMessage) { matchResult -> // Read access needs synchronization
             val topicType = matchResult.groupValues[1] // Synchronize read access to aggregateTopics
             val topicList = aggregateTopics[topicType]
             val entities = synchronized(topicList ?: Any()) { // Synchronize on the list if it exists, or a dummy object
                 topicList?.toList() // Create copy while holding lock
             }
-
             if (!entities.isNullOrEmpty()) { // Check if the copied list is not null or empty
                 "{${entities.joinToString("|")}}" // Use the copied list
             } else {
-
                 matchResult.value
             }
         }
@@ -292,7 +292,7 @@ open class ChatSocketManager(
     }
 
     /**
-     * Expands range expressions in the format [start..end:step]
+     * Expands range expressions in the format [start...end:step]
      * Creates a sequence of numbers from start to end with the given step (default 1)
      */
     private fun expandRange(
@@ -332,12 +332,10 @@ open class ChatSocketManager(
     ): List<(StringBuilder) -> Unit> {
         val tabs = TabbedDisplay(task, closable = false)
         return match.groupValues[1].split('|', ',').flatMap { option ->
-            recursiveFn(
-                api,
-                currentMessage.replaceFirst(match.value, option),
-                ui.newTask(false).apply { tabs[option] = placeholder },
-                baseMessages,
-            )
+            val newConversation = currentMessage.replaceFirst(match.value, option)
+            val task = ui.newTask(false).apply { tabs[option] = placeholder }
+            val filteredMessages = baseMessages.filter { it.content?.any { it.text?.contains(match.value) == true } != true }
+            recursiveFn(api, newConversation, task, filteredMessages)
         }.apply {
             tabs.update()
         }
@@ -377,25 +375,17 @@ open class ChatSocketManager(
         val tabs = TabbedDisplay(task, closable = false)
         val messages = baseMessages.dropLast(1).toMutableList()
         for (item in items) {
-            val itemTask = ui.newTask(false).apply { tabs[item] = placeholder }
-
-            val replaceFirst = currentMessage.replaceFirst(expression, item)
+            val newMessage = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
                 api = api,
-                currentMessage = replaceFirst,
-                task = itemTask,
-
-                baseMessages = messages
+                currentMessage = newMessage,
+                task = ui.newTask(false).apply { tabs[item] = placeholder },
+                baseMessages = messages.filter { it.content?.any { it.text?.contains(expression) == true } != true }
             )
-
-
             val subAggregate = StringBuilder()
             runAll(subTaskFunctions, subAggregate)
-
-
             aggregatedResponse.append("[").append(item).append("]\n").append(subAggregate.toString()).append("\n")
-
-            messages.add(ApiModel.ChatMessage(ApiModel.Role.user, replaceFirst.toContentList()))
+            messages.add(ApiModel.ChatMessage(ApiModel.Role.user, newMessage.toContentList()))
             messages.add(ApiModel.ChatMessage(ApiModel.Role.assistant, subAggregate.toString().toContentList()))
         }
         tabs.update()
@@ -405,6 +395,6 @@ open class ChatSocketManager(
         """<div>${response.renderMarkdown()}</div>"""
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(ChatSocketManager::class.java)
+        private val log = LoggerFactory.getLogger(ChatSocketManager::class.java)
     }
 }

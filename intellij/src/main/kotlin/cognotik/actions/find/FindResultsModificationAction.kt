@@ -14,11 +14,11 @@ import com.intellij.psi.PsiFile
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.psi.PsiUtil
+import com.simiacryptus.cognotik.util.PsiUtil
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
@@ -79,12 +79,12 @@ class FindResultsModificationAction(
             )
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Code Chat",
-                singleInput = true,
+                inputCnt = 1,
                 stickyInput = false,
                 loadImages = false,
                 showMenubar = false
             )
-            val server = AppServer.getServer(event.project)
+            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
@@ -122,7 +122,7 @@ class FindResultsModificationAction(
         path = "/patchChat",
         showMenubar = false,
     ) {
-        override val singleInput = true
+        override val inputCnt = 1
         override val stickyInput = false
 
         override fun newSession(user: User?, session: Session): SocketManager {

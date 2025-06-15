@@ -48,7 +48,6 @@ class KnowledgeIndexingTask(
         task: SessionTask,
         api: ChatClient,
         resultFn: (String) -> Unit,
-        api2: OpenAIClient,
         planSettings: PlanSettings
     ) {
         val filePaths = taskConfig?.file_paths ?: return
@@ -84,7 +83,7 @@ class KnowledgeIndexingTask(
             }
 
             saveAsBinary(
-                openAIClient = api2,
+                openAIClient = TODO(),
                 pool = threadPool,
                 progressState = progressState,
                 inputPaths = files.map { it.absolutePath }.toTypedArray()

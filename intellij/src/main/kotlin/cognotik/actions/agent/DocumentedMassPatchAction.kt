@@ -10,12 +10,12 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.FileSelectionUtils.Companion.isLLMIncludableFile
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.awt.BorderLayout
@@ -73,13 +73,13 @@ class DocumentedMassPatchAction : BaseAction() {
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Documented Code Patch",
-            singleInput = true,
+            inputCnt = 1,
             stickyInput = false,
             loadImages = false,
             showMenubar = false
         )
 
-        val server = AppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer(e.project)
         Thread {
             Thread.sleep(500)
             try {
@@ -101,7 +101,7 @@ class DocumentedMassPatchAction : BaseAction() {
         }
         val docFiles: Array<Path> = allFiles.filter { it.toString().endsWith(".md") }.toTypedArray()
         val sourceFiles: Array<Path> = allFiles.filter {
-            isLLMIncludableFile(it.toFile()) && !it.toString().endsWith(".md")
+            isLLMTextFile(it.toFile()) && !it.toString().endsWith(".md")
         }.toTypedArray()
 
         val settingsUI = SettingsUI().apply {

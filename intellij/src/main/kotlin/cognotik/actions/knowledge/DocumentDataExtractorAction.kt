@@ -5,7 +5,7 @@ import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -120,13 +120,13 @@ class DocumentDataExtractorAction : BaseAction(
                 SessionProxyServer.chats[session] = app
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Document Data Extractor",
-                    singleInput = false,
+                    inputCnt = 0,
                     stickyInput = true,
                     loadImages = false,
                     showMenubar = false
                 )
                 progress.text = "Starting server..."
-                val server = AppServer.getServer(e.project)
+                val server = CognotikAppServer.getServer(e.project)
                 launchBrowser(server, session.toString())
             } catch (ex: Throwable) {
                 log.error("Failed to initialize document extractor", ex)
@@ -137,7 +137,7 @@ class DocumentDataExtractorAction : BaseAction(
         }
     }
 
-    private fun launchBrowser(server: AppServer, session: String) {
+    private fun launchBrowser(server: CognotikAppServer, session: String) {
         Thread {
             Thread.sleep(500)
             try {

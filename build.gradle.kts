@@ -5,6 +5,7 @@ version = properties("libraryVersion")
 subprojects {
     apply(plugin = "java")
     apply(plugin = "kotlin")
+    apply(plugin = "jacoco")
     repositories {
         mavenCentral()
     }
@@ -19,6 +20,40 @@ subprojects {
             javaParameters = true
         }
     }
+    // Configure JaCoCo for code coverage
+    tasks.withType<JacocoReport> {
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+        }
+        // Ensure source directories are properly set
+        sourceDirectories.setFrom(files(sourceSets.main.get().allSource.srcDirs))
+        // Exclude common non-testable classes
+        classDirectories.setFrom(files(classDirectories.files.map {
+            fileTree(it) {
+                exclude(
+                    "**/generated/**",
+                    "**/*Test*.*",
+                    "**/test/**",
+                    "**/*Exception*.*",
+                    "**/META-INF/**"
+                )
+            }
+        }))
+    }
+    // Configure JaCoCo agent
+    tasks.withType<Test> {
+        extensions.configure<JacocoTaskExtension> {
+            // Ensure we have consistent output location
+            setDestinationFile(layout.buildDirectory.file("jacoco/${name}.exec").get().asFile)
+            // Include Kotlin inline functions
+            isIncludeNoLocationClasses = true
+            // Include classes from the same module
+            excludes = listOf("jdk.internal.*")
+        }
+    }
+    
     tasks.register("analyzeDependencies") {
         description = "Analyzes project dependencies for potential issues"
         doLast {
@@ -76,6 +111,38 @@ allprojects {
     }
 
 }
+// Add a task to generate an aggregated report for the entire project
+tasks.register<JacocoReport>("jacocoRootReport") {
+    description = "Generates an aggregate report from all subprojects"
+    group = "Verification"
+    dependsOn(subprojects.map { it.tasks.withType<Test>() })
+    executionData.setFrom(fileTree(project.rootDir) {
+        include("**/build/jacoco/*.exec")
+        exclude("**/build/jacoco/jacocoRootReport.exec")
+    })
+    subprojects.forEach { subproject ->
+        subproject.plugins.withType<JavaPlugin>().configureEach {
+            sourceDirectories.from(subproject.sourceSets.main.get().allSource.srcDirs)
+            classDirectories.from(subproject.sourceSets.main.get().output.asFileTree.matching {
+                // Exclude common patterns
+                exclude(
+                    "**/generated/**",
+                    "**/*Test*.*",
+                    "**/test/**",
+                    "**/*Exception*.*",
+                    "**/META-INF/**"
+                )
+            })
+        }
+    }
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/jacocoRootReport"))
+    }
+}
+
 
 tasks {
     wrapper {
@@ -92,27 +159,5 @@ repositories {
 plugins {
     kotlin("jvm") // Version is applied globally via settings.gradle.kts
     id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
-}
-// Configure the dependency updates plugin
-tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
-    // Configure resolution strategy to only recommend stable releases
-    // Other options include: ReleaseCandidate, Milestone, Integration
-    resolutionStrategy {
-        componentSelection {
-            all {
-                if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
-                    reject("Release candidate")
-                }
-            }
-        }
-    }
-    // Optional: Output results to a file (e.g., JSON, XML, plain text)
-    // outputFormatter = "json"
-    // outputDir = "build/dependencyUpdates"
-    // reportfileName = "report"
-}
-// Helper function to check for non-stable versions (adjust keywords as needed)
-fun isNonStable(version: String): Boolean {
-    val unstableKeywords = listOf("rc", "m", "beta", "alpha", "snapshot", "dev", "eap")
-    return unstableKeywords.any { version.contains(it, ignoreCase = true) }
+    jacoco
 }

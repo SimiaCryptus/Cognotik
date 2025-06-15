@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.hsql.HSQLMetadataStorage
 import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import java.io.File
 
@@ -40,7 +39,7 @@ object ApplicationServices {
 
     private val metadataStorageCache = mutableMapOf<File, MetadataStorageInterface>()
     var metadataStorageFactory: (File) -> MetadataStorageInterface = { file ->
-        metadataStorageCache.getOrPut(file) { HSQLMetadataStorage(file) }
+        metadataStorageCache.getOrPut(file) { HSQLMetadataStorage() }
     }
         private set(value) {
             require(!isLocked) { "ApplicationServices is locked" }
@@ -56,7 +55,7 @@ object ApplicationServices {
             require(!isLocked) { "ApplicationServices is locked" }
             field = value
         }
-    var usageManager: UsageInterface = HSQLUsageManager(File(dataStorageRoot, "usage"))
+    var usageManager: UsageInterface = HSQLUsageManager()
         private set(value) {
             require(!isLocked) { "ApplicationServices is locked" }
             field = value

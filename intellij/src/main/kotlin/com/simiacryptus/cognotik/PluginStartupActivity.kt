@@ -7,11 +7,10 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.util.IntelliJPsiValidator
+import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
@@ -22,28 +21,44 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.annotations.NonNls
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.jvm.isAccessible
 
 class PluginStartupActivity : ProjectActivity {
-    private val documentationPageOpenTimes = ConcurrentHashMap<String, Long>()
     override suspend fun execute(project: Project) {
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
+        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
+        System.getProperty("cognotik.config")?.let { configFile ->
+            try {
+                val file = File(configFile)
+                if (file.exists()) {
+                    StaticAppSettingsConfigurable().apply {
+                        import(file.readText())
+                        write(AppSettingsState.instance, AppSettingsComponent())
+                    }
+                    AppSettingsState.Companion.notifySettingsLoaded()
+                    log.info("Loaded config from $configFile")
+                } else {
+                    log.warn("Config file $configFile does not exist")
+                }
+            } catch (e: Exception) {
+                log.error("Error loading config file from $configFile", e)
+            }
+        }
         try {
 
             com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled = { AppSettingsState.instance.diffLoggingEnabled }
@@ -115,7 +130,6 @@ class PluginStartupActivity : ProjectActivity {
                         log.error("Error opening welcome page", e)
                     }
                 } ?: log.error("Welcome page not found")
-
                 AppSettingsState.instance.greetedVersion = AppSettingsState.WELCOME_VERSION
                 AppSettingsState.instance.showWelcomeScreen = false
             }

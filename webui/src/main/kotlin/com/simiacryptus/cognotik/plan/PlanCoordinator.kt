@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
@@ -18,7 +17,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
@@ -78,7 +76,6 @@ class PlanCoordinator(
         task: SessionTask,
         userMessage: String,
         api: API,
-        api2: OpenAIClient,
     ): PlanProcessingState {
         val api = (api as ChatClient).getChildClient(task)
         val tabs = TabbedDisplay(task)
@@ -98,7 +95,6 @@ class PlanCoordinator(
                 userMessage = userMessage,
                 plan = plan,
                 api = api,
-                api2 = api2,
                 tabs = tabs
             )
         } catch (e: Throwable) {
@@ -124,7 +120,6 @@ class PlanCoordinator(
         userMessage: String,
         plan: Map<String, TaskConfigBase>,
         api: API,
-        api2: OpenAIClient,
         tabs: TabbedDisplay,
     ) {
         val sessionTask = ui.newTask(false).apply { tabs["Session"] = placeholder }
@@ -212,7 +207,6 @@ class PlanCoordinator(
                         messages = messages,
                         task = task1,
                         api = api,
-                        api2 = api2,
                         resultFn = { planProcessingState.taskResult[taskId] = it },
                         planSettings = planSettings
                     )

@@ -16,26 +16,28 @@ import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.webui.test.*
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.OpenAIModels
+import com.simiacryptus.jopenai.models.AnthropicModels
 import org.eclipse.jetty.webapp.WebAppContext
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 
-object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.ApplicationDirectory(port = 8082) {
+object ActorTestAppServer : ApplicationDirectory(port = 7092) {
 
     data class TestJokeDataStructure(
         val setup: String? = null,
         val punchline: String? = null,
         val type: String? = null,
     )
+    val model = AnthropicModels.Claude35Haiku
 
     override val childWebApps by lazy {
-        val model = OpenAIModels.GPT4oMini
-        val parsingModel = OpenAIModels.GPT4oMini
+        val parsingModel = model
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model, parsingModel)),
             ChildWebApp(
@@ -59,7 +61,11 @@ object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.Applicat
                 )
             ),
             ChildWebApp("/images", ImageActorTestApp(ImageActor(textModel = model).apply {
-                openAI = OpenAIClient(workPool = Executors.newCachedThreadPool())
+                openAI = OpenAIClient(
+                    workPool = Executors.newCachedThreadPool(),
+                    key = emptyMap(),
+                    apiBase = emptyMap(),
+                )
             })),
 
 
@@ -85,17 +91,21 @@ object ActorTestAppServer : com.simiacryptus.cognotik.webui.application.Applicat
                     )
                 )
             ),
-            ChildWebApp("/test_file_patch", FilePatchTestApp(api = OpenAIClient(workPool = Executors.newCachedThreadPool()))),
+            ChildWebApp("/test_file_patch", FilePatchTestApp(api = OpenAIClient(
+                workPool = Executors.newCachedThreadPool(),
+                key = emptyMap(),
+                apiBase = emptyMap()
+            ))),
             ChildWebApp("/stressTest", StressTestApp()),
             ChildWebApp(
                 "/pdfExtractor", DocumentParserApp(
-                    parsingModel = DocumentParsingModel(OpenAIModels.GPT4o, 0.1) as ParsingModel<DocumentData>
+                    parsingModel = DocumentParsingModel(model, 0.1) as ParsingModel<DocumentData>
                 )
             ),
         )
     }
 
-    val log = org.slf4j.LoggerFactory.getLogger(ActorTestAppServer::class.java)
+    val log = LoggerFactory.getLogger(ActorTestAppServer::class.java)
 
     @JvmStatic
     fun main(args: Array<String>) {

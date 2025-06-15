@@ -39,4 +39,20 @@ open class Retryable(
 </div>
 """
 
+    companion object {
+        private const val serialVersionUID: Long = 1L
+        private val log = org.slf4j.LoggerFactory.getLogger(Retryable::class.java)
+        fun retryable(
+            ui: ApplicationInterface,
+            pool: ImmediateExecutorService = ui.socketManager?.pool ?: throw IllegalStateException("No socket manager available"),
+            task: SessionTask = ui.newTask(true),
+            fn: (SessionTask) -> Unit
+        ) {
+            Retryable(ui, task) {
+                val task = ui.newTask(false)
+                pool.submit { fn(task) }
+                task.placeholder
+            }
+        }
+    }
 }

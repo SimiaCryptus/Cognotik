@@ -51,7 +51,11 @@ object PresentationAudioInjector {
 
     private fun generateAudioFile(text: String, filePath: String) {
         log.debug("Generating audio for text: {}", text)
-        val mp3Bytes = OpenAIClient(workPool = Executors.newCachedThreadPool()).createSpeech(
+        val mp3Bytes = OpenAIClient(
+            workPool = Executors.newCachedThreadPool(),
+            key = emptyMap(),
+            apiBase = emptyMap()
+        ).createSpeech(
             ApiModel.SpeechRequest(
                 input = text,
                 model = AudioModels.TTS.modelName,

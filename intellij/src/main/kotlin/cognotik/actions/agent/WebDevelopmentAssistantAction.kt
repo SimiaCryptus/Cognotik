@@ -5,23 +5,18 @@ import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.AppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
-import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.*
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.AgentPatterns
-import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -34,7 +29,6 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.OpenAIModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
@@ -73,12 +67,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
             SessionProxyServer.chats[session] = WebDevApp(root = selectedFile)
             ApplicationServer.appInfoMap[session] = AppInfoData(
                 applicationName = "Code Chat",
-                singleInput = true,
+                inputCnt = 1,
                 stickyInput = false,
                 loadImages = false,
                 showMenubar = false
             )
-            val server = AppServer.getServer(project)
+            val server = CognotikAppServer.getServer(project)
 
             UITools.runAsync(e.project, "Opening Web Development Assistant", true) { progress ->
                 progress.text = "Launching browser..."
@@ -97,7 +91,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
         applicationName: String = "Web Development Agent",
         val temperature: Double = 0.1,
         root: VirtualFile?,
-        override val singleInput: Boolean = false,
+        override val inputCnt: Int = 0,
     ) : ApplicationServer(
         applicationName = applicationName,
         path = "/webdev",
@@ -118,7 +112,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
             api: API
         ) {
             try {
-                val settings = getSettings(session, user) ?: Settings()
+                val settings = getSettings(session, user) ?: Settings(
+                    model = AppSettingsState.instance.smartModel
+                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured"),
+                    parsingModel = AppSettingsState.instance.fastModel
+                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured")
+                )
                 if (api is ChatClient) {
                     api.budget = settings.budget ?: DEFAULT_BUDGET
                 }
@@ -141,14 +140,19 @@ class WebDevelopmentAssistantAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel = OpenAIModels.GPT4o,
-            val parsingModel: ChatModel = OpenAIModels.GPT4oMini,
+            val model: ChatModel,
+            val parsingModel: ChatModel,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
 
         @Suppress("UNCHECKED_CAST")
-        override fun <T : Any> initSettings(session: Session): T? = Settings() as T
+        override fun <T : Any> initSettings(session: Session): T? = Settings(
+            model = AppSettingsState.instance.smartModel
+                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+            parsingModel = AppSettingsState.instance.fastModel
+                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+        ) as T
     }
 
     class WebDevAgent(

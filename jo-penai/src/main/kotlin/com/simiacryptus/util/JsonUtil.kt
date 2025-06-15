@@ -15,7 +15,7 @@ import java.lang.reflect.Type
 object JsonUtil {
 
     val _initForReading: ThreadLocal<JavaType?> = ThreadLocal.withInitial { null }
-    open fun objectMapper(): ObjectMapper {
+    fun objectMapper(): ObjectMapper {
         return object : ObjectMapper() {
             override fun _initForReading(p: JsonParser?, targetType: JavaType?): JsonToken {
 
@@ -56,12 +56,11 @@ object JsonUtil {
             ).registerModule(JavaTimeModule())
     }
 
-    open fun toJson(data: Any): String {
-
+    fun toJson(data: Any): String {
         return objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
     }
 
-    open fun <T> fromJson(data: String, type: Type): T {
+    fun <T> fromJson(data: String, type: Type): T {
 
         if (type is Class<*> && type.isAssignableFrom(String::class.java)) return data as T
         val objectMapper = objectMapper()

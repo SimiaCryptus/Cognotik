@@ -20,6 +20,9 @@ export const useModal = () => {
         const host = window.location.hostname;
         const port = window.location.port;
         const path = window.location.pathname;
+        logger.debug('Building modal URL:', {
+            protocol, host, port, path, endpoint
+        });
         let url: string;
         if (endpoint.startsWith("/")) {
             url = `${protocol}//${host}:${port}${endpoint}`;
@@ -32,6 +35,7 @@ export const useModal = () => {
             const separator = endpoint.includes('?') ? '&' : '?';
             url = url + separator + 'sessionId=' + WebSocketService.getSessionId();
         }
+        logger.debug('Final modal URL:', url);
         return url;
     };
     const openModal = (endpoint: string, event?: React.MouseEvent) => {
@@ -43,11 +47,14 @@ export const useModal = () => {
             event.preventDefault();
             event.stopPropagation();
         }
+        logger.debug('Opening modal for endpoint:', endpoint);
         dispatch(showModalAction(endpoint));
         // Set initial loading message for all modal openings
         dispatch(setModalContent('<div class="loading">Loading...</div>'));
+
         if (endpoint === 'fileIndex/') {
             const iframeSrc = getModalUrl(endpoint);
+            logger.debug('Creating iframe modal for fileIndex with URL:', iframeSrc);
             // Use requestAnimationFrame to ensure the loading message is rendered before setting iframe
             requestAnimationFrame(() => {
                 const iframeContent = `<iframe src="${iframeSrc}" style="width:100%; height:100%; border:none; min-height: 450px;" title="File Index"></iframe>`;
@@ -55,6 +62,7 @@ export const useModal = () => {
                 // highlightCode() is not called here as content is sandboxed in an iframe
             });
         } else {
+            logger.debug('Fetching modal content from URL:', getModalUrl(endpoint));
             fetch(getModalUrl(endpoint), {
                 mode: 'cors',
                 credentials: 'include',
@@ -63,6 +71,11 @@ export const useModal = () => {
                 }
             })
                 .then(response => {
+                    logger.debug('Modal fetch response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        url: response.url
+                    });
                     if (!response.ok) {
                         logger.error('Modal fetch failed', {
                             status: response.status, endpoint
@@ -72,6 +85,7 @@ export const useModal = () => {
                     return response.text();
                 })
                 .then(content => {
+                    logger.debug('Modal content received, length:', content.length);
                     requestAnimationFrame(() => {
                         dispatch(setModalContent(content));
                         highlightCode(); // Highlight for non-iframe fetched content
@@ -83,7 +97,7 @@ export const useModal = () => {
                         endpoint,
                         stack: error.stack
                     });
-                    dispatch(setModalContent(`<div class="error">Error loading content: ${error.message}</div>`));
+                    dispatch(setModalContent(`<div class="error">Error loading content: ${error.message}<br><br>Attempted URL: ${getModalUrl(endpoint)}</div>`));
                 });
         }
     };

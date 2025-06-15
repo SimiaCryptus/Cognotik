@@ -65,6 +65,8 @@ dependencies {
     implementation(libs.scala.reflect)
     implementation(libs.commons.io)
     implementation(libs.flexmark.all)
+    implementation(libs.selenium.java)
+    implementation(libs.webdrivermanager)
     implementation(platform("software.amazon.awssdk:bom:2.27.23"))
     implementation(libs.aws.sdk)
     implementation(libs.aws.sso)

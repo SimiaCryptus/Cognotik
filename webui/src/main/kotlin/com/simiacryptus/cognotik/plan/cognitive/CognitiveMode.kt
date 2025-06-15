@@ -47,12 +47,11 @@ object CognitiveModes {
 }
 
 interface CognitiveModeStrategy {
-    val singleInput: Boolean
+    val inputCnt: Int
 
     fun getCognitiveMode(
         ui: ApplicationInterface,
         api: API,
-        api2: OpenAIClient,
         planSettings: PlanSettings,
         session: Session,
         user: User?,

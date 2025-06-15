@@ -24,7 +24,6 @@ open class PlanAheadMode(
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
-    private val api2: OpenAIClient,
     val describer: TypeDescriber
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(PlanAheadMode::class.java)
@@ -52,7 +51,7 @@ open class PlanAheadMode(
                 session = session,
                 dataStorage = ui.socketManager?.dataStorage!!,
                 ui = ui,
-                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getDataDir(
+                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getSessionDir(
                     user,
                     session
                 )?.toPath() ?: File(".").toPath(),
@@ -76,8 +75,7 @@ open class PlanAheadMode(
                 plan = plan.plan,
                 task = task,
                 userMessage = userMessage,
-                api = apiClient, // Use the budgeted and task-specific client
-                api2 = api2
+                api = apiClient // Use the budgeted and task-specific client
             )
         } catch (e: Throwable) {
             task.error(ui, e) // Report error on the current task
@@ -86,15 +84,14 @@ open class PlanAheadMode(
     }
 
     companion object : CognitiveModeStrategy {
-        override val singleInput: Boolean = true
+        override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
             api: API,
-            api2: OpenAIClient,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = PlanAheadMode(ui, api, planSettings, session, user, api2, describer)
+        ) = PlanAheadMode(ui, api, planSettings, session, user, describer)
     }
 }

@@ -8,8 +8,6 @@ import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.ApiModel.*
 import com.simiacryptus.jopenai.util.ClientUtil.allowedCharset
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
-import com.simiacryptus.jopenai.util.ClientUtil.defaultApiProvider
-import com.simiacryptus.jopenai.util.ClientUtil.keyMap
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.StringUtil
 import org.apache.hc.client5.http.classic.methods.HttpGet
@@ -32,8 +30,8 @@ import java.util.concurrent.ExecutorService
 import javax.imageio.ImageIO
 
 open class OpenAIClient(
-    protected var key: Map<APIProvider, String> = keyMap.mapKeys { APIProvider.valueOf(it.key) },
-    protected val apiBase: Map<APIProvider, String> = APIProvider.values().associate { it to (it.base ?: "") },
+    protected var key: Map<APIProvider, String>,
+    protected val apiBase: Map<APIProvider, String>,
     logLevel: Level = Level.TRACE,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     workPool: ExecutorService
@@ -91,6 +89,8 @@ open class OpenAIClient(
         authorize(request, apiProvider)
         EntityUtils.toString(it.execute(request).entity)
     }
+
+    open val provider = APIProvider.OpenAI
 
     open fun complete(
         request: CompletionRequest, model: TextModel
@@ -153,12 +153,12 @@ open class OpenAIClient(
                 log.debug("Text Completion Request with Prefix: ${request.prompt} and Suffix: ${request.suffix}")
             }
             val result = post(
-                "${apiBase[defaultApiProvider]}/engines/${model.modelName}/completions",
+                "$provider/engines/${model.modelName}/completions",
                 StringUtil.restrictCharacterSet(
                     JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(request),
                     allowedCharset
                 ),
-                defaultApiProvider
+                provider
             )
             checkError(result)
             val response = JsonUtil.objectMapper().readValue(
@@ -197,10 +197,10 @@ open class OpenAIClient(
     open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
         withReliability {
             withPerformanceLogging {
-                val url = "${apiBase[defaultApiProvider]}/audio/transcriptions"
+                val url = "${apiBase[provider]}/audio/transcriptions"
                 val request = HttpPost(url)
                 request.addHeader("Accept", "application/json")
-                authorize(request, defaultApiProvider)
+                authorize(request, provider)
                 val entity = MultipartEntityBuilder.create()
                 entity.setMode(HttpMultipartMode.EXTENDED)
                 entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
@@ -226,8 +226,8 @@ open class OpenAIClient(
 
     open fun createSpeech(request: ApiModel.SpeechRequest): ByteArray? = withReliability {
         withPerformanceLogging {
-            val httpRequest = HttpPost("${apiBase[defaultApiProvider]}/audio/speech")
-            authorize(httpRequest, defaultApiProvider)
+            val httpRequest = HttpPost("${apiBase[provider]}/audio/speech")
+            authorize(httpRequest, provider)
             httpRequest.addHeader("Accept", "application/json")
             httpRequest.addHeader("Content-Type", "application/json")
             httpRequest.entity =
@@ -255,11 +255,11 @@ open class OpenAIClient(
     open fun render(prompt: String = "", resolution: Int = 1024, count: Int = 1): List<BufferedImage> =
         withReliability {
             withPerformanceLogging {
-                val url = "${apiBase[defaultApiProvider]}/images/generations"
+                val url = "${apiBase[provider]}/images/generations"
                 val request = HttpPost(url)
                 request.addHeader("Accept", "application/json")
                 request.addHeader("Content-Type", "application/json")
-                authorize(request, defaultApiProvider)
+                authorize(request, provider)
                 val jsonObject = JsonObject()
                 jsonObject.addProperty("prompt", prompt)
                 jsonObject.addProperty("n", count)
@@ -298,8 +298,8 @@ open class OpenAIClient(
 
     open fun moderate(text: String) = withReliability {
         when {
-            defaultApiProvider == APIProvider.Groq -> return@withReliability
-            defaultApiProvider == APIProvider.ModelsLab -> return@withReliability
+            provider == APIProvider.Groq -> return@withReliability
+            provider == APIProvider.ModelsLab -> return@withReliability
         }
         withPerformanceLogging {
             val body: String = try {
@@ -312,7 +312,7 @@ open class OpenAIClient(
                 throw RuntimeException(e)
             }
             val result: String = try {
-                this.post("${apiBase[defaultApiProvider]}/moderations", body, defaultApiProvider)
+                this.post("${apiBase[provider]}/moderations", body, provider)
             } catch (e: IOException) {
                 log.warn("IOException during moderation request", e)
                 throw RuntimeException(e)
@@ -402,7 +402,7 @@ open class OpenAIClient(
             val request: String = StringUtil.restrictCharacterSet(
                 JsonUtil.objectMapper().writeValueAsString(editRequest), allowedCharset
             )
-            val result = post("${apiBase[defaultApiProvider]}/edits", request, defaultApiProvider)
+            val result = post("${apiBase[provider]}/edits", request, provider)
             log.info("Edit response received")
             checkError(result)
             val response = JsonUtil.objectMapper().readValue(
@@ -438,7 +438,7 @@ open class OpenAIClient(
     }
 
     open fun listModels(): ApiModel.ModelListResponse {
-        val result = get("${apiBase[defaultApiProvider]}/models", defaultApiProvider)
+        val result = get("${apiBase[provider]}/models", provider)
         checkError(result)
         return JsonUtil.objectMapper().readValue(result, ModelListResponse::class.java)
     }
@@ -471,9 +471,9 @@ open class OpenAIClient(
                     )
                 }
                 val result = post(
-                    "${apiBase[defaultApiProvider]}/embeddings", StringUtil.restrictCharacterSet(
+                    "${apiBase[provider]}/embeddings", StringUtil.restrictCharacterSet(
                         JsonUtil.objectMapper().writeValueAsString(request), allowedCharset
-                    ), defaultApiProvider
+                    ), provider
                 )
                 log.info("Embedding creation response received")
                 checkError(result)
@@ -494,11 +494,11 @@ open class OpenAIClient(
 
     open fun createImage(request: ImageGenerationRequest): ImageGenerationResponse = withReliability {
         withPerformanceLogging {
-            val url = "${apiBase[defaultApiProvider]}/images/generations"
+            val url = "${apiBase[provider]}/images/generations"
             val httpRequest = HttpPost(url)
             httpRequest.addHeader("Accept", "application/json")
             httpRequest.addHeader("Content-Type", "application/json")
-            authorize(httpRequest, defaultApiProvider)
+            authorize(httpRequest, provider)
 
             val requestBody = Gson().toJson(request)
             httpRequest.entity = StringEntity(requestBody, Charsets.UTF_8, false)

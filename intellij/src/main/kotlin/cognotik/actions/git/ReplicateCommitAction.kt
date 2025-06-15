@@ -13,22 +13,18 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.AppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.AgentPatterns
-import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -114,7 +110,7 @@ class ReplicateCommitAction : BaseAction() {
                 SessionProxyServer.chats[session] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
-                    singleInput = true,
+                    inputCnt = 1,
                     stickyInput = false,
                     loadImages = false,
                     showMenubar = false
@@ -123,7 +119,7 @@ class ReplicateCommitAction : BaseAction() {
             ApplicationManager.getApplication().executeOnPooledThread {
                 Thread.sleep(500)
                 try {
-                    val server = AppServer.getServer(project)
+                    val server = CognotikAppServer.getServer(project)
                     val uri = server.server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
@@ -189,7 +185,7 @@ class ReplicateCommitAction : BaseAction() {
     ) {
         abstract fun codeFiles(): Set<Path>
         abstract fun codeSummary(paths: List<Path>): String
-        override val singleInput = true
+        override val inputCnt = 1
         override val stickyInput = false
 
         override fun userMessage(
@@ -333,7 +329,7 @@ class ReplicateCommitAction : BaseAction() {
         virtualFiles?.forEach { file ->
             if (file.isDirectory) {
                 if (file.name.startsWith(".")) return@forEach
-                if (FileSelectionUtils.Companion.isGitignore(file.toNioPath())) return@forEach
+                if (FileSelectionUtils.isGitignore(file.toNioPath())) return@forEach
                 codeFiles.addAll(getFiles(file.children))
             } else {
                 codeFiles.add((file.toNioPath()))

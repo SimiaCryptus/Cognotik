@@ -278,11 +278,10 @@ val Throwable.stackTraceTxt: String
     }
 
 fun ChatClient.getChildClient(task: SessionTask): ChatClient = this.getChildClient().apply {
-    val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log").second
+    val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
 
-    createFile?.apply {
+    createFile.second?.apply {
         val buffered = this.outputStream().buffered()
-
         buffered.write("API Logging Started\n".toByteArray())
         buffered.write("Stack Trace:\n".toByteArray())
         val stackTrace = Thread.currentThread().stackTrace
@@ -290,6 +289,6 @@ fun ChatClient.getChildClient(task: SessionTask): ChatClient = this.getChildClie
             buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
         }
         logStreams += buffered
-        task.verbose("API log: <pre>${absolutePath}</pre>")
+        task.verbose("""API log: <a href='${createFile.first}' target='_blank'><pre>${absolutePath}</pre></a>""")
     }
 }

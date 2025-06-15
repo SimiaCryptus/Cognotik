@@ -5,7 +5,7 @@ import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.AppServer
+import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.findRecursively
@@ -60,7 +60,7 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
 
                 ApplicationServer.appInfoMap[config.sessionId] = AppInfoData(
                     applicationName = config.applicationName,
-                    singleInput = false,
+                    inputCnt = 0,
                     stickyInput = true,
                     loadImages = false,
                     showMenubar = false
@@ -93,7 +93,7 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
                 indicator.fraction = 1.0
                 indicator.text = "Opening browser..."
 
-                val server = AppServer.getServer(e.project)
+                val server = CognotikAppServer.getServer(e.project)
 
                 ApplicationManager.getApplication().executeOnPooledThread {
                     Thread.sleep(500)
