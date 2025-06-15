@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils.fuzzyResolveToRelativePath
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
@@ -182,7 +183,7 @@ open class AddApplyFileDiffLinks {
 
             val codeblocks = resolvedMatches.filter { (header, block) ->
                 try {
-                    true == getFile(root, header ?: return@filter false)?.exists()
+                    true != getFile(root, header ?: return@filter false)?.exists()
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
                     false
@@ -215,7 +216,7 @@ open class AddApplyFileDiffLinks {
                 }
                 val header = headers.lastOrNull { it.first.last < codeBlock.first.first }?.second ?: defaultFile
                 if (header.isNullOrBlank()) return markdown
-                val filename = fuzzyResolveToRelativePath(root, header)
+                val filename = prefilterFilename(header)
                 if (filename.isNullOrBlank()) return markdown
                 val newMarkdown = renderNewFile(root, filename, codeValue, handle, ui, lang, shouldAutoApply)
                 markdown.replace(codeBlock.second.value, newMarkdown)

@@ -105,16 +105,26 @@ object FileSelectionUtils {
             }
             (when {
                 it.name.endsWith(".data") -> arrayOf(it)
-                isGitignore(it.toPath()) -> arrayOf()
-                isLLMIgnored(it.toPath()) -> arrayOf()
+                isGitignore(it.toPath()) -> {
+                    log.debug("File ignored by gitignore: ${it.absolutePath}")
+                    arrayOf()
+                }
+                isLLMIgnored(it.toPath()) -> {
+                    log.debug("File ignored by llmignore: ${it.absolutePath}")
+                    arrayOf()
+                }
                 it.length() > 100_000_000L -> {
                     log.debug("File too large (>100MB): ${it.absolutePath}")
                     arrayOf()
                 }
-
-                it.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> arrayOf()
-
-                isBinaryFile(it) -> arrayOf()
+                it.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> {
+                    log.debug("File is a binary type: ${it.absolutePath}")
+                    arrayOf()
+                }
+                isBinaryFile(it) -> {
+                    log.debug("File is detected as binary: ${it.absolutePath}")
+                    arrayOf()
+                }
                 it.isDirectory -> expandFileList(*it.listFiles() ?: arrayOf())
                 else -> arrayOf(it)
             }).toList()
@@ -152,7 +162,6 @@ object FileSelectionUtils {
             }
         } catch (e: Exception) {
             log.debug("Error reading file for binary detection: ${file.absolutePath}", e)
-
             false
         }
     }
@@ -166,7 +175,6 @@ object FileSelectionUtils {
         if (bytesRead >= 3 && bytes[0] == 0xEF.toByte() && bytes[1] == 0xBB.toByte() && bytes[2] == 0xBF.toByte()) {
             return false // UTF-8 with BOM is text
         }
-
 
         var binaryCount = 0
         var nullCount = 0
@@ -191,15 +199,11 @@ object FileSelectionUtils {
                     binaryCount++
                     nullCount++
                 }
-
-
                 // Allow common control characters: tab(9), newline(10), carriage return(13)
                 b in 1..8 -> binaryCount++
                 b in 11..12 -> binaryCount++
                 b in 14..31 -> binaryCount++
-
                 b >= 127 -> binaryCount++
-
             }
         }
 
@@ -212,7 +216,7 @@ object FileSelectionUtils {
             nullRatio > 0.01 -> true // More than 1% null bytes
             binaryRatio > 0.30 -> true // More than 30% non-printable
             utf8Ratio > 0.95 -> false // High UTF-8 confidence
-            else -> binaryRatio > 0.15 // Lower threshold with UTF-8 consideration
+            else -> false
         }
     }
 
@@ -329,69 +333,52 @@ object FileSelectionUtils {
             return null
         }
 
-        val backtickPattern = "`([^`]+)`".toRegex()
-        var resolvedFilename = filename.trim()
-        if (resolvedFilename.isEmpty()) {
-            log.debug("Empty filename provided")
-            return null
-        }
+        var returnValue = prefilterFilename(filename) ?: return null
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
-
-        resolvedFilename = resolvedFilename.split("\\s+".toRegex()).firstOrNull() ?: ""
-        if (resolvedFilename.isEmpty()) return null
-
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
-
-        if (backtickPattern.containsMatchIn(resolvedFilename)) {
-            resolvedFilename = backtickPattern.find(resolvedFilename)?.groupValues?.get(1) ?: resolvedFilename
-            log.trace("Extracted filename from backticks: {}", resolvedFilename)
-        }
-
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         // Handle absolute paths
         try {
-            val path = File(resolvedFilename).toPath()
+            val path = File(returnValue).toPath()
             if (path.startsWith(root)) {
-                resolvedFilename = path.toString().relativizeFrom(root)
-                log.debug("Relativized path to: {}", resolvedFilename)
+                returnValue = path.toString().relativizeFrom(root)
+                log.debug("Relativized path to: {}", returnValue)
             }
         } catch (e: Throwable) {
-            log.debug("Error resolving filename '{}': {}", resolvedFilename, e.message)
+            log.debug("Error resolving filename '{}': {}", returnValue, e.message)
         }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         // Recursive search with better performance
         try {
-            val resolvedPath = root.resolve(resolvedFilename)
+            val resolvedPath = root.resolve(returnValue)
             if (!resolvedPath.toFile().exists() || !resolvedPath.toFile().isFile) {
                 log.debug("File not found directly under root, searching recursively")
-                val targetFileName = File(resolvedFilename).name
+                val targetFileName = File(returnValue).name
                 val foundFile = root.toFile().listFilesRecursively()
                     .asSequence()
                     .filter { it.isFile }
                     .find {
                         val normalizedPath = it.toString().replace("\\", "/")
-                        val normalizedTarget = resolvedFilename.replace("\\", "/")
+                        val normalizedTarget = returnValue.replace("\\", "/")
                         normalizedPath.endsWith(normalizedTarget) ||
                                 it.name.equals(targetFileName, ignoreCase = true)
                     }
                 if (foundFile != null) {
-                    resolvedFilename = foundFile.toString().relativizeFrom(root)
-                    log.debug("Found file recursively at: {}", resolvedFilename)
+                    returnValue = foundFile.toString().relativizeFrom(root)
+                    log.debug("Found file recursively at: {}", returnValue)
                 }
             }
         } catch (e: Throwable) {
-            log.debug("Error searching for file '{}' recursively: {}", resolvedFilename, e.message)
+            log.debug("Error searching for file '{}' recursively: {}", returnValue, e.message)
         }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         // Fuzzy matching with improved algorithm
         try {
-            if (!root.resolve(resolvedFilename).toFile().exists()) {
+            if (!root.resolve(returnValue).toFile().exists()) {
                 log.debug("File not found, attempting fuzzy match")
                 val levenshtein = LevenshteinDistance()
-                val targetName = File(resolvedFilename).name
+                val targetName = File(returnValue).name
                 val maxDistance = maxOf(2, targetName.length / 4) // More conservative threshold
 
                 val closest = root.toFile().listFilesRecursively()
@@ -405,16 +392,27 @@ object FileSelectionUtils {
                     .minByOrNull { it.second }?.first
 
                 if (closest != null) {
-                    resolvedFilename = closest.toString().relativizeFrom(root)
-                    log.debug("Found closest match: {}", resolvedFilename)
+                    returnValue = closest.toString().relativizeFrom(root)
+                    log.debug("Found closest match: {}", returnValue)
                 }
             }
         } catch (e: Throwable) {
-            log.debug("Error finding fuzzy match for '{}': {}", resolvedFilename, e.message)
+            log.debug("Error finding fuzzy match for '{}': {}", returnValue, e.message)
         }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         return null
+    }
+
+    fun prefilterFilename(text: String) : String? {
+        var returnValue = text.trim()
+        if (returnValue.isEmpty()) return null
+        returnValue = returnValue.split("\\s+".toRegex()).filterNot { it.isBlank() }.firstOrNull() ?: return null
+        val backtickPattern = "`([^`]+)`".toRegex()
+        if (backtickPattern.containsMatchIn(returnValue)) {
+            returnValue = backtickPattern.find(returnValue)?.groupValues?.get(1) ?: returnValue
+        }
+        return returnValue
     }
 
     private object FileExtensions {

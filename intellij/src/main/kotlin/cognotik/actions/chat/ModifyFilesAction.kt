@@ -38,12 +38,19 @@ open class ModifyFilesAction(
     protected val showLineNumbers: Boolean = false
 ) : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
     override fun isEnabled(event: AnActionEvent): Boolean {
-        if (FileSelectionUtils.expandFileList(
-                *PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.map { it.toFile }?.toTypedArray<File>()
-                    ?: arrayOf()
-            ).isEmpty()
-        ) return false
+        try {
+            val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)
+            val files = virtualFiles?.map { it.toFile }?.toTypedArray<File>()
+            val expandFileList = FileSelectionUtils.expandFileList(*files ?: arrayOf())
+            if (expandFileList.isEmpty()) {
+                return false
+            }
+        } catch (e: Exception) {
+            log.error("Error checking if action is enabled", e)
+            return false
+        }
         return super.isEnabled(event)
     }
 
