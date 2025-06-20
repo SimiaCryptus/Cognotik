@@ -5,9 +5,9 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.ImageGenerationRequest
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.awt.image.BufferedImage

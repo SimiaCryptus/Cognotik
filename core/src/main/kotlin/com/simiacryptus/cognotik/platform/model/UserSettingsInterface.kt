@@ -19,7 +19,8 @@ interface UserSettingsInterface {
 
     class UserSettings(
         val apis: MutableList<ApiData> = mutableListOf(),
-        val tools: MutableList<ToolData> = mutableListOf()
+        val tools: MutableList<ToolData> = mutableListOf(),
+        val etc: MutableMap<String, Any> = mutableMapOf(),
     ) {
         @Deprecated("Use UserSettings constructor with MutableList parameters instead")
         constructor(
@@ -43,14 +44,14 @@ interface UserSettingsInterface {
         @get:Deprecated("Use this.apis instead")
         val apiKeys: Map<APIProvider, String>
             get() = apis.associate {
-                APIProvider.valueOf(it.key!!) to (it.baseUrl ?: "")
+                it.provider!! to (it.key ?: "")
             }
 
         @get:JsonIgnore
         @get:Deprecated("Use this.apis instead")
         val apiBase: Map<APIProvider, String>
             get() = apis.associate {
-                APIProvider.valueOf(it.key!!) to (it.baseUrl ?: "")
+                it.provider!! to (it.baseUrl ?: "")
             }
 
         @get:JsonIgnore

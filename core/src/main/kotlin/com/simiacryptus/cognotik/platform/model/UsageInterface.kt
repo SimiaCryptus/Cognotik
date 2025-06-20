@@ -5,40 +5,21 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.jopenai.models.OpenAIModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import java.util.concurrent.atomic.AtomicLong
 
 interface UsageInterface {
-    fun incrementUsage(session: Session, user: User?, model: OpenAIModel, tokens: ApiModel.Usage) = incrementUsage(
-        session, when (user) {
-            null -> null
-            else -> {
-                val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user)
-                userSettings.apiKeys[if (model is ChatModel) {
-                    model.provider
-                } else {
-                    APIProvider.Companion.OpenAI
-                }]
-            }
-        }, model, tokens
-    )
 
-    fun incrementUsage(session: Session, apiKey: String?, model: OpenAIModel, tokens: ApiModel.Usage)
-
-    fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage> = getUserUsageSummary(
-        ApplicationServices.userSettingsManager.getUserSettings(user).apiKeys[APIProvider.Companion.OpenAI]!!
-
-    )
-
-    fun getUserUsageSummary(apiKey: String): Map<OpenAIModel, ApiModel.Usage>
-
+    fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage>
     fun getSessionUsageSummary(session: Session): Map<OpenAIModel, ApiModel.Usage>
+    fun incrementUsage(session: Session, user: User, model: TextModel, tokens: ApiModel.Usage)
     fun clear()
 
     data class UsageKey(
         val session: Session,
-        val apiKey: String?,
+        val user: User?,
         val model: OpenAIModel,
     )
 
@@ -52,15 +33,5 @@ interface UsageInterface {
             outputTokens.addAndGet(tokens.completion_tokens)
             cost.addAndGet(tokens.cost ?: 0.0)
         }
-
-        fun toUsage() = ApiModel.Usage(
-            prompt_tokens = inputTokens.get(),
-            completion_tokens = outputTokens.get(),
-            cost = cost.get()
-        )
     }
-
-    class UsageCounters(
-        val tokensPerModel: java.util.HashMap<UsageKey, UsageValues> = HashMap(),
-    )
 }

@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.ImageActor
 import com.simiacryptus.cognotik.actors.ImageResponse
 import com.simiacryptus.cognotik.util.getModuleRootForFile
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import org.slf4j.LoggerFactory
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout

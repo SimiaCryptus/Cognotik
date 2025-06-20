@@ -18,7 +18,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.JsonDescriber
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language

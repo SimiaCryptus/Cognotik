@@ -1,4 +1,7 @@
-package com.simiacryptus.jopenai.models
+package com.simiacryptus.jopenai.models.chat
+
+import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object PerplexityModels {
 
@@ -9,7 +12,7 @@ object PerplexityModels {
             modelName = "llama-3.1-sonar-small-128k-chat",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
-            provider = APIProvider.Perplexity,
+            provider = APIProvider.Companion.Perplexity,
             inputTokenPricePerK = 0.0005,
             outputTokenPricePerK = 0.0015
         )
@@ -22,7 +25,7 @@ object PerplexityModels {
             modelName = "llama-3.1-sonar-small-128k-online",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
-            provider = APIProvider.Perplexity,
+            provider = APIProvider.Companion.Perplexity,
             inputTokenPricePerK = 0.0005,
             outputTokenPricePerK = 0.0015
         )
@@ -35,7 +38,7 @@ object PerplexityModels {
             modelName = "llama-3.1-sonar-large-128k-chat",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
-            provider = APIProvider.Perplexity,
+            provider = APIProvider.Companion.Perplexity,
             inputTokenPricePerK = 0.0005,
             outputTokenPricePerK = 0.0015
         )
@@ -48,7 +51,7 @@ object PerplexityModels {
             modelName = "llama-3.1-sonar-large-128k-online",
             maxTotalTokens = maxTotalTokens,
             maxOutTokens = maxTotalTokens,
-            provider = APIProvider.Perplexity,
+            provider = APIProvider.Companion.Perplexity,
             inputTokenPricePerK = 0.0005,
             outputTokenPricePerK = 0.0015
         )

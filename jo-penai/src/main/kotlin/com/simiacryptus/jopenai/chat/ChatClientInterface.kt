@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 
 interface ChatClientInterface {
     /**

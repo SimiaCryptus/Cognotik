@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import java.io.File
 
 class BasicChatApp(

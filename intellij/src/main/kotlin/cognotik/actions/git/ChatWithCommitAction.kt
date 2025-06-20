@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import java.io.File
 import java.text.SimpleDateFormat
 

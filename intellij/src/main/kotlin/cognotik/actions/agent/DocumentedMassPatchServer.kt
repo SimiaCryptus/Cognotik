@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.nio.file.Path
 import java.util.concurrent.Semaphore

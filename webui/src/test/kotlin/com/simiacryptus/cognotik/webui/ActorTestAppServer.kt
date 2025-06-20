@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.webui.test.*
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.AnthropicModels
+import com.simiacryptus.jopenai.models.chat.AnthropicModels
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import java.io.File

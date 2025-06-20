@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClient
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path

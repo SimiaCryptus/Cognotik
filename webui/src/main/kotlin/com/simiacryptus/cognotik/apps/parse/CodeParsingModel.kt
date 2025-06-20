@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 
 open class CodeParsingModel(
     private val parsingModel: ChatModel,

@@ -1,6 +1,7 @@
 package com.simiacryptus.jopenai.models
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
+import com.simiacryptus.jopenai.models.chat.TextModel
 import org.slf4j.LoggerFactory
 
 open class EmbeddingModels(

@@ -27,7 +27,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.commonRoot
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.toJson
 import org.slf4j.LoggerFactory

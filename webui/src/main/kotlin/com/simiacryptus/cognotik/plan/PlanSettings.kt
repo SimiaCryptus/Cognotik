@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfig
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
 import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import org.openqa.selenium.remote.RemoteWebDriver
 import java.io.File
 class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {

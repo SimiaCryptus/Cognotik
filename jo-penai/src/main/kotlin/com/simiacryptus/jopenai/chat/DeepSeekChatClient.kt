@@ -2,8 +2,8 @@ package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer

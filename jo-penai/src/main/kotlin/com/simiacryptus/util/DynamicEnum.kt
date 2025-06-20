@@ -19,9 +19,12 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
         }
 
         fun <T> valueOf(clazz: Class<T>, name: String): T {
-
-            return getRegistry(clazz).toMap().get(name)
-                ?: throw IllegalArgumentException("Unknown enum constant: $name")
+            val get = getRegistry(clazz).toMap().get(name)
+            return if (get != null) {
+                get
+            } else {
+                throw IllegalArgumentException("Unknown enum constant: $name")
+            }
         }
 
         fun <T : DynamicEnum<T>> values(clazz: Class<T>): List<T> {

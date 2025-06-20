@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap

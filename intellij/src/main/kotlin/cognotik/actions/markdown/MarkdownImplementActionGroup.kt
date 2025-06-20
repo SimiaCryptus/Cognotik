@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import org.slf4j.LoggerFactory
 

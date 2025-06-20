@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.ChatRequest
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson
 

@@ -25,8 +25,8 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import org.slf4j.LoggerFactory
 import java.io.File

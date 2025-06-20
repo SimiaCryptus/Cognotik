@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory

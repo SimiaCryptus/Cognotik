@@ -1,4 +1,7 @@
-package com.simiacryptus.jopenai.models
+package com.simiacryptus.jopenai.models.chat
+
+import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object DeepSeekModels {
     val DeepSeekChat = ChatModel(
@@ -6,7 +9,7 @@ object DeepSeekModels {
         modelName = "deepseek-chat",
         maxTotalTokens = 64000,
         maxOutTokens = 4096,
-        provider = APIProvider.DeepSeek,
+        provider = APIProvider.Companion.DeepSeek,
         inputTokenPricePerK = 0.14 / 1000.0,
         outputTokenPricePerK = 0.28 / 1000.0
     )
@@ -15,7 +18,7 @@ object DeepSeekModels {
         modelName = "deepseek-coder",
         maxTotalTokens = 64000,
         maxOutTokens = 4096,
-        provider = APIProvider.DeepSeek,
+        provider = APIProvider.Companion.DeepSeek,
         inputTokenPricePerK = 0.14 / 1000.0,
         outputTokenPricePerK = 0.28 / 1000.0
     )
@@ -24,14 +27,14 @@ object DeepSeekModels {
         modelName = "deepseek-reasoner",
         maxTotalTokens = 64000,
         maxOutTokens = 4096,
-        provider = APIProvider.DeepSeek,
+        provider = APIProvider.Companion.DeepSeek,
         inputTokenPricePerK = 0.55 / 1000.0,
         outputTokenPricePerK = 2.19 / 1000.0
     )
     val values = mapOf(
-        "DeepSeekChat" to DeepSeekModels.DeepSeekChat,
-        "DeepSeekCoder" to DeepSeekModels.DeepSeekCoder,
-        "DeepSeekReasoner" to DeepSeekModels.DeepSeekReasoner,
+        "DeepSeekChat" to DeepSeekChat,
+        "DeepSeekCoder" to DeepSeekCoder,
+        "DeepSeekReasoner" to DeepSeekReasoner,
     )
 
 }

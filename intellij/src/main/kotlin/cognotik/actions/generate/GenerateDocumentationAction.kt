@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout

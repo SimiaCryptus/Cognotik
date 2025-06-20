@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 
 @JsonTypeIdResolver(TaskSettingsBase.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")

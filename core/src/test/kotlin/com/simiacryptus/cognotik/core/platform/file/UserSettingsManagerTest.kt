@@ -47,7 +47,7 @@ abstract class UserSettingsTest(private val userSettings: UserSettingsInterface)
 
         val initialSettings = userSettings.getUserSettings(testUser)
         log.debug("Retrieved initial user settings")
-        Assertions.assertEquals("", initialSettings.apiKeys[APIProvider.OpenAI])
+        Assertions.assertEquals(null, initialSettings.apiKeys[APIProvider.OpenAI])
 
         val updatedSettings = UserSettingsInterface.UserSettings(apiKeys = mapOf(APIProvider.OpenAI to "67890"))
         log.debug("Updating user settings with new API key")

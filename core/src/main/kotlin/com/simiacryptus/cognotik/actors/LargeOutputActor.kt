@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory

@@ -1,4 +1,7 @@
-package com.simiacryptus.jopenai.models
+package com.simiacryptus.jopenai.models.chat
+
+import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object GroqModels {
 
@@ -7,7 +10,7 @@ object GroqModels {
         modelName = "llama-3.3-70b-versatile",
         maxTotalTokens = 128000,
         maxOutTokens = 32768,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.79
     )
@@ -17,7 +20,7 @@ object GroqModels {
         modelName = "gemma2-9b-it",
         maxTotalTokens = 8192,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.20,
         outputTokenPricePerK = 0.20
     )
@@ -27,7 +30,7 @@ object GroqModels {
         modelName = "llama-3.3-70b-specdec",
         maxTotalTokens = 8192,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.99
     )
@@ -37,7 +40,7 @@ object GroqModels {
         modelName = "llama-3.1-8b-instant",
         maxTotalTokens = 128000,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.05,
         outputTokenPricePerK = 0.08
     )
@@ -47,7 +50,7 @@ object GroqModels {
         modelName = "llama-3.2-1b-preview",
         maxTotalTokens = 128000,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.04,
         outputTokenPricePerK = 0.04
     )
@@ -57,7 +60,7 @@ object GroqModels {
         modelName = "llama-3.2-3b-preview",
         maxTotalTokens = 128000,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.06,
         outputTokenPricePerK = 0.06
     )
@@ -67,7 +70,7 @@ object GroqModels {
         modelName = "llama-guard-3-8b",
         maxTotalTokens = 8192,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.20,
         outputTokenPricePerK = 0.20
     )
@@ -77,7 +80,7 @@ object GroqModels {
         modelName = "llama3-70b-8192",
         maxTotalTokens = 8192,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.79
     )
@@ -87,7 +90,7 @@ object GroqModels {
         modelName = "llama3-8b-8192",
         maxTotalTokens = 8192,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.05,
         outputTokenPricePerK = 0.08
     )
@@ -97,7 +100,7 @@ object GroqModels {
         modelName = "qwen-2.5-32b",
         maxTotalTokens = 128000,
         maxOutTokens = 16384,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
@@ -106,7 +109,7 @@ object GroqModels {
         modelName = "qwen-2.5-coder-32b",
         maxTotalTokens = 128000,
         maxOutTokens = 16384,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
@@ -115,7 +118,7 @@ object GroqModels {
         modelName = "qwen-qwq-32b",
         maxTotalTokens = 128000,
         maxOutTokens = 16384,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
@@ -124,7 +127,7 @@ object GroqModels {
         modelName = "mistral-saba-24b",
         maxTotalTokens = 32000,
         maxOutTokens = 16384,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.25,
         outputTokenPricePerK = 0.25
     )
@@ -134,7 +137,7 @@ object GroqModels {
         modelName = "deepseek-r1-distill-qwen-32b",
         maxTotalTokens = 128000,
         maxOutTokens = 16384,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
@@ -144,7 +147,7 @@ object GroqModels {
         modelName = "deepseek-r1-distill-llama-70b",
         maxTotalTokens = 128000,
         maxOutTokens = 16384,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.59,
         outputTokenPricePerK = 0.79
     )
@@ -154,7 +157,7 @@ object GroqModels {
         modelName = "llama-3.2-11b-vision-preview",
         maxTotalTokens = 128000,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.10,
         outputTokenPricePerK = 0.10
     )
@@ -164,7 +167,7 @@ object GroqModels {
         modelName = "llama-3.2-90b-vision-preview",
         maxTotalTokens = 128000,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.70,
         outputTokenPricePerK = 0.70
     )
@@ -173,7 +176,7 @@ object GroqModels {
         modelName = "meta-llama/llama-4-scout-17b-16e-instruct",
         maxTotalTokens = 131072,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.20,
         outputTokenPricePerK = 0.20
     )
@@ -182,7 +185,7 @@ object GroqModels {
         modelName = "meta-llama/llama-4-maverick-17b-128e-instruct",
         maxTotalTokens = 131072,
         maxOutTokens = 8192,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.20,
         outputTokenPricePerK = 0.20
     )
@@ -191,7 +194,7 @@ object GroqModels {
         modelName = "allam-2-7b",
         maxTotalTokens = 4096,
         maxOutTokens = 4096,
-        provider = APIProvider.Groq,
+        provider = APIProvider.Companion.Groq,
         inputTokenPricePerK = 0.10,
         outputTokenPricePerK = 0.10
     )

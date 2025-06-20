@@ -3,7 +3,7 @@ package com.simiacryptus.jopenai.chat
 import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils

@@ -1,11 +1,14 @@
-package com.simiacryptus.jopenai.models
+package com.simiacryptus.jopenai.models.chat
+
+import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object OpenAIModels {
     val GPT4Turbo = ChatModel(
         name = "GPT4Turbo",
         modelName = "gpt-4-turbo",
         maxTotalTokens = 128000,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.010,
         outputTokenPricePerK = 0.030
     )
@@ -14,7 +17,7 @@ object OpenAIModels {
         name = "GPT4o",
         modelName = "gpt-4o",
         maxTotalTokens = 128000,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.0025,
         outputTokenPricePerK = 0.010
     )
@@ -23,7 +26,7 @@ object OpenAIModels {
         name = "GPT45",
         modelName = "gpt-4.5-preview-2025-02-27",
         maxTotalTokens = 128000,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.075,
         outputTokenPricePerK = 0.150
     )
@@ -32,7 +35,7 @@ object OpenAIModels {
         name = "GPT4oMini",
         modelName = "gpt-4o-mini",
         maxTotalTokens = 128000,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.00015,
         outputTokenPricePerK = 0.00060
     )
@@ -41,7 +44,7 @@ object OpenAIModels {
         name = "O1Preview",
         modelName = "o1-preview",
         maxTotalTokens = 128 * 1024,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015,
         hasTemperature = false,
@@ -52,7 +55,7 @@ object OpenAIModels {
         name = "O1",
         modelName = "o1",
         maxTotalTokens = 128 * 1024,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.015,
         outputTokenPricePerK = 0.060,
         hasTemperature = false,
@@ -63,7 +66,7 @@ object OpenAIModels {
         name = "O1Mini",
         modelName = "o1-mini",
         maxTotalTokens = 128 * 1024,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.00110,
         outputTokenPricePerK = 0.00440,
         hasTemperature = false,
@@ -74,7 +77,7 @@ object OpenAIModels {
         name = "O3Mini",
         modelName = "o3-mini",
         maxTotalTokens = 128 * 1024,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.00110,
         outputTokenPricePerK = 0.00440,
         hasTemperature = false,
@@ -84,7 +87,7 @@ object OpenAIModels {
         name = "O4Mini",
         modelName = "o4-mini",
         maxTotalTokens = 200000,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.00110,
         outputTokenPricePerK = 0.00440,
         hasTemperature = false,
@@ -94,7 +97,7 @@ object OpenAIModels {
         name = "O3",
         modelName = "o3",
         maxTotalTokens = 200000,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.010,
         outputTokenPricePerK = 0.040,
         hasTemperature = false,
@@ -105,7 +108,7 @@ object OpenAIModels {
         name = "GPT 4.1",
         modelName = "gpt-4.1-2025-04-14",
         maxTotalTokens = 1048576,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 2.00 / 1000,
         outputTokenPricePerK = 8.00 / 1000,
         hasTemperature = true,
@@ -116,7 +119,7 @@ object OpenAIModels {
         name = "GPT 4.1 Mini",
         modelName = "gpt-4.1-mini-2025-04-14",
         maxTotalTokens = 1048576,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.40 / 1000,
         outputTokenPricePerK = 1.60 / 1000,
         hasTemperature = true,
@@ -127,7 +130,7 @@ object OpenAIModels {
         name = "GPT 4.1 Nano",
         modelName = "gpt-4.1-nano-2025-04-14",
         maxTotalTokens = 1048576,
-        provider = APIProvider.OpenAI,
+        provider = APIProvider.Companion.OpenAI,
         inputTokenPricePerK = 0.10 / 1000,
         outputTokenPricePerK = 0.40 / 1000,
         hasTemperature = true,

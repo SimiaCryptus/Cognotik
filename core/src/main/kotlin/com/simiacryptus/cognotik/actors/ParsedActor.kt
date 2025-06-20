@@ -6,8 +6,8 @@ import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory

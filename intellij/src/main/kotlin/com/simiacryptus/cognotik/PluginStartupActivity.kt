@@ -23,7 +23,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

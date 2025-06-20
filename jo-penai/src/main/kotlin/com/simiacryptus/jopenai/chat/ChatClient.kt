@@ -17,6 +17,8 @@ import com.simiacryptus.jopenai.chat.ModelsLabChatClient.Companion.toModelsLab
 import com.simiacryptus.jopenai.exceptions.ModerationException
 import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.ApiModel.*
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.allowedCharset
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.text.TextCompressor

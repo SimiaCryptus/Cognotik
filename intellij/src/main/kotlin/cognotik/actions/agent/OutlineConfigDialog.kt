@@ -9,8 +9,8 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.chatModel
 import javax.swing.*
 
 class OutlineConfigDialog(

@@ -1,13 +1,9 @@
 package com.simiacryptus.jopenai.util
 
 import com.google.gson.Gson
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.exceptions.*
-import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.TextModel
-import com.simiacryptus.util.JsonUtil.fromJson
-import java.io.File
+import com.simiacryptus.jopenai.models.chat.TextModel
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.regex.Pattern

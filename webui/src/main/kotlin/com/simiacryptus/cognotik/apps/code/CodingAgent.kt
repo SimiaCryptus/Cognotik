@@ -16,8 +16,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import org.slf4j.LoggerFactory
 import java.util.*

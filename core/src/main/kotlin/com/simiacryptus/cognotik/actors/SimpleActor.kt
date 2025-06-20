@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.TextModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 
 open class SimpleActor(
