@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.actors
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel.*

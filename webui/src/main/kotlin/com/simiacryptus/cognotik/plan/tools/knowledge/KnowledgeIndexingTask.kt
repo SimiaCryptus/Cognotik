@@ -7,8 +7,7 @@ import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.Description
 import java.io.File
 import java.util.concurrent.Executors

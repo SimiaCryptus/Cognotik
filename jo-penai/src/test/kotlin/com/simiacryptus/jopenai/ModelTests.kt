@@ -1,9 +1,9 @@
 package com.simiacryptus.jopenai
 
+import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.util.ClientUtil
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
@@ -57,8 +57,8 @@ class ModelTests {
     private fun testChatWithModel(model: ChatModel) {
         val client = ChatClient(
             workPool = Executors.newCachedThreadPool(),
-            key = TODO(),
-            apiBase = TODO()
+            apiKeyMap = TODO(),
+            apiBaseMap = TODO()
         )
         val request = ApiModel.ChatRequest(
             model = model.modelName,

@@ -5,7 +5,7 @@ import java.util.concurrent.Semaphore
 
 private val log = LoggerFactory.getLogger("RunWithPermitLogger")
 
-fun Semaphore.runWithPermit(function: () -> String): String {
+fun <T> Semaphore.runWithPermit(function: () -> T): T {
     log.info("Attempting to acquire permit...")
     this.acquire()
     log.info("Permit acquired.")

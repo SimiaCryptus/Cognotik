@@ -4,7 +4,7 @@ object GoogleModels {
 
     val GeminiPro_15 = ChatModel(
         name = "GeminiPro_15",
-        modelName = "models/gemini-1.5-pro",
+        modelName = "gemini-1.5-pro",
         maxTotalTokens = 2097152,
         maxOutTokens = 8192,
         provider = APIProvider.Google,
@@ -15,7 +15,7 @@ object GoogleModels {
     )
     val GeminiPro_10 = ChatModel(
         name = "GeminiPro_10",
-        modelName = "models/gemini-1.0-pro",
+        modelName = "gemini-1.0-pro",
         maxTotalTokens = 2097152,
         maxOutTokens = 8192,
         provider = APIProvider.Google,
@@ -26,7 +26,7 @@ object GoogleModels {
     )
     val GeminiFlash_15 = ChatModel(
         name = "GeminiFlash_15",
-        modelName = "models/gemini-1.5-flash",
+        modelName = "gemini-1.5-flash",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = APIProvider.Google,
@@ -37,7 +37,7 @@ object GoogleModels {
     )
     val GeminiFlash_15_8B = ChatModel(
         name = "GeminiFlash_15_8B",
-        modelName = "models/gemini-1.5-flash-8b",
+        modelName = "gemini-1.5-flash-8b",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = APIProvider.Google,
@@ -48,7 +48,7 @@ object GoogleModels {
     )
     val GeminiFlash_20 = ChatModel(
         name = "GeminiFlash_20",
-        modelName = "models/gemini-2.0-flash",
+        modelName = "gemini-2.0-flash",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = APIProvider.Google,
@@ -59,7 +59,7 @@ object GoogleModels {
     )
     val GeminiFlash_20_Lite = ChatModel(
         name = "GeminiFlash_20_Lite",
-        modelName = "models/gemini-2.0-flash-lite",
+        modelName = "gemini-2.0-flash-lite",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = APIProvider.Google,
@@ -70,7 +70,7 @@ object GoogleModels {
     )
     val GeminiFlash_20_Thinking_Experimental_01_21 = ChatModel(
         name = "GeminiFlash_20_Thinking_Experimental_01_21",
-        modelName = "models/gemini-2.0-flash-thinking-exp-01-21",
+        modelName = "gemini-2.0-flash-thinking-exp-01-21",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = APIProvider.Google,
@@ -81,7 +81,7 @@ object GoogleModels {
     )
     val GeminiPro_25_Experimental_03_25 = ChatModel(
         name = "GeminiPro_25_Experimental_03_25",
-        modelName = "models/gemini-2.5-pro-exp-03-25",
+        modelName = "gemini-2.5-pro-exp-03-25",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = APIProvider.Google,
@@ -90,7 +90,7 @@ object GoogleModels {
     )
     val GeminiPro_25_Preview_05_06 = ChatModel(
         name = "GeminiPro_25_Preview_05_06",
-        modelName = "models/gemini-2.5-pro-preview-05-06",
+        modelName = "gemini-2.5-pro-preview-05-06",
         maxTotalTokens = 1048576, // Input token limit
         maxOutTokens = 65536,    // Output token limit
         provider = APIProvider.Google,
@@ -99,7 +99,7 @@ object GoogleModels {
     )
     val GeminiFlash_25_Preview_04_17 = ChatModel(
         name = "GeminiFlash_25_Preview_04_17",
-        modelName = "models/gemini-2.5-flash-preview-04-17",
+        modelName = "gemini-2.5-flash-preview-04-17",
         maxTotalTokens = 1048576, // Input token limit
         maxOutTokens = 65536,    // Output token limit
         provider = APIProvider.Google,

@@ -10,7 +10,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IdeaOpenAIClient
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClient
 import org.slf4j.LoggerFactory
 import javax.swing.Icon
 

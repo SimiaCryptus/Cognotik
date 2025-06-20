@@ -34,11 +34,11 @@ open class ChatModel(
     override fun toString() = modelName
 
     override fun pricing(usage: Usage) =
-        (usage.prompt_tokens * inputTokenPricePerK + usage.completion_tokens * outputTokenPricePerK) / 1000.0
+        ((usage.prompt_tokens ?: 0L) * inputTokenPricePerK + (usage.completion_tokens ?: 0L) * outputTokenPricePerK) / 1000.0
 
     companion object {
 
-        fun values() = values.filterValues { it != null }.mapValues { it.value!! }
+        fun values() = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
         val values: MutableMap<String, ChatModel?> by lazy { defaultValues().toMutableMap() }
 
         fun defaultValues() = OpenAIModels.values +
@@ -55,17 +55,32 @@ open class ChatModel(
 
 class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
     override fun serialize(value: ChatModel, gen: JsonGenerator, provider: SerializerProvider) {
-        values().entries.find { it.value == value }?.key?.let { gen.writeString(it) }
+        val modelKey = values().entries.find { it.value == value }?.key
+        gen.writeString(modelKey ?: value.modelName)
     }
 }
 
 class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
         val modelName = p.readValueAs(String::class.java)
-        return values()[modelName] ?: throw IllegalArgumentException("Unknown model name: $modelName")
+        return values()[modelName] ?: ChatModel(
+            name = modelName,
+            modelName = modelName,
+            maxTotalTokens = 4096,
+            provider = APIProvider.OpenAI,
+            inputTokenPricePerK = 0.0,
+            outputTokenPricePerK = 0.0
+        )
     }
 }
 
 fun String.chatModel() = values().entries.find {
     it.key.equals(this, true) || it.value.modelName.equals(this, true)
-}?.value ?: throw IllegalArgumentException("Unknown model: $this")
+}?.value ?: ChatModel(
+    name = this,
+    modelName = this,
+    maxTotalTokens = 4096,
+    provider = APIProvider.OpenAI,
+    inputTokenPricePerK = 0.0,
+    outputTokenPricePerK = 0.0
+)

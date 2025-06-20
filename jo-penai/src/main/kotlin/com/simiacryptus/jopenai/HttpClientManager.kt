@@ -26,7 +26,7 @@ import kotlin.math.pow
 open class HttpClientManager(
     private val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    private val workPool: ExecutorService,
+    val workPool: ExecutorService,
 ) : API() {
     val createdBy = Thread.currentThread().stackTrace
 
@@ -174,23 +174,29 @@ open class HttpClientManager(
         var lastException: Throwable? = null
         var i = 0
         while (i++ <= retryCount) {
-            val sleepPeriod = sleepScale * 2.0.pow(i.toDouble()).toLong()
+            val sleepPeriod = (sleepScale * 2.0.pow(i.toDouble()).toLong()).coerceAtMost(TimeUnit.MINUTES.toMillis(5))
             try {
                 return fn()
             } catch (e: Throwable) {
                 val exception = unwrapException(e)
                 throwIfNonrecoverable(exception, sleepPeriod)
-                this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount): " + exception.message)
-                Thread.sleep(sleepPeriod)
+                this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount) after ${sleepPeriod}ms: ${exception.message}")
+                if (i <= retryCount) {
+                    Thread.sleep(sleepPeriod)
+                }
                 lastException = exception
             }
         }
-        throw lastException!!
+        throw lastException ?: RuntimeException("Retry failed without exception")
     }
 
     open fun throwIfNonrecoverable(exception: Throwable, sleepPeriod: Long) {
         when (exception) {
-            is RateLimitException -> Thread.sleep((TimeUnit.SECONDS.toMillis(exception.delay)).coerceAtLeast(sleepPeriod))
+            is RateLimitException -> {
+                val delayMs = TimeUnit.SECONDS.toMillis(exception.delay).coerceAtLeast(sleepPeriod)
+                log(Level.INFO, "Rate limited, waiting ${delayMs}ms before retry")
+                Thread.sleep(delayMs)
+            }
             is AIServiceException -> if (exception.isFatal) throw exception
             is Exception -> return
             else -> throw exception
@@ -212,7 +218,7 @@ open class HttpClientManager(
     }
 
     private fun <T> withTimeout(duration: Duration, fn: () -> T): T {
-        var thread = Thread.currentThread()
+        val thread = Thread.currentThread()
         val start = Date()
         val cancellationFuture = scheduledPool.schedule({
             log(
@@ -247,8 +253,8 @@ open class HttpClientManager(
     fun <T> withClient(fn: Function<CloseableHttpClient, T>): T = fn.apply(client)
 
     protected open fun log(level: Level = logLevel, msg: String) {
-        val message = msg.trim().lineSequence()
-            .map {
+        val message = msg.trim().takeIf { it.isNotEmpty() }?.lineSequence()
+           ?.map {
                 when {
                     it.isBlank() -> {
                         when {
@@ -260,25 +266,27 @@ open class HttpClientManager(
                     else -> "\t" + it
                 }
             }
-            .joinToString("\n")
+            ?.joinToString("\n") ?: ""
+        
+        val timestamp = "%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)
+        val logEntry = "[$level] [$timestamp] ${message.replace("\n", "\n\t")}\n"
+        
         logStreams.forEach { stream ->
-            stream.write(
-                "[$level] [${"%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)}] ${
-                    message.replace(
-                        "\n",
-                        "\n\t"
-                    )
-                }\n".toByteArray()
-            )
-            stream.flush()
+            try {
+                stream.write(logEntry.toByteArray())
+                stream.flush()
+            } catch (e: Exception) {
+                // Avoid logging errors in the logging mechanism itself
+                System.err.println("Failed to write to log stream: ${e.message}")
+            }
         }
+        
         when (level) {
             Level.ERROR -> log.error(message)
             Level.WARN -> log.warn(message)
             Level.INFO -> log.info(message)
             Level.DEBUG -> log.debug(message)
             Level.TRACE -> log.trace(message)
-            else -> log.debug(message)
         }
     }
 

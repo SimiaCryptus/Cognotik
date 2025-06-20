@@ -5,16 +5,12 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.platform.ApplicationServices.dataStorageFactory
 import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.OpenAIModel
-import com.simiacryptus.jopenai.util.ClientUtil
+import com.simiacryptus.jopenai.models.TextModel
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ScheduledThreadPoolExecutor
 
@@ -64,30 +60,28 @@ open class ClientManager {
         val sessionDir = dataStorageFactory(dataStorageRoot).getDataDir(user, session).apply { mkdirs() }
         if (user != null) {
             val userSettings = userSettingsManager.getUserSettings(user)
-            val userApi =
-                if (userSettings.apiKeys.isNotEmpty()) {
-                    object : ChatClient(
-                        key = userSettings.apiKeys,
-                        apiBase = userSettings.apiBase,
-                        workPool = getPool(session, user),
-                    ){
-                        override fun onUsage(
-                            model: OpenAIModel?,
-                            tokens: ApiModel.Usage
-                        ) {
-                            super.onUsage(model, tokens)
-                            ApplicationServices.usageManager.incrementUsage(session, user, model!!, tokens)
-                        }
-                    }.apply {
-                        this.session = session
-                        this.user = user
-                        logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
+            return if (userSettings.apiKeys.isNotEmpty()) {
+                object : ChatClient(
+                    apiKeyMap = userSettings.apiKeys,
+                    apiBaseMap = userSettings.apiBase,
+                    workPool = getPool(session, user)
+                ) {
+                    override fun onUsage(
+                        model: TextModel,
+                        tokens: ApiModel.Usage
+                    ) {
+                        super.onUsage(model, tokens)
+                        ApplicationServices.usageManager.incrementUsage(session, user, model!!, tokens)
                     }
-                } else {
-                    log.warn("No API key for user: $user in session: $session")
-                    return null
+                }.apply {
+                    this.session = session
+                    this.user = user
+                    logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
                 }
-            return userApi
+            } else {
+                log.warn("No API key for user: $user in session: $session")
+                return null
+            }
         } else {
             log.warn("No user provided for session: $session")
         }

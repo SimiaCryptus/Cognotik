@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.plan
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.Description
 
 class ForeachTask(

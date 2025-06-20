@@ -5,8 +5,7 @@ import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory

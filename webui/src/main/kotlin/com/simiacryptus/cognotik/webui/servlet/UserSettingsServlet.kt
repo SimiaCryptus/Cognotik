@@ -21,7 +21,7 @@ class UserSettingsServlet : HttpServlet() {
         } else {
             try {
                 val settings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
-                val visibleSettings = settings.copy(
+                val visibleSettings = UserSettings(
                     apiKeys = APIProvider.values().map {
                         it to when (settings.apiKeys[it]) {
                             null -> ""
@@ -36,6 +36,7 @@ class UserSettingsServlet : HttpServlet() {
                             else -> settings.apiBase[it]
                         }!!
                     }.toMap(),
+                    localTools = settings.localTools
                 )
                 val json = JsonUtil.toJson(visibleSettings)
 
@@ -85,7 +86,7 @@ class UserSettingsServlet : HttpServlet() {
         } else {
             val settings = JsonUtil.fromJson<UserSettings>(req.getParameter("settings"), UserSettings::class.java)
             val prevSettings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
-            val reconstructedSettings = prevSettings.copy(
+            val reconstructedSettings = UserSettings(
                 apiKeys = settings.apiKeys.mapValues {
                     when (it.value) {
                         "" -> ""
@@ -99,7 +100,7 @@ class UserSettingsServlet : HttpServlet() {
                         else -> settings.apiBase[it.key] ?: prevSettings.apiBase[it.key] ?: it.key.base!!
                     }
                 },
-                localTools = (prevSettings.localTools + settings.localTools).distinct(),
+                localTools = (prevSettings.localTools + settings.localTools).distinct()
             )
             ApplicationServices.userSettingsManager.updateUserSettings(userinfo, reconstructedSettings)
             resp.sendRedirect("/")
