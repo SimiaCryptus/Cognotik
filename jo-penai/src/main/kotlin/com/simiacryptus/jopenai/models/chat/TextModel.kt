@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.Usage
 import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.CompletionModels
 import com.simiacryptus.jopenai.models.EditModels
 import com.simiacryptus.jopenai.models.EmbeddingModels
 import com.simiacryptus.jopenai.models.OpenAIModel
@@ -19,10 +18,10 @@ import com.simiacryptus.jopenai.models.OpenAIModel
 @JsonDeserialize(using = OpenAITextModelDeserializer::class)
 @JsonSerialize(using = OpenAITextModelSerializer::class)
 open class TextModel(
-    override val modelName: String = "",
+    override val modelName: String,
+    val provider: APIProvider,
     val maxTotalTokens: Int = -1,
     val maxOutTokens: Int = maxTotalTokens,
-    val provider: APIProvider = APIProvider.Companion.OpenAI,
     val hasTemperature: Boolean = true,
     val hasReasoningEffort: Boolean = false,
 ) : OpenAIModel {
@@ -34,9 +33,7 @@ class OpenAITextModelSerializer : StdSerializer<TextModel>(TextModel::class.java
     override fun serialize(value: TextModel, gen: JsonGenerator, provider: SerializerProvider) {
         ((listOf(
             ChatModel.Companion.values(),
-            CompletionModels.Companion.values(),
             EmbeddingModels.Companion.values(),
-            EditModels.Companion.values(),
         ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelName)
             .let { gen.writeString(it) }
     }
@@ -47,10 +44,12 @@ class OpenAITextModelDeserializer : JsonDeserializer<TextModel>() {
         val modelName = p.readValueAs(String::class.java)
         listOf(
             ChatModel.Companion.values(),
-            CompletionModels.Companion.values(),
             EmbeddingModels.Companion.values(),
             EditModels.Companion.values(),
         ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
-        return TextModel(modelName)
+        return TextModel(
+            modelName,
+            provider = APIProvider.OpenAI,
+        )
     }
 }

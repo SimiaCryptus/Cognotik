@@ -39,12 +39,13 @@ class ApiKeyServlet : HttpServlet() {
         )
         val action = req.getParameter("action")
         val apiKey = req.getParameter("apiKey")
+        val provider = req.getParameter("provider")
 
         when (action.lowercase(Locale.ROOT)) {
             "edit" -> {
                 val record = apiKeyRecords.find { it.apiKey == apiKey && it.owner == user.email }
                 if (record != null) {
-                    serveEditPage(resp, record)
+                    serveEditPage(req, resp, record)
                 } else {
                     resp.writer.write("API Key record not found")
                 }
@@ -63,15 +64,14 @@ class ApiKeyServlet : HttpServlet() {
             }
 
             "create" -> {
-
+                val userSettings = userSettingsManager.getUserSettings(user)
                 serveEditPage(
+                    req,
                     resp,
                     ApiKeyRecord(
                         user.email,
                         UUID.randomUUID().toString(),
-                        userSettingsManager.getUserSettings(user).apiKeys[APIProvider.OpenAI]
-                            ?: "",
-
+                        userSettings.apiKeys[APIProvider.valueOf(provider)] ?: "",
                         0.0,
                         ""
                     )
@@ -213,8 +213,9 @@ class ApiKeyServlet : HttpServlet() {
         )
     }
 
-    private fun serveEditPage(resp: HttpServletResponse, record: ApiKeyRecord) {
-        val usageSummary = ApplicationServices.usageManager.getUserUsageSummary(record.apiKey)
+    private fun serveEditPage(req: HttpServletRequest, resp: HttpServletResponse, record: ApiKeyRecord) {
+        val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
+        val usageSummary = ApplicationServices.usageManager.getUserUsageSummary(user = userinfo!!)
 
         resp.writer.write(
             """

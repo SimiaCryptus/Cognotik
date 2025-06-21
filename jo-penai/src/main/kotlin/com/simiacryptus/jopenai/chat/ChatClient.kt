@@ -109,8 +109,7 @@ open class ChatClient(
                 throw RuntimeException("Failed to serialize moderation request", e)
             }
 
-            val apiBase = apiBaseMap[APIProvider.OpenAI]
-                ?: throw IllegalStateException("OpenAI API base not configured")
+            val apiBase = apiBaseMap[APIProvider.OpenAI] ?: return@withPerformanceLogging
 
             val result: String = try {
                 this.post("$apiBase/moderations", body, APIProvider.OpenAI)

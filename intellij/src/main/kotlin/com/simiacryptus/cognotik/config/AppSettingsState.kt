@@ -304,7 +304,7 @@ data class AppSettingsState(
     data class UserSuppliedModel(
         var displayName: String = "",
         var modelId: String = "",
-        var provider: APIProvider = APIProvider.OpenAI
+        var provider: APIProvider? = null
     )
 
     data class SavedPlanConfig(

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.Usage
 import com.simiacryptus.jopenai.models.chat.ChatModel.Companion.values
 import kotlin.collections.toMutableMap
@@ -17,7 +18,7 @@ open class ChatModel(
     modelName: String,
     maxTotalTokens: Int,
     maxOutTokens: Int = maxTotalTokens,
-    provider: com.simiacryptus.jopenai.models.APIProvider,
+    provider: APIProvider,
     val inputTokenPricePerK: Double,
     val outputTokenPricePerK: Double,
     hasTemperature: Boolean = true,
@@ -66,7 +67,7 @@ class ChatModelsDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<C
             name = modelName,
             modelName = modelName,
             maxTotalTokens = 4096,
-            provider = _root_ide_package_.com.simiacryptus.jopenai.models.APIProvider.Companion.OpenAI,
+            provider = APIProvider.Companion.OpenAI,
             inputTokenPricePerK = 0.0,
             outputTokenPricePerK = 0.0
         )
@@ -79,7 +80,7 @@ fun String.chatModel() = values().entries.find {
     name = this,
     modelName = this,
     maxTotalTokens = 4096,
-    provider = _root_ide_package_.com.simiacryptus.jopenai.models.APIProvider.Companion.OpenAI,
+    provider = APIProvider.Companion.OpenAI,
     inputTokenPricePerK = 0.0,
     outputTokenPricePerK = 0.0
 )
