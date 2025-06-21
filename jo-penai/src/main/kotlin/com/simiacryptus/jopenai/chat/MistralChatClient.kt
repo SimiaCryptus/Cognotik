@@ -11,7 +11,7 @@ import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
-class GroqChatClient(
+class MistralChatClient(
     apiKey: String,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,

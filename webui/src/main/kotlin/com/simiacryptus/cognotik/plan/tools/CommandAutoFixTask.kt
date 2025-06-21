@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -20,7 +20,7 @@ class CommandAutoFixTask(
     class CommandAutoFixTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
-        model: ChatModel? = null,
+        model: ChatModelType? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 

@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 enum class ImageModels(
     override val modelName: String,
     val maxPrompt: Int
-) : OpenAIModel {
+) : AIModel {
 
     DallE2("dall-e-2", 1000) {
         override fun pricing(width: Int, height: Int): Double {

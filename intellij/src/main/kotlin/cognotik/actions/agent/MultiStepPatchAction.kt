@@ -31,7 +31,7 @@ import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.chatModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
@@ -136,7 +136,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel? = AppSettingsState.instance.smartModel.chatModel(),
+            val model: ChatModelType? = AppSettingsState.instance.smartModel.chatModel(),
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -150,8 +150,8 @@ class MultiStepPatchAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModel,
-        val parsingModel: ChatModel,
+        val model: ChatModelType,
+        val parsingModel: ChatModelType,
         val event: AnActionEvent,
     ) {
         val actors = mapOf(

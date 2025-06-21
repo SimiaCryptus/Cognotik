@@ -2,8 +2,8 @@ package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
@@ -19,11 +19,17 @@ import java.util.concurrent.ExecutorService
 
 class AwsChatClient(
     apiKey: String,
+    apiBase: String,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
 ) : SingleProviderChatClient(
-    APIProvider.AWS, apiKey = apiKey, workPool = workPool, logLevel = logLevel, logStreams = logStreams
+    provider = APIProvider.AWS,
+    apiKey = apiKey,
+    apiBase = apiBase,
+    workPool = workPool,
+    logLevel = logLevel,
+    logStreams = logStreams
 ) {
     private val awsAuth: AWSAuth by lazy {
         JsonUtil.fromJson(apiKey, AWSAuth::class.java)
@@ -41,7 +47,7 @@ class AwsChatClient(
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest, model: TextModel
+        chatRequest: ApiModel.ChatRequest, model: LLMModel
     ): ApiModel.ChatResponse {
         validateChatRequest(chatRequest, model)
 
@@ -82,7 +88,7 @@ class AwsChatClient(
 
                 val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
 
-                if (response.usage != null && model is ChatModel) {
+                if (response.usage != null && model is ChatModelType) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
                 }
 
@@ -91,7 +97,7 @@ class AwsChatClient(
             }
         }
     }
-    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: TextModel) {
+    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
         require(awsAuth.region.isNotBlank()) { "AWS region must be specified" }
@@ -110,13 +116,13 @@ class AwsChatClient(
             val region: String = Region.US_WEST_2.id(),
         )
 
-        fun toAWS(model: TextModel, chatRequest: ApiModel.ChatRequest) =
+        fun toAWS(model: LLMModel, chatRequest: ApiModel.ChatRequest) =
             InvokeModelRequest.builder().modelId(model.modelName).accept("application/json")
                 .contentType("application/json")
                 .body(SdkBytes.fromString(JsonUtil.toJson(awsBody(model, chatRequest)), Charsets.UTF_8)).build()
 
         fun awsBody(
-            model: TextModel, chatRequest: ApiModel.ChatRequest
+            model: LLMModel, chatRequest: ApiModel.ChatRequest
         ): Map<String, Any> = when {
             model.modelName.contains("llama") -> {
                 mapOf(
@@ -191,7 +197,7 @@ class AwsChatClient(
             else -> throw RuntimeException("Unsupported model: $model")
         }
 
-        fun anthropic_version(model: TextModel) = when {
+        fun anthropic_version(model: LLMModel) = when {
             else -> "bedrock-2023-05-31"
 
         }

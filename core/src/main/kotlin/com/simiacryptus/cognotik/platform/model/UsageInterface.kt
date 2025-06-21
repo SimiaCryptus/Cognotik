@@ -1,26 +1,23 @@
 package com.simiacryptus.cognotik.platform.model
 
 import com.google.common.util.concurrent.AtomicDouble
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.OpenAIModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.AIModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import java.util.concurrent.atomic.AtomicLong
 
 interface UsageInterface {
 
-    fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage>
-    fun getSessionUsageSummary(session: Session): Map<OpenAIModel, ApiModel.Usage>
-    fun incrementUsage(session: Session, user: User, model: TextModel, tokens: ApiModel.Usage)
+    fun getUserUsageSummary(user: User): Map<AIModel, ApiModel.Usage>
+    fun getSessionUsageSummary(session: Session): Map<AIModel, ApiModel.Usage>
+    fun incrementUsage(session: Session, user: User, model: LLMModel, tokens: ApiModel.Usage)
     fun clear()
 
     data class UsageKey(
         val session: Session,
         val user: User?,
-        val model: OpenAIModel,
+        val model: AIModel,
     )
 
     class UsageValues(

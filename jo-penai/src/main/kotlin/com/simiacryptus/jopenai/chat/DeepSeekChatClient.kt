@@ -2,8 +2,8 @@ package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
@@ -36,7 +36,7 @@ class DeepSeekChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: TextModel
+        model: LLMModel
     ): ApiModel.ChatResponse {
         val deepSeekRequest = toDeepSeek(chatRequest)
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
@@ -44,7 +44,7 @@ class DeepSeekChatClient(
         val result = post("$apiBase/v1/chat/completions", json, APIProvider.DeepSeek)
         checkError(result)
         val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
-        if (response.usage != null && model is ChatModel) {
+        if (response.usage != null && model is ChatModelType) {
             onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
         }
         return response

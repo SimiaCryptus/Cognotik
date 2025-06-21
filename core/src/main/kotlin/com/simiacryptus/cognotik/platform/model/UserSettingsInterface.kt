@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.models.APIProvider
 
 interface UserSettingsInterface {
@@ -9,7 +10,10 @@ interface UserSettingsInterface {
         val key: String? = null,
         val baseUrl: String? = null,
         val provider: APIProvider? = null,
-    )
+    ) {
+        val chatClient: ChatClientInterface
+            get() = provider?.getChatClient(key ?: "", baseUrl ?: "") ?: throw IllegalStateException("Provider not set or invalid")
+    }
 
     data class ToolData(
         val name: String? = null,

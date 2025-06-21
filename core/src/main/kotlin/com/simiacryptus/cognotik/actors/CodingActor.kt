@@ -7,8 +7,8 @@ import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.util.*
 import javax.script.ScriptException
@@ -25,8 +25,8 @@ open class CodingActor(
     ),
     name: String? = interpreterClass.simpleName,
     val details: String? = null,
-    model: TextModel,
-    val fallbackModel: ChatModel,
+    model: LLMModel,
+    val fallbackModel: ChatModelType,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
     var codeInterceptor: CodeInterceptor = { it }
@@ -272,7 +272,7 @@ ${details ?: ""}
         override val code: String = givenCode ?: implementation.first
 
         private fun implement(
-            model: TextModel,
+            model: LLMModel,
         ): Pair<String, String> {
             val request = ChatRequest(messages = ArrayList(this.messages.toList()))
             for (codingAttempt in 0..input.fixRetries) {
@@ -401,7 +401,7 @@ ${TT}
         previousCode: String,
         error: Throwable,
         vararg promptMessages: ChatMessage,
-        model: TextModel
+        model: LLMModel
     ): String = chat(
         api = api,
         request = ChatRequest(
@@ -433,11 +433,11 @@ Correct the code and try again.
         model = model
     )
 
-    private fun chat(api: ChatClient, request: ChatRequest, model: TextModel) =
+    private fun chat(api: ChatClient, request: ChatRequest, model: LLMModel) =
         api.chat(request.copy(model = model.modelName, temperature = temperature), model)
             .choices.first().message?.content.orEmpty().trim()
 
-    override fun withModel(model: ChatModel): CodingActor = CodingActor(
+    override fun withModel(model: ChatModelType): CodingActor = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
         describer = describer,

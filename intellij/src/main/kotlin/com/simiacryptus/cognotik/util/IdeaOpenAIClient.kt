@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.OpenAIModel
+import com.simiacryptus.jopenai.models.AIModel
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -26,7 +26,7 @@ class IdeaOpenAIClient : OpenAIClient(
         }
     }
 
-    override fun onUsage(model: OpenAIModel?, tokens: ApiModel.Usage) {
+    override fun onUsage(model: AIModel?, tokens: ApiModel.Usage) {
 
         ApplicationServices.usageManager.incrementUsage(
             IdeaChatClient.currentSession,

@@ -6,14 +6,21 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.jopenai.models.AIModel
 import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.chat.ChatModel.Companion.values
+import com.simiacryptus.jopenai.models.EmbeddingModels
+import com.simiacryptus.jopenai.models.ImageModels
+import com.simiacryptus.jopenai.models.chat.ChatModelType.Companion.values
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.util.concurrent.ExecutorService
 import kotlin.collections.toMutableMap
 
 @JsonDeserialize(using = ChatModelsDeserializer::class)
 @JsonSerialize(using = ChatModelsSerializer::class)
-open class ChatModel(
+open class ChatModelType(
     val name: String,
     modelName: String,
     maxTotalTokens: Int,
@@ -23,7 +30,7 @@ open class ChatModel(
     val outputTokenPricePerK: Double,
     hasTemperature: Boolean = true,
     hasReasoningEffort: Boolean = false,
-) : TextModel(
+) : LLMModel(
     modelName = modelName,
     maxTotalTokens = maxTotalTokens,
     maxOutTokens = maxOutTokens,
@@ -36,12 +43,54 @@ open class ChatModel(
     override fun pricing(usage: Usage) =
         ((usage.prompt_tokens ?: 0L) * inputTokenPricePerK + (usage.completion_tokens ?: 0L) * outputTokenPricePerK) / 1000.0
 
+    interface ChatModel {
+        fun chat(
+            chatRequest: ApiModel.ChatRequest,
+            workPool: ExecutorService,
+        ): ApiModel.ChatResponse
+    }
+
+    fun instance(
+        key: String,
+        base: String = provider.base!!,
+        logLevel: Level = Level.INFO,
+        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    ) = object : ChatModel {
+        override fun chat(
+            chatRequest: ApiModel.ChatRequest,
+            workPool: ExecutorService
+        ): ApiModel.ChatResponse {
+            return provider.getChatClient(
+                key,
+                base,
+                workPool,
+                logLevel,
+                logStreams
+            ).chat(chatRequest, this@ChatModelType)
+        }
+    }
+
+    open fun chat(
+        chatRequest: ApiModel.ChatRequest,
+        key: String,
+        workPool: ExecutorService,
+        base: String = provider.base!!,
+        logLevel: Level = Level.INFO,
+        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    ) = provider.getChatClient(
+        key,
+        base,
+        workPool,
+        logLevel,
+        logStreams
+    ).chat(chatRequest, this)
+
     companion object {
 
         fun values() = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
-        val values: MutableMap<String, ChatModel?> by lazy { defaultValues().toMutableMap() }
+        val values: MutableMap<String, ChatModelType?> by lazy { defaultValues().toMutableMap() }
 
-        fun defaultValues() = OpenAIModels.values +
+        private fun defaultValues() = OpenAIModels.values +
                 PerplexityModels.values +
                 MistralModels.values +
                 GroqModels.values +
@@ -53,17 +102,17 @@ open class ChatModel(
     }
 }
 
-class ChatModelsSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<ChatModel>(ChatModel::class.java) {
-    override fun serialize(value: ChatModel, gen: JsonGenerator, provider: SerializerProvider) {
+class ChatModelsSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<ChatModelType>(ChatModelType::class.java) {
+    override fun serialize(value: ChatModelType, gen: JsonGenerator, provider: SerializerProvider) {
         val modelKey = values().entries.find { it.value == value }?.key
         gen.writeString(modelKey ?: value.modelName)
     }
 }
 
-class ChatModelsDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<ChatModel>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
+class ChatModelsDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<ChatModelType>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModelType {
         val modelName = p.readValueAs(String::class.java)
-        return values()[modelName] ?: ChatModel(
+        return values()[modelName] ?: ChatModelType(
             name = modelName,
             modelName = modelName,
             maxTotalTokens = 4096,
@@ -76,7 +125,7 @@ class ChatModelsDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<C
 
 fun String.chatModel() = values().entries.find {
     it.key.equals(this, true) || it.value.modelName.equals(this, true)
-}?.value ?: ChatModel(
+}?.value ?: ChatModelType(
     name = this,
     modelName = this,
     maxTotalTokens = 4096,
@@ -84,3 +133,8 @@ fun String.chatModel() = values().entries.find {
     inputTokenPricePerK = 0.0,
     outputTokenPricePerK = 0.0
 )
+
+fun getModel(modelName: String?): AIModel? = ChatModelType.values().values.find { it.modelName == modelName }
+    ?: EmbeddingModels.values().values.find { it.modelName == modelName }
+    ?: ImageModels.values().find { it.modelName == modelName }
+

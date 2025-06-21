@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ScheduledThreadPoolExecutor
 
@@ -67,11 +67,11 @@ open class ClientManager {
                     workPool = getPool(session, user)
                 ) {
                     override fun onUsage(
-                        model: TextModel,
+                        model: LLMModel,
                         tokens: ApiModel.Usage
                     ) {
                         super.onUsage(model, tokens)
-                        ApplicationServices.usageManager.incrementUsage(session, user, model!!, tokens)
+                        ApplicationServices.usageManager.incrementUsage(session, user, model, tokens)
                     }
                 }.apply {
                     this.session = session

@@ -10,44 +10,44 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.chat.ChatModel
 import com.simiacryptus.jopenai.models.EditModels
 import com.simiacryptus.jopenai.models.EmbeddingModels
-import com.simiacryptus.jopenai.models.OpenAIModel
+import com.simiacryptus.jopenai.models.AIModel
 
-@JsonDeserialize(using = OpenAITextModelDeserializer::class)
-@JsonSerialize(using = OpenAITextModelSerializer::class)
-open class TextModel(
+@JsonDeserialize(using = LLMModelDeserializer::class)
+@JsonSerialize(using = LLMModelSerializer::class)
+open class LLMModel(
     override val modelName: String,
     val provider: APIProvider,
     val maxTotalTokens: Int = -1,
     val maxOutTokens: Int = maxTotalTokens,
     val hasTemperature: Boolean = true,
     val hasReasoningEffort: Boolean = false,
-) : OpenAIModel {
+) : AIModel {
 
     open fun pricing(usage: Usage): Double = 0.0
+
 }
 
-class OpenAITextModelSerializer : StdSerializer<TextModel>(TextModel::class.java) {
-    override fun serialize(value: TextModel, gen: JsonGenerator, provider: SerializerProvider) {
+class LLMModelSerializer : StdSerializer<LLMModel>(LLMModel::class.java) {
+    override fun serialize(value: LLMModel, gen: JsonGenerator, provider: SerializerProvider) {
         ((listOf(
-            ChatModel.Companion.values(),
+            ChatModelType.Companion.values(),
             EmbeddingModels.Companion.values(),
         ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelName)
             .let { gen.writeString(it) }
     }
 }
 
-class OpenAITextModelDeserializer : JsonDeserializer<TextModel>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): TextModel {
+class LLMModelDeserializer : JsonDeserializer<LLMModel>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LLMModel {
         val modelName = p.readValueAs(String::class.java)
         listOf(
-            ChatModel.Companion.values(),
+            ChatModelType.Companion.values(),
             EmbeddingModels.Companion.values(),
             EditModels.Companion.values(),
         ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
-        return TextModel(
+        return LLMModel(
             modelName,
             provider = APIProvider.OpenAI,
         )

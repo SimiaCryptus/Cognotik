@@ -5,14 +5,14 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.EmbeddingModels
 import com.simiacryptus.util.JsonUtil
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
 open class DocumentParsingModel(
-    private val parsingModel: ChatModel,
+    private val parsingModel: ChatModelType,
     private val temperature: Double
 ) : ParsingModel<DocumentParsingModel.DocumentData> {
 

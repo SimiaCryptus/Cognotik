@@ -16,8 +16,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -34,7 +34,7 @@ open class CodingAgent<T : Interpreter>(
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
-    val model: TextModel,
+    val model: LLMModel,
     private val mainTask: SessionTask,
     val retryable : Boolean = true,
 ) {
@@ -45,7 +45,7 @@ open class CodingAgent<T : Interpreter>(
         temperature = temperature,
         details = details,
         model = model,
-        fallbackModel = model as ChatModel
+        fallbackModel = model as ChatModelType
     ) }
 
     open val canPlay by lazy {

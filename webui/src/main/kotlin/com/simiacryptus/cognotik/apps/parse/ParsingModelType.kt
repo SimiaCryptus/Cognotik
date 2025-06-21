@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer
@@ -14,7 +14,7 @@ class ParsingModelType<out T : ParsingModel<*>>(
 ) : DynamicEnum<ParsingModelType<*>>(name) {
     companion object {
         private val modelConstructors =
-            mutableMapOf<ParsingModelType<*>, (ChatModel, Double) -> ParsingModel<*>>()
+            mutableMapOf<ParsingModelType<*>, (ChatModelType, Double) -> ParsingModel<*>>()
 
         val Document = ParsingModelType<ParsingModel<*>>("Document")
         val Code = ParsingModelType<ParsingModel<*>>("Code")
@@ -28,7 +28,7 @@ class ParsingModelType<out T : ParsingModel<*>>(
 
         private fun <T : ParsingModel<*>> registerConstructor(
             modelType: ParsingModelType<T>,
-            constructor: (ChatModel, Double) -> T
+            constructor: (ChatModelType, Double) -> T
         ) {
             modelConstructors[modelType] = constructor
             register(modelType)
@@ -37,7 +37,7 @@ class ParsingModelType<out T : ParsingModel<*>>(
         fun values() = values(ParsingModelType::class.java)
 
         fun getImpl(
-            chatModel: ChatModel,
+            chatModel: ChatModelType,
             temperature: Double,
             modelType: ParsingModelType<*>
         ): ParsingModel<*> {

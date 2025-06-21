@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
 import java.awt.CardLayout
@@ -81,7 +81,7 @@ class PlanConfigDialog(
         private const val FONT_SIZE_DISABLED = 12f
         private const val DIVIDER_PROPORTION = 0.3f
 
-        fun isVisible(it: ChatModel): Boolean {
+        fun isVisible(it: ChatModelType): Boolean {
             return AppSettingsState.instance.apiKeys?.get(it.provider.name)?.isNotBlank() ?: false
         }
     }
@@ -100,7 +100,7 @@ class PlanConfigDialog(
     }
     private val budgetLabel = JLabel(BUDGET_LABEL.format(apiBudget))
 
-    private fun validateModelSelection(taskType: TaskType<*, *>, model: ChatModel?): Boolean {
+    private fun validateModelSelection(taskType: TaskType<*, *>, model: ChatModelType?): Boolean {
         if (model == null && settings.getTaskSettings(taskType).enabled) {
             return false
         }
@@ -378,7 +378,7 @@ class PlanConfigDialog(
         AppSettingsState.instance.savedPlanConfigs?.keys?.sorted()?.forEach { addItem(it) }
     }
 
-    private fun getVisibleModels() = ChatModel.values().map { it.value }.filter { isVisible(it) }.toList()
+    private fun getVisibleModels() = ChatModelType.values().map { it.value }.filter { isVisible(it) }.toList()
         .sortedBy { "${it.provider.name} - ${it.modelName}" }
 
     init {

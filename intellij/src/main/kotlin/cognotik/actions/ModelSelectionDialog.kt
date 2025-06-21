@@ -4,16 +4,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import javax.swing.JComponent
 
 class ModelSelectionDialog(
     project: Project?,
-    private val availableModels: List<Pair<String, ChatModel>>,
-    private val initialSelection: ChatModel? = null
+    private val availableModels: List<Pair<String, ChatModelType>>,
+    private val initialSelection: ChatModelType? = null
 ) : DialogWrapper(project, true) {
 
-    var selectedModel: ChatModel? = null
+    var selectedModel: ChatModelType? = null
 
     init {
         init()

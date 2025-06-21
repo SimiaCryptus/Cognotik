@@ -4,9 +4,9 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.OpenAIModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.AIModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.DriverManager
@@ -42,7 +42,7 @@ class HSQLUsageManager() : UsageInterface {
         )
     }
 
-    override fun incrementUsage(session: Session, user: User, model: TextModel, tokens: ApiModel.Usage) {
+    override fun incrementUsage(session: Session, user: User, model: LLMModel, tokens: ApiModel.Usage) {
         try {
             log.debug("Incrementing usage for session: ${session.sessionId}, user: ${user.email}, model: ${model.modelName}")
             val usageKey = UsageInterface.UsageKey(session, user, model)
@@ -56,7 +56,7 @@ class HSQLUsageManager() : UsageInterface {
         }
     }
 
-    override fun getUserUsageSummary(user: User): Map<OpenAIModel, ApiModel.Usage> {
+    override fun getUserUsageSummary(user: User): Map<AIModel, ApiModel.Usage> {
         log.debug("Executing SQL query to get user usage summary for user: ${user.email}")
         val statement = connection.prepareStatement(
             """
@@ -71,7 +71,7 @@ class HSQLUsageManager() : UsageInterface {
         return generateUsageSummary(resultSet)
     }
 
-    override fun getSessionUsageSummary(session: Session): Map<OpenAIModel, ApiModel.Usage> {
+    override fun getSessionUsageSummary(session: Session): Map<AIModel, ApiModel.Usage> {
         log.info("Getting session usage summary for session: ${session.sessionId}")
         val statement = connection.prepareStatement(
             """
@@ -111,9 +111,9 @@ class HSQLUsageManager() : UsageInterface {
         statement.executeUpdate()
     }
 
-    private fun generateUsageSummary(resultSet: ResultSet): Map<OpenAIModel, ApiModel.Usage> {
+    private fun generateUsageSummary(resultSet: ResultSet): Map<AIModel, ApiModel.Usage> {
         log.debug("Generating usage summary from result set")
-        val summary = mutableMapOf<OpenAIModel, ApiModel.Usage>()
+        val summary = mutableMapOf<AIModel, ApiModel.Usage>()
         while (resultSet.next()) {
             val string = resultSet.getString(1)
             val model = openAIModel(string) ?: continue
@@ -127,9 +127,9 @@ class HSQLUsageManager() : UsageInterface {
         return summary
     }
 
-    private fun openAIModel(string: String): OpenAIModel? {
+    private fun openAIModel(string: String): AIModel? {
         log.debug("Retrieving OpenAI model for string: $string")
-        val model = ChatModel.values().filter {
+        val model = ChatModelType.values().filter {
             it.key == string || it.value.modelName == string || it.value.name == string
         }.toList().firstOrNull()?.second ?: return null
         log.debug("OpenAI model retrieved: $model")

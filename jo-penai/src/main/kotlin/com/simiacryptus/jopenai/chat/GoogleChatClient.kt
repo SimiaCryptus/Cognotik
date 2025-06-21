@@ -2,20 +2,28 @@ package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class GoogleChatClient(
     apiKey: String,
-    workPool: ExecutorService
+    apiBase: String,
+    workPool: ExecutorService,
+    logLevel: Level = Level.INFO,
+    logStreams: MutableList<BufferedOutputStream>,
 ) : SingleProviderChatClient(
     APIProvider.Google,
     apiKey = apiKey,
-    workPool = workPool
+    apiBase = apiBase,
+    workPool = workPool,
+    logLevel = logLevel,
+    logStreams = logStreams,
 ) {
     override fun authorize(
         request: HttpRequest,
@@ -28,7 +36,7 @@ class GoogleChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: TextModel
+        model: LLMModel
     ): ApiModel.ChatResponse {
         val geminiChatRequest = toGeminiChatRequest(chatRequest, model)
         val json = JsonUtil.objectMapper()
@@ -45,7 +53,7 @@ class GoogleChatClient(
         val responseJson = fromGemini(responseBody)
         val response = JsonUtil.objectMapper()
             .readValue(responseJson, ApiModel.ChatResponse::class.java)
-        if (response.usage != null && model is ChatModel) {
+        if (response.usage != null && model is ChatModelType) {
             onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
         }
         return response
@@ -66,7 +74,7 @@ class GoogleChatClient(
                 ))
         }
 
-        fun toGeminiChatRequest(chatRequest: ApiModel.ChatRequest, model: TextModel): GenerateContentRequest {
+        fun toGeminiChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel): GenerateContentRequest {
             return GenerateContentRequest(
                 contents = collectRoleSequences(chatRequest.messages.filter {
                     when (it.role) {

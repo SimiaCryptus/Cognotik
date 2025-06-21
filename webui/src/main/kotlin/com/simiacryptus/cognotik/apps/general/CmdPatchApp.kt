@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClient
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
@@ -22,8 +22,8 @@ class CmdPatchApp(
     settings: Settings,
     api: ChatClient,
     val files: Array<out File>?,
-    model: ChatModel,
-    parsingModel: ChatModel,
+    model: ChatModelType,
+    parsingModel: ChatModelType,
 ) : PatchApp(root.toFile(), settings, api, model, parsingModel = parsingModel) {
 
     companion object {

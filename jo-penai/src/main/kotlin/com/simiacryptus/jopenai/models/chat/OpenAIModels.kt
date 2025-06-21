@@ -1,10 +1,9 @@
 package com.simiacryptus.jopenai.models.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object OpenAIModels {
-    val GPT4Turbo = ChatModel(
+    val GPT4Turbo = ChatModelType(
         name = "GPT4Turbo",
         modelName = "gpt-4-turbo",
         maxTotalTokens = 128000,
@@ -13,7 +12,7 @@ object OpenAIModels {
         outputTokenPricePerK = 0.030
     )
 
-    val GPT4o = ChatModel(
+    val GPT4o = ChatModelType(
         name = "GPT4o",
         modelName = "gpt-4o",
         maxTotalTokens = 128000,
@@ -22,7 +21,7 @@ object OpenAIModels {
         outputTokenPricePerK = 0.010
     )
 
-    val GPT45 = ChatModel(
+    val GPT45 = ChatModelType(
         name = "GPT45",
         modelName = "gpt-4.5-preview-2025-02-27",
         maxTotalTokens = 128000,
@@ -31,7 +30,7 @@ object OpenAIModels {
         outputTokenPricePerK = 0.150
     )
 
-    val GPT4oMini = ChatModel(
+    val GPT4oMini = ChatModelType(
         name = "GPT4oMini",
         modelName = "gpt-4o-mini",
         maxTotalTokens = 128000,
@@ -40,7 +39,7 @@ object OpenAIModels {
         outputTokenPricePerK = 0.00060
     )
 
-    val O1Preview = ChatModel(
+    val O1Preview = ChatModelType(
         name = "O1Preview",
         modelName = "o1-preview",
         maxTotalTokens = 128 * 1024,
@@ -51,7 +50,7 @@ object OpenAIModels {
         hasReasoningEffort = true,
     )
 
-    val O1 = ChatModel(
+    val O1 = ChatModelType(
         name = "O1",
         modelName = "o1",
         maxTotalTokens = 128 * 1024,
@@ -62,7 +61,7 @@ object OpenAIModels {
         hasReasoningEffort = true,
     )
 
-    val O1Mini = ChatModel(
+    val O1Mini = ChatModelType(
         name = "O1Mini",
         modelName = "o1-mini",
         maxTotalTokens = 128 * 1024,
@@ -73,7 +72,7 @@ object OpenAIModels {
         hasReasoningEffort = false,
     )
 
-    val O3Mini = ChatModel(
+    val O3Mini = ChatModelType(
         name = "O3Mini",
         modelName = "o3-mini",
         maxTotalTokens = 128 * 1024,
@@ -83,7 +82,7 @@ object OpenAIModels {
         hasTemperature = false,
         hasReasoningEffort = true,
     )
-    val O4Mini = ChatModel(
+    val O4Mini = ChatModelType(
         name = "O4Mini",
         modelName = "o4-mini",
         maxTotalTokens = 200000,
@@ -93,7 +92,7 @@ object OpenAIModels {
         hasTemperature = false,
         hasReasoningEffort = true,
     )
-    val O3 = ChatModel(
+    val O3 = ChatModelType(
         name = "O3",
         modelName = "o3",
         maxTotalTokens = 200000,
@@ -104,7 +103,7 @@ object OpenAIModels {
         hasReasoningEffort = true,
     )
 
-    val GPT41 = ChatModel(
+    val GPT41 = ChatModelType(
         name = "GPT 4.1",
         modelName = "gpt-4.1-2025-04-14",
         maxTotalTokens = 1048576,
@@ -115,7 +114,7 @@ object OpenAIModels {
         hasReasoningEffort = false,
     )
 
-    val GPT41Mini = ChatModel(
+    val GPT41Mini = ChatModelType(
         name = "GPT 4.1 Mini",
         modelName = "gpt-4.1-mini-2025-04-14",
         maxTotalTokens = 1048576,
@@ -126,7 +125,7 @@ object OpenAIModels {
         hasReasoningEffort = false,
     )
 
-    val GPT41Nano = ChatModel(
+    val GPT41Nano = ChatModelType(
         name = "GPT 4.1 Nano",
         modelName = "gpt-4.1-nano-2025-04-14",
         maxTotalTokens = 1048576,

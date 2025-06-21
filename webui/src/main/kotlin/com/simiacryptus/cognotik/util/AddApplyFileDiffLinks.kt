@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -82,7 +82,7 @@ open class AddApplyFileDiffLinks {
             ui: ApplicationInterface,
             api: API,
             shouldAutoApply: (Path) -> Boolean = { false },
-            model: ChatModel? = null,
+            model: ChatModelType? = null,
             defaultFile: String? = null,
         ): String {
             log.debug("Instrumenting file diffs for root: {}", root)
@@ -120,7 +120,7 @@ open class AddApplyFileDiffLinks {
         ""
     }
 
-    protected open fun createPatchFixerActor(chatModel: ChatModel): SimpleActor {
+    protected open fun createPatchFixerActor(chatModel: ChatModelType): SimpleActor {
         return SimpleActor(
             prompt = """
         You are a helpful AI that helps people with coding.
@@ -139,7 +139,7 @@ open class AddApplyFileDiffLinks {
         ui: ApplicationInterface,
         api: API,
         shouldAutoApply: (Path) -> Boolean = { false },
-        model: ChatModel? = null,
+        model: ChatModelType? = null,
         defaultFile: String? = null,
     ): String {
         self.apply {
@@ -294,7 +294,7 @@ open class AddApplyFileDiffLinks {
         ui: ApplicationInterface,
         api: API?,
         shouldAutoApply: (Path) -> Boolean,
-        model: ChatModel? = null,
+        model: ChatModelType? = null,
     ): String {
 
         val filepath = root.resolve(filename)

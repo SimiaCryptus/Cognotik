@@ -3,7 +3,7 @@ package com.simiacryptus.jopenai.chat
 import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
@@ -120,7 +120,7 @@ abstract class ChatClientBase(
     }
 
 
-    override fun onUsage(model: TextModel, tokens: Usage) {
+    override fun onUsage(model: LLMModel, tokens: Usage) {
         log.debug("Usage recorded for session: {}, user: {}, model: {}, tokens: {}", session, user, model, tokens)
         budget?.let { currentBudget ->
             val cost = tokens.cost ?: 0.0
@@ -145,7 +145,7 @@ abstract class ChatClientBase(
             this@ChatClientBase.log(level, msg)
         }
 
-        override fun onUsage(model: TextModel, tokens: Usage) {
+        override fun onUsage(model: LLMModel, tokens: Usage) {
             this@ChatClientBase.onUsage(model, tokens)
             super.onUsage(model, tokens)
         }

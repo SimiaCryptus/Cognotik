@@ -9,7 +9,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.chatModel
 import javax.swing.*
 
@@ -28,8 +28,7 @@ class OutlineConfigDialog(
         settings.expansionSteps.forEach { addElement(it) }
     }
     private var selectedIndex = -1
-    private val availableModels = ChatModel.values().filter { isVisible(it.value) }
-        .toList()
+    private val availableModels = ChatModelType.values().filter { isVisible(it.value) }.toList()
 
     init {
         init()
@@ -104,7 +103,7 @@ class OutlineConfigDialog(
                 comboBox(availableModels).apply {
                     component.selectedItem = parsingModel
                     component.addActionListener {
-                        parsingModel = component.selectedItem as ChatModel
+                        parsingModel = component.selectedItem as ChatModelType
                     }
                 }
                     .align(Align.FILL)
@@ -184,7 +183,7 @@ class OutlineConfigDialog(
     }
 
     companion object {
-        fun isVisible(model: ChatModel): Boolean {
+        fun isVisible(model: ChatModelType): Boolean {
             val hasApiKey = AppSettingsState.instance.apiKeys
                 ?.filter { it.value.isNotBlank() }
                 ?.keys
@@ -194,7 +193,7 @@ class OutlineConfigDialog(
     }
 
     data class ExpansionStep(
-        val model: ChatModel,
+        val model: ChatModelType,
     )
 
     data class OutlineSettings(
@@ -207,6 +206,6 @@ class OutlineConfigDialog(
         val showProjector: Boolean = true,
         val writeFinalEssay: Boolean = true,
         val budget: Double = 2.0,
-        val parsingModel: ChatModel = AppSettingsState.instance.smartModel.chatModel()
+        val parsingModel: ChatModelType = AppSettingsState.instance.smartModel.chatModel()
     )
 }

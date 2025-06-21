@@ -1,10 +1,9 @@
 package com.simiacryptus.jopenai.models.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object AnthropicModels {
-    val Claude4Opus = ChatModel(
+    val Claude4Opus = ChatModelType(
         name = "Claude4Opus",
         modelName = "claude-opus-4-20250514",
         maxTotalTokens = 200000,
@@ -13,7 +12,7 @@ object AnthropicModels {
         inputTokenPricePerK = 30.0 / 1000.0,
         outputTokenPricePerK = 120.0 / 1000.0,
     )
-    val Claude4Sonnet = ChatModel(
+    val Claude4Sonnet = ChatModelType(
         name = "Claude4Sonnet",
         modelName = "claude-sonnet-4-20250514",
         maxTotalTokens = 200000,
@@ -24,7 +23,7 @@ object AnthropicModels {
     )
 
 
-    val Claude35Sonnet = ChatModel(
+    val Claude35Sonnet = ChatModelType(
         name = "Claude35Sonnet",
         modelName = "claude-3-5-sonnet-latest",
         maxTotalTokens = 200000,
@@ -33,7 +32,7 @@ object AnthropicModels {
         inputTokenPricePerK = 3.75 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
-    val Claude37Sonnet = ChatModel(
+    val Claude37Sonnet = ChatModelType(
         name = "Claude37Sonnet",
         modelName = "claude-3-7-sonnet-latest",
         maxTotalTokens = 200000,
@@ -42,7 +41,7 @@ object AnthropicModels {
         inputTokenPricePerK = 3.75 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
-    val Claude35Haiku = ChatModel(
+    val Claude35Haiku = ChatModelType(
         name = "Claude35Haiku",
         modelName = "claude-3-5-haiku-latest",
         maxTotalTokens = 200000,
@@ -51,7 +50,7 @@ object AnthropicModels {
         inputTokenPricePerK = 1.0 / 1000.0,
         outputTokenPricePerK = 4.0 / 1000.0,
     )
-    val Claude3Opus = ChatModel(
+    val Claude3Opus = ChatModelType(
         name = "Claude3Opus",
         modelName = "claude-3-opus-latest",
         maxTotalTokens = 200000,
@@ -60,7 +59,7 @@ object AnthropicModels {
         inputTokenPricePerK = 18.75 / 1000.0,
         outputTokenPricePerK = 75.0 / 1000.0,
     )
-    val Claude3Sonnet = ChatModel(
+    val Claude3Sonnet = ChatModelType(
         name = "Claude3Sonnet",
         modelName = "claude-3-sonnet-latest",
         maxTotalTokens = 200000,
@@ -69,7 +68,7 @@ object AnthropicModels {
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0
     )
-    val Claude3Haiku = ChatModel(
+    val Claude3Haiku = ChatModelType(
         name = "Claude3Haiku",
         modelName = "claude-3-haiku-latest",
         maxTotalTokens = 200000,

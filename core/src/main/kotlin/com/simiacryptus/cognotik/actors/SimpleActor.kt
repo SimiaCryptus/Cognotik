@@ -2,14 +2,14 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 
 open class SimpleActor(
     prompt: String,
     name: String? = null,
-    model: TextModel,
+    model: LLMModel,
     temperature: Double = 0.3,
 ) : BaseActor<List<String>, String>(
     prompt = prompt,
@@ -33,7 +33,7 @@ open class SimpleActor(
         )
     }
 
-    override fun withModel(model: ChatModel): SimpleActor = SimpleActor(
+    override fun withModel(model: ChatModelType): SimpleActor = SimpleActor(
         prompt = prompt,
         name = name,
         model = model,

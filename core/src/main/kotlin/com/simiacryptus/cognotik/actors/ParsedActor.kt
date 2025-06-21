@@ -6,8 +6,8 @@ import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
@@ -18,9 +18,9 @@ open class ParsedActor<T : Any>(
     val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
     prompt: String = "",
     name: String? = resultClass?.simpleName,
-    model: TextModel,
+    model: LLMModel,
     temperature: Double = 0.3,
-    val parsingModel: TextModel,
+    val parsingModel: LLMModel,
     val deserializerRetries: Int = 2,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
@@ -156,7 +156,7 @@ open class ParsedActor<T : Any>(
             throw e
         }
 
-    override fun withModel(model: ChatModel): ParsedActor<T> = ParsedActor(
+    override fun withModel(model: ChatModelType): ParsedActor<T> = ParsedActor(
         resultClass = resultClass,
         prompt = prompt,
         name = name,

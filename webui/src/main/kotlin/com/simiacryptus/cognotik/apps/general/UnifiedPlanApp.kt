@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
@@ -35,8 +35,8 @@ open class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     val planSettings: PlanSettings,
-    val model: ChatModel,
-    val parsingModel: ChatModel,
+    val model: ChatModelType,
+    val parsingModel: ChatModelType,
     showMenubar: Boolean = true,
     val api: API? = null,
     val cognitiveStrategy: CognitiveModeStrategy,

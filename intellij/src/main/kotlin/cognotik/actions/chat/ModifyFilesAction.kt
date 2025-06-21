@@ -25,7 +25,7 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.chatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import org.slf4j.LoggerFactory
@@ -121,8 +121,8 @@ open class ModifyFilesAction(
 
     inner class PatchChatManager(
         session: Session,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: ChatModelType,
+        parsingModel: ChatModelType,
         val root: File,
         private val files: Set<Path>,
         private val showLineNumbers: Boolean = false

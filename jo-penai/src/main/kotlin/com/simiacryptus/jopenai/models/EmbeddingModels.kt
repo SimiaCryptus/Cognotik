@@ -1,14 +1,14 @@
 package com.simiacryptus.jopenai.models
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import org.slf4j.LoggerFactory
 
 open class EmbeddingModels(
     modelName: String,
     maxTokens: Int,
     private val tokenPricePerK: Double,
-) : TextModel(modelName, maxTokens) {
+) : LLMModel(modelName, maxTokens) {
     private val log = LoggerFactory.getLogger(EmbeddingModels::class.java)
     override fun pricing(usage: Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
         .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }

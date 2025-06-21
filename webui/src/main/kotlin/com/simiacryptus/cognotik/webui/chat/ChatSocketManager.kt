@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 open class ChatSocketManager(
     session: Session,
-    var model: ChatModel,
-    var parsingModel: ChatModel,
+    var model: ChatModelType,
+    var parsingModel: ChatModelType,
     val userInterfacePrompt: String = """
     <div class="expandable-guide">
       <div class="expandable-header">

@@ -18,7 +18,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.JsonDescriber
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
@@ -53,9 +53,9 @@ open class OutlineApp(
         ) + "</div>")
 
     data class Settings(
-        val models: List<ChatModel> = listOf(
+        val models: List<ChatModelType> = listOf(
         ),
-        val parsingModel: ChatModel? = null,
+        val parsingModel: ChatModelType? = null,
         val temperature: Double = 0.3,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,
@@ -103,9 +103,9 @@ class OutlineAgent(
     val session: Session,
     val user: User?,
     val temperature: Double,
-    val models: List<ChatModel>,
-    val firstLevelModel: ChatModel,
-    val parsingModel: ChatModel,
+    val models: List<ChatModelType>,
+    val firstLevelModel: ChatModelType,
+    val parsingModel: ChatModelType,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -241,7 +241,7 @@ class OutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModel>,
+        models: List<ChatModelType>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -287,7 +287,7 @@ class OutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModel,
+        model: ChatModelType,
         api: API,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
@@ -321,13 +321,13 @@ interface OutlineActors {
 
         val log = LoggerFactory.getLogger(OutlineActors::class.java)
 
-        fun actorMap(temperature: Double, firstLevelModel: ChatModel, parsingModel: ChatModel) = mapOf(
+        fun actorMap(temperature: Double, firstLevelModel: ChatModelType, parsingModel: ChatModelType) = mapOf(
             ActorType.INITIAL to initialAuthor(temperature, firstLevelModel, parsingModel),
             ActorType.EXPAND to expansionAuthor(temperature, parsingModel),
             ActorType.FINAL to finalWriter(temperature, firstLevelModel, maxIterations = 10),
         )
 
-        private fun initialAuthor(temperature: Double, model: ChatModel, parsingModel: ChatModel) = ParsedActor(
+        private fun initialAuthor(temperature: Double, model: ChatModelType, parsingModel: ChatModelType) = ParsedActor(
             NodeList::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = model,
@@ -356,7 +356,7 @@ interface OutlineActors {
 
         private fun expansionAuthor(
             temperature: Double,
-            parsingModel: ChatModel
+            parsingModel: ChatModelType
         ): ParsedActor<NodeList> =
             ParsedActor(
                 resultClass = NodeList::class.java,
@@ -368,7 +368,7 @@ interface OutlineActors {
                 exampleInstance = exampleNodeList(),
             )
 
-        private fun finalWriter(temperature: Double, model: ChatModel, maxIterations: Int) = LargeOutputActor(
+        private fun finalWriter(temperature: Double, model: ChatModelType, maxIterations: Int) = LargeOutputActor(
             model = model,
             temperature = temperature,
             maxIterations = maxIterations,

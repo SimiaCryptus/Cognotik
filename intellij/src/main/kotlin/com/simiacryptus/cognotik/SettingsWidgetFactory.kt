@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import icons.MyIcons
 import java.awt.BorderLayout
 import java.awt.Component
@@ -320,7 +320,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-        fun models() = ChatModel.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
+        fun models() = ChatModelType.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
             .sortedBy { "${it.second.provider.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
@@ -435,7 +435,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         """.trimIndent().trim()
         }
 
-        private fun isVisible(it: ChatModel): Boolean {
+        private fun isVisible(it: ChatModelType): Boolean {
             return true
         }
 

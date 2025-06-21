@@ -1,13 +1,12 @@
 package com.simiacryptus.jopenai.models.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object PerplexityModels {
 
     val SonarSmallChat128k = run {
         val maxTotalTokens = 128 * 1024
-        ChatModel(
+        ChatModelType(
             name = "SonarSmallChat128k",
             modelName = "llama-3.1-sonar-small-128k-chat",
             maxTotalTokens = maxTotalTokens,
@@ -20,7 +19,7 @@ object PerplexityModels {
 
     val SonarSmallOnline128k = run {
         val maxTotalTokens = 128 * 1024
-        ChatModel(
+        ChatModelType(
             name = "SonarSmallOnline128k",
             modelName = "llama-3.1-sonar-small-128k-online",
             maxTotalTokens = maxTotalTokens,
@@ -33,7 +32,7 @@ object PerplexityModels {
 
     val SonarLargeChat128k = run {
         val maxTotalTokens = 128 * 1024
-        ChatModel(
+        ChatModelType(
             name = "SonarLargeChat128k",
             modelName = "llama-3.1-sonar-large-128k-chat",
             maxTotalTokens = maxTotalTokens,
@@ -46,7 +45,7 @@ object PerplexityModels {
 
     val SonarLargeOnline128k = run {
         val maxTotalTokens = 128 * 1024
-        ChatModel(
+        ChatModelType(
             name = "SonarLargeOnline128k",
             modelName = "llama-3.1-sonar-large-128k-online",
             maxTotalTokens = maxTotalTokens,

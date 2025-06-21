@@ -1,6 +1,6 @@
 package com.simiacryptus.jopenai.models
 
-interface OpenAIModel {
+interface AIModel {
 
     val modelName: String
 }

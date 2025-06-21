@@ -2,10 +2,10 @@
 
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.EmbeddingModels
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.OpenAIModel
+import com.simiacryptus.jopenai.models.AIModel
 import com.simiacryptus.util.JsonUtil
 import java.awt.image.BufferedImage
 import java.io.Closeable
@@ -174,8 +174,3 @@ class JsonFunctionRecorder(baseDir: File) : FunctionInterceptor, Closeable {
         val log = org.slf4j.LoggerFactory.getLogger(JsonFunctionRecorder::class.java)
     }
 }
-
-fun getModel(modelName: String?): OpenAIModel? = ChatModel.values().values.find { it.modelName == modelName }
-    ?: EmbeddingModels.values().values.find { it.modelName == modelName }
-    ?: ImageModels.values().find { it.modelName == modelName }
-

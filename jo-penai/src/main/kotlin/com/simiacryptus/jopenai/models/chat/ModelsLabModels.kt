@@ -1,11 +1,10 @@
 package com.simiacryptus.jopenai.models.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object ModelsLabModels {
 
-    val Zephyr7bBeta = ChatModel(
+    val Zephyr7bBeta = ChatModelType(
         name = "Zephyr7bBeta",
         modelName = "zephyr-7b-beta",
         maxTotalTokens = 16384,
@@ -13,7 +12,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val DialoGPTLarge = ChatModel(
+    val DialoGPTLarge = ChatModelType(
         name = "DialoGPTLarge",
         modelName = "DialoGPT-large",
         maxTotalTokens = 16384,
@@ -21,7 +20,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val YarnMistral7b128k = ChatModel(
+    val YarnMistral7b128k = ChatModelType(
         name = "YarnMistral7b128k",
         modelName = "Yarn-Mistral-7b-128k",
         maxTotalTokens = 16384,
@@ -29,7 +28,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val Pygmalion13b = ChatModel(
+    val Pygmalion13b = ChatModelType(
         name = "Pygmalion13b",
         modelName = "pygmalion-1.3b",
         maxTotalTokens = 16384,
@@ -37,7 +36,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val Opt67b = ChatModel(
+    val Opt67b = ChatModelType(
         name = "Opt67b",
         modelName = "opt-6.7b",
         maxTotalTokens = 16384,
@@ -45,7 +44,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val MistralLite = ChatModel(
+    val MistralLite = ChatModelType(
         name = "MistralLite",
         modelName = "MistralLite",
         maxTotalTokens = 16384,
@@ -53,7 +52,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val Openchat35 = ChatModel(
+    val Openchat35 = ChatModelType(
         name = "Openchat35",
         modelName = "openchat_3.5",
         maxTotalTokens = 16384,
@@ -61,7 +60,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val NeuralChat7bV3 = ChatModel(
+    val NeuralChat7bV3 = ChatModelType(
         name = "NeuralChat7bV3",
         modelName = "neural-chat-7b-v3",
         maxTotalTokens = 16384,
@@ -69,7 +68,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val OpenHermes25Mistral7B = ChatModel(
+    val OpenHermes25Mistral7B = ChatModelType(
         name = "OpenHermes25Mistral7B",
         modelName = "OpenHermes-2.5-Mistral-7B",
         maxTotalTokens = 16384,
@@ -77,7 +76,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val Dolphin221Mistral7b = ChatModel(
+    val Dolphin221Mistral7b = ChatModelType(
         name = "Dolphin221Mistral7b",
         modelName = "dolphin-2.2.1-mistral-7b",
         maxTotalTokens = 16384,
@@ -85,7 +84,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val Mistral7BOpenOrca = ChatModel(
+    val Mistral7BOpenOrca = ChatModelType(
         name = "Mistral7BOpenOrca",
         modelName = "Mistral-7B-OpenOrca",
         maxTotalTokens = 16384,
@@ -94,7 +93,7 @@ object ModelsLabModels {
         outputTokenPricePerK = 0.0015
     )
 
-    val DeepseekCoder67bInstruct = ChatModel(
+    val DeepseekCoder67bInstruct = ChatModelType(
         name = "DeepseekCoder67bInstruct",
         modelName = "deepseek-coder-6.7b-instruct",
         maxTotalTokens = 16384,
@@ -102,7 +101,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val Phi15 = ChatModel(
+    val Phi15 = ChatModelType(
         name = "Phi15",
         modelName = "phi-1_5",
         maxTotalTokens = 16384,
@@ -110,7 +109,7 @@ object ModelsLabModels {
         inputTokenPricePerK = 0.0005,
         outputTokenPricePerK = 0.0015
     )
-    val Zephyr7bAlpha = ChatModel(
+    val Zephyr7bAlpha = ChatModelType(
         name = "Zephyr7bAlpha",
         modelName = "zephyr-7b-alpha",
         maxTotalTokens = 16384,

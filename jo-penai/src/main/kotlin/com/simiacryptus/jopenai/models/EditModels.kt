@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.models
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -9,7 +9,7 @@ open class EditModels(
     modelName: String,
     maxTokens: Int,
     private val tokenPricePerK: Double,
-) : TextModel(modelName, maxTokens) {
+) : LLMModel(modelName, maxTokens) {
     private val log: Logger = LoggerFactory.getLogger(EditModels::class.java)
 
     init {

@@ -1,10 +1,9 @@
 package com.simiacryptus.jopenai.models.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.chat.ChatModel
 
 object DeepSeekModels {
-    val DeepSeekChat = ChatModel(
+    val DeepSeekChat = ChatModelType(
         name = "DeepSeekChat",
         modelName = "deepseek-chat",
         maxTotalTokens = 64000,
@@ -13,7 +12,7 @@ object DeepSeekModels {
         inputTokenPricePerK = 0.14 / 1000.0,
         outputTokenPricePerK = 0.28 / 1000.0
     )
-    val DeepSeekCoder = ChatModel(
+    val DeepSeekCoder = ChatModelType(
         name = "DeepSeekCoder",
         modelName = "deepseek-coder",
         maxTotalTokens = 64000,
@@ -22,7 +21,7 @@ object DeepSeekModels {
         inputTokenPricePerK = 0.14 / 1000.0,
         outputTokenPricePerK = 0.28 / 1000.0
     )
-    val DeepSeekReasoner = ChatModel(
+    val DeepSeekReasoner = ChatModelType(
         name = "DeepSeekReasoner",
         modelName = "deepseek-reasoner",
         maxTotalTokens = 64000,

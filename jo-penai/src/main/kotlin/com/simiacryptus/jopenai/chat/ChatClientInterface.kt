@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 
 interface ChatClientInterface {
     /**
@@ -12,7 +12,7 @@ interface ChatClientInterface {
      * @throws IllegalArgumentException if the request is invalid
      * @throws RuntimeException if the API call fails
      */
-    fun chat(chatRequest: ApiModel.ChatRequest, model: TextModel): ApiModel.ChatResponse
+    fun chat(chatRequest: ApiModel.ChatRequest, model: LLMModel): ApiModel.ChatResponse
 
     /**
      * Moderates the given text for policy violations
@@ -32,5 +32,5 @@ interface ChatClientInterface {
      * @param model The model that was used
      * @param tokens Usage information including token counts and cost
      */
-    fun onUsage(model: TextModel, tokens: ApiModel.Usage)
+    fun onUsage(model: LLMModel, tokens: ApiModel.Usage)
 }

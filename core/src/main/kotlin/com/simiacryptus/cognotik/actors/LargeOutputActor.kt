@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
@@ -36,7 +36,7 @@ class LargeOutputActor(
         5. For the initial iteration, provide a high level document structure with a few expansion markers. Each '...sectionName...' will be expanded in subsequent iterations.
     """.trimIndent(),
     name: String? = null,
-    model: TextModel,
+    model: LLMModel,
     temperature: Double = 0.3,
     private val maxIterations: Int = 3,
     private val namedEllipsisPattern: Regex = Regex("""\.\.\.(?<sectionName>[\w\s\-_]+?)\.\.\."""),
@@ -204,7 +204,7 @@ class LargeOutputActor(
         return accumulatedResponse
     }
 
-    override fun withModel(model: ChatModel): LargeOutputActor {
+    override fun withModel(model: ChatModelType): LargeOutputActor {
         return LargeOutputActor(
             prompt = this.prompt,
             name = this.name,

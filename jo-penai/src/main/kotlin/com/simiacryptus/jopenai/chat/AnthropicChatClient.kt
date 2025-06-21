@@ -2,20 +2,28 @@ package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class AnthropicChatClient(
     apiKey: String,
-    workPool: ExecutorService
+    workPool: ExecutorService,
+    apiBase: String,
+    logLevel: Level,
+    logStreams: MutableList<BufferedOutputStream>
 ) : SingleProviderChatClient(
     APIProvider.Anthropic,
     apiKey = apiKey,
-    workPool = workPool
+    apiBase = apiBase,
+    workPool = workPool,
+    logLevel = logLevel,
+    logStreams = logStreams,
 ) {
     override fun authorize(
         request: HttpRequest,
@@ -29,7 +37,7 @@ class AnthropicChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: TextModel
+        model: LLMModel
     ): ApiModel.ChatResponse {
         validateChatRequest(chatRequest, model)
 
@@ -56,7 +64,7 @@ class AnthropicChatClient(
 
                 val response = JsonUtil.objectMapper().readValue(responseJson, ApiModel.ChatResponse::class.java)
 
-                if (response.usage != null && model is ChatModel) {
+                if (response.usage != null && model is ChatModelType) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
                 }
 
@@ -64,7 +72,7 @@ class AnthropicChatClient(
             }
         }
     }
-    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: TextModel) {
+    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
@@ -73,7 +81,7 @@ class AnthropicChatClient(
 
     companion object {
 
-        fun mapToAnthropicChatRequest(chatRequest: ApiModel.ChatRequest, model: TextModel): AnthropicChatRequest {
+        fun mapToAnthropicChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel): AnthropicChatRequest {
             require(chatRequest.messages.isNotEmpty()) { "Messages cannot be empty" }
             require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
 

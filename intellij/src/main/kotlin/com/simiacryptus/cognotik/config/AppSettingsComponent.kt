@@ -18,7 +18,7 @@ import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.ImageModels
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -294,7 +294,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
 
         setExecutables(AppSettingsState.instance.executables ?: emptySet())
-        ChatModel.values()
+        ChatModelType.values()
             .filter {
                 AppSettingsState.instance.apiKeys?.filter { it.value.isNotBlank() }?.keys?.contains(it.value.provider.name)
                     ?: false
@@ -310,23 +310,23 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }
             .filter { modelItem ->
                 isVisible(
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
+                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
                 )
             }
             .sortedBy { modelItem ->
                 val model =
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
                 "${model.provider.name} - ${model.modelName}"
             }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }
             .filter { modelItem ->
                 isVisible(
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
+                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
                 )
             }
             .sortedBy { modelItem ->
                 val model =
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
                 "${model.provider.name} - ${model.modelName}"
             }.toList()
         smartModel.removeAllItems()
@@ -355,7 +355,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             text = value
 
             if (value != null) {
-                val model = ChatModel.values().entries.find { it.value.modelName == value }?.value
+                val model = ChatModelType.values().entries.find { it.value.modelName == value }?.value
                 text = "${model?.provider?.name} - $value"
             }
         }

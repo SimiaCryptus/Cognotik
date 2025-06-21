@@ -17,10 +17,8 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTas
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
-import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.chat.ChatModel
-import org.openqa.selenium.remote.RemoteWebDriver
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import java.io.File
 class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): MutableMap<String, TaskSettingsBase> {
@@ -60,8 +58,8 @@ class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSett
 
 
 open class PlanSettings(
-    var defaultModel: ChatModel,
-    var parsingModel: ChatModel,
+    var defaultModel: ChatModelType,
+    var parsingModel: ChatModelType,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -82,7 +80,7 @@ open class PlanSettings(
     var maxTasksPerIteration: Int = 3,
     var maxIterations: Int = 10,
 
-) {
+    ) {
 
     @get:JsonIgnore
     val absoluteWorkingDir get() = when {
@@ -99,8 +97,8 @@ open class PlanSettings(
     }
 
     fun copy(
-        model: ChatModel = this.defaultModel,
-        parsingModel: ChatModel = this.parsingModel,
+        model: ChatModelType = this.defaultModel,
+        parsingModel: ChatModelType = this.parsingModel,
         command: List<String> = this.shellCmd,
         temperature: Double = this.temperature,
         budget: Double = this.budget,

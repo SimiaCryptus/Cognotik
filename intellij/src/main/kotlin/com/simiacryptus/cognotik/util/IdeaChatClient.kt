@@ -10,11 +10,10 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
-import org.slf4j.event.Level
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -40,30 +39,9 @@ open class IdeaChatClient(
         }
     }
 
-    private class IdeaChildClient(
-        val inner: IdeaChatClient,
-        key: Map<APIProvider, String>,
-        apiBase: Map<APIProvider, String>
-    ) : IdeaChatClient(
-        key = key,
-        apiBase = apiBase,
-        reasoningEffort = inner.reasoningEffort
-    ) {
-        override fun log(level: Level, msg: String) {
-            super.log(level, msg)
-            inner.log(level, msg)
-        }
-    }
-
-    override fun getChildClient(): ChatClient = IdeaChildClient(inner = this, key = apiKeyMap, apiBase = apiBaseMap).apply {
-        session = inner.session
-        user = inner.user
-        textCompressor = inner.textCompressor
-    }
-
     private val isInRequest = AtomicBoolean(false)
 
-    override fun onUsage(model: TextModel, tokens: Usage) {
+    override fun onUsage(model: LLMModel, tokens: Usage) {
         ApplicationServices.usageManager.incrementUsage(currentSession, localUser, model!!, tokens)
         super.onUsage(model, tokens)
     }
@@ -71,7 +49,7 @@ open class IdeaChatClient(
     @Suppress("NAME_SHADOWING")
     override fun chat(
         chatRequest: ChatRequest,
-        model: TextModel
+        model: LLMModel
     ): ChatResponse {
         val storeMetadata = AppSettingsState.instance.storeMetadata
         var chatRequest = chatRequest.copy(

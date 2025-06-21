@@ -6,7 +6,7 @@ import com.google.gson.JsonObject
 import com.simiacryptus.jopenai.exceptions.ModerationException
 import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.allowedCharset
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
@@ -48,7 +48,7 @@ open class OpenAIClient(
     var user: Any? = null
     var session: Any? = null
 
-    open fun onUsage(model: OpenAIModel?, tokens: Usage) {
+    open fun onUsage(model: AIModel?, tokens: Usage) {
     }
 
     @Throws(IOException::class, InterruptedException::class)
@@ -94,7 +94,7 @@ open class OpenAIClient(
     open val provider = APIProvider.OpenAI
 
     open fun complete(
-        request: CompletionRequest, model: TextModel
+        request: CompletionRequest, model: LLMModel
     ): CompletionResponse = withReliability {
         withPerformanceLogging {
             if (request.suffix == null) {

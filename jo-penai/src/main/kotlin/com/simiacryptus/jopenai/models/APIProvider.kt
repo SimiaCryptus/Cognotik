@@ -2,33 +2,196 @@ package com.simiacryptus.jopenai.models
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.jopenai.chat.AnthropicChatClient
+import com.simiacryptus.jopenai.chat.AwsChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.DeepSeekChatClient
+import com.simiacryptus.jopenai.chat.GoogleChatClient
+import com.simiacryptus.jopenai.chat.GroqChatClient
+import com.simiacryptus.jopenai.chat.MistralChatClient
+import com.simiacryptus.jopenai.chat.ModelsLabChatClient
+import com.simiacryptus.jopenai.chat.OpenAIChatClient
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.util.concurrent.ExecutorService
 
 private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
 
 @JsonDeserialize(using = APIProviderDeserializer::class)
 @JsonSerialize(using = APIProviderSerializer::class)
-class APIProvider private constructor(name: String, val base: String? = null) : DynamicEnum<APIProvider>(name) {
+abstract class APIProvider private constructor(name: String, val base: String? = null) : DynamicEnum<APIProvider>(name) {
+    abstract fun getChatClient(
+        key: String,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level = Level.INFO,
+        logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+    ): ChatClientInterface
     companion object {
-        val Google = APIProvider(
-            "Google",
-
-            "https://generativelanguage.googleapis.com"
-        )
-        val OpenAI = APIProvider("OpenAI", "https://api.openai.com/v1")
-        val Anthropic = APIProvider("Anthropic", "https://api.anthropic.com/v1")
-        val AWS = APIProvider("AWS", "https://api.openai.aws")
-        val Groq = APIProvider("Groq", "https://api.groq.com/openai/v1")
-        val Perplexity = APIProvider("Perplexity", "https://api.perplexity.ai")
-        val ModelsLab = APIProvider("ModelsLab", "https://modelslab.com/api/v6")
-        val Mistral = APIProvider("Mistral", "https://api.mistral.ai/v1")
-        val DeepSeek = APIProvider("DeepSeek", "https://api.deepseek.com")
-        val GoogleSearch = APIProvider("GoogleSearch", "c581d1409962d72e1")
-        val Github = APIProvider("Github", "https://api.github.com")
+        val Google = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = GoogleChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val OpenAI = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = GoogleChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val Anthropic = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = AnthropicChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val AWS = object : APIProvider("AWS", "https://api.openai.aws") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = AwsChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val Groq = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = GroqChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val Perplexity = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = OpenAIChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val ModelsLab = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = ModelsLabChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val Mistral = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = MistralChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val DeepSeek = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = DeepSeekChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val GoogleSearch = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = GoogleChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
+        }
+        val Github = object : APIProvider("Github", "https://api.github.com") {
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = throw UnsupportedOperationException("Github API does not support chat functionality")
+        }
 
         init {
             log.info("Registering API providers")

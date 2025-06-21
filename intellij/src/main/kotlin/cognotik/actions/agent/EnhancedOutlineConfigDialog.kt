@@ -9,7 +9,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.chatModel
 import javax.swing.*
 
@@ -28,7 +28,7 @@ class EnhancedOutlineConfigDialog(
         settings.phases.forEach { addElement(it) }
     }
     private var selectedIndex = -1
-    private val availableModels = ChatModel.values().toList()
+    private val availableModels = ChatModelType.values().toList()
 
     private fun addPhase(listComponent: JBList<PhaseSettings>) {
         val dialog = ModelSelectionDialog(project, availableModels)
@@ -133,7 +133,7 @@ class EnhancedOutlineConfigDialog(
                 comboBox(availableModels).apply {
                     component.selectedItem = parsingModel
                     component.addActionListener {
-                        parsingModel = component.selectedItem as ChatModel
+                        parsingModel = component.selectedItem as ChatModelType
                     }
                 }
                     .align(Align.FILL)
@@ -212,7 +212,7 @@ class EnhancedOutlineConfigDialog(
         val showProjector: Boolean = true,
         val writeFinalEssay: Boolean = true,
         val budget: Double = 2.0,
-        val parsingModel: ChatModel = AppSettingsState.instance.smartModel.chatModel(),
+        val parsingModel: ChatModelType = AppSettingsState.instance.smartModel.chatModel(),
         val phases: List<PhaseSettings> = listOf(
             PhaseSettings(
                 model = AppSettingsState.instance.smartModel.chatModel(),
@@ -233,7 +233,7 @@ class EnhancedOutlineConfigDialog(
     )
 
     data class PhaseSettings(
-        val model: ChatModel,
+        val model: ChatModelType,
         val extract: String,
         val question: String
     )

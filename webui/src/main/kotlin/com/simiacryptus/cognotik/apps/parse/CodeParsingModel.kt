@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 
 open class CodeParsingModel(
-    private val parsingModel: ChatModel,
+    private val parsingModel: ChatModelType,
     private val temperature: Double
 ) : ParsingModel<CodeParsingModel.CodeData> {
 

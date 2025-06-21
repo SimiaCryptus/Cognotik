@@ -1,9 +1,9 @@
 package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.*
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.ModelsLabDataModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.runWithPermit
 import org.apache.hc.core5.http.HttpRequest
@@ -14,13 +14,14 @@ import java.util.concurrent.Semaphore
 
 class ModelsLabChatClient(
     apiKey: String,
+    apiBase: String = APIProvider.ModelsLab.base!!,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
 ) : SingleProviderChatClient(
     APIProvider.ModelsLab,
     apiKey = apiKey,
-    apiBase = APIProvider.ModelsLab.base!!,
+    apiBase = apiBase,
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams
@@ -37,7 +38,7 @@ class ModelsLabChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: TextModel
+        model: LLMModel
     ): ApiModel.ChatResponse {
         return modelsLabThrottle.runWithPermit {
             val modelsLabRequest = toModelsLab(chatRequest)
@@ -49,7 +50,7 @@ class ModelsLabChatClient(
 
             val response: ApiModel.ChatResponse =
                 JsonUtil.objectMapper().readValue(responseJson, ApiModel.ChatResponse::class.java)
-            if (response.usage != null && model is ChatModel) {
+            if (response.usage != null && model is ChatModelType) {
                 onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
             }
             response

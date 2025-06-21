@@ -4,14 +4,14 @@ import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.ChatRequest
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson
 
 open class ChatProxy<T : Any>(
     clazz: Class<out T>,
     val api: ChatClient,
-    var model: ChatModel,
+    var model: ChatModelType,
     temperature: Double = 0.5,
     private val moderated: Boolean = false,
     val deserializerRetries: Int = 2,

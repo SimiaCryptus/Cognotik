@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettin
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.OpenAIModel
+import com.simiacryptus.jopenai.models.AIModel
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -285,7 +285,7 @@ class ApiKeyServlet : HttpServlet() {
       <!-- Usage Summary -->
       <h2>Usage Summary</h2>
       ${
-                usageSummary.entries.joinToString { (model: OpenAIModel, usage: ApiModel.Usage) ->
+                usageSummary.entries.joinToString { (model: AIModel, usage: ApiModel.Usage) ->
                     """
           <div>
             <h3>${model.modelName}</h3>

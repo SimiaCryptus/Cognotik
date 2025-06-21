@@ -27,7 +27,7 @@ import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
@@ -114,9 +114,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
             try {
                 val settings = getSettings(session, user) ?: Settings(
                     model = AppSettingsState.instance.smartModel
-                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured"),
+                        .let { ChatModelType.values().get(it) } ?:  throw IllegalStateException("No model configured"),
                     parsingModel = AppSettingsState.instance.fastModel
-                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured")
+                        .let { ChatModelType.values().get(it) } ?:  throw IllegalStateException("No model configured")
                 )
                 if (api is ChatClient) {
                     api.budget = settings.budget ?: DEFAULT_BUDGET
@@ -140,8 +140,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel,
-            val parsingModel: ChatModel,
+            val model: ChatModelType,
+            val parsingModel: ChatModelType,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -149,9 +149,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
         @Suppress("UNCHECKED_CAST")
         override fun <T : Any> initSettings(session: Session): T? = Settings(
             model = AppSettingsState.instance.smartModel
-                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+                .let { ChatModelType.values().get(it) } ?: throw IllegalStateException("No model configured"),
             parsingModel = AppSettingsState.instance.fastModel
-                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+                .let { ChatModelType.values().get(it) } ?: throw IllegalStateException("No model configured"),
         ) as T
     }
 
@@ -161,8 +161,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModel,
-        val parsingModel: ChatModel,
+        val model: ChatModelType,
+        val parsingModel: ChatModelType,
         val root: File,
     ) {
         val actors = mapOf(

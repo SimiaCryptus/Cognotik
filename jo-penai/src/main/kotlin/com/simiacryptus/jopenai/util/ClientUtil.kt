@@ -3,7 +3,7 @@ package com.simiacryptus.jopenai.util
 import com.google.gson.Gson
 import com.simiacryptus.jopenai.exceptions.*
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.TextModel
+import com.simiacryptus.jopenai.models.chat.LLMModel
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.regex.Pattern
@@ -100,7 +100,7 @@ object ClientUtil {
         }
     )
 
-    fun checkError(result: String, model: TextModel? = null) {
+    fun checkError(result: String, model: LLMModel? = null) {
         try {
 
             val jsonElement = Gson().fromJson(result, com.google.gson.JsonElement::class.java) ?: return

@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.chat.ChatModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
@@ -28,11 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger
 data class PhaseConfig(
     val extract: String,
     val expansionQuestion: String,
-    val model: ChatModel
+    val model: ChatModelType
 )
 
 data class EnhancedSettings(
-    val parsingModel: ChatModel,
+    val parsingModel: ChatModelType,
     val temperature: Double = 0.3,
     val minTokensForExpansion: Int = 16,
     val showProjector: Boolean = true,
@@ -108,7 +108,7 @@ class EnhancedOutlineAgent(
     val user: User?,
     val temperature: Double,
     val phaseConfigs: List<PhaseConfig>,
-    val parsingModel: ChatModel,
+    val parsingModel: ChatModelType,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -249,7 +249,7 @@ class EnhancedOutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModel>,
+        models: List<ChatModelType>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -295,7 +295,7 @@ class EnhancedOutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModel,
+        model: ChatModelType,
         api: API,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
@@ -325,8 +325,8 @@ object EnhancedOutlineActors {
 
     fun actorMap(
         temperature: Double,
-        firstLevelModel: ChatModel,
-        parsingModel: ChatModel,
+        firstLevelModel: ChatModelType,
+        parsingModel: ChatModelType,
         phaseConfigs: List<PhaseConfig>
     ) = mapOf(
         ActorType.INITIAL to enhancedInitialAuthor(
@@ -341,8 +341,8 @@ object EnhancedOutlineActors {
 
     private fun enhancedInitialAuthor(
         temperature: Double,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: ChatModelType,
+        parsingModel: ChatModelType,
         phaseConfig: PhaseConfig?
     ) = ParsedActor(
         resultClass = NodeList::class.java,
@@ -360,7 +360,7 @@ object EnhancedOutlineActors {
 
     private fun enhancedExpansionAuthor(
         temperature: Double,
-        parsingModel: ChatModel,
+        parsingModel: ChatModelType,
         phaseConfig: PhaseConfig?
     ) = ParsedActor(
         resultClass = NodeList::class.java,
@@ -374,7 +374,7 @@ object EnhancedOutlineActors {
 
     private fun enhancedFinalWriter(
         temperature: Double,
-        model: ChatModel,
+        model: ChatModelType,
         maxIterations: Int
     ) = LargeOutputActor(
         model = model,
