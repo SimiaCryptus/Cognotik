@@ -2,15 +2,17 @@ package com.simiacryptus.jopenai.models
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.jopenai.chat.AnthropicChatClient
-import com.simiacryptus.jopenai.chat.AwsChatClient
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.DeepSeekChatClient
-import com.simiacryptus.jopenai.chat.GoogleChatClient
-import com.simiacryptus.jopenai.chat.GroqChatClient
-import com.simiacryptus.jopenai.chat.MistralChatClient
-import com.simiacryptus.jopenai.chat.ModelsLabChatClient
-import com.simiacryptus.jopenai.chat.OpenAIChatClient
+import com.simiacryptus.jopenai.chat.*
+import com.simiacryptus.jopenai.models.chat.AWSModels
+import com.simiacryptus.jopenai.models.chat.AnthropicModels
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.DeepSeekModels
+import com.simiacryptus.jopenai.models.chat.GoogleModels
+import com.simiacryptus.jopenai.models.chat.GroqModels
+import com.simiacryptus.jopenai.models.chat.MistralModels
+import com.simiacryptus.jopenai.models.chat.ModelsLabModels
+import com.simiacryptus.jopenai.models.chat.OpenAIModels
+import com.simiacryptus.jopenai.models.chat.PerplexityModels
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer
@@ -25,6 +27,7 @@ private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
 @JsonDeserialize(using = APIProviderDeserializer::class)
 @JsonSerialize(using = APIProviderSerializer::class)
 abstract class APIProvider private constructor(name: String, val base: String? = null) : DynamicEnum<APIProvider>(name) {
+
     abstract fun getChatClient(
         key: String,
         base: String,
@@ -32,8 +35,14 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf()
     ): ChatClientInterface
+
+    abstract fun getChatModels(): List<ChatModelType>
+
     companion object {
         val Google = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
+
+            override fun getChatModels(): List<ChatModelType> = GoogleModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -49,6 +58,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val OpenAI = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
+
+            override fun getChatModels(): List<ChatModelType> = OpenAIModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -64,6 +76,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val Anthropic = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
+
+            override fun getChatModels(): List<ChatModelType> = AnthropicModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -79,6 +94,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val AWS = object : APIProvider("AWS", "https://api.openai.aws") {
+
+            override fun getChatModels(): List<ChatModelType> = AWSModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -94,6 +112,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val Groq = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
+
+            override fun getChatModels(): List<ChatModelType> = GroqModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -109,6 +130,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val Perplexity = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
+
+            override fun getChatModels(): List<ChatModelType> = PerplexityModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -124,6 +148,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val ModelsLab = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
+
+            override fun getChatModels(): List<ChatModelType> = ModelsLabModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -138,7 +165,10 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val Mistral = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
+        val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
+
+            override fun getChatModels(): List<ChatModelType> = MistralModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -154,6 +184,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val DeepSeek = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
+
+            override fun getChatModels(): List<ChatModelType> = DeepSeekModels.values.values.toList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -169,6 +202,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val GoogleSearch = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
+
+            override fun getChatModels(): List<ChatModelType> = emptyList()
+
             override fun getChatClient(
                 key: String,
                 base: String,
@@ -184,6 +220,9 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             )
         }
         val Github = object : APIProvider("Github", "https://api.github.com") {
+
+            override fun getChatModels(): List<ChatModelType> = emptyList()
+
             override fun getChatClient(
                 key: String,
                 base: String,

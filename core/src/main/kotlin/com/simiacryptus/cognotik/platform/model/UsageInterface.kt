@@ -9,8 +9,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 interface UsageInterface {
 
-    fun getUserUsageSummary(user: User): Map<AIModel, ApiModel.Usage>
-    fun getSessionUsageSummary(session: Session): Map<AIModel, ApiModel.Usage>
+    fun getUserUsageSummary(user: User): Map<String, ApiModel.Usage>
+    fun getSessionUsageSummary(session: Session): Map<String, ApiModel.Usage>
     fun incrementUsage(session: Session, user: User, model: LLMModel, tokens: ApiModel.Usage)
     fun clear()
 

@@ -56,7 +56,7 @@ class HSQLUsageManager() : UsageInterface {
         }
     }
 
-    override fun getUserUsageSummary(user: User): Map<AIModel, ApiModel.Usage> {
+    override fun getUserUsageSummary(user: User): Map<String, ApiModel.Usage> {
         log.debug("Executing SQL query to get user usage summary for user: ${user.email}")
         val statement = connection.prepareStatement(
             """
@@ -71,7 +71,7 @@ class HSQLUsageManager() : UsageInterface {
         return generateUsageSummary(resultSet)
     }
 
-    override fun getSessionUsageSummary(session: Session): Map<AIModel, ApiModel.Usage> {
+    override fun getSessionUsageSummary(session: Session): Map<String, ApiModel.Usage> {
         log.info("Getting session usage summary for session: ${session.sessionId}")
         val statement = connection.prepareStatement(
             """
@@ -111,29 +111,19 @@ class HSQLUsageManager() : UsageInterface {
         statement.executeUpdate()
     }
 
-    private fun generateUsageSummary(resultSet: ResultSet): Map<AIModel, ApiModel.Usage> {
+    private fun generateUsageSummary(resultSet: ResultSet): Map<String, ApiModel.Usage> {
         log.debug("Generating usage summary from result set")
-        val summary = mutableMapOf<AIModel, ApiModel.Usage>()
+        val summary = mutableMapOf<String, ApiModel.Usage>()
         while (resultSet.next()) {
             val string = resultSet.getString(1)
-            val model = openAIModel(string) ?: continue
             val usage = ApiModel.Usage(
                 prompt_tokens = resultSet.getLong(2),
                 completion_tokens = resultSet.getLong(3),
                 cost = resultSet.getDouble(4)
             )
-            summary[model] = usage
+            summary[string] = usage
         }
         return summary
-    }
-
-    private fun openAIModel(string: String): AIModel? {
-        log.debug("Retrieving OpenAI model for string: $string")
-        val model = ChatModelType.values().filter {
-            it.key == string || it.value.modelName == string || it.value.name == string
-        }.toList().firstOrNull()?.second ?: return null
-        log.debug("OpenAI model retrieved: $model")
-        return model
     }
 
     companion object {

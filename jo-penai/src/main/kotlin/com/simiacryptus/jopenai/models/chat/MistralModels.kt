@@ -10,9 +10,7 @@ object MistralModels {
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0005,
-
         outputTokenPricePerK = 0.0015
-
     )
 
     val Mixtral8x7B = ChatModelType(
@@ -21,9 +19,7 @@ object MistralModels {
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0005,
-
         outputTokenPricePerK = 0.0015
-
     )
     val Mixtral8x22B = ChatModelType(
         name = "Mixtral8x22B",
@@ -41,9 +37,7 @@ object MistralModels {
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0005,
-
         outputTokenPricePerK = 0.0015
-
     )
     val MistralMedium = ChatModelType(
         name = "MistralMedium",
@@ -51,9 +45,7 @@ object MistralModels {
         maxTotalTokens = 32768,
         provider = APIProvider.Companion.Mistral,
         inputTokenPricePerK = 0.0005,
-
         outputTokenPricePerK = 0.0015
-
     )
     val MistralLarge = ChatModelType(
         name = "MistralLarge",

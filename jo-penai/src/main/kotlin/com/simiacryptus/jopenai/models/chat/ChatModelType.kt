@@ -56,34 +56,21 @@ open class ChatModelType(
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     ) = object : ChatModel {
+        val modelType = this@ChatModelType
         override fun chat(
             chatRequest: ApiModel.ChatRequest,
             workPool: ExecutorService
-        ): ApiModel.ChatResponse {
-            return provider.getChatClient(
-                key,
-                base,
-                workPool,
-                logLevel,
-                logStreams
-            ).chat(chatRequest, this@ChatModelType)
-        }
+        ) = provider.getChatClient(
+            key = key,
+            base = base,
+            workPool = workPool,
+            logLevel = logLevel,
+            logStreams = logStreams
+        ).chat(
+            chatRequest = chatRequest,
+            model = this@ChatModelType
+        )
     }
-
-    open fun chat(
-        chatRequest: ApiModel.ChatRequest,
-        key: String,
-        workPool: ExecutorService,
-        base: String = provider.base!!,
-        logLevel: Level = Level.INFO,
-        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    ) = provider.getChatClient(
-        key,
-        base,
-        workPool,
-        logLevel,
-        logStreams
-    ).chat(chatRequest, this)
 
     companion object {
 
