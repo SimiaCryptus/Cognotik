@@ -7,7 +7,9 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientBase
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient.ReasoningEffort
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.*
 import com.simiacryptus.jopenai.models.chat.LLMModel
@@ -25,7 +27,7 @@ open class IdeaChatClient(
     apiBase: Map<APIProvider, String> = AppSettingsState.instance.apiBase?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
         ?.associate { it.key to it.value } ?: mapOf(),
     reasoningEffort: ReasoningEffort = ReasoningEffort.valueOf(AppSettingsState.instance.reasoningEffort)
-) : ChatClient(
+) : ProvidersChatClient(
     apiKeyMap = key,
     apiBaseMap = apiBase,
     reasoningEffort = reasoningEffort,

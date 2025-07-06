@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import org.slf4j.LoggerFactory
@@ -103,7 +103,7 @@ open class UnifiedPlanApp(
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)
                 }
-                if (api is ChatClient) api.budget = settings.budget
+                if (api is ProvidersChatClient) api.budget = settings.budget
 
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
@@ -166,7 +166,7 @@ open class UnifiedPlanApp(
 
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-                if (api is ChatClient) api.budget = settings.budget
+                if (api is ProvidersChatClient) api.budget = settings.budget
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
                     api = api,

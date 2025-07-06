@@ -12,9 +12,10 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -200,7 +201,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
             }
         } ?: false
 
-        fun converter(chatClient: ChatClient, chatModel: ChatModelType, temp: Double) = ChatProxy(
+        fun converter(chatClient: ChatClientInterface, chatModel: ChatModelType, temp: Double) = ChatProxy(
             clazz = VirtualAPI::class.java,
             api = chatClient,
             model = chatModel,
@@ -243,12 +244,12 @@ private fun String.makeAbsolute(): String {
     }
 }
 
-class SmartPasteAction : PasteActionBase({ it.smartModel.chatModel() })
+class SmartPasteAction : PasteActionBase({ it.smartModel.chatModelType() })
 
 /**
  * Fast paste action using faster but simpler model
  */
-class FastPasteAction : PasteActionBase({ it.fastModel.chatModel() }) {
+class FastPasteAction : PasteActionBase({ it.fastModel.chatModelType() }) {
     companion object {
     }
 

@@ -9,7 +9,8 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -25,7 +26,7 @@ open class CodingActorTestApp(
     override fun userMessage(
         session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API
     ) {
-        (api as ChatClient).budget = 2.00
+        (api as ChatClientInterface).budget = 2.00
         val message = ui.newTask()
         try {
             message.echo(userMessage.renderMarkdown)

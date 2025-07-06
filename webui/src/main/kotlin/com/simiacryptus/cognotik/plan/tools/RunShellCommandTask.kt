@@ -5,7 +5,8 @@ import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
@@ -68,12 +69,12 @@ class RunShellCommandTask(
     """.trimIndent()
 
   override fun run(
-      agent: PlanCoordinator,
-      messages: List<String>,
-      task: SessionTask,
-      api: ChatClient,
-      resultFn: (String) -> Unit,
-      planSettings: PlanSettings
+    agent: PlanCoordinator,
+    messages: List<String>,
+    task: SessionTask,
+    api: ChatClientInterface,
+    resultFn: (String) -> Unit,
+    planSettings: PlanSettings
   ) {
     val autoRunCounter = AtomicInteger(0)
     val semaphore = Semaphore(0)

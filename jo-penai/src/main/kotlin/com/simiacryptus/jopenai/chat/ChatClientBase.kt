@@ -2,6 +2,7 @@ package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Usage
 import com.simiacryptus.jopenai.models.chat.LLMModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
@@ -39,7 +40,7 @@ abstract class ChatClientBase(
 
     var session: Any? = null
     var user: Any? = null
-    var budget: Number? = null
+    override var budget: Number? = null
 
     @Throws(IOException::class, InterruptedException::class)
     fun post(
@@ -131,7 +132,7 @@ abstract class ChatClientBase(
         }
     }
 
-    inner class ChildClient() : ChatClient(
+    inner class ChildClient() : ChatClientBase(
         logLevel = Level.INFO,
         workPool = workPool,
     ) {
@@ -145,13 +146,27 @@ abstract class ChatClientBase(
             this@ChatClientBase.log(level, msg)
         }
 
+        override fun authorize(
+            request: HttpRequest,
+            apiProvider: APIProvider
+        ) {
+            this@ChatClientBase.authorize(request, apiProvider)
+        }
+
+        override fun chat(
+            chatRequest: ApiModel.ChatRequest,
+            model: LLMModel
+        ): ApiModel.ChatResponse {
+            return this@ChatClientBase.chat(chatRequest, model)
+        }
+
         override fun onUsage(model: LLMModel, tokens: Usage) {
             this@ChatClientBase.onUsage(model, tokens)
             super.onUsage(model, tokens)
         }
     }
 
-    override fun getChildClient(): ChatClient = ChildClient()
+    override fun getChildClient(): ChildClient = ChildClient()
 
     companion object {
         val log = LoggerFactory.getLogger(ChatClientBase::class.java)

@@ -22,7 +22,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
@@ -118,7 +118,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     parsingModel = AppSettingsState.instance.fastModel
                         .let { ChatModelType.values().get(it) } ?:  throw IllegalStateException("No model configured")
                 )
-                if (api is ChatClient) {
+                if (api is ProvidersChatClient) {
                     api.budget = settings.budget ?: DEFAULT_BUDGET
                 }
                 WebDevAgent(

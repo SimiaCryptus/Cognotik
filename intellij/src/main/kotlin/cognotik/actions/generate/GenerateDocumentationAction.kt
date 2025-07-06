@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
@@ -283,7 +283,7 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
                 ),
             ),
         ),
-        AppSettingsState.instance.smartModel.chatModel()
+        AppSettingsState.instance.smartModel.chatModelType()
     ).choices.first().message?.content?.trim() ?: fileContent
 
     fun findGitRoot(path: Path?): Path? {

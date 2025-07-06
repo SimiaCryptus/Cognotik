@@ -11,7 +11,7 @@ interface UsageInterface {
 
     fun getUserUsageSummary(user: User): Map<String, ApiModel.Usage>
     fun getSessionUsageSummary(session: Session): Map<String, ApiModel.Usage>
-    fun incrementUsage(session: Session, user: User, model: LLMModel, tokens: ApiModel.Usage)
+    fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ApiModel.Usage)
     fun clear()
 
     data class UsageKey(

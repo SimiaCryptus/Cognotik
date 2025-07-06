@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Semaphore
 
 
-open class ChatClient(
+open class ProvidersChatClient(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
@@ -56,8 +56,20 @@ open class ChatClient(
     workPool = workPool,
 ), ChatClientInterface {
 
+    init {
+        require(apiKeyMap.size == apiBaseMap.size) {
+            "API Key and Base URL maps must have the same size: ${apiKeyMap.size} != ${apiBaseMap.size}"
+        }
+        require(apiKeyMap.keys.toSet() == (apiBaseMap.keys.toSet())) {
+            "API Key map must contain all API providers in API Base URL map: ${apiKeyMap.keys} != ${apiBaseMap.keys}"
+        }
+        require(apiBaseMap.isNotEmpty()) {
+            "API base URLs must not be empty"
+        }
+    }
+
     companion object {
-        val log = LoggerFactory.getLogger(ChatClient::class.java)
+        val log = LoggerFactory.getLogger(ProvidersChatClient::class.java)
 
         const val HEADER_CONTENT_TYPE = "Content-Type"
         const val HEADER_ACCEPT = "Accept"
@@ -80,18 +92,6 @@ open class ChatClient(
     private fun validateChatRequest(chatRequest: ChatRequest) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain at least one message" }
         require(!chatRequest.model.isNullOrBlank()) { "Model must be specified" }
-    }
-
-    private fun validateApiConfiguration(apiProvider: APIProvider): String {
-        val apiKey = apiKeyMap[apiProvider] 
-            ?: throw IllegalStateException("API key not found for provider: $apiProvider")
-        require(apiKey.isNotBlank()) { "API key cannot be blank for provider: $apiProvider" }
-        
-        val apiBase = apiBaseMap[apiProvider]
-            ?: throw IllegalStateException("API base not found for provider: $apiProvider")
-        require(apiBase.isNotBlank()) { "API base cannot be blank for provider: $apiProvider" }
-        
-        return apiKey
     }
 
     override fun moderate(text: String): Unit = withReliability {
@@ -155,7 +155,12 @@ open class ChatClient(
 
     @Throws(IOException::class)
     override fun authorize(request: HttpRequest, apiProvider: APIProvider) {
-        val apiKey = validateApiConfiguration(apiProvider)
+        val apiKey = apiKeyMap[apiProvider]
+            ?: throw IllegalStateException("API key not found for provider: $apiProvider")
+        require(apiKey.isNotBlank()) { "API key cannot be blank for provider: $apiProvider" }
+        val apiBase = apiBaseMap[apiProvider]
+            ?: throw IllegalStateException("API base not found for provider: $apiProvider")
+        require(apiBase.isNotBlank()) { "API base cannot be blank for provider: $apiProvider" }
 
         log.debug("Authorizing request for session: {}, user: {}, apiProvider: {}", session, user, apiProvider)
         request.addHeader(HEADER_CONTENT_TYPE, APPLICATION_JSON)
@@ -183,10 +188,10 @@ open class ChatClient(
         validateChatRequest(chatRequest)
 
         val apiProvider = model.provider
-        validateApiConfiguration(apiProvider)
-
-        val apiKey = apiKeyMap[apiProvider]!!
-        val apiBase = apiBaseMap[apiProvider]!!
+        val apiKey = apiKeyMap[apiProvider]
+            ?: throw IllegalStateException("API key not found for provider: $apiProvider")
+        val apiBase = apiBaseMap[apiProvider]
+            ?: throw IllegalStateException("API base not found for provider: $apiProvider")
 
         var chatRequest = chatRequest
         if (textCompressor != null) {
@@ -223,7 +228,7 @@ open class ChatClient(
         }
 
         if (model.hasReasoningEffort && chatRequest.reasoning_effort == null) {
-            chatRequest = chatRequest.copy(reasoning_effort = this@ChatClient.reasoningEffort.name.lowercase())
+            chatRequest = chatRequest.copy(reasoning_effort = this@ProvidersChatClient.reasoningEffort.name.lowercase())
         }
 
         val requestID = UUID.randomUUID().toString()
@@ -316,7 +321,7 @@ open class ChatClient(
         val anthropicChatRequest = mapToAnthropicChatRequest(chatRequest, model)
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
             .writeValueAsString(anthropicChatRequest)
-        val request = HttpPost("$apiBase/v1/messages")
+        val request = HttpPost("$apiBase/messages")
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
         request.addHeader("x-api-key", apiKey)

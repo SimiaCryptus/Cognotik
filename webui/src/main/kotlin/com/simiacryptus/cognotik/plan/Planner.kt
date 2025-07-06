@@ -7,7 +7,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
@@ -28,7 +29,7 @@ open class Planner {
         contextFn: () -> List<String> = { emptyList() },
         describer: TypeDescriber
     ): TaskBreakdownWithPrompt {
-        val api = (api as ChatClient).getChildClient(task)
+        val api = (api as ChatClientInterface).getChildClient(task)
         val toInput = inputFn(codeFiles, files, root)
         task.echo(userMessage.renderMarkdown())
         return if (!planSettings.autoFix)

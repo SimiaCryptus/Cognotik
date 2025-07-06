@@ -3,7 +3,8 @@ package com.simiacryptus.cognotik.actors
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel.*
@@ -138,7 +139,7 @@ ${details ?: ""}
         var result = CodeResultImpl(
             *messages,
             input = input,
-            api = (api as ChatClient)
+            api = (api as ChatClientInterface)
         )
         if (!input.autoEvaluate) return result
         for (i in 0..input.fixIterations) try {
@@ -240,7 +241,7 @@ ${details ?: ""}
     inner class CodeResultImpl(
         vararg val messages: ChatMessage,
         private val input: CodeRequest,
-        private val api: ChatClient,
+        private val api: ChatClientInterface,
         private val givenCode: String? = null,
         private val givenResponse: String? = null,
     ) : CodeResult {
@@ -397,7 +398,7 @@ ${TT}
     }
 
     private fun fixCommand(
-        api: ChatClient,
+        api: ChatClientInterface,
         previousCode: String,
         error: Throwable,
         vararg promptMessages: ChatMessage,
@@ -433,7 +434,7 @@ Correct the code and try again.
         model = model
     )
 
-    private fun chat(api: ChatClient, request: ChatRequest, model: LLMModel) =
+    private fun chat(api: ChatClientInterface, request: ChatRequest, model: LLMModel) =
         api.chat(request.copy(model = model.modelName, temperature = temperature), model)
             .choices.first().message?.content.orEmpty().trim()
 

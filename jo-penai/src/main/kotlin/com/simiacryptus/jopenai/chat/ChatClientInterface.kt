@@ -1,9 +1,14 @@
 package com.simiacryptus.jopenai.chat
 
+import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.chat.LLMModel
+import java.io.BufferedOutputStream
 
-interface ChatClientInterface {
+interface ChatClientInterface : API {
+    var budget: Number?
+    val logStreams: MutableList<BufferedOutputStream>
+
     /**
      * Sends a chat request to the configured model and returns the response
      * @param chatRequest The chat request containing messages and parameters

@@ -32,10 +32,11 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -217,7 +218,7 @@ class MassPatchAction : BaseAction() {
 
 class MassPatchServer(
     val config: Settings,
-    val api: ChatClient,
+    val api: ChatClientInterface,
     val autoApply: Boolean
 ) : ApplicationServer(
     applicationName = "Multi-file Patch Chat",
@@ -238,7 +239,7 @@ class MassPatchServer(
                     append(patchFormatPrompt)
                     append("\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.")
                 },
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -293,7 +294,7 @@ class MassPatchServer(
                                     ui = ui,
                                     api = api as API,
                                     shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastModel.chatModel(),
+                                    model = AppSettingsState.instance.fastModel.chatModelType(),
                                 )
                                 """<div>${renderMarkdown(markdown)}</div>"""
                             },

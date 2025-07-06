@@ -29,8 +29,9 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon
@@ -181,10 +182,10 @@ class FindResultsChatAction(
             api: API
         ) {
             val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
-            if (api is ChatClient) api.budget = settings.budget ?: 2.00
+            if (api is ProvidersChatClient) api.budget = settings.budget ?: 2.00
 
             val task = ui.newTask()
-            val api = (api as ChatClient).getChildClient(task)
+            val api = (api as ChatClientInterface).getChildClient(task)
 
             task.echo(renderMarkdown(userMessage))
 
@@ -199,7 +200,7 @@ class FindResultsChatAction(
                              You are a helpful AI that helps people understand code.
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
-                            model = AppSettingsState.instance.smartModel.chatModel()
+                            model = AppSettingsState.instance.smartModel.chatModelType()
                         ).answer(listOf(userMessage), api = api)
                     ) + "</div>"
                 )

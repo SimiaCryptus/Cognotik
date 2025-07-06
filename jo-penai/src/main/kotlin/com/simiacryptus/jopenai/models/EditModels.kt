@@ -9,7 +9,12 @@ open class EditModels(
     modelName: String,
     maxTokens: Int,
     private val tokenPricePerK: Double,
-) : LLMModel(modelName, maxTokens) {
+    provider: APIProvider = APIProvider.OpenAI,
+) : LLMModel(
+    modelName = modelName,
+    provider = provider,
+    maxTotalTokens = maxTokens
+) {
     private val log: Logger = LoggerFactory.getLogger(EditModels::class.java)
 
     init {

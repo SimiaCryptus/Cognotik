@@ -15,16 +15,17 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
 class DocumentedMassPatchServer(
-    val config: DocumentedMassPatchAction.Settings, val api: ChatClient, val autoApply: Boolean
+    val config: DocumentedMassPatchAction.Settings, val api: ChatClientInterface, val autoApply: Boolean
     /**
      * Server for handling documented mass code patches
      * @param config Settings containing project and file configurations
@@ -54,7 +55,7 @@ class DocumentedMassPatchServer(
          The diff format should use + for line additions, - for line deletions.
          The diff should include 2 lines of context before and after every change.
          """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -121,7 +122,7 @@ class DocumentedMassPatchServer(
                                     ui = ui,
                                     api = api as API,
                                     shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastModel.chatModel(),
+                                    model = AppSettingsState.instance.fastModel.chatModelType(),
                                     defaultFile = path.toString()
                                 ).renderMarkdown
                             )
@@ -151,7 +152,7 @@ class DocumentedMassPatchServer(
                                             ui = ui,
                                             api = api as API,
                                             shouldAutoApply = { autoApply },
-                                            model = AppSettingsState.instance.fastModel.chatModel(),
+                                            model = AppSettingsState.instance.fastModel.chatModelType(),
                                             defaultFile = path.toString()
                                         )
                                     }

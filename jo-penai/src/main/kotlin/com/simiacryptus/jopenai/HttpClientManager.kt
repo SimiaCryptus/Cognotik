@@ -27,7 +27,7 @@ open class HttpClientManager(
     private val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
-) : API() {
+) : API {
     val createdBy = Thread.currentThread().stackTrace
 
     companion object {
@@ -46,20 +46,19 @@ open class HttpClientManager(
         fun createHttpClient(userAgent: String = DEFAULT_USER_AGENT): CloseableHttpClient = HttpClientBuilder.create()
             .setRetryStrategy(DefaultHttpRequestRetryStrategy(
                 /* maxRetries = */ 0,
-                /* defaultRetryInterval = */ Timeout.ofSeconds(1)
+                /* defaultRetryInterval = */ Timeout.ofSeconds(15)
             ))
             .setConnectionManager(with(PoolingHttpClientConnectionManager()) {
                 defaultSocketConfig = with(SocketConfig.custom()) {
-                    setSoTimeout(Timeout.ofSeconds(600))
+                    setSoTimeout(Timeout.ofSeconds(3000))
                     setSoReuseAddress(false)
-                    setSoLinger(Timeout.ofSeconds(0))
-                    setDefaultConnectionConfig(ConnectionConfig.custom().apply {
-                        setConnectTimeout(Timeout.ofSeconds(60))
-                        setSocketTimeout(Timeout.ofSeconds(600))
-                        setSoKeepAlive(true)
-                        //setTimeToLive(Timeout.ofSeconds(600))
-                    }.build())
                     setSoKeepAlive(true)
+                    setDefaultConnectionConfig(ConnectionConfig.custom().apply {
+                        setConnectTimeout(Timeout.ofSeconds(30))
+                        setSocketTimeout(Timeout.ofSeconds(3000))
+                        setSoKeepAlive(true)
+                        setTimeToLive(Timeout.ofSeconds(6000))
+                    }.build())
                     build()
                 }
                 defaultMaxPerRoute = 64

@@ -99,7 +99,7 @@ abstract class ApplicationServer(
         userMessage: String,
         ui: ApplicationInterface,
         api: API
-    ): Unit {
+    ) {
         logger.warn("userMessage not implemented for application: {} - session: {} user: {}", 
                    applicationName, session, user?.email ?: "anonymous")
         throw UnsupportedOperationException("userMessage not implemented for $applicationName")

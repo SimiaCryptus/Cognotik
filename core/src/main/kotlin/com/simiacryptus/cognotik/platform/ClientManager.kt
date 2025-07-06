@@ -8,8 +8,11 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataSt
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientBase
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.LLMModel
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ScheduledThreadPoolExecutor
@@ -18,15 +21,11 @@ open class ClientManager {
 
     private data class SessionKey(val session: Session, val user: User?)
 
-    private val chatCache = mutableMapOf<SessionKey, ChatClient>()
+    private val chatCache = mutableMapOf<SessionKey, ChatClientInterface>()
     fun getChatClient(
         session: Session,
         user: User?,
-    ): ChatClient {
-        log.debug("Fetching client for session: {}, user: {}", session, user)
-        val key = SessionKey(session, user)
-        return chatCache.getOrPut(key) { createChatClient(session, user) ?: throw RuntimeException("No API key") }
-    }
+    ) = chatCache.getOrPut(SessionKey(session, user)) { createChatClient(session, user) ?: throw RuntimeException("No API key") }
 
     private val poolCache = mutableMapOf<SessionKey, ImmediateExecutorService>()
     protected open fun createPool(session: Session, user: User?) = ImmediateExecutorService(session, user)
@@ -55,13 +54,19 @@ open class ClientManager {
     protected open fun createChatClient(
         session: Session,
         user: User?,
-    ): ChatClient? {
+    ): ChatClientInterface? {
         log.debug("Creating chat client for session: {}, user: {}", session, user)
         val sessionDir = dataStorageFactory(dataStorageRoot).getDataDir(user, session).apply { mkdirs() }
-        if (user != null) {
+        return if (user == null) {
+            log.warn("No user provided for session: $session")
+            null
+        } else {
             val userSettings = userSettingsManager.getUserSettings(user)
-            return if (userSettings.apiKeys.isNotEmpty()) {
-                object : ChatClient(
+            if (userSettings.apiKeys.isEmpty()) {
+                log.warn("No API key for user: $user in session: $session")
+                null
+            } else {
+                object : ProvidersChatClient(
                     apiKeyMap = userSettings.apiKeys,
                     apiBaseMap = userSettings.apiBase,
                     workPool = getPool(session, user)
@@ -78,14 +83,8 @@ open class ClientManager {
                     this.user = user
                     logStreams += sessionDir.resolve("openai.log").outputStream().buffered()
                 }
-            } else {
-                log.warn("No API key for user: $user in session: $session")
-                return null
             }
-        } else {
-            log.warn("No user provided for session: $session")
         }
-        return null
     }
 
     companion object {
@@ -93,3 +92,18 @@ open class ClientManager {
     }
 }
 
+
+fun ChatModelType.instance(
+    user: User?
+): ChatModelType.ChatModel {
+    val userSettings = if (user == null) {
+        null
+    } else {
+        userSettingsManager.getUserSettings(user)
+    }
+    val apiData = userSettings?.apis?.filter { it.provider == this.provider }?.firstOrNull()
+    return this.instance(
+        key = apiData?.key ?: throw RuntimeException("No API key for model ${this.name}"),
+        base = apiData.baseUrl ?: this.provider.base ?: "",
+    )
+}

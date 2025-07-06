@@ -14,7 +14,8 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.LLMModel
@@ -117,7 +118,7 @@ open class CodingAgent<T : Interpreter>(
                 actor.CodeResultImpl(
                     messages = actor.chatMessages(codeRequest),
                     input = codeRequest,
-                    api = api as ChatClient,
+                    api = api as ChatClientInterface,
                     givenCode = lastUserMessage.removePrefix("```").removeSuffix("```")
                 )
             } else {

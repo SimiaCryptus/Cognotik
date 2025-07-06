@@ -15,7 +15,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import org.slf4j.LoggerFactory
@@ -97,7 +98,7 @@ open class GoalOrientedMode(
 
     val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
     val processor = FixedConcurrencyProcessor(executor, maxConcurrency)
-    val apiClient = (api as? ChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
+    val apiClient = (api as? ProvidersChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
     apiClient.budget = planSettings.budget
     val sessionLog = StringBuilder()
     val sessionLogTask = ui.newTask(false).apply { mainTab["Session Log"] = placeholder }
@@ -358,7 +359,7 @@ open class GoalOrientedMode(
     sessionLogTask.complete(sessionLog.toString().renderMarkdown())
   }
 
-  private fun parseInitialGoals(userMessage: String, api: ChatClient): List<Goal> {
+  private fun parseInitialGoals(userMessage: String, api: ChatClientInterface): List<Goal> {
     val parsedActor = ParsedActor(
       name = "InitialGoalParser",
       resultClass = GoalList::class.java,
@@ -419,9 +420,9 @@ open class GoalOrientedMode(
 
 
   private fun decomposeGoal(
-    goal: Goal,
-    api: ChatClient, // This should be the iteration-specific API client
-    coordinator: PlanCoordinator
+      goal: Goal,
+      api: ChatClientInterface, // This should be the iteration-specific API client
+      coordinator: PlanCoordinator
   ): Pair<List<Goal>, List<Task>> {
     val parsedActor = ParsedActor(
       name = "GoalDecomposer",
@@ -510,10 +511,10 @@ open class GoalOrientedMode(
 
 
   private fun executeTask(
-    taskDefinition: Task,
-    api: ChatClient,
-    uiTask: SessionTask,
-    coordinator: PlanCoordinator
+      taskDefinition: Task,
+      api: ChatClientInterface,
+      uiTask: SessionTask,
+      coordinator: PlanCoordinator
   ): String {
     val api = api.getChildClient(uiTask)
     val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)

@@ -26,11 +26,12 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
@@ -164,12 +165,12 @@ class CodeChangeAction : BaseAction() {
         ) {
             try {
                 val settings = getSettings(session, user) ?: Settings()
-                if (api is ChatClient) api.budget = settings.budget ?: 2.00
+                if (api is ProvidersChatClient) api.budget = settings.budget ?: 2.00
 
                 val task = ui.newTask()
                 task.add("Analyzing files...")
 
-                val api = (api as ChatClient).getChildClient(task)
+                val api = (api as ChatClientInterface).getChildClient(task)
 
                 val fileAnalyzer = ParsedActor(
                     resultClass = FileAnalysis::class.java,
@@ -180,8 +181,8 @@ class CodeChangeAction : BaseAction() {
                         2) Related files that provide important context
                         Be selective and only include files that are directly relevant.
                     """.trimIndent(),
-                    model = AppSettingsState.instance.fastModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                    model = AppSettingsState.instance.fastModel.chatModelType(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                 )
 
                 val allFiles = getCodeFiles()
@@ -205,7 +206,7 @@ class CodeChangeAction : BaseAction() {
                             You will be answering questions about the following code:
 
                         """.trimIndent() + codeSummary(relevantPaths) + patchFormatPrompt,
-                        model = AppSettingsState.instance.smartModel.chatModel()
+                        model = AppSettingsState.instance.smartModel.chatModelType()
                     )
                 }
 

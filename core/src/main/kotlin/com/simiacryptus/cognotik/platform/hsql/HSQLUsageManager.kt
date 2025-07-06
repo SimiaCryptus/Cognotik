@@ -42,7 +42,7 @@ class HSQLUsageManager() : UsageInterface {
         )
     }
 
-    override fun incrementUsage(session: Session, user: User, model: LLMModel, tokens: ApiModel.Usage) {
+    override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ApiModel.Usage) {
         try {
             log.debug("Incrementing usage for session: ${session.sessionId}, user: ${user.email}, model: ${model.modelName}")
             val usageKey = UsageInterface.UsageKey(session, user, model)

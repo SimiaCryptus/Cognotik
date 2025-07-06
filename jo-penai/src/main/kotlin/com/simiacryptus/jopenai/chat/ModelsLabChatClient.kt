@@ -1,5 +1,6 @@
 package com.simiacryptus.jopenai.chat
 
+import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.chat.ModelsLabDataModel
@@ -64,7 +65,7 @@ class ModelsLabChatClient(
             no_repeat_ngram_size = 5,
         )
 
-        fun fromModelsLab(rawResponse: String, client: ChatClient): String {
+        fun fromModelsLab(rawResponse: String, client: ChatClientInterface): String {
             val response = JsonUtil.objectMapper().readValue(rawResponse, ModelsLabDataModel.ChatResponse::class.java)
             return when (response.status) {
                 "success" -> {
@@ -87,17 +88,19 @@ class ModelsLabChatClient(
 
                 "processing" -> {
                     val seconds = response?.eta ?: 1
-                    ChatClient.Companion.log.info("Chat response is still processing; waiting ${seconds}s and trying again.")
+                    ProvidersChatClient.Companion.log.info("Chat response is still processing; waiting ${seconds}s and trying again.")
                     Thread.sleep(seconds * 1000L)
+                    val key = "" /*client.apiKeyMap[APIProvider.ModelsLab]*/
+                    val url = "" /*"${client.apiBaseMap}/llm/get_queued_response"*/
                     val postCheck = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
                         mapOf(
                             "chat_id" to (response.meta?.chat_id ?: response.chat_id),
-                            "key" to client.apiKeyMap[APIProvider.ModelsLab]
+                            "key" to key
                         )
                     )
                     fromModelsLab(
-                        client.post(
-                            "${client.apiBaseMap}/llm/get_queued_response",
+                        (client as ChatClientBase).post(
+                            url,
                             postCheck,
                             APIProvider.ModelsLab,
                         ),

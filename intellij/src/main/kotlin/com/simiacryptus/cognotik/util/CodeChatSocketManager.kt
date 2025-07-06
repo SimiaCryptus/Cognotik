@@ -6,17 +6,18 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
-import com.simiacryptus.jopenai.chat.ChatClient
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.models.chat.ChatModelType.ChatModel
 
 open class CodeChatSocketManager(
     session: Session,
     val language: String,
     val filename: String,
     val codeSelection: String,
-    api: ChatClient,
-    model: ChatModelType,
-    parsingModel: ChatModelType,
+    api: ChatClientInterface,
+    model: ChatModel,
+    parsingModel: ChatModel,
     storage: StorageInterface?,
 ) : ChatSocketManager(
     session = session,

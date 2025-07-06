@@ -11,7 +11,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
@@ -49,7 +50,7 @@ open class GraphOrderedPlanMode(
     override fun contextData(): List<String> = emptyList()
 
     private fun execute(userMessage: String, task: SessionTask) {
-        val apiClient = (api as ChatClient).getChildClient(task)
+        val apiClient = (api as ChatClientInterface).getChildClient(task)
         try {
             apiClient.budget = planSettings.budget
             task.add("Reading graph file: $graphFile")
@@ -99,7 +100,7 @@ open class GraphOrderedPlanMode(
         cumulativeTasks: MutableMap<String, TaskConfigBase>,
         graphFileContent: String,
         userMessage: String,
-        api: ChatClient
+        api: ChatClientInterface
     ) {
         log.debug("Starting dependency analysis for ${cumulativeTasks.size} tasks")
 

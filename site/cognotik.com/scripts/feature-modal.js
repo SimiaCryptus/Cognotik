@@ -11,31 +11,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Feature details content
     const featureDetails = {
-        'General-Purpose AI Agents': {
-            title: 'General-Purpose AI Agents',
+        'Intelligent Task Automation': {
+            title: 'Intelligent Task Automation',
             content: `
-                <p>Cognotik's AI agents are designed to be versatile and adaptable, capable of handling a wide range of development tasks:</p>
+                <p>Cognotik's intelligent agents automate complex workflows while understanding context and adapting to your needs:</p>
                 <ul>
-                    <li><strong>Flexible Agent Framework:</strong> Provides a modular structure for creating agents that can perform diverse tasks.</li>
-                    <li><strong>Cognitive Modes:</strong> Choose how the AI approaches tasks:
-                        <ul>
-                            <li><strong>Chat Mode:</strong> Interactive execution of individual tasks, ideal for focused work.</li>
-                            <li><strong>Autonomous Mode:</strong> AI independently plans and executes complex development tasks with minimal guidance.</li>
-                            <li><strong>Plan Ahead Mode:</strong> Collaboratively create detailed plans with the AI before execution, offering more control.</li>
-                        </ul>
-                    </li>
-                    <li><strong>The Task Library includes:</strong>
-                        <ul>
-                            <li><strong>InsightTask:</strong> Analyze code, answer questions, and provide explanations.</li>
-                            <li><strong>FileModificationTask:</strong> Create new files or modify existing code.</li>
-                            <li><strong>RunShellCommandTask:</strong> Execute shell command(s).</li>
-                            <li><strong>RunCodeTask:</strong> Generate and execute code snippets.</li>
-                            <li><strong>FileSearchTask:</strong> Search project files using patterns with contextual results.</li>
-                            <li><strong>WebSearchTask (CrawlerAgentTask):</strong> Search Google, fetch, and analyze web content.</li>
-                        </ul>
-                    </li>
+                    <li><strong>Context-Aware Processing:</strong> AI agents understand your project structure, coding patterns, and requirements to deliver relevant solutions.</li>
+                    <li><strong>Specialized Task Optimization:</strong> Each agent is fine-tuned for specific tasks like code generation, refactoring, documentation, or testing.</li>
+                    <li><strong>Quality Assurance:</strong> Built-in checks ensure generated code follows best practices and maintains consistency with your existing codebase.</li>
+                    <li><strong>Adaptive Learning:</strong> Agents improve their understanding of your preferences and coding style over time.</li>
+                    <li><strong>Workflow Integration:</strong> Seamlessly fits into your existing development process without disrupting your flow.</li>
                 </ul>
-                <p>These agents serve as true co-pilots in your development process, reducing cognitive load and handling repetitive tasks while you focus on higher-level design and problem-solving.</p>
+                <p>Focus on creative problem-solving while Cognotik handles the repetitive tasks that slow you down.</p>
             `
         },
         'Free & Open Source': {
@@ -53,19 +40,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p><a href="https://github.com/SimiaCryptus/Cognotik" target="_blank" rel="noopener">Visit our GitHub repository</a> to explore the code, contribute, or report issues.</p>
             `
         },
-        'Choose Any LLM Model': {
-            title: 'Choose Any LLM Model',
+        'Secure & Privacy-First': {
+            title: 'Secure & Privacy-First',
             content: `
-                <p>Cognotik gives you the freedom to select the AI model that best fits your specific requirements:</p>
+                <p>Your data security and privacy are paramount with Cognotik's BYOK (Bring Your Own Key) model:</p>
                 <ul>
-                    <li><strong>Multiple Provider Support:</strong> Connect to OpenAI (ChatGPT4.1, o3, etc), Anthropic Claude, Google Gemini, and other compatible LLMs.</li>
-                    <li><strong>Model Switching:</strong> Seamlessly switch between different models based on the task at hand.</li>
-                    <li><strong>Cost Optimization:</strong> Use more affordable models for routine tasks and premium models for complex challenges.</li>
-                    <li><strong>Specialized Capabilities:</strong> Select models with strengths in specific domains or programming languages.</li>
-                    <li><strong>Future-Proof:</strong> As new models emerge, Cognotik's architecture allows for easy integration.</li>
-                    <li><strong>Local Models:</strong> Support for running local models for complete privacy and offline work.</li>
+                    <li><strong>Direct API Connections:</strong> Connect directly to OpenAI, Anthropic, Google, or other AI providers using your own API keys.</li>
+                    <li><strong>Zero Data Storage:</strong> No code, prompts, or responses pass through our servers - everything stays between you and your chosen AI provider.</li>
+                    <li><strong>Enterprise Compliance:</strong> Perfect for organizations with strict security requirements, GDPR compliance, or sensitive codebases.</li>
+                    <li><strong>Complete Control:</strong> You maintain full ownership and control over all data, with no third-party access or storage.</li>
+                    <li><strong>Audit Trail:</strong> All AI interactions can be logged locally for compliance and review purposes.</li>
                 </ul>
-                <p>This flexibility ensures you're never locked into a single AI provider or model, giving you control over performance, cost, and capabilities.</p>
+                <p>Cognotik ensures your intellectual property and sensitive information remain completely under your control.</p>
             `
         },
         'Cross-Platform & Extensible': {
@@ -82,17 +68,111 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p>The extensible nature of Cognotik means it can grow with your needs and adapt to new technologies and methodologies as they emerge.</p>
             `
         },
-        'Bring Your Own Key (BYOK) Cost Model': {
-            title: 'Bring Your Own Key (BYOK) Cost Model',
+        'Smart Version Control Integration': {
+            title: 'Smart Version Control Integration',
             content: `
-                <p>Cognotik's BYOK approach puts you in complete control of your AI usage and costs:</p>
+                <p>Cognotik ensures you maintain full control over every change made to your codebase:</p>
                 <ul>
-                    <li><strong>Direct API Access:</strong> Use your own API keys from OpenAI, Anthropic, Google, or other providers.</li>
-                    <li><strong>Cost Transparency:</strong> Pay only for what you use, with no additional markups or hidden fees.</li>
-                    <li><strong>Budget Control:</strong> Set usage limits and monitor consumption to prevent unexpected costs.</li>
-                    <li><strong>Data Privacy:</strong> Ensure your code and sensitive information never passes through third-party servers.</li>
+                    <li><strong>Patch-Based Review:</strong> All modifications are presented as clear, reviewable patches before application.</li>
+                    <li><strong>Git Integration:</strong> Seamlessly works with Git and other version control systems for proper change tracking.</li>
+                    <li><strong>Selective Application:</strong> Accept, reject, or modify individual suggestions with full transparency.</li>
+                    <li><strong>Change History:</strong> Complete audit trail of all AI-suggested modifications and your decisions.</li>
+                    <li><strong>Rollback Support:</strong> Easily revert any changes if needed, maintaining code integrity.</li>
                 </ul>
-                <p>This model puts you in charge of your AI usage, allowing you to optimize costs while maintaining flexibility and control.</p>
+                <p>Never worry about AI making unwanted changes - you're always in the driver's seat.</p>
+            `
+        },
+        'Multi-Model Support': {
+            title: 'Multi-Model Support',
+            content: `
+                <p>Choose the best AI model for each task with Cognotik's flexible multi-model architecture:</p>
+                <ul>
+                    <li><strong>Provider Support:</strong> Works with OpenAI GPT-4, Anthropic Claude, Google Gemini, and local models.</li>
+                    <li><strong>Dynamic Switching:</strong> Seamlessly switch between models based on task requirements.</li>
+                    <li><strong>Cost Optimization:</strong> Use affordable models for routine tasks and premium models for complex challenges.</li>
+                    <li><strong>Automatic Selection:</strong> Let Cognotik choose the optimal model based on your requirements and budget.</li>
+                    <li><strong>Model Comparison:</strong> Compare outputs from different models to choose the best solution.</li>
+                    <li><strong>Future-Proof:</strong> Easy integration of new models as they become available.</li>
+                </ul>
+                <p>This flexibility ensures optimal performance and cost-effectiveness for every task.</p>
+            `
+        },
+        'Built for Teams': {
+            title: 'Built for Teams',
+            content: `
+                <p>Cognotik enhances team collaboration and maintains consistency across your development organization:</p>
+                <ul>
+                    <li><strong>Shared AI Assistants:</strong> Configure team-wide AI assistants with consistent behavior and knowledge.</li>
+                    <li><strong>Coding Standards:</strong> Enforce team coding standards and best practices automatically.</li>
+                    <li><strong>Knowledge Sharing:</strong> Share custom prompts, templates, and configurations across the team.</li>
+                    <li><strong>Onboarding Acceleration:</strong> Help new developers understand codebases and practices faster.</li>
+                    <li><strong>Code Review Enhancement:</strong> AI-powered code reviews ensure quality and consistency.</li>
+                    <li><strong>Collaborative Workflows:</strong> Support for pair programming and collaborative problem-solving with AI.</li>
+                </ul>
+                <p>Transform your team's productivity while maintaining high code quality and consistency.</p>
+            `
+        },
+        'Multi-Modal Cognitive Architecture': {
+            title: 'Multi-Modal Cognitive Architecture',
+            content: `
+                <p>Cognotik implements a groundbreaking cognitive planning architecture that adapts to your problem domain:</p>
+                <div style="margin-top:1.5em;">
+                    <h4 style="color:#007bff;margin-bottom:0.5em;">🎯 TaskChat Mode - Phenomenological Cognition</h4>
+                    <p>Reactive and conversational, perfect for immediate responses and interactive development. Features instant contextual responses, minimal cognitive overhead, and natural dialogue flow.</p>
+                    
+                    <h4 style="color:#28a745;margin-top:1em;margin-bottom:0.5em;">📋 PlanAhead Mode - Rationalist Cognition</h4>
+                    <p>Comprehensive upfront planning for well-defined projects. Creates detailed execution plans with complete dependency analysis, optimized execution order, and predictable outcomes.</p>
+                    
+                    <h4 style="color:#ffc107;margin-top:1em;margin-bottom:0.5em;">🔄 AutoPlan Mode - Pragmatist Cognition</h4>
+                    <p>Iterative planning with metacognitive awareness. Features dynamic strategy adjustment, explicit thinking status, and learning from outcomes.</p>
+                    
+                    <h4 style="color:#dc3545;margin-top:1em;margin-bottom:0.5em;">🎯 GoalOriented Mode - Systematist Cognition</h4>
+                    <p>Hierarchical goal decomposition for complex projects. Provides hierarchical task networks, goal-level supervision, and systems thinking approach.</p>
+                </div>
+                <p style="margin-top:1.5em;"><strong>Why Cognitive Pluralism Matters:</strong> Different problem domains require fundamentally different approaches to thinking. Cognotik matches its cognitive approach to the natural structure of your problem, whether you're doing rapid prototyping, systematic refactoring, exploratory debugging, or architectural planning.</p>
+            `
+        },
+        'Comprehensive Task Library': {
+            title: 'Comprehensive Task Library',
+            content: `
+                <p>Access a rich library of specialized task types designed for every aspect of software development:</p>
+                
+                <h4 style="color:#007bff;margin-top:1em;">📝 Code & File Management</h4>
+                <ul>
+                    <li><strong>File Modification:</strong> Create or modify files with diff-based preview and style preservation</li>
+                    <li><strong>File Search:</strong> Pattern-based search with regex support and contextual results</li>
+                    <li><strong>Insight Analysis:</strong> Code reviews, architecture recommendations, and Q&A</li>
+                </ul>
+                
+                <h4 style="color:#28a745;margin-top:1em;">🔧 Execution & Automation</h4>
+                <ul>
+                    <li><strong>Shell Commands:</strong> Safe execution with output capture and error handling</li>
+                    <li><strong>Code Execution:</strong> Run snippets in controlled environments with multiple language support</li>
+                    <li><strong>Command Auto-Fix:</strong> Automatic error detection and correction with approval workflow</li>
+                </ul>
+                
+                <h4 style="color:#ffc107;margin-top:1em;">📊 Planning & Organization</h4>
+                <ul>
+                    <li><strong>Task Planning:</strong> Complex task breakdown with dependency management</li>
+                    <li><strong>Software Graph Planning:</strong> Graph-aware planning based on code structure</li>
+                    <li><strong>Foreach Iteration:</strong> Sequential processing with progress tracking</li>
+                </ul>
+                
+                <h4 style="color:#dc3545;margin-top:1em;">🔍 Knowledge & Search</h4>
+                <ul>
+                    <li><strong>Embedding Search:</strong> Semantic search using AI embeddings</li>
+                    <li><strong>Knowledge Indexing:</strong> Document and code indexing with parallel processing</li>
+                    <li><strong>Data Compilation:</strong> Extract and compile structured data from multiple sources</li>
+                </ul>
+                
+                <h4 style="color:#6c757d;margin-top:1em;">🌐 External Integration</h4>
+                <ul>
+                    <li><strong>GitHub Search:</strong> Advanced repository and code search</li>
+                    <li><strong>Web Search & Analysis:</strong> Google integration with content analysis</li>
+                    <li><strong>Browser Automation:</strong> Selenium-based testing and data collection</li>
+                </ul>
+                
+                <p style="margin-top:1em;">Combine and orchestrate these tasks to create powerful workflows tailored to your specific needs.</p>
             `
         }
     };

@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
@@ -156,7 +156,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
     private fun generateFile(baseFile: ProjectFile, directive: String, progress: ProgressIndicator): ProjectFile = try {
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
-        val model = AppSettingsState.instance.smartModel.chatModel()
+        val model = AppSettingsState.instance.smartModel.chatModelType()
         val chatRequest = ApiModel.ChatRequest(
             model = model.modelName,
             temperature = AppSettingsState.instance.temperature,

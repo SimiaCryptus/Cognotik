@@ -11,7 +11,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
@@ -21,8 +22,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 open class ChatSocketManager(
     session: Session,
-    var model: ChatModelType,
-    var parsingModel: ChatModelType,
+    var model: ChatModelType.ChatModel,
+    var parsingModel: ChatModelType.ChatModel,
     val userInterfacePrompt: String = """
     <div class="expandable-guide">
       <div class="expandable-header">
@@ -54,7 +55,7 @@ open class ChatSocketManager(
   """.trimIndent(),
     open val initialAssistantPrompt: String = "",
     open val systemPrompt: String,
-    var api: ChatClient,
+    var api: ChatClientInterface,
     var temperature: Double = 0.3,
     applicationClass: Class<out ChatServer>,
     val storage: StorageInterface?,
@@ -123,7 +124,7 @@ open class ChatSocketManager(
 
     private fun subquery(
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         expandedUserMessage: String,
         currentChatMessages: List<ApiModel.ChatMessage>
     ) {
@@ -153,7 +154,7 @@ open class ChatSocketManager(
     private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""") // Matches [[start..end:step]] or [[start to end by step]]
 
     protected open fun respond(
-        api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>
+        api: ChatClientInterface, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>
     ) = buildString {
         val function1List = processMsgRecursive(api, userMessage, task, currentChatMessages)
         runAll(function1List, this)
@@ -202,14 +203,14 @@ open class ChatSocketManager(
         }.forEach { it.get() }
     }
 
-    private fun extractTopics(api: ChatClient, response: String): Topics {
+    private fun extractTopics(api: ChatClientInterface, response: String): Topics {
         val topicsParsedActor = ParsedActor(
             resultClass = Topics::class.java,
             prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
-            model = model,
+            model = model.modelType,
             temperature = temperature,
             name = "Topics",
-            parsingModel = parsingModel,
+            parsingModel = parsingModel.modelType,
         )
         return if (fastTopicParsing) {
             topicsParsedActor.getParser(api).apply(response)
@@ -244,7 +245,7 @@ open class ChatSocketManager(
     }
 
     private fun processMsgRecursive(
-        api: ChatClient,
+        api: ChatClientInterface,
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
@@ -274,8 +275,8 @@ open class ChatSocketManager(
                     ApiModel.ChatRequest(
                         messages = finalMessages,
                         temperature = temperature,
-                        model = model.modelName,
-                    ), model
+                        model = model.modelType.modelName,
+                    ), model.modelType
                 )
                 val newValue = chatResponse.choices.firstOrNull()?.message?.content.orEmpty()
                 responseRef.set(newValue)
@@ -296,7 +297,7 @@ open class ChatSocketManager(
      * Creates a sequence of numbers from start to end with the given step (default 1)
      */
     private fun expandRange(
-        api: ChatClient,
+        api: ChatClientInterface,
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
@@ -323,12 +324,12 @@ open class ChatSocketManager(
      * Each option is processed in parallel
      */
     private fun expandAlternatives(
-        api: ChatClient,
+        api: ChatClientInterface,
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
         match: MatchResult,
-        recursiveFn: (ChatClient, String, SessionTask, List<ApiModel.ChatMessage>) -> List<(StringBuilder) -> Unit>
+        recursiveFn: (ChatClientInterface, String, SessionTask, List<ApiModel.ChatMessage>) -> List<(StringBuilder) -> Unit>
     ): List<(StringBuilder) -> Unit> {
         val tabs = TabbedDisplay(task, closable = false)
         return match.groupValues[1].split('|', ',').flatMap { option ->
@@ -347,7 +348,7 @@ open class ChatSocketManager(
      * Returns a single function that encapsulates the entire sequential process.
      */
     private fun expandSequences(
-        api: ChatClient,
+        api: ChatClientInterface,
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
@@ -369,7 +370,7 @@ open class ChatSocketManager(
         items: List<String>,
         currentMessage: String,
         expression: String,
-        api: ChatClient
+        api: ChatClientInterface
     ) {
         val aggregatedResponse = StringBuilder()
         val tabs = TabbedDisplay(task, closable = false)

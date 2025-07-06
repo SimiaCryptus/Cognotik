@@ -10,7 +10,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IdeaOpenAIClient
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import org.slf4j.LoggerFactory
 import javax.swing.Icon
 
@@ -26,7 +27,7 @@ abstract class BaseAction(
      * Primary API client for chat interactions
      */
 
-    val api: ChatClient
+    val api: ChatClientInterface
         @JvmName("getChatClient") get() = IdeaChatClient.instance
     val api2 = IdeaOpenAIClient.instance
 

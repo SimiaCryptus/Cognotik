@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.IndentedText
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import com.simiacryptus.util.StringUtil
 
@@ -62,7 +62,7 @@ class DescribeAction : SelectionAction<String>() {
         get() = ChatProxy(
             clazz = DescribeAction_VirtualAPI::class.java,
             api = api,
-            model = AppSettingsState.instance.smartModel.chatModel(),
+            model = AppSettingsState.instance.smartModel.chatModelType(),
             temperature = AppSettingsState.instance.temperature,
             deserializerRetries = 5
         ).create()

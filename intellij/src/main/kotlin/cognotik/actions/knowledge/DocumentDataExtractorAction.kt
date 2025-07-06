@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
@@ -98,7 +98,7 @@ class DocumentDataExtractorAction : BaseAction(
                 val session = Session.newGlobalID()
                 DataStorage.sessionPaths[session] = selectedFile.toFile.parentFile
                 progress.text = "Configuring AI model..."
-                val smartModel = AppSettingsState.instance.smartModel.chatModel()
+                val smartModel = AppSettingsState.instance.smartModel.chatModelType()
                 val parsingModel = ParsingModelType.getImpl(smartModel, 0.1, modelType)
                 progress.text = "Initializing document parser..."
                 SessionProxyServer.metadataStorage.setSessionName(

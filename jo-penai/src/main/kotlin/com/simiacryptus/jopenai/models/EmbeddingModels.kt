@@ -8,7 +8,12 @@ open class EmbeddingModels(
     modelName: String,
     maxTokens: Int,
     private val tokenPricePerK: Double,
-) : LLMModel(modelName, maxTokens) {
+    provider: APIProvider = APIProvider.OpenAI,
+) : LLMModel(
+    modelName = modelName,
+    provider = provider,
+    maxTotalTokens = maxTokens
+) {
     private val log = LoggerFactory.getLogger(EmbeddingModels::class.java)
     override fun pricing(usage: Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
         .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }

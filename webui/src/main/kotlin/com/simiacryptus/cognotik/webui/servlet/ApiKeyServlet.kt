@@ -215,7 +215,7 @@ class ApiKeyServlet : HttpServlet() {
 
     private fun serveEditPage(req: HttpServletRequest, resp: HttpServletResponse, record: ApiKeyRecord) {
         val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-        val usageSummary = ApplicationServices.usageManager.getUserUsageSummary(user = userinfo!!)
+        val usageSummary: Map<String, ApiModel.Usage> = ApplicationServices.usageManager.getUserUsageSummary(user = userinfo!!)
 
         resp.writer.write(
             """
@@ -285,10 +285,10 @@ class ApiKeyServlet : HttpServlet() {
       <!-- Usage Summary -->
       <h2>Usage Summary</h2>
       ${
-                usageSummary.entries.joinToString { (model: AIModel, usage: ApiModel.Usage) ->
+                usageSummary.entries.joinToString { (model: String, usage: ApiModel.Usage) ->
                     """
           <div>
-            <h3>${model.modelName}</h3>
+            <h3>${model}</h3>
             <p>total_tokens: ${usage.total_tokens}</p>
             <p>Cost: ${usage.cost}</p>
           </div>

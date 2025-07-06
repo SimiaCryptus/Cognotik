@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -40,7 +40,7 @@ open class PlanAheadMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val chatApi = api as? ChatClient
+            val chatApi = api as? ProvidersChatClient
                 ?: throw IllegalStateException("PlanAheadMode requires a ChatClient API implementation.")
             val apiClient = chatApi.getChildClient(task) // Create a task-specific child client
             apiClient.budget = planSettings.budget ?: 2.0 // Set budget on the child client

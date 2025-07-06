@@ -2,7 +2,8 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.util.MultiExeption
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
@@ -75,7 +76,7 @@ open class ParsedActor<T : Any>(
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = (api as ChatClient).chat(
+                val content = (api as ChatClientInterface).chat(
                     ApiModel.ChatRequest(
                         messages = listOf(
                             ApiModel.ChatMessage(role = ApiModel.Role.system, content = prompt.toContentList()),

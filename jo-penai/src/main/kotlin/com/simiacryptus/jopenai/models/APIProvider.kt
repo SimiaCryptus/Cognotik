@@ -3,16 +3,7 @@ package com.simiacryptus.jopenai.models
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.jopenai.chat.*
-import com.simiacryptus.jopenai.models.chat.AWSModels
-import com.simiacryptus.jopenai.models.chat.AnthropicModels
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.DeepSeekModels
-import com.simiacryptus.jopenai.models.chat.GoogleModels
-import com.simiacryptus.jopenai.models.chat.GroqModels
-import com.simiacryptus.jopenai.models.chat.MistralModels
-import com.simiacryptus.jopenai.models.chat.ModelsLabModels
-import com.simiacryptus.jopenai.models.chat.OpenAIModels
-import com.simiacryptus.jopenai.models.chat.PerplexityModels
+import com.simiacryptus.jopenai.models.chat.*
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer
@@ -39,7 +30,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
     abstract fun getChatModels(): List<ChatModelType>
 
     companion object {
-        val Google = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
+        val Google: APIProvider = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
 
             override fun getChatModels(): List<ChatModelType> = GoogleModels.values.values.toList()
 
@@ -57,7 +48,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val OpenAI = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
+        val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
             override fun getChatModels(): List<ChatModelType> = OpenAIModels.values.values.toList()
 
@@ -75,7 +66,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val Anthropic = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
+        val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
 
             override fun getChatModels(): List<ChatModelType> = AnthropicModels.values.values.toList()
 
@@ -93,7 +84,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val AWS = object : APIProvider("AWS", "https://api.openai.aws") {
+        val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
 
             override fun getChatModels(): List<ChatModelType> = AWSModels.values.values.toList()
 
@@ -111,7 +102,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val Groq = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
+        val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
 
             override fun getChatModels(): List<ChatModelType> = GroqModels.values.values.toList()
 
@@ -129,7 +120,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val Perplexity = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
+        val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
 
             override fun getChatModels(): List<ChatModelType> = PerplexityModels.values.values.toList()
 
@@ -147,7 +138,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val ModelsLab = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
+        val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
 
             override fun getChatModels(): List<ChatModelType> = ModelsLabModels.values.values.toList()
 
@@ -183,7 +174,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val DeepSeek = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
+        val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
 
             override fun getChatModels(): List<ChatModelType> = DeepSeekModels.values.values.toList()
 
@@ -201,7 +192,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val GoogleSearch = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
+        val GoogleSearch: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
 
             override fun getChatModels(): List<ChatModelType> = emptyList()
 
@@ -219,7 +210,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logStreams = logStreams
             )
         }
-        val Github = object : APIProvider("Github", "https://api.github.com") {
+        val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
 
             override fun getChatModels(): List<ChatModelType> = emptyList()
 

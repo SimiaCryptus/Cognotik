@@ -1,6 +1,6 @@
 package com.simiacryptus.jopenai
 
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.chat.ChatModelType
@@ -55,7 +55,7 @@ class ModelTests {
     }
 
     private fun testChatWithModel(model: ChatModelType) {
-        val client = ChatClient(
+        val client = ProvidersChatClient(
             workPool = Executors.newCachedThreadPool(),
             apiKeyMap = TODO(),
             apiBaseMap = TODO()

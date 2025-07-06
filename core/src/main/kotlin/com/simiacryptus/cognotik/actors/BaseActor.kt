@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.models.AIModel
@@ -20,7 +21,7 @@ abstract class BaseActor<I, R>(
     ): R
 
     protected open fun response(vararg input: ApiModel.ChatMessage, model: AIModel = this.model, api: API) =
-        (api as ChatClient).chat(
+        (api as ChatClientInterface).chat(
             ApiModel.ChatRequest(
                 messages = ArrayList(input.toList()),
                 temperature = temperature,

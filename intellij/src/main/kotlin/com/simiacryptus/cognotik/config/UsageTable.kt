@@ -26,7 +26,7 @@ class UsageTable(
     val rowData by lazy {
         val usageData = usage.getUserUsageSummary(IdeaChatClient.localUser).map { entry ->
             listOf(
-                entry.key.modelName,
+                entry.key,
                 entry.value.prompt_tokens.toString(),
                 entry.value.completion_tokens.toString(),
                 String.format("%.2f", entry.value.cost)

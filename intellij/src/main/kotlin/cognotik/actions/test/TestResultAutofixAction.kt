@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.util.JsonUtil
 import org.jetbrains.annotations.NotNull
 import org.slf4j.LoggerFactory
@@ -211,8 +211,8 @@ class TestResultAutofixAction : BaseAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartModel.chatModel(),
-                        parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                        model = AppSettingsState.instance.smartModel.chatModelType(),
+                        parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                     ).answer(listOf(testInfo), api = IdeaChatClient.instance)
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")
@@ -283,7 +283,7 @@ $projectStructure
                 The diff format should use + for line additions, - for line deletions.
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel()
+                model = AppSettingsState.instance.smartModel.chatModelType()
             ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
             task.add("Processing suggested fixes...")
 

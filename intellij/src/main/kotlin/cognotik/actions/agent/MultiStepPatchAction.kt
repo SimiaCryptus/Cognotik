@@ -27,12 +27,13 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson
@@ -117,16 +118,16 @@ class MultiStepPatchAction : BaseAction() {
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
-                model = AppSettingsState.instance.smartModel.chatModel()
+                model = AppSettingsState.instance.smartModel.chatModelType()
             )
-            if (api is ChatClient) api.budget = settings.budget ?: DEFAULT_BUDGET
+            if (api is ProvidersChatClient) api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
                 api = api,
                 session = session,
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                 event = event,
             ).start(
                 userMessage = userMessage,
@@ -136,7 +137,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModelType? = AppSettingsState.instance.smartModel.chatModel(),
+            val model: ChatModelType? = AppSettingsState.instance.smartModel.chatModelType(),
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -197,7 +198,7 @@ class MultiStepPatchAction : BaseAction() {
             }
 
             val task = ui.newTask()
-            val api = (api as ChatClient).getChildClient(task)
+            val api = (api as ChatClientInterface).getChildClient(task)
 
             val toInput = { it: String -> listOf(codeSummary(), it) }
             val architectureResponse = Discussable(

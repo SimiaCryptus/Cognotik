@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -60,8 +62,9 @@ open class ProxyHttpServlet(
         val path = (req.servletPath ?: "").removePrefix("/")
         val proxyRequest = getProxyRequest(req)
         if (null != proxyKey) proxyRequest.addHeader("Authorization", "Bearer " + proxyKey.mappedKey)
+        val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
         val totalUsage =
-            ApplicationServices.usageManager.getUserUsageSummary(requestKey).values.map { it.cost ?: 0.0 }.sum()
+            ApplicationServices.usageManager.getUserUsageSummary(user!!).values.sumOf { it.cost ?: 0.0 }
         if (totalUsage > (proxyKey?.budget ?: 0.0)) {
             resp.status = 402
             resp.contentType = "text/plain"

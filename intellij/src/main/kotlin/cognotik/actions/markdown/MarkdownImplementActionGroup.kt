@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import org.slf4j.LoggerFactory
 
@@ -68,7 +68,7 @@ class MarkdownImplementActionGroup : ActionGroup() {
             return ChatProxy(
                 clazz = ConversionAPI::class.java,
                 api = api,
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 temperature = AppSettingsState.instance.temperature,
                 deserializerRetries = 5
             ).create()

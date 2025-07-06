@@ -10,6 +10,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
+import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
@@ -140,19 +141,55 @@ class DocumentedMassPatchAction : BaseAction() {
 
         override fun createCenterPanel(): JComponent {
             return JPanel(BorderLayout()).apply {
-                val splitPane = JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
-                    topComponent = JPanel(BorderLayout()).apply {
+                val mainPanel = JPanel(BorderLayout()).apply {
+                    val docPanel = JPanel(BorderLayout()).apply {
                         add(JLabel("Documentation Files"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.documentationFiles), BorderLayout.CENTER)
                     }
-                    bottomComponent = JPanel(BorderLayout()).apply {
+                    
+                    val codePanel = JPanel(BorderLayout()).apply {
                         add(JLabel("Code Files"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.codeFiles), BorderLayout.CENTER)
                     }
-                    preferredSize = Dimension(400, 500)
+                    
+                    val buttonPanel = JPanel().apply {
+                        layout = BoxLayout(this, BoxLayout.X_AXIS)
+                        border = JBUI.Borders.empty(10)
+                        
+                        add(Box.createHorizontalGlue())
+                        
+                        val moveDownButton = JButton("↓").apply {
+                            toolTipText = "Move selected documentation file to code files"
+                            addActionListener {
+                                moveFocusedItem(settingsUI.documentationFiles, settingsUI.codeFiles)
+                            }
+                        }
+                        add(moveDownButton)
+                        
+                        add(Box.createHorizontalStrut(10))
+                        
+                        val moveUpButton = JButton("↑").apply {
+                            toolTipText = "Move selected code file to documentation files"
+                            addActionListener {
+                                moveFocusedItem(settingsUI.codeFiles, settingsUI.documentationFiles)
+                            }
+                        }
+                        add(moveUpButton)
+                        
+                        add(Box.createHorizontalGlue())
+                    }
+                    
+                    val centerPanel = JPanel(BorderLayout()).apply {
+                        add(docPanel, BorderLayout.NORTH)
+                        add(buttonPanel, BorderLayout.CENTER)
+                        add(codePanel, BorderLayout.SOUTH)
+                    }
+                    
+                    add(centerPanel, BorderLayout.CENTER)
+                    preferredSize = Dimension(500, 600)
                 }
 
-                add(splitPane, BorderLayout.CENTER)
+                add(mainPanel, BorderLayout.CENTER)
                 add(JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
                     add(JLabel("AI Instruction"))
@@ -160,6 +197,35 @@ class DocumentedMassPatchAction : BaseAction() {
                     add(Box.createVerticalStrut(10))
                     add(settingsUI.autoApply)
                 }, BorderLayout.SOUTH)
+            }
+        }
+        private fun moveFocusedItem(sourceList: CheckBoxList<Path>, targetList: CheckBoxList<Path>) {
+            val focusedIndex = sourceList.selectedIndex
+            if (focusedIndex < 0 || focusedIndex >= sourceList.items.size) return
+            val focusedItem = sourceList.items[focusedIndex]
+            
+            // Remove from source list
+            val sourceItems = sourceList.items.toMutableList()
+            sourceItems.remove(focusedItem)
+            
+            // Add to target list
+            val targetItems = targetList.items.toMutableList()
+            targetItems.add(focusedItem)
+            
+            // Update both lists
+            val root = userSettings.documentationFiles.firstOrNull()?.parent 
+                ?: userSettings.codeFilePaths.firstOrNull()?.parent
+            sourceList.setItems(sourceItems) { path ->
+                root?.relativize(path)?.toString() ?: path.toString()
+            }
+            targetList.setItems(targetItems) { path ->
+                root?.relativize(path)?.toString() ?: path.toString()
+            }
+            
+            // Focus on the moved item in target list
+            val newIndex = targetItems.indexOf(focusedItem)
+            if (newIndex >= 0) {
+                targetList.selectedIndex = newIndex
             }
         }
 

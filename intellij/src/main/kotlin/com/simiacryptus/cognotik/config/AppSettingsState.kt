@@ -20,9 +20,12 @@ import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ImageModels
+import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.models.chat.ChatModelType.Companion.values
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
 import java.io.File
 
 data class CommandConfig(
@@ -315,4 +318,25 @@ data class AppSettingsState(
         val taskSettings: Map<String, TaskSettingsBase>
     )
 
+}
+
+
+fun String.chatModel() = (values().entries.find {
+    it.key.equals(this, true) || it.value.modelName.equals(this, true)
+}?.value ?: ChatModelType(
+    name = this,
+    modelName = this,
+    maxTotalTokens = 4096,
+    provider = APIProvider.Companion.OpenAI,
+    inputTokenPricePerK = 0.0,
+    outputTokenPricePerK = 0.0
+)).let { chatModel ->
+    chatModel.instance(
+        key = AppSettingsState.instance.apiKeys?.get(chatModel.provider.name)
+            ?: throw IllegalArgumentException("API key for ${chatModel.provider.name} is not set"),
+        base = AppSettingsState.instance.apiBase?.get(chatModel.provider.name) ?: chatModel.provider.base
+            ?: throw IllegalArgumentException("API base for ${chatModel.provider.name} is not set"),
+        logLevel = Level.INFO,
+        logStreams = mutableListOf()
+    )
 }

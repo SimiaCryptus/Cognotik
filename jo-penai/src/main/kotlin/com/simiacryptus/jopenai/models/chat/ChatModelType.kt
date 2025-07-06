@@ -48,6 +48,7 @@ open class ChatModelType(
             chatRequest: ApiModel.ChatRequest,
             workPool: ExecutorService,
         ): ApiModel.ChatResponse
+        val modelType: ChatModelType
     }
 
     fun instance(
@@ -56,7 +57,7 @@ open class ChatModelType(
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     ) = object : ChatModel {
-        val modelType = this@ChatModelType
+        override val modelType = this@ChatModelType
         override fun chat(
             chatRequest: ApiModel.ChatRequest,
             workPool: ExecutorService
@@ -110,7 +111,7 @@ class ChatModelsDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<C
     }
 }
 
-fun String.chatModel() = values().entries.find {
+fun String.chatModelType() = (values().entries.find {
     it.key.equals(this, true) || it.value.modelName.equals(this, true)
 }?.value ?: ChatModelType(
     name = this,
@@ -119,8 +120,7 @@ fun String.chatModel() = values().entries.find {
     provider = APIProvider.Companion.OpenAI,
     inputTokenPricePerK = 0.0,
     outputTokenPricePerK = 0.0
-)
-
+))
 fun getModel(modelName: String?): AIModel? = ChatModelType.values().values.find { it.modelName == modelName }
     ?: EmbeddingModels.values().values.find { it.modelName == modelName }
     ?: ImageModels.values().find { it.modelName == modelName }

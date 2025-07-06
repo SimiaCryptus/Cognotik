@@ -15,7 +15,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
@@ -68,7 +69,7 @@ open class AutoPlanMode(
         log.debug("Starting auto plan chat with initial message: $userMessage")
         val task = ui.newTask(true)
         val apiClient =
-            (api as? ChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
+            (api as? ProvidersChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
         task.echo(renderMarkdown(userMessage))
 
         var continueLoop = true
@@ -262,7 +263,7 @@ $fullTaskDataJson
     }
 
     private fun runTask(
-        api: ChatClient,
+        api: ChatClientInterface,
         coordinator: PlanCoordinator,
         currentTask: TaskConfigBase,
         userMessage: String,
@@ -301,7 +302,7 @@ $fullTaskDataJson
     }
 
     private fun getNextTask(
-        api: ChatClient,
+        api: ChatClientInterface,
         coordinator: PlanCoordinator,
         userMessage: String,
         thinkingStatus: ThinkingStatus,
@@ -407,7 +408,7 @@ $fullTaskDataJson
     private fun processTaskExpansionRecursive(
         currentText: String,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         parsedActor: ParsedActor<Tasks>,
         processor: FixedConcurrencyProcessor
     ): List<TaskData> {
@@ -439,7 +440,7 @@ $fullTaskDataJson
     private fun initThinking(
         planSettings: PlanSettings,
         userMessage: String,
-        api: ChatClient,
+        api: ChatClientInterface,
     ): ThinkingStatus {
         return ParsedActor(
             name = "ThinkingStatusInitializer",
@@ -486,7 +487,7 @@ $fullTaskDataJson
     }
 
     private fun updateThinking(
-        api: ChatClient,
+        api: ChatClientInterface,
         thinkingStatus: ThinkingStatus,
         completedTasks: List<ExecutionRecord>,
     ): ThinkingStatus = ParsedActor(

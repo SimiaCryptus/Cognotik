@@ -4,7 +4,8 @@ import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import org.slf4j.LoggerFactory
@@ -276,7 +277,7 @@ val Throwable.stackTraceTxt: String
         return sw.toString()
     }
 
-fun ChatClient.getChildClient(task: SessionTask): ChatClient = this.getChildClient().apply {
+fun ChatClientInterface.getChildClient(task: SessionTask): ChatClientInterface = this.getChildClient().apply {
     val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
 
     createFile.second?.apply {

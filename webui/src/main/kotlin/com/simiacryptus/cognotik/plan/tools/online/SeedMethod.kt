@@ -43,9 +43,10 @@ enum class SeedMethod {
                 val userSettings = user?.let {
                     ApplicationServices.userSettingsManager.getUserSettings(it)
                 }
-                val key = userSettings?.apiKeys?.get(APIProvider.GoogleSearch)?.let { it.trim() }
+                val key = userSettings
+                    ?.apis?.firstOrNull { it.provider == APIProvider.GoogleSearch }?.key?.trim()
                     ?: throw RuntimeException("Google API token is required")
-                val engineId = userSettings?.apiBase?.get(APIProvider.GoogleSearch)?.let { it.trim() }
+                val engineId = userSettings.apiBase[APIProvider.GoogleSearch]?.trim()
                     ?: throw RuntimeException("Search engine id is required")
                 log.debug("Preparing Google Search API request with engine ID: $engineId")
                 val uriBuilder =

@@ -15,8 +15,9 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
@@ -142,7 +143,7 @@ class EnhancedOutlineAgent(
 
     fun buildMap() {
         val task = ui.newTask(false)
-        val childApi = (api as ChatClient).getChildClient(task)
+        val childApi = (api as ChatClientInterface).getChildClient(task)
         tabbedDisplay["Content"] = task.placeholder
         val outlineManager = try {
             task.echo(this.userMessage.renderMarkdown)
@@ -263,7 +264,7 @@ class EnhancedOutlineAgent(
         for ((item, childNode) in terminalNodeMap) {
             activeThreadCounter.incrementAndGet()
             val subTask = ui.newTask(false)
-            val childApi = (api as ChatClient).getChildClient(subTask)
+            val childApi = (api as ChatClientInterface).getChildClient(subTask)
             tabbedDisplay[item] = subTask.placeholder
             ApplicationServices.clientManager.getPool(session, user).submit {
                 try {

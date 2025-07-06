@@ -15,7 +15,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.util.JsonUtil
@@ -30,7 +31,7 @@ import java.util.concurrent.TimeUnit
 abstract class PatchApp(
     override val root: File,
     protected val settings: Settings,
-    private val api: ChatClient,
+    private val api: ChatClientInterface,
     val model: ChatModelType,
     val parsingModel: ChatModelType,
     private val promptPrefix: String = """The following command was run and produced an error:""",
@@ -273,7 +274,7 @@ abstract class PatchApp(
         val fixTask = ui.newTask(false).apply { tabs["Fix"] = placeholder }
         try {
             log.info("Creating child API client for fix task")
-            val api = api.getChildClient(task = fixTask)
+            val api = api.getChildClient(fixTask)
             val plan = if (outputResult.errors == null) {
                 log.info("No pre-parsed errors, parsing errors from output")
                 parsedErrorsParsedResponse(settings = settings, output = outputResult, api = api)
@@ -332,7 +333,7 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         settings: Settings,
         changed: MutableSet<Path>,
-        api: ChatClient,
+        api:  ChatClientInterface,
         progressHeader: StringBuilder?
     ) {
         log.info("Starting fixAllErrors")
@@ -402,7 +403,7 @@ abstract class PatchApp(
     }
 
     private fun parsedErrorsParsedResponse(
-        settings: Settings, output: OutputResult, api: ChatClient
+        settings: Settings, output: OutputResult, api: ChatClientInterface
     ): ParsedResponse<ParsedErrors> {
         log.info("Parsing errors from command output")
         val plan = ParsedActor(
@@ -468,7 +469,7 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         autoFix: Boolean,
         changed: MutableSet<Path>,
-        api: ChatClient,
+        api: ChatClientInterface,
         task: SessionTask,
     ) {
         log.info("Starting fix for error: ${error.message}")

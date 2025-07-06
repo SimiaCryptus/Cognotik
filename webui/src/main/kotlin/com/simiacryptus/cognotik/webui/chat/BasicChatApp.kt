@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.chat
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.instance
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.models.chat.ChatModelType
@@ -40,10 +41,11 @@ class BasicChatApp(
 
     override fun newSession(user: User?, session: Session): ChatSocketManager {
         val settings = this.settings ?: getSettings(session, user)!!
+
         return ChatSocketManager(
             session = session,
-            model = settings.model,
-            parsingModel = settings.parsingModel,
+            model = settings.model.instance(user ?: throw IllegalArgumentException("User must be provided for chat session")),
+            parsingModel = settings.parsingModel.instance(user),
             initialAssistantPrompt = "",
             systemPrompt = "",
             api = ApplicationServices.clientManager.getChatClient(session, user),
@@ -55,3 +57,4 @@ class BasicChatApp(
         )
     }
 }
+

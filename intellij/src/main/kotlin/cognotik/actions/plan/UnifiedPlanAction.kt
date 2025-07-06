@@ -28,7 +28,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.chat.chatModel
+import com.simiacryptus.jopenai.models.chat.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 
@@ -43,8 +43,8 @@ class UnifiedPlanAction : BaseAction() {
         val root: String = UITools.getRoot(e)
         val dialog = PlanConfigDialog(
             e.project, PlanSettings(
-                defaultModel = AppSettingsState.instance.smartModel.chatModel(),
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                defaultModel = AppSettingsState.instance.smartModel.chatModelType(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
@@ -287,10 +287,10 @@ class UnifiedPlanAction : BaseAction() {
                 command = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
             ),
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+            model = AppSettingsState.instance.smartModel.chatModelType(),
+            parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
             showMenubar = false,
             api = api.getChildClient().apply {
                 budget = apiBudget

@@ -1,6 +1,7 @@
 package com.simiacryptus.jopenai.proxy
 
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.ChatRequest
@@ -10,7 +11,7 @@ import com.simiacryptus.util.JsonUtil.toJson
 
 open class ChatProxy<T : Any>(
     clazz: Class<out T>,
-    val api: ChatClient,
+    val api: ChatClientInterface,
     var model: ChatModelType,
     temperature: Double = 0.5,
     private val moderated: Boolean = false,

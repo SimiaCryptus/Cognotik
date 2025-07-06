@@ -16,7 +16,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
@@ -77,7 +78,7 @@ class PlanCoordinator(
         userMessage: String,
         api: API,
     ): PlanProcessingState {
-        val api = (api as ChatClient).getChildClient(task)
+        val api = (api as ChatClientInterface).getChildClient(task)
         val tabs = TabbedDisplay(task)
         val planProcessingState = newState(plan)
         this.planProcessingState = planProcessingState
@@ -123,7 +124,7 @@ class PlanCoordinator(
         tabs: TabbedDisplay,
     ) {
         val sessionTask = ui.newTask(false).apply { tabs["Session"] = placeholder }
-        val api = (api as ChatClient).getChildClient(sessionTask)
+        val api = (api as ChatClientInterface).getChildClient(sessionTask)
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
