@@ -56,7 +56,7 @@ interface UserSettingsInterface {
         @Deprecated("Use UserSettings constructor with MutableList parameters instead")
         constructor(
             apiKeys: Map<APIProvider, String>,
-            apiBase: Map<APIProvider, String>,
+            apiBase: Map<APIProvider, String> = emptyMap(),
             localTools: List<String> = emptyList()
         ) : this(apiKeys.map {
             ApiData(

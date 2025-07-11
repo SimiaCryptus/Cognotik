@@ -8,11 +8,12 @@ import com.simiacryptus.jopenai.models.chat.OpenAIModels
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
 abstract class UsageTest(private val impl: UsageInterface) {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(UsageTest::class.java)
+        private val log = LoggerFactory.getLogger(UsageTest::class.java)
     }
 
     private val testUser = User(
@@ -39,10 +40,10 @@ abstract class UsageTest(private val impl: UsageInterface) {
         )
         log.info("Incrementing usage for session {} with model {}", session, model)
         impl.incrementUsage(session, testUser, model, usage)
-        val usageSummary = impl.getSessionUsageSummary(session)
-        Assertions.assertEquals(usage, usageSummary[model])
+        val usageSummary: Map<String, ApiModel.Usage> = impl.getSessionUsageSummary(session)
+        Assertions.assertEquals(usage, usageSummary[model.modelName])
         val userUsageSummary = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(usage, userUsageSummary[model])
+        Assertions.assertEquals(usage, userUsageSummary[model.modelName])
     }
 
     @Test
@@ -58,7 +59,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
         log.info("Incrementing usage for user {} with model {}", testUser.email, model)
         impl.incrementUsage(session, testUser, model, usage)
         val userUsageSummary = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(usage, userUsageSummary[model])
+        Assertions.assertEquals(usage, userUsageSummary[model.modelName])
     }
 
     @Test
@@ -102,11 +103,11 @@ abstract class UsageTest(private val impl: UsageInterface) {
         impl.incrementUsage(session, testUser, model2, usage2)
         log.debug("Verifying usage summaries for session and user")
         val usageSummary = impl.getSessionUsageSummary(session)
-        Assertions.assertEquals(usage1, usageSummary[model1])
-        Assertions.assertEquals(usage2, usageSummary[model2])
+        Assertions.assertEquals(usage1, usageSummary[model1.modelName])
+        Assertions.assertEquals(usage2, usageSummary[model2.modelName])
         val userUsageSummary = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(usage1, userUsageSummary[model1])
-        Assertions.assertEquals(usage2, userUsageSummary[model2])
+        Assertions.assertEquals(usage1, userUsageSummary[model1.modelName])
+        Assertions.assertEquals(usage2, userUsageSummary[model2.modelName])
     }
 
     @Test
@@ -134,9 +135,9 @@ abstract class UsageTest(private val impl: UsageInterface) {
             completion_tokens = 30,
             cost = 45.0,
         )
-        Assertions.assertEquals(expectedUsage, usageSummary[model])
+        Assertions.assertEquals(expectedUsage, usageSummary[model.modelName])
         val userUsageSummary = impl.getUserUsageSummary(testUser)
-        Assertions.assertEquals(expectedUsage, userUsageSummary[model])
+        Assertions.assertEquals(expectedUsage, userUsageSummary[model.modelName])
     }
 
     @Test

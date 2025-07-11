@@ -176,46 +176,83 @@ object FileSelectionUtils {
             return false // UTF-8 with BOM is text
         }
 
-        var binaryCount = 0
         var nullCount = 0
-        var validUtf8Sequences = 0
+        var controlCharCount = 0
+        var printableCount = 0
+        var i = 0
         
-        for (i in 0 until bytesRead) {
+        while (i < bytesRead) {
             val b = bytes[i].toInt() and 0xFF
-            // Check for valid UTF-8 sequences
-            if (b and 0x80 == 0) {
-                // ASCII character
-                validUtf8Sequences++
-            } else if (b and 0xE0 == 0xC0 && i + 1 < bytesRead) {
-                // 2-byte UTF-8 sequence
-                val next = bytes[i + 1].toInt() and 0xFF
-                if (next and 0xC0 == 0x80) {
-                    validUtf8Sequences++
-                }
-            }
             
             when {
                 b == 0 -> {
-                    binaryCount++
                     nullCount++
+                    i++
                 }
-                // Allow common control characters: tab(9), newline(10), carriage return(13)
-                b in 1..8 -> binaryCount++
-                b in 11..12 -> binaryCount++
-                b in 14..31 -> binaryCount++
-                b >= 127 -> binaryCount++
+                // Allow common control characters: tab(9), newline(10), carriage return(13), form feed(12)
+                b in listOf(9, 10, 12, 13) -> {
+                    printableCount++
+                    i++
+                }
+                // Other control characters (but not as strict)
+                b in 1..8 || b in 11..11 || b in 14..31 -> {
+                    controlCharCount++
+                    i++
+                }
+                // ASCII printable characters
+                b in 32..126 -> {
+                    printableCount++
+                    i++
+                }
+                // Handle UTF-8 sequences properly
+                b and 0x80 != 0 -> {
+                    val utfLength = when {
+                        b and 0xE0 == 0xC0 -> 2  // 110xxxxx - 2 byte sequence
+                        b and 0xF0 == 0xE0 -> 3  // 1110xxxx - 3 byte sequence  
+                        b and 0xF8 == 0xF0 -> 4  // 11110xxx - 4 byte sequence
+                        else -> 1 // Invalid UTF-8 start byte, treat as single byte
+                    }
+                    
+                    // Validate UTF-8 sequence
+                    var validUtf8 = true
+                    if (utfLength > 1 && i + utfLength <= bytesRead) {
+                        for (j in 1 until utfLength) {
+                            val continuationByte = bytes[i + j].toInt() and 0xFF
+                            if (continuationByte and 0xC0 != 0x80) {
+                                validUtf8 = false
+                                break
+                            }
+                        }
+                    } else if (utfLength > 1) {
+                        validUtf8 = false // Incomplete sequence at end of buffer
+                    }
+                    
+                    if (validUtf8 && utfLength > 1) {
+                        printableCount++
+                        i += utfLength
+                    } else {
+                        controlCharCount++
+                        i++
+                    }
+                }
+                // High ASCII (128-255) - could be extended ASCII or invalid UTF-8
+                else -> {
+                    controlCharCount++
+                    i++
+                }
             }
+            
         }
 
-        // Enhanced binary detection logic
+        // More lenient binary detection logic
         val nullRatio = nullCount.toDouble() / bytesRead
-        val binaryRatio = binaryCount.toDouble() / bytesRead
-        val utf8Ratio = validUtf8Sequences.toDouble() / bytesRead
+        val controlRatio = controlCharCount.toDouble() / bytesRead
+        val printableRatio = printableCount.toDouble() / bytesRead
 
         return when {
-            nullRatio > 0.01 -> true // More than 1% null bytes
-            binaryRatio > 0.30 -> true // More than 30% non-printable
-            utf8Ratio > 0.95 -> false // High UTF-8 confidence
+            nullRatio > 0.05 -> true // More than 5% null bytes (more lenient)
+            printableRatio > 0.70 -> false // More than 70% printable characters (including UTF-8)
+            controlRatio > 0.50 -> true // More than 50% control/invalid characters
             else -> false
         }
     }

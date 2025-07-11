@@ -32,10 +32,14 @@ class DocumentedMassPatchAction : BaseAction() {
 
     class SettingsUI {
         @Name("Documentation Files")
-        val documentationFiles = CheckBoxList<Path>()
+        val documentationFiles = CheckBoxList<Path>().apply {
+            selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+        }
 
         @Name("Code Files")
-        val codeFiles = CheckBoxList<Path>()
+        val codeFiles = CheckBoxList<Path>().apply {
+            selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+        }
 
         @Name("AI Instruction")
         val transformationMessage = JBTextArea(4, 40)
@@ -161,7 +165,7 @@ class DocumentedMassPatchAction : BaseAction() {
                         val moveDownButton = JButton("↓").apply {
                             toolTipText = "Move selected documentation file to code files"
                             addActionListener {
-                                moveFocusedItem(settingsUI.documentationFiles, settingsUI.codeFiles)
+                               moveSelectedItems(settingsUI.documentationFiles, settingsUI.codeFiles)
                             }
                         }
                         add(moveDownButton)
@@ -171,7 +175,7 @@ class DocumentedMassPatchAction : BaseAction() {
                         val moveUpButton = JButton("↑").apply {
                             toolTipText = "Move selected code file to documentation files"
                             addActionListener {
-                                moveFocusedItem(settingsUI.codeFiles, settingsUI.documentationFiles)
+                               moveSelectedItems(settingsUI.codeFiles, settingsUI.documentationFiles)
                             }
                         }
                         add(moveUpButton)
@@ -199,18 +203,19 @@ class DocumentedMassPatchAction : BaseAction() {
                 }, BorderLayout.SOUTH)
             }
         }
-        private fun moveFocusedItem(sourceList: CheckBoxList<Path>, targetList: CheckBoxList<Path>) {
-            val focusedIndex = sourceList.selectedIndex
-            if (focusedIndex < 0 || focusedIndex >= sourceList.items.size) return
-            val focusedItem = sourceList.items[focusedIndex]
+       private fun moveSelectedItems(sourceList: CheckBoxList<Path>, targetList: CheckBoxList<Path>) {
+           val selectedIndices = sourceList.selectedIndices
+           if (selectedIndices.isEmpty()) return
+           
+           val selectedItems = selectedIndices.map { sourceList.items[it] }
             
             // Remove from source list
             val sourceItems = sourceList.items.toMutableList()
-            sourceItems.remove(focusedItem)
+           selectedItems.forEach { sourceItems.remove(it) }
             
             // Add to target list
             val targetItems = targetList.items.toMutableList()
-            targetItems.add(focusedItem)
+           targetItems.addAll(selectedItems)
             
             // Update both lists
             val root = userSettings.documentationFiles.firstOrNull()?.parent 
@@ -222,10 +227,13 @@ class DocumentedMassPatchAction : BaseAction() {
                 root?.relativize(path)?.toString() ?: path.toString()
             }
             
-            // Focus on the moved item in target list
-            val newIndex = targetItems.indexOf(focusedItem)
-            if (newIndex >= 0) {
-                targetList.selectedIndex = newIndex
+           // Select the moved items in target list
+           val newIndices = selectedItems.mapNotNull { item ->
+               val index = targetItems.indexOf(item)
+               if (index >= 0) index else null
+           }.toIntArray()
+           if (newIndices.isNotEmpty()) {
+               targetList.selectedIndices = newIndices
             }
         }
 
