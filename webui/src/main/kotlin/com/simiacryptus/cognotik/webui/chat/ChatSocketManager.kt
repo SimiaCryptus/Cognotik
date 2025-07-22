@@ -147,9 +147,9 @@ open class ChatSocketManager(
     }
 
     private val idSubPattern = """[^|\n,/\\;}{\]\[><]+""" // Matches any valid identifier character except for special characters used in the expansion syntax
-    private val expansionExpressionPattern = Regex("""\{($idSubPattern(?:[|,]$idSubPattern)*)}""") // Matches
+    private val expansionExpressionPattern = Regex("""\{($idSubPattern(?:[|,]$idSubPattern)+)}""") // Matches
 
-    private val sequenceExpansionPattern = Regex("""<($idSubPattern(?:$idSubPattern)+)>""") // Matches <item1;item2;item3>
+    private val sequenceExpansionPattern = Regex("""<($idSubPattern(?:[|,]$idSubPattern)+)>""") // Matches <item1;item2;item3>
 
     private val rangeExpansionPattern = Regex("""\[\[(\d+)(?:\.{2,3}| to )(\d+)(?:(?::| by )(\d+))?]]""") // Matches [[start..end:step]] or [[start to end by step]]
 
@@ -255,13 +255,14 @@ open class ChatSocketManager(
         if (rangeMatch != null) {
             return expandRange(api, currentMessage, task, baseMessages, rangeMatch)
         }
+
         val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
-        if (sequenceMatch != null) {
+        if (sequenceMatch != null && sequenceMatch.groupValues[1].split('|', ',').size > 1) {
             return expandSequences(api, currentMessage, task, baseMessages, sequenceMatch)
         }
 
         val match = expansionExpressionPattern.find(currentMessage)
-        if (match != null) {
+        if (match != null && match.groupValues[1].split('|', ',').size > 1) {
             return expandAlternatives(api, currentMessage, task, baseMessages, match, this::processMsgRecursive)
         }
 
