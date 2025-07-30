@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.chat.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
@@ -53,7 +52,6 @@ open class ChatSocketManager(
       </div>
     </div>
   """.trimIndent(),
-    open val initialAssistantPrompt: String = "",
     open val systemPrompt: String,
     var api: ChatClientInterface,
     var temperature: Double = 0.3,
@@ -251,20 +249,20 @@ open class ChatSocketManager(
         baseMessages: List<ApiModel.ChatMessage>,
     ): List<(StringBuilder) -> Unit> {
 
-        val rangeMatch = rangeExpansionPattern.find(currentMessage)
-        if (rangeMatch != null) {
-            return expandRange(api, currentMessage, task, baseMessages, rangeMatch)
-        }
-
-        val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
-        if (sequenceMatch != null && sequenceMatch.groupValues[1].split('|', ',').size > 1) {
-            return expandSequences(api, currentMessage, task, baseMessages, sequenceMatch)
-        }
-
-        val match = expansionExpressionPattern.find(currentMessage)
-        if (match != null && match.groupValues[1].split('|', ',').size > 1) {
-            return expandAlternatives(api, currentMessage, task, baseMessages, match, this::processMsgRecursive)
-        }
+//        val rangeMatch = rangeExpansionPattern.find(currentMessage)
+//        if (rangeMatch != null) {
+//            return expandRange(api, currentMessage, task, baseMessages, rangeMatch)
+//        }
+//
+//        val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
+//        if (sequenceMatch != null && sequenceMatch.groupValues[1].split('|', ',').size > 1) {
+//            return expandSequences(api, currentMessage, task, baseMessages, sequenceMatch)
+//        }
+//
+//        val match = expansionExpressionPattern.find(currentMessage)
+//        if (match != null && match.groupValues[1].split('|', ',').size > 1) {
+//            return expandAlternatives(api, currentMessage, task, baseMessages, match, this::processMsgRecursive)
+//        }
 
         return listOf { aggregateResponse: StringBuilder ->
             task.add("")

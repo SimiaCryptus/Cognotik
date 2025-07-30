@@ -45,8 +45,8 @@ open class ProvidersChatClient(
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     var reasoningEffort: ReasoningEffort = ReasoningEffort.Low,
     var textCompressor: TextCompressor? = TextCompressor(
-        minLength = 256,
-        minOccurrences = 5
+        minLength = 25600,
+        minOccurrences = 50
     ),
     val apiKeyMap: Map<APIProvider, String> = emptyMap(),
     val apiBaseMap: Map<APIProvider, String> = emptyMap(),

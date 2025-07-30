@@ -46,7 +46,6 @@ class BasicChatApp(
             session = session,
             model = settings.model.instance(user ?: throw IllegalArgumentException("User must be provided for chat session")),
             parsingModel = settings.parsingModel.instance(user),
-            initialAssistantPrompt = "",
             systemPrompt = "",
             api = ApplicationServices.clientManager.getChatClient(session, user),
             temperature = settings.temperature,

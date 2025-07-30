@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
-import com.simiacryptus.jopenai.models.chat.chatModelType
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 
@@ -41,7 +40,6 @@ class GenericChatAction : BaseAction() {
                     session = session,
                     model = AppSettingsState.instance.smartModel.chatModel(),
                     parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-                    initialAssistantPrompt = "",
                     systemPrompt = systemPrompt,
                     api = api,
                     applicationClass = ApplicationServer::class.java,
