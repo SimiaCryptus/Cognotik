@@ -56,6 +56,7 @@ kover = "0.9.1"
 qodana = "2025.1.0"
 shadow = "8.1.1"
 junitJupiter = "5.12.2"
+android-gradle-plugin = "8.1.4"
 
 [libraries]
 jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
@@ -148,3 +149,4 @@ intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "inte
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
