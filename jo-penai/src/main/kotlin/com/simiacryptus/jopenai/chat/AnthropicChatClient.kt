@@ -157,8 +157,10 @@ class AnthropicChatClient(
                 if (errorCheck.has("type") && errorCheck.get("type").asText() == "error") {
                     val errorMessage = if (errorCheck.has("message")) {
                         errorCheck.get("message").asText()
+                    } else if (errorCheck.has("error") && errorCheck.get("error").has("message")) {
+                        errorCheck.get("error").get("message").asText()
                     } else {
-                        "Unknown error"
+                        "Unknown error: ${errorCheck}"
                     }
                     throw RuntimeException("Anthropic API error: $errorMessage")
                 }
