@@ -136,7 +136,7 @@ object OpenAIModels {
         hasReasoningEffort = false,
     )
 
-    val values = mapOf(
+    val values: Map<String, ChatModelType> = mapOf(
         "GPT4Turbo" to GPT4Turbo,
         "GPT4o" to GPT4o,
         "GPT4oMini" to GPT4oMini,

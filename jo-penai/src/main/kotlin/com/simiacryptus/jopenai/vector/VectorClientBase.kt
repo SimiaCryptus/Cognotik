@@ -1,0 +1,185 @@
+package com.simiacryptus.jopenai.vector
+
+import com.simiacryptus.jopenai.HttpClientManager
+import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.jopenai.models.ApiModel.Usage
+import com.simiacryptus.jopenai.models.EmbeddingModels
+import org.apache.hc.client5.http.classic.methods.HttpPost
+import org.apache.hc.core5.http.HttpRequest
+import org.apache.hc.core5.http.io.entity.EntityUtils
+import org.apache.hc.core5.http.io.entity.StringEntity
+import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.io.IOException
+import java.util.*
+import java.util.concurrent.ExecutorService
+
+interface VectorClientInterface {
+    var budget: Number?
+    
+    fun createEmbedding(
+        request: ApiModel.EmbeddingRequest,
+        model: EmbeddingModels
+    ): ApiModel.EmbeddingResponse
+    
+    fun onUsage(model: EmbeddingModels, tokens: Usage)
+    
+    fun getChildClient(): VectorClientInterface
+}
+
+abstract class SingleProviderVectorClient(
+    protected val provider: APIProvider,
+    val apiKey: String,
+    val apiBase: String = provider.base!!,
+    workPool: ExecutorService,
+    logLevel: Level = Level.INFO,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+) : VectorClientBase(
+    workPool = workPool,
+    logLevel = logLevel,
+    logStreams = logStreams
+)
+
+abstract class VectorClientBase(
+    workPool: ExecutorService,
+    logLevel: Level = Level.INFO,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+) : HttpClientManager(
+    logLevel = logLevel, logStreams = logStreams, workPool = workPool
+), VectorClientInterface {
+
+    var session: Any? = null
+    var user: Any? = null
+    override var budget: Number? = null
+
+    @Throws(IOException::class, InterruptedException::class)
+    fun post(
+        url: String,
+        json: String,
+        apiProvider: APIProvider,
+        requestID: String = UUID.randomUUID().toString()
+    ): String {
+        validatePostRequest(url, json)
+        val request = HttpPost(url)
+        request.addHeader("Content-Type", "application/json")
+        request.addHeader("Accept", "application/json")
+        authorize(request, apiProvider)
+        request.entity = StringEntity(json, Charsets.UTF_8, false)
+        return post(request, requestID = requestID)
+    }
+
+    private fun validatePostRequest(url: String, json: String) {
+        require(url.isNotBlank()) { "URL cannot be blank" }
+        require(json.isNotBlank()) { "JSON payload cannot be blank" }
+        require(url.startsWith("http")) { "URL must be a valid HTTP/HTTPS URL: $url" }
+    }
+
+    abstract fun authorize(request: HttpRequest, apiProvider: APIProvider)
+
+    fun post(request: HttpPost, requestID: String = UUID.randomUUID().toString()): String = try {
+        withClient<String> {
+            log(
+                level = Level.DEBUG,
+                msg = String.format(
+                    "POST %s\nID:%s\nPrefix:\n\t%s\n%s\n",
+                    request.uri,
+                    requestID,
+                    formatEntityForLogging(request.entity),
+                    captureCallerStack().lineSequence().map {
+                        when {
+                            it.isBlank() -> {
+                                when {
+                                    it.length < "\t".length -> "\t"
+                                    else -> it
+                                }
+                            }
+
+                            else -> "\t" + it
+                        }
+                    }.joinToString("\n")
+                )
+            )
+            val response = it.execute(request)
+            val entity = response.entity
+            if (entity != null) {
+                val responseBody = EntityUtils.toString(entity)
+                if (responseBody.isBlank()) {
+                    throw IOException("Empty response body")
+                }
+                responseBody
+            } else {
+                throw IOException("Empty response entity")
+            }
+        }
+    } catch (e: Exception) {
+        log.error("Failed to execute POST request to ${request.uri}", e)
+        throw e
+    }
+
+    private fun formatEntityForLogging(entity: org.apache.hc.core5.http.HttpEntity?): String {
+        return try {
+            EntityUtils.toString(entity)?.lineSequence()?.map {
+                when {
+                    it.isBlank() -> if (it.length < "\t".length) "\t" else it
+                    else -> "\t$it"
+                }
+            }?.joinToString("\n").orEmpty()
+        } catch (e: Exception) {
+            log.warn("Failed to format entity for logging", e)
+            "[Unable to format entity for logging]"
+        }
+    }
+
+    override fun onUsage(model: EmbeddingModels, tokens: Usage) {
+        log.debug("Usage recorded for session: {}, user: {}, model: {}, tokens: {}", session, user, model, tokens)
+        budget?.let { currentBudget ->
+            val cost = tokens.cost ?: 0.0
+            budget = (currentBudget.toDouble() - cost).coerceAtLeast(0.0)
+            if (budget!!.toDouble() <= 0.0) {
+                log.warn("Budget exhausted for session: $session, user: $user")
+            }
+        }
+    }
+
+    inner class ChildClient() : VectorClientBase(
+        logLevel = Level.INFO,
+        workPool = workPool,
+    ) {
+        init {
+            session = this@VectorClientBase.session
+            user = this@VectorClientBase.user
+        }
+
+        override fun log(level: Level, msg: String) {
+            super.log(level, msg)
+            this@VectorClientBase.log(level, msg)
+        }
+
+        override fun authorize(
+            request: HttpRequest,
+            apiProvider: APIProvider
+        ) {
+            this@VectorClientBase.authorize(request, apiProvider)
+        }
+
+        override fun createEmbedding(
+            request: ApiModel.EmbeddingRequest,
+            model: EmbeddingModels
+        ): ApiModel.EmbeddingResponse {
+            return this@VectorClientBase.createEmbedding(request, model)
+        }
+
+        override fun onUsage(model: EmbeddingModels, tokens: Usage) {
+            this@VectorClientBase.onUsage(model, tokens)
+            super.onUsage(model, tokens)
+        }
+    }
+
+    override fun getChildClient(): ChildClient = ChildClient()
+
+    companion object {
+        val log = LoggerFactory.getLogger(VectorClientBase::class.java)
+    }
+}

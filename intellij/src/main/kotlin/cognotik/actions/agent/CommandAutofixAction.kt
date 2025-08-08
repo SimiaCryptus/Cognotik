@@ -97,7 +97,7 @@ class CommandAutofixAction : BaseAction() {
                                 AppSettingsState.instance.recentWorkingDirs?.apply {
                                     if (size > MAX_RECENT_ARGUMENTS) dropLast(size - MAX_RECENT_DIRS)
                                 }
-                                require(executable.exists()) { "Executable file does not exist: ${executable}" }
+                                require(executable.exists()) { "Executable file does not exist: $executable" }
                                 PatchApp.CommandSettings(
                                     executable = executable,
                                     arguments = argument,
