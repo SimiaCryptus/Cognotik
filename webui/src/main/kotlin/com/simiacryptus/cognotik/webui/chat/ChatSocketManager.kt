@@ -19,11 +19,13 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
+var ALLOW_EXPANSION = false
+
 open class ChatSocketManager(
     session: Session,
     var model: ChatModelType.ChatModel,
     var parsingModel: ChatModelType.ChatModel,
-    val userInterfacePrompt: String = """
+    val userInterfacePrompt: String = (if(!ALLOW_EXPANSION) "" else """
     <div class="expandable-guide">
       <div class="expandable-header">
         <strong>Query Expansion Syntax Guide</strong>
@@ -51,7 +53,7 @@ open class ChatSocketManager(
         <p class="expandable-footer">You can combine these syntaxes for more complex expansions.</p>
       </div>
     </div>
-  """.trimIndent(),
+  """.trimIndent()),
     open val systemPrompt: String,
     var api: ChatClientInterface,
     var temperature: Double = 0.3,
@@ -67,7 +69,7 @@ open class ChatSocketManager(
 
     init {
         if (userInterfacePrompt.isNotBlank()) {
-            val task = newTask(false, true)
+            val task = newTask(ALLOW_EXPANSION, true)
             task.complete(userInterfacePrompt)
         }
     }
@@ -75,14 +77,6 @@ open class ChatSocketManager(
     val sysMessage: ApiModel.ChatMessage
         get() = ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())
     protected val chatMessages = mutableListOf<ApiModel.ChatMessage>()
-    protected val messages: List<ApiModel.ChatMessage> get() = synchronized(messagesLock) {
-        // Ensure the system message is always first
-        if (chatMessages.isEmpty() || chatMessages.first().role != ApiModel.Role.system) {
-            listOf(sysMessage) + chatMessages
-        } else {
-            chatMessages
-        }
-    }
     val ui = ApplicationInterface(this)
 
     override fun onRun(userMessage: String, socket: ChatSocket) {
@@ -102,8 +96,8 @@ open class ChatSocketManager(
                 task.add("")
                 val responseString = respond(api, task, expandedUserMessage, chatMessages())
                 synchronized(messagesLock) {
-                    if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
-                        chatMessages.removeAt(messages.size - 1)
+                    if (chatMessages.lastOrNull()?.role == ApiModel.Role.assistant) {
+                        chatMessages.removeAt(chatMessages.size - 1)
                     }
                     chatMessages += ApiModel.ChatMessage(ApiModel.Role.assistant, responseString.toContentList())
                 }
@@ -111,7 +105,7 @@ open class ChatSocketManager(
             } else {
                 val currentChatMessages = chatMessages()
                 retryable(ui, pool, task) { task ->
-                    subquery(task, api, expandedUserMessage, currentChatMessages)
+                    innerRun(task, api, expandedUserMessage, currentChatMessages)
                 }
             }
         } catch (e: Exception) {
@@ -120,7 +114,7 @@ open class ChatSocketManager(
         }
     }
 
-    private fun subquery(
+    private fun innerRun(
         task: SessionTask,
         api: ChatClientInterface,
         expandedUserMessage: String,
@@ -130,8 +124,8 @@ open class ChatSocketManager(
             task.add("")
             val responseString = respond(api, task, expandedUserMessage, currentChatMessages)
             synchronized(messagesLock) {
-                if (messages.lastOrNull()?.role == ApiModel.Role.assistant) {
-                    chatMessages.removeAt(messages.size - 1)
+                if (chatMessages.lastOrNull()?.role == ApiModel.Role.assistant) {
+                    chatMessages.removeAt(chatMessages.size - 1)
                 }
                 chatMessages += ApiModel.ChatMessage(
                     ApiModel.Role.assistant,
@@ -162,7 +156,6 @@ open class ChatSocketManager(
             val topicsText = try {
                 answer.topics.let { topics ->
                     if (topics?.isNotEmpty() == true) {
-
                         topics.forEach { (topicType, entities) ->
                             val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
                             synchronized(topicList) {
@@ -218,8 +211,11 @@ open class ChatSocketManager(
     }
 
     protected open fun chatMessages(): List<ApiModel.ChatMessage> = synchronized(messagesLock) {
-        // Return a snapshot of messages, ensuring the system prompt is first
-        listOf(messages.first()) + messages.drop(1)
+        if (chatMessages.isEmpty() || chatMessages.first().role != ApiModel.Role.system) {
+            listOf(sysMessage) + chatMessages
+        } else {
+            chatMessages
+        }
     }
 
     data class Topics(
@@ -249,20 +245,22 @@ open class ChatSocketManager(
         baseMessages: List<ApiModel.ChatMessage>,
     ): List<(StringBuilder) -> Unit> {
 
-//        val rangeMatch = rangeExpansionPattern.find(currentMessage)
-//        if (rangeMatch != null) {
-//            return expandRange(api, currentMessage, task, baseMessages, rangeMatch)
-//        }
-//
-//        val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
-//        if (sequenceMatch != null && sequenceMatch.groupValues[1].split('|', ',').size > 1) {
-//            return expandSequences(api, currentMessage, task, baseMessages, sequenceMatch)
-//        }
-//
-//        val match = expansionExpressionPattern.find(currentMessage)
-//        if (match != null && match.groupValues[1].split('|', ',').size > 1) {
-//            return expandAlternatives(api, currentMessage, task, baseMessages, match, this::processMsgRecursive)
-//        }
+        if(ALLOW_EXPANSION) {
+            val rangeMatch = rangeExpansionPattern.find(currentMessage)
+            if (rangeMatch != null) {
+                return expandRange(api, currentMessage, task, baseMessages, rangeMatch)
+            }
+
+            val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
+            if (sequenceMatch != null && sequenceMatch.groupValues[1].split('|', ',').size > 1) {
+                return expandSequences(api, currentMessage, task, baseMessages, sequenceMatch)
+            }
+
+            val match = expansionExpressionPattern.find(currentMessage)
+            if (match != null && match.groupValues[1].split('|', ',').size > 1) {
+                return expandAlternatives(api, currentMessage, task, baseMessages, match, this::processMsgRecursive)
+            }
+        }
 
         return listOf { aggregateResponse: StringBuilder ->
             task.add("")
@@ -330,10 +328,10 @@ open class ChatSocketManager(
         match: MatchResult,
         recursiveFn: (ChatClientInterface, String, SessionTask, List<ApiModel.ChatMessage>) -> List<(StringBuilder) -> Unit>
     ): List<(StringBuilder) -> Unit> {
-        val tabs = TabbedDisplay(task, closable = false)
+        val tabs = TabbedDisplay(task, closable = ALLOW_EXPANSION)
         return match.groupValues[1].split('|', ',').flatMap { option ->
             val newConversation = currentMessage.replaceFirst(match.value, option)
-            val task = ui.newTask(false).apply { tabs[option] = placeholder }
+            val task = ui.newTask(ALLOW_EXPANSION).apply { tabs[option] = placeholder }
             val filteredMessages = baseMessages.filter { it.content?.any { it.text?.contains(match.value) == true } != true }
             recursiveFn(api, newConversation, task, filteredMessages)
         }.apply {
@@ -372,14 +370,14 @@ open class ChatSocketManager(
         api: ChatClientInterface
     ) {
         val aggregatedResponse = StringBuilder()
-        val tabs = TabbedDisplay(task, closable = false)
+        val tabs = TabbedDisplay(task, closable = ALLOW_EXPANSION)
         val messages = baseMessages.dropLast(1).toMutableList()
         for (item in items) {
             val newMessage = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
                 api = api,
                 currentMessage = newMessage,
-                task = ui.newTask(false).apply { tabs[item] = placeholder },
+                task = ui.newTask(ALLOW_EXPANSION).apply { tabs[item] = placeholder },
                 baseMessages = messages.filter { it.content?.any { it.text?.contains(expression) == true } != true }
             )
             val subAggregate = StringBuilder()

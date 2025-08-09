@@ -17,7 +17,11 @@ interface ChatClientInterface : API {
      * @throws IllegalArgumentException if the request is invalid
      * @throws RuntimeException if the API call fails
      */
-    fun chat(chatRequest: ApiModel.ChatRequest, model: LLMModel): ApiModel.ChatResponse
+    fun chat(
+        chatRequest: ApiModel.ChatRequest,
+        model: LLMModel,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams
+    ): ApiModel.ChatResponse
 
     /**
      * Moderates the given text for policy violations

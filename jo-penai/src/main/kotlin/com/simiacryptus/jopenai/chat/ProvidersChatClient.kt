@@ -81,8 +81,6 @@ open class ProvidersChatClient(
         const val ANTHROPIC_API_VERSION = "2023-06-01"
 
         var modelsLabThrottle = Semaphore(1)
-        private const val MAX_RETRY_ATTEMPTS = 3
-        private const val RETRY_DELAY_MS = 1000L
     }
 
     enum class ReasoningEffort {
@@ -183,7 +181,8 @@ open class ProvidersChatClient(
     }
 
     override fun chat(
-        chatRequest: ChatRequest, model: LLMModel
+        chatRequest: ChatRequest, model: LLMModel,
+        logStreams: MutableList<java.io.BufferedOutputStream>
     ): ChatResponse {
         validateChatRequest(chatRequest)
 
@@ -234,18 +233,18 @@ open class ProvidersChatClient(
         val requestID = UUID.randomUUID().toString()
         log.info("Chat request ID: $requestID with ${chatRequest.messages.size} messages")
 
-        return withReliability {
-            withPerformanceLogging {
+        return withReliability(logStreams=logStreams) {
+            withPerformanceLogging(logStreams=logStreams) {
                 val result = when (apiProvider) {
-                    APIProvider.DeepSeek -> handleDeepSeekChat(chatRequest, apiBase, requestID)
-                    APIProvider.Google -> handleGoogleChat(chatRequest, model, apiBase, apiKey, requestID)
-                    APIProvider.Anthropic -> handleAnthropicChat(chatRequest, model, apiBase, apiKey)
-                    APIProvider.Perplexity -> handlePerplexityChat(chatRequest, apiBase, apiProvider, requestID)
-                    APIProvider.Mistral -> handleMistralChat(chatRequest, apiBase, apiProvider, requestID)
-                    APIProvider.Groq -> handleGroqChat(chatRequest, apiBase, apiProvider, requestID)
-                    APIProvider.ModelsLab -> handleModelsLabChat(chatRequest, apiBase, apiProvider, requestID)
+                    APIProvider.DeepSeek -> handleDeepSeekChat(chatRequest, apiBase, requestID, logStreams)
+                    APIProvider.Google -> handleGoogleChat(chatRequest, model, apiBase, apiKey, requestID, logStreams)
+                    APIProvider.Anthropic -> handleAnthropicChat(chatRequest, model, apiBase, apiKey, logStreams)
+                    APIProvider.Perplexity -> handlePerplexityChat(chatRequest, apiBase, apiProvider, requestID, logStreams)
+                    APIProvider.Mistral -> handleMistralChat(chatRequest, apiBase, apiProvider, requestID, logStreams)
+                    APIProvider.Groq -> handleGroqChat(chatRequest, apiBase, apiProvider, requestID, logStreams)
+                    APIProvider.ModelsLab -> handleModelsLabChat(chatRequest, apiBase, apiProvider, requestID, logStreams)
                     APIProvider.AWS -> handleAwsChat(chatRequest, model, apiKey)
-                    else -> handleGenericChat(chatRequest, apiBase, apiProvider, requestID)
+                    else -> handleGenericChat(chatRequest, apiBase, apiProvider, requestID, logStreams)
                 }
                 checkError(result)
                 val response = JsonUtil.objectMapper().readValue(result, ChatResponse::class.java)
@@ -257,37 +256,45 @@ open class ProvidersChatClient(
                     msg = String.format(
                         "Chat Completion %s:\n\t%s",
                         requestID,
-                        response.choices.firstOrNull()?.message?.content?.trim { it <= ' ' }?.let { trim ->
-                            trim.lineSequence().map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "\t".length -> "\t"
-                                            else -> it
-                                        }
+                        response.choices.firstOrNull()?.message?.content?.trim { it <= ' ' }?.lineSequence()?.map {
+                            when {
+                                it.isBlank() -> {
+                                    when {
+                                        it.length < "\t".length -> "\t"
+                                        else -> it
                                     }
-
-                                    else -> "\t" + it
                                 }
-                            }.joinToString("\n")
-                        } ?: JsonUtil.toJson(response)))
+
+                                else -> "\t" + it
+                            }
+                        }?.joinToString("\n") ?: JsonUtil.toJson(response)),
+                    logStreams)
                 response
             }
         }
     }
 
-    private fun handleDeepSeekChat(chatRequest: ChatRequest, apiBase: String, requestID: String): String {
-        val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-            .writeValueAsString(toDeepSeek(chatRequest))
-        return post("$apiBase/v1/chat/completions", json, APIProvider.DeepSeek, requestID = requestID)
-    }
+    private fun handleDeepSeekChat(
+        chatRequest: ChatRequest,
+        apiBase: String,
+        requestID: String,
+        logStreams: MutableList<BufferedOutputStream>
+    ) = post(
+        "$apiBase/v1/chat/completions",
+        JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+            .writeValueAsString(toDeepSeek(chatRequest)),
+        APIProvider.DeepSeek,
+        requestID = requestID,
+        logStreams = logStreams
+    )
 
     private fun handleGoogleChat(
         chatRequest: ChatRequest,
         model: LLMModel,
         apiBase: String,
         apiKey: String,
-        requestID: String
+        requestID: String,
+        logStreams: MutableList<BufferedOutputStream>
     ): String {
         val geminiChatRequest = toGeminiChatRequest(
             chatRequest
@@ -307,7 +314,7 @@ open class ProvidersChatClient(
                 "$apiBase/v1beta/models/${model.modelName}:generateContent?key=$apiKey",
                 json,
                 APIProvider.Google,
-                requestID
+                requestID, logStreams = logStreams
             )
         )
     }
@@ -316,7 +323,8 @@ open class ProvidersChatClient(
         chatRequest: ChatRequest,
         model: LLMModel,
         apiBase: String,
-        apiKey: String
+        apiKey: String,
+        logStreams: MutableList<BufferedOutputStream>
     ): String {
         val anthropicChatRequest = mapToAnthropicChatRequest(chatRequest, model)
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
@@ -327,7 +335,7 @@ open class ProvidersChatClient(
         request.addHeader("x-api-key", apiKey)
         request.addHeader("anthropic-version", "2023-06-01")
         request.entity = StringEntity(json, Charsets.UTF_8, false)
-        val rawResponse = post(request)
+        val rawResponse = post(request, logStreams = logStreams)
         return fromAnthropicResponse(rawResponse)
     }
 
@@ -335,51 +343,59 @@ open class ProvidersChatClient(
         chatRequest: ChatRequest,
         apiBase: String,
         apiProvider: APIProvider,
-        requestID: String
+        requestID: String,
+        logStreams: MutableList<BufferedOutputStream>
     ): String {
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
             .writeValueAsString(chatRequest.copy(stop = null))
-        return post("$apiBase/chat/completions", json, apiProvider, requestID)
+        return post("$apiBase/chat/completions", json, apiProvider, requestID, logStreams = logStreams)
     }
 
     private fun handleMistralChat(
         chatRequest: ChatRequest,
         apiBase: String,
         apiProvider: APIProvider,
-        requestID: String
+        requestID: String,
+        logStreams: MutableList<BufferedOutputStream>
     ): String {
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
             .writeValueAsString(toGroq(chatRequest))
-        return post("$apiBase/v1/chat/completions", json, apiProvider, requestID)
+        return post("$apiBase/v1/chat/completions", json, apiProvider, requestID, logStreams = logStreams)
     }
 
     private fun handleGroqChat(
         chatRequest: ChatRequest,
         apiBase: String,
         apiProvider: APIProvider,
-        requestID: String
+        requestID: String,
+        logStreams: MutableList<BufferedOutputStream>
     ): String {
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
             .writeValueAsString(toGroq(chatRequest))
-        return post("$apiBase/openai/v1/chat/completions", json, apiProvider, requestID)
+        return post("$apiBase/openai/v1/chat/completions", json, apiProvider, requestID, logStreams = logStreams)
     }
 
     private fun handleModelsLabChat(
         chatRequest: ChatRequest,
         apiBase: String,
         apiProvider: APIProvider,
-        requestID: String
+        requestID: String,
+        logStreams: MutableList<BufferedOutputStream>
     ): String {
         return modelsLabThrottle.runWithPermit {
             modelsLabThrottle.runWithPermit {
                 val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
                     .writeValueAsString(toModelsLab(chatRequest))
-                fromModelsLab(post("$apiBase/llm/chat", json, apiProvider, requestID), this)
+                fromModelsLab(post("$apiBase/llm/chat", json, apiProvider, requestID, logStreams = logStreams), this)
             }
         }
     }
 
-    private fun handleAwsChat(chatRequest: ChatRequest, model: LLMModel, apiKey: String): String {
+    private fun handleAwsChat(
+        chatRequest: ChatRequest,
+        model: LLMModel,
+        apiKey: String
+    ): String {
         val awsAuth = JsonUtil.fromJson<AwsChatClient.Companion.AWSAuth>(
             apiKey,
             AwsChatClient.Companion.AWSAuth::class.java
@@ -397,11 +413,12 @@ open class ProvidersChatClient(
         chatRequest: ChatRequest,
         apiBase: String,
         apiProvider: APIProvider,
-        requestID: String
+        requestID: String,
+        logStreams: MutableList<BufferedOutputStream>
     ): String {
         val json =
             JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(chatRequest)
-        return post("$apiBase/chat/completions", json, apiProvider, requestID)
+        return post("$apiBase/chat/completions", json, apiProvider, requestID, logStreams = logStreams)
     }
 
 

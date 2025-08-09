@@ -5,11 +5,11 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
+import java.io.BufferedOutputStream
 import java.io.File
 import java.util.*
 import java.util.function.Consumer
@@ -277,18 +277,21 @@ val Throwable.stackTraceTxt: String
         return sw.toString()
     }
 
-fun ChatClientInterface.getChildClient(task: SessionTask): ChatClientInterface = this.getChildClient().apply {
-    val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
+fun ChatClientInterface.getChildClient(task: SessionTask): ChatClientInterface {
+    val childClient = this.getChildClient()
+    childClient.logStreams += task.newLogStream()
+    return childClient
+}
 
-    createFile.second?.apply {
-        val buffered = this.outputStream().buffered()
-        buffered.write("API Logging Started\n".toByteArray())
-        buffered.write("Stack Trace:\n".toByteArray())
-        val stackTrace = Thread.currentThread().stackTrace
-        stackTrace.forEach { element ->
-            buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
-        }
-        logStreams += buffered
-        task.verbose("""API log: <a href='${createFile.first}' target='_blank'><pre>${absolutePath}</pre></a>""")
+fun SessionTask.newLogStream(): BufferedOutputStream {
+    val pair = createFile(".logs/api-${UUID.randomUUID()}.log")
+    val createFile = pair.second ?: throw IllegalStateException("Failed to create log file")
+    val buffered = createFile.outputStream().buffered()
+    buffered.write("API Logging Started\n".toByteArray())
+    buffered.write("Stack Trace:\n".toByteArray())
+    Thread.currentThread().stackTrace.forEach { element ->
+        buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
     }
+    verbose("""API log: <a href='${pair.first}' target='_blank'><pre>${createFile.absolutePath}</pre></a>""")
+    return buffered
 }

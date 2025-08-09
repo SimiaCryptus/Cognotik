@@ -36,7 +36,8 @@ class GoogleChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: LLMModel
+        model: LLMModel,
+        logStreams: MutableList<java.io.BufferedOutputStream>
     ): ApiModel.ChatResponse {
         val geminiChatRequest = toGeminiChatRequest(chatRequest, model)
         val json = JsonUtil.objectMapper()

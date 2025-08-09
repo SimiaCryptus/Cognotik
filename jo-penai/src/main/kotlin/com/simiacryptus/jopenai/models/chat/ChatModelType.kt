@@ -69,7 +69,8 @@ open class ChatModelType(
             logStreams = logStreams
         ).chat(
             chatRequest = chatRequest,
-            model = this@ChatModelType
+            model = this@ChatModelType,
+            logStreams = logStreams
         )
     }
 

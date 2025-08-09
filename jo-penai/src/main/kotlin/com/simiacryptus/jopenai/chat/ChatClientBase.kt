@@ -5,7 +5,9 @@ import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Usage
 import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.util.copy
 import org.apache.hc.client5.http.classic.methods.HttpPost
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
@@ -47,7 +49,8 @@ abstract class ChatClientBase(
         url: String,
         json: String,
         apiProvider: APIProvider,
-        requestID: String = UUID.randomUUID().toString()
+        requestID: String = UUID.randomUUID().toString(),
+        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams
     ): String {
         validatePostRequest(url, json)
         val request = HttpPost(url)
@@ -55,7 +58,7 @@ abstract class ChatClientBase(
         request.addHeader("Accept", "application/json")
         authorize(request, apiProvider)
         request.entity = StringEntity(json, Charsets.UTF_8, false)
-        return post(request, requestID = requestID)
+        return post(request, requestID = requestID, logStreams = logStreams)
     }
 
     private fun validatePostRequest(url: String, json: String) {
@@ -66,7 +69,11 @@ abstract class ChatClientBase(
 
     abstract fun authorize(request: HttpRequest, apiProvider: APIProvider)
 
-    fun post(request: HttpPost, requestID: String = UUID.randomUUID().toString()): String = try {
+    fun post(
+        request: HttpPost,
+        requestID: String = UUID.randomUUID().toString(),
+        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams
+    ): String = try {
         withClient<String> {
             log(
                 level = Level.DEBUG,
@@ -88,24 +95,33 @@ abstract class ChatClientBase(
                             else -> "\t" + it
                         }
                     }.joinToString("\n")
-                )
+                ),
+                logStreams
             )
-            val response = it.execute(request)
-            val entity = response.entity
-            if (entity != null) {
-                val responseBody = EntityUtils.toString(entity)
-                if (responseBody.isBlank()) {
-                    throw IOException("Empty response body")
-                }
-                responseBody
-            } else {
-                throw IOException("Empty response entity")
-            }
+            innerPost(it, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
         }
     } catch (e: Exception) {
         log.error("Failed to execute POST request to ${request.uri}", e)
         throw e
     }
+
+    protected open fun innerPost(
+        client: CloseableHttpClient,
+        request: HttpPost
+    ): String? {
+        val response = client.execute(request)
+        val entity = response.entity
+        return if (entity != null) {
+            val responseBody = EntityUtils.toString(entity)
+            if (responseBody.isBlank()) {
+                throw IOException("Empty response body")
+            }
+            responseBody
+        } else {
+            throw IOException("Empty response entity")
+        }
+    }
+
     private fun formatEntityForLogging(entity: org.apache.hc.core5.http.HttpEntity?): String {
         return try {
             EntityUtils.toString(entity)?.lineSequence()?.map {
@@ -135,15 +151,11 @@ abstract class ChatClientBase(
     inner class ChildClient() : ChatClientBase(
         logLevel = Level.INFO,
         workPool = workPool,
+        logStreams = this@ChatClientBase.logStreams.toTypedArray().toMutableList(),
     ) {
         init {
             session = this@ChatClientBase.session
             user = this@ChatClientBase.user
-        }
-
-        override fun log(level: Level, msg: String) {
-            super.log(level, msg)
-            this@ChatClientBase.log(level, msg)
         }
 
         override fun authorize(
@@ -155,9 +167,10 @@ abstract class ChatClientBase(
 
         override fun chat(
             chatRequest: ApiModel.ChatRequest,
-            model: LLMModel
+            model: LLMModel,
+            logStreams: MutableList<BufferedOutputStream>
         ): ApiModel.ChatResponse {
-            return this@ChatClientBase.chat(chatRequest, model)
+            return this@ChatClientBase.chat(chatRequest, model, logStreams)
         }
 
         override fun onUsage(model: LLMModel, tokens: Usage) {

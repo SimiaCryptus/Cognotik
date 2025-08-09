@@ -41,8 +41,6 @@ open class IdeaChatClient(
         }
     }
 
-    private val isInRequest = AtomicBoolean(false)
-
     override fun onUsage(model: LLMModel, tokens: Usage) {
         ApplicationServices.usageManager.incrementUsage(currentSession, localUser, model!!, tokens)
         super.onUsage(model, tokens)
@@ -51,7 +49,8 @@ open class IdeaChatClient(
     @Suppress("NAME_SHADOWING")
     override fun chat(
         chatRequest: ChatRequest,
-        model: LLMModel
+        model: LLMModel,
+        logStreams: MutableList<java.io.BufferedOutputStream>
     ): ChatResponse {
         val storeMetadata = AppSettingsState.instance.storeMetadata
         var chatRequest = chatRequest.copy(
@@ -59,8 +58,7 @@ open class IdeaChatClient(
             metadata = storeMetadata?.let { JsonUtil.fromJson(it, Map::class.java) }
         )
         val lastEvent = lastEvent
-        lastEvent ?: return super.chat(chatRequest, model)
-        chatRequest = chatRequest.copy(
+        if(lastEvent != null) chatRequest = chatRequest.copy(
             store = chatRequest.store,
             metadata = chatRequest.metadata?.let {
                 it + mapOf(
@@ -70,27 +68,13 @@ open class IdeaChatClient(
                 )
             }
         )
-        if (isInRequest.getAndSet(true)) {
-            val response = super.chat(chatRequest, model)
-            if (null != response.usage) {
-                UITools.logAction(
-                    "Chat Response: ${toJson(response.usage!!)}"
-                )
-            }
-            return response
-        } else {
-            try {
-                val response = super.chat(chatRequest, model)
-                if (null != response.usage) {
-                    UITools.logAction(
-                        "Chat Response: ${toJson(response.usage!!)}"
-                    )
-                }
-                return response
-            } finally {
-                isInRequest.set(false)
-            }
+        val response = super.chat(chatRequest, model, logStreams)
+        if (null != response.usage) {
+            UITools.logAction(
+                "Chat Response: ${toJson(response.usage!!)}"
+            )
         }
+        return response
     }
 
     companion object {
@@ -99,8 +83,8 @@ open class IdeaChatClient(
             get() = _instance.apply {
                 reasoningEffort = AppSettingsState.instance.reasoningEffort.let(ReasoningEffort::valueOf)
             }
-        private val _instance by lazy {
 
+        private val _instance by lazy {
             val client = IdeaChatClient()
             if (AppSettingsState.instance.apiLog) {
                 try {

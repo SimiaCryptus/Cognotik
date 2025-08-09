@@ -36,7 +36,8 @@ class DeepSeekChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: LLMModel
+        model: LLMModel,
+        logStreams: MutableList<java.io.BufferedOutputStream>
     ): ApiModel.ChatResponse {
         val deepSeekRequest = toDeepSeek(chatRequest)
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()

@@ -87,16 +87,16 @@ abstract class VectorClientBase(
                     request.uri,
                     requestID,
                     formatEntityForLogging(request.entity),
-                    captureCallerStack().lineSequence().map {
+                    captureCallerStack().lineSequence().map { str ->
                         when {
-                            it.isBlank() -> {
+                            str.isBlank() -> {
                                 when {
-                                    it.length < "\t".length -> "\t"
-                                    else -> it
+                                    str.length < "\t".length -> "\t"
+                                    else -> str
                                 }
                             }
 
-                            else -> "\t" + it
+                            else -> "\t" + str
                         }
                     }.joinToString("\n")
                 )
@@ -152,8 +152,8 @@ abstract class VectorClientBase(
             user = this@VectorClientBase.user
         }
 
-        override fun log(level: Level, msg: String) {
-            super.log(level, msg)
+        override fun log(level: Level, msg: String, logStreams: MutableList<BufferedOutputStream>) {
+            super.log(level, msg, logStreams)
             this@VectorClientBase.log(level, msg)
         }
 

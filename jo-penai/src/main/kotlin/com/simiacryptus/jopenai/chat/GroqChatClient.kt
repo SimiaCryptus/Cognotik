@@ -37,7 +37,8 @@ class GroqChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: LLMModel
+        model: LLMModel,
+        logStreams: MutableList<java.io.BufferedOutputStream>
     ): ApiModel.ChatResponse {
         log.info("Starting Groq chat with model: ${model.modelName}")
 
