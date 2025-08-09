@@ -75,7 +75,9 @@ open class ChatSocketManager(
     }
 
     val sysMessage: ApiModel.ChatMessage
-        get() = ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())
+        get() {
+            return ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())
+        }
     protected val chatMessages = mutableListOf<ApiModel.ChatMessage>()
     val ui = ApplicationInterface(this)
 
@@ -103,8 +105,9 @@ open class ChatSocketManager(
                 }
                 task.complete()
             } else {
-                val currentChatMessages = chatMessages()
                 retryable(ui, pool, task) { task ->
+                    chatMessages.takeLastWhile { it.role == ApiModel.Role.assistant }.forEach { chatMessages.remove(it) }
+                    val currentChatMessages = chatMessages()
                     innerRun(task, api, expandedUserMessage, currentChatMessages)
                 }
             }

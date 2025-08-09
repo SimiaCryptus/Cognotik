@@ -5,9 +5,9 @@ import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Usage
 import com.simiacryptus.jopenai.models.chat.LLMModel
-import com.simiacryptus.util.copy
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
+import org.apache.hc.core5.http.HttpEntity
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
@@ -50,7 +50,7 @@ abstract class ChatClientBase(
         json: String,
         apiProvider: APIProvider,
         requestID: String = UUID.randomUUID().toString(),
-        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams
     ): String {
         validatePostRequest(url, json)
         val request = HttpPost(url)
@@ -72,17 +72,16 @@ abstract class ChatClientBase(
     fun post(
         request: HttpPost,
         requestID: String = UUID.randomUUID().toString(),
-        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams
     ): String = try {
-        withClient<String> {
+        withClient { client ->
             log(
                 level = Level.DEBUG,
                 msg = String.format(
                     "POST %s\nID:%s\nPrefix:\n\t%s\n%s\n",
                     request.uri,
                     requestID,
-
-                    formatEntityForLogging(request.entity),
+                    request.entity.formatEntityForLogging(),
                     captureCallerStack().lineSequence().map {
                         when {
                             it.isBlank() -> {
@@ -98,7 +97,7 @@ abstract class ChatClientBase(
                 ),
                 logStreams
             )
-            innerPost(it, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
+            innerPost(client, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
         }
     } catch (e: Exception) {
         log.error("Failed to execute POST request to ${request.uri}", e)
@@ -119,20 +118,6 @@ abstract class ChatClientBase(
             responseBody
         } else {
             throw IOException("Empty response entity")
-        }
-    }
-
-    private fun formatEntityForLogging(entity: org.apache.hc.core5.http.HttpEntity?): String {
-        return try {
-            EntityUtils.toString(entity)?.lineSequence()?.map {
-                when {
-                    it.isBlank() -> if (it.length < "\t".length) "\t" else it
-                    else -> "\t$it"
-                }
-            }?.joinToString("\n").orEmpty()
-        } catch (e: Exception) {
-            log.warn("Failed to format entity for logging", e)
-            "[Unable to format entity for logging]"
         }
     }
 
@@ -184,4 +169,15 @@ abstract class ChatClientBase(
     companion object {
         val log = LoggerFactory.getLogger(ChatClientBase::class.java)
     }
+}
+
+fun HttpEntity?.formatEntityForLogging() = try {
+    EntityUtils.toString(this)?.lineSequence()?.map {
+        when {
+            it.isBlank() -> if (it.length < "\t".length) "\t" else it
+            else -> "\t$it"
+        }
+    }?.joinToString("\n").orEmpty()
+} catch (e: Exception) {
+    "[Unable to format entity for logging]: $e"
 }
