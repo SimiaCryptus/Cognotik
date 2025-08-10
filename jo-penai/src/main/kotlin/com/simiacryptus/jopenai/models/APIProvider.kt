@@ -3,7 +3,16 @@ package com.simiacryptus.jopenai.models
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.jopenai.chat.*
-import com.simiacryptus.jopenai.models.chat.*
+import com.simiacryptus.jopenai.chat.model.AWSModels
+import com.simiacryptus.jopenai.chat.model.AnthropicModels
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.chat.model.DeepSeekModels
+import com.simiacryptus.jopenai.chat.model.GoogleModels
+import com.simiacryptus.jopenai.chat.model.GroqModels
+import com.simiacryptus.jopenai.chat.model.MistralModels
+import com.simiacryptus.jopenai.chat.model.ModelsLabModels
+import com.simiacryptus.jopenai.chat.model.OpenAIModels
+import com.simiacryptus.jopenai.chat.model.PerplexityModels
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer

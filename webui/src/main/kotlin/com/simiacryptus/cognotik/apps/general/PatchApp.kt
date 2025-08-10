@@ -16,9 +16,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File

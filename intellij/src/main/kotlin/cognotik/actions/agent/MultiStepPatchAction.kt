@@ -32,8 +32,8 @@ import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson

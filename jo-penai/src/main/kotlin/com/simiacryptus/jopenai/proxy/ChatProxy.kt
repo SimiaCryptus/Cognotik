@@ -1,11 +1,10 @@
 package com.simiacryptus.jopenai.proxy
 
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.ChatRequest
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson
 

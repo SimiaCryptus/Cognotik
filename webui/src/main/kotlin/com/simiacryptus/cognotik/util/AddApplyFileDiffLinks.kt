@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration

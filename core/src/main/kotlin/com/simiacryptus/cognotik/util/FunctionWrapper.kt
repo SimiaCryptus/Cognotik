@@ -2,10 +2,6 @@
 
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.EmbeddingModels
-import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.AIModel
 import com.simiacryptus.util.JsonUtil
 import java.awt.image.BufferedImage
 import java.io.Closeable

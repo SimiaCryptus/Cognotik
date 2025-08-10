@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.apps.general.ValidationPatchApp
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 

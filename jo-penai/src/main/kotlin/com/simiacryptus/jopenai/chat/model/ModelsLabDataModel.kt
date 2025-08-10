@@ -1,4 +1,4 @@
-package com.simiacryptus.jopenai.models.chat
+package com.simiacryptus.jopenai.chat.model
 
 class ModelsLabDataModel {
 

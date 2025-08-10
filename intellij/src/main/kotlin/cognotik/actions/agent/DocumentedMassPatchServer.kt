@@ -17,13 +17,11 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
-import java.util.concurrent.Future
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 

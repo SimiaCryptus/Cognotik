@@ -8,12 +8,11 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataSt
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
-import com.simiacryptus.jopenai.chat.ChatClientBase
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.models.LLMModel
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ScheduledThreadPoolExecutor
 

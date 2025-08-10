@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat

@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.jopenai.models.chat.AnthropicModels
+import com.simiacryptus.jopenai.chat.model.AnthropicModels
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.LoggerFactory
 import java.awt.Desktop

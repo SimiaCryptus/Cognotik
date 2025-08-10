@@ -13,9 +13,8 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document

@@ -3,12 +3,11 @@ package com.simiacryptus.cognotik.actors
 import com.simiacryptus.cognotik.util.MultiExeption
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory

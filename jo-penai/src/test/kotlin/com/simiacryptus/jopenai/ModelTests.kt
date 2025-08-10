@@ -3,7 +3,7 @@ package com.simiacryptus.jopenai
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest

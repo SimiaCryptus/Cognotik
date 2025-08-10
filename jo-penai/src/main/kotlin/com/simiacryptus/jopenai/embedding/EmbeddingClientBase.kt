@@ -1,4 +1,4 @@
-package com.simiacryptus.jopenai.vector
+package com.simiacryptus.jopenai.embedding
 
 import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.APIProvider
@@ -16,7 +16,7 @@ import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutorService
 
-interface VectorClientInterface {
+interface EmbeddingClientInterface {
     var budget: Number?
     
     fun createEmbedding(
@@ -26,29 +26,29 @@ interface VectorClientInterface {
     
     fun onUsage(model: EmbeddingModels, tokens: Usage)
     
-    fun getChildClient(): VectorClientInterface
+    fun getChildClient(): EmbeddingClientInterface
 }
 
-abstract class SingleProviderVectorClient(
+abstract class SingleProviderEmbeddingClient(
     protected val provider: APIProvider,
     val apiKey: String,
     val apiBase: String = provider.base!!,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-) : VectorClientBase(
+) : EmbeddingClientBase(
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams
 )
 
-abstract class VectorClientBase(
+abstract class EmbeddingClientBase(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
 ) : HttpClientManager(
     logLevel = logLevel, logStreams = logStreams, workPool = workPool
-), VectorClientInterface {
+), EmbeddingClientInterface {
 
     var session: Any? = null
     var user: Any? = null
@@ -143,36 +143,36 @@ abstract class VectorClientBase(
         }
     }
 
-    inner class ChildClient() : VectorClientBase(
+    inner class ChildClient() : EmbeddingClientBase(
         logLevel = Level.INFO,
         workPool = workPool,
     ) {
         init {
-            session = this@VectorClientBase.session
-            user = this@VectorClientBase.user
+            session = this@EmbeddingClientBase.session
+            user = this@EmbeddingClientBase.user
         }
 
         override fun log(level: Level, msg: String, logStreams: MutableList<BufferedOutputStream>) {
             super.log(level, msg, logStreams)
-            this@VectorClientBase.log(level, msg)
+            this@EmbeddingClientBase.log(level, msg)
         }
 
         override fun authorize(
             request: HttpRequest,
             apiProvider: APIProvider
         ) {
-            this@VectorClientBase.authorize(request, apiProvider)
+            this@EmbeddingClientBase.authorize(request, apiProvider)
         }
 
         override fun createEmbedding(
             request: ApiModel.EmbeddingRequest,
             model: EmbeddingModels
         ): ApiModel.EmbeddingResponse {
-            return this@VectorClientBase.createEmbedding(request, model)
+            return this@EmbeddingClientBase.createEmbedding(request, model)
         }
 
         override fun onUsage(model: EmbeddingModels, tokens: Usage) {
-            this@VectorClientBase.onUsage(model, tokens)
+            this@EmbeddingClientBase.onUsage(model, tokens)
             super.onUsage(model, tokens)
         }
     }
@@ -180,6 +180,6 @@ abstract class VectorClientBase(
     override fun getChildClient(): ChildClient = ChildClient()
 
     companion object {
-        val log = LoggerFactory.getLogger(VectorClientBase::class.java)
+        val log = LoggerFactory.getLogger(EmbeddingClientBase::class.java)
     }
 }

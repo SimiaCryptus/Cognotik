@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModifi
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import java.io.File
 class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): MutableMap<String, TaskSettingsBase> {

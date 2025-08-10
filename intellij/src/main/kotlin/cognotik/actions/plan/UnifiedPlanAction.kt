@@ -28,7 +28,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 

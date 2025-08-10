@@ -3,7 +3,7 @@ package com.simiacryptus.jopenai.util
 import com.google.gson.Gson
 import com.simiacryptus.jopenai.exceptions.*
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.models.LLMModel
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.regex.Pattern

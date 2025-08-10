@@ -1,11 +1,10 @@
 package com.simiacryptus.jopenai.opt
 
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.opt.PromptOptimization.GeneticApi.Prompt
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList

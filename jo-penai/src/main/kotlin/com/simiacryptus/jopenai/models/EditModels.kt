@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.models
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.models.LLMModel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

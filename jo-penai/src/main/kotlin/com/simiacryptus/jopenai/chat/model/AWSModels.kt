@@ -1,4 +1,4 @@
-package com.simiacryptus.jopenai.models.chat
+package com.simiacryptus.jopenai.chat.model
 
 import com.simiacryptus.jopenai.models.APIProvider
 import org.slf4j.LoggerFactory

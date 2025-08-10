@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.OpenAIModels
+import com.simiacryptus.jopenai.chat.model.OpenAIModels
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

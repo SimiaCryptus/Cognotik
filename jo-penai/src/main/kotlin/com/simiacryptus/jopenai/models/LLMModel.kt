@@ -1,4 +1,4 @@
-package com.simiacryptus.jopenai.models.chat
+package com.simiacryptus.jopenai.models
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.Usage
 import com.simiacryptus.jopenai.models.EditModels
@@ -29,7 +30,7 @@ open class LLMModel(
 
 }
 
-class LLMModelSerializer : StdSerializer<LLMModel>(LLMModel::class.java) {
+class LLMModelSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<LLMModel>(LLMModel::class.java) {
     override fun serialize(value: LLMModel, gen: JsonGenerator, provider: SerializerProvider) {
         ((listOf(
             ChatModelType.Companion.values(),
@@ -39,7 +40,7 @@ class LLMModelSerializer : StdSerializer<LLMModel>(LLMModel::class.java) {
     }
 }
 
-class LLMModelDeserializer : JsonDeserializer<LLMModel>() {
+class LLMModelDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<LLMModel>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LLMModel {
         val modelName = p.readValueAs(String::class.java)
         listOf(

@@ -2,8 +2,8 @@ package com.simiacryptus.jopenai.chat
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level

@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.models.LLMModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.core5.http.HttpEntity

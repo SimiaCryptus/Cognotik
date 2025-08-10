@@ -5,7 +5,7 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.EmbeddingModels
 import com.simiacryptus.util.JsonUtil
 import java.util.concurrent.ExecutorService

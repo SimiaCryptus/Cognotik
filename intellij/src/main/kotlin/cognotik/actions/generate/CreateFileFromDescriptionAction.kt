@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.io.File
 

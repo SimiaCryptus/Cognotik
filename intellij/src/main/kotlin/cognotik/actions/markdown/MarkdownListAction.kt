@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.util.UITools.getIndent
 import com.simiacryptus.cognotik.util.UITools.insertString
 import com.simiacryptus.cognotik.util.PsiUtil.getAll
 import com.simiacryptus.cognotik.util.PsiUtil.getSmallestIntersecting
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import com.simiacryptus.util.StringUtil
 import java.awt.Component

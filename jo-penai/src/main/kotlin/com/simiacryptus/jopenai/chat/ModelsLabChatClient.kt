@@ -1,10 +1,9 @@
 package com.simiacryptus.jopenai.chat
 
-import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.*
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.ModelsLabDataModel
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ModelsLabDataModel
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.runWithPermit
 import org.apache.hc.core5.http.HttpRequest

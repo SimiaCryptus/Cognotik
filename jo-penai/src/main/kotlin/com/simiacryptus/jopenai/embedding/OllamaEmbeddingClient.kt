@@ -1,4 +1,4 @@
-package com.simiacryptus.jopenai.vector
+package com.simiacryptus.jopenai.embedding
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
@@ -8,16 +8,15 @@ import com.simiacryptus.util.JsonUtil
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.lang.IllegalStateException
-import java.net.http.HttpRequest
 import java.util.concurrent.ExecutorService
 
-class OllamaVectorClient(
+class OllamaEmbeddingClient(
     apiKey: String = "",
     apiBase: String = "http://localhost:11434",
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf()
-) : SingleProviderVectorClient(
+) : SingleProviderEmbeddingClient(
     provider = APIProvider.valueOf("Ollama"),
     apiKey = apiKey,
     apiBase = apiBase,

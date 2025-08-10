@@ -31,7 +31,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon

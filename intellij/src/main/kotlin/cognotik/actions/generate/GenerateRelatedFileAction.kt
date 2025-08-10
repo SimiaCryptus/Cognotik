@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils

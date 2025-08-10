@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.chat.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 
 class LogPatternGenerator(
     private val parsingModel: ChatModelType,

@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.AIModel
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.models.LLMModel
 import java.util.concurrent.atomic.AtomicLong
 
 interface UsageInterface {

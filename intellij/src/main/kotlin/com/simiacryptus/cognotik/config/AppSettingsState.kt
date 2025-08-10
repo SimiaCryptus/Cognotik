@@ -20,8 +20,8 @@ import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.chat.ChatModelType
-import com.simiacryptus.jopenai.models.chat.ChatModelType.Companion.values
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.chat.model.ChatModelType.Companion.values
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory

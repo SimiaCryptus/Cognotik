@@ -31,7 +31,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.chat.chatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.util.JsonUtil
 import java.io.File
 import java.nio.file.Files

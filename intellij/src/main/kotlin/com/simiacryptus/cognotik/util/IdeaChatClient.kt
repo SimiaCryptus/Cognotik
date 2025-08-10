@@ -12,7 +12,7 @@ import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.chat.ProvidersChatClient.ReasoningEffort
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.chat.LLMModel
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
