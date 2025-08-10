@@ -3,6 +3,7 @@ package com.simiacryptus.jopenai.models.chat
 import com.simiacryptus.jopenai.models.APIProvider
 
 object GoogleModels {
+    // Deprecated models
 
     val GeminiPro_15 = ChatModelType(
         name = "GeminiPro_15",
@@ -11,10 +12,9 @@ object GoogleModels {
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.00125,
-
         outputTokenPricePerK = 0.005
-
     )
+    
     val GeminiPro_10 = ChatModelType(
         name = "GeminiPro_10",
         modelName = "gemini-1.0-pro",
@@ -22,10 +22,9 @@ object GoogleModels {
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.00025,
-
         outputTokenPricePerK = 0.0005
-
     )
+    
     val GeminiFlash_15 = ChatModelType(
         name = "GeminiFlash_15",
         modelName = "gemini-1.5-flash",
@@ -33,10 +32,9 @@ object GoogleModels {
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.000075,
-
         outputTokenPricePerK = 0.0003
-
     )
+    // Deprecated
     val GeminiFlash_15_8B = ChatModelType(
         name = "GeminiFlash_15_8B",
         modelName = "gemini-1.5-flash-8b",
@@ -44,10 +42,9 @@ object GoogleModels {
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.0000375,
-
         outputTokenPricePerK = 0.00015
-
     )
+    
     val GeminiFlash_20 = ChatModelType(
         name = "GeminiFlash_20",
         modelName = "gemini-2.0-flash",
@@ -55,10 +52,9 @@ object GoogleModels {
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.0001,
-
         outputTokenPricePerK = 0.0004
-
     )
+    
     val GeminiFlash_20_Lite = ChatModelType(
         name = "GeminiFlash_20_Lite",
         modelName = "gemini-2.0-flash-lite",
@@ -66,48 +62,102 @@ object GoogleModels {
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.00005,
-
         outputTokenPricePerK = 0.0002
-
     )
-    val GeminiFlash_20_Thinking_Experimental_01_21 = ChatModelType(
-        name = "GeminiFlash_20_Thinking_Experimental_01_21",
-        modelName = "gemini-2.0-flash-thinking-exp-01-21",
+    
+    val GeminiFlash_20_Live = ChatModelType(
+        name = "GeminiFlash_20_Live",
+        modelName = "gemini-2.0-flash-live-001",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.0001,
-
         outputTokenPricePerK = 0.0004
-
     )
-    val GeminiPro_25_Experimental_03_25 = ChatModelType(
-        name = "GeminiPro_25_Experimental_03_25",
-        modelName = "gemini-2.5-pro-exp-03-25",
+    val GeminiFlash_20_Preview_Image_Generation = ChatModelType(
+        name = "GeminiFlash_20_Preview_Image_Generation",
+        modelName = "gemini-2.0-flash-preview-image-generation",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 8192,
+        provider = APIProvider.Companion.Google,
+        inputTokenPricePerK = 0.0001,
+        outputTokenPricePerK = 0.0004
+    )
+    
+    val GeminiPro_25 = ChatModelType(
+        name = "GeminiPro_25",
+        modelName = "gemini-2.5-pro",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = APIProvider.Companion.Google,
         inputTokenPricePerK = 0.0015,
         outputTokenPricePerK = 0.006
     )
-    val GeminiPro_25_Preview_05_06 = ChatModelType(
-        name = "GeminiPro_25_Preview_05_06",
-        modelName = "gemini-2.5-pro-preview-05-06",
-        maxTotalTokens = 1048576, // Input token limit
-        maxOutTokens = 65536,    // Output token limit
+    
+    val GeminiFlash_25 = ChatModelType(
+        name = "GeminiFlash_25",
+        modelName = "gemini-2.5-flash",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
         provider = APIProvider.Companion.Google,
-        inputTokenPricePerK = 0.0015, // NOTE: Pricing assumed (same as exp-03-25) as not provided in source material
-        outputTokenPricePerK = 0.006   // NOTE: Pricing assumed (same as exp-03-25) as not provided in source material
+        inputTokenPricePerK = 0.00015,
+        outputTokenPricePerK = 0.0006
     )
-    val GeminiFlash_25_Preview_04_17 = ChatModelType(
-        name = "GeminiFlash_25_Preview_04_17",
-        modelName = "gemini-2.5-flash-preview-04-17",
-        maxTotalTokens = 1048576, // Input token limit
-        maxOutTokens = 65536,    // Output token limit
+    val GeminiFlash_25_Lite = ChatModelType(
+        name = "GeminiFlash_25_Lite",
+        modelName = "gemini-2.5-flash-lite",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
         provider = APIProvider.Companion.Google,
-        inputTokenPricePerK = 0.00015, // NOTE: Pricing assumed as not provided in source material
-        outputTokenPricePerK = 0.0006  // NOTE: Pricing assumed as not provided in source material
+        inputTokenPricePerK = 0.00005,
+        outputTokenPricePerK = 0.0002
     )
+    val GeminiFlash_25_Live = ChatModelType(
+        name = "GeminiFlash_25_Live",
+        modelName = "gemini-live-2.5-flash-preview",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Google,
+        inputTokenPricePerK = 0.00015,
+        outputTokenPricePerK = 0.0006
+    )
+    val GeminiFlash_25_Preview_Native_Audio_Dialog = ChatModelType(
+        name = "GeminiFlash_25_Preview_Native_Audio_Dialog",
+        modelName = "gemini-2.5-flash-preview-native-audio-dialog",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Google,
+        inputTokenPricePerK = 0.00015,
+        outputTokenPricePerK = 0.0006
+    )
+    val GeminiFlash_25_Exp_Native_Audio_Thinking_Dialog = ChatModelType(
+        name = "GeminiFlash_25_Exp_Native_Audio_Thinking_Dialog",
+        modelName = "gemini-2.5-flash-exp-native-audio-thinking-dialog",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Google,
+        inputTokenPricePerK = 0.00015,
+        outputTokenPricePerK = 0.0006
+    )
+    val GeminiFlash_25_Preview_TTS = ChatModelType(
+        name = "GeminiFlash_25_Preview_TTS",
+        modelName = "gemini-2.5-flash-preview-tts",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Google,
+        inputTokenPricePerK = 0.00015,
+        outputTokenPricePerK = 0.0006
+    )
+    val GeminiPro_25_Preview_TTS = ChatModelType(
+        name = "GeminiPro_25_Preview_TTS",
+        modelName = "gemini-2.5-pro-preview-tts",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Google,
+        inputTokenPricePerK = 0.0015,
+        outputTokenPricePerK = 0.006
+    )
+    
     val values = mapOf(
         "GeminiPro_15" to GeminiPro_15,
         "GeminiFlash_15" to GeminiFlash_15,
@@ -115,9 +165,15 @@ object GoogleModels {
         "GeminiPro" to GeminiPro_10,
         "GeminiFlash_20" to GeminiFlash_20,
         "GeminiFlash_20_Lite" to GeminiFlash_20_Lite,
-        "GeminiFlash_20_Thinking_Experimental_01_21" to GeminiFlash_20_Thinking_Experimental_01_21,
-        "GeminiPro_25_Experimental_03_25" to GeminiPro_25_Experimental_03_25,
-        "GeminiPro_25_Preview_05_06" to GeminiPro_25_Preview_05_06,
-        "GeminiFlash_25_Preview_04_17" to GeminiFlash_25_Preview_04_17,
+        "GeminiFlash_20_Live" to GeminiFlash_20_Live,
+//        "GeminiFlash_20_Preview_Image_Generation" to GeminiFlash_20_Preview_Image_Generation,
+        "GeminiPro_25" to GeminiPro_25,
+        "GeminiFlash_25" to GeminiFlash_25,
+        "GeminiFlash_25_Lite" to GeminiFlash_25_Lite,
+        "GeminiFlash_25_Live" to GeminiFlash_25_Live,
+//        "GeminiFlash_25_Preview_Native_Audio_Dialog" to GeminiFlash_25_Preview_Native_Audio_Dialog,
+//        "GeminiFlash_25_Exp_Native_Audio_Thinking_Dialog" to GeminiFlash_25_Exp_Native_Audio_Thinking_Dialog,
+//        "GeminiFlash_25_Preview_TTS" to GeminiFlash_25_Preview_TTS,
+//        "GeminiPro_25_Preview_TTS" to GeminiPro_25_Preview_TTS,
     )
 }
