@@ -7,11 +7,14 @@ subprojects {
     repositories {
         mavenCentral()
     }
-    // Only apply Java plugin to non-Android projects
-    if (name != "android") {
-        apply(plugin = "java")
+    when (name) {
+        "android" -> { /* Skip Java plugin for Android project */ }
+//        "webui" -> {}
+        else -> {
+            apply(plugin = "java")
+            apply(plugin = "kotlin")
+        }
     }
-
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
@@ -76,14 +79,20 @@ subprojects {
 
 allprojects {
     // Only apply Java plugin to non-Android projects
-    if (name != "android") {
-        apply(plugin = "java")
-        java {
-            toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
+    when (name) {
+        "android" -> { /* Skip Java plugin for Android project */ }
+//        "webui" -> {}
+        else -> {
+            apply(plugin = "java")
         }
     }
+    java {
+        toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
     }

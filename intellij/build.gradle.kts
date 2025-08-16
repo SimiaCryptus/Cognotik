@@ -3,7 +3,6 @@ import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm")
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
     alias(libs.plugins.qodana)

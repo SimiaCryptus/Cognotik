@@ -13,8 +13,9 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.8.0")
     id("com.github.ben-manes.versions") version "0.50.0" apply false
     id("io.github.gradle-nexus.publish-plugin") version "1.3.0" apply false
-    id("com.android.application") version "8.1.4" apply false
-    id("org.jetbrains.kotlin.android") version "2.1.20" apply false
+    // This seems to be incompatible with the SASS plugin
+    //    id("com.android.application") version "8.1.4" apply false
+    //    id("org.jetbrains.kotlin.android") version "2.1.20" apply false
 }
 
 include(":jo-penai")
