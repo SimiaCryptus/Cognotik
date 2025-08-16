@@ -3,21 +3,24 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 subprojects {
-    apply(plugin = "java")
-    apply(plugin = "kotlin")
     apply(plugin = "jacoco")
     repositories {
         mavenCentral()
     }
+    // Only apply Java plugin to non-Android projects
+    if (name != "android") {
+        apply(plugin = "java")
+    }
+
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_17.toString()
-            freeCompilerArgs = listOf("-Xjsr305=strict")
-            javaParameters = true
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.set(listOf("-Xjsr305=strict"))
+            javaParameters.set(true)
         }
     }
     // Configure JaCoCo for code coverage
@@ -53,7 +56,7 @@ subprojects {
             excludes = listOf("jdk.internal.*")
         }
     }
-    
+
     tasks.register("analyzeDependencies") {
         description = "Analyzes project dependencies for potential issues"
         doLast {
@@ -72,11 +75,14 @@ subprojects {
 }
 
 allprojects {
-    apply(plugin = "java")
-    java {
-        toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+    // Only apply Java plugin to non-Android projects
+    if (name != "android") {
+        apply(plugin = "java")
+        java {
+            toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
     }
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"

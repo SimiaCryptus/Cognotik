@@ -294,9 +294,9 @@ abstract class PatchApp(
             fixTask.add(
                 AgentPatterns.displayMapInTabs(
                     mapOf(
-                      "Text" to plan.text.renderMarkdown,
-                      "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown,
-                      "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown
+                        "Text" to plan.text.renderMarkdown,
+                        "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown,
+                        "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown
                     ).filter { it.value.isNotBlank() },
                 )
             )
@@ -332,7 +332,7 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         settings: Settings,
         changed: MutableSet<Path>,
-        api:  ChatClientInterface,
+        api: ChatClientInterface,
         progressHeader: StringBuilder?
     ) {
         log.info("Starting fixAllErrors")
@@ -371,8 +371,12 @@ abstract class PatchApp(
                             log.debug("Executing search query: pattern=${query.pattern}, glob=${query.fileGlob}")
                             filteredWalk(settings.workingDirectory ?: root).filter { file ->
                                 FileSystems.getDefault().getPathMatcher("glob:" + query.fileGlob).matches(file.toPath())
-                            }.filter { it.readText().contains(query.pattern ?: "", ignoreCase = true) }
-                                .map { it.toPath() }.toList()
+                            }.filter {
+                                it.isFile &&
+                                it.length() < (1 * 1024 * 1024) &&
+                                query.pattern?.isBlank() == false &&
+                                it.readText().contains(query.pattern ?: "", ignoreCase = true)
+                            }.map { it.toPath() }.toList()
                         }?.toSet() ?: emptySet()
                         log.info("Search found ${searchResults.size} relevant files")
                         if (searchResults.isNotEmpty()) {
@@ -536,7 +540,13 @@ abstract class PatchApp(
                     changed.add(path)
                     true
                 } else {
-                    log.debug("Not auto-applying fix to: $path (autoFix=$autoFix, already changed=${changed.contains(path)})")
+                    log.debug(
+                        "Not auto-applying fix to: $path (autoFix=$autoFix, already changed=${
+                            changed.contains(
+                                path
+                            )
+                        })"
+                    )
                     false
                 }
             },

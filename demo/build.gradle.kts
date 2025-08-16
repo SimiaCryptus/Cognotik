@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     `java-library`
+    kotlin("jvm")
 }
 
 group = "com.simiacryptus"
@@ -42,6 +43,7 @@ dependencies {
 
     implementation(libs.remoterobot.fixtures)
     implementation(libs.remoterobot.robot)
+
 
     implementation(libs.logback.classic)
     implementation(libs.logback.core)

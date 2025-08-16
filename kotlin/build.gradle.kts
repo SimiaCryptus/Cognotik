@@ -5,6 +5,7 @@ version = providers.gradleProperty("libraryVersion").get()
 
 plugins {
     `java-library`
+    kotlin("jvm")
 }
 
 repositories {
@@ -43,13 +44,9 @@ dependencies {
 }
 
 tasks {
-    compileKotlin {
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            javaParameters.set(true)
-        }
-    }
-    compileTestKotlin {
-        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
             javaParameters.set(true)
         }
     }
