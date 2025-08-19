@@ -1,9 +1,10 @@
-package com.simiacryptus.cognotik.apps.parse
+package com.simiacryptus.cognotik.input
 
+import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import java.awt.image.BufferedImage
 import java.io.File
 
-class TextReader(private val textFile: File) : DocumentParserApp.DocumentReader {
+class TextReader(private val textFile: File) : DocumentReader {
     private val pages: List<String> = splitIntoPages(textFile.readLines().joinToString("\n"))
     private lateinit var settings: DocumentParserApp.Settings
     fun configure(settings: DocumentParserApp.Settings) {

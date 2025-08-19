@@ -4,6 +4,9 @@ import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
+import com.simiacryptus.cognotik.input.DocumentReader
+import com.simiacryptus.cognotik.input.TextReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -16,9 +19,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.util.JsonUtil
-import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
@@ -30,14 +31,7 @@ open class DocumentParserApp(
     applicationName: String = "Document Extractor",
     path: String = "/pdfExtractor",
     val parsingModel: ParsingModel<DocumentData>,
-    val reader: (File) -> DocumentReader = {
-        when {
-            it.name.endsWith(".pdf", ignoreCase = true) -> PDFReader(it)
-            it.name.endsWith(".html", ignoreCase = true) -> HTMLReader(it)
-            it.name.endsWith(".htm", ignoreCase = true) -> HTMLReader(it)
-            else -> TextReader(it)
-        }
-    },
+    val reader: (File) -> DocumentReader = { it.getReader() },
     val fileInputs: List<Path>? = null,
     val fastMode: Boolean = true
 ) : ApplicationServer(
@@ -348,10 +342,5 @@ open class DocumentParserApp(
         private val log = org.slf4j.LoggerFactory.getLogger(DocumentParserApp::class.java)
     }
 
-    interface DocumentReader : AutoCloseable {
-        fun getPageCount(): Int
-        fun getText(startPage: Int, endPage: Int): String
-        fun renderImage(pageIndex: Int, dpi: Float): BufferedImage
-    }
-
 }
+

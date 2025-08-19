@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.apps.parse
+package com.simiacryptus.cognotik.input
 
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -7,7 +7,7 @@ import org.apache.pdfbox.text.PDFTextStripper
 import java.awt.image.BufferedImage
 import java.io.File
 
-class PDFReader(pdfFile: File) : DocumentParserApp.DocumentReader {
+class PDFReader(pdfFile: File) : DocumentReader {
     private val document: PDDocument = Loader.loadPDF(pdfFile)
     private val renderer: PDFRenderer = PDFRenderer(document)
 

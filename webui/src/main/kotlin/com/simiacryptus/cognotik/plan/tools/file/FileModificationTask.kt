@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
@@ -245,5 +246,25 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
     companion object {
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
+
+        val FileModificationTaskType = TaskType(
+            "FileModificationTask",
+            FileModificationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Create new files or modify existing code with AI-powered assistance",
+            """
+                      Creates or modifies source files with AI assistance while maintaining code quality.
+                      <ul>
+                        <li>Shows proposed changes in diff format for easy review</li>
+                        <li>Supports both automated application and manual approval modes</li>
+                        <li>Maintains project coding standards and style consistency</li>
+                        <li>Handles complex multi-file operations and refactoring</li>
+                        <li>Provides clear documentation of all changes with rationale</li>
+                        <li>Implements proper error handling and edge cases</li>
+                        <li>Updates imports and dependencies automatically</li>
+                        <li>Preserves existing code formatting and structure</li>
+                      </ul>
+                    """
+        )
     }
 }

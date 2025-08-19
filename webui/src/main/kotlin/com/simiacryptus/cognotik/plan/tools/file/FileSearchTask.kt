@@ -287,5 +287,21 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 listOf("Error listing files: ${e.message}")
             }
         }
+        val FileSearchTaskType = TaskType(
+            "FileSearchTask",
+            com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search project files using patterns with contextual results",
+            """
+                      Performs pattern-based searches across project files with context.
+                      <ul>
+                        <li>Supports both substring and regex search patterns</li>
+                        <li>Shows configurable context lines around matches</li>
+                        <li>Groups results by file with line numbers</li>
+                        <li>Filters for text-based files automatically</li>
+                        <li>Provides organized, readable output format</li>
+                      </ul>
+                    """
+        )
     }
 }

@@ -1,11 +1,12 @@
-package com.simiacryptus.cognotik.apps.parse
+package com.simiacryptus.cognotik.input
 
+import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.awt.image.BufferedImage
 import java.io.File
 
-class HTMLReader(private val htmlFile: File) : DocumentParserApp.DocumentReader {
+class HTMLReader(private val htmlFile: File) : DocumentReader {
     private val document: Document = Jsoup.parse(htmlFile, "UTF-8")
     private val pages: List<String> = splitIntoPages(document.body().text())
     private lateinit var settings: DocumentParserApp.Settings
