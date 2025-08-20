@@ -4,8 +4,17 @@ import java.awt.image.BufferedImage
 import java.io.File
 
 interface DocumentReader : AutoCloseable {
+    fun getText(): String
+}
+
+interface PaginatedDocumentReader : DocumentReader {
     fun getPageCount(): Int
     fun getText(startPage: Int, endPage: Int): String
+    
+    override fun getText(): String = getText(0, getPageCount())
+}
+
+interface RenderableDocumentReader : DocumentReader {
     fun renderImage(pageIndex: Int, dpi: Float): BufferedImage
 }
 

@@ -7,9 +7,14 @@ import org.apache.pdfbox.text.PDFTextStripper
 import java.awt.image.BufferedImage
 import java.io.File
 
-class PDFReader(pdfFile: File) : DocumentReader {
+class PDFReader(pdfFile: File) : PaginatedDocumentReader, RenderableDocumentReader {
     private val document: PDDocument = Loader.loadPDF(pdfFile)
     private val renderer: PDFRenderer = PDFRenderer(document)
+    override fun getText(): String {
+        val stripper = PDFTextStripper().apply { sortByPosition = true }
+        return stripper.getText(document)
+    }
+
 
     override fun getPageCount(): Int = document.numberOfPages
 

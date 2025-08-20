@@ -4,27 +4,34 @@ import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import java.awt.image.BufferedImage
 import java.io.File
 
-class TextReader(private val textFile: File) : DocumentReader {
-    private val pages: List<String> = splitIntoPages(textFile.readLines().joinToString("\n"))
-    private lateinit var settings: DocumentParserApp.Settings
+class TextReader(private val textFile: File) : PaginatedDocumentReader {
+    private val fullText: String = textFile.readLines().joinToString("\n")
+    private val pages: List<String> by lazy { splitIntoPages(fullText) }
+    private var settings: DocumentParserApp.Settings? = null
+    
     fun configure(settings: DocumentParserApp.Settings) {
         this.settings = settings
     }
+    override fun getText(): String {
+        return if (settings?.addLineNumbers == true) {
+            fullText.lines().mapIndexed { index, line ->
+                "${(index + 1).toString().padStart(6)}: $line"
+            }.joinToString("\n")
+        } else fullText
+    }
+
 
     override fun getPageCount(): Int = pages.size
 
     override fun getText(startPage: Int, endPage: Int): String {
         val text = pages.subList(startPage, endPage.coerceAtMost(pages.size)).joinToString("\n")
-        return if (settings.addLineNumbers) {
+        return if (settings?.addLineNumbers == true) {
             text.lines().mapIndexed { index, line ->
                 "${(index + 1).toString().padStart(6)}: $line"
             }.joinToString("\n")
         } else text
     }
 
-    override fun renderImage(pageIndex: Int, dpi: Float): BufferedImage {
-        throw UnsupportedOperationException("Text files do not support image rendering")
-    }
 
     override fun close() {
 

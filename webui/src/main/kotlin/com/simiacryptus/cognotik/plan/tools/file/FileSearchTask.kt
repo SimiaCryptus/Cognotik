@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
@@ -28,6 +30,8 @@ class FileSearchTask(
         val context_lines: Int = 2,
         @Description("The specific files (or file patterns) to be searched")
         val input_files: List<String>? = null,
+        @Description("Whether to extract and search text content from non-text files (PDF, HTML, etc.)")
+        val extractContent: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -101,7 +105,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
                 }.map { it.toPath() }.flatMap { path ->
                     try {
-                        val fileContentLines = Files.readAllLines(path)
+                        val fileContentLines = if (currentConfig.extractContent && !isTextFile(path.toFile())) {
+                            extractDocumentContent(path.toFile()).lines()
+                        } else {
+                            Files.readAllLines(path)
+                        }
                         val relativePath = root.relativize(path).toString()
 
                         // 1. Find all individual raw matches (line number and content)
@@ -175,6 +183,27 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     }
                 }
             }
+    }
+    private fun isTextFile(file: java.io.File): Boolean {
+        val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+        return textExtensions.contains(file.extension.lowercase())
+    }
+    private fun extractDocumentContent(file: java.io.File): String {
+        return try {
+            file.getReader().use { reader ->
+                when (reader) {
+                    is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                    else -> reader.getText()
+                }
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+            try {
+                file.readText()
+            } catch (e2: Exception) {
+                "Error reading file: ${e2.message}"
+            }
+        }
     }
 
 
@@ -273,9 +302,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
         return sb.toString().take(maxLength) // Final safeguard
     }
-
-    // SearchResult data class is removed, replaced by DisplayBlock and MatchInBlock defined earlier
-    // getContext method is removed as it's no longer used
 
     companion object {
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)

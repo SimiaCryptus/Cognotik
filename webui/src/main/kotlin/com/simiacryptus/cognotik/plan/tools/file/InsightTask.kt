@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
@@ -32,6 +34,8 @@ class InsightTask(
         val inquiry_goal: String? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,
+        @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)")
+        val extractContent: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -158,12 +162,36 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             .joinToString("\n\n") { relativePath ->
                 val file = root.resolve(relativePath).toFile()
                 try {
-                    "# $relativePath\n\n$TRIPLE_TILDE\n${codeFiles[file.toPath()] ?: file.readText()}\n$TRIPLE_TILDE"
+                    val content = if (taskConfig?.extractContent == true && !isTextFile(file)) {
+                        extractDocumentContent(file)
+                    } else {
+                        codeFiles[file.toPath()] ?: file.readText()
+                    }
+                    "# $relativePath\n\n$TRIPLE_TILDE\n$content\n$TRIPLE_TILDE"
                 } catch (e: Throwable) {
                     log.warn("Error reading file: $relativePath", e)
                     ""
                 }
             }
+    private fun isTextFile(file: java.io.File): Boolean {
+        val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+        return textExtensions.contains(file.extension.lowercase())
+    }
+    private fun extractDocumentContent(file: java.io.File) = try {
+        file.getReader().use { reader ->
+            when (reader) {
+                is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                else -> reader.getText()
+            }
+        }
+    } catch (e: Exception) {
+        log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+        try {
+            file.readText()
+        } catch (e2: Exception) {
+            "Error reading file: ${e2.message}"
+        }
+    }
 
     companion object {
         private val log = LoggerFactory.getLogger(InsightTask::class.java)

@@ -41,16 +41,6 @@
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
             </action>
-            <!--<action class="cognotik.actions.agent.OutlineAction"
-                    id="OutlineAction"
-                    text="🗂️ Outline Tool"
-                    description="Create and expand outlines using Cognotik assistance">
-            </action>
-            <action class="cognotik.actions.agent.EnhancedOutlineAction"
-                    id="EnhancedOutlineAction"
-                    text="📝 Enhanced Outline Tool"
-                    description="Create and expand outlines with customizable phases using Cognotik assistance">
-            </action>-->
         </group>
         <group id="cognotik.ui.EditorMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -95,28 +85,6 @@
                    description="Recent code edits"
                    popup="true">
             </group>
-            <!--<action class="cognotik.actions.markdown.MarkdownListAction"
-                    text="📝 Add _List Items"
-                    description="Intelligently extend Markdown lists by generating contextually relevant new items">
-            </action>
-            <group id="cognotik.actions.markdown.MarkdownImplementActionGroup"
-                   class="cognotik.actions.markdown.MarkdownImplementActionGroup"
-                   text="🛠️ Imple_ment As..."
-                   description="Convert selected Markdown text into executable code snippets in various programming languages"
-                   popup="true">
-            </group>
-            <action class="cognotik.actions.editor.DescribeAction"
-                    text="📝 Describe C_ode and Prepend Comment"
-                    description="Add doc comments">
-                <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift D"/>
-                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta shift D"/>
-            </action>
-            <action class="cognotik.actions.dev.PrintTreeAction"
-                    text="🌳 Print PSI Tree"
-                    description="Print PSI Tree">
-                <keyboard-shortcut keymap="$default" first-keystroke="control alt A"/>
-                <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt A"/>
-            </action>-->
         </group>
         <group id="cognotik.ui.ProjectMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
@@ -186,51 +154,7 @@
                         text="✓ Validate Code"
                         description="Validate code syntax and structure using Cognotik-powered analysis">
                 </action>
-<!--
-                <action class="cognotik.actions.agent.SimpleCommandAction"
-                        text="✨ Do Something"
-                        description="Execute custom coding tasks with intelligent assistance, analyzing project structure and context">
-                </action>
-                <action class="cognotik.actions.agent.MultiStepPatchAction"
-                        text="📝 Multi-Step Editor"
-                        description="Break down complex code modifications into a series of manageable steps, with intelligent suggestions for each stage">
-                </action>
--->
-<!--
-                <action id="CognotikShellCommand"
-                        class="cognotik.actions.agent.ShellCommandAction"
-                        text="🐚 Shell Agent"
-                        description="Execute shell commands in the selected directory via a coding agent">
-                </action>
--->
-<!--
-                <action class="cognotik.actions.agent.WebDevelopmentAssistantAction"
-                        text="🌐 Web Dev"
-                        description="Comprehensive tool for web application development, assisting with file generation, code writing, and project structure">
-                </action>
--->
             </group>
-<!--
-            <group id="cognotik.ui.ProjectMenu.Knowledge"
-                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
-                   popup="true"
-                   text="📚 Knowledge Mgmt"
-                   description="Knowledge management and analysis tools">
-                <action class="cognotik.actions.knowledge.DocumentDataExtractorAction"
-                        text="📄 Extract Document Data"
-                        description="Comprehensive tool for extracting and analyzing text and images from various document formats (PDF, TXT, MD, HTML)">
-                </action>
-                <action id="cognotik.actions.knowledge.CreateProjectorFromQueryIndexAction"
-                        class="cognotik.actions.knowledge.CreateProjectorFromQueryIndexAction"
-                        text="🔮 View Projector"
-                        description="View Vectors using Tensorflow Projector">
-                </action>
-                <action class="cognotik.actions.knowledge.SaveAsQueryIndexAction"
-                        text="💾 Save as Query DB"
-                        description="Convert selected parsed JSON files into an optimized binary index for efficient querying and data retrieval">
-                </action>
-            </group>
--->
         </group>
 
         <group id="cognotik.ui.VcsMenu"

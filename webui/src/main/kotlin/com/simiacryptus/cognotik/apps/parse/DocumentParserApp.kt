@@ -5,6 +5,8 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
 import com.simiacryptus.cognotik.input.DocumentReader
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.RenderableDocumentReader
 import com.simiacryptus.cognotik.input.TextReader
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -124,7 +126,10 @@ open class DocumentParserApp(
                         }
                         var previousPageText = ""
 
-                        val pageCount = minOf(reader.getPageCount(), maxPages)
+                        val pageCount = when (reader) {
+                            is PaginatedDocumentReader -> minOf(reader.getPageCount(), maxPages)
+                            else -> minOf(1, maxPages)
+                        }
                         val pageSets = 0 until pageCount step pagesPerBatch
                         progressBar?.add(0.0, pageCount.toDouble())
                         var runningDocument = parsingModel.newDocument()
@@ -133,7 +138,10 @@ open class DocumentParserApp(
                             val api = api.getChildClient(pageTask)
                             try {
                                 val batchEnd = min(batchStart + pagesPerBatch, pageCount)
-                                val text = reader.getText(batchStart, batchEnd)
+                                val text = when (reader) {
+                                    is PaginatedDocumentReader -> reader.getText(batchStart, batchEnd)
+                                    else -> reader.getText()
+                                }
                                 val label =
                                     if ((batchStart + 1) != batchEnd) "Pages ${batchStart}-${batchEnd}" else "Page ${batchStart}"
                                 val pageTabs =
@@ -141,7 +149,10 @@ open class DocumentParserApp(
                                 if (settings.showImages) {
                                     for (pageIndex in batchStart until batchEnd) {
                                         try {
-                                            val image = reader.renderImage(pageIndex, settings.dpi)
+                                            val image = when (reader) {
+                                                is RenderableDocumentReader -> reader.renderImage(pageIndex, settings.dpi)
+                                                else -> continue // Skip image rendering for non-renderable readers
+                                            }
                                             ui.newTask(false).apply<SessionTask> {
                                                 pageTabs["Image ${1 + (pageIndex - batchStart)}"] = placeholder
                                                 image(image)
@@ -343,4 +354,3 @@ open class DocumentParserApp(
     }
 
 }
-

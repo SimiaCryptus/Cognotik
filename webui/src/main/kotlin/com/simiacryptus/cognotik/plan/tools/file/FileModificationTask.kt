@@ -26,6 +26,7 @@ class FileModificationTask(
     class FileModificationTaskConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
+        extractContent: Boolean = false,
         @Description("Specific modifications to be made to the files")
         val modifications: Any? = null,
         @Description("Whether to include git diff with HEAD")
@@ -39,6 +40,7 @@ class FileModificationTask(
         task_dependencies = task_dependencies,
         related_files = related_files,
         files = files,
+        extractContent = extractContent,
         state = state
     )
 

@@ -6,29 +6,35 @@ import org.jsoup.nodes.Document
 import java.awt.image.BufferedImage
 import java.io.File
 
-class HTMLReader(private val htmlFile: File) : DocumentReader {
+class HTMLReader(private val htmlFile: File) : PaginatedDocumentReader {
     private val document: Document = Jsoup.parse(htmlFile, "UTF-8")
-    private val pages: List<String> = splitIntoPages(document.body().text())
-    private lateinit var settings: DocumentParserApp.Settings
+    private val fullText: String = document.body().text()
+    private val pages: List<String> by lazy { splitIntoPages(fullText) }
+    private var settings: DocumentParserApp.Settings? = null
 
     fun configure(settings: DocumentParserApp.Settings) {
         this.settings = settings
     }
+    override fun getText(): String {
+        return if (settings?.addLineNumbers == true) {
+            fullText.lines().mapIndexed { index, line ->
+                "${(index + 1).toString().padStart(6)}: $line"
+            }.joinToString("\n")
+        } else fullText
+    }
+
 
     override fun getPageCount(): Int = pages.size
 
     override fun getText(startPage: Int, endPage: Int): String {
         val text = pages.subList(startPage, endPage.coerceAtMost(pages.size)).joinToString("\n")
-        return if (::settings.isInitialized && settings.addLineNumbers) {
+        return if (settings?.addLineNumbers == true) {
             text.lines().mapIndexed { index, line ->
                 "${(index + 1).toString().padStart(6)}: $line"
             }.joinToString("\n")
         } else text
     }
 
-    override fun renderImage(pageIndex: Int, dpi: Float): BufferedImage {
-        throw UnsupportedOperationException("HTML files do not support image rendering")
-    }
 
     override fun close() {
 
