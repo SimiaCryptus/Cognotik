@@ -114,6 +114,10 @@
                         text="🔨 Mass Patch"
                         description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
                 </action>
+                <action class="cognotik.actions.agent.CustomFileSetPatchAction"
+                        text="🔨 Custom Patch"
+                        description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
+                </action>
             </group>
             <group id="cognotik.ui.ProjectMenu.Generation"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
