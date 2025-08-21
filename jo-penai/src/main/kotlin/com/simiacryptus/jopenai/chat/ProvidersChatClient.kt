@@ -14,11 +14,10 @@ import com.simiacryptus.jopenai.chat.GoogleChatClient.Companion.toGeminiChatRequ
 import com.simiacryptus.jopenai.chat.GroqChatClient.Companion.toGroq
 import com.simiacryptus.jopenai.chat.ModelsLabChatClient.Companion.fromModelsLab
 import com.simiacryptus.jopenai.chat.ModelsLabChatClient.Companion.toModelsLab
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.exceptions.ModerationException
 import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.allowedCharset
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.text.TextCompressor
@@ -231,7 +230,11 @@ open class ProvidersChatClient(
         }
 
         val requestID = UUID.randomUUID().toString()
-        log.info("Chat request ID: $requestID with ${chatRequest.messages.size} messages")
+        log(
+            Level.INFO,
+            "Chat request ID: $requestID with ${chatRequest.messages.size} messages",
+            logStreams = logStreams
+        )
 
         return withReliability(logStreams=logStreams) {
             withPerformanceLogging(logStreams=logStreams) {
@@ -249,7 +252,7 @@ open class ProvidersChatClient(
                 checkError(result)
                 val response = JsonUtil.objectMapper().readValue(result, ChatResponse::class.java)
                 if (response.usage != null && model is ChatModelType) {
-                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
+                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
                 }
                 log(
                     level = Level.DEBUG,

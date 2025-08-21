@@ -1,8 +1,8 @@
 package com.simiacryptus.jopenai.chat
 
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
@@ -51,7 +51,7 @@ class OpenAIChatClient(
                 val response = JsonUtil.objectMapper().readValue(rawResponse, ApiModel.ChatResponse::class.java)
 
                 if (response.usage != null && model is ChatModelType) {
-                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
+                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
                 }
 
                 response

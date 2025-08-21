@@ -122,13 +122,22 @@ abstract class ChatClientBase(
     }
 
 
-    override fun onUsage(model: LLMModel, tokens: Usage) {
-        log.debug("Usage recorded for session: {}, user: {}, model: {}, tokens: {}", session, user, model, tokens)
+    override fun onUsage(
+        model: LLMModel,
+        tokens: Usage,
+        logStreams: MutableList<BufferedOutputStream>
+    ) {
+        log(
+            Level.INFO,
+            "Usage recorded for session: {}, user: {}, model: {}, tokens: {}".format(session, user, model, tokens)
+        )
         budget?.let { currentBudget ->
             val cost = tokens.cost ?: 0.0
             budget = (currentBudget.toDouble() - cost).coerceAtLeast(0.0)
             if (budget!!.toDouble() <= 0.0) {
-                log.warn("Budget exhausted for session: $session, user: $user")
+                log(Level.WARN, "Budget exhausted for session: $session, user: $user")
+            } else {
+                log(Level.INFO, "Remaining budget for session: $session, user: $user is $budget")
             }
         }
     }
@@ -158,9 +167,12 @@ abstract class ChatClientBase(
             return this@ChatClientBase.chat(chatRequest, model, logStreams)
         }
 
-        override fun onUsage(model: LLMModel, tokens: Usage) {
-            this@ChatClientBase.onUsage(model, tokens)
-            super.onUsage(model, tokens)
+        override fun onUsage(
+            model: LLMModel, tokens: Usage,
+            logStreams: MutableList<BufferedOutputStream>
+        ) {
+            this@ChatClientBase.onUsage(model, tokens, logStreams = logStreams)
+            super.onUsage(model, tokens, logStreams)
         }
     }
 

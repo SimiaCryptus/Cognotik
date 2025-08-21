@@ -41,5 +41,9 @@ interface ChatClientInterface : API {
      * @param model The model that was used
      * @param tokens Usage information including token counts and cost
      */
-    fun onUsage(model: LLMModel, tokens: ApiModel.Usage)
+    fun onUsage(
+        model: LLMModel,
+        tokens: ApiModel.Usage,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams.toTypedArray().toMutableList(),
+    )
 }

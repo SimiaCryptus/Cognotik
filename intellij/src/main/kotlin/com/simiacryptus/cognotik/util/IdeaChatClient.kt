@@ -7,18 +7,16 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.jopenai.chat.ChatClientBase
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.chat.ProvidersChatClient.ReasoningEffort
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel.*
 import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
+import java.io.BufferedOutputStream
 import java.io.File
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 open class IdeaChatClient(
@@ -41,9 +39,12 @@ open class IdeaChatClient(
         }
     }
 
-    override fun onUsage(model: LLMModel, tokens: Usage) {
+    override fun onUsage(
+        model: LLMModel, tokens: Usage,
+        logStreams: MutableList<BufferedOutputStream>
+    ) {
         ApplicationServices.usageManager.incrementUsage(currentSession, localUser, model!!, tokens)
-        super.onUsage(model, tokens)
+        super.onUsage(model, tokens, logStreams)
     }
 
     @Suppress("NAME_SHADOWING")
