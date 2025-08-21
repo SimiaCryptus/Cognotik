@@ -4,33 +4,37 @@ import cognotik.actions.BaseAction
 import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.ui.components.*
+import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import java.awt.FlowLayout
+import com.simiacryptus.cognotik.input.getReader
 import java.awt.BorderLayout
 import java.awt.Dimension
-import java.io.File
+import java.awt.FlowLayout
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.PathMatcher
 import java.text.SimpleDateFormat
+import java.util.concurrent.ConcurrentHashMap
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
-import kotlin.streams.toList
 
 class CustomFileSetPatchAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
     enum class OutputMode {
         EDIT_FILES,
         GENERATE_DOCUMENTATION,
@@ -41,14 +45,28 @@ class CustomFileSetPatchAction : BaseAction() {
     data class FilePattern(
         val pattern: String,
         val isContext: Boolean = false
-    )
+    ) {
+        override fun toString(): String = "${if (isContext) "[Context] " else ""}$pattern"
+    }
 
     data class FileSet(
         val name: String,
         val files: List<Path>
     )
 
-   class SettingsUI(private val project: Project?, private val selectedDirectory: Path?) {
+    class SettingsUI(private val project: Project?, private val selectedDirectory: Path?) {
+        companion object {
+            private const val DEFAULT_PATTERN_WIDTH = 30
+            private const val DEFAULT_TEXTAREA_ROWS = 4
+            private const val DEFAULT_TEXTAREA_COLS = 40
+            private const val PREVIEW_ROWS = 15
+            private const val PREVIEW_COLS = 50
+            private const val MAX_PREVIEW_FILES = 100
+        }
+
+        private val patternCache = ConcurrentHashMap<String, PathMatcher>()
+
+
         @Name("File Patterns")
         val patternListModel = DefaultListModel<FilePattern>()
         val patternList = JList(patternListModel).apply {
@@ -60,7 +78,7 @@ class CustomFileSetPatchAction : BaseAction() {
                 ): java.awt.Component {
                     val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
                     if (value is FilePattern) {
-                        text = "${if (value.isContext) "[Context] " else ""}${value.pattern}"
+                        text = value.toString()
                     }
                     return component
                 }
@@ -68,31 +86,37 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
         @Name("Pattern Input")
-        val patternInput = JBTextField(30)
+        val patternInput = JBTextField(DEFAULT_PATTERN_WIDTH)
 
         @Name("Is Context")
         val isContextCheckbox = JCheckBox("Include as context in all calls")
 
         @Name("AI Instruction")
-        val transformationMessage = JBTextArea(4, 40)
+        val transformationMessage = JBTextArea(DEFAULT_TEXTAREA_ROWS, DEFAULT_TEXTAREA_COLS)
 
         @Name("Auto Apply")
         val autoApply = JCheckBox("Auto Apply Changes")
+        @Name("Treat Documents as Text")
+        val treatDocumentsAsText = JCheckBox("Include PDF/HTML files as text", false)
+
+
         @Name("Output Mode")
         val outputModeGroup = ButtonGroup()
         val editFilesRadio = JRadioButton("Edit Files", true)
         val generateDocsRadio = JRadioButton("Generate Documentation")
-        val generateExtractsRadio = JRadioButton("Generate Extracts/Transforms")
+
         @Name("Single Output File")
         val singleOutputFile = JCheckBox("Produce a single output file", true)
+
         @Name("Output File")
         val outputFilename = JBTextField("output.md")
+
         @Name("Output Directory")
         val outputDirectory = JBTextField("output/")
 
 
         @Name("Preview")
-        val previewArea = JBTextArea(15, 50).apply {
+        val previewArea = JBTextArea(PREVIEW_ROWS, PREVIEW_COLS).apply {
             isEditable = false
             font = java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.PLAIN, 12)
         }
@@ -101,38 +125,36 @@ class CustomFileSetPatchAction : BaseAction() {
             // Setup radio button group
             outputModeGroup.add(editFilesRadio)
             outputModeGroup.add(generateDocsRadio)
-            outputModeGroup.add(generateExtractsRadio)
 
             // Add document listener to update preview when patterns change
-            val updatePreview = {
-                updatePreview()
-            }
-            
+
             patternInput.document.addDocumentListener(object : DocumentListener {
                 override fun insertUpdate(e: DocumentEvent?) = updatePreview()
                 override fun removeUpdate(e: DocumentEvent?) = updatePreview()
                 override fun changedUpdate(e: DocumentEvent?) = updatePreview()
             })
-            
+
             patternList.addListSelectionListener { updatePreview() }
+
             // Add listeners for output mode changes
             editFilesRadio.addActionListener { updateOutputOptionsVisibility() }
             generateDocsRadio.addActionListener { updateOutputOptionsVisibility() }
-            generateExtractsRadio.addActionListener { updateOutputOptionsVisibility() }
+
             updateOutputOptionsVisibility()
         }
+
         private fun updateOutputOptionsVisibility() {
-            val isGenerateMode = generateDocsRadio.isSelected || generateExtractsRadio.isSelected
+            val isGenerateMode = generateDocsRadio.isSelected
             singleOutputFile.isVisible = isGenerateMode
             outputFilename.isVisible = isGenerateMode
             outputDirectory.isVisible = isGenerateMode
             autoApply.isVisible = editFilesRadio.isSelected
         }
+
         fun getOutputMode(): OutputMode {
             return when {
                 editFilesRadio.isSelected -> OutputMode.EDIT_FILES
                 generateDocsRadio.isSelected -> OutputMode.GENERATE_DOCUMENTATION
-                generateExtractsRadio.isSelected -> OutputMode.GENERATE_EXTRACTS
                 else -> OutputMode.EDIT_FILES
             }
         }
@@ -141,12 +163,31 @@ class CustomFileSetPatchAction : BaseAction() {
         fun addPattern() {
             val pattern = patternInput.text.trim()
             if (pattern.isNotEmpty()) {
+                if (!isValidPattern(pattern)) {
+                    JOptionPane.showMessageDialog(
+                        patternList,
+                        "Invalid glob pattern: $pattern",
+                        "Pattern Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                    return
+                }
                 patternListModel.addElement(FilePattern(pattern, isContextCheckbox.isSelected))
                 patternInput.text = ""
                 isContextCheckbox.isSelected = false
                 updatePreview()
             }
         }
+
+        private fun isValidPattern(pattern: String): Boolean {
+            return try {
+                FileSystems.getDefault().getPathMatcher("glob:$pattern")
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
 
         fun removeSelectedPattern() {
             val selectedIndex = patternList.selectedIndex
@@ -157,89 +198,116 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
         private fun updatePreview() {
-           val root = selectedDirectory ?: project?.basePath?.let { Path.of(it) } ?: Path.of(".")
+            val root = getRoot()
             val fileSets = resolveFileSets(root)
             val contextFiles = resolveContextFiles(root)
-            
+
             val preview = StringBuilder()
-            
+
             if (contextFiles.isNotEmpty()) {
                 preview.append("Context Files (included in all calls):\n")
-                contextFiles.forEach { file ->
+                contextFiles.take(MAX_PREVIEW_FILES).forEach { file ->
                     preview.append("  - ${root.relativize(file)}\n")
+                }
+                if (contextFiles.size > MAX_PREVIEW_FILES) {
+                    preview.append("  ... and ${contextFiles.size - MAX_PREVIEW_FILES} more files\n")
                 }
                 preview.append("\n")
             }
-            
+
             preview.append("File Sets to Process:\n")
             fileSets.forEach { fileSet ->
                 preview.append("${fileSet.name}:\n")
-                fileSet.files.forEach { file ->
+                fileSet.files.take(MAX_PREVIEW_FILES).forEach { file ->
                     preview.append("  - ${root.relativize(file)}\n")
+                }
+                if (fileSet.files.size > MAX_PREVIEW_FILES) {
+                    preview.append("  ... and ${fileSet.files.size - MAX_PREVIEW_FILES} more files\n")
                 }
                 preview.append("\n")
             }
-            
+
             if (fileSets.isEmpty() && contextFiles.isEmpty()) {
                 preview.append("No files match the current patterns.")
             }
-            
+
             previewArea.text = preview.toString()
         }
+
+        private fun getRoot(): Path =
+            selectedDirectory ?: project?.basePath?.let { Path.of(it) } ?: Path.of(".")
 
         fun resolveFileSets(root: Path): List<FileSet> {
             val patterns = (0 until patternListModel.size)
                 .map { patternListModel.getElementAt(it) }
                 .filter { !it.isContext }
-            
-            return patterns.mapNotNull { pattern ->
-                try {
-                    val matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern.pattern}")
-                    val matchedPaths = Files.walk(root)
-                        .filter { matcher.matches(root.relativize(it)) }
-                        .toList()
-                    
-                    val fileSets = mutableListOf<FileSet>()
-                    
-                    matchedPaths.forEach { path ->
-                        when {
-                            Files.isDirectory(path) -> {
-                                val dirFiles = Files.walk(path)
-                                    .filter { Files.isRegularFile(it) && isLLMTextFile(it.toFile()) }
-                                    .toList()
-                                if (dirFiles.isNotEmpty()) {
-                                    fileSets.add(FileSet(root.relativize(path).toString(), dirFiles))
-                                }
-                            }
-                            Files.isRegularFile(path) && isLLMTextFile(path.toFile()) -> {
-                                fileSets.add(FileSet(root.relativize(path).toString(), listOf(path)))
-                            }
-                        }
-                    }
-                    
-                    fileSets
-                } catch (e: Exception) {
-                    null
-                }
-            }.flatten()
+
+            return patterns.flatMap { pattern ->
+                resolvePattern(root, pattern)
+            }
         }
 
         fun resolveContextFiles(root: Path): List<Path> {
             val contextPatterns = (0 until patternListModel.size)
                 .map { patternListModel.getElementAt(it) }
                 .filter { it.isContext }
-            
+
             return contextPatterns.flatMap { pattern ->
                 try {
-                    val matcher = FileSystems.getDefault().getPathMatcher("glob:${pattern.pattern}")
-                    Files.walk(root)
-                        .filter { Files.isRegularFile(it) && isLLMTextFile(it.toFile()) }
-                        .filter { matcher.matches(root.relativize(it)) }
-                        .toList()
+                    val matcher = getOrCreateMatcher(pattern.pattern)
+                    Files.walk(root).use { stream ->
+                        stream
+                            .filter { Files.isRegularFile(it) && isLLMTextFile(it.toFile(), treatDocumentsAsText.isSelected) }
+                            .filter { matcher.matches(root.relativize(it)) }
+                            .toList()
+                    }
                 } catch (e: Exception) {
+                    log.warn("Error resolving context pattern: ${pattern.pattern}", e)
                     emptyList()
                 }
             }
+        }
+
+        private fun getOrCreateMatcher(pattern: String): PathMatcher {
+            return patternCache.computeIfAbsent(pattern) {
+                FileSystems.getDefault().getPathMatcher("glob:$it")
+            }
+        }
+
+
+        private fun resolvePattern(root: Path, pattern: FilePattern): List<FileSet> {
+            return try {
+                val matcher = getOrCreateMatcher(pattern.pattern)
+                val matchedPaths = Files.walk(root).use { stream ->
+                    stream.filter { matcher.matches(root.relativize(it)) }
+                        .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
+                        .toList()
+                }
+                matchedPaths.mapNotNull { path ->
+                    when {
+                        Files.isDirectory(path) -> processDirectory(root, path)
+                        Files.isRegularFile(path) && isLLMTextFile(path.toFile(), treatDocumentsAsText.isSelected) -> {
+                            FileSet(root.relativize(path).toString(), listOf(path))
+                        }
+
+                        else -> null
+                    }
+                }
+            } catch (e: Exception) {
+                log.warn("Error resolving pattern: ${pattern.pattern}", e)
+                emptyList()
+            }
+        }
+
+        private fun processDirectory(root: Path, directory: Path): FileSet? {
+            val dirFiles = Files.walk(directory).use { stream ->
+                stream
+                    .filter { Files.isRegularFile(it) && isLLMTextFile(it.toFile(), treatDocumentsAsText.isSelected) }
+                    .toList()
+            }
+            return if (dirFiles.isNotEmpty()) {
+                FileSet(root.relativize(directory).toString(), dirFiles)
+            } else null
         }
     }
 
@@ -247,6 +315,7 @@ class CustomFileSetPatchAction : BaseAction() {
         var transformationMessage: String = "Review and improve the code according to best practices",
         var patterns: List<FilePattern> = listOf(),
         var autoApply: Boolean = false,
+        var treatDocumentsAsText: Boolean = false,
         var outputMode: OutputMode = OutputMode.EDIT_FILES,
         var singleOutputFile: Boolean = true,
         var outputFilename: String = "output.md",
@@ -256,14 +325,13 @@ class CustomFileSetPatchAction : BaseAction() {
     class Settings(
         val settings: UserSettings? = null,
         val project: Project? = null,
-       val selectedDirectory: Path? = null,
+        val selectedDirectory: Path? = null,
     )
 
     override fun handle(e: AnActionEvent) {
         val project = e.project
-       val selectedDirectory = getSelectedDirectory(e)
-       val config = getConfig(project, e, selectedDirectory)
-        if (config == null) return
+        val selectedDirectory = getSelectedDirectory(e)
+        val config = getConfig(project, e, selectedDirectory) ?: return
 
         val session = Session.newGlobalID()
         SessionProxyServer.metadataStorage.setSessionName(
@@ -271,12 +339,14 @@ class CustomFileSetPatchAction : BaseAction() {
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
+
         SessionProxyServer.chats[session] = CustomFileSetPatchServer(
             config = config,
             api = api,
             autoApply = config.settings?.autoApply ?: false,
             outputMode = config.settings?.outputMode ?: OutputMode.EDIT_FILES
         )
+
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Custom File Set Patch",
             inputCnt = 1,
@@ -298,18 +368,18 @@ class CustomFileSetPatchAction : BaseAction() {
         }.start()
     }
 
-   private fun getSelectedDirectory(e: AnActionEvent): Path? {
-       val virtualFiles = e.getData(com.intellij.openapi.actionSystem.CommonDataKeys.VIRTUAL_FILE_ARRAY)
-       val selectedFile = virtualFiles?.firstOrNull()
-       return when {
-           selectedFile?.isDirectory == true -> selectedFile.toNioPath()
-           selectedFile != null -> selectedFile.parent?.toNioPath()
-           else -> e.project?.basePath?.let { Path.of(it) }
-       }
-   }
+    private fun getSelectedDirectory(e: AnActionEvent): Path? {
+        val virtualFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
+        val selectedFile = virtualFiles?.firstOrNull()
+        return when {
+            selectedFile?.isDirectory == true -> selectedFile.toNioPath()
+            selectedFile != null -> selectedFile.parent?.toNioPath()
+            else -> e.project?.basePath?.let { Path.of(it) }
+        }
+    }
 
-   private fun getConfig(project: Project?, e: AnActionEvent, selectedDirectory: Path?): Settings? {
-       val settingsUI = SettingsUI(project, selectedDirectory).apply {
+    private fun getConfig(project: Project?, e: AnActionEvent, selectedDirectory: Path?): Settings? {
+        val settingsUI = SettingsUI(project, selectedDirectory).apply {
             transformationMessage.text = "Review and improve the code according to best practices"
             autoApply.isSelected = false
             outputFilename.text = "output.md"
@@ -318,12 +388,15 @@ class CustomFileSetPatchAction : BaseAction() {
 
         val dialog = ConfigDialog(project, settingsUI, "Custom File Set Patch")
         dialog.show()
-        if (!dialog.isOK) return null
 
-       return Settings(dialog.userSettings, project, selectedDirectory)
+
+        return if (dialog.isOK) {
+            Settings(dialog.userSettings, project, selectedDirectory)
+        } else null
     }
 
-    class ConfigDialog(project: Project?, private val settingsUI: SettingsUI, title: String) : DialogWrapper(project, false) {
+    class ConfigDialog(project: Project?, private val settingsUI: SettingsUI, title: String) :
+        DialogWrapper(project, false) {
         val userSettings = UserSettings()
 
         init {
@@ -336,16 +409,16 @@ class CustomFileSetPatchAction : BaseAction() {
             return JPanel(BorderLayout()).apply {
                 val leftPanel = JPanel(BorderLayout()).apply {
                     preferredSize = Dimension(400, 600)
-                    
+
                     val patternPanel = JPanel(BorderLayout()).apply {
                         border = JBUI.Borders.empty(10)
-                        
+
                         val inputPanel = JPanel(BorderLayout()).apply {
                             add(JLabel("File Pattern (glob syntax):"), BorderLayout.NORTH)
                             add(settingsUI.patternInput, BorderLayout.CENTER)
                             add(settingsUI.isContextCheckbox, BorderLayout.SOUTH)
                         }
-                        
+
                         val buttonPanel = JPanel().apply {
                             layout = BoxLayout(this, BoxLayout.X_AXIS)
                             val addButton = JButton("Add Pattern").apply {
@@ -358,44 +431,44 @@ class CustomFileSetPatchAction : BaseAction() {
                             add(Box.createHorizontalStrut(10))
                             add(removeButton)
                         }
-                        
+
                         add(inputPanel, BorderLayout.NORTH)
                         add(buttonPanel, BorderLayout.CENTER)
                     }
-                    
+
                     val listPanel = JPanel(BorderLayout()).apply {
                         border = JBUI.Borders.empty(10)
                         add(JLabel("Patterns:"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.patternList), BorderLayout.CENTER)
                     }
-                    
+
                     val instructionPanel = JPanel(BorderLayout()).apply {
                         border = JBUI.Borders.empty(10)
                         add(JLabel("AI Instruction:"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.transformationMessage), BorderLayout.CENTER)
-                        
+
                         val optionsPanel = JPanel().apply {
                             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                            
+
                             val outputModePanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                                 border = BorderFactory.createTitledBorder("Output Mode")
                                 add(settingsUI.editFilesRadio)
                                 add(settingsUI.generateDocsRadio)
-                                add(settingsUI.generateExtractsRadio)
                             }
                             add(outputModePanel)
-                            
+
                             val outputOptionsPanel = JPanel().apply {
                                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
                                 add(settingsUI.autoApply)
                                 add(settingsUI.singleOutputFile)
-                                
+                            add(settingsUI.treatDocumentsAsText)
+
                                 val filePanel = JPanel(BorderLayout()).apply {
                                     add(JLabel("Output File:"), BorderLayout.WEST)
                                     add(settingsUI.outputFilename, BorderLayout.CENTER)
                                 }
                                 add(filePanel)
-                                
+
                                 val dirPanel = JPanel(BorderLayout()).apply {
                                     add(JLabel("Output Directory:"), BorderLayout.WEST)
                                     add(settingsUI.outputDirectory, BorderLayout.CENTER)
@@ -406,22 +479,22 @@ class CustomFileSetPatchAction : BaseAction() {
                         }
                         add(optionsPanel, BorderLayout.SOUTH)
                     }
-                    
+
                     add(patternPanel, BorderLayout.NORTH)
                     add(listPanel, BorderLayout.CENTER)
                     add(instructionPanel, BorderLayout.SOUTH)
                 }
-                
+
                 val rightPanel = JPanel(BorderLayout()).apply {
                     preferredSize = Dimension(500, 600)
                     border = JBUI.Borders.empty(10)
                     add(JLabel("Preview:"), BorderLayout.NORTH)
                     add(JBScrollPane(settingsUI.previewArea), BorderLayout.CENTER)
                 }
-                
+
                 add(leftPanel, BorderLayout.WEST)
                 add(rightPanel, BorderLayout.CENTER)
-                
+
                 preferredSize = Dimension(900, 600)
             }
         }
@@ -433,6 +506,7 @@ class CustomFileSetPatchAction : BaseAction() {
                 patterns = (0 until settingsUI.patternListModel.size)
                     .map { settingsUI.patternListModel.getElementAt(it) }
                 autoApply = settingsUI.autoApply.isSelected
+                treatDocumentsAsText = settingsUI.treatDocumentsAsText.isSelected
                 outputMode = settingsUI.getOutputMode()
                 singleOutputFile = settingsUI.singleOutputFile.isSelected
                 outputFilename = settingsUI.outputFilename.text

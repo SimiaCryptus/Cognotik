@@ -1,15 +1,13 @@
 package com.simiacryptus.cognotik.input
 
-import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
-import java.awt.image.BufferedImage
 import java.io.File
 
 class TextReader(private val textFile: File) : PaginatedDocumentReader {
     private val fullText: String = textFile.readLines().joinToString("\n")
     private val pages: List<String> by lazy { splitIntoPages(fullText) }
-    private var settings: DocumentParserApp.Settings? = null
+    private var settings: Settings? = null
     
-    fun configure(settings: DocumentParserApp.Settings) {
+    fun configure(settings: Settings) {
         this.settings = settings
     }
     override fun getText(): String {

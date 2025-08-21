@@ -34,6 +34,8 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.gson)
     implementation(libs.httpclient5)
+    implementation(libs.jsoup)
+    implementation(libs.pdfbox)
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)

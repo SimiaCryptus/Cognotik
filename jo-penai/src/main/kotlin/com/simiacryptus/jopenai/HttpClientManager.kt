@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.*
@@ -106,6 +108,11 @@ open class HttpClientManager(
             else -> null
         }
 
+        fun toString(exception: Throwable): String {
+            val writer = StringWriter()
+            exception.printStackTrace(PrintWriter(writer))
+            return writer.toString()
+        }
     }
 
     protected fun captureCallerStack(): String {
@@ -180,7 +187,7 @@ open class HttpClientManager(
             } catch (e: Throwable) {
                 val exception = unwrapException(e)
                 throwIfNonrecoverable(exception, sleepPeriod)
-                this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount) after ${sleepPeriod}ms: ${exception.message}", logStreams)
+                this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount) after ${sleepPeriod}ms: ${toString(exception)}", logStreams)
                 if (i <= retryCount) {
                     Thread.sleep(sleepPeriod)
                 }

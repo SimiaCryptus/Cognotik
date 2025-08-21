@@ -12,10 +12,16 @@ object FileSelectionUtils {
     val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
 
     fun filteredWalkAsciiTree(
-        rootFile: File, maxFilesPerDir: Int = 20, fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
+        rootFile: File,
+        maxFilesPerDir: Int = 20,
+        treatDocumentsAsText: Boolean = false,
+        fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
     ): String {
         val sb = StringBuilder()
-        if (!fn(rootFile)) {
+        val filterFn = if (treatDocumentsAsText) {
+            { file: File -> fn(file) || isDocumentFile(file) }
+        } else fn
+        if (!filterFn(rootFile)) {
             log.debug("Skipping root file for tree: ${rootFile.absolutePath}")
             return "" // Root itself doesn't match, so empty tree
         }
@@ -30,7 +36,7 @@ object FileSelectionUtils {
             entriesToConsider.forEachIndexed { index, child ->
                 buildAsciiSubTree(
                     child, "", // Initial parentContinuationPrefix for children of the root
-                    index == entriesToConsider.size - 1, maxFilesPerDir, fn, sb
+                    index == entriesToConsider.size - 1, maxFilesPerDir, filterFn, sb
                 )
             }
         }
@@ -67,13 +73,19 @@ object FileSelectionUtils {
     }
 
     fun filteredWalk(
-        file: File, maxFilesPerDir: Int = 20, fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
+        file: File,
+        maxFilesPerDir: Int = 20,
+        treatDocumentsAsText: Boolean = false,
+        fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
     ): List<File> {
+        val filterFn = if (treatDocumentsAsText) {
+            { f: File -> fn(f) || isDocumentFile(f) }
+        } else fn
         val result = mutableListOf<File>()
-        if (fn(file)) {
+        if (filterFn(file)) {
             if (file.isDirectory) {
                 file.listFiles()?.take(maxFilesPerDir)?.forEach { child ->
-                    result.addAll(filteredWalk(child, maxFilesPerDir, fn))
+                    result.addAll(filteredWalk(child, maxFilesPerDir, treatDocumentsAsText, fn))
                 }
             } else {
                 result.add(file)
@@ -97,7 +109,7 @@ object FileSelectionUtils {
         return files
     }
 
-    fun expandFileList(vararg data: File): Array<File> {
+    fun expandFileList(vararg data: File, treatDocumentsAsText: Boolean = false): Array<File> {
         return data.flatMap {
             if (!it.exists()) {
                 log.debug("File does not exist during expansion: ${it.absolutePath}")
@@ -105,6 +117,7 @@ object FileSelectionUtils {
             }
             (when {
                 it.name.endsWith(".data") -> arrayOf(it)
+                treatDocumentsAsText && isDocumentFile(it) -> arrayOf(it)
                 isGitignore(it.toPath()) -> {
                     log.debug("File ignored by gitignore: ${it.absolutePath}")
                     arrayOf()
@@ -125,17 +138,18 @@ object FileSelectionUtils {
                     log.debug("File is detected as binary: ${it.absolutePath}")
                     arrayOf()
                 }
-                it.isDirectory -> expandFileList(*it.listFiles() ?: arrayOf())
+                it.isDirectory -> expandFileList(*it.listFiles() ?: arrayOf(), treatDocumentsAsText = treatDocumentsAsText)
                 else -> arrayOf(it)
             }).toList()
         }.toTypedArray()
     }
 
-    fun isLLMTextFile(file: File): Boolean {
+    fun isLLMTextFile(file: File, treatDocumentsAsText: Boolean = false): Boolean {
         return when {
             !file.exists() -> false
             file.isDirectory -> false
             file.name.endsWith(".data") -> true
+            treatDocumentsAsText && isDocumentFile(file) -> true
             file.length() > 100_000_000L -> false // 100MB limit
             isGitignore(file.toPath()) -> false
             isLLMIgnored(file.toPath()) -> false
@@ -362,6 +376,11 @@ object FileSelectionUtils {
     } catch (e: Throwable) {
         this
     }
+    fun isDocumentFile(file: File): Boolean {
+        val extension = file.extension.lowercase(Locale.getDefault())
+        return extension in setOf("pdf", "html", "htm")
+    }
+
 
     fun fuzzyResolveToRelativePath(root: Path, filename: String): String? {
         log.debug("Resolving filename '{}' relative to root '{}'", filename, root)

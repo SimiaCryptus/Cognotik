@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
 import com.simiacryptus.cognotik.input.DocumentReader
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.RenderableDocumentReader
+import com.simiacryptus.cognotik.input.Settings
 import com.simiacryptus.cognotik.input.TextReader
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -329,20 +330,6 @@ open class DocumentParserApp(
         } else {
             "\n```$language\n$content\n```\n"
         }
-
-    data class Settings(
-        val dpi: Float = 120f,
-        val maxPages: Int = Int.MAX_VALUE,
-        val outputFormat: String = "PNG",
-        val fileInputs: List<String>? = null,
-        val showImages: Boolean = true,
-        val pagesPerBatch: Int = 1,
-        val saveImageFiles: Boolean = false,
-        val saveTextFiles: Boolean = false,
-        val saveFinalJson: Boolean = true,
-        val fastMode: Boolean = true,
-        val addLineNumbers: Boolean = false
-    )
 
     override val settingsClass: Class<*> get() = Settings::class.java
 

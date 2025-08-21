@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import org.slf4j.LoggerFactory
 import java.nio.file.FileSystems

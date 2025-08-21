@@ -1,18 +1,16 @@
 package com.simiacryptus.cognotik.input
 
-import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import java.awt.image.BufferedImage
 import java.io.File
 
 class HTMLReader(private val htmlFile: File) : PaginatedDocumentReader {
     private val document: Document = Jsoup.parse(htmlFile, "UTF-8")
     private val fullText: String = document.body().text()
     private val pages: List<String> by lazy { splitIntoPages(fullText) }
-    private var settings: DocumentParserApp.Settings? = null
+    private var settings: Settings? = null
 
-    fun configure(settings: DocumentParserApp.Settings) {
+    fun configure(settings: Settings) {
         this.settings = settings
     }
     override fun getText(): String {
