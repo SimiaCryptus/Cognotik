@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.input.getReader
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -96,13 +95,15 @@ class CustomFileSetPatchAction : BaseAction() {
 
         @Name("Auto Apply")
         val autoApply = JCheckBox("Auto Apply Changes")
+
         @Name("Treat Documents as Text")
         val treatDocumentsAsText = JCheckBox("Include PDF/HTML files as text", false)
 
-
         @Name("Output Mode")
         val outputModeGroup = ButtonGroup()
+
         val editFilesRadio = JRadioButton("Edit Files", true)
+
         val generateDocsRadio = JRadioButton("Generate Documentation")
 
         @Name("Single Output File")
@@ -113,7 +114,6 @@ class CustomFileSetPatchAction : BaseAction() {
 
         @Name("Output Directory")
         val outputDirectory = JBTextField("output/")
-
 
         @Name("Preview")
         val previewArea = JBTextArea(PREVIEW_ROWS, PREVIEW_COLS).apply {
@@ -331,41 +331,172 @@ class CustomFileSetPatchAction : BaseAction() {
     override fun handle(e: AnActionEvent) {
         val project = e.project
         val selectedDirectory = getSelectedDirectory(e)
-        val config = getConfig(project, e, selectedDirectory) ?: return
+        val settingsUI = SettingsUI(project, selectedDirectory).apply {
+            transformationMessage.text = "Review and improve the code according to best practices"
+            autoApply.isSelected = false
+            outputFilename.text = "output.md"
+            outputDirectory.text = "output/"
+        }
+        // (project, settingsUI, "Custom File Set Patch")
+        val dialog = object: DialogWrapper(project, false) {
+            val userSettings = UserSettings()
 
-        val session = Session.newGlobalID()
-        SessionProxyServer.metadataStorage.setSessionName(
-            null,
-            session,
-            "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-        )
-
-        SessionProxyServer.chats[session] = CustomFileSetPatchServer(
-            config = config,
-            api = api,
-            autoApply = config.settings?.autoApply ?: false,
-            outputMode = config.settings?.outputMode ?: OutputMode.EDIT_FILES
-        )
-
-        ApplicationServer.appInfoMap[session] = AppInfoData(
-            applicationName = "Custom File Set Patch",
-            inputCnt = 1,
-            stickyInput = false,
-            loadImages = false,
-            showMenubar = false
-        )
-
-        val server = CognotikAppServer.getServer(e.project)
-        Thread {
-            Thread.sleep(500)
-            try {
-                val uri = server.server.uri.resolve("/#$session")
-                log.info("Opening browser to $uri")
-                browse(uri)
-            } catch (e: Throwable) {
-                log.warn("Error opening browser", e)
+            init {
+                this.title = title
+                isModal = false
+                init()
             }
-        }.start()
+
+            override fun createCenterPanel(): JComponent {
+                return JPanel(BorderLayout()).apply {
+                    val leftPanel = JPanel(BorderLayout()).apply {
+                        preferredSize = Dimension(400, 600)
+
+                        val patternPanel = JPanel(BorderLayout()).apply {
+                            border = JBUI.Borders.empty(10)
+
+                            val inputPanel = JPanel(BorderLayout()).apply {
+                                add(JLabel("File Pattern (glob syntax):"), BorderLayout.NORTH)
+                                add(settingsUI.patternInput, BorderLayout.CENTER)
+                                add(settingsUI.isContextCheckbox, BorderLayout.SOUTH)
+                            }
+
+                            val buttonPanel = JPanel().apply {
+                                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                                val addButton = JButton("Add Pattern").apply {
+                                    addActionListener { settingsUI.addPattern() }
+                                }
+                                val removeButton = JButton("Remove Selected").apply {
+                                    addActionListener { settingsUI.removeSelectedPattern() }
+                                }
+                                add(addButton)
+                                add(Box.createHorizontalStrut(10))
+                                add(removeButton)
+                            }
+
+                            add(inputPanel, BorderLayout.NORTH)
+                            add(buttonPanel, BorderLayout.CENTER)
+                        }
+
+                        val listPanel = JPanel(BorderLayout()).apply {
+                            border = JBUI.Borders.empty(10)
+                            add(JLabel("Patterns:"), BorderLayout.NORTH)
+                            add(JBScrollPane(settingsUI.patternList), BorderLayout.CENTER)
+                        }
+
+                        val instructionPanel = JPanel(BorderLayout()).apply {
+                            border = JBUI.Borders.empty(10)
+                            add(JLabel("AI Instruction:"), BorderLayout.NORTH)
+                            add(JBScrollPane(settingsUI.transformationMessage), BorderLayout.CENTER)
+
+                            val optionsPanel = JPanel().apply {
+                                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+
+                                val outputModePanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                                    border = BorderFactory.createTitledBorder("Output Mode")
+                                    add(settingsUI.editFilesRadio)
+                                    add(settingsUI.generateDocsRadio)
+                                }
+                                add(outputModePanel)
+
+                                val outputOptionsPanel = JPanel().apply {
+                                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                                    add(settingsUI.autoApply)
+                                    add(settingsUI.singleOutputFile)
+                                    add(settingsUI.treatDocumentsAsText)
+
+                                    val filePanel = JPanel(BorderLayout()).apply {
+                                        add(JLabel("Output File:"), BorderLayout.WEST)
+                                        add(settingsUI.outputFilename, BorderLayout.CENTER)
+                                    }
+                                    add(filePanel)
+
+                                    val dirPanel = JPanel(BorderLayout()).apply {
+                                        add(JLabel("Output Directory:"), BorderLayout.WEST)
+                                        add(settingsUI.outputDirectory, BorderLayout.CENTER)
+                                    }
+                                    add(dirPanel)
+                                }
+                                add(outputOptionsPanel)
+                            }
+                            add(optionsPanel, BorderLayout.SOUTH)
+                        }
+
+                        add(patternPanel, BorderLayout.NORTH)
+                        add(listPanel, BorderLayout.CENTER)
+                        add(instructionPanel, BorderLayout.SOUTH)
+                    }
+
+                    val rightPanel = JPanel(BorderLayout()).apply {
+                        preferredSize = Dimension(500, 600)
+                        border = JBUI.Borders.empty(10)
+                        add(JLabel("Preview:"), BorderLayout.NORTH)
+                        add(JBScrollPane(settingsUI.previewArea), BorderLayout.CENTER)
+                    }
+
+                    add(leftPanel, BorderLayout.WEST)
+                    add(rightPanel, BorderLayout.CENTER)
+
+                    preferredSize = Dimension(900, 600)
+                }
+            }
+
+            override fun doOKAction() {
+                super.doOKAction()
+                userSettings.apply {
+                    transformationMessage = settingsUI.transformationMessage.text
+                    patterns = (0 until settingsUI.patternListModel.size)
+                        .map { settingsUI.patternListModel.getElementAt(it) }
+                    autoApply = settingsUI.autoApply.isSelected
+                    treatDocumentsAsText = settingsUI.treatDocumentsAsText.isSelected
+                    outputMode = settingsUI.getOutputMode()
+                    singleOutputFile = settingsUI.singleOutputFile.isSelected
+                    outputFilename = settingsUI.outputFilename.text
+                    outputDirectory = settingsUI.outputDirectory.text
+                }
+                // Handle the actual action execution here since dialog is non-modal
+                executeAction()
+            }
+            private fun executeAction() {
+                val session = Session.newGlobalID()
+                SessionProxyServer.metadataStorage.setSessionName(
+                    null,
+                    session,
+                    "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+                )
+
+                SessionProxyServer.chats[session] = CustomFileSetPatchServer(
+                    config = Settings(userSettings, project, selectedDirectory),
+                    api = api,
+                    autoApply = userSettings.autoApply,
+                    outputMode = userSettings.outputMode
+                )
+
+                ApplicationServer.appInfoMap[session] = AppInfoData(
+                    applicationName = "Custom File Set Patch",
+                    inputCnt = 1,
+                    stickyInput = false,
+                    loadImages = false,
+                    showMenubar = false
+                )
+
+                val server = CognotikAppServer.getServer(e.project)
+                Thread {
+                    Thread.sleep(500)
+                    try {
+                        val uri = server.server.uri.resolve("/#$session")
+                        log.info("Opening browser to $uri")
+                        browse(uri)
+                    } catch (e: Throwable) {
+                        log.warn("Error opening browser", e)
+                    }
+                }.start()
+            }
+        }
+        dialog.show() // BUG: As a non-modal dialog, this does not block further execution
+        if (dialog.isOK) {
+            Settings(dialog.userSettings, project, selectedDirectory)
+        } else null
     }
 
     private fun getSelectedDirectory(e: AnActionEvent): Path? {
@@ -378,142 +509,6 @@ class CustomFileSetPatchAction : BaseAction() {
         }
     }
 
-    private fun getConfig(project: Project?, e: AnActionEvent, selectedDirectory: Path?): Settings? {
-        val settingsUI = SettingsUI(project, selectedDirectory).apply {
-            transformationMessage.text = "Review and improve the code according to best practices"
-            autoApply.isSelected = false
-            outputFilename.text = "output.md"
-            outputDirectory.text = "output/"
-        }
-
-        val dialog = ConfigDialog(project, settingsUI, "Custom File Set Patch")
-        dialog.show()
-
-
-        return if (dialog.isOK) {
-            Settings(dialog.userSettings, project, selectedDirectory)
-        } else null
-    }
-
-    class ConfigDialog(project: Project?, private val settingsUI: SettingsUI, title: String) :
-        DialogWrapper(project, false) {
-        val userSettings = UserSettings()
-
-        init {
-            this.title = title
-            isModal = false
-            init()
-        }
-
-        override fun createCenterPanel(): JComponent {
-            return JPanel(BorderLayout()).apply {
-                val leftPanel = JPanel(BorderLayout()).apply {
-                    preferredSize = Dimension(400, 600)
-
-                    val patternPanel = JPanel(BorderLayout()).apply {
-                        border = JBUI.Borders.empty(10)
-
-                        val inputPanel = JPanel(BorderLayout()).apply {
-                            add(JLabel("File Pattern (glob syntax):"), BorderLayout.NORTH)
-                            add(settingsUI.patternInput, BorderLayout.CENTER)
-                            add(settingsUI.isContextCheckbox, BorderLayout.SOUTH)
-                        }
-
-                        val buttonPanel = JPanel().apply {
-                            layout = BoxLayout(this, BoxLayout.X_AXIS)
-                            val addButton = JButton("Add Pattern").apply {
-                                addActionListener { settingsUI.addPattern() }
-                            }
-                            val removeButton = JButton("Remove Selected").apply {
-                                addActionListener { settingsUI.removeSelectedPattern() }
-                            }
-                            add(addButton)
-                            add(Box.createHorizontalStrut(10))
-                            add(removeButton)
-                        }
-
-                        add(inputPanel, BorderLayout.NORTH)
-                        add(buttonPanel, BorderLayout.CENTER)
-                    }
-
-                    val listPanel = JPanel(BorderLayout()).apply {
-                        border = JBUI.Borders.empty(10)
-                        add(JLabel("Patterns:"), BorderLayout.NORTH)
-                        add(JBScrollPane(settingsUI.patternList), BorderLayout.CENTER)
-                    }
-
-                    val instructionPanel = JPanel(BorderLayout()).apply {
-                        border = JBUI.Borders.empty(10)
-                        add(JLabel("AI Instruction:"), BorderLayout.NORTH)
-                        add(JBScrollPane(settingsUI.transformationMessage), BorderLayout.CENTER)
-
-                        val optionsPanel = JPanel().apply {
-                            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-
-                            val outputModePanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                                border = BorderFactory.createTitledBorder("Output Mode")
-                                add(settingsUI.editFilesRadio)
-                                add(settingsUI.generateDocsRadio)
-                            }
-                            add(outputModePanel)
-
-                            val outputOptionsPanel = JPanel().apply {
-                                layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                                add(settingsUI.autoApply)
-                                add(settingsUI.singleOutputFile)
-                            add(settingsUI.treatDocumentsAsText)
-
-                                val filePanel = JPanel(BorderLayout()).apply {
-                                    add(JLabel("Output File:"), BorderLayout.WEST)
-                                    add(settingsUI.outputFilename, BorderLayout.CENTER)
-                                }
-                                add(filePanel)
-
-                                val dirPanel = JPanel(BorderLayout()).apply {
-                                    add(JLabel("Output Directory:"), BorderLayout.WEST)
-                                    add(settingsUI.outputDirectory, BorderLayout.CENTER)
-                                }
-                                add(dirPanel)
-                            }
-                            add(outputOptionsPanel)
-                        }
-                        add(optionsPanel, BorderLayout.SOUTH)
-                    }
-
-                    add(patternPanel, BorderLayout.NORTH)
-                    add(listPanel, BorderLayout.CENTER)
-                    add(instructionPanel, BorderLayout.SOUTH)
-                }
-
-                val rightPanel = JPanel(BorderLayout()).apply {
-                    preferredSize = Dimension(500, 600)
-                    border = JBUI.Borders.empty(10)
-                    add(JLabel("Preview:"), BorderLayout.NORTH)
-                    add(JBScrollPane(settingsUI.previewArea), BorderLayout.CENTER)
-                }
-
-                add(leftPanel, BorderLayout.WEST)
-                add(rightPanel, BorderLayout.CENTER)
-
-                preferredSize = Dimension(900, 600)
-            }
-        }
-
-        override fun doOKAction() {
-            super.doOKAction()
-            userSettings.apply {
-                transformationMessage = settingsUI.transformationMessage.text
-                patterns = (0 until settingsUI.patternListModel.size)
-                    .map { settingsUI.patternListModel.getElementAt(it) }
-                autoApply = settingsUI.autoApply.isSelected
-                treatDocumentsAsText = settingsUI.treatDocumentsAsText.isSelected
-                outputMode = settingsUI.getOutputMode()
-                singleOutputFile = settingsUI.singleOutputFile.isSelected
-                outputFilename = settingsUI.outputFilename.text
-                outputDirectory = settingsUI.outputDirectory.text
-            }
-        }
-    }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         return super.isEnabled(event) && event.project != null
