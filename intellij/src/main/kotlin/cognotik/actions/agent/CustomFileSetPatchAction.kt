@@ -36,16 +36,16 @@ class CustomFileSetPatchAction : BaseAction() {
 
     enum class OutputMode {
         EDIT_FILES,
-        GENERATE_DOCUMENTATION,
-        GENERATE_EXTRACTS
+        GENERATE_DOCUMENTATION
     }
 
 
     data class FilePattern(
         val pattern: String,
-        val isContext: Boolean = false
+        val isContext: Boolean = false,
+        val isRegex: Boolean = false
     ) {
-        override fun toString(): String = "${if (isContext) "[Context] " else ""}$pattern"
+        override fun toString(): String = "${if (isContext) "[Context] " else ""}${if (isRegex) "[Regex] " else ""}$pattern"
     }
 
     data class FileSet(
@@ -89,6 +89,9 @@ class CustomFileSetPatchAction : BaseAction() {
 
         @Name("Is Context")
         val isContextCheckbox = JCheckBox("Include as context in all calls")
+        @Name("Use Regex")
+        val useRegexCheckbox = JCheckBox("Use regex pattern instead of glob")
+
 
         @Name("AI Instruction")
         val transformationMessage = JBTextArea(DEFAULT_TEXTAREA_ROWS, DEFAULT_TEXTAREA_COLS)
@@ -114,6 +117,9 @@ class CustomFileSetPatchAction : BaseAction() {
 
         @Name("Output Directory")
         val outputDirectory = JBTextField("output/")
+        @Name("Concurrency")
+        val concurrencySpinner = JSpinner(SpinnerNumberModel(4, 1, 16, 1))
+
 
         @Name("Preview")
         val previewArea = JBTextArea(PREVIEW_ROWS, PREVIEW_COLS).apply {
@@ -163,31 +169,23 @@ class CustomFileSetPatchAction : BaseAction() {
         fun addPattern() {
             val pattern = patternInput.text.trim()
             if (pattern.isNotEmpty()) {
-                if (!isValidPattern(pattern)) {
+                val isRegex = useRegexCheckbox.isSelected
+                if (!isValidPattern(pattern, isRegex)) {
                     JOptionPane.showMessageDialog(
                         patternList,
-                        "Invalid glob pattern: $pattern",
+                        "Invalid ${if (isRegex) "regex" else "glob"} pattern: $pattern",
                         "Pattern Error",
                         JOptionPane.ERROR_MESSAGE
                     )
                     return
                 }
-                patternListModel.addElement(FilePattern(pattern, isContextCheckbox.isSelected))
+                patternListModel.addElement(FilePattern(pattern, isContextCheckbox.isSelected, isRegex))
                 patternInput.text = ""
                 isContextCheckbox.isSelected = false
+                useRegexCheckbox.isSelected = false
                 updatePreview()
             }
         }
-
-        private fun isValidPattern(pattern: String): Boolean {
-            return try {
-                FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                true
-            } catch (e: Exception) {
-                false
-            }
-        }
-
 
         fun removeSelectedPattern() {
             val selectedIndex = patternList.selectedIndex
@@ -258,7 +256,15 @@ class CustomFileSetPatchAction : BaseAction() {
                     Files.walk(root).use { stream ->
                         stream
                             .filter { Files.isRegularFile(it) && isLLMTextFile(it.toFile(), treatDocumentsAsText.isSelected) }
-                            .filter { matcher.matches(root.relativize(it)) }
+                            .filter { path ->
+                                val relativePath = root.relativize(path)
+                                // Skip current directory references
+                                if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
+                                    false
+                                } else {
+                                    matcher.matches(relativePath)
+                                }
+                            }
                             .toList()
                     }
                 } catch (e: Exception) {
@@ -275,13 +281,45 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
 
+        private fun isValidPattern(pattern: String, isRegex: Boolean): Boolean {
+            return try {
+                if (isRegex) {
+                    pattern.toRegex()
+                   true // Regex pattern is valid if it compiles
+               } else {
+                   FileSystems.getDefault().getPathMatcher("glob:$pattern")
+                   true // Glob pattern is valid if PathMatcher can be created
+                }
+            } catch (e: Exception) {
+                false
+            }
+        }
+
         private fun resolvePattern(root: Path, pattern: FilePattern): List<FileSet> {
             return try {
-                val matcher = getOrCreateMatcher(pattern.pattern)
-                val matchedPaths = Files.walk(root).use { stream ->
-                    stream.filter { matcher.matches(root.relativize(it)) }
-                        .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
-                        .toList()
+                val matchedPaths = if (pattern.isRegex) {
+                   val regex = pattern.pattern.toRegex()
+                   Files.walk(root).use { stream ->
+                       stream
+                           .filter { path ->
+                               val relativePath = root.relativize(path)
+                               // Skip current directory references
+                               if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
+                                   false
+                               } else {
+                                   regex.matches(relativePath.toString())
+                               }
+                           }
+                           .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
+                           .toList()
+                   }
+                } else {
+                    val matcher = getOrCreateMatcher(pattern.pattern)
+                    Files.walk(root).use { stream ->
+                        stream.filter { path -> matcher.matches(root.relativize(path)) }
+                            .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
+                            .toList()
+                    }
                 }
                 matchedPaths.mapNotNull { path ->
                     when {
@@ -311,7 +349,7 @@ class CustomFileSetPatchAction : BaseAction() {
         }
     }
 
-    class UserSettings(
+class UserSettings(
         var transformationMessage: String = "Review and improve the code according to best practices",
         var patterns: List<FilePattern> = listOf(),
         var autoApply: Boolean = false,
@@ -319,7 +357,8 @@ class CustomFileSetPatchAction : BaseAction() {
         var outputMode: OutputMode = OutputMode.EDIT_FILES,
         var singleOutputFile: Boolean = true,
         var outputFilename: String = "output.md",
-        var outputDirectory: String = "output/"
+        var outputDirectory: String = "output/",
+        var concurrency: Int = 4
     )
 
     class Settings(
@@ -358,7 +397,13 @@ class CustomFileSetPatchAction : BaseAction() {
                             val inputPanel = JPanel(BorderLayout()).apply {
                                 add(JLabel("File Pattern (glob syntax):"), BorderLayout.NORTH)
                                 add(settingsUI.patternInput, BorderLayout.CENTER)
-                                add(settingsUI.isContextCheckbox, BorderLayout.SOUTH)
+                               
+                               val checkboxPanel = JPanel().apply {
+                                   layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                                   add(settingsUI.isContextCheckbox)
+                                   add(settingsUI.useRegexCheckbox)
+                               }
+                               add(checkboxPanel, BorderLayout.SOUTH)
                             }
 
                             val buttonPanel = JPanel().apply {
@@ -416,6 +461,11 @@ class CustomFileSetPatchAction : BaseAction() {
                                         add(settingsUI.outputDirectory, BorderLayout.CENTER)
                                     }
                                     add(dirPanel)
+                                    val concurrencyPanel = JPanel(BorderLayout()).apply {
+                                        add(JLabel("Concurrency:"), BorderLayout.WEST)
+                                        add(settingsUI.concurrencySpinner, BorderLayout.CENTER)
+                                    }
+                                    add(concurrencyPanel)
                                 }
                                 add(outputOptionsPanel)
                             }
@@ -453,6 +503,7 @@ class CustomFileSetPatchAction : BaseAction() {
                     singleOutputFile = settingsUI.singleOutputFile.isSelected
                     outputFilename = settingsUI.outputFilename.text
                     outputDirectory = settingsUI.outputDirectory.text
+                    concurrency = settingsUI.concurrencySpinner.value as Int
                 }
                 // Handle the actual action execution here since dialog is non-modal
                 executeAction()

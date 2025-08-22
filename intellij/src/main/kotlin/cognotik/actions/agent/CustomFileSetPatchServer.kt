@@ -32,7 +32,10 @@ import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class CustomFileSetPatchServer(
     val config: CustomFileSetPatchAction.Settings,
@@ -46,14 +49,14 @@ class CustomFileSetPatchServer(
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(CustomFileSetPatchServer::class.java)
-        private const val DEFAULT_CONCURRENCY = 4
-        private const val BROWSER_OPEN_DELAY_MS = 500L
         private const val TASK_TIMEOUT_MINUTES = 30L
         private const val MAX_FILE_SIZE_MB = 10
         private const val MAX_CONTEXT_LENGTH = 100_000
     }
 
     private lateinit var _root: Path
+    private val outputLock = ReentrantLock()
+    private val outputWritten = AtomicBoolean(false)
 
     override val inputCnt = 0
     override val stickyInput = true
@@ -78,12 +81,6 @@ class CustomFileSetPatchServer(
                     Response should be in markdown format with clear sections and explanations.
                 """.trimIndent()
 
-                CustomFileSetPatchAction.OutputMode.GENERATE_EXTRACTS -> """
-                    You are a helpful AI that helps people extract and transform information from code.
-                    You will be analyzing code files and extracting/transforming information based on the provided instruction.
-                    Please process the code according to the given requirements and provide the requested output.
-                    Response should be formatted according to the specific transformation requested.
-                """.trimIndent()
             }
 
             return SimpleActor(
@@ -92,6 +89,43 @@ class CustomFileSetPatchServer(
                 temperature = AppSettingsState.instance.temperature,
             )
         }
+    private fun initializeSingleOutputFile(): Path {
+        val outputDir = _root.resolve(config.settings?.outputDirectory ?: "output")
+        Files.createDirectories(outputDir)
+        val outputFile = outputDir.resolve(config.settings?.outputFilename ?: "output.${getFileExtension()}")
+
+        // Create/truncate the file and write header
+        Files.newBufferedWriter(
+            outputFile,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.TRUNCATE_EXISTING
+        ).use { writer ->
+            writer.write("# Generated Output\n\n")
+        }
+
+        return outputFile
+    }
+
+    private fun appendToSingleOutputFile(outputFile: Path, fileSetName: String, content: String) {
+        outputLock.withLock {
+            Files.newBufferedWriter(
+                outputFile,
+                StandardOpenOption.APPEND
+            ).use { writer ->
+                if (outputWritten.compareAndSet(false, true)) {
+                    // First write, no extra newlines needed
+                } else {
+                    writer.write("\n\n")
+                }
+                writer.write("# $fileSetName\n\n")
+                writer.write(content)
+            }
+        }
+    }
+
+    private fun finalizeSingleOutputFile(outputFile: Path, session: Session, task: SessionTask) {
+        task.add("<a href='fileIndex/$session/${_root.relativize(outputFile)}'>Generated: ${_root.relativize(outputFile)}</a>")
+    }
 
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
@@ -122,12 +156,15 @@ class CustomFileSetPatchServer(
             return socketManager
         }
 
-
         val contextSummary = buildContextSummary(contextFiles)
-
         val status: StringBuilder = task.add("Starting...<br/>")!!
-        val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, DEFAULT_CONCURRENCY)
+        val concurrency = config.settings?.concurrency ?: 4
+        val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, concurrency)
         val markdownContent = TreeMap<String, String>()
+        // Initialize single output file if needed
+        val singleOutputFile = if (outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES && config.settings?.singleOutputFile == true) {
+            initializeSingleOutputFile()
+        } else null
 
         val futures = fileSets.map { fileSet ->
             fixedConcurrencyProcessor.submit {
@@ -141,7 +178,8 @@ class CustomFileSetPatchServer(
                     status = status,
                     task = task,
                     session = session,
-                    markdownContent = markdownContent
+                    markdownContent = markdownContent,
+                    singleOutputFile = singleOutputFile
                 )
             }
         }
@@ -159,8 +197,8 @@ class CustomFileSetPatchServer(
             }
 
             // Handle single output file for documentation/extracts
-            if (outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES && config.settings?.singleOutputFile == true) {
-                writeSingleOutputFile(markdownContent, session, task)
+            singleOutputFile?.let { outputFile ->
+                finalizeSingleOutputFile(outputFile, session, task)
             }
 
             status.append("Processing complete. ${completedFutures.size}/${futures.size} file sets processed successfully.<br/>")
@@ -218,7 +256,8 @@ class CustomFileSetPatchServer(
         status: StringBuilder,
         task: SessionTask,
         session: Session,
-        markdownContent: TreeMap<String, String>
+        markdownContent: TreeMap<String, String>,
+        singleOutputFile: Path?
     ) {
         try {
             status.append("Processing ${fileSet.name}...<br/>")
@@ -239,7 +278,7 @@ class CustomFileSetPatchServer(
                 }
 
                 outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
-                    handleGenerationMode(fileSet, userMessage, api, fileTask, session, markdownContent, toInput)
+                    handleGenerationMode(fileSet, userMessage, api, fileTask, session, markdownContent, singleOutputFile, toInput)
                 }
 
                 else -> {
@@ -304,21 +343,21 @@ class CustomFileSetPatchServer(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
         api: ChatClientInterface,
-        fileTask: SessionTask,
+        task: SessionTask,
         ui: ApplicationInterface,
         session: Session,
         toInput: (String) -> List<String>
     ) {
         val design = mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
-            fileTask.add(
+            task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(
                     self = ui.socketManager!!,
                     root = _root,
                     response = design,
                     handle = { newCodeMap ->
                         newCodeMap.forEach { (path, _) ->
-                            fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                         }
                     },
                     ui = ui,
@@ -329,7 +368,7 @@ class CustomFileSetPatchServer(
                 ).renderMarkdown
             )
         } else {
-            fileTask.complete("No changes suggested.")
+            task.complete("No changes suggested.")
         }
     }
 
@@ -337,16 +376,15 @@ class CustomFileSetPatchServer(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
         api: ChatClientInterface,
-        fileTask: SessionTask,
+        task: SessionTask,
         session: Session,
         markdownContent: TreeMap<String, String>,
+        singleOutputFile: Path?,
         toInput: (String) -> List<String>
     ) {
         val result = mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
-        if (config.settings?.singleOutputFile == true) {
-            synchronized(markdownContent) {
-                markdownContent[fileSet.name] = result
-            }
+        if (singleOutputFile != null) {
+            appendToSingleOutputFile(singleOutputFile, fileSet.name, result)
         } else {
             val outputDir = _root.resolve(config.settings?.outputDirectory ?: "output")
             Files.createDirectories(outputDir)
@@ -357,7 +395,7 @@ class CustomFileSetPatchServer(
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING
             )
-            fileTask.complete(
+            task.complete(
                 "<a href='fileIndex/$session/${_root.relativize(outputFile)}'>Generated: ${
                     _root.relativize(
                         outputFile
@@ -371,20 +409,20 @@ class CustomFileSetPatchServer(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
         api: ChatClientInterface,
-        fileTask: SessionTask,
+        task: SessionTask,
         ui: ApplicationInterface,
         session: Session,
         toInput: (String) -> List<String>
     ) {
         Discussable(
-            task = fileTask,
+            task = task,
             userMessage = { userMessage },
             heading = renderMarkdown(userMessage),
             initialResponse = {
                 mainActor.answer(toInput(it), api = api)
             },
             outputFn = { design: String ->
-                formatOutput(design, ui, session, fileSet, fileTask, api)
+                formatOutput(design, ui, session, fileSet, task, api)
             },
             ui = ui,
             reviseResponse = { userMessages ->
@@ -401,6 +439,7 @@ class CustomFileSetPatchServer(
             },
             atomicRef = AtomicReference(),
             semaphore = Semaphore(0),
+            blocking = false
         ).call()
     }
 
@@ -439,31 +478,11 @@ class CustomFileSetPatchServer(
         }
     }
 
-    private fun writeSingleOutputFile(
-        markdownContent: TreeMap<String, String>,
-        session: Session,
-        task: SessionTask
-    ) {
-        val outputDir = _root.resolve(config.settings?.outputDirectory ?: "output")
-        Files.createDirectories(outputDir)
-        val sortedContent = markdownContent.entries.joinToString("\n\n") { (name, content) ->
-            "# $name\n\n$content"
-        }
-        val outputFile = outputDir.resolve(config.settings?.outputFilename ?: "output.${getFileExtension()}")
-        Files.write(
-            outputFile,
-            sortedContent.toByteArray(),
-            StandardOpenOption.CREATE,
-            StandardOpenOption.TRUNCATE_EXISTING
-        )
-        task.add("<a href='fileIndex/$session/${_root.relativize(outputFile)}'>Generated: ${_root.relativize(outputFile)}</a>")
-    }
 
     private fun getFileExtension(): String {
         return when (outputMode) {
             CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION -> "md"
-            CustomFileSetPatchAction.OutputMode.GENERATE_EXTRACTS -> "txt"
-            else -> "md"
+            else -> "txt"
         }
     }
 }
