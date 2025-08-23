@@ -15,7 +15,6 @@ class PDFReader(pdfFile: File) : PaginatedDocumentReader, RenderableDocumentRead
         return stripper.getText(document)
     }
 
-
     override fun getPageCount(): Int = document.numberOfPages
 
     override fun getText(startPage: Int, endPage: Int): String {

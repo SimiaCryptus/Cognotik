@@ -1,7 +1,7 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.MultiStepPatchAction.AutoDevApp.Settings
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -248,7 +248,7 @@ class CodeChangeAction : BaseAction() {
                 ).call()
             } catch (e: Exception) {
                 log.error("Error processing user message", e)
-                ui.newTask().error(ui, e)
+                ui.newTask().error(e)
             }
         }
     }

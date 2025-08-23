@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 
@@ -37,7 +36,7 @@ open class ParsedActorTestApp<T : Any>(
             )
         } catch (e: Throwable) {
             log.warn("Error", e)
-            message.error(ui, e)
+            message.error(e)
         }
     }
 

@@ -181,7 +181,7 @@ class DocumentedMassPatchServer(
                     task.update()
                 } catch (e: Exception) {
                     log.warn("Error processing $path", e)
-                    task.error(ui, e)
+                    task.error(e)
                 }
             }
         }

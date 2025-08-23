@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.session
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
@@ -14,10 +15,12 @@ import java.io.File
 import java.util.*
 import java.util.function.Consumer
 
+
 abstract class SessionTask(
     val messageID: String,
     private var buffer: MutableList<StringBuilder> = mutableListOf(),
-    private val spinner: String = SessionTask.spinner
+    private val spinner: String = SessionTask.spinner,
+    val manager: SocketManagerBase
 ) {
 
     val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
@@ -70,7 +73,6 @@ abstract class SessionTask(
 
     @Description("Adds a hideable message to the task output.")
     fun hideable(
-        ui: ApplicationInterface?,
         @Description("The message to add")
         message: String,
         @Description("Whether to show the spinner for the task (default: true)")
@@ -78,18 +80,23 @@ abstract class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
-        additionalClasses: String = ""
+        additionalClasses: String = "",
+        socketManagerBase: SocketManagerBase
     ): StringBuilder? {
         var windowBuffer: StringBuilder? = null
         val closeButton = """<span class="close">${
-            ui?.hrefLink("&times;", "close-button href-link") {
-                windowBuffer?.clear()
-                send()
-            }
+            socketManagerBase.hrefLink(
+                "&times;",
+                "close-button href-link",
+                null,
+                ApplicationInterface.Companion.oneAtATime { it: Unit ->
+                    windowBuffer?.clear()
+                    send()
+                })
         }</span>"""
         windowBuffer = append(
             """<$tag class="${
-                (additionalClasses.split(" ").toSet() + setOf("response-message")).joinToString(" ")
+                (additionalClasses.split(" ").toSet() + setOf("response-message", "hideable-message")).joinToString(" ")
             }">$closeButton$message</$tag>""",
             showSpinner
         )
@@ -195,7 +202,6 @@ abstract class SessionTask(
 
     @Description("Displays an error in the task output.")
     fun error(
-        ui: ApplicationInterface?,
         @Description("The error to display")
         e: Throwable,
         @Description("Whether to show the spinner for the task (default: false)")
@@ -203,7 +209,6 @@ abstract class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div"
     ) = hideable(
-        ui,
         when {
           e is ValidatedObject.ValidationError -> """
         **Data Validation Error**
@@ -214,12 +219,13 @@ abstract class SessionTask(
         ```text
         """.trimIndent() + e.stackTraceTxt + """
         ```
-      """.renderMarkdown
+      """
 
-          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n".renderMarkdown
+          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n"
 
-          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
-        }, showSpinner, tag, "error"
+          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
+
+        }.renderMarkdown(), showSpinner, tag, "error", manager
     )
 
     @Description("Displays a final message in the task output. This will hide the spinner.")
@@ -232,7 +238,7 @@ abstract class SessionTask(
         additionalClasses: String = ""
     ) = append(
         if (message.isNotBlank()) """<$tag class="${
-            (additionalClasses.split(" ").toSet() + setOf("response-message")).joinToString(" ")
+            (additionalClasses.split(" ").toSet() + setOf("response-message", "completion-message")).joinToString(" ")
         }">$message</$tag>""" else "", false
     )
 
@@ -241,6 +247,14 @@ abstract class SessionTask(
         @Description("The image to display")
         image: BufferedImage
     ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
+
+    fun newSession(
+    ): SocketManagerBase {
+        val newSession = Session.newGlobalID()
+        val linkedManager = manager.createLinkedManager(newSession)
+        SessionProxyServer.agents[newSession] = linkedManager
+        return linkedManager
+    }
 
     companion object {
         val log = LoggerFactory.getLogger(SessionTask::class.java)

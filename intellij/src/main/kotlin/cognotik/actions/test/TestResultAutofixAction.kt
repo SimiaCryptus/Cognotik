@@ -1,7 +1,7 @@
 package cognotik.actions.test
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.execution.testframework.AbstractTestProxy
 import com.intellij.execution.testframework.sm.runner.SMTestProxy
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -252,7 +252,7 @@ class TestResultAutofixAction : BaseAction() {
                     return@Retryable task.placeholder
                 } catch (e: Exception) {
                     log.error("Error in autofix process: ${e.message}", e)
-                    task.error(ui, e)
+                    task.error(e)
                     throw e
                 }
             }

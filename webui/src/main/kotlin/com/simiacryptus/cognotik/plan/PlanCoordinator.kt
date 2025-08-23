@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
@@ -100,7 +99,7 @@ class PlanCoordinator(
             )
         } catch (e: Throwable) {
             log.warn("Error during incremental code generation process", e)
-            task.error(ui, e)
+            task.error(e)
         }
         return planProcessingState
     }
@@ -213,7 +212,7 @@ class PlanCoordinator(
                     )
                 } catch (e: Throwable) {
                     log.warn("Error during task execution", e)
-                    task1.error(ui, e)
+                    task1.error(e)
                 } finally {
                     planProcessingState.completedTasks.add(element = taskId)
                     subTask.state = AbstractTask.TaskState.Completed

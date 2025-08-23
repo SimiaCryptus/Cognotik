@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import org.slf4j.LoggerFactory
 import java.io.BufferedWriter
@@ -88,7 +87,7 @@ class DataTableCompilationTask(
         val matchedFiles = result.distinct()
         if (matchedFiles.isEmpty()) {
             val errorMsg = "No files matched the provided patterns: ${taskConfig?.file_patterns?.joinToString(", ")}"
-            task.error(ui = agent.ui, Exception(errorMsg))
+            task.error(Exception(errorMsg))
             resultFn(errorMsg)
             return
         }

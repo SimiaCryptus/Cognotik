@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik
 
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.webui.chat.ChatServer

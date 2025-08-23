@@ -43,11 +43,14 @@ graalvm = "24.2.1"
 eclipseJdtCore = "3.41.0"
 pdfbox = "3.0.5"
 zxing = "3.5.3"
+poi = "5.4.1"
 googleApiClient = "2.7.2"
 googleOauthClientJetty = "1.39.0"
 googleApiServicesOauth2 = "v2-rev20200213-2.0.0"
 googleHttpClientGson = "1.47.0"
 commonsCodec = "1.18.0"
+commonsCsv = "1.10.0"
+odftoolkit = "0.12.0"
 
 # plugins
 changelog = "2.2.1"
@@ -129,12 +132,17 @@ graalvm-js-language = { group = "org.graalvm.js", name = "js-language", version.
 eclipse-jdt-core = { group = "org.eclipse.jdt", name = "org.eclipse.jdt.core", version.ref = "eclipseJdtCore" }
 pdfbox = { group = "org.apache.pdfbox", name = "pdfbox", version.ref = "pdfbox" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+poi = { group = "org.apache.poi", name = "poi", version.ref = "poi" }
+poi-ooxml = { group = "org.apache.poi", name = "poi-ooxml", version.ref = "poi" }
+poiscratchpad = { group = "org.apache.poi", name = "poi-scratchpad", version.ref = "poi" }
 zxing-javase = { group = "com.google.zxing", name = "javase", version.ref = "zxing" }
 google-api-client = { group = "com.google.api-client", name = "google-api-client", version.ref = "googleApiClient" }
 google-oauth-client-jetty = { group = "com.google.oauth-client", name = "google-oauth-client-jetty", version.ref = "googleOauthClientJetty" }
 google-api-services-oauth2 = { group = "com.google.apis", name = "google-api-services-oauth2", version.ref = "googleApiServicesOauth2" }
 google-http-client-gson = { group = "com.google.http-client", name = "google-http-client-gson", version.ref = "googleHttpClientGson" }
 commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commonsCodec" }
+commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commonsCsv" }
+odfdom-java = { group = "org.odftoolkit", name = "odfdom-java", version.ref = "odftoolkit" }
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitJupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }

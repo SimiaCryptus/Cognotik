@@ -63,7 +63,7 @@ open class CodingAgent<T : Interpreter>(
             start(codeRequest, mainTask)
         } catch (e: Throwable) {
             log.warn("Error", e)
-            mainTask.error(ui, e)
+            mainTask.error(e)
         }
     }
 
@@ -83,7 +83,7 @@ open class CodingAgent<T : Interpreter>(
                             statusSB?.clear()
                         } catch (e: Throwable) {
                             log.warn("Error", e)
-                            task.error(ui, e)
+                            task.error(e)
                         } finally {
                             task.complete()
                         }
@@ -98,7 +98,7 @@ open class CodingAgent<T : Interpreter>(
                     statusSB?.clear()
                 } catch (e: Throwable) {
                     log.warn("Error", e)
-                    task.error(ui, e)
+                    task.error(e)
                 } finally {
                     task.complete()
                 }
@@ -138,7 +138,7 @@ open class CodingAgent<T : Interpreter>(
             displayCode(task, response)
             displayFeedback(task, append(codeRequest, response), response)
         } catch (e: Throwable) {
-            task.error(ui, e)
+            task.error(e)
             log.warn("Error", e)
         }
     }
@@ -227,7 +227,7 @@ open class CodingAgent<T : Interpreter>(
             )
         } catch (e: Throwable) {
             log.warn("Error", e)
-            task.error(ui, e)
+            task.error(e)
         }
     }
 

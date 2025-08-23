@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import org.slf4j.LoggerFactory
 
 open class ImageActorTestApp(
@@ -48,7 +47,7 @@ open class ImageActorTestApp(
             message.complete()
         } catch (e: Throwable) {
             log.warn("Error flushing image", e)
-            message.error(ui, e)
+            message.error(e)
         }
     }
 

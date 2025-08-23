@@ -77,7 +77,7 @@ open class PlanAheadMode(
                 api = apiClient // Use the budgeted and task-specific client
             )
         } catch (e: Throwable) {
-            task.error(ui, e) // Report error on the current task
+            task.error(e) // Report error on the current task
             log.error("Error in execute", e)
         }
     }

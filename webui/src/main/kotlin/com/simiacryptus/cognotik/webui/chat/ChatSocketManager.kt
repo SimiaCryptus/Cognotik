@@ -113,7 +113,7 @@ open class ChatSocketManager(
             }
         } catch (e: Exception) {
             log.info("Error in chat", e)
-            task.error(ApplicationInterface(this), e)
+            task.error(e)
         }
     }
 
@@ -179,7 +179,7 @@ open class ChatSocketManager(
             }
             response + topicsText
         } catch (e: Exception) {
-            task.error(null, e)
+            task.error(e)
             log.error("Error in topic extraction", e)
             response
         }

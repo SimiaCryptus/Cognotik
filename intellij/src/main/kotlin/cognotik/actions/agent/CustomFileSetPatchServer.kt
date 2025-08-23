@@ -23,6 +23,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
 import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.util.set
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -134,7 +135,7 @@ class CustomFileSetPatchServer(
 
         val task = ui.newTask(true)
         val api = api.getChildClient(task)
-        val tabs = TabbedDisplay(task)
+        val tabs: TabbedDisplay? = null //TabbedDisplay(task)
         val userMessage =
             config.settings?.transformationMessage ?: "Review and improve the code according to best practices"
 
@@ -152,7 +153,7 @@ class CustomFileSetPatchServer(
         val contextFiles = settingsUI.resolveContextFiles(_root)
         val fileSets = settingsUI.resolveFileSets(_root)
         if (fileSets.isEmpty()) {
-            task.error(ui, IllegalArgumentException("No files match the specified patterns"))
+            task.error(IllegalArgumentException("No files match the specified patterns"))
             return socketManager
         }
 
@@ -175,7 +176,6 @@ class CustomFileSetPatchServer(
                     ui = ui,
                     api = api,
                     tabs = tabs,
-                    status = status,
                     task = task,
                     session = session,
                     markdownContent = markdownContent,
@@ -252,44 +252,58 @@ class CustomFileSetPatchServer(
         userMessage: String,
         ui: ApplicationInterface,
         api: ChatClientInterface,
-        tabs: TabbedDisplay,
-        status: StringBuilder,
+        tabs: TabbedDisplay?,
         task: SessionTask,
         session: Session,
         markdownContent: TreeMap<String, String>,
         singleOutputFile: Path?
     ) {
         try {
-            status.append("Processing ${fileSet.name}...<br/>")
-            task.update()
+            var status: StringBuilder? = null
             val fileSetContent = buildFileSetContent(fileSet)
             val fullContent = if (contextSummary.isNotEmpty()) {
                 "$contextSummary\n\n$fileSetContent"
             } else {
                 fileSetContent
             }
-            val fileTask = ui.newTask(false).apply {
-                tabs[fileSet.name] = placeholder
+            val fileTask = if(tabs != null) {
+                status = task.add("Processing ${fileSet.name}...<br/>")!!
+                ui.newTask(false).apply {
+                    tabs[fileSet.name] = placeholder
+                }
+            } else {
+                val newSession = task.newSession()
+                val link = """<a href="#${newSession.sessionId}" target="_blank" class="${"linked-task-link"}">${fileSet.name}</a>"""
+                status = task.add("Processing ${link}...<br/>")!!
+                newSession.newTask()
             }
-            val toInput = { it: String -> listOf(fullContent, it) }
-            when {
-                outputMode == CustomFileSetPatchAction.OutputMode.EDIT_FILES && autoApply -> {
-                    handleAutoApplyMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
+            fileTask.header("Processing ${fileSet.name}")
+            try {
+                val toInput = { it: String -> listOf(fullContent, it) }
+                when {
+                    outputMode == CustomFileSetPatchAction.OutputMode.EDIT_FILES && autoApply -> {
+                        handleAutoApplyMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
+                    }
+
+                    outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
+                        handleGenerationMode(fileSet, userMessage, api, fileTask, session, markdownContent, singleOutputFile, toInput)
+                    }
+
+                    else -> {
+                        handleInteractiveMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
+                    }
                 }
 
-                outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
-                    handleGenerationMode(fileSet, userMessage, api, fileTask, session, markdownContent, singleOutputFile, toInput)
-                }
-
-                else -> {
-                    handleInteractiveMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
-                }
+                status?.set(status.toString().removeSuffix("<br/>") + "Completed processing ${fileSet.name}<br/>")
+                task.update()
+                fileTask.complete("Processed ${fileSet.name} successfully.")
+            } catch (e: Exception) {
+                fileTask.error(e)
             }
-            status.append("Completed processing ${fileSet.name}<br/>")
             task.update()
         } catch (e: Exception) {
             log.warn("Error processing ${fileSet.name}", e)
-            task.error(ui, e)
+            task.error(e)
         }
     }
 

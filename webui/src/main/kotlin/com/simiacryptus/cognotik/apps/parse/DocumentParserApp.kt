@@ -114,7 +114,7 @@ open class DocumentParserApp(
             val docTabs = TabbedDisplay(task)
             fileInputs.map { it.toFile() }.forEach { file ->
                 if (!file.exists()) {
-                    task.error(ui, IllegalArgumentException("File not found: $file"))
+                    task.error(IllegalArgumentException("File not found: $file"))
                     return
                 }
                 ui.socketManager?.pool?.submit {
@@ -182,7 +182,6 @@ open class DocumentParserApp(
                                 }
                                 if (text.isBlank()) {
                                     pageTask.error(
-                                        ui,
                                         IllegalArgumentException("No text extracted from pages $batchStart to $batchEnd")
                                     )
                                     return@mapNotNull null
@@ -236,7 +235,7 @@ open class DocumentParserApp(
                                     Futures.immediateFuture(runningDocument)
                                 }
                             } catch (e: Throwable) {
-                                pageTask.error(ui, e)
+                                pageTask.error(e)
                                 null
                             }
                         }.toTypedArray()
@@ -244,7 +243,7 @@ open class DocumentParserApp(
                             try {
                                 it.get()
                             } catch (e: Throwable) {
-                                task.error(ui, e)
+                                task.error(e)
                                 null
                             }
                         }.fold(parsingModel.newDocument())
@@ -267,7 +266,7 @@ open class DocumentParserApp(
                 }
             }
         } catch (e: Throwable) {
-            task.error(ui, e)
+            task.error(e)
         }
     }
 
@@ -305,7 +304,7 @@ open class DocumentParserApp(
             }
             jsonResult
         } catch (e: Throwable) {
-            pageTask.error(ui, e)
+            pageTask.error(e)
             null
         } finally {
             progressBar?.add(1.0, 0.0)

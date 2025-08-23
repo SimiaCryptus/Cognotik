@@ -21,7 +21,7 @@ open class DataStorage(
         session: Session
     ): LinkedHashMap<String, String> {
         Session.validateSessionId(session)
-        log.debug("Fetching messages for session: ${session.sessionId}, user: ${user?.email}")
+        log.debug("Fetching messages for session: ${session}, user: ${user?.email}")
         val messageDir =
             getDataDir(user, session).resolve("messages/")
                 .apply { mkdirs() }
@@ -33,7 +33,7 @@ open class DataStorage(
                 messages[messageId] = message
             }
         }
-        log.debug("Loaded ${messages.size} messages for session: ${session.sessionId}")
+        log.debug("Loaded ${messages.size} messages for session: ${session}")
         return messages
     }
 
@@ -51,7 +51,7 @@ open class DataStorage(
         session: Session
     ): File {
         Session.validateSessionId(session)
-        log.debug("Getting data directory for session: ${session.sessionId}, user: ${user?.email}")
+        log.debug("Getting data directory for session: ${session}, user: ${user?.email}")
         val parts = session.sessionId.split("-")
         return when (parts.size) {
             3 -> {
@@ -62,14 +62,14 @@ open class DataStorage(
                 }
                 val dateDir = File(root, parts[1])
                 val sessionDir = File(dateDir, parts[2])
-                log.debug("Session directory for session: ${session.sessionId} is ${sessionDir.absolutePath}")
+                log.debug("Session directory for session: ${session} is ${sessionDir.absolutePath}")
                 sessionDir
             }
 
             2 -> {
                 val dateDir = dataDir.resolve("global").resolve(parts[0])
                 val sessionDir = dateDir.resolve(parts[1])
-                log.debug("Session directory for session: ${session.sessionId} is ${sessionDir.absolutePath}")
+                log.debug("Session directory for session: ${session} is ${sessionDir.absolutePath}")
                 sessionDir
             }
 
@@ -126,7 +126,7 @@ open class DataStorage(
         value: String
     ) {
         Session.validateSessionId(session)
-        log.debug("Updating message for session: ${session.sessionId}, messageId: $messageId, user: ${user?.email}")
+        log.debug("Updating message for session: ${session}, messageId: $messageId, user: ${user?.email}")
         val file =
             getDataDir(user, session).resolve("messages/$messageId.json")
                 .apply { parentFile.mkdirs() }
@@ -143,7 +143,7 @@ open class DataStorage(
         messageId: String
     ) {
         synchronized(this) {
-            log.debug("Adding message ID for session: ${session.sessionId}, messageId: $messageId, user: ${user?.email}")
+            log.debug("Adding message ID for session: ${session}, messageId: $messageId, user: ${user?.email}")
             setMessageIds(user, session, getMessageIds(user, session) + messageId)
         }
     }
@@ -158,7 +158,7 @@ open class DataStorage(
 
     override fun deleteSession(user: User?, session: Session) {
         Session.validateSessionId(session)
-        log.debug("Deleting session: ${session.sessionId}, user: ${user?.email}")
+        log.debug("Deleting session: ${session}, user: ${user?.email}")
         val sessionDir = getDataDir(user, session)
         ApplicationServices.metadataStorageFactory(dataDir).deleteSession(user, session)
         sessionDir.deleteRecursively()

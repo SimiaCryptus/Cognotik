@@ -192,7 +192,7 @@ class CmdPatchApp(
                         }
                     }
                 } catch (e: Throwable) {
-                    task.error(null, e)
+                    task.error(e)
                     return OutputResult(1, "Error executing command: ${e.message}")
                 }
             }

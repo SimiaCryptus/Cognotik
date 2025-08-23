@@ -1,6 +1,6 @@
 package cognotik.actions.problems
 
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.toFile
 import cognotik.actions.test.TestResultAutofixAction.Companion.findGitRoot
 import cognotik.actions.test.TestResultAutofixAction.Companion.getProjectStructure
@@ -213,7 +213,7 @@ class AnalyzeProblemAction : AnAction() {
                     task.placeholder
                 }
             } catch (e: Exception) {
-                task.error(ui, e)
+                task.error(e)
             }
         }
 

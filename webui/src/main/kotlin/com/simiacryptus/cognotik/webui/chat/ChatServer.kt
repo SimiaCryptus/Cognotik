@@ -46,11 +46,11 @@ abstract class ChatServer(
                 try {
                     if (req.parameterMap.containsKey("sessionId")) {
                         val session = Session(req.parameterMap["sessionId"]?.first()!!)
-                        trafficLog.debug("WebSocket connection request for session: ${session.sessionId}")
+                        trafficLog.debug("WebSocket connection request for session: ${session}")
                         val sessionManager = sessions.computeIfAbsent(session) { s ->
                                 val user =
                                     authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
-                                trafficLog.debug("Creating new session manager for session: ${s.sessionId}, user: ${user?.name ?: "anonymous"}")
+                                trafficLog.debug("Creating new session manager for session: ${s}, user: ${user?.name ?: "anonymous"}")
                                 newSession(user, s)
                         }
                         ChatSocket(sessionManager)

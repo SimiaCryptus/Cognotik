@@ -1,7 +1,7 @@
 ﻿package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.vfs.VirtualFile
@@ -382,7 +382,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 iterateCode(task)
             } catch (e: Throwable) {
                 log.warn("Error", e)
-                task.error(ui, e)
+                task.error(e)
             }
         }
 
@@ -495,7 +495,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                   }' style='max-width: 100%;'/>".renderMarkdown
                 )
             } catch (e: Throwable) {
-                val error = task.error(ui, e)
+                val error = task.error(e)
                 task.complete(ui.hrefLink("♻", "href-link regen-button") {
                     error?.clear()
                     draftImage(task, request, actor, path)
@@ -578,7 +578,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     }'>$path</a> Updated"
                 )
             } catch (e: Throwable) {
-                val error = task.error(ui, e)
+                val error = task.error(e)
                 task.complete(ui.hrefLink("♻", "href-link regen-button") {
                     error?.clear()
                     draftResourceCode(task, request, actor, path, *languages)

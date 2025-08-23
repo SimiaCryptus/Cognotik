@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
@@ -31,12 +32,12 @@ class GenericChatAction : BaseAction() {
                 progress.text = "Setting up chat session..."
 
                 val session = Session.newGlobalID()
-                cognotik.actions.SessionProxyServer.metadataStorage.setSessionName(
+                SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                cognotik.actions.SessionProxyServer.agents[session] = ChatSocketManager(
+                SessionProxyServer.agents[session] = ChatSocketManager(
                     session = session,
                     model = AppSettingsState.instance.smartModel.chatModel(),
                     parsingModel = AppSettingsState.instance.fastModel.chatModel(),

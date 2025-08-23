@@ -1,7 +1,7 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.MultiStepPatchAction.AutoDevApp.Settings
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -183,7 +183,7 @@ open class ModifyFilesAction(
                 response = html,
                 handle = { newCodeMap ->
                     newCodeMap.forEach { (path, newCode) ->
-                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                        task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                     }
                 },
                 ui = ui,

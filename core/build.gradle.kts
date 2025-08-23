@@ -36,6 +36,11 @@ dependencies {
     implementation(libs.httpclient5)
     implementation(libs.jsoup)
     implementation(libs.pdfbox)
+    implementation(libs.poi)
+    implementation(libs.poi.ooxml)
+    implementation(libs.poiscratchpad)
+    implementation(libs.commons.csv)
+    implementation(libs.odfdom.java)
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)

@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
@@ -176,7 +175,7 @@ open class TaskChatMode(
             processBufferedMessages()
         } catch (e: Exception) {
             log.error("Error executing task", e)
-            task.error(null, e)
+            task.error(e)
 
             synchronized(messagesLock) {
                 isProcessing = false

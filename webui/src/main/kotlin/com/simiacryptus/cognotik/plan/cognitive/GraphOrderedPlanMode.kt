@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
@@ -90,7 +89,7 @@ open class GraphOrderedPlanMode(
                     )).let(::renderMarkdown))
             task.add("Plan execution completed")
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
             task.add("Error during ordered planning: ${e.message}")
             log.error("Error during ordered planning: ${e.message}", e)
         }

@@ -1,7 +1,7 @@
 package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -281,7 +281,7 @@ class SimpleCommandAction : BaseAction() {
                 )
             } catch (e: Exception) {
                 log.error("Error during task execution", e)
-                task.error(ui, e)
+                task.error(e)
             }
             task.placeholder
         }

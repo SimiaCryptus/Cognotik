@@ -88,7 +88,7 @@ open class AutoPlanMode(
         executor.execute {
             val socketManager = ui.socketManager ?: run {
                 log.error("SocketManager is null, cannot proceed.")
-                task.error(ui, IllegalStateException("SocketManager is null"))
+                task.error(IllegalStateException("SocketManager is null"))
                 return@execute
             }
             try {
@@ -197,7 +197,7 @@ $fullTaskDataJson
                                     ""
                                 }
                             } catch (e: Exception) {
-                                taskExecutionTask.error(ui, e)
+                                taskExecutionTask.error(e)
                                 log.error("Error executing task", e)
                                 "Error executing task: ${e.message}"
                             }
@@ -235,7 +235,7 @@ $fullTaskDataJson
                         )
                     } catch (e: Exception) {
                         log.error("Error updating thinking status", e)
-                        thinkingStatusTask.error(ui, e)
+                        thinkingStatusTask.error(e)
                         iterationTabbedDisplay["Errors"]?.append(renderMarkdown("Error updating thinking status: ${e.message}"))
                     }
                 }
@@ -243,7 +243,7 @@ $fullTaskDataJson
                 log.debug("Main execution loop completed")
                 task.complete("Auto Plan Chat completed.")
             } catch (e: Throwable) {
-                task.error(ui, e)
+                task.error(e)
                 log.error("Error in startAutoPlanChat", e)
             } finally {
                 log.debug("Finalizing auto plan chat")
@@ -419,7 +419,7 @@ $fullTaskDataJson
                 listOf(TaskData(chosenTasks, currentText))
             } catch (e: Exception) {
                 log.error("Error parsing task text: $currentText", e)
-                task.error(ui, e)
+                task.error(e)
                 emptyList()
             }
         } else {

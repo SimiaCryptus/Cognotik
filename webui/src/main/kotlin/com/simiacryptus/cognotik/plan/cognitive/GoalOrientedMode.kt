@@ -67,7 +67,7 @@ open class GoalOrientedMode(
       startGoalOrientedSession(userMessage, task)
     } catch (e: Throwable) {
       log.error("Error in Goal-Oriented session", e)
-      task.error(ui, e)
+      task.error(e)
     } finally {
       isRunning.set(false)
     }
@@ -132,7 +132,7 @@ open class GoalOrientedMode(
     } catch (e: Exception) {
       log.error("Failed to parse initial goals", e)
       logToSession("Error parsing initial goals: ${e.message}")
-      task.error(ui, e)
+      task.error(e)
       return
     }
     updateGoalTreeUI()

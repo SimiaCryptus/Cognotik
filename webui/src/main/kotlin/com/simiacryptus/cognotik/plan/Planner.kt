@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
@@ -57,7 +56,7 @@ open class Planner {
                         )
                     } catch (e: Throwable) {
                         log.warn("Error rendering task breakdown", e)
-                        task.error(ui, e)
+                        task.error(e)
                         e.message ?: e.javaClass.simpleName
                     }
                 },

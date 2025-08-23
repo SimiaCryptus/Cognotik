@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.util.Selenium
 import com.simiacryptus.cognotik.util.Selenium2S3
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.chrome.ChromeDriver
@@ -171,7 +170,7 @@ class SeleniumSessionTask(
                     log.debug("Command completed in ${duration}ms")
                     result
                 } catch (e: Exception) {
-                    task.error(agent.ui, e)
+                    task.error(e)
                     log.error("Error executing command: $command", e)
                     e.message ?: "Error executing command"
                 }

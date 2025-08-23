@@ -20,26 +20,28 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 
 abstract class SocketManagerBase(
-    protected val session: Session,
+    val sessionId: Session,
     val dataStorage: StorageInterface?,
     protected val owner: User? = null,
     private val applicationClass: Class<*>,
 ) : SocketManager {
     private val messageStates = Collections.synchronizedMap(
         try {
-            dataStorage?.getMessages(owner, session) ?: LinkedHashMap()
+            dataStorage?.getMessages(owner, sessionId) ?: LinkedHashMap()
         } catch (e: Exception) {
-            log.error("Failed to load messages from storage for session: {}, using empty map", session, e)
+            log.error("Failed to load messages from storage for session: {}, using empty map", sessionId, e)
             LinkedHashMap()
         }
     )
+    @Suppress("unused")
+    private val createdBy = Thread.currentThread().stackTrace
     private val messageTimestamps = HashMap<String, Long>()
     private val sockets: MutableMap<ChatSocket, org.eclipse.jetty.websocket.api.Session> = ConcurrentHashMap()
     private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
     private val queueProcessing: MutableSet<ChatSocket> = ConcurrentHashMap.newKeySet()
     private val messageVersions = ConcurrentHashMap<String, AtomicInteger>()
-    val pool get() = clientManager.getPool(session, owner)
-    val scheduledThreadPoolExecutor get() = clientManager.getScheduledPool(session, owner, dataStorage)
+    val pool get() = clientManager.getPool(sessionId, owner)
+    val scheduledThreadPoolExecutor get() = clientManager.getScheduledPool(sessionId, owner, dataStorage)
 
     override fun removeSocket(socket: ChatSocket) {
         log.debug("Removing socket: {} (id: {})", socket, System.identityHashCode(socket))
@@ -98,9 +100,9 @@ abstract class SocketManagerBase(
         trafficLog.debug("Socket added, active connections: {}", sockets.size)
     }
 
-    fun newTask(
-        cancelable: Boolean = false,
-        root: Boolean = true
+    override fun newTask(
+        cancelable: Boolean,
+        root: Boolean
     ): SessionTask {
         try {
             val operationID = randomID(root)
@@ -125,7 +127,10 @@ abstract class SocketManagerBase(
         spinner: String = SessionTask.spinner,
         buffer: MutableList<StringBuilder> = mutableListOf(StringBuilder(responseContents))
     ) : SessionTask(
-        messageID = operationID, buffer = buffer, spinner = spinner
+        messageID = operationID,
+        buffer = buffer,
+        spinner = spinner,
+        manager = this@SocketManagerBase
     ) {
 
         override fun hrefLink(
@@ -158,7 +163,7 @@ abstract class SocketManagerBase(
             log.debug("Saving file at path: {}", relativePath)
             trafficLog.debug("Saving file at path: {}", relativePath)
             
-            dataStorage?.getSessionDir(owner, session)?.let { dir ->
+            dataStorage?.getSessionDir(owner, sessionId)?.let { dir ->
                 if (!dir.exists() && !dir.mkdirs()) {
                     throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
                 }
@@ -171,7 +176,7 @@ abstract class SocketManagerBase(
                 resolve.writeBytes(data)
                 log.info("Successfully saved file: {} ({} bytes)", relativePath, data.size)
             }
-            return "fileIndex/$session/$relativePath"
+            return "fileIndex/$sessionId/$relativePath"
         }
 
         override fun createFile(relativePath: String): Pair<String, File?> {
@@ -181,7 +186,7 @@ abstract class SocketManagerBase(
             log.debug("Creating file at path: {}", relativePath)
             trafficLog.debug("Creating file at path: {}", relativePath)
             
-            return Pair("fileIndex/$session/$relativePath", dataStorage?.getSessionDir(owner, session)?.let { dir ->
+            return Pair("fileIndex/$sessionId/$relativePath", dataStorage?.getSessionDir(owner, sessionId)?.let { dir ->
                 if (!dir.exists() && !dir.mkdirs()) {
                     throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
                 }
@@ -282,8 +287,8 @@ abstract class SocketManagerBase(
                 }
             }
         } catch (e: Exception) {
-            log.error("Error in send method for session: {}", session, e)
-            trafficLog.error("Error in send method for session: {}, error: {}", session, e.message)
+            log.error("Error in send method for session: {}", sessionId, e)
+            trafficLog.error("Error in send method for session: {}, error: {}", sessionId, e.message)
         }
     }
 
@@ -364,7 +369,7 @@ abstract class SocketManagerBase(
         try {
             // Persist first, then update in-memory state
             log.debug("Updating message - Key: {}, Content size: {} bytes", key, value.length)
-            dataStorage?.updateMessage(owner, session, key, value)
+            dataStorage?.updateMessage(owner, sessionId, key, value)
             messageStates[key] = value // Using [] syntax for put
             messageTimestamps[key] = System.currentTimeMillis()
             // getOrPut on ConcurrentHashMap is atomic. AtomicInteger operations are atomic.
@@ -572,6 +577,29 @@ abstract class SocketManagerBase(
                    <button class="text-submit-button" data-id="$operationID">Send</button>
                </div>""".trimIndent()
     }
+    /**
+     * Creates a linked SocketManager for a new session that shares the same configuration
+     * but operates independently with its own message state and socket connections.
+     */
+    open fun createLinkedManager(newSession: Session): SocketManagerBase {
+        log.debug("Creating linked manager for session: {}", newSession)
+        trafficLog.info("Creating linked manager for session: {}, owner: {}", newSession, owner?.name ?: "anonymous")
+        return object : SocketManagerBase(
+            sessionId = newSession,
+            dataStorage = dataStorage,
+            owner = owner,
+            applicationClass = applicationClass
+        ) {
+            override fun onRun(userMessage: String, socket: ChatSocket) {
+                throw UnsupportedOperationException("onRun not implemented in linked manager")
+            }
+            override fun canWrite(user: User?): Boolean {
+                return false
+            }
+
+        }
+    }
+
 
     protected abstract fun onRun(
         userMessage: String,
@@ -581,7 +609,7 @@ abstract class SocketManagerBase(
         log.debug("Getting active sockets, count: {}", sockets.size)
         trafficLog.debug("Getting active sockets, count: {}", sockets.size)
         return try {
-            sockets.keys.filterNotNull().toList()
+            sockets.keys.toList()
         } catch (e: Exception) {
             log.error("Error getting active sockets", e)
             emptyList()

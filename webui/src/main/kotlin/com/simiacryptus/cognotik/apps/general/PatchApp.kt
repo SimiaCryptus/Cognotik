@@ -313,7 +313,7 @@ abstract class PatchApp(
             )
         } catch (e: Exception) {
             log.error("Error during fix process", e)
-            fixTask.error(ui, e)
+            fixTask.error(e)
         }
         return outputResult
     }

@@ -67,7 +67,7 @@ ${
             task.complete()
         } catch (e: Throwable) {
             log.error("Error in discussable", e)
-            task.error(ui, e)
+            task.error(e)
             task.complete(ui.hrefLink("🔄 Retry") {
                 main(tabIndex = tabIndex, task = task)
             })
@@ -127,7 +127,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
                 feedback(tabContent, userResponse, history, design, task)
             } catch (e: Exception) {
                 log.error("Error processing user feedback", e)
-                task.error(ui, e)
+                task.error(e)
                 feedbackSB.set(prev)
                 feedbackTask.complete()
                 throw e
@@ -186,7 +186,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
             }
         } catch (e: Exception) {
             log.error("Error accepting design", e)
-            task.error(ui, e)
+            task.error(e)
             acceptGuard.set(blocking)
             throw e
         }
@@ -208,7 +208,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
                 if (blocking) semaphore.acquire()
             } catch (e: Throwable) {
                 log.error("Error in main function", e)
-                task.error(ui, e)
+                task.error(e)
             } finally {
                 header?.clear()
                 newTask.complete()
@@ -222,7 +222,7 @@ Error in Discussable
 ${e.message}
 """, e
             )
-            task.error(ui, e)
+            task.error(e)
             return null as T
         }
     }

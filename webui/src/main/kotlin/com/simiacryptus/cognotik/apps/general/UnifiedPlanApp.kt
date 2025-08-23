@@ -66,7 +66,7 @@ open class UnifiedPlanApp(
         val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
         ui.newTask(true).expandable(
             "Session Info", """
-                Session ID: `${session.sessionId}`
+                Session ID: `${session}`
                 
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
                 
@@ -119,7 +119,7 @@ open class UnifiedPlanApp(
 
         } catch (e: Throwable) {
             log.error("Error processing user message", e)
-            ui.newTask().error(ui, e)
+            ui.newTask().error(e)
         }
     }
 

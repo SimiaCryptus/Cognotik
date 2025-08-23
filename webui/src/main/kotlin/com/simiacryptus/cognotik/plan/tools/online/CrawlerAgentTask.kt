@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
@@ -254,7 +253,7 @@ class CrawlerAgentTask(
                             analysisResultsMap[currentIndex] = processPageResult
                             log.info("Processed page: ${page.toJson()}")
                         } catch (e: Exception) {
-                            task.error(agent.ui, e)
+                            task.error(e)
                             log.error("Error processing page: ${page.link}", e)
                             analysisResultsMap[currentIndex] =
                                 "## ${currentIndex}. [${page.title}](${page.link})\n\n*Error processing this result: ${e.message}*\n\n"

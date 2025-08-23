@@ -42,13 +42,13 @@ class HSQLUsageManager() : UsageInterface {
 
     override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ApiModel.Usage) {
         try {
-            log.debug("Incrementing usage for session: ${session.sessionId}, user: ${user.email}, model: ${model.modelName}")
+            log.debug("Incrementing usage for session: ${session}, user: ${user.email}, model: ${model.modelName}")
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val usageValues = UsageInterface.UsageValues()
 
             usageValues.addAndGet(tokens)
             saveUsageValues(usageKey, usageValues)
-            log.debug("Usage incremented for session: ${session.sessionId}, user: ${user.email}, model: ${model.modelName}")
+            log.debug("Usage incremented for session: ${session}, user: ${user.email}, model: ${model.modelName}")
         } catch (e: Exception) {
             log.error("Error incrementing usage", e)
         }
@@ -70,7 +70,7 @@ class HSQLUsageManager() : UsageInterface {
     }
 
     override fun getSessionUsageSummary(session: Session): Map<String, ApiModel.Usage> {
-        log.info("Getting session usage summary for session: ${session.sessionId}")
+        log.info("Getting session usage summary for session: ${session}")
         val statement = connection.prepareStatement(
             """
             SELECT model, SUM(prompt_tokens), SUM(completion_tokens), SUM(cost)
@@ -90,7 +90,12 @@ class HSQLUsageManager() : UsageInterface {
     }
 
     private fun saveUsageValues(usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues) {
-        log.debug("Saving usage values for session: ${usageKey.session.sessionId}, user: ${usageKey.user?.email}, model: ${usageKey.model.modelName}")
+        log.debug(
+            "Saving usage values for session: {}, user: {}, model: {}",
+            usageKey.session,
+            usageKey.user?.email,
+            usageKey.model.modelName
+        )
         val statement = connection.prepareStatement(
             """
          INSERT INTO usage (session_id, user_id, model, prompt_tokens, completion_tokens, cost, datetime)
@@ -105,7 +110,7 @@ class HSQLUsageManager() : UsageInterface {
         statement.setDouble(6, usageValues.cost.get())
         statement.setTimestamp(7, Timestamp(System.currentTimeMillis()))
         log.debug("Executing statement: $statement")
-        log.debug("With parameters: ${usageKey.session.sessionId}, ${usageKey.user?.email}, ${usageKey.model.modelName}, ${usageValues.inputTokens.get()}, ${usageValues.outputTokens.get()}, ${usageValues.cost.get()}")
+        log.debug("With parameters: ${usageKey.session}, ${usageKey.user?.email}, ${usageKey.model.modelName}, ${usageValues.inputTokens.get()}, ${usageValues.outputTokens.get()}, ${usageValues.cost.get()}")
         statement.executeUpdate()
     }
 

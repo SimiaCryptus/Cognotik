@@ -142,7 +142,7 @@ class OutlineAgent(
             task.complete()
             OutlineManager(OutlineManager.OutlinedText(root.text, root.obj))
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
             throw e
         }
 
@@ -206,7 +206,7 @@ class OutlineAgent(
             projectorMessage.complete(response)
         } catch (e: Exception) {
             log.warn("Error", e)
-            projectorMessage.error(ui, e)
+            projectorMessage.error(e)
         }
     }
 
@@ -224,7 +224,7 @@ class OutlineAgent(
             finalRenderMessage.complete(finalEssay.renderMarkdown)
         } catch (e: Exception) {
             log.warn("Error", e)
-            finalRenderMessage.error(ui, e)
+            finalRenderMessage.error(e)
         }
     }
 
@@ -249,7 +249,7 @@ class OutlineAgent(
         if (terminalNodeMap.isEmpty()) {
             val errorMessage = "No terminal nodes: ${node.text}"
             log.warn(errorMessage)
-            task.error(ui, RuntimeException(errorMessage))
+            task.error(RuntimeException(errorMessage))
             return
         }
         for ((item, childNode) in terminalNodeMap) {
@@ -267,13 +267,13 @@ class OutlineAgent(
                             val existingNode = manager.expansionMap[childNode]!!
                             val errorMessage = "Conflict: ${existingNode} vs ${newNode}"
                             log.warn(errorMessage)
-                            task.error(ui, RuntimeException(errorMessage))
+                            task.error(RuntimeException(errorMessage))
                         }
                     }
                     if (models.size > 1) processRecursive(manager, newNode, models.drop(1), task)
                 } catch (e: Exception) {
                     log.warn("Error in processRecursive", e)
-                    task.error(ui, e)
+                    task.error(e)
                 } finally {
                     activeThreadCounter.decrementAndGet()
                 }

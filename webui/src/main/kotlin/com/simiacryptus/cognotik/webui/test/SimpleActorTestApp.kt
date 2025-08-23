@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import org.slf4j.LoggerFactory
 
 open class SimpleActorTestApp(
@@ -45,7 +44,7 @@ open class SimpleActorTestApp(
             message.complete(response.renderMarkdown)
         } catch (e: Throwable) {
             log.warn("Error", e)
-            message.error(ui, e)
+            message.error(e)
         }
     }
 

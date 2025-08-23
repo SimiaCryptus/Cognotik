@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik
 
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -445,7 +445,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 String.format(messages.getString(key), *args)
 
             fun getSessionLink(session: Session) =
-                "http://${AppSettingsState.Companion.instance.listeningEndpoint}:${AppSettingsState.Companion.instance.listeningPort}/#${session.sessionId}"
+                "http://${AppSettingsState.Companion.instance.listeningEndpoint}:${AppSettingsState.Companion.instance.listeningPort}/#${session}"
         }
 
     }

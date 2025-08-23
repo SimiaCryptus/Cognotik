@@ -1,4 +1,4 @@
-package cognotik.actions
+package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session

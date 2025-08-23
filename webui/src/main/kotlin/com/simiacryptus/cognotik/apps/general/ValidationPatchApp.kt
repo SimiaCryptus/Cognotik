@@ -58,7 +58,7 @@ class ValidationPatchApp(
                 if (errors.isEmpty()) tabs.delete(file.toString())
                 fileTask.complete("File passed validation checks.")
             } catch (e: Exception) {
-                fileTask.error(null, e)
+                fileTask.error(e)
                 log.error("Error validating file: $file", e)
                 validationErrors.add(
                     ValidationError(

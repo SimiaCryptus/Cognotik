@@ -1,7 +1,7 @@
 package cognotik.actions.git
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -300,7 +300,7 @@ class ReplicateCommitAction : BaseAction() {
                 task.placeholder
             }
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
         }
     }
 

@@ -323,7 +323,7 @@ open class AddApplyFileDiffLinks {
                     commandTask.complete()
                 } catch (e: Throwable) {
                     hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                    commandTask.error(null, e)
+                    commandTask.error(e)
                 }
             })!!
             return "\n```${codeLang}\n${codeValue}\n```\n\n${commandTask.placeholder}\n"
@@ -375,7 +375,7 @@ open class AddApplyFileDiffLinks {
                     revertTask.complete()
                 } catch (e: Throwable) {
                     revertButton.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                    revertTask.error(null, e)
+                    revertTask.error(e)
                 }
             })!!
             return revertTask.placeholder
@@ -453,7 +453,7 @@ open class AddApplyFileDiffLinks {
             } catch (e: Throwable) {
                 isApplied = false
                 hrefLink.set("""<div class="cmd-button">Error: ${e.message}</div>""")
-                applydiffTask.error(null, e)
+                applydiffTask.error(e)
             }
         }
         
@@ -469,7 +469,7 @@ open class AddApplyFileDiffLinks {
                 applydiffTask.complete()
             } catch (e: Throwable) {
                 hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                applydiffTask.error(null, e)
+                applydiffTask.error(e)
             }
         }
 
