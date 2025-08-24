@@ -3,13 +3,11 @@ package cognotik.actions.agent
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
@@ -22,18 +20,15 @@ import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.slf4j.LoggerFactory
-import com.simiacryptus.cognotik.input.getReader
-import com.simiacryptus.cognotik.util.set
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.*
-import java.util.concurrent.Future
-import java.util.concurrent.Semaphore
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -58,6 +53,9 @@ class CustomFileSetPatchServer(
     private lateinit var _root: Path
     private val outputLock = ReentrantLock()
     private val outputWritten = AtomicBoolean(false)
+    private val processedCount = AtomicInteger(0)
+    private val currentlyProcessing = ConcurrentHashMap<String, String>()
+    private val completedFileSets = ConcurrentLinkedQueue<String>()
 
     override val inputCnt = 0
     override val stickyInput = true
@@ -131,7 +129,6 @@ class CustomFileSetPatchServer(
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
-        _root = config.selectedDirectory ?: config.project?.basePath?.let { Path.of(it) } ?: Path.of(".")
 
         val task = ui.newTask(true)
         val api = api.getChildClient(task)
@@ -149,6 +146,9 @@ class CustomFileSetPatchServer(
         }
         // Set the treatDocumentsAsText option from config
         settingsUI.treatDocumentsAsText.isSelected = config.settings?.treatDocumentsAsText ?: false
+        // Get the root directory from the settings UI which handles base directory mode
+        _root = settingsUI.getRoot()
+
 
         val contextFiles = settingsUI.resolveContextFiles(_root)
         val fileSets = settingsUI.resolveFileSets(_root)
@@ -162,47 +162,137 @@ class CustomFileSetPatchServer(
         val concurrency = config.settings?.concurrency ?: 4
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, concurrency)
         val markdownContent = TreeMap<String, String>()
+        val bigDataThreshold = config.settings?.bigDataThreshold ?: 100
+        val useBigDataMode = fileSets.size > bigDataThreshold
+        
         // Initialize single output file if needed
         val singleOutputFile = if (outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES && config.settings?.singleOutputFile == true) {
             initializeSingleOutputFile()
         } else null
 
-        val futures = fileSets.map { fileSet ->
-            fixedConcurrencyProcessor.submit {
-                processFileSet(
-                    fileSet = fileSet,
-                    contextSummary = contextSummary,
-                    userMessage = userMessage,
-                    ui = ui,
-                    api = api,
-                    tabs = tabs,
-                    task = task,
-                    session = session,
-                    markdownContent = markdownContent,
-                    singleOutputFile = singleOutputFile
-                )
-            }
-        }
+        if (useBigDataMode) {
+            // Big data mode: use mid-level subsession for decoupling
+            status.set("Processing ${fileSets.size} file sets in big data mode...<br/>")
+            val progressStatus = task.add("")!!
 
-        fixedConcurrencyProcessor.submit {
-            val completedFutures = mutableListOf<Future<*>>()
-            futures.forEach { future ->
-                try {
-                    future.get(TASK_TIMEOUT_MINUTES, TimeUnit.MINUTES)
-                    completedFutures.add(future)
-                } catch (e: Exception) {
-                    log.error("Error processing file set", e)
-                    status.append("Error processing file set: ${e.message}<br/>")
+            val futures = fileSets.mapIndexed { index, fileSet ->
+                fixedConcurrencyProcessor.submit {
+                    val fileSetName = fileSet.name
+                    currentlyProcessing[fileSetName] = fileSetName
+
+                    try {
+                        // Create a subsession for this file set
+                        val subSession = task.newSession()
+                        val subTask = subSession.newTask()
+
+                        processFileSet(
+                            fileSet = fileSet,
+                            contextSummary = contextSummary,
+                            userMessage = userMessage,
+                            ui = ui,
+                            api = api,
+                            tabs = null, // No tabs in big data mode
+                            task = subTask,
+                            session = session,
+                            markdownContent = markdownContent,
+                            singleOutputFile = singleOutputFile,
+                            parentTask = task,
+                            useBigDataMode = true
+                        )
+
+                        completedFileSets.offer(fileSetName)
+                    } finally {
+                        currentlyProcessing.remove(fileSetName)
+                        val completed = processedCount.incrementAndGet()
+
+                        // Update progress status
+                        val processingList = currentlyProcessing.values.take(3).joinToString(", ") { name ->
+                            """<a href="#" class="processing-link">$name</a>"""
+                        }
+                        val remainingCount = currentlyProcessing.size - 3
+                        val processingText = if (remainingCount > 0) {
+                            "$processingList (+$remainingCount more)"
+                        } else {
+                            processingList
+                        }
+
+                        progressStatus.set(
+                            """
+                            <div class="progress-status">
+                                <strong>Progress: $completed / ${fileSets.size} file sets processed</strong><br/>
+                                ${if (currentlyProcessing.isNotEmpty()) "Currently processing: $processingText" else ""}
+                            </div>
+                        """.trimIndent()
+                        )
+                        task.update()
+                    }
                 }
             }
 
-            // Handle single output file for documentation/extracts
-            singleOutputFile?.let { outputFile ->
-                finalizeSingleOutputFile(outputFile, session, task)
-            }
 
-            status.append("Processing complete. ${completedFutures.size}/${futures.size} file sets processed successfully.<br/>")
-            task.update()
+            fixedConcurrencyProcessor.submit {
+                val completedFutures = mutableListOf<Future<*>>()
+                futures.forEach { future ->
+                    try {
+                        future.get(TASK_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+                        completedFutures.add(future)
+                    } catch (e: Exception) {
+                        log.error("Error processing file set", e)
+                    }
+                }
+                // Handle single output file for documentation/extracts
+                singleOutputFile?.let { outputFile ->
+                    finalizeSingleOutputFile(outputFile, session, task)
+                }
+                progressStatus.set(
+                    """
+                    <div class="progress-status">
+                        <strong>✓ Processing complete: ${completedFutures.size}/${futures.size} file sets processed successfully</strong>
+                    </div>
+                """.trimIndent()
+                )
+                task.update()
+            }
+        } else {
+            // Normal mode: existing behavior
+            val futures = fileSets.map { fileSet ->
+                fixedConcurrencyProcessor.submit {
+                    processFileSet(
+                        fileSet = fileSet,
+                        contextSummary = contextSummary,
+                        userMessage = userMessage,
+                        ui = ui,
+                        api = api,
+                        tabs = tabs,
+                        task = task,
+                        session = session,
+                        markdownContent = markdownContent,
+                        singleOutputFile = singleOutputFile,
+                        parentTask = null,
+                        useBigDataMode = false
+                    )
+                }
+            }
+            fixedConcurrencyProcessor.submit {
+                val completedFutures = mutableListOf<Future<*>>()
+                futures.forEach { future ->
+                    try {
+                        future.get(TASK_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+                        completedFutures.add(future)
+                    } catch (e: Exception) {
+                        log.error("Error processing file set", e)
+                        status.append("Error processing file set: ${e.message}<br/>")
+                    }
+                }
+
+                // Handle single output file for documentation/extracts
+                singleOutputFile?.let { outputFile ->
+                    finalizeSingleOutputFile(outputFile, session, task)
+                }
+
+                status.append("Processing complete. ${completedFutures.size}/${futures.size} file sets processed successfully.<br/>")
+                task.update()
+            }
         }
 
         return socketManager
@@ -256,7 +346,9 @@ class CustomFileSetPatchServer(
         task: SessionTask,
         session: Session,
         markdownContent: TreeMap<String, String>,
-        singleOutputFile: Path?
+        singleOutputFile: Path?,
+        parentTask: SessionTask? = null,
+        useBigDataMode: Boolean = false
     ) {
         try {
             var status: StringBuilder? = null
@@ -266,16 +358,25 @@ class CustomFileSetPatchServer(
             } else {
                 fileSetContent
             }
-            val fileTask = if(tabs != null) {
+            val fileTask = when {
+                useBigDataMode -> {
+                    // In big data mode, use the provided task directly
+                    task
+                }
+
+                tabs != null -> {
                 status = task.add("Processing ${fileSet.name}...<br/>")!!
                 ui.newTask(false).apply {
                     tabs[fileSet.name] = placeholder
                 }
-            } else {
+                }
+
+                else -> {
                 val newSession = task.newSession()
                 val link = """<a href="#${newSession.sessionId}" target="_blank" class="${"linked-task-link"}">${fileSet.name}</a>"""
                 status = task.add("Processing ${link}...<br/>")!!
                 newSession.newTask()
+                }
             }
             fileTask.header("Processing ${fileSet.name}")
             try {

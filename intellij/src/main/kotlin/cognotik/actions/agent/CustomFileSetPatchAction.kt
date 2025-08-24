@@ -1,7 +1,6 @@
 package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -16,6 +15,7 @@ import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.awt.BorderLayout
@@ -38,14 +38,26 @@ class CustomFileSetPatchAction : BaseAction() {
         EDIT_FILES,
         GENERATE_DOCUMENTATION
     }
+    enum class BaseDirectoryMode {
+        SELECTED_DIRECTORY,
+        MODULE_ROOT
+    }
 
 
     data class FilePattern(
         val pattern: String,
         val isContext: Boolean = false,
-        val isRegex: Boolean = false
+        val isRegex: Boolean = false,
+        val isExclusion: Boolean = false,
+        val baseDirectory: String = ""
     ) {
-        override fun toString(): String = "${if (isContext) "[Context] " else ""}${if (isRegex) "[Regex] " else ""}$pattern"
+        override fun toString(): String = buildString {
+            if (isExclusion) append("[Exclude] ")
+            if (isContext) append("[Context] ")
+            if (isRegex) append("[Regex] ")
+            if (baseDirectory.isNotEmpty()) append("[${baseDirectory}] ")
+            append(pattern)
+        }
     }
 
     data class FileSet(
@@ -65,6 +77,12 @@ class CustomFileSetPatchAction : BaseAction() {
 
         private val patternCache = ConcurrentHashMap<String, PathMatcher>()
 
+        @Name("Base Directory Mode")
+        val baseDirectoryMode = JComboBox(BaseDirectoryMode.values()).apply {
+            selectedItem = BaseDirectoryMode.SELECTED_DIRECTORY
+        }
+
+
 
         @Name("File Patterns")
         val patternListModel = DefaultListModel<FilePattern>()
@@ -78,6 +96,9 @@ class CustomFileSetPatchAction : BaseAction() {
                     val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
                     if (value is FilePattern) {
                         text = value.toString()
+                        if (value.isExclusion) {
+                            foreground = java.awt.Color.RED.darker()
+                        }
                     }
                     return component
                 }
@@ -87,8 +108,18 @@ class CustomFileSetPatchAction : BaseAction() {
         @Name("Pattern Input")
         val patternInput = JBTextField(DEFAULT_PATTERN_WIDTH)
 
+        @Name("Base Directory")
+        val baseDirectoryInput = JBTextField().apply {
+            text = selectedDirectory?.toString() ?: project?.basePath ?: ""
+        }
+
+
         @Name("Is Context")
         val isContextCheckbox = JCheckBox("Include as context in all calls")
+
+        @Name("Is Exclusion")
+        val isExclusionCheckbox = JCheckBox("Exclude matching files")
+        
         @Name("Use Regex")
         val useRegexCheckbox = JCheckBox("Use regex pattern instead of glob")
 
@@ -127,10 +158,35 @@ class CustomFileSetPatchAction : BaseAction() {
             font = java.awt.Font(java.awt.Font.MONOSPACED, java.awt.Font.PLAIN, 12)
         }
 
+        @Name("File Volume")
+        val fileVolumeLabel = JLabel("Total size: 0 KB")
+
+        @Name("FileSet Count")
+        val fileSetCountLabel = JLabel("FileSets: 0")
+
+        @Name("Big Data Mode Threshold")
+        val bigDataThresholdSpinner = JSpinner(SpinnerNumberModel(100, 10, 1000, 10))
+
         init {
             // Setup radio button group
             outputModeGroup.add(editFilesRadio)
             outputModeGroup.add(generateDocsRadio)
+            // Add listener for base directory mode changes
+            baseDirectoryMode.addActionListener {
+                updatePreview()
+            }
+            // Add listener for exclusion checkbox
+            isExclusionCheckbox.addActionListener {
+                if (isExclusionCheckbox.isSelected) {
+                    isContextCheckbox.isSelected = false
+                    isContextCheckbox.isEnabled = false
+                    baseDirectoryInput.isEnabled = false
+                } else {
+                    isContextCheckbox.isEnabled = true
+                    baseDirectoryInput.isEnabled = true
+                }
+            }
+
 
             // Add document listener to update preview when patterns change
 
@@ -139,6 +195,12 @@ class CustomFileSetPatchAction : BaseAction() {
                 override fun removeUpdate(e: DocumentEvent?) = updatePreview()
                 override fun changedUpdate(e: DocumentEvent?) = updatePreview()
             })
+            baseDirectoryInput.document.addDocumentListener(object : DocumentListener {
+                override fun insertUpdate(e: DocumentEvent?) = updatePreview()
+                override fun removeUpdate(e: DocumentEvent?) = updatePreview()
+                override fun changedUpdate(e: DocumentEvent?) = updatePreview()
+            })
+
 
             patternList.addListSelectionListener { updatePreview() }
 
@@ -179,10 +241,22 @@ class CustomFileSetPatchAction : BaseAction() {
                     )
                     return
                 }
-                patternListModel.addElement(FilePattern(pattern, isContextCheckbox.isSelected, isRegex))
+                patternListModel.addElement(
+                    FilePattern(
+                        pattern,
+                        isContextCheckbox.isSelected,
+                        isRegex,
+                        isExclusionCheckbox.isSelected,
+                        baseDirectoryInput.text.trim()
+                    )
+                )
                 patternInput.text = ""
+                baseDirectoryInput.text = selectedDirectory?.toString() ?: project?.basePath ?: ""
                 isContextCheckbox.isSelected = false
                 useRegexCheckbox.isSelected = false
+                isExclusionCheckbox.isSelected = false
+                isContextCheckbox.isEnabled = true
+                baseDirectoryInput.isEnabled = true
                 updatePreview()
             }
         }
@@ -199,6 +273,18 @@ class CustomFileSetPatchAction : BaseAction() {
             val root = getRoot()
             val fileSets = resolveFileSets(root)
             val contextFiles = resolveContextFiles(root)
+            // Calculate total file size and update labels
+            val totalSize = calculateTotalFileSize(fileSets, contextFiles)
+            val totalSizeKB = totalSize / 1024
+            val totalSizeMB = totalSizeKB / 1024
+            val sizeText = when {
+                totalSizeMB > 1 -> String.format("Total size: %.1f MB", totalSizeMB.toDouble())
+                totalSizeKB > 1 -> "Total size: ${totalSizeKB} KB"
+                else -> "Total size: ${totalSize} bytes"
+            }
+            fileVolumeLabel.text = sizeText
+            fileSetCountLabel.text = "FileSets: ${fileSets.size}"
+
 
             val preview = StringBuilder()
 
@@ -232,32 +318,118 @@ class CustomFileSetPatchAction : BaseAction() {
             previewArea.text = preview.toString()
         }
 
-        private fun getRoot(): Path =
-            selectedDirectory ?: project?.basePath?.let { Path.of(it) } ?: Path.of(".")
+        private fun calculateTotalFileSize(fileSets: List<FileSet>, contextFiles: List<Path>): Long {
+            var totalProcessedSize = 0L
+            val root = getRoot()
+
+            // Calculate processed size for context files (included in every call)
+            contextFiles.forEach { file ->
+                try {
+                    if (Files.isRegularFile(file)) {
+                        val rawSize = Files.size(file)
+                        val relativePath = root.relativize(file).toString()
+                        val fileExtension = file.toString().split('.').lastOrNull() ?: ""
+
+                        // Account for markdown formatting overhead
+                        val headerSize = "# Context File: $relativePath\n```$fileExtension\n".length
+                        val footerSize = "\n```\n\n".length
+                        val formattedSize = rawSize + headerSize + footerSize
+
+                        // Context files are included in every fileset call
+                        totalProcessedSize += formattedSize * fileSets.size
+                    }
+                } catch (e: Exception) {
+                    // Ignore files that can't be read
+                }
+            }
+
+            // Calculate processed size for fileset files
+            fileSets.forEach { fileSet ->
+                fileSet.files.forEach { file ->
+                    try {
+                        if (Files.isRegularFile(file)) {
+                            val rawSize = Files.size(file)
+                            val relativePath = root.relativize(file).toString()
+                            val fileExtension = file.toString().split('.').lastOrNull() ?: ""
+
+                            // Account for markdown formatting overhead
+                            val headerSize = "# File: $relativePath\n```$fileExtension\n".length
+                            val footerSize = "\n```\n\n".length
+                            val formattedSize = rawSize + headerSize + footerSize
+
+                            totalProcessedSize += formattedSize
+                        }
+                    } catch (e: Exception) {
+                        // Ignore files that can't be read
+                    }
+                }
+            }
+
+            return totalProcessedSize
+        }
+
+
+        fun getRoot(): Path {
+            return when (baseDirectoryMode.selectedItem as BaseDirectoryMode) {
+                BaseDirectoryMode.SELECTED_DIRECTORY ->
+                    selectedDirectory ?: project?.basePath?.let { Path.of(it) } ?: Path.of(".")
+
+                BaseDirectoryMode.MODULE_ROOT ->
+                    project?.basePath?.let { Path.of(it) } ?: selectedDirectory ?: Path.of(".")
+
+            }
+        }
 
         fun resolveFileSets(root: Path): List<FileSet> {
+            // First get inclusion patterns
             val patterns = (0 until patternListModel.size)
                 .map { patternListModel.getElementAt(it) }
-                .filter { !it.isContext }
+                .filter { !it.isContext && !it.isExclusion }
 
-            return patterns.flatMap { pattern ->
-                resolvePattern(root, pattern)
+            // Then get exclusion patterns
+            val exclusionPatterns = (0 until patternListModel.size)
+                .map { patternListModel.getElementAt(it) }
+                .filter { it.isExclusion }
+
+            val fileSets = patterns.flatMap { pattern ->
+                val patternRoot = if (pattern.baseDirectory.isNotEmpty()) {
+                    Path.of(pattern.baseDirectory)
+                } else {
+                    root
+                }
+                resolvePattern(patternRoot, pattern)
             }
+            // Apply exclusions to each file set
+            return fileSets.map { fileSet ->
+                val filteredFiles = fileSet.files.filter { file ->
+                    !isExcluded(file, exclusionPatterns)
+                }
+                fileSet.copy(files = filteredFiles)
+            }.filter { it.files.isNotEmpty() }
         }
 
         fun resolveContextFiles(root: Path): List<Path> {
             val contextPatterns = (0 until patternListModel.size)
                 .map { patternListModel.getElementAt(it) }
-                .filter { it.isContext }
+                .filter { it.isContext && !it.isExclusion }
 
-            return contextPatterns.flatMap { pattern ->
+            val exclusionPatterns = (0 until patternListModel.size)
+                .map { patternListModel.getElementAt(it) }
+                .filter { it.isExclusion }
+
+            val contextFiles = contextPatterns.flatMap { pattern ->
                 try {
+                    val patternRoot = if (pattern.baseDirectory.isNotEmpty()) {
+                        Path.of(pattern.baseDirectory)
+                    } else {
+                        root
+                    }
                     val matcher = getOrCreateMatcher(pattern.pattern)
-                    Files.walk(root).use { stream ->
+                    Files.walk(patternRoot).use { stream ->
                         stream
                             .filter { Files.isRegularFile(it) && isLLMTextFile(it.toFile(), treatDocumentsAsText.isSelected) }
                             .filter { path ->
-                                val relativePath = root.relativize(path)
+                                val relativePath = patternRoot.relativize(path)
                                 // Skip current directory references
                                 if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
                                     false
@@ -270,6 +442,32 @@ class CustomFileSetPatchAction : BaseAction() {
                 } catch (e: Exception) {
                     log.warn("Error resolving context pattern: ${pattern.pattern}", e)
                     emptyList()
+                }
+            }
+            // Apply exclusions
+            return contextFiles.filter { file ->
+                !isExcluded(file, exclusionPatterns)
+            }
+        }
+
+        private fun isExcluded(file: Path, exclusionPatterns: List<FilePattern>): Boolean {
+            return exclusionPatterns.any { pattern ->
+                try {
+                    val patternRoot = if (pattern.baseDirectory.isNotEmpty()) {
+                        Path.of(pattern.baseDirectory)
+                    } else {
+                        getRoot()
+                    }
+                    val relativePath = patternRoot.relativize(file)
+                    if (pattern.isRegex) {
+                        val regex = pattern.pattern.toRegex()
+                        regex.matches(relativePath.toString())
+                    } else {
+                        val matcher = getOrCreateMatcher(pattern.pattern)
+                        matcher.matches(relativePath)
+                    }
+                } catch (e: Exception) {
+                    false
                 }
             }
         }
@@ -358,7 +556,8 @@ class UserSettings(
         var singleOutputFile: Boolean = true,
         var outputFilename: String = "output.md",
         var outputDirectory: String = "output/",
-        var concurrency: Int = 4
+        var concurrency: Int = 4,
+        var bigDataThreshold: Int = 100
     )
 
     class Settings(
@@ -396,14 +595,19 @@ class UserSettings(
 
                             val inputPanel = JPanel(BorderLayout()).apply {
                                 add(JLabel("File Pattern (glob syntax):"), BorderLayout.NORTH)
-                                add(settingsUI.patternInput, BorderLayout.CENTER)
+                                val patternAndBasePanel = JPanel(BorderLayout()).apply {
+                                    add(settingsUI.patternInput, BorderLayout.CENTER)
+                                }
+                                add(patternAndBasePanel, BorderLayout.CENTER)
+                                add(settingsUI.baseDirectoryInput, BorderLayout.SOUTH)
                                
                                val checkboxPanel = JPanel().apply {
                                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
                                    add(settingsUI.isContextCheckbox)
+                                   add(settingsUI.isExclusionCheckbox)
                                    add(settingsUI.useRegexCheckbox)
                                }
-                               add(checkboxPanel, BorderLayout.SOUTH)
+                                add(checkboxPanel, BorderLayout.AFTER_LAST_LINE)
                             }
 
                             val buttonPanel = JPanel().apply {
@@ -422,6 +626,12 @@ class UserSettings(
                             add(inputPanel, BorderLayout.NORTH)
                             add(buttonPanel, BorderLayout.CENTER)
                         }
+                        val baseDirectoryPanel = JPanel(BorderLayout()).apply {
+                            border = JBUI.Borders.empty(10)
+                            add(JLabel("Base Directory:"), BorderLayout.NORTH)
+                            add(settingsUI.baseDirectoryMode, BorderLayout.CENTER)
+                        }
+
 
                         val listPanel = JPanel(BorderLayout()).apply {
                             border = JBUI.Borders.empty(10)
@@ -472,7 +682,12 @@ class UserSettings(
                             add(optionsPanel, BorderLayout.SOUTH)
                         }
 
-                        add(patternPanel, BorderLayout.NORTH)
+                        val topPanel = JPanel(BorderLayout()).apply {
+                            add(baseDirectoryPanel, BorderLayout.NORTH)
+                            add(patternPanel, BorderLayout.CENTER)
+                        }
+
+                        add(topPanel, BorderLayout.NORTH)
                         add(listPanel, BorderLayout.CENTER)
                         add(instructionPanel, BorderLayout.SOUTH)
                     }
@@ -480,7 +695,18 @@ class UserSettings(
                     val rightPanel = JPanel(BorderLayout()).apply {
                         preferredSize = Dimension(500, 600)
                         border = JBUI.Borders.empty(10)
-                        add(JLabel("Preview:"), BorderLayout.NORTH)
+
+                        val topPanel = JPanel(BorderLayout()).apply {
+                            val labelPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                                add(JLabel("Preview:"))
+                                add(Box.createHorizontalStrut(20))
+                                add(settingsUI.fileVolumeLabel)
+                                add(Box.createHorizontalStrut(20))
+                                add(settingsUI.fileSetCountLabel)
+                            }
+                            add(labelPanel, BorderLayout.WEST)
+                        }
+                        add(topPanel, BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.previewArea), BorderLayout.CENTER)
                     }
 
@@ -504,6 +730,7 @@ class UserSettings(
                     outputFilename = settingsUI.outputFilename.text
                     outputDirectory = settingsUI.outputDirectory.text
                     concurrency = settingsUI.concurrencySpinner.value as Int
+                    bigDataThreshold = settingsUI.bigDataThresholdSpinner.value as Int
                 }
                 // Handle the actual action execution here since dialog is non-modal
                 executeAction()
