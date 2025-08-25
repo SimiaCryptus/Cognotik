@@ -884,7 +884,8 @@ class UserSettings(
                     outputMode = settingsUI.getOutputMode()
                     singleOutputFile = settingsUI.singleOutputFile.isSelected
                     outputFilename = settingsUI.outputFilename.text
-                    outputDirectory = settingsUI.outputDirectory.text
+                    outputDirectory = selectedDirectory?.resolve(settingsUI.outputDirectory.text)?.toString()
+                        ?: settingsUI.outputDirectory.text
                     concurrency = settingsUI.concurrencySpinner.value as Int
                     bigDataThreshold = settingsUI.bigDataThresholdSpinner.value as Int
                 }

@@ -51,7 +51,7 @@ class CustomFileSetPatchServer(
     }
 
     private var _root: Path? = null
-   private var _selectedDirectory: Path? = null
+    private var _selectedDirectory: Path? = null
     private val outputLock = ReentrantLock()
     private val outputWritten = AtomicBoolean(false)
     private val processedCount = AtomicInteger(0)
@@ -62,9 +62,9 @@ class CustomFileSetPatchServer(
 
     override val inputCnt = 0
     override val stickyInput = true
-   private fun getSelectedDirectory(): Path? {
-       return _selectedDirectory
-   }
+    private fun getSelectedDirectory(): Path? {
+        return _selectedDirectory
+    }
 
     private val mainActor: SimpleActor
         get() {
@@ -96,9 +96,9 @@ class CustomFileSetPatchServer(
         }
 
     private fun initializeSingleOutputFile(): Path {
-       val selectedDirectory = getSelectedDirectory()
-       val outputDir = selectedDirectory?.resolve(config.settings?.outputDirectory ?: "output")
-           ?: throw IllegalStateException("Selected directory is not set")
+        val selectedDirectory = getSelectedDirectory()
+        val outputDir = selectedDirectory?.resolve(config.settings?.outputDirectory ?: "output")
+            ?: throw IllegalStateException("Selected directory is not set")
         try {
             Files.createDirectories(outputDir)
         } catch (e: IOException) {
@@ -143,13 +143,13 @@ class CustomFileSetPatchServer(
     }
 
     private fun finalizeSingleOutputFile(outputFile: Path, session: Session, task: SessionTask) {
-        task.add(
-           "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
-               _selectedDirectory?.relativize(
+        val message =
+            "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
+                _selectedDirectory?.relativize(
                     outputFile
                 ) ?: outputFile
             }</a>"
-        )
+        task.add(message)
     }
 
     override fun newSession(user: User?, session: Session): SocketManager {
@@ -164,7 +164,7 @@ class CustomFileSetPatchServer(
 
         val settingsUI = CustomFileSetPatchAction.SettingsUI(
             config.project,
-            selectedDirectory = _root,
+            selectedDirectory = config.settings?.outputDirectory?.let { File(it).toPath() },
         )
 
         config.settings?.patterns?.forEach { pattern ->
@@ -173,16 +173,8 @@ class CustomFileSetPatchServer(
         // Set the treatDocumentsAsText option from config
         settingsUI.treatDocumentsAsText.isSelected = config.settings?.treatDocumentsAsText ?: false
         // Get the root directory from the settings UI which handles base directory mode
-        _root = settingsUI.getRoot() ?: run {
-            task.error(IllegalArgumentException("Root directory is not set"))
-            return socketManager
-        }
-       _selectedDirectory = settingsUI.getSelectedDirectory() ?: run {
-           task.error(IllegalArgumentException("Selected directory is not set"))
-           return socketManager
-       }
-
-
+        _root = settingsUI.getRoot()
+        _selectedDirectory = settingsUI.getSelectedDirectory()
         val contextFiles = settingsUI.resolveContextFiles(_root!!)
         val fileSets = settingsUI.resolveFileSets(_root!!)
         if (fileSets.isEmpty()) {
@@ -535,20 +527,20 @@ class CustomFileSetPatchServer(
         if (design.isNotBlank()) {
             task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(
-                self = ui.socketManager!!,
-                root = _root ?: throw IllegalStateException("Root directory is not set"),
-                response = design,
-                handle = { newCodeMap ->
-                    newCodeMap.forEach { (path, _) ->
-                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                    }
-                },
-                ui = ui,
-                api = api as API,
-                shouldAutoApply = { autoApply },
-                model = AppSettingsState.instance.fastModel.chatModelType(),
-                defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
-                    ?: "").renderMarkdown)
+                    self = ui.socketManager!!,
+                    root = _root ?: throw IllegalStateException("Root directory is not set"),
+                    response = design,
+                    handle = { newCodeMap ->
+                        newCodeMap.forEach { (path, _) ->
+                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                        }
+                    },
+                    ui = ui,
+                    api = api as API,
+                    shouldAutoApply = { autoApply },
+                    model = AppSettingsState.instance.fastModel.chatModelType(),
+                    defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
+                        ?: "").renderMarkdown)
         } else {
             task.complete("No changes suggested.")
         }
@@ -567,7 +559,7 @@ class CustomFileSetPatchServer(
         if (singleOutputFile != null) {
             appendToSingleOutputFile(singleOutputFile, fileSet.name, result)
         } else {
-           val outputDir = _selectedDirectory?.resolve(config.settings?.outputDirectory ?: "output") ?: File(
+            val outputDir = _selectedDirectory?.resolve(config.settings?.outputDirectory ?: "output") ?: File(
                 config.settings?.outputDirectory ?: "output"
             ).toPath()
             Files.createDirectories(outputDir)
@@ -576,8 +568,8 @@ class CustomFileSetPatchServer(
                 outputFile, result.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
             )
             task.complete(
-               "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
-                   _selectedDirectory?.relativize(outputFile) ?: outputFile
+                "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
+                    _selectedDirectory?.relativize(outputFile) ?: outputFile
                 }</a>"
             )
         }
