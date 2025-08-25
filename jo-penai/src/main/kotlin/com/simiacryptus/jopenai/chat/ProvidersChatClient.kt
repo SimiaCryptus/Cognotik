@@ -253,6 +253,8 @@ open class ProvidersChatClient(
                 val response = JsonUtil.objectMapper().readValue(result, ChatResponse::class.java)
                 if (response.usage != null && model is ChatModelType) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
+                } else {
+                    log(Level.DEBUG, "No usage information returned", logStreams = logStreams)
                 }
                 log(
                     level = Level.DEBUG,

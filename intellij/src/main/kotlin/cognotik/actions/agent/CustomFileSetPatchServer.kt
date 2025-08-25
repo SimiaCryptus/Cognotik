@@ -25,7 +25,6 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -48,17 +47,24 @@ class CustomFileSetPatchServer(
         private const val TASK_TIMEOUT_MINUTES = 30L
         private const val MAX_FILE_SIZE_MB = 10
         private const val MAX_CONTEXT_LENGTH = 100_000
+        private const val BATCH_SIZE = 10
     }
 
-    private lateinit var _root: Path
+    private var _root: Path? = null
+   private var _selectedDirectory: Path? = null
     private val outputLock = ReentrantLock()
     private val outputWritten = AtomicBoolean(false)
     private val processedCount = AtomicInteger(0)
     private val currentlyProcessing = ConcurrentHashMap<String, String>()
     private val completedFileSets = ConcurrentLinkedQueue<String>()
+    private val errorCount = AtomicInteger(0)
+    private val startTime = AtomicReference<Long>()
 
     override val inputCnt = 0
     override val stickyInput = true
+   private fun getSelectedDirectory(): Path? {
+       return _selectedDirectory
+   }
 
     private val mainActor: SimpleActor
         get() {
@@ -88,18 +94,30 @@ class CustomFileSetPatchServer(
                 temperature = AppSettingsState.instance.temperature,
             )
         }
+
     private fun initializeSingleOutputFile(): Path {
-        val outputDir = _root.resolve(config.settings?.outputDirectory ?: "output")
-        Files.createDirectories(outputDir)
+       val selectedDirectory = getSelectedDirectory()
+       val outputDir = selectedDirectory?.resolve(config.settings?.outputDirectory ?: "output")
+           ?: throw IllegalStateException("Selected directory is not set")
+        try {
+            Files.createDirectories(outputDir)
+        } catch (e: IOException) {
+            log.error("Failed to create output directory: $outputDir", e)
+            throw IllegalStateException("Cannot create output directory: ${e.message}", e)
+        }
         val outputFile = outputDir.resolve(config.settings?.outputFilename ?: "output.${getFileExtension()}")
 
         // Create/truncate the file and write header
-        Files.newBufferedWriter(
-            outputFile,
-            StandardOpenOption.CREATE,
-            StandardOpenOption.TRUNCATE_EXISTING
-        ).use { writer ->
-            writer.write("# Generated Output\n\n")
+        try {
+            Files.newBufferedWriter(
+                outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
+            ).use { writer ->
+                writer.write("# Generated Output\n\n")
+                writer.write("Generated at: ${java.time.LocalDateTime.now()}\n\n")
+            }
+        } catch (e: IOException) {
+            log.error("Failed to initialize output file: $outputFile", e)
+            throw IllegalStateException("Cannot initialize output file: ${e.message}", e)
         }
 
         return outputFile
@@ -107,23 +125,31 @@ class CustomFileSetPatchServer(
 
     private fun appendToSingleOutputFile(outputFile: Path, fileSetName: String, content: String) {
         outputLock.withLock {
-            Files.newBufferedWriter(
-                outputFile,
-                StandardOpenOption.APPEND
-            ).use { writer ->
-                if (outputWritten.compareAndSet(false, true)) {
-                    // First write, no extra newlines needed
-                } else {
-                    writer.write("\n\n")
+            try {
+                Files.newBufferedWriter(
+                    outputFile, StandardOpenOption.APPEND
+                ).use { writer ->
+                    if (!outputWritten.compareAndSet(false, true)) {
+                        writer.write("\n\n---\n\n")
+                    }
+                    writer.write("## $fileSetName\n\n")
+                    writer.write(content)
                 }
-                writer.write("# $fileSetName\n\n")
-                writer.write(content)
+            } catch (e: IOException) {
+                log.error("Failed to append to output file: $outputFile", e)
+                throw IllegalStateException("Cannot write to output file: ${e.message}", e)
             }
         }
     }
 
     private fun finalizeSingleOutputFile(outputFile: Path, session: Session, task: SessionTask) {
-        task.add("<a href='fileIndex/$session/${_root.relativize(outputFile)}'>Generated: ${_root.relativize(outputFile)}</a>")
+        task.add(
+           "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
+               _selectedDirectory?.relativize(
+                    outputFile
+                ) ?: outputFile
+            }</a>"
+        )
     }
 
     override fun newSession(user: User?, session: Session): SocketManager {
@@ -147,11 +173,18 @@ class CustomFileSetPatchServer(
         // Set the treatDocumentsAsText option from config
         settingsUI.treatDocumentsAsText.isSelected = config.settings?.treatDocumentsAsText ?: false
         // Get the root directory from the settings UI which handles base directory mode
-        _root = settingsUI.getRoot()
+        _root = settingsUI.getRoot() ?: run {
+            task.error(IllegalArgumentException("Root directory is not set"))
+            return socketManager
+        }
+       _selectedDirectory = settingsUI.getSelectedDirectory() ?: run {
+           task.error(IllegalArgumentException("Selected directory is not set"))
+           return socketManager
+       }
 
 
-        val contextFiles = settingsUI.resolveContextFiles(_root)
-        val fileSets = settingsUI.resolveFileSets(_root)
+        val contextFiles = settingsUI.resolveContextFiles(_root!!)
+        val fileSets = settingsUI.resolveFileSets(_root!!)
         if (fileSets.isEmpty()) {
             task.error(IllegalArgumentException("No files match the specified patterns"))
             return socketManager
@@ -161,70 +194,92 @@ class CustomFileSetPatchServer(
         val status: StringBuilder = task.add("Starting...<br/>")!!
         val concurrency = config.settings?.concurrency ?: 4
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, concurrency)
-        val markdownContent = TreeMap<String, String>()
         val bigDataThreshold = config.settings?.bigDataThreshold ?: 100
         val useBigDataMode = fileSets.size > bigDataThreshold
-        
+        startTime.set(System.currentTimeMillis())
+
         // Initialize single output file if needed
-        val singleOutputFile = if (outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES && config.settings?.singleOutputFile == true) {
-            initializeSingleOutputFile()
-        } else null
+        val singleOutputFile =
+            if (outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES && config.settings?.singleOutputFile == true) {
+                initializeSingleOutputFile()
+            } else null
 
         if (useBigDataMode) {
             // Big data mode: use mid-level subsession for decoupling
-            status.set("Processing ${fileSets.size} file sets in big data mode...<br/>")
+            status.set("Processing ${fileSets.size} file sets in big data mode (batches of $BATCH_SIZE)...<br/>")
             val progressStatus = task.add("")!!
+            val errorStatus = task.add("")!!
 
-            val futures = fileSets.mapIndexed { index, fileSet ->
-                fixedConcurrencyProcessor.submit {
-                    val fileSetName = fileSet.name
-                    currentlyProcessing[fileSetName] = fileSetName
+            val futures = fileSets.chunked(BATCH_SIZE).flatMap { batch ->
+                batch.map { fileSet ->
+                    fixedConcurrencyProcessor.submit {
+                        val fileSetName = fileSet.name
+                        currentlyProcessing[fileSetName] = fileSetName
 
-                    try {
-                        // Create a subsession for this file set
-                        val subSession = task.newSession()
-                        val subTask = subSession.newTask()
+                        try {
+                            // Create a subsession for this file set
+                            val subSession = task.newSession()
+                            val subTask = subSession.newTask()
 
-                        processFileSet(
-                            fileSet = fileSet,
-                            contextSummary = contextSummary,
-                            userMessage = userMessage,
-                            ui = ui,
-                            api = api,
-                            tabs = null, // No tabs in big data mode
-                            task = subTask,
-                            session = session,
-                            markdownContent = markdownContent,
-                            singleOutputFile = singleOutputFile,
-                            parentTask = task,
-                            useBigDataMode = true
-                        )
+                            processFileSet(
+                                fileSet = fileSet,
+                                contextSummary = contextSummary,
+                                userMessage = userMessage,
+                                ui = ui,
+                                api = api,
+                                tabs = null, // No tabs in big data mode
+                                task = subTask,
+                                session = session,
+                                singleOutputFile = singleOutputFile,
+                                useBigDataMode = true
+                            )
 
-                        completedFileSets.offer(fileSetName)
-                    } finally {
-                        currentlyProcessing.remove(fileSetName)
-                        val completed = processedCount.incrementAndGet()
+                            completedFileSets.offer(fileSetName)
+                        } catch (e: Exception) {
+                            log.error("Error processing file set: $fileSetName", e)
+                            errorCount.incrementAndGet()
+                            errorStatus.set(
+                                """<div class="error-status" style="color: red;">
+                                Errors: ${errorCount.get()} file sets failed
+                            </div>""".trimIndent()
+                            )
+                        } finally {
+                            currentlyProcessing.remove(fileSetName)
+                            val completed = processedCount.incrementAndGet()
+                            val elapsedSeconds = (System.currentTimeMillis() - startTime.get()) / 1000
+                            val rate = if (elapsedSeconds > 0) completed.toDouble() / elapsedSeconds else 0.0
+                            val estimatedRemaining = if (rate > 0) ((fileSets.size - completed) / rate).toInt() else 0
 
-                        // Update progress status
-                        val processingList = currentlyProcessing.values.take(3).joinToString(", ") { name ->
-                            """<a href="#" class="processing-link">$name</a>"""
-                        }
-                        val remainingCount = currentlyProcessing.size - 3
-                        val processingText = if (remainingCount > 0) {
-                            "$processingList (+$remainingCount more)"
-                        } else {
-                            processingList
-                        }
+                            // Update progress status
+                            val processingList = currentlyProcessing.values.take(3).joinToString(", ") { name ->
+                                """<a href="#" class="processing-link">$name</a>"""
+                            }
+                            val remainingCount = currentlyProcessing.size - 3
+                            val processingText = if (remainingCount > 0) {
+                                "$processingList (+$remainingCount more)"
+                            } else {
+                                processingList
+                            }
 
-                        progressStatus.set(
-                            """
+                            progressStatus.set(
+                                """
                             <div class="progress-status">
-                                <strong>Progress: $completed / ${fileSets.size} file sets processed</strong><br/>
+                                <strong>Progress: $completed / ${fileSets.size} file sets processed (${
+                                    String.format(
+                                        "%.1f", completed * 100.0 / fileSets.size
+                                    )
+                                }%)</strong><br/>
+                                <small>Rate: ${
+                                    String.format(
+                                        "%.2f", rate
+                                    )
+                                } files/sec | Est. remaining: ${estimatedRemaining}s</small><br/>
                                 ${if (currentlyProcessing.isNotEmpty()) "Currently processing: $processingText" else ""}
                             </div>
                         """.trimIndent()
-                        )
-                        task.update()
+                            )
+                            task.update()
+                        }
                     }
                 }
             }
@@ -247,7 +302,8 @@ class CustomFileSetPatchServer(
                 progressStatus.set(
                     """
                     <div class="progress-status">
-                        <strong>✓ Processing complete: ${completedFutures.size}/${futures.size} file sets processed successfully</strong>
+                        <strong>✓ Processing complete: ${completedFutures.size} file sets processed successfully</strong><br/>
+                        <small>Total time: ${(System.currentTimeMillis() - startTime.get()) / 1000}s | Errors: ${errorCount.get()}</small>
                     </div>
                 """.trimIndent()
                 )
@@ -266,22 +322,27 @@ class CustomFileSetPatchServer(
                         tabs = tabs,
                         task = task,
                         session = session,
-                        markdownContent = markdownContent,
                         singleOutputFile = singleOutputFile,
-                        parentTask = null,
                         useBigDataMode = false
                     )
                 }
-            }
+            }.toMutableList()
             fixedConcurrencyProcessor.submit {
                 val completedFutures = mutableListOf<Future<*>>()
-                futures.forEach { future ->
+                while (!futures.isEmpty()) {
                     try {
-                        future.get(TASK_TIMEOUT_MINUTES, TimeUnit.MINUTES)
-                        completedFutures.add(future)
+                        futures.removeFirst().apply {
+                            try {
+                                get(TASK_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+                                completedFutures.add(this)
+                            } catch (e: Exception) {
+                                log.error("Error processing file set", e)
+                                status.append("Error processing file set: ${e.message}<br/>")
+                            }
+                        }
                     } catch (e: Exception) {
-                        log.error("Error processing file set", e)
-                        status.append("Error processing file set: ${e.message}<br/>")
+                        log.warn("Error updating task status", e)
+                        task.error(e)
                     }
                 }
 
@@ -290,7 +351,7 @@ class CustomFileSetPatchServer(
                     finalizeSingleOutputFile(outputFile, session, task)
                 }
 
-                status.append("Processing complete. ${completedFutures.size}/${futures.size} file sets processed successfully.<br/>")
+                status.append("Processing complete. ${completedFutures.size} file sets processed successfully.<br/>")
                 task.update()
             }
         }
@@ -318,7 +379,7 @@ class CustomFileSetPatchServer(
                 }
 
                 val fileSection = """
-                    # Context File: ${_root.relativize(path)}
+                    # Context File: ${_root?.relativize(path) ?: path}
                     ```${path.toString().split('.').lastOrNull() ?: ""}
                     $fileContent
                     ```
@@ -345,9 +406,7 @@ class CustomFileSetPatchServer(
         tabs: TabbedDisplay?,
         task: SessionTask,
         session: Session,
-        markdownContent: TreeMap<String, String>,
         singleOutputFile: Path?,
-        parentTask: SessionTask? = null,
         useBigDataMode: Boolean = false
     ) {
         try {
@@ -365,17 +424,18 @@ class CustomFileSetPatchServer(
                 }
 
                 tabs != null -> {
-                status = task.add("Processing ${fileSet.name}...<br/>")!!
-                ui.newTask(false).apply {
-                    tabs[fileSet.name] = placeholder
-                }
+                    status = task.add("Processing ${fileSet.name}...<br/>")!!
+                    ui.newTask(false).apply {
+                        tabs[fileSet.name] = placeholder
+                    }
                 }
 
                 else -> {
-                val newSession = task.newSession()
-                val link = """<a href="#${newSession.sessionId}" target="_blank" class="${"linked-task-link"}">${fileSet.name}</a>"""
-                status = task.add("Processing ${link}...<br/>")!!
-                newSession.newTask()
+                    val newSession = task.newSession()
+                    val link =
+                        """<a href="#${newSession.sessionId}" target="_blank" class="${"linked-task-link"}">${fileSet.name}</a>"""
+                    status = task.add("Processing ${link}...<br/>")!!
+                    newSession.newTask()
                 }
             }
             fileTask.header("Processing ${fileSet.name}")
@@ -387,7 +447,7 @@ class CustomFileSetPatchServer(
                     }
 
                     outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
-                        handleGenerationMode(fileSet, userMessage, api, fileTask, session, markdownContent, singleOutputFile, toInput)
+                        handleGenerationMode(fileSet, userMessage, api, fileTask, session, singleOutputFile, toInput)
                     }
 
                     else -> {
@@ -423,7 +483,7 @@ class CustomFileSetPatchServer(
                 val fileContent = readFileContent(file)
                 contentBuilder.append(
                     """
-                    # File: ${_root.relativize(path)}
+                    # File: ${_root?.relativize(path) ?: path}
                     ```${path.toString().split('.').lastOrNull() ?: ""}
                     $fileContent
                     ```
@@ -435,17 +495,25 @@ class CustomFileSetPatchServer(
         }
         return contentBuilder.toString()
     }
-    
+
     private fun readFileContent(file: File): String {
         return try {
+            // Check file size first
+            val fileSizeMB = file.length() / (1024 * 1024)
+            if (fileSizeMB > MAX_FILE_SIZE_MB) {
+                return "File too large (${fileSizeMB}MB) - skipped"
+            }
+
             when {
-                file.name.endsWith(".pdf", ignoreCase = true) ||
-                file.name.endsWith(".html", ignoreCase = true) ||
-                file.name.endsWith(".htm", ignoreCase = true) -> {
+                file.name.endsWith(".pdf", ignoreCase = true) || file.name.endsWith(
+                    ".html",
+                    ignoreCase = true
+                ) || file.name.endsWith(".htm", ignoreCase = true) -> {
                     file.getReader().use { reader ->
                         reader.getText()
                     }
                 }
+
                 else -> file.readText(Charsets.UTF_8)
             }
         } catch (e: Exception) {
@@ -467,21 +535,20 @@ class CustomFileSetPatchServer(
         if (design.isNotBlank()) {
             task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(
-                    self = ui.socketManager!!,
-                    root = _root,
-                    response = design,
-                    handle = { newCodeMap ->
-                        newCodeMap.forEach { (path, _) ->
-                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
-                        }
-                    },
-                    ui = ui,
-                    api = api as API,
-                    shouldAutoApply = { autoApply },
-                    model = AppSettingsState.instance.fastModel.chatModelType(),
-                    defaultFile = fileSet.files.firstOrNull()?.let { _root.relativize(it).toString() } ?: ""
-                ).renderMarkdown
-            )
+                self = ui.socketManager!!,
+                root = _root ?: throw IllegalStateException("Root directory is not set"),
+                response = design,
+                handle = { newCodeMap ->
+                    newCodeMap.forEach { (path, _) ->
+                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                    }
+                },
+                ui = ui,
+                api = api as API,
+                shouldAutoApply = { autoApply },
+                model = AppSettingsState.instance.fastModel.chatModelType(),
+                defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
+                    ?: "").renderMarkdown)
         } else {
             task.complete("No changes suggested.")
         }
@@ -493,7 +560,6 @@ class CustomFileSetPatchServer(
         api: ChatClientInterface,
         task: SessionTask,
         session: Session,
-        markdownContent: TreeMap<String, String>,
         singleOutputFile: Path?,
         toInput: (String) -> List<String>
     ) {
@@ -501,20 +567,17 @@ class CustomFileSetPatchServer(
         if (singleOutputFile != null) {
             appendToSingleOutputFile(singleOutputFile, fileSet.name, result)
         } else {
-            val outputDir = _root.resolve(config.settings?.outputDirectory ?: "output")
+           val outputDir = _selectedDirectory?.resolve(config.settings?.outputDirectory ?: "output") ?: File(
+                config.settings?.outputDirectory ?: "output"
+            ).toPath()
             Files.createDirectories(outputDir)
             val outputFile = outputDir.resolve("${fileSet.name}.${getFileExtension()}")
             Files.write(
-                outputFile,
-                result.toByteArray(),
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING
+                outputFile, result.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
             )
             task.complete(
-                "<a href='fileIndex/$session/${_root.relativize(outputFile)}'>Generated: ${
-                    _root.relativize(
-                        outputFile
-                    )
+               "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
+                   _selectedDirectory?.relativize(outputFile) ?: outputFile
                 }</a>"
             )
         }
@@ -544,12 +607,9 @@ class CustomFileSetPatchServer(
                 mainActor.respond(
                     messages = userMessages.map {
                         ApiModel.ChatMessage(
-                            it.second,
-                            it.first.toContentList()
+                            it.second, it.first.toContentList()
                         )
-                    }.toTypedArray(),
-                    input = toInput(userMessage),
-                    api = api
+                    }.toTypedArray(), input = toInput(userMessage), api = api
                 )
             },
             atomicRef = AtomicReference(),
@@ -572,7 +632,7 @@ class CustomFileSetPatchServer(
                     renderMarkdown(design) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
                             self = ui.socketManager!!,
-                            root = _root,
+                            root = _root ?: throw IllegalStateException("Root directory is not set"),
                             response = design,
                             handle = { newCodeMap ->
                                 newCodeMap.forEach { (path, _) ->
@@ -583,8 +643,8 @@ class CustomFileSetPatchServer(
                             api = api as API,
                             shouldAutoApply = { false },
                             model = AppSettingsState.instance.fastModel.chatModelType(),
-                            defaultFile = fileSet.files.firstOrNull()?.let { _root.relativize(it).toString() } ?: ""
-                        )
+                            defaultFile = fileSet.files.firstOrNull()
+                                ?.let { (_root?.relativize(it) ?: it).toString() } ?: "")
                     }
                 }</div>"""
             }

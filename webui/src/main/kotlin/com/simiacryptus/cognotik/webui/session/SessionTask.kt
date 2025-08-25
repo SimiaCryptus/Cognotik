@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.util.copy
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -26,7 +27,7 @@ abstract class SessionTask(
     val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
 
     private val currentText: String
-        get() = buffer.filter { it.isNotBlank() }.joinToString("")
+        get() = buffer.toTypedArray().filter { it.isNotBlank() }.joinToString("")
 
     fun append(
         htmlToAppend: String,

@@ -72,6 +72,11 @@ class GoogleChatClient(
                                 content = candidate.content?.parts?.joinToString("\n") { it.text ?: "" }), index = index
                         )
                     } ?: emptyList(),
+                    usage = ApiModel.Usage(
+                        prompt_tokens = (fromJson.usageMetadata?.promptTokenCount ?: 0).toLong(),
+                        completion_tokens = (fromJson.usageMetadata?.candidatesTokenCount ?: 0).toLong(),
+                        total_tokens = (fromJson.usageMetadata?.totalTokenCount ?: 0).toLong()
+                    )
                 ))
         }
 
@@ -145,7 +150,10 @@ class GoogleChatClient(
         )
 
         data class GenerateContentResponse(
-            val candidates: List<Candidate>? = null
+            val candidates: List<Candidate>? = null,
+            val usageMetadata: UsageMetadata? = null,
+            val modelVersion: String? = null,
+            val responseId: String? = null
         )
 
         data class Candidate(
@@ -153,6 +161,17 @@ class GoogleChatClient(
 
             val finishReason: String? = null, val index: Int? = null, val safetyRatings: List<SafetyRating>? = null
         )
+        data class UsageMetadata(
+            val promptTokenCount: Int? = null,
+            val candidatesTokenCount: Int? = null,
+            val totalTokenCount: Int? = null,
+            val promptTokensDetails: List<TokensDetail>? = null
+        )
+        data class TokensDetail(
+            val modality: String? = null,
+            val tokenCount: Int? = null
+        )
+
 
         data class SafetyRating(
             val category: String? = null, val probability: String? = null
