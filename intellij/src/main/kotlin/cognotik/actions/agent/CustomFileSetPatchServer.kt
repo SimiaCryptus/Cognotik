@@ -85,6 +85,12 @@ class CustomFileSetPatchServer(
                     Please analyze the code and create comprehensive documentation according to the given requirements.
                     Response should be in markdown format with clear sections and explanations.
                 """.trimIndent()
+                CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION -> """
+                    You are a helpful AI that helps people with data extraction and analysis.
+                    You will be extracting and aggregating data from multiple code files based on the provided instruction.
+                    Please analyze the code files and extract relevant information according to the given requirements.
+                    Response should be in markdown format with structured data and clear summaries.
+                """.trimIndent()
 
             }
 
@@ -189,20 +195,29 @@ class CustomFileSetPatchServer(
         val bigDataThreshold = config.settings?.bigDataThreshold ?: 100
         val useBigDataMode = fileSets.size > bigDataThreshold
         startTime.set(System.currentTimeMillis())
+        // Aggregate file sets if in aggregated data extraction mode
+        val processFileSets = if (outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION) {
+            aggregateFileSets(fileSets, config.settings?.aggregationSizeKB ?: 10)
+        } else {
+            fileSets
+        }
 
         // Initialize single output file if needed
         val singleOutputFile =
-            if (outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES && config.settings?.singleOutputFile == true) {
+            if ((outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION ||
+                        outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION)
+                && config.settings?.singleOutputFile == true
+            ) {
                 initializeSingleOutputFile()
             } else null
 
-        if (useBigDataMode) {
+        if (useBigDataMode && outputMode != CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION) {
             // Big data mode: use mid-level subsession for decoupling
-            status.set("Processing ${fileSets.size} file sets in big data mode (batches of $BATCH_SIZE)...<br/>")
+            status.set("Processing ${processFileSets.size} file sets in big data mode (batches of $BATCH_SIZE)...<br/>")
             val progressStatus = task.add("")!!
             val errorStatus = task.add("")!!
 
-            val futures = fileSets.chunked(BATCH_SIZE).flatMap { batch ->
+            val futures = processFileSets.chunked(BATCH_SIZE).flatMap { batch ->
                 batch.map { fileSet ->
                     fixedConcurrencyProcessor.submit {
                         val fileSetName = fileSet.name
@@ -240,7 +255,8 @@ class CustomFileSetPatchServer(
                             val completed = processedCount.incrementAndGet()
                             val elapsedSeconds = (System.currentTimeMillis() - startTime.get()) / 1000
                             val rate = if (elapsedSeconds > 0) completed.toDouble() / elapsedSeconds else 0.0
-                            val estimatedRemaining = if (rate > 0) ((fileSets.size - completed) / rate).toInt() else 0
+                            val estimatedRemaining =
+                                if (rate > 0) ((processFileSets.size - completed) / rate).toInt() else 0
 
                             // Update progress status
                             val processingList = currentlyProcessing.values.take(3).joinToString(", ") { name ->
@@ -256,9 +272,9 @@ class CustomFileSetPatchServer(
                             progressStatus.set(
                                 """
                             <div class="progress-status">
-                                <strong>Progress: $completed / ${fileSets.size} file sets processed (${
+                                <strong>Progress: $completed / ${processFileSets.size} file sets processed (${
                                     String.format(
-                                        "%.1f", completed * 100.0 / fileSets.size
+                                        "%.1f", completed * 100.0 / processFileSets.size
                                     )
                                 }%)</strong><br/>
                                 <small>Rate: ${
@@ -303,7 +319,7 @@ class CustomFileSetPatchServer(
             }
         } else {
             // Normal mode: existing behavior
-            val futures = fileSets.map { fileSet ->
+            val futures = processFileSets.map { fileSet ->
                 fixedConcurrencyProcessor.submit {
                     processFileSet(
                         fileSet = fileSet,
@@ -350,6 +366,51 @@ class CustomFileSetPatchServer(
 
         return socketManager
     }
+
+    private fun aggregateFileSets(
+        fileSets: List<CustomFileSetPatchAction.FileSet>,
+        targetSizeKB: Int
+    ): List<CustomFileSetPatchAction.FileSet> {
+        val targetSizeBytes = targetSizeKB * 1024L
+        val aggregatedSets = mutableListOf<CustomFileSetPatchAction.FileSet>()
+        var currentFiles = mutableListOf<Path>()
+        var currentSize = 0L
+        var aggregateIndex = 1
+        for (fileSet in fileSets) {
+            for (file in fileSet.files) {
+                try {
+                    val fileSize = Files.size(file)
+                    // If adding this file would exceed target size and we have files, create a new aggregate
+                    if (currentSize + fileSize > targetSizeBytes && currentFiles.isNotEmpty()) {
+                        aggregatedSets.add(
+                            CustomFileSetPatchAction.FileSet(
+                                "Aggregate_${aggregateIndex++}",
+                                currentFiles.toList()
+                            )
+                        )
+                        currentFiles = mutableListOf()
+                        currentSize = 0L
+                    }
+                    currentFiles.add(file)
+                    currentSize += fileSize
+                } catch (e: Exception) {
+                    log.warn("Error getting file size for aggregation: $file", e)
+                }
+            }
+        }
+        // Add remaining files if any
+        if (currentFiles.isNotEmpty()) {
+            aggregatedSets.add(
+                CustomFileSetPatchAction.FileSet(
+                    "Aggregate_${aggregateIndex}",
+                    currentFiles.toList()
+                )
+            )
+        }
+        log.info("Aggregated ${fileSets.size} file sets into ${aggregatedSets.size} aggregated sets")
+        return aggregatedSets
+    }
+
 
     private fun buildContextSummary(contextFiles: List<Path>): String {
         return if (contextFiles.isNotEmpty()) {
@@ -438,7 +499,8 @@ class CustomFileSetPatchServer(
                         handleAutoApplyMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
                     }
 
-                    outputMode != CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
+                    outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION ||
+                            outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION -> {
                         handleGenerationMode(fileSet, userMessage, api, fileTask, session, singleOutputFile, toInput)
                     }
 
@@ -649,6 +711,7 @@ class CustomFileSetPatchServer(
     private fun getFileExtension(): String {
         return when (outputMode) {
             CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION -> "md"
+            CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION -> "md"
             else -> "txt"
         }
     }

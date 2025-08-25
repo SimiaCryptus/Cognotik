@@ -38,7 +38,8 @@ class CustomFileSetPatchAction : BaseAction() {
 
     enum class OutputMode {
         EDIT_FILES,
-        GENERATE_DOCUMENTATION
+        GENERATE_DOCUMENTATION,
+        AGGREGATED_DATA_EXTRACTION
     }
     enum class BaseDirectoryMode {
         SELECTED_DIRECTORY,
@@ -149,11 +150,11 @@ class CustomFileSetPatchAction : BaseAction() {
         val treatDocumentsAsText = JCheckBox("Include PDF/HTML files as text", false)
 
         @Name("Output Mode")
-        val outputModeGroup = ButtonGroup()
 
-        val editFilesRadio = JRadioButton("Edit Files", true)
 
-        val generateDocsRadio = JRadioButton("Generate Documentation")
+        val outputModeCombo = JComboBox(OutputMode.entries.toTypedArray()).apply {
+            selectedItem = OutputMode.EDIT_FILES
+        }
 
         @Name("Single Output File")
         val singleOutputFile = JCheckBox("Produce a single output file", true)
@@ -189,10 +190,10 @@ class CustomFileSetPatchAction : BaseAction() {
         @Name("Big Data Mode Threshold")
         val bigDataThresholdSpinner = JSpinner(SpinnerNumberModel(100, 10, 1000, 10))
 
+        @Name("Aggregation Size (KB)")
+        val aggregationSizeSpinner = JSpinner(SpinnerNumberModel(10, 1, 100, 1))
+
         init {
-            // Setup radio button group
-            outputModeGroup.add(editFilesRadio)
-            outputModeGroup.add(generateDocsRadio)
             // Add listener for base directory mode changes
             baseDirectoryMode.addActionListener {
                 schedulePreviewUpdate()
@@ -219,27 +220,25 @@ class CustomFileSetPatchAction : BaseAction() {
 
             patternList.addListSelectionListener { schedulePreviewUpdate() }
 
-            // Add listeners for output mode changes
-            editFilesRadio.addActionListener { updateOutputOptionsVisibility() }
-            generateDocsRadio.addActionListener { updateOutputOptionsVisibility() }
+            // Add listener for output mode changes
+            outputModeCombo.addActionListener { updateOutputOptionsVisibility() }
 
             updateOutputOptionsVisibility()
         }
 
         private fun updateOutputOptionsVisibility() {
-            val isGenerateMode = generateDocsRadio.isSelected
+            val selectedMode = outputModeCombo.selectedItem as OutputMode
+            val isGenerateMode =
+                selectedMode == OutputMode.GENERATE_DOCUMENTATION || selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION
             singleOutputFile.isVisible = isGenerateMode
             outputFilename.isVisible = isGenerateMode
             outputDirectory.isVisible = isGenerateMode
-            autoApply.isVisible = editFilesRadio.isSelected
+            autoApply.isVisible = selectedMode == OutputMode.EDIT_FILES
+            aggregationSizeSpinner.isVisible = selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION
         }
 
         fun getOutputMode(): OutputMode {
-            return when {
-                editFilesRadio.isSelected -> OutputMode.EDIT_FILES
-                generateDocsRadio.isSelected -> OutputMode.GENERATE_DOCUMENTATION
-                else -> OutputMode.EDIT_FILES
-            }
+            return outputModeCombo.selectedItem as OutputMode
         }
 
 
@@ -650,8 +649,11 @@ class CustomFileSetPatchAction : BaseAction() {
                 }
                 // Cache the results
                 fileCache[cacheKey] = matchedPaths
-                
-                matchedPaths.mapNotNull { path ->
+
+                // Filter out parent directories when child directories/files are also matched
+                val filteredPaths = filterOutParentDirectories(matchedPaths)
+
+                filteredPaths.mapNotNull { path ->
                     when {
                         Files.isDirectory(path) -> processDirectory(root, path)
                         Files.isRegularFile(path) && isLLMTextFile(path.toFile(), treatDocumentsAsText.isSelected) -> {
@@ -665,6 +667,20 @@ class CustomFileSetPatchAction : BaseAction() {
                 log.warn("Error resolving pattern: ${pattern.pattern}", e)
                 emptyList()
             }
+        }
+
+        private fun filterOutParentDirectories(paths: List<Path>): List<Path> {
+            val sortedPaths = paths.sortedBy { it.nameCount }
+            val filteredPaths = mutableListOf<Path>()
+            for (path in sortedPaths) {
+                val isParentOfOtherMatch = sortedPaths.any { otherPath ->
+                    otherPath != path && otherPath.startsWith(path)
+                }
+                if (!isParentOfOtherMatch) {
+                    filteredPaths.add(path)
+                }
+            }
+            return filteredPaths
         }
 
         private fun processDirectory(root: Path, directory: Path): FileSet? {
@@ -700,7 +716,8 @@ class UserSettings(
         var outputFilename: String = "output.md",
         var outputDirectory: String = "output/",
         var concurrency: Int = 4,
-        var bigDataThreshold: Int = 100
+        var bigDataThreshold: Int = 100,
+        var aggregationSizeKB: Int = 10
     )
 
     class Settings(
@@ -790,8 +807,7 @@ class UserSettings(
 
                                 val outputModePanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                                     border = BorderFactory.createTitledBorder("Output Mode")
-                                    add(settingsUI.editFilesRadio)
-                                    add(settingsUI.generateDocsRadio)
+                                    add(settingsUI.outputModeCombo)
                                 }
                                 add(outputModePanel)
 
@@ -812,6 +828,12 @@ class UserSettings(
                                         add(settingsUI.outputDirectory, BorderLayout.CENTER)
                                     }
                                     add(dirPanel)
+                                    val aggregationPanel = JPanel(BorderLayout()).apply {
+                                        add(JLabel("Aggregation Size (KB):"), BorderLayout.WEST)
+                                        add(settingsUI.aggregationSizeSpinner, BorderLayout.CENTER)
+                                    }
+                                    add(aggregationPanel)
+
                                     val concurrencyPanel = JPanel(BorderLayout()).apply {
                                         add(JLabel("Concurrency:"), BorderLayout.WEST)
                                         add(settingsUI.concurrencySpinner, BorderLayout.CENTER)
@@ -888,6 +910,7 @@ class UserSettings(
                         ?: settingsUI.outputDirectory.text
                     concurrency = settingsUI.concurrencySpinner.value as Int
                     bigDataThreshold = settingsUI.bigDataThresholdSpinner.value as Int
+                    aggregationSizeKB = settingsUI.aggregationSizeSpinner.value as Int
                 }
                 // Handle the actual action execution here since dialog is non-modal
                 executeAction()
