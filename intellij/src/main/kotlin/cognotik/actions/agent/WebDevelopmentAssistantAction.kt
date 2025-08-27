@@ -1,7 +1,6 @@
 ﻿package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.vfs.VirtualFile
@@ -22,12 +21,12 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
@@ -284,12 +283,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 var messageWithTools = userMessage
 
                 task.echo(
-                  "```json\n${JsonUtil.toJson(architectureResponse.obj)/*.indent("  ")*/}\n```".renderMarkdown
+                    "```json\n${JsonUtil.toJson(architectureResponse?.obj)/*.indent("  ")*/}\n```".renderMarkdown
                 )
                 val fileTabs = TabbedDisplay(task)
-                architectureResponse.obj.files.filter {
+                architectureResponse?.obj?.files?.filter {
                     !it.name!!.startsWith("http")
-                }.map { (path, description) ->
+                }?.map { (path, description) ->
                     val task = ui.newTask(false).apply { fileTabs[path.toString()] = placeholder }
                     task.header("Drafting $path", 1)
                     codeFiles.add(File(path).toPath())
@@ -299,9 +298,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "js" -> draftResourceCode(
                                 task = task,
                                 request = javascriptActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -312,9 +311,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "css" -> draftResourceCode(
                                 task = task,
                                 request = cssActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -325,9 +324,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "html" -> draftResourceCode(
                                 task = task,
                                 request = htmlActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -338,9 +337,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "png" -> draftImage(
                                 task = task,
                                 request = etcActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -351,9 +350,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "jpg" -> draftImage(
                                 task = task,
                                 request = etcActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -364,9 +363,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             else -> draftResourceCode(
                                 task = task,
                                 request = etcActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -376,7 +375,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
 
                         }
                     }
-                }.toTypedArray().forEach { it.get() }
+                }?.toTypedArray()?.forEach { it.get() }
 
 
                 iterateCode(task)
@@ -488,10 +487,10 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 ).call()
                 task.complete(
                   "<img src='${
-                    task.saveFile(
+                      if (null != code) task.saveFile(
                       path.toString(),
                       write(code, path)
-                    )
+                      ) else ""
                   }' style='max-width: 100%;'/>".renderMarkdown
                 )
             } catch (e: Throwable) {
@@ -568,7 +567,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                         )
                     },
                 ).call()
-                code = extractCode(code)
+                code = extractCode(code ?: "")
                 task.complete(
                     "<a href='${
                         task.saveFile(

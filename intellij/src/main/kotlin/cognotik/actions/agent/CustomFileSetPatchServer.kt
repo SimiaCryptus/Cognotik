@@ -24,13 +24,14 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.write
 
 class CustomFileSetPatchServer(
     val config: CustomFileSetPatchAction.Settings,
@@ -41,24 +42,33 @@ class CustomFileSetPatchServer(
     applicationName = "Custom File Set Patch",
     path = "/customFileSetPatch",
     showMenubar = false,
-) {
+), AutoCloseable {
     companion object {
         private val log = LoggerFactory.getLogger(CustomFileSetPatchServer::class.java)
         private const val TASK_TIMEOUT_MINUTES = 30L
         private const val MAX_FILE_SIZE_MB = 10
         private const val MAX_CONTEXT_LENGTH = 100_000
         private const val BATCH_SIZE = 10
+        private const val MAX_RETRY_ATTEMPTS = 3
+        private const val RETRY_DELAY_MS = 1000L
+        private const val EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = 60L
     }
 
     private var _root: Path? = null
     private var _selectedDirectory: Path? = null
-    private val outputLock = ReentrantLock()
+    private val outputLock = ReentrantReadWriteLock()
     private val outputWritten = AtomicBoolean(false)
     private val processedCount = AtomicInteger(0)
     private val currentlyProcessing = ConcurrentHashMap<String, String>()
     private val completedFileSets = ConcurrentLinkedQueue<String>()
     private val errorCount = AtomicInteger(0)
     private val startTime = AtomicReference<Long>()
+    private val executorService = Executors.newCachedThreadPool { r ->
+        Thread(r, "FileSetProcessor").apply { isDaemon = true }
+    }
+
+    @Volatile
+    private var isShutdown = false
 
     override val inputCnt = 0
     override val stickyInput = true
@@ -79,13 +89,16 @@ class CustomFileSetPatchServer(
                     The diff should include 2 lines of context before and after every change.
                 """.trimIndent()
 
-                CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION -> """
+                CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_SINGLE,
+                CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_MULTI -> """
                     You are a helpful AI that helps people with documentation.
                     You will be creating documentation for code files based on the provided instruction.
                     Please analyze the code and create comprehensive documentation according to the given requirements.
                     Response should be in markdown format with clear sections and explanations.
                 """.trimIndent()
-                CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION -> """
+
+                CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE,
+                CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI -> """
                     You are a helpful AI that helps people with data extraction and analysis.
                     You will be extracting and aggregating data from multiple code files based on the provided instruction.
                     Please analyze the code files and extract relevant information according to the given requirements.
@@ -101,17 +114,41 @@ class CustomFileSetPatchServer(
             )
         }
 
+    override fun close() {
+        isShutdown = true
+        executorService.shutdown()
+        try {
+            if (!executorService.awaitTermination(EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                executorService.shutdownNow()
+                log.warn("Executor service did not terminate gracefully")
+            }
+        } catch (e: InterruptedException) {
+            executorService.shutdownNow()
+            Thread.currentThread().interrupt()
+        }
+        currentlyProcessing.clear()
+        completedFileSets.clear()
+    }
+
     private fun initializeSingleOutputFile(): Path {
         val selectedDirectory = getSelectedDirectory()
         val outputDir = selectedDirectory?.resolve(config.settings?.outputDirectory ?: "output")
             ?: throw IllegalStateException("Selected directory is not set")
+        require(outputDir.toString().isNotBlank()) { "Output directory cannot be blank" }
+
         try {
             Files.createDirectories(outputDir)
         } catch (e: IOException) {
             log.error("Failed to create output directory: $outputDir", e)
             throw IllegalStateException("Cannot create output directory: ${e.message}", e)
         }
+
         val outputFile = outputDir.resolve(config.settings?.outputFilename ?: "output.${getFileExtension()}")
+        // Validate output file path
+        require(!Files.isDirectory(outputFile)) { "Output file path points to a directory: $outputFile" }
+        require(outputFile.parent != null && Files.exists(outputFile.parent)) {
+            "Parent directory does not exist: ${outputFile.parent}"
+        }
 
         // Create/truncate the file and write header
         try {
@@ -130,21 +167,53 @@ class CustomFileSetPatchServer(
     }
 
     private fun appendToSingleOutputFile(outputFile: Path, fileSetName: String, content: String) {
-        outputLock.withLock {
-            try {
-                Files.newBufferedWriter(
-                    outputFile, StandardOpenOption.APPEND
-                ).use { writer ->
-                    if (!outputWritten.compareAndSet(false, true)) {
-                        writer.write("\n\n---\n\n")
+        outputLock.write {
+            var retryCount = 0
+            var lastException: IOException? = null
+            // Create temp file for atomic write
+            val tempFile = Files.createTempFile(outputFile.parent, "output", ".tmp")
+
+            while (retryCount < MAX_RETRY_ATTEMPTS) {
+                try {
+                    // Read existing content if file exists
+                    val existingContent = if (Files.exists(outputFile)) {
+                        Files.readString(outputFile)
+                    } else {
+                        ""
                     }
-                    writer.write("## $fileSetName\n\n")
-                    writer.write(content)
+
+                    // Write to temp file
+                    Files.newBufferedWriter(tempFile).use { writer ->
+                        writer.write(existingContent)
+                        if (existingContent.isNotEmpty()) {
+                            writer.write("\n\n---\n\n")
+                        }
+                        writer.write("## $fileSetName\n\n")
+                        writer.write(content)
+                    }
+                    // Atomic move
+                    Files.move(
+                        tempFile,
+                        outputFile,
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE
+                    )
+                    outputWritten.set(true)
+                    return // Success
+                } catch (e: IOException) {
+                    lastException = e
+                    retryCount++
+                    if (retryCount < MAX_RETRY_ATTEMPTS) {
+                        log.warn("Failed to append to output file (attempt $retryCount): $outputFile", e)
+                        Thread.sleep(RETRY_DELAY_MS)
+                    }
                 }
-            } catch (e: IOException) {
-                log.error("Failed to append to output file: $outputFile", e)
-                throw IllegalStateException("Cannot write to output file: ${e.message}", e)
             }
+            log.error("Failed to append to output file after $MAX_RETRY_ATTEMPTS attempts: $outputFile", lastException)
+            throw IllegalStateException(
+                "Cannot write to output file after $MAX_RETRY_ATTEMPTS attempts: ${lastException?.message}",
+                lastException
+            )
         }
     }
 
@@ -161,23 +230,36 @@ class CustomFileSetPatchServer(
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
+        // Validate configuration early
+        if (config.settings == null) {
+            val task = ui.newTask(true)
+            task.error(IllegalStateException("Configuration settings are missing"))
+            return socketManager
+        }
+
 
         val task = ui.newTask(true)
         val api = api.getChildClient(task)
         val tabs: TabbedDisplay? = null //TabbedDisplay(task)
         val userMessage =
             config.settings?.transformationMessage ?: "Review and improve the code according to best practices"
+        // Validate user message
+        if (userMessage.isBlank()) {
+            task.error(IllegalArgumentException("Transformation message cannot be blank"))
+            return socketManager
+        }
+
 
         val settingsUI = CustomFileSetPatchAction.SettingsUI(
             config.project,
-            selectedDirectory = config.settings?.outputDirectory?.let { File(it).toPath() },
+            selectedDirectory = config.settings.outputDirectory.let { File(it).toPath() },
         )
 
-        config.settings?.patterns?.forEach { pattern ->
+        config.settings.patterns.forEach { pattern ->
             settingsUI.patternListModel.addElement(pattern)
         }
         // Set the treatDocumentsAsText option from config
-        settingsUI.treatDocumentsAsText.isSelected = config.settings?.treatDocumentsAsText ?: false
+        settingsUI.treatDocumentsAsText.isSelected = config.settings.treatDocumentsAsText
         // Get the root directory from the settings UI which handles base directory mode
         _root = settingsUI.getRoot()
         _selectedDirectory = settingsUI.getSelectedDirectory()
@@ -196,30 +278,44 @@ class CustomFileSetPatchServer(
         val useBigDataMode = fileSets.size > bigDataThreshold
         startTime.set(System.currentTimeMillis())
         // Aggregate file sets if in aggregated data extraction mode
-        val processFileSets = if (outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION) {
+        val processFileSets = if (outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE ||
+            outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI
+        ) {
             aggregateFileSets(fileSets, config.settings?.aggregationSizeKB ?: 10)
         } else {
             fileSets
         }
+        // Validate file sets
+        if (processFileSets.isEmpty()) {
+            task.error(IllegalStateException("No file sets to process after aggregation"))
+            return socketManager
+        }
 
         // Initialize single output file if needed
         val singleOutputFile =
-            if ((outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION ||
-                        outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION)
-                && config.settings?.singleOutputFile == true
+            if (outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_SINGLE ||
+                outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE
             ) {
                 initializeSingleOutputFile()
             } else null
 
-        if (useBigDataMode && outputMode != CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION) {
+        if (useBigDataMode && outputMode != CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE &&
+            outputMode != CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI
+        ) {
             // Big data mode: use mid-level subsession for decoupling
             status.set("Processing ${processFileSets.size} file sets in big data mode (batches of $BATCH_SIZE)...<br/>")
             val progressStatus = task.add("")!!
             val errorStatus = task.add("")!!
+            val completionLatch = CountDownLatch(processFileSets.size)
 
             val futures = processFileSets.chunked(BATCH_SIZE).flatMap { batch ->
                 batch.map { fileSet ->
                     fixedConcurrencyProcessor.submit {
+                        if (isShutdown) {
+                            log.info("Skipping processing due to shutdown: ${fileSet.name}")
+                            completionLatch.countDown()
+                            return@submit
+                        }
                         val fileSetName = fileSet.name
                         currentlyProcessing[fileSetName] = fileSetName
 
@@ -251,6 +347,7 @@ class CustomFileSetPatchServer(
                             </div>""".trimIndent()
                             )
                         } finally {
+                            completionLatch.countDown()
                             currentlyProcessing.remove(fileSetName)
                             val completed = processedCount.incrementAndGet()
                             val elapsedSeconds = (System.currentTimeMillis() - startTime.get()) / 1000
@@ -385,6 +482,7 @@ class CustomFileSetPatchServer(
                         aggregatedSets.add(
                             CustomFileSetPatchAction.FileSet(
                                 "Aggregate_${aggregateIndex++}",
+                                fileSet.base,
                                 currentFiles.toList()
                             )
                         )
@@ -403,6 +501,7 @@ class CustomFileSetPatchServer(
             aggregatedSets.add(
                 CustomFileSetPatchAction.FileSet(
                     "Aggregate_${aggregateIndex}",
+                    fileSets.lastOrNull()?.base ?: Path.of(""),
                     currentFiles.toList()
                 )
             )
@@ -416,10 +515,22 @@ class CustomFileSetPatchServer(
         return if (contextFiles.isNotEmpty()) {
             val contextBuilder = StringBuilder()
             var totalLength = 0
+            var filesProcessed = 0
+            val errors = mutableListOf<String>()
 
             for (path in contextFiles) {
+                if (filesProcessed >= 100) { // Limit context files
+                    log.warn("Context file limit reached (100 files)")
+                    contextBuilder.append("\n... ${contextFiles.size - filesProcessed} more files omitted ...\n")
+                    break
+                }
+
                 val fileContent = try {
                     val file = path.toFile()
+                    if (!file.exists()) {
+                        errors.add("File not found: $path")
+                        continue
+                    }
                     val fileSizeMB = file.length() / (1024 * 1024)
                     if (fileSizeMB > MAX_FILE_SIZE_MB) {
                         log.warn("Skipping large file: $path (${fileSizeMB}MB)")
@@ -445,7 +556,12 @@ class CustomFileSetPatchServer(
 
                 contextBuilder.append(fileSection).append("\n\n")
                 totalLength += fileSection.length
+                filesProcessed++
             }
+            if (errors.isNotEmpty()) {
+                log.warn("Errors reading context files: ${errors.joinToString(", ")}")
+            }
+
             contextBuilder.toString()
         } else ""
     }
@@ -499,8 +615,10 @@ class CustomFileSetPatchServer(
                         handleAutoApplyMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
                     }
 
-                    outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION ||
-                            outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION -> {
+                    outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_SINGLE ||
+                            outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_MULTI ||
+                            outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE ||
+                            outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI -> {
                         handleGenerationMode(fileSet, userMessage, api, fileTask, session, singleOutputFile, toInput)
                     }
 
@@ -552,27 +670,72 @@ class CustomFileSetPatchServer(
 
     private fun readFileContent(file: File): String {
         return try {
+            require(file.exists()) { "File does not exist: ${file.absolutePath}" }
+            require(file.isFile) { "Path is not a file: ${file.absolutePath}" }
+            require(file.canRead()) { "File is not readable: ${file.absolutePath}" }
+
             // Check file size first
             val fileSizeMB = file.length() / (1024 * 1024)
             if (fileSizeMB > MAX_FILE_SIZE_MB) {
                 return "File too large (${fileSizeMB}MB) - skipped"
             }
+            // Check if file is binary
+            if (isBinaryFile(file)) {
+                return "Binary file - skipped"
+            }
 
             when {
                 file.name.endsWith(".pdf", ignoreCase = true) || file.name.endsWith(
-                    ".html",
+                    "html",
                     ignoreCase = true
                 ) || file.name.endsWith(".htm", ignoreCase = true) -> {
-                    file.getReader().use { reader ->
-                        reader.getText()
+                    try {
+                        file.getReader().use { reader ->
+                            reader.getText()
+                        }
+                    } catch (e: Exception) {
+                        log.warn("Failed to read document file ${file.name}, falling back to text", e)
+                        file.readText(Charsets.UTF_8)
                     }
                 }
 
-                else -> file.readText(Charsets.UTF_8)
+                else -> {
+                    try {
+                        file.readText(Charsets.UTF_8)
+                    } catch (e: Exception) {
+                        log.warn("Failed to read as UTF-8, trying ISO-8859-1: ${file.name}", e)
+                        file.readText(Charsets.ISO_8859_1)
+                    }
+                }
             }
         } catch (e: Exception) {
             log.error("Error reading file content: ${file.absolutePath}", e)
             "Error reading file: ${e.message}"
+        }
+    }
+
+    private fun isBinaryFile(file: File): Boolean {
+        return try {
+            file.inputStream().use { stream ->
+                val bytes = ByteArray(512)
+                val bytesRead = stream.read(bytes)
+                if (bytesRead <= 0) return false
+                // Check for null bytes (common in binary files)
+                for (i in 0 until bytesRead) {
+                    if (bytes[i] == 0.toByte()) {
+                        return true
+                    }
+                }
+                // Check for high ratio of non-printable characters
+                val nonPrintable = bytes.take(bytesRead).count { b ->
+                    val c = b.toInt() and 0xFF
+                    c < 32 && c != 9 && c != 10 && c != 13
+                }
+                nonPrintable.toDouble() / bytesRead > 0.3
+            }
+        } catch (e: Exception) {
+            log.warn("Error checking if file is binary: ${file.absolutePath}", e)
+            false
         }
     }
 
@@ -617,7 +780,14 @@ class CustomFileSetPatchServer(
         singleOutputFile: Path?,
         toInput: (String) -> List<String>
     ) {
-        val result = mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+        val result = try {
+            mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+        } catch (e: Exception) {
+            log.error("Error generating content for ${fileSet.name}", e)
+            task.error(e)
+            return
+        }
+
         if (singleOutputFile != null) {
             appendToSingleOutputFile(singleOutputFile, fileSet.name, result)
         } else {
@@ -625,7 +795,7 @@ class CustomFileSetPatchServer(
                 config.settings?.outputDirectory ?: "output"
             ).toPath()
             Files.createDirectories(outputDir)
-            val outputFile = outputDir.resolve("${fileSet.name}.${getFileExtension()}")
+            val outputFile = generateOutputFilePath(outputDir, fileSet, config.settings?.outputFilename)
             Files.write(
                 outputFile, result.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
             )
@@ -707,11 +877,46 @@ class CustomFileSetPatchServer(
         }
     }
 
+    private fun generateOutputFilePath(
+        outputDir: Path,
+        fileSet: CustomFileSetPatchAction.FileSet,
+        outputFilename: String?
+    ): Path {
+
+        // For single file filesets, generate output name based on the input file
+        return if (fileSet.files.size == 1) {
+            val inputFile = fileSet.files.first()
+            val inputFileName = inputFile.fileName.toString()
+            val lastDotIndex = inputFileName.lastIndexOf('.')
+            val baseName = if (lastDotIndex > 0) {
+                inputFileName.substring(0, lastDotIndex)
+            } else {
+                inputFileName
+            }
+            // Preserve directory structure if the fileset name contains path separators
+            val fileSetPath = Path.of(fileSet.name)
+            val parentDir = if (fileSetPath.parent != null) {
+                outputDir.resolve(fileSetPath.parent)
+            } else {
+                outputDir
+            }
+            Files.createDirectories(parentDir)
+            parentDir.resolve("${baseName}.${outputFilename}.${getFileExtension()}")
+        } else {
+            // For multi-file filesets, use the fileset name
+            outputDir.resolve("${fileSet.name}.${getFileExtension()}")
+        }
+    }
+
 
     private fun getFileExtension(): String {
         return when (outputMode) {
-            CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION -> "md"
-            CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION -> "md"
+            CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_SINGLE,
+            CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_MULTI -> "md"
+
+            CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE,
+            CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI -> "md"
+
             else -> "txt"
         }
     }

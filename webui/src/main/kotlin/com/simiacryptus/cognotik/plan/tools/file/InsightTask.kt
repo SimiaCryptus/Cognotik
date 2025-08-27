@@ -140,7 +140,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         ).apply {
             task.add(MarkdownUtil.renderMarkdown(this, ui = agent.ui))
         }
-        resultFn(inquiryResult)
+        resultFn(inquiryResult ?: "(no response)")
     }
 
     private fun getInputFileCode(): String =

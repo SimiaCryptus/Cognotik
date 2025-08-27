@@ -129,15 +129,16 @@ abstract class ChatClientBase(
     ) {
         log(
             Level.INFO,
-            "Usage recorded for session: {}, user: {}, model: {}, tokens: {}".format(session, user, model, tokens)
+            "Usage recorded for session: {}, user: {}, model: {}, tokens: {}".format(session, user, model, tokens),
+            logStreams
         )
         budget?.let { currentBudget ->
             val cost = tokens.cost ?: 0.0
             budget = (currentBudget.toDouble() - cost).coerceAtLeast(0.0)
             if (budget!!.toDouble() <= 0.0) {
-                log(Level.WARN, "Budget exhausted for session: $session, user: $user")
+                log(Level.WARN, "Budget exhausted for session: $session, user: $user", logStreams)
             } else {
-                log(Level.INFO, "Remaining budget for session: $session, user: $user is $budget")
+                log(Level.INFO, "Remaining budget for session: $session, user: $user is $budget", logStreams)
             }
         }
     }

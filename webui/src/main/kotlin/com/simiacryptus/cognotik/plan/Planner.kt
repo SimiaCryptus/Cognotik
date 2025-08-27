@@ -72,8 +72,8 @@ open class Planner {
             ).call().let {
                 TaskBreakdownWithPrompt(
                     prompt = userMessage,
-                    plan = PlanUtil.filterPlan { it.obj } ?: emptyMap(),
-                    planText = it.text
+                    plan = PlanUtil.filterPlan { it?.obj } ?: emptyMap(),
+                    planText = it?.text ?: "(no plan generated)"
                 )
             }
         else {

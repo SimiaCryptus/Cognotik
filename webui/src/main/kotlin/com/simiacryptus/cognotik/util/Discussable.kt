@@ -16,7 +16,7 @@ class Discussable<T : Any>(
     private val outputFn: (T) -> String,
     private val ui: ApplicationInterface,
     private val reviseResponse: (List<Pair<String, Role>>) -> T,
-    private val atomicRef: AtomicReference<T> = AtomicReference(),
+    private val atomicRef: AtomicReference<T?> = AtomicReference(),
     private val semaphore: Semaphore = Semaphore(0),
     private val heading: String,
     private val blocking: Boolean = true,
@@ -89,7 +89,7 @@ ${
 <div style="display: flex; flex-direction: column;">
 ${acceptLink(tabIndex, tabContent, design, feedbackSB, feedbackTask = this)}
 </div>
-${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
+${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
 """
         )
         complete()
@@ -109,7 +109,6 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
     }
 
     private fun textInput(
-        design: T,
         tabContent: StringBuilder,
         history: List<Pair<String, Role>>,
         task: SessionTask,
@@ -124,7 +123,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
             try {
                 feedbackSB.clear()
                 feedbackTask.complete()
-                feedback(tabContent, userResponse, history, design, task)
+                feedback(tabContent, userResponse, history, task)
             } catch (e: Exception) {
                 log.error("Error processing user feedback", e)
                 task.error(e)
@@ -141,7 +140,6 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
         tabContent: StringBuilder,
         userResponse: String,
         history: List<Pair<String, Role>>,
-        design: T,
         task: SessionTask,
     ) {
         log.info("Processing feedback for user response: $userResponse")
@@ -194,7 +192,7 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
         semaphore.release()
     }
 
-    override fun call(): T {
+    override fun call(): T? {
         try {
 
             if (heading.isNotBlank()) task.echo(heading)
@@ -223,7 +221,7 @@ ${e.message}
 """, e
             )
             task.error(e)
-            return null as T
+            return null
         }
     }
 

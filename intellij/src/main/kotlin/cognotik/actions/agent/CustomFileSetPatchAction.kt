@@ -21,14 +21,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.PathMatcher
+import java.nio.file.*
 import java.text.SimpleDateFormat
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
+import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -37,13 +33,11 @@ class CustomFileSetPatchAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     enum class OutputMode {
-        EDIT_FILES,
-        GENERATE_DOCUMENTATION,
-        AGGREGATED_DATA_EXTRACTION
+        EDIT_FILES, GENERATE_DOCUMENTATION_SINGLE, GENERATE_DOCUMENTATION_MULTI, AGGREGATED_DATA_EXTRACTION_SINGLE, AGGREGATED_DATA_EXTRACTION_MULTI
     }
+
     enum class BaseDirectoryMode {
-        SELECTED_DIRECTORY,
-        MODULE_ROOT
+        SELECTED_DIRECTORY, MODULE_ROOT
     }
 
 
@@ -63,7 +57,7 @@ class CustomFileSetPatchAction : BaseAction() {
                 null
             }
         }
-        
+
         override fun toString(): String = buildString {
             if (isExclusion) append("[Exclude] ")
             if (isContext) append("[Context] ")
@@ -74,8 +68,7 @@ class CustomFileSetPatchAction : BaseAction() {
     }
 
     data class FileSet(
-        val name: String,
-        val files: List<Path>
+        val name: String, val base: Path, val files: List<Path>
     )
 
     class SettingsUI(private val project: Project?, private val selectedDirectory: Path?) {
@@ -87,6 +80,9 @@ class CustomFileSetPatchAction : BaseAction() {
             private const val PREVIEW_COLS = 50
             private const val MAX_PREVIEW_FILES = 100
             private const val PREVIEW_UPDATE_DELAY_MS = 500L
+            private const val MAX_WALK_DEPTH = 10
+            private const val MAX_FILES_PER_PATTERN = 1000L
+            private const val CACHE_EXPIRY_MS = 60_000L // 1 minute cache expiry
         }
 
         private val patternCache = ConcurrentHashMap<String, PathMatcher>()
@@ -94,8 +90,18 @@ class CustomFileSetPatchAction : BaseAction() {
             Thread(r, "FileSetPreviewUpdater").apply { isDaemon = true }
         }
         private var currentPreviewTask: Future<*>? = null
-        private val fileCache = ConcurrentHashMap<Path, List<Path>>()
+        private val fileCache = ConcurrentHashMap<Path, CacheEntry>()
         private val lastUpdateTime = java.util.concurrent.atomic.AtomicLong(0)
+        private val isUpdating = AtomicBoolean(false)
+
+        private data class CacheEntry(
+            val paths: List<Path>, val timestamp: Long = System.currentTimeMillis()
+        ) {
+            fun isExpired(): Boolean = System.currentTimeMillis() - timestamp > CACHE_EXPIRY_MS
+        }
+
+        @Volatile
+        private var isDisposed = false
 
         @Name("Base Directory Mode")
         val baseDirectoryMode = JComboBox(BaseDirectoryMode.entries.toTypedArray()).apply {
@@ -104,15 +110,13 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
 
-
         @Name("File Patterns")
         val patternListModel = DefaultListModel<FilePattern>()
         val patternList = JList(patternListModel).apply {
             selectionMode = ListSelectionModel.SINGLE_SELECTION
             cellRenderer = object : DefaultListCellRenderer() {
                 override fun getListCellRendererComponent(
-                    list: JList<*>?, value: Any?, index: Int,
-                    isSelected: Boolean, cellHasFocus: Boolean
+                    list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean
                 ): java.awt.Component {
                     val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
                     if (value is FilePattern) {
@@ -135,7 +139,7 @@ class CustomFileSetPatchAction : BaseAction() {
 
         @Name("Is Exclusion")
         val isExclusionCheckbox = JCheckBox("Exclude matching files")
-        
+
         @Name("Use Regex")
         val useRegexCheckbox = JCheckBox("Use regex pattern instead of glob")
 
@@ -156,14 +160,13 @@ class CustomFileSetPatchAction : BaseAction() {
             selectedItem = OutputMode.EDIT_FILES
         }
 
-        @Name("Single Output File")
-        val singleOutputFile = JCheckBox("Produce a single output file", true)
 
         @Name("Output File")
         val outputFilename = JBTextField("output.md")
 
         @Name("Output Directory")
         val outputDirectory = JBTextField("output/")
+
         @Name("Concurrency")
         val concurrencySpinner = JSpinner(SpinnerNumberModel(4, 1, 16, 1))
 
@@ -226,15 +229,32 @@ class CustomFileSetPatchAction : BaseAction() {
             updateOutputOptionsVisibility()
         }
 
+        fun dispose() {
+            isDisposed = true
+            currentPreviewTask?.cancel(true)
+            previewExecutor.shutdown()
+            try {
+                if (!previewExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    previewExecutor.shutdownNow()
+                }
+            } catch (e: InterruptedException) {
+                previewExecutor.shutdownNow()
+                Thread.currentThread().interrupt()
+            }
+            patternCache.clear()
+            fileCache.clear()
+        }
+
         private fun updateOutputOptionsVisibility() {
             val selectedMode = outputModeCombo.selectedItem as OutputMode
-            val isGenerateMode =
-                selectedMode == OutputMode.GENERATE_DOCUMENTATION || selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION
-            singleOutputFile.isVisible = isGenerateMode
-            outputFilename.isVisible = isGenerateMode
-            outputDirectory.isVisible = isGenerateMode
+            val isSingleFileMode =
+                selectedMode == OutputMode.GENERATE_DOCUMENTATION_SINGLE || selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE
+            val isMultiFileMode =
+                selectedMode == OutputMode.GENERATE_DOCUMENTATION_MULTI || selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI
+            outputDirectory.isVisible = isSingleFileMode || isMultiFileMode
             autoApply.isVisible = selectedMode == OutputMode.EDIT_FILES
-            aggregationSizeSpinner.isVisible = selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION
+            aggregationSizeSpinner.isVisible =
+                selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE || selectedMode == OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI
         }
 
         fun getOutputMode(): OutputMode {
@@ -263,11 +283,10 @@ class CustomFileSetPatchAction : BaseAction() {
                         isRegex,
                         isExclusionCheckbox.isSelected,
                         baseDirectory = when (baseDirectoryMode.selectedItem as BaseDirectoryMode) {
-                            BaseDirectoryMode.SELECTED_DIRECTORY ->
-                                selectedDirectory?.toString() ?: project?.basePath ?: ""
+                            BaseDirectoryMode.SELECTED_DIRECTORY -> selectedDirectory?.toString() ?: project?.basePath
+                            ?: ""
 
-                            BaseDirectoryMode.MODULE_ROOT ->
-                                project?.basePath ?: selectedDirectory?.toString() ?: ""
+                            BaseDirectoryMode.MODULE_ROOT -> project?.basePath ?: selectedDirectory?.toString() ?: ""
                         }
                     )
                 )
@@ -290,6 +309,13 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
         private fun schedulePreviewUpdate() {
+            if (isDisposed) return
+            // Prevent concurrent updates
+            if (!isUpdating.compareAndSet(false, true)) {
+                return
+            }
+
+
             // Cancel any pending preview update
             currentPreviewTask?.cancel(false)
             // Throttle updates to avoid excessive computation
@@ -303,20 +329,30 @@ class CustomFileSetPatchAction : BaseAction() {
             currentPreviewTask = previewExecutor.submit {
                 try {
                     Thread.sleep(PREVIEW_UPDATE_DELAY_MS)
-                    if (!Thread.currentThread().isInterrupted) {
+                    if (!Thread.currentThread().isInterrupted && !isDisposed) {
                         SwingUtilities.invokeLater {
-                            updatePreview()
+                            if (!isDisposed) {
+                                updatePreview()
+                            } else {
+                                isUpdating.set(false)
+                            }
                         }
                     }
                 } catch (e: InterruptedException) {
                     // Task was cancelled, do nothing
+                    Thread.currentThread().interrupt()
+                } finally {
+                    isUpdating.set(false)
                 }
             }
         }
 
         private fun updatePreview() {
+            if (isDisposed) return
+
             // Show loading indicator
             SwingUtilities.invokeLater {
+                if (isDisposed) return@invokeLater
                 previewArea.text = "Loading preview..."
                 fileVolumeLabel.text = "Calculating..."
                 fileSetCountLabel.text = "Calculating..."
@@ -332,8 +368,7 @@ class CustomFileSetPatchAction : BaseAction() {
                     val contextFiles = resolveContextFiles(root)
                     // Calculate file size statistics and update labels
                     val (totalSize, avgFileSetSize, maxFileSetSize) = calculateFileSizeStatistics(
-                        fileSets,
-                        contextFiles
+                        fileSets, contextFiles
                     )
                     // Build preview text
                     val preview = buildPreviewText(root, fileSets, contextFiles)
@@ -351,11 +386,7 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
         private fun updatePreviewUI(
-            totalSize: Long,
-            avgFileSetSize: Long,
-            maxFileSetSize: Long,
-            fileSetCount: Int,
-            preview: String
+            totalSize: Long, avgFileSetSize: Long, maxFileSetSize: Long, fileSetCount: Int, preview: String
         ) {
             val totalSizeKB = totalSize / 1024
             val totalSizeMB = totalSizeKB / 1024
@@ -417,8 +448,7 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
         private fun calculateFileSizeStatistics(
-            fileSets: List<FileSet>,
-            contextFiles: List<Path>
+            fileSets: List<FileSet>, contextFiles: List<Path>
         ): Triple<Long, Long, Long> {
             var totalProcessedSize = 0L
             val fileSetSizes = mutableListOf<Long>()
@@ -479,28 +509,28 @@ class CustomFileSetPatchAction : BaseAction() {
 
         fun getRoot(): Path {
             return when (baseDirectoryMode.selectedItem as BaseDirectoryMode) {
-                BaseDirectoryMode.SELECTED_DIRECTORY ->
-                    selectedDirectory ?: project?.basePath?.let { Path.of(it) } ?: Path.of(".")
+                BaseDirectoryMode.SELECTED_DIRECTORY -> selectedDirectory ?: project?.basePath?.let { Path.of(it) }
+                ?: Path.of(".")
 
-                BaseDirectoryMode.MODULE_ROOT ->
-                    project?.basePath?.let { Path.of(it) } ?: selectedDirectory ?: Path.of(".")
+                BaseDirectoryMode.MODULE_ROOT -> project?.basePath?.let { Path.of(it) } ?: selectedDirectory ?: Path.of(
+                    "."
+                )
 
             }
         }
-       fun getSelectedDirectory(): Path? {
-           return selectedDirectory
-       }
+
+        fun getSelectedDirectory(): Path? {
+            return selectedDirectory
+        }
 
         fun resolveFileSets(root: Path): List<FileSet> {
             // First get inclusion patterns
-            val patterns = (0 until patternListModel.size)
-                .map { patternListModel.getElementAt(it) }
+            val patterns = (0 until patternListModel.size).map { patternListModel.getElementAt(it) }
                 .filter { !it.isContext && !it.isExclusion }
 
             // Then get exclusion patterns
-            val exclusionPatterns = (0 until patternListModel.size)
-                .map { patternListModel.getElementAt(it) }
-                .filter { it.isExclusion }
+            val exclusionPatterns =
+                (0 until patternListModel.size).map { patternListModel.getElementAt(it) }.filter { it.isExclusion }
 
             val fileSets = patterns.flatMap { pattern ->
                 val patternRoot = if (pattern.baseDirectory.isNotEmpty()) {
@@ -520,13 +550,11 @@ class CustomFileSetPatchAction : BaseAction() {
         }
 
         fun resolveContextFiles(root: Path): List<Path> {
-            val contextPatterns = (0 until patternListModel.size)
-                .map { patternListModel.getElementAt(it) }
+            val contextPatterns = (0 until patternListModel.size).map { patternListModel.getElementAt(it) }
                 .filter { it.isContext && !it.isExclusion }
 
-            val exclusionPatterns = (0 until patternListModel.size)
-                .map { patternListModel.getElementAt(it) }
-                .filter { it.isExclusion }
+            val exclusionPatterns =
+                (0 until patternListModel.size).map { patternListModel.getElementAt(it) }.filter { it.isExclusion }
 
             val contextFiles = contextPatterns.flatMap { pattern ->
                 try {
@@ -537,9 +565,12 @@ class CustomFileSetPatchAction : BaseAction() {
                     }
                     val matcher = getOrCreateMatcher(pattern.pattern)
                     Files.walk(patternRoot).use { stream ->
-                        stream
-                            .filter { Files.isRegularFile(it) && isLLMTextFile(it.toFile(), treatDocumentsAsText.isSelected) }
-                            .filter { path ->
+                        stream.filter {
+                            Files.isRegularFile(it) && isLLMTextFile(
+                                it.toFile(),
+                                treatDocumentsAsText.isSelected
+                            )
+                        }.filter { path ->
                                 val relativePath = patternRoot.relativize(path)
                                 // Skip current directory references
                                 if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
@@ -547,8 +578,7 @@ class CustomFileSetPatchAction : BaseAction() {
                                 } else {
                                     matcher.matches(relativePath)
                                 }
-                            }
-                            .toList()
+                        }.toList()
                     }
                 } catch (e: Exception) {
                     log.warn("Error resolving context pattern: ${pattern.pattern}", e)
@@ -594,10 +624,10 @@ class CustomFileSetPatchAction : BaseAction() {
             return try {
                 if (isRegex) {
                     pattern.toRegex()
-                   true // Regex pattern is valid if it compiles
-               } else {
-                   FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                   true // Glob pattern is valid if PathMatcher can be created
+                    true // Regex pattern is valid if it compiles
+                } else {
+                    FileSystems.getDefault().getPathMatcher("glob:$pattern")
+                    true // Glob pattern is valid if PathMatcher can be created
                 }
             } catch (e: Exception) {
                 false
@@ -606,49 +636,66 @@ class CustomFileSetPatchAction : BaseAction() {
 
         private fun resolvePattern(root: Path, pattern: FilePattern): List<FileSet> {
             return try {
+                // Validate root path
+                if (!Files.exists(root)) {
+                    log.warn("Root path does not exist: $root")
+                    return emptyList()
+                }
+
                 // Check cache first
                 val cacheKey = root.resolve(pattern.pattern)
-                fileCache[cacheKey]?.let { it.mapNotNull { path ->
+                val cachedEntry = fileCache[cacheKey]
+                if (cachedEntry != null && !cachedEntry.isExpired()) {
+                    return cachedEntry.paths.mapNotNull { path ->
                         when {
                             Files.isDirectory(path) -> processDirectory(root, path)
                             Files.isRegularFile(path) && isLLMTextFile(
-                                path.toFile(),
-                                treatDocumentsAsText.isSelected
+                                path.toFile(), treatDocumentsAsText.isSelected
                             ) -> {
-                                FileSet(root.relativize(path).toString(), listOf(path))
+                                FileSet(root.relativize(path).toString(), cacheKey, listOf(path))
                             }
 
                             else -> null
                         }
                     }
                 }
-                
+
                 val matchedPaths = if (pattern.isRegex) {
-                   val regex = pattern.pattern.toRegex()
-                   Files.walk(root).use { stream ->
-                       stream
-                           .filter { path ->
-                               val relativePath = root.relativize(path)
-                               // Skip current directory references
-                               if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
-                                   false
-                               } else {
-                                   regex.matches(relativePath.toString())
-                               }
-                           }
-                           .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
-                           .toList()
-                   }
+                    val regex =
+                        pattern.toRegex() ?: throw IllegalArgumentException("Invalid regex pattern: ${pattern.pattern}")
+                    Files.walk(root, FileVisitOption.FOLLOW_LINKS).use { stream ->
+                        stream.parallel() // Use parallel processing for large directories
+                            .filter { path ->
+                                val relativePath = root.relativize(path)
+                                // Skip current directory references
+                                if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
+                                    false
+                                } else {
+                                    try {
+                                        regex.matches(relativePath.toString())
+                                    } catch (e: Exception) {
+                                        log.warn("Regex matching failed for path: $relativePath", e)
+                                        false
+                                    }
+                                }
+                            }.filter { Files.isRegularFile(it) || Files.isDirectory(it) }.limit(MAX_FILES_PER_PATTERN)
+                            .toList()
+                    }
                 } else {
                     val matcher = getOrCreateMatcher(pattern.pattern)
-                    Files.walk(root).use { stream ->
+                    Files.walk(root, MAX_WALK_DEPTH).use { stream ->
                         stream.filter { path -> matcher.matches(root.relativize(path)) }
-                            .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
+                            .filter { Files.isRegularFile(it) || Files.isDirectory(it) }.limit(MAX_FILES_PER_PATTERN)
                             .toList()
                     }
                 }
                 // Cache the results
-                fileCache[cacheKey] = matchedPaths
+                fileCache[cacheKey] = CacheEntry(matchedPaths)
+
+                // Clean up expired cache entries periodically
+                if (fileCache.size > 100) {
+                    fileCache.entries.removeIf { it.value.isExpired() }
+                }
 
                 // Filter out parent directories when child directories/files are also matched
                 val filteredPaths = filterOutParentDirectories(matchedPaths)
@@ -657,7 +704,7 @@ class CustomFileSetPatchAction : BaseAction() {
                     when {
                         Files.isDirectory(path) -> processDirectory(root, path)
                         Files.isRegularFile(path) && isLLMTextFile(path.toFile(), treatDocumentsAsText.isSelected) -> {
-                            FileSet(root.relativize(path).toString(), listOf(path))
+                            FileSet(root.relativize(path).toString(), path, listOf(path))
                         }
 
                         else -> null
@@ -685,19 +732,15 @@ class CustomFileSetPatchAction : BaseAction() {
 
         private fun processDirectory(root: Path, directory: Path): FileSet? {
             return try {
-                val dirFiles = Files.walk(directory, 10).use { stream -> // Limit depth to avoid deep recursion
-                    stream
-                        .filter {
+                val dirFiles = Files.walk(directory, MAX_WALK_DEPTH).use { stream ->
+                    stream.filter {
                             Files.isRegularFile(it) && isLLMTextFile(
-                                it.toFile(),
-                                treatDocumentsAsText.isSelected
+                                it.toFile(), treatDocumentsAsText.isSelected
                             )
-                        }
-                        .limit(1000) // Limit number of files per directory
-                        .toList()
+                    }.limit(MAX_FILES_PER_PATTERN).toList()
                 }
                 if (dirFiles.isNotEmpty()) {
-                    FileSet(root.relativize(directory).toString(), dirFiles)
+                    FileSet(root.relativize(directory).toString(), directory, dirFiles)
                 } else null
             } catch (e: Exception) {
                 log.warn("Error processing directory: $directory", e)
@@ -706,13 +749,12 @@ class CustomFileSetPatchAction : BaseAction() {
         }
     }
 
-class UserSettings(
+    class UserSettings(
         var transformationMessage: String = "Review and improve the code according to best practices",
         var patterns: List<FilePattern> = listOf(),
         var autoApply: Boolean = false,
         var treatDocumentsAsText: Boolean = false,
         var outputMode: OutputMode = OutputMode.EDIT_FILES,
-        var singleOutputFile: Boolean = true,
         var outputFilename: String = "output.md",
         var outputDirectory: String = "output/",
         var concurrency: Int = 4,
@@ -735,7 +777,7 @@ class UserSettings(
             outputDirectory.text = "output/"
         }
         // (project, settingsUI, "Custom File Set Patch")
-        val dialog = object: DialogWrapper(project, false) {
+        val dialog = object : DialogWrapper(project, false) {
             val userSettings = UserSettings()
 
             init {
@@ -759,12 +801,12 @@ class UserSettings(
                                 }
                                 add(patternAndBasePanel, BorderLayout.CENTER)
 
-                               val checkboxPanel = JPanel().apply {
-                                   layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                                   add(settingsUI.isContextCheckbox)
-                                   add(settingsUI.isExclusionCheckbox)
-                                   add(settingsUI.useRegexCheckbox)
-                               }
+                                val checkboxPanel = JPanel().apply {
+                                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                                    add(settingsUI.isContextCheckbox)
+                                    add(settingsUI.isExclusionCheckbox)
+                                    add(settingsUI.useRegexCheckbox)
+                                }
                                 add(checkboxPanel, BorderLayout.AFTER_LAST_LINE)
                             }
 
@@ -814,7 +856,6 @@ class UserSettings(
                                 val outputOptionsPanel = JPanel().apply {
                                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
                                     add(settingsUI.autoApply)
-                                    add(settingsUI.singleOutputFile)
                                     add(settingsUI.treatDocumentsAsText)
 
                                     val filePanel = JPanel(BorderLayout()).apply {
@@ -885,7 +926,6 @@ class UserSettings(
             }
 
             override fun doOKAction() {
-                super.doOKAction()
                 // Validate settings before proceeding
                 if (settingsUI.patternListModel.isEmpty) {
                     JOptionPane.showMessageDialog(
@@ -896,75 +936,89 @@ class UserSettings(
                     )
                     return
                 }
-                
+                // Validate output settings for generation modes
+                if (settingsUI.getOutputMode() != OutputMode.EDIT_FILES) {
+                    val outputDir = settingsUI.outputDirectory.text.trim()
+                    if (outputDir.isEmpty()) {
+                        JOptionPane.showMessageDialog(
+                            this.contentPane,
+                            "Please specify an output directory",
+                            "Validation Error",
+                            JOptionPane.ERROR_MESSAGE
+                        )
+                        return
+                    }
+                }
+
                 userSettings.apply {
                     transformationMessage = settingsUI.transformationMessage.text
-                    patterns = (0 until settingsUI.patternListModel.size)
-                        .map { settingsUI.patternListModel.getElementAt(it) }
+                    patterns =
+                        (0 until settingsUI.patternListModel.size).map { settingsUI.patternListModel.getElementAt(it) }
                     autoApply = settingsUI.autoApply.isSelected
                     treatDocumentsAsText = settingsUI.treatDocumentsAsText.isSelected
-                    outputMode = settingsUI.getOutputMode()
-                    singleOutputFile = settingsUI.singleOutputFile.isSelected
                     outputFilename = settingsUI.outputFilename.text
+                    outputMode = settingsUI.getOutputMode()
                     outputDirectory = selectedDirectory?.resolve(settingsUI.outputDirectory.text)?.toString()
                         ?: settingsUI.outputDirectory.text
                     concurrency = settingsUI.concurrencySpinner.value as Int
                     bigDataThreshold = settingsUI.bigDataThresholdSpinner.value as Int
                     aggregationSizeKB = settingsUI.aggregationSizeSpinner.value as Int
                 }
+                super.doOKAction()
                 // Handle the actual action execution here since dialog is non-modal
                 executeAction()
             }
+
+            override fun dispose() {
+                settingsUI.dispose()
+                super.dispose()
+            }
+
             private fun executeAction() {
                 try {
-                val session = Session.newGlobalID()
-                SessionProxyServer.metadataStorage.setSessionName(
-                    null,
-                    session,
-                    "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-                )
+                    val session = Session.newGlobalID()
+                    SessionProxyServer.metadataStorage.setSessionName(
+                        null,
+                        session,
+                        "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+                    )
 
-                SessionProxyServer.chats[session] = CustomFileSetPatchServer(
-                    config = Settings(userSettings, project),
-                    api = api,
-                    autoApply = userSettings.autoApply,
-                    outputMode = userSettings.outputMode
-                )
+                    SessionProxyServer.chats[session] = CustomFileSetPatchServer(
+                        config = Settings(userSettings, project),
+                        api = api,
+                        autoApply = userSettings.autoApply,
+                        outputMode = userSettings.outputMode
+                    )
 
-                ApplicationServer.appInfoMap[session] = AppInfoData(
-                    applicationName = "Custom File Set Patch",
-                    inputCnt = 1,
-                    stickyInput = false,
-                    loadImages = false,
-                    showMenubar = false
-                )
+                    ApplicationServer.appInfoMap[session] = AppInfoData(
+                        applicationName = "Custom File Set Patch",
+                        inputCnt = 1,
+                        stickyInput = false,
+                        loadImages = false,
+                        showMenubar = false
+                    )
 
-                val server = CognotikAppServer.getServer(e.project)
-                Thread {
-                    Thread.sleep(500)
-                    try {
-                        val uri = server.server.uri.resolve("/#$session")
-                        log.info("Opening browser to $uri")
-                        browse(uri)
-                    } catch (e: Throwable) {
-                        log.warn("Error opening browser", e)
-                    }
-                }.start()
+                    val server = CognotikAppServer.getServer(e.project)
+                    CompletableFuture.runAsync({
+                        Thread.sleep(500)
+                        try {
+                            val uri = server.server.uri.resolve("/#$session")
+                            log.info("Opening browser to $uri")
+                            browse(uri)
+                        } catch (e: Throwable) {
+                            log.warn("Error opening browser", e)
+                        }
+                    }, Executors.newSingleThreadExecutor())
                 } catch (e: Exception) {
                     log.error("Failed to execute action", e)
                     JOptionPane.showMessageDialog(
-                        null,
-                        "Failed to start server: ${e.message}",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
+                        null, "Failed to start server: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
                     )
                 }
             }
         }
-        dialog.show() // BUG: As a non-modal dialog, this does not block further execution
-        if (dialog.isOK) {
-            Settings(dialog.userSettings, project)
-        } else null
+        dialog.show()
+        // Note: Non-modal dialog doesn't block, action is executed via doOKAction
     }
 
     private fun getSelectedDirectory(e: AnActionEvent): Path? {
