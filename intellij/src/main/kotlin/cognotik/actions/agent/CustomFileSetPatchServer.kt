@@ -241,8 +241,7 @@ class CustomFileSetPatchServer(
         val task = ui.newTask(true)
         val api = api.getChildClient(task)
         val tabs: TabbedDisplay? = null //TabbedDisplay(task)
-        val userMessage =
-            config.settings?.transformationMessage ?: "Review and improve the code according to best practices"
+        val userMessage = config.settings.transformationMessage
         // Validate user message
         if (userMessage.isBlank()) {
             task.error(IllegalArgumentException("Transformation message cannot be blank"))
@@ -272,16 +271,16 @@ class CustomFileSetPatchServer(
 
         val contextSummary = buildContextSummary(contextFiles)
         val status: StringBuilder = task.add("Starting...<br/>")!!
-        val concurrency = config.settings?.concurrency ?: 4
+        val concurrency = config.settings.concurrency
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, concurrency)
-        val bigDataThreshold = config.settings?.bigDataThreshold ?: 100
+        val bigDataThreshold = config.settings.bigDataThreshold
         val useBigDataMode = fileSets.size > bigDataThreshold
         startTime.set(System.currentTimeMillis())
         // Aggregate file sets if in aggregated data extraction mode
         val processFileSets = if (outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE ||
             outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI
         ) {
-            aggregateFileSets(fileSets, config.settings?.aggregationSizeKB ?: 10)
+            aggregateFileSets(fileSets, config.settings.aggregationSizeKB)
         } else {
             fileSets
         }
@@ -611,19 +610,14 @@ class CustomFileSetPatchServer(
             try {
                 val toInput = { it: String -> listOf(fullContent, it) }
                 when {
-                    outputMode == CustomFileSetPatchAction.OutputMode.EDIT_FILES && autoApply -> {
+                    outputMode == CustomFileSetPatchAction.OutputMode.EDIT_FILES -> if (autoApply) {
                         handleAutoApplyMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
-                    }
-
-                    outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_SINGLE ||
-                            outputMode == CustomFileSetPatchAction.OutputMode.GENERATE_DOCUMENTATION_MULTI ||
-                            outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_SINGLE ||
-                            outputMode == CustomFileSetPatchAction.OutputMode.AGGREGATED_DATA_EXTRACTION_MULTI -> {
-                        handleGenerationMode(fileSet, userMessage, api, fileTask, session, singleOutputFile, toInput)
+                    } else {
+                        handleInteractiveMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
                     }
 
                     else -> {
-                        handleInteractiveMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
+                        handleGenerationMode(fileSet, userMessage, api, fileTask, session, singleOutputFile, toInput)
                     }
                 }
 
