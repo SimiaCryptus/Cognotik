@@ -25,15 +25,15 @@
   },
   "copy_gradlew_path": {
     "text": "First, we need to copy the path to our Gradle wrapper executable. This tells Command Autofix which build tool to use.",
-    "audio": "copy_gradlew_path.mp3"
+    "audio": "copy_gradlew_path.wav"
   },
   "configure_tool_selection": {
     "text": "Now we'll paste the gradlew path into the tool selection field. This specifies the exact build command that Command Autofix will use.",
-    "audio": "configure_tool_selection.mp3"
+    "audio": "configure_tool_selection.wav"
   },
   "configure_tool_arguments": {
     "text": "Next, we'll add 'clean build' as the tool execution arguments. This ensures a clean build process that will reveal any compilation issues.",
-    "audio": "configure_tool_arguments.mp3"
+    "audio": "configure_tool_arguments.wav"
   },
   "enable_auto_apply": {
     "text": "We'll enable the 'Auto-apply fixes' option, which allows Command Autofix to automatically implement suggested fixes without manual confirmation.",

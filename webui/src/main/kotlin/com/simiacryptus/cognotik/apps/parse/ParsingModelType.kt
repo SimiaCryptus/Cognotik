@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
@@ -13,22 +14,25 @@ class ParsingModelType<out T : ParsingModel<*>>(
     name: String
 ) : DynamicEnum<ParsingModelType<*>>(name) {
     companion object {
+
         private val modelConstructors =
-            mutableMapOf<ParsingModelType<*>, (ChatModelType, Double) -> ParsingModel<*>>()
+            mutableMapOf<ParsingModelType<*>, (ChatModelType, Double, ChatClientInterface) -> ParsingModel<*>>()
 
         val Document = ParsingModelType<ParsingModel<*>>("Document")
         val Code = ParsingModelType<ParsingModel<*>>("Code")
         val Log = ParsingModelType<ParsingModel<*>>("Log")
+       val RawText = ParsingModelType<ParsingModel<*>>("RawText")
 
         init {
-            registerConstructor(Document) { model, temp -> DocumentParsingModel(model, temp) }
-            registerConstructor(Code) { model, temp -> CodeParsingModel(model, temp) }
-            registerConstructor(Log) { model, temp -> LogDataParsingModel(model, temp) }
+            registerConstructor(Document) { model, temp, api -> DocumentParsingModel(model, temp, api) }
+            registerConstructor(Code) { model, temp, api -> CodeParsingModel(model, temp, api) }
+            registerConstructor(Log) { model, temp, api -> LogDataParsingModel(model, temp, api) }
+           registerConstructor(RawText) { model, temp, api -> RawTextParsingModel(api) }
         }
 
         private fun <T : ParsingModel<*>> registerConstructor(
             modelType: ParsingModelType<T>,
-            constructor: (ChatModelType, Double) -> T
+            constructor: (ChatModelType, Double, ChatClientInterface) -> T
         ) {
             modelConstructors[modelType] = constructor
             register(modelType)
@@ -39,11 +43,12 @@ class ParsingModelType<out T : ParsingModel<*>>(
         fun getImpl(
             chatModel: ChatModelType,
             temperature: Double,
-            modelType: ParsingModelType<*>
+            modelType: ParsingModelType<*>,
+            api: ChatClientInterface
         ): ParsingModel<*> {
             val constructor = modelConstructors[modelType]
                 ?: throw RuntimeException("Unknown parsing model type: ${modelType.name}")
-            return constructor(chatModel, temperature)
+            return constructor(chatModel, temperature, api)
         }
 
         fun valueOf(name: String): ParsingModelType<*> = valueOf(ParsingModelType::class.java, name)

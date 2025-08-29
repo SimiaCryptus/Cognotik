@@ -35,7 +35,7 @@ import java.time.LocalDateTime
 abstract class DemoTestBase(
     recordingConfig: RecordingConfig = RecordingConfig(),
     splashScreenConfig: SplashScreenConfig = SplashScreenConfig(),
-    val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.5.zip",
+    val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.6.zip",
     protected val narrationFile: String? = null
 ) :
     //ScreenRec(recordingConfig = recordingConfig, splashScreenConfig = splashScreenConfig)
@@ -109,7 +109,7 @@ abstract class DemoTestBase(
 
         remoteRobot = RemoteRobot("http://127.0.0.1:$robotPort", OkHttpClient())
 
-        waitFor(Duration.ofSeconds(120), Duration.ofSeconds(5)) {
+        waitFor(Duration.ofSeconds(300), Duration.ofSeconds(5)) {
             try {
                 /* //div[@class='JRootPane'] */
                 remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@class='JRootPane']"))

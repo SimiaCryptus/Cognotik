@@ -482,7 +482,7 @@ open class OpenAIClient(
                     result, EmbeddingResponse::class.java
                 )
                 if (response.usage != null) {
-                    val model = EmbeddingModels.values().values.find { it.modelName.equals(request.model, true) }
+                    val model = EmbeddingModel.values().values.find { it.modelName.equals(request.model, true) }
                     onUsage(
                         model,
                         response.usage.copy(cost = model?.pricing(response.usage))

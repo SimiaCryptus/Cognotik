@@ -2,18 +2,19 @@ package com.simiacryptus.jopenai.embedding
 
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.EmbeddingModels
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.lang.IllegalStateException
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class OllamaEmbeddingClient(
     apiKey: String = "",
     apiBase: String = "http://localhost:11434",
-    workPool: ExecutorService,
+    workPool: ExecutorService = Executors.newCachedThreadPool(),
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf()
 ) : SingleProviderEmbeddingClient(
@@ -39,7 +40,7 @@ class OllamaEmbeddingClient(
 
     override fun createEmbedding(
         request: ApiModel.EmbeddingRequest,
-        model: EmbeddingModels
+        model: EmbeddingModel
     ): ApiModel.EmbeddingResponse {
         validateEmbeddingRequest(request, model)
 
@@ -91,7 +92,7 @@ class OllamaEmbeddingClient(
         }
     }
 
-    private fun validateEmbeddingRequest(request: ApiModel.EmbeddingRequest, model: EmbeddingModels) {
+    private fun validateEmbeddingRequest(request: ApiModel.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
         require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
     }

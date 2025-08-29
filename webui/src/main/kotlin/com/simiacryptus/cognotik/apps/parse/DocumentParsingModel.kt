@@ -2,18 +2,22 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.models.EmbeddingModels
+import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.util.jsonCast
+import com.simiacryptus.util.toJson
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
 open class DocumentParsingModel(
     private val parsingModel: ChatModelType,
-    private val temperature: Double
+    private val temperature: Double,
+    override val api: ChatClientInterface,
 ) : ParsingModel<DocumentParsingModel.DocumentData> {
 
     override fun merge(
@@ -94,14 +98,15 @@ open class DocumentParsingModel(
             progressState: ProgressState?,
             futureList: MutableList<Future<*>>,
             pool: ExecutorService,
-            openAIClient: OpenAIClient,
-            fileData: Map<String, Any>?
+            embeddingClient: EmbeddingClientBase,
+            fileData: Map<String, Any>?,
+            embeddingModel: EmbeddingModel
         ): MutableList<DocumentRecord> {
             val records: MutableList<DocumentRecord> = mutableListOf()
             fun processContent(content: Map<String, Any>, path: String = "") {
                 val record = DocumentRecord(
                     text = content["text"] as? String,
-                    metadata = JsonUtil.toJson(content.filter<String, Any> { it.key != "text" && it.key != "content" && it.key != "type" }),
+                    metadata = JsonUtil.toJson(content.filter { it.key != "text" && it.key != "content" && it.key != "type" }),
                     sourcePath = inputPath,
                     jsonPath = path,
                     vector = null
@@ -110,21 +115,21 @@ open class DocumentParsingModel(
                 if (record.text != null) {
                     progressState?.add(0.0, 1.0)
                     futureList.add(pool.submit {
-                        record.vector = openAIClient.createEmbedding(
+                        record.vector = embeddingClient.createEmbedding(
                             ApiModel.EmbeddingRequest(
-                                EmbeddingModels.Large.modelName, record.text
-                            )
+                                embeddingModel.modelName, record.text
+                            ), embeddingModel
                         ).data[0].embedding ?: DoubleArray(0)
                         progressState?.add(1.0, 0.0)
                     })
                 }
-                (content["content_list"] as? List<Map<String, Any>>)?.forEachIndexed<Map<String, Any>> { index, childContent ->
+                (content["content_list"] as? List<Map<String, Any>>)?.forEachIndexed { index, childContent ->
                     processContent(childContent, "$path.content_list[$index]")
                 }
             }
             fileData?.get("content_list")?.let { contentList ->
-                (contentList as? List<Map<String, Any>>)?.forEachIndexed<Map<String, Any>> { index, content ->
-                    processContent(content, "content_list[$index]")
+                (contentList as? List<*>)?.forEachIndexed { index, content ->
+                    processContent(content?.jsonCast() ?: emptyMap(), "content_list[$index]")
                 }
             }
             return records

@@ -3,16 +3,7 @@ package com.simiacryptus.jopenai.models
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.jopenai.chat.*
-import com.simiacryptus.jopenai.chat.model.AWSModels
-import com.simiacryptus.jopenai.chat.model.AnthropicModels
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.chat.model.DeepSeekModels
-import com.simiacryptus.jopenai.chat.model.GoogleModels
-import com.simiacryptus.jopenai.chat.model.GroqModels
-import com.simiacryptus.jopenai.chat.model.MistralModels
-import com.simiacryptus.jopenai.chat.model.ModelsLabModels
-import com.simiacryptus.jopenai.chat.model.OpenAIModels
-import com.simiacryptus.jopenai.chat.model.PerplexityModels
+import com.simiacryptus.jopenai.chat.model.*
 import com.simiacryptus.util.DynamicEnum
 import com.simiacryptus.util.DynamicEnumDeserializer
 import com.simiacryptus.util.DynamicEnumSerializer
@@ -56,6 +47,18 @@ abstract class APIProvider private constructor(name: String, val base: String? =
                 logLevel = logLevel,
                 logStreams = logStreams
             )
+        }
+        val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
+
+            override fun getChatModels(): List<ChatModelType> = emptyList()
+
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = throw UnsupportedOperationException("Ollama API does not support chat functionality")
         }
         val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
@@ -245,6 +248,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
             register(APIProvider::class.java, DeepSeek)
             register(APIProvider::class.java, GoogleSearch)
             register(APIProvider::class.java, Github)
+            register(APIProvider::class.java, Ollama)
         }
 
         @JvmStatic

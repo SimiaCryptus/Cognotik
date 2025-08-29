@@ -2,12 +2,14 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.chat.model.ChatModelType
 
 open class CodeParsingModel(
     private val parsingModel: ChatModelType,
-    private val temperature: Double
+    private val temperature: Double,
+    override val api: ChatClientInterface
 ) : ParsingModel<CodeParsingModel.CodeData> {
 
     override fun merge(

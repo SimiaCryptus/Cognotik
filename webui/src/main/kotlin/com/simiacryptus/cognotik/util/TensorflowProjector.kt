@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.ApiModel.EmbeddingRequest
-import com.simiacryptus.jopenai.models.EmbeddingModels
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.util.JsonUtil
 import java.io.IOException
 import java.util.*
@@ -34,7 +34,7 @@ class TensorflowProjector(
         val vectors = words.map { word ->
             word to api.createEmbedding(
                 EmbeddingRequest(
-                    model = EmbeddingModels.AdaEmbedding.modelName,
+                    model = EmbeddingModel.AdaEmbedding.modelName,
                     input = word.trim(),
                 )
             ).data.first().embedding!!

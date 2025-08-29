@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.util.JsonUtil
 import java.io.*
 import java.util.concurrent.ExecutorService
@@ -66,17 +67,57 @@ data class DocumentRecord(
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(DocumentRecord::class.java)
 
-        fun saveAsBinary(
-            openAIClient: OpenAIClient,
+        fun indexJsonFile(
+            embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
             progressState: ProgressState? = null,
             vararg inputPaths: String,
+            model: EmbeddingModel,
         ) = inputPaths.map { inputPath ->
             val futureList = mutableListOf<Future<*>>()
             val infile = File(inputPath)
             val fileData = JsonUtil.fromJson<Map<String, Any>>(infile.readText(), Map::class.java)
             val records =
-                DocumentParsingModel.getRows(inputPath, progressState, futureList, pool, openAIClient, fileData)
+                DocumentParsingModel.getRows(
+                    inputPath,
+                    progressState,
+                    futureList,
+                    pool,
+                    embeddingClient,
+                    fileData,
+                    model
+                )
+            val outputPath =
+                infile.parentFile.resolve(infile.name.split("\\.".toRegex(), 2).first() + ".index.data").absolutePath
+            awaitAll(futureList.toTypedArray())
+            writeBinary(outputPath, records)
+            outputPath
+        }
+        fun indexTextFile(
+            embeddingClient: EmbeddingClientBase,
+            pool: ExecutorService,
+            parsingModel: ParsingModel<*>,
+            progressState: ProgressState? = null,
+            vararg inputPaths: String,
+            model: EmbeddingModel,
+        ) = inputPaths.map { inputPath ->
+            val futureList = mutableListOf<Future<*>>()
+            val infile = File(inputPath)
+            val textContent = infile.readText()
+            // Parse the text content using the parsing model
+            val parser = parsingModel.getFastParser()
+            val parsedDocument = parser(textContent)
+            // Convert parsed document to map format for processing
+            val fileData = mapOf("content_list" to parsedDocument.content_list)
+            val records = DocumentParsingModel.getRows(
+                inputPath,
+                progressState,
+                futureList,
+                pool,
+                embeddingClient,
+                fileData as Map<String, Any>?,
+                model
+            )
             val outputPath =
                 infile.parentFile.resolve(infile.name.split("\\.".toRegex(), 2).first() + ".index.data").absolutePath
             awaitAll(futureList.toTypedArray())

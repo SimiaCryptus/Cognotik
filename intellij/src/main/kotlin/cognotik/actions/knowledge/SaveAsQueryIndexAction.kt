@@ -6,11 +6,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
+import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.findRecursively
-import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.saveAsBinary
+import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFile
 import com.simiacryptus.cognotik.apps.parse.ProgressState
+import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
+import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 
@@ -21,7 +24,7 @@ class SaveAsQueryIndexAction : BaseAction() {
         val batchSize: Int = 100
     )
 
-    private fun getConfig(project: com.intellij.openapi.project.Project?): IndexConfig {
+    private fun getConfig(project: Project?): IndexConfig {
 
         return IndexConfig()
     }
@@ -33,6 +36,10 @@ class SaveAsQueryIndexAction : BaseAction() {
             file.isDirectory || file.name.endsWith(".parsed.json")
         }
     }
+
+    val model = EmbeddingModel.OllamaNomadic
+    val embeddingClient: EmbeddingClientBase
+        get() = OllamaEmbeddingClient()
 
     override fun handle(e: AnActionEvent) {
         val selectedFiles = UITools.getSelectedFiles(e)
@@ -62,9 +69,8 @@ class SaveAsQueryIndexAction : BaseAction() {
                     indicator.isIndeterminate = false
                     indicator.fraction = 0.0
                     indicator.text = "Initializing vector indexing..."
-
-                    saveAsBinary(
-                        openAIClient = IdeaOpenAIClient.instance,
+                    indexJsonFile(
+                        embeddingClient = embeddingClient,
                         pool = threadPool,
                         progressState = ProgressState().apply {
                             onUpdate += {
@@ -75,7 +81,8 @@ class SaveAsQueryIndexAction : BaseAction() {
                                 }
                             }
                         },
-                        inputPaths = jsonFiles.map { it.path }.toTypedArray()
+                        inputPaths = jsonFiles.map { it.path }.toTypedArray(),
+                        model = model
                     )
 
                     indicator.fraction = 1.0

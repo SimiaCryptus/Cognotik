@@ -4,7 +4,7 @@ import com.simiacryptus.jopenai.HttpClientManager
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.EmbeddingModels
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
@@ -21,10 +21,10 @@ interface EmbeddingClientInterface {
     
     fun createEmbedding(
         request: ApiModel.EmbeddingRequest,
-        model: EmbeddingModels
+        model: EmbeddingModel
     ): ApiModel.EmbeddingResponse
     
-    fun onUsage(model: EmbeddingModels, tokens: Usage)
+    fun onUsage(model: EmbeddingModel, tokens: Usage)
     
     fun getChildClient(): EmbeddingClientInterface
 }
@@ -132,7 +132,7 @@ abstract class EmbeddingClientBase(
         }
     }
 
-    override fun onUsage(model: EmbeddingModels, tokens: Usage) {
+    override fun onUsage(model: EmbeddingModel, tokens: Usage) {
         log.debug("Usage recorded for session: {}, user: {}, model: {}, tokens: {}", session, user, model, tokens)
         budget?.let { currentBudget ->
             val cost = tokens.cost ?: 0.0
@@ -166,12 +166,12 @@ abstract class EmbeddingClientBase(
 
         override fun createEmbedding(
             request: ApiModel.EmbeddingRequest,
-            model: EmbeddingModels
+            model: EmbeddingModel
         ): ApiModel.EmbeddingResponse {
             return this@EmbeddingClientBase.createEmbedding(request, model)
         }
 
-        override fun onUsage(model: EmbeddingModels, tokens: Usage) {
+        override fun onUsage(model: EmbeddingModel, tokens: Usage) {
             this@EmbeddingClientBase.onUsage(model, tokens)
             super.onUsage(model, tokens)
         }

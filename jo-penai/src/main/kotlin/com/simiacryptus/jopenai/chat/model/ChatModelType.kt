@@ -12,7 +12,7 @@ import com.simiacryptus.jopenai.models.AIModel
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import com.simiacryptus.jopenai.models.EmbeddingModels
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.chat.model.ChatModelType.Companion.values
 import com.simiacryptus.jopenai.models.LLMModel
@@ -126,6 +126,6 @@ fun String.chatModelType() = (ChatModelType.Companion.values().entries.find {
     outputTokenPricePerK = 0.0
 ))
 fun getModel(modelName: String?): AIModel? = values().values.find { it.modelName == modelName }
-    ?: EmbeddingModels.values().values.find { it.modelName == modelName }
+    ?: EmbeddingModel.values().values.find { it.modelName == modelName }
     ?: ImageModels.values().find { it.modelName == modelName }
 
