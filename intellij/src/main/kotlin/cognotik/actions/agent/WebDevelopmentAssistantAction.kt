@@ -48,7 +48,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        val file = UITools.getSelectedFolder(event) ?: return false
+        val file = event.getSelectedFolder() ?: return false
         return file.isDirectory
     }
 
@@ -56,7 +56,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
         try {
             val project = e.project ?: return
             val session = Session.newGlobalID()
-            val selectedFile = UITools.getSelectedFolder(e) ?: return
+            val selectedFile = e.getSelectedFolder() ?: return
             DataStorage.sessionPaths[session] = selectedFile.toFile
             SessionProxyServer.metadataStorage.setSessionName(
                 null,

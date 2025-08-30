@@ -48,7 +48,7 @@ class MultiStepPatchAction : BaseAction() {
     val path = "/autodev"
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        UITools.getSelectedFile(event) ?: return false
+        event.getSelectedFile() ?: return false
         return true
     }
 
@@ -60,7 +60,7 @@ class MultiStepPatchAction : BaseAction() {
                 val session = Session.newGlobalID()
                 val storage =
                     ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome) as DataStorage?
-                val selectedFile = UITools.getSelectedFolder(e)
+                val selectedFile = e.getSelectedFolder()
                 if (null != storage && null != selectedFile) {
                     DataStorage.sessionPaths[session] = selectedFile.toFile
                 }

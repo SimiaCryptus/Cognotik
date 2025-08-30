@@ -9,9 +9,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.UITools.getIndent
-import com.simiacryptus.cognotik.util.UITools.insertString
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.PsiUtil.getAll
 import com.simiacryptus.cognotik.util.PsiUtil.getSmallestIntersecting
 import com.simiacryptus.jopenai.chat.model.chatModelType
@@ -21,7 +19,7 @@ import java.awt.Component
 import javax.swing.JOptionPane
 
 /**
- * Action that extends markdown lists by generating additional items using AI.
+ * Action that extends Markdown lists by generating additional items using AI.
  * Supports bullet lists and checkbox lists.
  */
 class MarkdownListAction : BaseAction() {
@@ -104,7 +102,7 @@ class MarkdownListAction : BaseAction() {
             )
             progress.fraction = 0.4
             progress.text = "Generating new items..."
-            val indent = getIndent(caret)
+            val indent = caret.getIndent()
             val endOffset = list.textRange.endOffset
             val bulletTypes = listOf("- [ ] ", "- ", "* ")
             val document = (e.getData(CommonDataKeys.EDITOR) ?: return).document
@@ -114,7 +112,7 @@ class MarkdownListAction : BaseAction() {
                 else it.toString()
             }
 
-            UITools.redoableTask(e) {
+            e.redoableTask {
                 var newItems: List<String?>? = null
                 progress.isIndeterminate = false
                 progress.fraction = 0.2
@@ -137,11 +135,10 @@ class MarkdownListAction : BaseAction() {
                     val bulletString = bulletTypes.find(strippedList::startsWith) ?: "1. "
                     newList = newItems?.joinToString("\n") { indent.toString() + bulletString + it } ?: ""
                 }
-                UITools.writeableFn(e) {
-                    insertString(document, endOffset, "\n" + newList)
+                e.writeableFn {
+                    document.insertSubString(endOffset, "\n" + newList)
                 }
             }
-
         } catch (ex: Exception) {
             log.error("Failed to generate list items", ex)
             UITools.showErrorDialog(

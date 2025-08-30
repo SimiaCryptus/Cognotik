@@ -1,7 +1,6 @@
 package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.generate.items
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -16,7 +15,9 @@ import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
-import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.getSelectedFiles
+import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.awt.BorderLayout
@@ -98,9 +99,9 @@ class DocumentedMassPatchAction : BaseAction() {
     }
 
     private fun getConfig(project: Project?, e: AnActionEvent): Settings? {
-        var root = UITools.getSelectedFolder(e)?.toNioPath()
+        var root = e.getSelectedFolder()?.toNioPath()
         val allFiles: List<Path> = root?.let { Files.walk(it).toList() }
-            ?: UITools.getSelectedFiles(e).map { it.toNioPath() }
+            ?: e.getSelectedFiles().map { it.toNioPath() }
         if (root == null) {
             root = e.project?.basePath?.let { File(it).toPath() }
         }
@@ -252,7 +253,7 @@ class DocumentedMassPatchAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        UITools.getSelectedFolder(event) ?: UITools.getSelectedFiles(event).let {
+        event.getSelectedFolder() ?: event.getSelectedFiles().let {
             when (it.size) {
                 0 -> null
                 1 -> null

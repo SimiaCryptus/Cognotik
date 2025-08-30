@@ -7,10 +7,11 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.findRecursively
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFile
 import com.simiacryptus.cognotik.apps.parse.ProgressState
+import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.findRecursively
+import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
 import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
 import com.simiacryptus.jopenai.models.EmbeddingModel
@@ -31,7 +32,7 @@ class SaveAsQueryIndexAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        val selectedFiles = UITools.getSelectedFiles(event)
+        val selectedFiles = event.getSelectedFiles()
         return selectedFiles.isNotEmpty() && selectedFiles.any { file ->
             file.isDirectory || file.name.endsWith(".parsed.json")
         }
@@ -42,7 +43,7 @@ class SaveAsQueryIndexAction : BaseAction() {
         get() = OllamaEmbeddingClient()
 
     override fun handle(e: AnActionEvent) {
-        val selectedFiles = UITools.getSelectedFiles(e)
+        val selectedFiles = e.getSelectedFiles()
         if (selectedFiles.isEmpty()) {
             UITools.showErrorDialog(
                 "Please select JSON files to convert.",

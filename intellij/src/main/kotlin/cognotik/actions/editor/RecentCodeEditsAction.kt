@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
-import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.hasSelection
 
 class RecentCodeEditsAction : ActionGroup() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -38,7 +38,7 @@ class RecentCodeEditsAction : ActionGroup() {
 
     companion object {
         fun isEnabled(e: AnActionEvent): Boolean {
-            if (!UITools.hasSelection(e)) return false
+            if (!e.hasSelection()) return false
             val computerLanguage = ComputerLanguage.getComputerLanguage(e)
             return computerLanguage != ComputerLanguage.Text
         }

@@ -5,8 +5,8 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
@@ -21,7 +21,6 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
@@ -43,10 +42,6 @@ class KnowledgeIndexingAction : BaseAction() {
             wrapStyleWord = true
         }
 
-        init {
-            // This will be populated by the calling code with selected files
-        }
-
         fun getSettings(): IndexingSettings {
             val paths = filePathsArea.text.split('\n')
                 .map { it.trim() }
@@ -60,6 +55,7 @@ class KnowledgeIndexingAction : BaseAction() {
 
     override fun handle(e: AnActionEvent) {
         val project = e.project
+
         val selectedFiles = getSelectedFiles(e)
         val settingsUI = SettingsUI(project, null)
         

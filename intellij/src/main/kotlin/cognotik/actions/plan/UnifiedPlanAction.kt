@@ -1,7 +1,6 @@
 package cognotik.actions.plan
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -18,17 +17,16 @@ import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.chat.model.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 
@@ -40,7 +38,7 @@ class UnifiedPlanAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(e: AnActionEvent) {
-        val root: String = UITools.getRoot(e)
+        val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
             e.project, PlanSettings(
                 defaultModel = AppSettingsState.instance.smartModel.chatModelType(),
@@ -262,8 +260,8 @@ class UnifiedPlanAction : BaseAction() {
     }
 
     private fun getProjectRoot(e: AnActionEvent): File? {
-        val folder = UITools.getSelectedFolder(e)
-        return folder?.toFile ?: UITools.getSelectedFile(e)?.parent?.toFile?.let { file ->
+        val folder = e.getSelectedFolder()
+        return folder?.toFile ?: e.getSelectedFile()?.parent?.toFile?.let { file ->
             getModuleRootForFile(file)
         }
     }

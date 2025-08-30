@@ -68,9 +68,9 @@ object UITools {
         Messages.showWarningDialog(project, message, title)
     }
 
-    private val log = LoggerFactory.getLogger(UITools::class.java)
+    val log = LoggerFactory.getLogger(UITools::class.java)
     private val threadFactory: ThreadFactory = ThreadFactoryBuilder().setNameFormat("API Thread %d").build()
-    private val pool: ListeningExecutorService by lazy {
+    val pool: ListeningExecutorService by lazy {
         MoreExecutors.listeningDecorator(
             ThreadPoolExecutor(/* corePoolSize = */ AppSettingsState.instance.apiThreads,/* maximumPoolSize = */
                 AppSettingsState.instance.apiThreads,/* keepAliveTime = */
@@ -88,10 +88,6 @@ object UITools {
     private val errorLog = mutableListOf<Pair<String, Throwable>>()
     private val actionLog = mutableListOf<String>()
     private val singleThreadPool = Executors.newSingleThreadExecutor()
-
-    fun getRoot(e: AnActionEvent): String {
-        return getSelectedFolder(e)?.toFile?.absolutePath ?: getSelectedFile(e)?.toFile?.parent ?: ""
-    }
 
     fun runAsync(
         project: Project?,
@@ -120,32 +116,6 @@ object UITools {
         }
     }
 
-    fun redoableTask(
-        event: AnActionEvent,
-        request: Supplier<Runnable>,
-    ) {
-        log.debug("Starting redoableTask with event: ${event}, request: ${request}")
-        Futures.addCallback(pool.submit<Runnable> {
-            request.get()
-        }, futureCallback(event, request), pool)
-        log.debug("Submitted redoableTask for execution")
-    }
-
-    private fun futureCallback(
-        event: AnActionEvent,
-        request: Supplier<Runnable>,
-    ) = object : FutureCallback<Runnable> {
-        override fun onSuccess(undo: Runnable) {
-            val requiredData = event.getData(CommonDataKeys.EDITOR) ?: return
-            val document = requiredData.document
-            retry[document] = getRetry(event, request, undo)
-        }
-
-        override fun onFailure(t: Throwable) {
-            error(log, "Error", t)
-        }
-    }
-
     fun getRetry(
         event: AnActionEvent,
         request: Supplier<Runnable>,
@@ -155,110 +125,8 @@ object UITools {
             pool.submit<Runnable> {
                 WriteCommandAction.runWriteCommandAction(event.project) { undo.run() }
                 request.get()
-            }, futureCallback(event, request), pool
+            }, event.futureCallback(request), pool
         )
-    }
-
-    fun replaceString(document: Document, startOffset: Int, endOffset: Int, newText: CharSequence): Runnable {
-        log.debug("Invoking replaceString with startOffset: $startOffset, endOffset: $endOffset, newText: $newText")
-        val oldText: CharSequence = document.getText(TextRange(startOffset, endOffset))
-        document.replaceString(startOffset, endOffset, newText)
-        logEdit(
-            String.format(
-                "FWD replaceString from %s to %s (%s->%s): %s",
-                startOffset,
-                endOffset,
-                endOffset - startOffset,
-                newText.length,
-                newText
-            )
-        )
-        return Runnable {
-            val verifyTxt = document.getText(TextRange(startOffset, startOffset + newText.length))
-            log.debug("Verifying text after replaceString: expected: $newText, actual: $verifyTxt")
-            if (verifyTxt != newText) {
-                val msg = String.format(
-                    "The text range from %d to %d does not match the expected text \"%s\" and is instead \"%s\"",
-                    startOffset,
-                    startOffset + newText.length,
-                    newText,
-                    verifyTxt
-                )
-                log.error("Verification failed after replaceString: $msg")
-                throw IllegalStateException(msg)
-            }
-            document.replaceString(startOffset, startOffset + newText.length, oldText)
-            logEdit(
-                String.format(
-                    "REV replaceString from %s to %s (%s->%s): %s",
-                    startOffset,
-                    startOffset + newText.length,
-                    newText.length,
-                    oldText.length,
-                    oldText
-                )
-            )
-        }
-    }
-
-    fun insertString(document: Document, startOffset: Int, newText: CharSequence): Runnable {
-        document.insertString(startOffset, newText)
-        logEdit(String.format("FWD insertString @ %s (%s): %s", startOffset, newText.length, newText))
-        return Runnable {
-            val verifyTxt = document.getText(TextRange(startOffset, startOffset + newText.length))
-            if (verifyTxt != newText) {
-                val message = String.format(
-                    "The text range from %d to %d does not match the expected text \"%s\" and is instead \"%s\"",
-                    startOffset,
-                    startOffset + newText.length,
-                    newText,
-                    verifyTxt
-                )
-                throw AssertionError(message)
-            }
-            document.deleteString(startOffset, startOffset + newText.length)
-            logEdit(String.format("REV deleteString from %s to %s", startOffset, startOffset + newText.length))
-        }
-    }
-
-    private fun logEdit(message: String) {
-        log.debug(message)
-    }
-
-    @Suppress("unused")
-    fun deleteString(document: Document, startOffset: Int, endOffset: Int): Runnable {
-        val oldText: CharSequence = document.getText(TextRange(startOffset, endOffset))
-        document.deleteString(startOffset, endOffset)
-        return Runnable {
-            document.insertString(startOffset, oldText)
-            logEdit(String.format("REV insertString @ %s (%s): %s", startOffset, oldText.length, oldText))
-        }
-    }
-
-    fun getIndent(caret: Caret?): CharSequence {
-        if (null == caret) return ""
-        val document = caret.editor.document
-        val documentText = document.text
-        val lineNumber = document.getLineNumber(caret.selectionStart)
-        val lines = documentText.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        if (lines.isEmpty()) return ""
-        return IndentedText.fromString(lines[max(lineNumber, 0).coerceAtMost(lines.size - 1)]).indent
-    }
-
-    @Suppress("unused")
-    fun hasSelection(e: AnActionEvent): Boolean {
-        val caret = e.getData(CommonDataKeys.CARET)
-        return null != caret && caret.hasSelection()
-    }
-
-    fun getIndent(event: AnActionEvent): CharSequence {
-        val caret = event.getData(CommonDataKeys.CARET)
-        val indent: CharSequence = if (null == caret) {
-            ""
-        } else {
-            getIndent(caret)
-        }
-        return indent
     }
 
     fun <T : Any, R : Any> readKotlinUIViaReflection(
@@ -312,7 +180,7 @@ object UITools {
                                 val item = comboBox.item
                                 val enumClass = settingsField.returnType.javaType as Class<out Enum<*>?>
                                 val string = item.toString()
-                                newSettingsValue = findValue(enumClass, string)
+                                newSettingsValue = enumClass.findValue(string)
                             }
                         }
                     }
@@ -321,20 +189,6 @@ object UITools {
                     throw RuntimeException("Error processing $settingsField", e)
                 }
             }
-        }
-    }
-
-    private fun findValue(enumClass: Class<out Enum<*>?>, string: String): Enum<*>? {
-
-        val caseInsensitiveMatch = enumClass.enumConstants?.firstOrNull {
-            it?.name?.equals(string, ignoreCase = true) == true
-        }
-        if (caseInsensitiveMatch != null) return caseInsensitiveMatch
-
-        return try {
-            java.lang.Enum.valueOf(enumClass, string)
-        } catch (e: IllegalArgumentException) {
-            null
         }
     }
 
@@ -397,7 +251,7 @@ object UITools {
         }
     }
 
-    private fun <T : Any> addKotlinFields(ui: T, formBuilder: FormBuilder, fillVertically: Boolean) {
+    fun <T : Any> addKotlinFields(ui: T, formBuilder: FormBuilder, fillVertically: Boolean) {
         var first = true
         for (field in ui.javaClass.kotlin.memberProperties.filterNotNull()) {
             try {
@@ -522,15 +376,6 @@ object UITools {
         return JOptionPane.CLOSED_OPTION
     }
 
-    fun <T : Any> buildFormViaReflection(
-        component: T,
-        fillVertically: Boolean = true,
-        formBuilder: FormBuilder = FormBuilder.createFormBuilder(),
-    ): JPanel? {
-        addKotlinFields(component, formBuilder, fillVertically)
-        return formBuilder.addComponentFillVertically(JPanel(), 0).panel
-    }
-
     fun <T : Any, C : Any> showDialog(
         project: Project?,
         uiClass: Class<T>,
@@ -552,7 +397,7 @@ object UITools {
 
             override fun createCenterPanel(): JComponent? {
                 log.debug("Creating center panel for dialog")
-                return buildFormViaReflection(component1)
+                return component1.buildFormViaReflection()
             }
         }
         dialog.show()
@@ -570,68 +415,6 @@ object UITools {
             log.debug("Dialog cancelled")
             return null
         }
-    }
-
-    fun getSelectedFolder(e: AnActionEvent): VirtualFile? {
-        val dataContext = e.dataContext
-        val data = PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)
-        if (data != null && data.isDirectory) {
-            return data
-        }
-        val editor = PlatformDataKeys.EDITOR.getData(dataContext)
-        if (editor != null) {
-            val file = FileDocumentManager.getInstance().getFile(editor.document)
-            if (file != null) {
-                return file.parent
-            }
-        }
-        return null
-    }
-
-    fun getSelectedFolders(e: AnActionEvent): List<VirtualFile> {
-        val dataContext = e.dataContext
-        val data = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-        if (null != data) return data.filter { it.isDirectory }
-        val editor = PlatformDataKeys.EDITOR.getData(dataContext)
-        if (editor != null) {
-            val file = FileDocumentManager.getInstance().getFile(editor.document)
-            if (file != null) {
-                return listOf(file.parent)
-            }
-        }
-        return emptyList()
-    }
-
-    fun getSelectedFile(e: AnActionEvent): VirtualFile? {
-        val dataContext = e.dataContext
-        val data = PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)
-        if (data != null && !data.isDirectory) {
-            return data
-        }
-        return null
-    }
-
-    fun getSelectedFiles(e: AnActionEvent): List<VirtualFile> {
-        val dataContext = e.dataContext
-        val data = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-        if (null != data) return data.toList()
-        val editor = PlatformDataKeys.EDITOR.getData(dataContext)
-        if (editor != null) {
-            val file = FileDocumentManager.getInstance().getFile(editor.document)
-            if (file != null) {
-                return listOf(file)
-            }
-        }
-        return emptyList()
-    }
-
-    fun writeableFn(
-        event: AnActionEvent,
-        fn: () -> Runnable,
-    ): Runnable {
-        val runnable = AtomicReference<Runnable>()
-        WriteCommandAction.runWriteCommandAction(event.project) { runnable.set(fn()) }
-        return runnable.get()
     }
 
     fun <T : Any> run(
@@ -672,7 +455,7 @@ object UITools {
                     null, e.message, "This request was rejected by OpenAI Moderation", JOptionPane.WARNING_MESSAGE
                 )
             } else if (e.matches {
-                    java.lang.InterruptedException::class.java.isAssignableFrom(it.javaClass) && it.message?.contains(
+                    InterruptedException::class.java.isAssignableFrom(it.javaClass) && it.message?.contains(
                         "sleep interrupted"
                     ) == true
                 }) {
@@ -745,14 +528,14 @@ object UITools {
                 Locale: ${Locale.getDefault().country} / ${Locale.getDefault().language}
                 Error Details:
                 ```
-                ${toString(e)}
+                ${e.toFullString()}
                 ```
                 Action History:
                 ${actionLog.joinToString("\n") { "* ${it.prependIndent("  ")}" }}
                 Error History:
                 ${
                                 errorLog.filter { it.second != e }
-                                    .joinToString("\n") { "${it.first}\n```\n${toString(it.second)}\n```" }
+                                    .joinToString("\n") { "${it.first}\n```\n${it.second.toFullString()}\n```" }
                             }
                 """.trimIndent()
                         )
@@ -778,25 +561,6 @@ object UITools {
                 log.info("showOptionDialog = $showOptionDialog")
             }
         }
-    }
-
-    private fun Throwable.matches(matchFn: (Throwable) -> Boolean): Boolean {
-        if (matchFn(this)) return true
-        if (this.cause != null && this.cause !== this) return this.cause!!.matches(matchFn)
-        return false
-    }
-
-    fun Throwable.get(matchFn: (Throwable) -> Boolean): Throwable? {
-        if (matchFn(this)) return this
-        if (this.cause != null && this.cause !== this) return this.cause!!.get(matchFn)
-        return null
-    }
-
-    fun toString(e: Throwable): String {
-        val sw = StringWriter()
-        val pw = PrintWriter(sw)
-        e.printStackTrace(pw)
-        return sw.toString()
     }
 
     fun showInputDialog(
@@ -831,4 +595,232 @@ object UITools {
         showOptionDialog(panel, "OK", title = title, modal = true)
     }
 
+}
+
+fun AnActionEvent.getSelectedFiles(): List<VirtualFile> {
+    val dataContext = this.dataContext
+    val data = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
+    if (null != data) return data.toList()
+    val editor = PlatformDataKeys.EDITOR.getData(dataContext)
+    if (editor != null) {
+        val file = FileDocumentManager.getInstance().getFile(editor.document)
+        if (file != null) {
+            return listOf(file)
+        }
+    }
+    return emptyList()
+}
+
+fun Throwable.toFullString(): String {
+    val sw = StringWriter()
+    val pw = PrintWriter(sw)
+    printStackTrace(pw)
+    return sw.toString()
+}
+
+fun Throwable.get(matchFn: (Throwable) -> Boolean): Throwable? {
+    if (matchFn(this)) return this
+    if (this.cause != null && this.cause !== this) return this.cause!!.get(matchFn)
+    return null
+}
+
+fun Throwable.matches(matchFn: (Throwable) -> Boolean): Boolean {
+    if (matchFn(this)) return true
+    if (this.cause != null && this.cause !== this) return this.cause!!.matches(matchFn)
+    return false
+}
+
+fun AnActionEvent.writeableFn(
+    fn: () -> Runnable,
+): Runnable {
+    val runnable = AtomicReference<Runnable>()
+    WriteCommandAction.runWriteCommandAction(this.project) { runnable.set(fn()) }
+    return runnable.get()
+}
+
+fun AnActionEvent.getSelectedFile(): VirtualFile? {
+    val dataContext = this.dataContext
+    val data = PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)
+    if (data != null && !data.isDirectory) {
+        return data
+    }
+    return null
+}
+
+fun AnActionEvent.getSelectedFolders(): List<VirtualFile> {
+    val dataContext = this.dataContext
+    val data = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
+    if (null != data) return data.filter { it.isDirectory }
+    val editor = PlatformDataKeys.EDITOR.getData(dataContext)
+    if (editor != null) {
+        val file = FileDocumentManager.getInstance().getFile(editor.document)
+        if (file != null) {
+            return listOf(file.parent)
+        }
+    }
+    return emptyList()
+}
+
+fun AnActionEvent.getSelectedFolder(): VirtualFile? {
+    val dataContext = this.dataContext
+    val data = PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)
+    if (data != null && data.isDirectory) {
+        return data
+    }
+    val editor = PlatformDataKeys.EDITOR.getData(dataContext)
+    if (editor != null) {
+        val file = FileDocumentManager.getInstance().getFile(editor.document)
+        if (file != null) {
+            return file.parent
+        }
+    }
+    return null
+}
+
+@Suppress("unused")
+fun AnActionEvent.hasSelection(): Boolean {
+    val caret = getData(CommonDataKeys.CARET)
+    return null != caret && caret.hasSelection()
+}
+
+fun AnActionEvent.getIndent(): CharSequence {
+    val caret = getData(CommonDataKeys.CARET)
+    val indent: CharSequence = if (null == caret) {
+        ""
+    } else {
+        caret.getIndent()
+    }
+    return indent
+}
+
+fun Caret?.getIndent(): CharSequence {
+    if (null == this) return ""
+    val document = this.editor.document
+    val documentText = document.text
+    val lineNumber = document.getLineNumber(this.selectionStart)
+    val lines = documentText.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    if (lines.isEmpty()) return ""
+    return IndentedText.fromString(lines[max(lineNumber, 0).coerceAtMost(lines.size - 1)]).indent
+}
+
+fun AnActionEvent.redoableTask(
+    request: Supplier<Runnable>,
+) {
+    UITools.log.debug("Starting redoableTask with event: ${this}, request: ${request}")
+    Futures.addCallback(UITools.pool.submit<Runnable> {
+        request.get()
+    }, futureCallback(request), UITools.pool)
+    UITools.log.debug("Submitted redoableTask for execution")
+}
+
+fun AnActionEvent.getRoot(): String {
+    return this.getSelectedFolder()?.toFile?.absolutePath ?: this.getSelectedFile()?.toFile?.parent ?: ""
+}
+
+fun Class<out Enum<*>?>.findValue(string: String): Enum<*>? {
+
+    val caseInsensitiveMatch = this.enumConstants?.firstOrNull {
+        it?.name?.equals(string, ignoreCase = true) == true
+    }
+    if (caseInsensitiveMatch != null) return caseInsensitiveMatch
+
+    return try {
+        java.lang.Enum.valueOf(this, string)
+    } catch (e: IllegalArgumentException) {
+        null
+    }
+}
+
+fun <T : Any> T.buildFormViaReflection(
+    fillVertically: Boolean = true,
+    formBuilder: FormBuilder = FormBuilder.createFormBuilder(),
+): JPanel? {
+    UITools.addKotlinFields(this, formBuilder, fillVertically)
+    return formBuilder.addComponentFillVertically(JPanel(), 0).panel
+}
+
+fun AnActionEvent.futureCallback(
+    request: Supplier<Runnable>,
+) = object : FutureCallback<Runnable> {
+    override fun onSuccess(undo: Runnable) {
+        val requiredData = getData(CommonDataKeys.EDITOR) ?: return
+        val document = requiredData.document
+        UITools.retry[document] = UITools.getRetry(this@futureCallback, request, undo)
+    }
+
+    override fun onFailure(t: Throwable) {
+        UITools.error(UITools.log, "Error", t)
+    }
+}
+
+fun Document.insertSubString(startOffset: Int, newText: CharSequence): Runnable {
+    this.insertString(startOffset, newText)
+    UITools.log.debug(String.format("FWD insertString @ %s (%s): %s", startOffset, newText.length, newText))
+    return Runnable {
+        val verifyTxt = getText(TextRange(startOffset, startOffset + newText.length))
+        if (verifyTxt != newText) {
+            val message = String.format(
+                "The text range from %d to %d does not match the expected text \"%s\" and is instead \"%s\"",
+                startOffset,
+                startOffset + newText.length,
+                newText,
+                verifyTxt
+            )
+            throw AssertionError(message)
+        }
+        this.deleteString(startOffset, startOffset + newText.length)
+        UITools.log.debug(String.format("REV deleteString from %s to %s", startOffset, startOffset + newText.length))
+    }
+}
+
+@Suppress("unused")
+fun Document.deleteString(startOffset: Int, endOffset: Int): Runnable {
+    val oldText: CharSequence = getText(TextRange(startOffset, endOffset))
+    this.deleteString(startOffset, endOffset)
+    return Runnable {
+        insertString(startOffset, oldText)
+        UITools.log.debug(String.format("REV insertString @ %s (%s): %s", startOffset, oldText.length, oldText))
+    }
+}
+
+fun Document.replaceSubString(startOffset: Int, endOffset: Int, newText: CharSequence): Runnable {
+    UITools.log.debug("Invoking replaceString with startOffset: $startOffset, endOffset: $endOffset, newText: $newText")
+    val oldText: CharSequence = getText(TextRange(startOffset, endOffset))
+    this.replaceString(startOffset, endOffset, newText)
+    UITools.log.debug(
+        String.format(
+            "FWD replaceString from %s to %s (%s->%s): %s",
+            startOffset,
+            endOffset,
+            endOffset - startOffset,
+            newText.length,
+            newText
+        )
+    )
+    return Runnable {
+        val verifyTxt = getText(TextRange(startOffset, startOffset + newText.length))
+        UITools.log.debug("Verifying text after replaceString: expected: $newText, actual: $verifyTxt")
+        if (verifyTxt != newText) {
+            val msg = String.format(
+                "The text range from %d to %d does not match the expected text \"%s\" and is instead \"%s\"",
+                startOffset,
+                startOffset + newText.length,
+                newText,
+                verifyTxt
+            )
+            UITools.log.error("Verification failed after replaceString: $msg")
+            throw IllegalStateException(msg)
+        }
+        this.replaceString(startOffset, startOffset + newText.length, oldText)
+        UITools.log.debug(
+            String.format(
+                "REV replaceString from %s to %s (%s->%s): %s",
+                startOffset,
+                startOffset + newText.length,
+                newText.length,
+                oldText.length,
+                oldText
+            )
+        )
+    }
 }

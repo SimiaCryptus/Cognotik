@@ -1,7 +1,6 @@
 package cognotik.actions.git
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -30,8 +29,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.chat.model.chatModelType
+import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.util.JsonUtil
 import java.io.File
 import java.nio.file.Files
@@ -55,7 +54,7 @@ class ReplicateCommitAction : BaseAction() {
 
             val dataContext = event.dataContext
             val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-            val folder = UITools.getSelectedFolder(event)
+            val folder = event.getSelectedFolder()
             var root = if (null != folder) {
                 folder.toFile.toPath()
             } else {
@@ -339,12 +338,12 @@ class ReplicateCommitAction : BaseAction() {
     }
 
     private fun getUserSettings(event: AnActionEvent?): Settings? {
-        val root = UITools.getSelectedFolder(event ?: return null)?.toNioPath() ?: event.project?.basePath?.let {
+        val root = (event ?: return null).getSelectedFolder()?.toNioPath() ?: event.project?.basePath?.let {
             File(
                 it
             ).toPath()
         }
-        val files = UITools.getSelectedFiles(event).map { it.path.let { File(it).toPath() } }.toMutableSet()
+        val files = event.getSelectedFiles().map { it.path.let { File(it).toPath() } }.toMutableSet()
         if (files.isEmpty()) Files.walk(root)
             .filter { Files.isRegularFile(it) && !Files.isDirectory(it) }
             .toList().filterNotNull().forEach { files.add(it) }

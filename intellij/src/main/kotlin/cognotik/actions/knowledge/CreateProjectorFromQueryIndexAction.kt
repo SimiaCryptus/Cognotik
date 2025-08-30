@@ -1,18 +1,15 @@
 package cognotik.actions.knowledge
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.findRecursively
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.TensorflowProjector
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
@@ -30,7 +27,7 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        val selectedFiles = UITools.getSelectedFiles(event)
+        val selectedFiles = event.getSelectedFiles()
         val processableFiles = selectedFiles.flatMap { file ->
             when {
                 file.isDirectory -> file.findRecursively { it.name.endsWith(".index.data") }
@@ -113,7 +110,7 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
         }
     }
 
-    private fun getProcessableFiles(e: AnActionEvent) = UITools.getSelectedFiles(e).flatMap { file ->
+    private fun getProcessableFiles(e: AnActionEvent) = e.getSelectedFiles().flatMap { file ->
         when {
             file.isDirectory -> file.findRecursively { it.name.endsWith(".index.data") }
             file.name.endsWith(".index.data") -> listOf(file)

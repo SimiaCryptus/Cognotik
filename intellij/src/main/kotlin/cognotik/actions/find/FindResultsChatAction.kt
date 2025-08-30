@@ -1,7 +1,6 @@
 package cognotik.actions.find
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.MultiStepPatchAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -14,16 +13,14 @@ import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -56,7 +53,7 @@ class FindResultsChatAction(
 
         try {
             val root = getModuleRootForFile(
-                UITools.getSelectedFile(event)?.parent?.toFile
+                event.getSelectedFile()?.parent?.toFile
                     ?: throw RuntimeException("No file selected")
             )
 

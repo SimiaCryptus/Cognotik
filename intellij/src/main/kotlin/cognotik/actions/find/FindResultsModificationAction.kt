@@ -1,7 +1,6 @@
 package cognotik.actions.find
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -15,18 +14,14 @@ import com.intellij.usages.Usage
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.PsiUtil
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
@@ -46,12 +41,12 @@ class FindResultsModificationAction(
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(event: AnActionEvent) {
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         val root: Path = if (null != folder) {
             folder.toFile.toPath()
         } else {
             getModuleRootForFile(
-                UITools.getSelectedFile(event)?.parent?.toFile
+                event.getSelectedFile()?.parent?.toFile
                     ?: throw RuntimeException("No file or folder selected")
             ).toPath()
         }

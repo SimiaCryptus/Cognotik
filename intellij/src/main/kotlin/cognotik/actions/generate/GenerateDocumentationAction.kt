@@ -17,9 +17,10 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.cognotik.util.getSelectedFile
+import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.jopenai.chat.model.chatModelType
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
@@ -39,7 +40,7 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun isEnabled(event: AnActionEvent): Boolean {
-        if (UITools.getSelectedFile(event)?.isDirectory == false) return false
+        if (event.getSelectedFile()?.isDirectory == false) return false
         return super.isEnabled(event)
     }
 
@@ -77,7 +78,7 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
     )
 
     override fun getConfig(project: Project?, e: AnActionEvent): Settings? {
-        val root = UITools.getSelectedFolder(e)?.toNioPath()
+        val root = e.getSelectedFolder()?.toNioPath()
         val files = Files.walk(root)
             .filter { Files.isRegularFile(it) && !Files.isDirectory(it) }
             .toList().filterNotNull().sortedBy { it.toString() }.toTypedArray()

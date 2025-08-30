@@ -1,6 +1,5 @@
 package cognotik.actions.knowledge
 
-import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFile
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFile
 import com.simiacryptus.cognotik.apps.parse.ParsingModelType
 import com.simiacryptus.cognotik.apps.parse.ProgressState
@@ -35,7 +34,6 @@ class KnowledgeIndexingServer(
     companion object {
         private val log = LoggerFactory.getLogger(KnowledgeIndexingServer::class.java)
         private const val PROGRESS_UPDATE_INTERVAL_MS = 1000L
-        private const val MAX_FILE_SIZE_MB = 50
         private const val MAX_DISPLAY_FILES = 20
     }
 
@@ -137,7 +135,7 @@ class KnowledgeIndexingServer(
         
         // Create progress status placeholder
         val progressStatus = task.add(MarkdownUtil.renderMarkdown("## Progress\n\nInitializing...", ui = ui))!!
-        val detailsStatus = task.add(MarkdownUtil.renderMarkdown("### Processing Details\n\n", ui = ui))!!
+        task.add(MarkdownUtil.renderMarkdown("### Processing Details\n\n", ui = ui))!!
 
         try {
             val progressState = ProgressState()

@@ -1,19 +1,20 @@
 package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.code.CodingAgent
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -26,7 +27,7 @@ class ShellCommandAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun isEnabled(event: AnActionEvent): Boolean {
-        return UITools.getSelectedFolder(event) != null
+        return event.getSelectedFolder() != null
     }
 
     override fun handle(e: AnActionEvent) {
@@ -47,7 +48,7 @@ class ShellCommandAction : BaseAction() {
     private fun initializeShellCommand(e: AnActionEvent, progress: ProgressIndicator) {
         progress.text = "Setting up shell environment..."
         val selectedFolder =
-            UITools.getSelectedFolder(e)?.toFile ?: throw IllegalStateException("No directory selected")
+            e.getSelectedFolder()?.toFile ?: throw IllegalStateException("No directory selected")
         progress.text = "Configuring session..."
         val session = Session.newGlobalID()
         ApplicationServer.appInfoMap[session] = AppInfoData(
