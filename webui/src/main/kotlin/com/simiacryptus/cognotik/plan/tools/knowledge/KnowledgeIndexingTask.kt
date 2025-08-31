@@ -74,26 +74,7 @@ class KnowledgeIndexingTask(
             Runtime.getRuntime().availableProcessors().coerceAtMost(16)
         )
         try {
-            val progressState = ProgressState()
-            var currentProgress = 0.0
-            var lastUpdateTime = System.currentTimeMillis()
-            
-            progressState.onUpdate += {
-                val newProgress = it.progress / it.max
-                val currentTime = System.currentTimeMillis()
-                // Update at most once per second to avoid UI flooding
-                if (newProgress != currentProgress && (currentTime - lastUpdateTime) > 1000) {
-                    currentProgress = newProgress
-                    lastUpdateTime = currentTime
-                    task.add(
-                        MarkdownUtil.renderMarkdown(
-                            "Processing: ${(currentProgress * 100).toInt()}% (${it.progress}/${it.max})",
-                            ui = agent.ui
-                        )
-                    )
-                }
-            }
-
+            val progressState = ProgressState.progressBar(task)
             val embeddingClient = OllamaEmbeddingClient(workPool = threadPool,)
             indexJsonFile(
                 embeddingClient = embeddingClient,

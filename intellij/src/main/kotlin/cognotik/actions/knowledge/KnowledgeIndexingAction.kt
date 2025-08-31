@@ -1,10 +1,9 @@
 package cognotik.actions.knowledge
 
 import cognotik.actions.BaseAction
+import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBScrollPane
@@ -14,13 +13,13 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.models.EmbeddingModel
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
-import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
@@ -36,7 +35,7 @@ class KnowledgeIndexingAction : BaseAction() {
         var filePaths: List<String> = emptyList(),
     )
 
-    class SettingsUI(private val project: Project?, private val selectedDirectory: Path?) {
+    class SettingsUI {
         val filePathsArea = JBTextArea(8, 40).apply {
             lineWrap = true
             wrapStyleWord = true
@@ -55,13 +54,11 @@ class KnowledgeIndexingAction : BaseAction() {
 
     override fun handle(e: AnActionEvent) {
         val project = e.project
+        val selectedFiles = e.getSelectedFiles()
+        val settingsUI = SettingsUI()
 
-        val selectedFiles = getSelectedFiles(e)
-        val settingsUI = SettingsUI(project, null)
-        
-        // Pre-populate with selected files
         if (selectedFiles.isNotEmpty()) {
-            settingsUI.filePathsArea.text = selectedFiles.joinToString("\n")
+            settingsUI.filePathsArea.text = selectedFiles.joinToString("\n") { it.toFile.absolutePath }
         }
 
         val dialog = object : DialogWrapper(project, false) {
@@ -220,25 +217,6 @@ class KnowledgeIndexingAction : BaseAction() {
         dialog.show()
     }
 
-    private fun getSelectedFiles(e: AnActionEvent): List<String> {
-        val virtualFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)
-        
-        if (virtualFiles.isNullOrEmpty()) {
-            // If no files selected, use project base path
-            return e.project?.basePath?.let { listOf(it) } ?: emptyList()
-        }
-        val result = mutableListOf<String>()
-        for (virtualFile in virtualFiles) {
-            if (virtualFile.isDirectory) {
-                // Recursively collect all files in the directory
-                collectFilesRecursively(virtualFile, result)
-            } else {
-                // Add individual file
-                result.add(virtualFile.path)
-            }
-        }
-        return result
-    }
     private fun collectFilesRecursively(directory: VirtualFile, result: MutableList<String>) {
         directory.children?.forEach { child ->
             if (child.isDirectory) {

@@ -1,6 +1,6 @@
 package cognotik.actions.knowledge
 
-import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFile
+import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFiles
 import com.simiacryptus.cognotik.apps.parse.ParsingModelType
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.platform.Session
@@ -59,16 +59,15 @@ class KnowledgeIndexingServer(
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
-
-        val task = ui.newTask(true)
-
-        try {
-            executeIndexing(task, ui)
-        } catch (e: Exception) {
-            log.error("Error during indexing", e)
-            task.error(e)
+        socketManager.pool.submit {
+            val task = ui.newTask(true)
+            try {
+                executeIndexing(task, ui)
+            } catch (e: Exception) {
+                log.error("Error during indexing", e)
+                task.error(e)
+            }
         }
-
         return socketManager
     }
 
@@ -95,100 +94,49 @@ class KnowledgeIndexingServer(
             return
         }
 
-        // Display initial status with file statistics
         val totalSizeKB = files.sumOf { it.length() } / 1024
         val totalSizeMB = totalSizeKB / 1024
         val sizeDisplay = if (totalSizeMB > 1) "${totalSizeMB} MB" else "${totalSizeKB} KB"
         
         task.add(MarkdownUtil.renderMarkdown("# Knowledge Indexing", ui = ui))
-        
-        val initialStatus = buildString {
-            appendLine("## Indexing Overview")
-            appendLine("- **Files to process:** ${files.size}")
-            appendLine("- **Total size:** $sizeDisplay")
-            appendLine("- **Embedding model:** ${model.modelName}")
-            appendLine()
-            
+
+        task.add(MarkdownUtil.renderMarkdown(buildString {
+            this.appendLine("## Indexing Overview")
+            this.appendLine("- **Files to process:** ${files.size}")
+            this.appendLine("- **Total size:** $sizeDisplay")
+            this.appendLine("- **Embedding model:** ${model.modelName}")
+            this.appendLine()
+
             if (files.size <= MAX_DISPLAY_FILES) {
-                appendLine("### Files:")
+                this.appendLine("### Files:")
                 files.forEach { file ->
                     val fileSizeKB = file.length() / 1024
                     val fileSizeMB = fileSizeKB / 1024
                     val fileSize = if (fileSizeMB > 1) "${fileSizeMB} MB" else "${fileSizeKB} KB"
-                    appendLine("- `${file.name}` ($fileSize)")
+                    this.appendLine("- `${file.name}` ($fileSize)")
                 }
             } else {
-                appendLine("### Sample Files:")
+                this.appendLine("### Sample Files:")
                 files.take(MAX_DISPLAY_FILES).forEach { file ->
                     val fileSizeKB = file.length() / 1024
                     val fileSizeMB = fileSizeKB / 1024
                     val fileSize = if (fileSizeMB > 1) "${fileSizeMB} MB" else "${fileSizeKB} KB"
-                    appendLine("- `${file.name}` ($fileSize)")
+                    this.appendLine("- `${file.name}` ($fileSize)")
                 }
-                appendLine("- ... and ${files.size - MAX_DISPLAY_FILES} more files")
+                this.appendLine("- ... and ${files.size - MAX_DISPLAY_FILES} more files")
             }
-            appendLine()
-            appendLine("---")
-        }
-        
-        task.add(MarkdownUtil.renderMarkdown(initialStatus, ui = ui))
-        
-        // Create progress status placeholder
-        val progressStatus = task.add(MarkdownUtil.renderMarkdown("## Progress\n\nInitializing...", ui = ui))!!
-        task.add(MarkdownUtil.renderMarkdown("### Processing Details\n\n", ui = ui))!!
+            this.appendLine()
+            this.appendLine("---")
+        }, ui = ui))
 
         try {
-            val progressState = ProgressState()
-            
+            val progressState = ProgressState.progressBar(task)
             val startTime = System.currentTimeMillis()
-            var lastUpdateTime = startTime
-            var currentFile = ""
-            val processedFiles = mutableSetOf<String>()
-            val failedFiles = mutableListOf<String>()
-            
-            progressState.onUpdate += { state ->
-                val currentTime = System.currentTimeMillis()
-                // Update at most once per second to avoid UI flooding
-                if (currentTime - lastUpdateTime > PROGRESS_UPDATE_INTERVAL_MS) {
-                    lastUpdateTime = currentTime
-                    
-                    val progress = if (state.max > 0) state.progress.toDouble() / state.max else 0.0
-                    val elapsedSeconds = (currentTime - startTime) / 1000
-                    val rate = if (elapsedSeconds > 0) state.progress.toDouble() / elapsedSeconds else 0.0
-                    val estimatedTotal = if (rate > 0) (state.max / rate).toInt() else 0
-                    val remainingSeconds = maxOf(0, estimatedTotal - elapsedSeconds.toInt())
-                    
-                    val progressBar = "█".repeat((progress * 20).toInt()) + "░".repeat(20 - (progress * 20).toInt())
-                    
-                    val progressMarkdown = buildString {
-                        appendLine("## Progress")
-                        appendLine()
-                        appendLine("**Overall Progress:** ${(progress * 100).toInt()}% `[$progressBar]`")
-                        appendLine()
-                        appendLine("- **Processed:** ${state.progress} / ${state.max} chunks")
-                        appendLine("- **Files completed:** ${processedFiles.size} / ${files.size}")
-                        if (failedFiles.isNotEmpty()) {
-                            appendLine("- **Failed files:** ${failedFiles.size}")
-                        }
-                        appendLine("- **Processing rate:** ${String.format("%.1f", rate)} chunks/sec")
-                        appendLine("- **Elapsed time:** ${formatDuration(elapsedSeconds.toInt())}")
-                        if (remainingSeconds > 0) {
-                            appendLine("- **Estimated remaining:** ${formatDuration(remainingSeconds)}")
-                        }
-                        if (currentFile.isNotEmpty()) {
-                            appendLine("- **Current file:** `$currentFile`")
-                        }
-                    }
-                    
-                    progressStatus.set(MarkdownUtil.renderMarkdown(progressMarkdown, ui = ui))
-                    task.update()
-                }
-            }
 
-            indexTextFile(
+            indexTextFiles(
                 embeddingClient = OllamaEmbeddingClient(
                     "",
-                    workPool = threadPool,
+                    workPool = ui.socketManager!!.pool,
                 ),
                 pool = threadPool,
                 progressState = progressState,
@@ -202,48 +150,17 @@ class KnowledgeIndexingServer(
                 ),
             )
 
-
             val endTime = System.currentTimeMillis()
             val totalDuration = (endTime - startTime) / 1000
-            val successCount = processedFiles.size
-            val failureCount = failedFiles.size
             
             val completionResult = buildString {
                 appendLine("# 🎉 Knowledge Indexing Complete")
                 appendLine()
                 appendLine("## Summary")
                 appendLine("- **Total files:** ${files.size}")
-                appendLine("- **Successfully indexed:** $successCount")
-                if (failureCount > 0) {
-                    appendLine("- **Failed:** $failureCount")
-                }
                 appendLine("- **Total processing time:** ${formatDuration(totalDuration.toInt())}")
-                appendLine("- **Average time per file:** ${String.format("%.1f", totalDuration.toDouble() / successCount)} seconds")
                 appendLine()
-                
-                if (successCount > 0) {
-                    appendLine("## ✅ Successfully Indexed Files")
-                    if (successCount <= MAX_DISPLAY_FILES) {
-                        processedFiles.forEach { file ->
-                            appendLine("- `$file`")
-                        }
-                    } else {
-                        processedFiles.take(MAX_DISPLAY_FILES).forEach { file ->
-                            appendLine("- `$file`")
-                        }
-                        appendLine("- ... and ${successCount - MAX_DISPLAY_FILES} more files")
-                    }
-                    appendLine()
-                }
-                
-                if (failureCount > 0) {
-                    appendLine("## ❌ Failed Files")
-                    failedFiles.forEach { error ->
-                        appendLine("- $error")
-                    }
-                    appendLine()
-                }
-                
+
                 appendLine("## Next Steps")
                 appendLine("Your files have been indexed and are now ready for:")
                 appendLine("- **Semantic search** - Find relevant content using natural language queries")
@@ -254,13 +171,7 @@ class KnowledgeIndexingServer(
             }
 
             task.add(MarkdownUtil.renderMarkdown(completionResult, ui = ui))
-            
-            val statusMessage = if (failureCount == 0) {
-                "✅ Indexing completed successfully - $successCount files indexed"
-            } else {
-                "⚠️ Indexing completed with issues - $successCount succeeded, $failureCount failed"
-            }
-            task.complete(statusMessage)
+
         } catch (e: Exception) {
             log.error("Error during indexing process", e)
             val errorResult = buildString {

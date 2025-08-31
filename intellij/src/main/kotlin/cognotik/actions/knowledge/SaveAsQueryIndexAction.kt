@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.findRecursively
 import com.simiacryptus.cognotik.util.getSelectedFiles
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
 import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
 import com.simiacryptus.jopenai.models.EmbeddingModel
@@ -73,15 +74,7 @@ class SaveAsQueryIndexAction : BaseAction() {
                     indexJsonFile(
                         embeddingClient = embeddingClient,
                         pool = threadPool,
-                        progressState = ProgressState().apply {
-                            onUpdate += {
-                                indicator.fraction = it.progress / it.max
-                                indicator.text = "Processing files (${it.progress}/${it.max})"
-                                if (indicator.isCanceled) {
-                                    throw InterruptedException("Operation cancelled by user")
-                                }
-                            }
-                        },
+                        progressState = ProgressState.progressBar(SessionTask.noop()),
                         inputPaths = jsonFiles.map { it.path }.toTypedArray(),
                         model = model
                     )

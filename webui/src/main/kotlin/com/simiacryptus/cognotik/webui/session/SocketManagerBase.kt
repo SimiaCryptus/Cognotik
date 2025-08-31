@@ -21,7 +21,7 @@ import java.util.function.Consumer
 
 abstract class SocketManagerBase(
     val sessionId: Session,
-    val dataStorage: StorageInterface?,
+    val dataStorage: StorageInterface? = null,
     protected val owner: User? = null,
     private val applicationClass: Class<*>,
 ) : SocketManager {

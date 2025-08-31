@@ -10,7 +10,6 @@ import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
 import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.jsonCast
-import com.simiacryptus.util.toJson
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
@@ -93,48 +92,63 @@ open class DocumentParsingModel(
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(DocumentParsingModel::class.java)
 
-        fun getRows(
-            inputPath: String,
-            progressState: ProgressState?,
-            futureList: MutableList<Future<*>>,
-            pool: ExecutorService,
-            embeddingClient: EmbeddingClientBase,
-            fileData: Map<String, Any>?,
-            embeddingModel: EmbeddingModel
-        ): MutableList<DocumentRecord> {
-            val records: MutableList<DocumentRecord> = mutableListOf()
-            fun processContent(content: Map<String, Any>, path: String = "") {
-                val record = DocumentRecord(
-                    text = content["text"] as? String,
-                    metadata = JsonUtil.toJson(content.filter { it.key != "text" && it.key != "content" && it.key != "type" }),
-                    sourcePath = inputPath,
-                    jsonPath = path,
-                    vector = null
-                )
-                records.add(record)
-                if (record.text != null) {
-                    progressState?.add(0.0, 1.0)
-                    futureList.add(pool.submit {
-                        record.vector = embeddingClient.createEmbedding(
-                            ApiModel.EmbeddingRequest(
-                                embeddingModel.modelName, record.text
-                            ), embeddingModel
-                        ).data[0].embedding ?: DoubleArray(0)
-                        progressState?.add(1.0, 0.0)
-                    })
-                }
-                (content["content_list"] as? List<Map<String, Any>>)?.forEachIndexed { index, childContent ->
-                    processContent(childContent, "$path.content_list[$index]")
-                }
-            }
-            fileData?.get("content_list")?.let { contentList ->
-                (contentList as? List<*>)?.forEachIndexed { index, content ->
-                    processContent(content?.jsonCast() ?: emptyMap(), "content_list[$index]")
-                }
-            }
-            return records
-        }
-
     }
 
+}
+
+fun EmbeddingModel.getRows(
+    inputPath: String,
+    progressState: ProgressState,
+    futureList: MutableList<Future<*>>,
+    pool: ExecutorService,
+    embeddingClient: EmbeddingClientBase,
+    fileData: Map<String, Any>?
+): MutableList<DocumentRecord> {
+    val records: MutableList<DocumentRecord> = mutableListOf()
+    fun processContent(content: Map<String, Any>, path: String = "") {
+        val record = DocumentRecord(
+            text = content["text"] as? String,
+            metadata = JsonUtil.toJson(content.filter { it.key != "text" && it.key != "content" && it.key != "type" }),
+            sourcePath = inputPath,
+            jsonPath = path,
+            vector = null
+        )
+        records.add(record)
+        if (record.text != null) {
+//            DocumentParsingModel.log.info("Queueing: $record")
+            progressState.add(0.0, 1.0)
+            futureList.add(pool.submit {
+                DocumentParsingModel.log.info("Embedding: ${record.text}")
+                record.vector = embeddingClient.createEmbedding(
+                    ApiModel.EmbeddingRequest(
+                        modelName, record.text
+                    ), this
+                ).data[0].embedding ?: DoubleArray(0)
+                DocumentParsingModel.log.info("Embedded: ${record.text}")
+                progressState.add(1.0, 0.0)
+            })
+        }
+        when (val subContent = content["content"] ?: content["content_list"]) {
+            is List<*> -> {
+                (subContent as? List<*>)?.forEachIndexed { index, childContent ->
+                    processContent(childContent?.jsonCast() ?: emptyMap(), "$path.content_list[$index]")
+                }
+            }
+            is Map<*, *> -> {
+                processContent(subContent.jsonCast(), "$path.content")
+            }
+            null -> {
+                // do nothing
+            }
+            else -> {
+                processContent(subContent.jsonCast(), "$path.content")
+            }
+        }
+    }
+    fileData?.get("content_list")?.let { contentList ->
+        (contentList as? List<*>)?.forEachIndexed { index, content ->
+            processContent(content?.jsonCast() ?: emptyMap(), "content_list[$index]")
+        }
+    }
+    return records
 }

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
@@ -269,6 +270,41 @@ abstract class SessionTask(
                 return os.toByteArray()
             }
         }
+
+         fun noop(): SessionTask {
+            return object : SessionTask(
+                messageID = "noop",
+                manager = object : SocketManagerBase(Session.newGlobalID(), applicationClass = SessionTask.javaClass) {
+                    override fun onRun(
+                        userMessage: String,
+                        socket: ChatSocket
+                    ) {
+                        TODO("Not yet implemented")
+                    }
+                }
+            ) {
+                override fun createFile(relativePath: String): Pair<String, File?> {
+                    throw IllegalStateException("Noop")
+                }
+
+                override fun send(html: String) {
+                    // Do nothing
+                }
+
+                override fun saveFile(relativePath: String, data: ByteArray): String {
+                    throw IllegalStateException("Noop")
+                }
+
+                override fun hrefLink(
+                    linkText: String,
+                    classname: String,
+                    id: String?,
+                    handler: Consumer<Unit>
+                ): String {
+                    throw IllegalStateException("Noop")
+                }
+            }
+         }
 
     }
 

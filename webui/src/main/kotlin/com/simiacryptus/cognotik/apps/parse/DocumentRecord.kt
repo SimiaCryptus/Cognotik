@@ -41,11 +41,22 @@ data class DocumentRecord(
 
     @Throws(IOException::class)
     fun writeObject(out: ObjectOutputStream) {
-        out.writeUTF(text ?: "")
+        val normalize = normalize(text ?: "")
+        out.writeUTF(normalize)
         out.writeUTF(metadata ?: "")
         out.writeUTF(sourcePath)
         out.writeUTF(jsonPath)
         out.writeObject(vector)
+    }
+
+    private fun normalize(string: String): String {
+        if(string.length < 65535) return string
+        var string = string.trim()
+        if(string.length < 65535) return string
+        string = string.replace(Regex("\\s{2,}"), " ")
+        if(string.length < 65535) return string
+        string = string.take(65532)
+        return string
     }
 
     @Throws(IOException::class, ClassNotFoundException::class)
@@ -70,22 +81,21 @@ data class DocumentRecord(
         fun indexJsonFile(
             embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
-            progressState: ProgressState? = null,
-            vararg inputPaths: String,
+            progressState: ProgressState,
             model: EmbeddingModel,
+            vararg inputPaths: String,
         ) = inputPaths.map { inputPath ->
             val futureList = mutableListOf<Future<*>>()
             val infile = File(inputPath)
             val fileData = JsonUtil.fromJson<Map<String, Any>>(infile.readText(), Map::class.java)
             val records =
-                DocumentParsingModel.getRows(
-                    inputPath,
-                    progressState,
-                    futureList,
-                    pool,
-                    embeddingClient,
-                    fileData,
-                    model
+                model.getRows(
+                    inputPath = inputPath,
+                    progressState = progressState,
+                    futureList = futureList,
+                    pool = pool,
+                    embeddingClient = embeddingClient,
+                    fileData = fileData
                 )
             val outputPath =
                 infile.parentFile.resolve(infile.name.split("\\.".toRegex(), 2).first() + ".index.data").absolutePath
@@ -93,35 +103,32 @@ data class DocumentRecord(
             writeBinary(outputPath, records)
             outputPath
         }
-        fun indexTextFile(
+        fun indexTextFiles(
             embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
             parsingModel: ParsingModel<*>,
-            progressState: ProgressState? = null,
-            vararg inputPaths: String,
             model: EmbeddingModel,
+            progressState: ProgressState,
+            vararg inputPaths: String,
         ) = inputPaths.map { inputPath ->
-            val futureList = mutableListOf<Future<*>>()
             val infile = File(inputPath)
-            val textContent = infile.readText()
-            // Parse the text content using the parsing model
-            val parser = parsingModel.getFastParser()
-            val parsedDocument = parser(textContent)
-            // Convert parsed document to map format for processing
-            val fileData = mapOf("content_list" to parsedDocument.content_list)
-            val records = DocumentParsingModel.getRows(
-                inputPath,
-                progressState,
-                futureList,
-                pool,
-                embeddingClient,
-                fileData as Map<String, Any>?,
-                model
-            )
             val outputPath =
                 infile.parentFile.resolve(infile.name.split("\\.".toRegex(), 2).first() + ".index.data").absolutePath
+            // Parse the text content using the parsing model
+            val parser = parsingModel.getFastParser()
+            val textContent = infile.readText()
+            val parsedDocument = parser(textContent)
+            val futureList = mutableListOf<Future<*>>()
+            val rows = model.getRows(
+                inputPath = inputPath,
+                progressState = progressState,
+                futureList = futureList,
+                pool = pool,
+                embeddingClient = embeddingClient,
+                fileData = mapOf("content_list" to parsedDocument.content_list) as Map<String, Any>?
+            )
             awaitAll(futureList.toTypedArray())
-            writeBinary(outputPath, records)
+            writeBinary(outputPath, rows)
             outputPath
         }
 
