@@ -41,6 +41,10 @@ class EmbeddingSearchServer(
 
     companion object {
         private val log = LoggerFactory.getLogger(EmbeddingSearchServer::class.java)
+        private const val MAX_CONTEXT_LENGTH = 5000
+        private const val SEARCH_TIMEOUT_SECONDS = 30L
+        private const val MAX_CONCURRENT_SEARCHES = 4
+        private const val EMBEDDING_CACHE_SIZE = 100
     }
 
     override val inputCnt = 0
@@ -49,6 +53,7 @@ class EmbeddingSearchServer(
     private val threadPool = Executors.newFixedThreadPool(
         Runtime.getRuntime().availableProcessors().coerceAtMost(8)
     )
+    private val embeddingCache = mutableMapOf<String, DoubleArray>()
 
     override fun close() {
         threadPool.shutdown()
@@ -65,16 +70,15 @@ class EmbeddingSearchServer(
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
-
-        val task = ui.newTask(true)
-
-        try {
-            executeSearch(task, ui)
-        } catch (e: Exception) {
-            log.error("Error during search", e)
-            task.error(e)
+        socketManager.pool.submit {
+            val task = ui.newTask(true)
+            try {
+                executeSearch(task, ui)
+            } catch (e: Exception) {
+                log.error("Error during search", e)
+                task.error(e)
+            }
         }
-
         return socketManager
     }
 
@@ -89,55 +93,79 @@ class EmbeddingSearchServer(
             - **Min length:** ${settings.minLength}
             - **Required patterns:** ${settings.requiredRegexes.joinToString(", ")}
         """.trimIndent(), ui = ui))
-        task.add(MarkdownUtil.renderMarkdown("Searching for similar embeddings...", ui = ui))
+        
+        val indexFiles = files.filter { it?.name?.endsWith(".index.data") == true }
+        if (indexFiles.isEmpty()) {
+            task.add(MarkdownUtil.renderMarkdown("""
+                ## ⚠️ No Index Files Found
+                
+                No `.index.data` files were found in the selected location.
+                Please run Knowledge Indexing first to create searchable embeddings.
+            """.trimIndent(), ui = ui))
+            task.complete("No index files found")
+            return
+        }
+        
+        task.add(MarkdownUtil.renderMarkdown("""
+            ## Searching ${indexFiles.size} index files...
+            
+            Creating query embeddings and searching for similar content...
+        """.trimIndent(), ui = ui))
 
         try {
             val embeddingClient = OllamaEmbeddingClient("", workPool = threadPool)
-            val searchResults = performEmbeddingSearch(embeddingClient)
+            val searchResults = performEmbeddingSearch(embeddingClient, indexFiles)
             val formattedResults = formatSearchResults(searchResults)
 
             task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = ui))
             task.complete("Search completed successfully")
         } catch (e: Exception) {
             log.error("Error during search process", e)
+            task.add(MarkdownUtil.renderMarkdown("""
+                ## ❌ Search Failed
+                An error occurred during the search:
+                ```
+                ${e.message}
+                ```
+            """.trimIndent(), ui = ui))
             task.error(e)
         }
     }
 
-    private fun performEmbeddingSearch(api: EmbeddingClientBase): List<EmbeddingSearchResult> {
+    private fun performEmbeddingSearch(
+        api: EmbeddingClientBase,
+        indexFiles: List<VirtualFile?>
+    ): List<EmbeddingSearchResult> {
         if (settings.positiveQueries.isEmpty()) {
             throw IllegalArgumentException("At least one positive query is required")
         }
+        log.info("Creating embeddings for ${settings.positiveQueries.size} positive queries")
+        // Create embeddings with progress tracking
+        val totalQueries = settings.positiveQueries.size + settings.negativeQueries.size
+        var processedQueries = 0
         
-        val positiveEmbeddings = settings.positiveQueries.mapNotNull { query ->
-            try {
-                api.createEmbedding(
-                    ApiModel.EmbeddingRequest(
-                        input = query,
-                        model = model.modelName
-                    ),
-                    model
-                ).data.firstOrNull()?.embedding
-            } catch (e: Exception) {
-                log.error("Failed to create embedding for query: $query", e)
-                null
+        
+        fun getOrCreateEmbedding(query: String): DoubleArray? {
+            return embeddingCache.getOrPut(query) {
+                try {
+                    processedQueries++
+                    log.debug("Creating embedding ${processedQueries}/$totalQueries: $query")
+                    api.createEmbedding(
+                        ApiModel.EmbeddingRequest(
+                            input = query,
+                            model = model.modelName
+                        ),
+                        model
+                    ).data.firstOrNull()?.embedding ?: return null
+                } catch (e: Exception) {
+                    log.error("Failed to create embedding for query: $query", e)
+                    return null
+                }
             }
         }
+        val positiveEmbeddings = settings.positiveQueries.mapNotNull { getOrCreateEmbedding(it) }
+        val negativeEmbeddings = settings.negativeQueries.mapNotNull { getOrCreateEmbedding(it) }
 
-        val negativeEmbeddings = settings.negativeQueries.mapNotNull { query ->
-            try {
-                api.createEmbedding(
-                    ApiModel.EmbeddingRequest(
-                        input = query,
-                        model = model.modelName
-                    ),
-                    model
-                ).data.firstOrNull()?.embedding
-            } catch (e: Exception) {
-                log.error("Failed to create embedding for negative query: $query", e)
-                null
-            }
-        }
 
         if (positiveEmbeddings.isEmpty()) {
             throw IllegalStateException("Failed to create any positive embeddings")
@@ -147,12 +175,24 @@ class EmbeddingSearchServer(
         val minLength = settings.minLength
         val requiredRegexes = settings.requiredRegexes.map { Pattern.compile(it) }
         fun String.matchesAllRegexes() = requiredRegexes.all { regex -> regex.matcher(this).find() }
-        val searchResults = files
+        
+        log.info("Searching through ${indexFiles.size} index files")
+        val semaphore = java.util.concurrent.Semaphore(MAX_CONCURRENT_SEARCHES)
+        val searchResults = indexFiles
+            .parallelStream()
             .flatMap { path ->
+                val results = mutableListOf<EmbeddingSearchResult>()
                 try {
+                    semaphore.acquire()
                     val inputPath = path?.toFile?.toString() ?: throw IllegalArgumentException("Invalid file path")
-                    val records = DocumentRecord.readBinary(inputPath)
-                    records.mapNotNull { record ->
+                    log.debug("Reading index file: $inputPath")
+                    var recordCount = 0
+                    
+                    DocumentRecord.readBinaryStream(inputPath) { record ->
+                        recordCount++
+                        if (recordCount % 100 == 0) {
+                            log.debug("Processing record $recordCount from $inputPath")
+                        }
                         record.vector?.let { vector ->
                             val positiveDistances = positiveEmbeddings.map { embedding ->
                                 distanceType.distance(vector, embedding)
@@ -169,17 +209,21 @@ class EmbeddingSearchServer(
                             }
                             val content = record.text ?: ""
                             if (content.length >= minLength && content.matchesAllRegexes()) {
-                                EmbeddingSearchResult(
+                                results.add(EmbeddingSearchResult(
                                     file = path?.toNioPath()?.let { root.toPath().relativize(it).toString() } ?: "Unknown",
                                     record = record,
                                     distance = overallDistance
-                                )
-                            } else null
+                                ))
+                            }
                         }
                     }
+                    log.debug("Processed $recordCount records from $inputPath, found ${results.size} matches")
+                    results.stream()
                 } catch (e: Exception) {
                     log.error("Failed to read index file: $path", e)
-                    emptyList()
+                    java.util.stream.Stream.empty<EmbeddingSearchResult>()
+                } finally {
+                    semaphore.release()
                 }
             }
             .toList()

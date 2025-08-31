@@ -136,6 +136,10 @@
                         text="💾 Save as Query Index"
                         description="Save selected files as a queryable knowledge index for future reference and retrieval">
                 </action>
+                <action class="cognotik.actions.knowledge.CreateProjectorFromQueryIndexAction"
+                        text="📽️ Create Projector from Query Index"
+                        description="Create a visual representation of the knowledge index for easier exploration and understanding">
+                </action>
             </group>
             <group id="cognotik.ui.ProjectMenu.Generation"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"

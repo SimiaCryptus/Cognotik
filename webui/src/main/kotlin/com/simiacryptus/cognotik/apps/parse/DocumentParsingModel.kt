@@ -105,6 +105,15 @@ fun EmbeddingModel.getRows(
     fileData: Map<String, Any>?
 ): MutableList<DocumentRecord> {
     val records: MutableList<DocumentRecord> = mutableListOf()
+    val batchQueue = mutableListOf<DocumentRecord>()
+    val batchSize = when {
+        this == EmbeddingModel.Small -> 100
+        this == EmbeddingModel.Large -> 25
+        else -> 50
+    }
+    val maxConcurrentBatches = 3
+    val semaphore = java.util.concurrent.Semaphore(maxConcurrentBatches)
+    
     fun processContent(content: Map<String, Any>, path: String = "") {
         val record = DocumentRecord(
             text = content["text"] as? String,
@@ -115,18 +124,21 @@ fun EmbeddingModel.getRows(
         )
         records.add(record)
         if (record.text != null) {
-//            DocumentParsingModel.log.info("Queueing: $record")
             progressState.add(0.0, 1.0)
-            futureList.add(pool.submit {
-                DocumentParsingModel.log.info("Embedding: ${record.text}")
-                record.vector = embeddingClient.createEmbedding(
-                    ApiModel.EmbeddingRequest(
-                        modelName, record.text
-                    ), this
-                ).data[0].embedding ?: DoubleArray(0)
-                DocumentParsingModel.log.info("Embedded: ${record.text}")
-                progressState.add(1.0, 0.0)
-            })
+            batchQueue.add(record)
+            
+            if (batchQueue.size >= batchSize) {
+                val batch = batchQueue.toList()
+                batchQueue.clear()
+                futureList.add(pool.submit {
+                    try {
+                        semaphore.acquire()
+                        processBatch(batch, embeddingClient, this, progressState)
+                    } finally {
+                        semaphore.release()
+                    }
+                })
+            }
         }
         when (val subContent = content["content"] ?: content["content_list"]) {
             is List<*> -> {
@@ -150,5 +162,56 @@ fun EmbeddingModel.getRows(
             processContent(content?.jsonCast() ?: emptyMap(), "content_list[$index]")
         }
     }
+    // Process remaining items in batch queue
+    if (batchQueue.isNotEmpty()) {
+        futureList.add(pool.submit {
+            processBatch(batchQueue.toList(), embeddingClient, this, progressState)
+        })
+    }
+    
     return records
+}
+private fun processBatch(
+    batch: List<DocumentRecord>,
+    embeddingClient: EmbeddingClientBase,
+    model: EmbeddingModel,
+    progressState: ProgressState
+) {
+    val texts = batch.mapNotNull { it.text }
+    if (texts.isEmpty()) {
+        batch.forEach { _ -> progressState.add(1.0, 0.0) }
+        return
+    }
+    
+        
+    var retryCount = 0
+    var lastException: Exception? = null
+    
+    while (retryCount < 3) {
+        try {
+            val embeddings = embeddingClient.createEmbedding(
+                ApiModel.EmbeddingRequest(
+                    model = model.modelName,
+                    input = texts.joinToString("\n")
+                ), model
+            ).data
+            
+            batch.forEachIndexed { index, record ->
+                if (record.text != null && index < embeddings.size) {
+                    record.vector = embeddings[index].embedding ?: DoubleArray(0)
+                }
+                progressState.add(1.0, 0.0)
+            }
+            return // Success
+        } catch (e: Exception) {
+            lastException = e
+            retryCount++
+            if (retryCount < 3) {
+                DocumentParsingModel.log.warn("Failed to embed batch (attempt $retryCount/3), retrying...", e)
+                Thread.sleep(1000L * retryCount) // Exponential backoff
+            }
+        }
+    }
+    DocumentParsingModel.log.error("Failed to embed batch of ${batch.size} texts after 3 attempts", lastException)
+    batch.forEach { _ -> progressState.add(1.0, 0.0) }
 }

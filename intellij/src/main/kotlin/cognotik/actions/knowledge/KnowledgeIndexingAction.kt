@@ -120,10 +120,13 @@ class KnowledgeIndexingAction : BaseAction() {
                     )
                     return
                 }
+                
                 // Validate file paths and show warning for large files
                 val invalidPaths = mutableListOf<String>()
                 val largePaths = mutableListOf<String>()
                 var totalSizeMB = 0L
+                val validPaths = mutableListOf<String>()
+                
                 settings.filePaths.forEach { path ->
                     val file = File(path)
                     if (!file.exists()) {
@@ -134,8 +137,21 @@ class KnowledgeIndexingAction : BaseAction() {
                         if (sizeMB > 50) {
                             largePaths.add("$path (${sizeMB}MB)")
                         }
+                        validPaths.add(path)
+                    } else if (file.isDirectory) {
+                        // Calculate directory size
+                        val dirSize = file.walkTopDown()
+                            .filter { it.isFile }
+                            .map { it.length() }
+                            .sum() / (1024 * 1024)
+                        totalSizeMB += dirSize
+                        if (dirSize > 100) {
+                            largePaths.add("$path (${dirSize}MB - directory)")
+                        }
+                        validPaths.add(path)
                     }
                 }
+                
                 if (invalidPaths.isNotEmpty()) {
                     val result = JOptionPane.showConfirmDialog(
                         this.contentPane,
@@ -148,7 +164,18 @@ class KnowledgeIndexingAction : BaseAction() {
                     if (result != JOptionPane.YES_OPTION) {
                         return
                     }
+                    settings.filePaths = validPaths
                 }
+                if (validPaths.isEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        this.contentPane,
+                        "No valid paths found to index.",
+                        "No Valid Files",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                    return
+                }
+                
                 if (largePaths.isNotEmpty()) {
                     val result = JOptionPane.showConfirmDialog(
                         this.contentPane,

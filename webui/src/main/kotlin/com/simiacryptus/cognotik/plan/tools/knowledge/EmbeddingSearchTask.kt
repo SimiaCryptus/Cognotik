@@ -94,26 +94,42 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
 
     private fun performEmbeddingSearch(api: EmbeddingClientBase): List<EmbeddingSearchResult> {
         val model = EmbeddingModel.Large
-        val positiveEmbeddings = taskConfig?.positive_queries?.map { query ->
-            api.createEmbedding(
-                ApiModel.EmbeddingRequest(
-                    input = query,
-                    model = model.modelName
-                ),
-                model
-            ).data[0].embedding
-        } ?: emptyList()
-        val negativeEmbeddings = taskConfig?.negative_queries?.map { query ->
-            api.createEmbedding(
-                ApiModel.EmbeddingRequest(
-                    input = query,
-                    model = model.modelName
-                ),
-                model
-            ).data[0].embedding
-        } ?: emptyList()
-        if (positiveEmbeddings.isEmpty()) {
+        // Validate queries first
+        if (taskConfig?.positive_queries?.isEmpty() != false) {
             throw IllegalArgumentException("At least one positive query is required")
+        }
+        // Create embeddings with retry logic
+        fun createEmbeddingWithRetry(query: String, maxRetries: Int = 3): DoubleArray? {
+            repeat(maxRetries) { attempt ->
+                try {
+                    return api.createEmbedding(
+                        ApiModel.EmbeddingRequest(
+                            input = query,
+                            model = model.modelName
+                        ),
+                        model
+                    ).data[0].embedding
+                } catch (e: Exception) {
+                    if (attempt == maxRetries - 1) {
+                        log.error("Failed to create embedding for query after $maxRetries attempts: $query", e)
+                        return null
+                    }
+                    Thread.sleep(1000L * (attempt + 1))
+                }
+            }
+            return null
+        }
+        
+        val positiveEmbeddings = taskConfig?.positive_queries?.map { query ->
+            createEmbeddingWithRetry(query)
+        } ?: emptyList()
+        
+        val negativeEmbeddings = taskConfig?.negative_queries?.map { query ->
+            createEmbeddingWithRetry(query)
+        } ?: emptyList()
+        
+        if (positiveEmbeddings.filterNotNull().isEmpty()) {
+            throw IllegalStateException("Failed to create any positive embeddings")
         }
         val distanceType = taskConfig?.distance_type ?: DistanceType.Cosine
         val filtered = Files.walk(root).asSequence()
@@ -128,8 +144,9 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
 
         val searchResults = filtered
             .flatMap { path ->
-                val records = DocumentRecord.readBinary(path.toString())
-                records.mapNotNull { record ->
+                val results = mutableListOf<EmbeddingSearchResult>()
+                try {
+                    DocumentRecord.readBinaryStream(path.toString()) { record ->
                     record.vector?.let { vector ->
                         val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
                             distanceType.distance(vector, embedding)
@@ -145,14 +162,18 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
                         }
                         val content = record.text ?: ""
                         if (content.length >= minLength && content.matchesAllRegexes()) {
-                            EmbeddingSearchResult(
+                            results.add(EmbeddingSearchResult(
                                 file = root.relativize(path).toString(),
                                 record = record,
                                 distance = overallDistance
-                            )
-                        } else null
+                            ))
+                        }
                     }
                 }
+                } catch (e: Exception) {
+                    log.error("Failed to search in file: $path", e)
+                }
+                results
             }
             .toList()
         return searchResults

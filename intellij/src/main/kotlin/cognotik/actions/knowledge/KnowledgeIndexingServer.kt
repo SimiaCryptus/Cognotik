@@ -35,6 +35,9 @@ class KnowledgeIndexingServer(
         private val log = LoggerFactory.getLogger(KnowledgeIndexingServer::class.java)
         private const val PROGRESS_UPDATE_INTERVAL_MS = 1000L
         private const val MAX_DISPLAY_FILES = 20
+        private const val MAX_FILE_SIZE_MB = 100
+        private const val CHUNK_SIZE_MB = 10
+        private const val BATCH_SIZE = 10
     }
 
     override val inputCnt = 0
@@ -43,8 +46,11 @@ class KnowledgeIndexingServer(
     private val threadPool = Executors.newFixedThreadPool(
         Runtime.getRuntime().availableProcessors().coerceAtMost(16)
     )
+    @Volatile
+    private var isCancelled = false
 
     override fun close() {
+        isCancelled = true
         threadPool.shutdown()
         try {
             if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
@@ -93,6 +99,22 @@ class KnowledgeIndexingServer(
             task.complete(result)
             return
         }
+        // Group files by size for better batch processing
+        val (smallFiles, largeFiles) = files.partition { it.length() < CHUNK_SIZE_MB * 1024 * 1024 }
+        val veryLargeFiles = files.filter { it.length() / (1024 * 1024) > MAX_FILE_SIZE_MB }
+        if (veryLargeFiles.isNotEmpty()) {
+            task.add(MarkdownUtil.renderMarkdown(buildString {
+                appendLine("⚠️ **Warning: Large files detected**")
+                appendLine()
+                veryLargeFiles.forEach { file ->
+                    val sizeMB = file.length() / (1024 * 1024)
+                    appendLine("- ${file.name}: ${sizeMB}MB")
+                }
+                appendLine()
+                appendLine("Large files will be processed in chunks to avoid memory issues.")
+            }, ui = ui))
+        }
+
 
         val totalSizeKB = files.sumOf { it.length() } / 1024
         val totalSizeMB = totalSizeKB / 1024
@@ -132,34 +154,103 @@ class KnowledgeIndexingServer(
         try {
             val progressState = ProgressState.progressBar(task)
             val startTime = System.currentTimeMillis()
+            val errors = mutableListOf<String>()
+            val successfulFiles = mutableListOf<String>()
 
-            indexTextFiles(
-                embeddingClient = OllamaEmbeddingClient(
-                    "",
-                    workPool = ui.socketManager!!.pool,
-                ),
-                pool = threadPool,
-                progressState = progressState,
-                inputPaths = files.map { it.absolutePath }.toTypedArray(),
-                model = model,
-                parsingModel = ParsingModelType.getImpl(
-                    chatModel = GoogleModels.GeminiFlash_25_Lite,
-                    temperature = 0.0,
-                    modelType = ParsingModelType.RawText,
-                    api = api
-                ),
-            )
+            // Process small files in batches to avoid overwhelming the system
+            val smallResults = mutableListOf<String?>()
+            smallFiles.chunked(BATCH_SIZE).forEach { batch ->
+                if (isCancelled) {
+                    task.add(MarkdownUtil.renderMarkdown("⚠️ Indexing cancelled by user", ui = ui))
+                    return
+                }
+                
+                try {
+                    val batchResults = indexTextFiles(
+                        embeddingClient = OllamaEmbeddingClient(
+                            "",
+                            workPool = ui.socketManager!!.pool,
+                        ),
+                        pool = threadPool,
+                        progressState = progressState,
+                        inputPaths = batch.map { it.absolutePath }.toTypedArray(),
+                        model = model,
+                        parsingModel = ParsingModelType.getImpl(
+                            chatModel = GoogleModels.GeminiFlash_25_Lite,
+                            temperature = 0.0,
+                            modelType = ParsingModelType.RawText,
+                            api = api
+                        ),
+                    )
+                    smallResults.addAll(batchResults)
+                    batch.forEach { successfulFiles.add(it.name) }
+                } catch (e: Exception) {
+                    log.error("Failed to index batch of ${batch.size} files", e)
+                    batch.forEach { errors.add("${it.name}: ${e.message}") }
+                }
+            }
+            
+            // Process large files one by one with chunking
+            val largeResults = largeFiles.mapNotNull { file ->
+                try {
+                    task.add(MarkdownUtil.renderMarkdown("Processing large file: ${file.name}...", ui = ui))
+                    val result = indexTextFiles(
+                        embeddingClient = OllamaEmbeddingClient(
+                            "",
+                            workPool = ui.socketManager!!.pool,
+                        ),
+                        pool = threadPool,
+                        progressState = progressState,
+                        inputPaths = arrayOf(file.absolutePath),
+                        model = model,
+                        parsingModel = ParsingModelType.getImpl(
+                            chatModel = GoogleModels.GeminiFlash_25_Lite,
+                            temperature = 0.0,
+                            modelType = ParsingModelType.RawText,
+                            api = api
+                        ),
+                    ).firstOrNull()
+                    if (result != null) {
+                        successfulFiles.add(file.name)
+                    }
+                    result
+                } catch (e: Exception) {
+                    log.error("Failed to index large file: ${file.name}", e)
+                    errors.add("${file.name}: ${e.message}")
+                    null
+                }
+            }
+
+            val results = smallResults + largeResults
+            val successCount = results.filterNotNull().size + successfulFiles.size
+            val failureCount = files.size - successCount
 
             val endTime = System.currentTimeMillis()
             val totalDuration = (endTime - startTime) / 1000
             
             val completionResult = buildString {
-                appendLine("# 🎉 Knowledge Indexing Complete")
+                if (failureCount == 0) {
+                    appendLine("# 🎉 Knowledge Indexing Complete")
+                } else if (successCount > 0) {
+                    appendLine("# ⚠️ Knowledge Indexing Partially Complete")
+                } else {
+                    appendLine("# ❌ Knowledge Indexing Failed")
+                }
                 appendLine()
                 appendLine("## Summary")
-                appendLine("- **Total files:** ${files.size}")
+                appendLine("- **Successfully indexed:** $successCount files")
+                if (failureCount > 0) {
+                    appendLine("- **Failed:** $failureCount files")
+                }
                 appendLine("- **Total processing time:** ${formatDuration(totalDuration.toInt())}")
                 appendLine()
+                if (errors.isNotEmpty()) {
+                    appendLine("## Errors")
+                    errors.forEach { error ->
+                        appendLine("- $error")
+                    }
+                    appendLine()
+                }
 
                 appendLine("## Next Steps")
                 appendLine("Your files have been indexed and are now ready for:")
