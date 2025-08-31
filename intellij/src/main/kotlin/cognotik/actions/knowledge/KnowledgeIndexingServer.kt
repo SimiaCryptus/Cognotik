@@ -1,19 +1,17 @@
 package cognotik.actions.knowledge
 
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFiles
-import com.simiacryptus.cognotik.apps.parse.ParsingModelType
 import com.simiacryptus.cognotik.apps.parse.ProgressState
+import com.simiacryptus.cognotik.apps.parse.RawTextParsingModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.GoogleModels
 import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
 import com.simiacryptus.jopenai.models.EmbeddingModel
 import org.slf4j.LoggerFactory
@@ -127,6 +125,7 @@ class KnowledgeIndexingServer(
             this.appendLine("- **Files to process:** ${files.size}")
             this.appendLine("- **Total size:** $sizeDisplay")
             this.appendLine("- **Embedding model:** ${model.modelName}")
+           this.appendLine("- **Split regex:** `${settings.splitRegex}`")
             this.appendLine()
 
             if (files.size <= MAX_DISPLAY_FILES) {
@@ -175,12 +174,7 @@ class KnowledgeIndexingServer(
                         progressState = progressState,
                         inputPaths = batch.map { it.absolutePath }.toTypedArray(),
                         model = model,
-                        parsingModel = ParsingModelType.getImpl(
-                            chatModel = GoogleModels.GeminiFlash_25_Lite,
-                            temperature = 0.0,
-                            modelType = ParsingModelType.RawText,
-                            api = api
-                        ),
+                       parsingModel = RawTextParsingModel(api, settings.splitRegex),
                     )
                     smallResults.addAll(batchResults)
                     batch.forEach { successfulFiles.add(it.name) }
@@ -203,12 +197,7 @@ class KnowledgeIndexingServer(
                         progressState = progressState,
                         inputPaths = arrayOf(file.absolutePath),
                         model = model,
-                        parsingModel = ParsingModelType.getImpl(
-                            chatModel = GoogleModels.GeminiFlash_25_Lite,
-                            temperature = 0.0,
-                            modelType = ParsingModelType.RawText,
-                            api = api
-                        ),
+                       parsingModel = RawTextParsingModel(api, settings.splitRegex),
                     ).firstOrNull()
                     if (result != null) {
                         successfulFiles.add(file.name)
@@ -224,7 +213,6 @@ class KnowledgeIndexingServer(
             val results = smallResults + largeResults
             val successCount = results.filterNotNull().size + successfulFiles.size
             val failureCount = files.size - successCount
-
             val endTime = System.currentTimeMillis()
             val totalDuration = (endTime - startTime) / 1000
             

@@ -33,6 +33,7 @@ class KnowledgeIndexingAction : BaseAction() {
 
     data class IndexingSettings(
         var filePaths: List<String> = emptyList(),
+       var splitRegex: String = "(\\n|(?<!\\.)\\..(?!\\.))\\s*",
     )
 
     class SettingsUI {
@@ -40,6 +41,11 @@ class KnowledgeIndexingAction : BaseAction() {
             lineWrap = true
             wrapStyleWord = true
         }
+       val splitRegexField = JBTextArea(2, 40).apply {
+           text = "(\\n|(?<!\\.)\\..(?!\\.))\\s*"
+           lineWrap = true
+           wrapStyleWord = true
+       }
 
         fun getSettings(): IndexingSettings {
             val paths = filePathsArea.text.split('\n')
@@ -48,6 +54,8 @@ class KnowledgeIndexingAction : BaseAction() {
 
             return IndexingSettings(
                 filePaths = paths,
+               splitRegex = splitRegexField.text.trim().takeIf { it.isNotEmpty() } 
+                   ?: "(\\n|(?<!\\.)\\..(?!\\.))\\s*",
             )
         }
     }
@@ -70,7 +78,7 @@ class KnowledgeIndexingAction : BaseAction() {
 
             override fun createCenterPanel(): JComponent {
                 return JPanel(BorderLayout()).apply {
-                    preferredSize = Dimension(600, 400)
+                   preferredSize = Dimension(600, 500)
                     border = JBUI.Borders.empty(10)
 
                     val mainPanel = JPanel(BorderLayout()).apply {
@@ -87,17 +95,37 @@ class KnowledgeIndexingAction : BaseAction() {
                             add(headerPanel, BorderLayout.NORTH)
                             add(JBScrollPane(settingsUI.filePathsArea), BorderLayout.CENTER)
                         }
+                       val regexPanel = JPanel(BorderLayout()).apply {
+                           border = JBUI.Borders.empty(10, 0, 10, 0)
+                           val regexHeaderPanel = JPanel(BorderLayout()).apply {
+                               add(JLabel("Text splitting regex pattern:"), BorderLayout.WEST)
+                               val regexInfoLabel = JLabel("💡 Controls how text is split into segments").apply {
+                                   font = font.deriveFont(font.size * 0.9f)
+                                   foreground = java.awt.Color.GRAY
+                               }
+                               add(regexInfoLabel, BorderLayout.EAST)
+                           }
+                           add(regexHeaderPanel, BorderLayout.NORTH)
+                           add(JBScrollPane(settingsUI.splitRegexField), BorderLayout.CENTER)
+                       }
 
                         val descPanel = JPanel(BorderLayout()).apply {
                             border = JBUI.Borders.empty(10, 0, 0, 0)
                             val descText = JLabel("<html><b>Knowledge Indexing</b><br/>" +
                                 "This will create searchable embeddings of your files for semantic search and AI assistance.<br/>" +
-                                "Supported formats: text files, code, markdown, PDF, HTML</html>")
+                               "Supported formats: text files, code, markdown, PDF, HTML<br/>" +
+                               "<br/><b>Split Regex:</b> Defines how text is divided into searchable segments. " +
+                               "Default splits on newlines and sentence endings.</html>")
                             add(descText, BorderLayout.NORTH)
                         }
 
                         add(pathPanel, BorderLayout.CENTER)
-                        add(descPanel, BorderLayout.SOUTH)
+                       add(regexPanel, BorderLayout.SOUTH)
+                       
+                       val bottomPanel = JPanel(BorderLayout()).apply {
+                           add(descPanel, BorderLayout.CENTER)
+                       }
+                       add(bottomPanel, BorderLayout.SOUTH)
                     }
 
                     add(mainPanel, BorderLayout.CENTER)
@@ -120,7 +148,21 @@ class KnowledgeIndexingAction : BaseAction() {
                     )
                     return
                 }
+               // Validate regex pattern
+               try {
+                   Regex(settings.splitRegex)
+               } catch (e: Exception) {
+                   JOptionPane.showMessageDialog(
+                       this.contentPane,
+                       "Invalid regex pattern: ${e.message}\n\n" +
+                       "Please enter a valid regular expression for text splitting.",
+                       "Invalid Regex",
+                       JOptionPane.ERROR_MESSAGE
+                   )
+                   return
+               }
                 
+               
                 // Validate file paths and show warning for large files
                 val invalidPaths = mutableListOf<String>()
                 val largePaths = mutableListOf<String>()

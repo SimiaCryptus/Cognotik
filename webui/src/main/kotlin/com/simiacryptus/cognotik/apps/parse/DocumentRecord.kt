@@ -45,6 +45,9 @@ data class DocumentRecord(
 
     @Throws(IOException::class)
     fun writeObject(out: ObjectOutputStream) {
+        if (vector == null) {
+            throw IllegalStateException("Vector is null for record from $sourcePath at $jsonPath")
+        }
         val normalize = normalize(text ?: "")
         out.writeUTF(normalize)
         out.writeUTF(metadata ?: "")
@@ -87,12 +90,8 @@ data class DocumentRecord(
 
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(DocumentRecord::class.java)
-        private const val MAX_BATCH_SIZE = 100
-        private const val EMBEDDING_TIMEOUT_MINUTES = 5L
         private const val RECORD_VERSION = 2
-        private const val MAX_RETRY_ATTEMPTS = 3
-        private const val RETRY_DELAY_MS = 1000L
-        
+
         fun readBinaryStream(inputPath: String, processor: (DocumentRecord) -> Unit) {
             ObjectInputStream(FileInputStream(inputPath)).use { input ->
                 val version = try { input.readInt() } catch (e: Exception) { 1 }
@@ -149,7 +148,7 @@ data class DocumentRecord(
                 val outputPath = infile.parentFile.resolve(
                     infile.name.split("\\.".toRegex(), 2).first() + ".index.data"
                 ).absolutePath
-                awaitAll(futureList.toTypedArray())
+                awaitAll(futureList.toTypedArray(), TimeUnit.MINUTES.toMillis(5))
                 writeBinary(outputPath, records)
                 outputPath
             } catch (e: Exception) {
@@ -181,17 +180,17 @@ data class DocumentRecord(
                 embeddingClient = embeddingClient,
                 fileData = mapOf("content_list" to parsedDocument.content_list) as Map<String, Any>?
             )
-            awaitAll(futureList.toTypedArray())
+            awaitAll(futureList.toTypedArray(), TimeUnit.MINUTES.toMillis(30))
             writeBinary(outputPath, rows)
             outputPath
         }
 
-        fun awaitAll(futureList: Array<Future<*>>) {
+        fun awaitAll(futureList: Array<Future<*>>, timeoutMs: Long) {
             val start = System.currentTimeMillis()
             for (future in futureList) {
                 try {
                     future.get(
-                        TimeUnit.MINUTES.toMillis(5) - (System.currentTimeMillis() - start),
+                        timeoutMs - (System.currentTimeMillis() - start),
                         TimeUnit.MILLISECONDS
                     )
                 } catch (e: Exception) {

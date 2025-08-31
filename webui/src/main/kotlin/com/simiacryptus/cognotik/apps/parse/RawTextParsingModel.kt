@@ -6,13 +6,10 @@ import com.simiacryptus.jopenai.describe.Description
 
 open class RawTextParsingModel(
     override val api: ChatClientInterface,
-    private val splitRegex: String = "\n|\\."
+    private val splitRegex: String = "(\n|(?<!\\.)\\.(?!\\.))\\s*"
 ) : ParsingModel<RawTextParsingModel.RawTextData> {
 
-    override fun merge(
-        runningDocument: RawTextData,
-        newData: RawTextData
-    ): RawTextData {
+    override fun merge(runningDocument: RawTextData, newData: RawTextData): RawTextData {
         return RawTextData(
             id = newData.id ?: runningDocument.id,
             content_list = mergeContent(runningDocument.content_list, newData.content_list).takeIf { it.isNotEmpty() },
@@ -25,8 +22,7 @@ open class RawTextParsingModel(
     ): List<TextSegmentData> {
         val mergedContent = (existingContent ?: emptyList()).toMutableList()
         (newContent ?: emptyList()).forEach { newItem ->
-            val existingIndex =
-                mergedContent.indexOfFirst { it.text?.trim() == newItem.text?.trim() }
+            val existingIndex = mergedContent.indexOfFirst { it.text?.trim() == newItem.text?.trim() }
             if (existingIndex != -1) {
                 mergedContent[existingIndex] = mergeTextSegmentData(mergedContent[existingIndex], newItem)
             } else {
@@ -37,26 +33,23 @@ open class RawTextParsingModel(
     }
 
     protected open fun mergeTextSegmentData(existing: TextSegmentData, new: TextSegmentData) = existing.copy(
-        tags = ((existing.tags ?: emptyList()) + (new.tags ?: emptyList())).distinct().takeIf { it.isNotEmpty() }
-    )
+        tags = ((existing.tags ?: emptyList()) + (new.tags ?: emptyList())).distinct().takeIf { it.isNotEmpty() })
 
     override fun getFastParser(api: API): (String) -> RawTextData {
         return { text -> parseRawText(text) }
     }
 
-    private fun parseRawText(text: String) = RawTextData(
-        id = "raw_text_document",
-        content_list = text.split(Regex(splitRegex))
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .mapIndexed { index, segment ->
-                TextSegmentData(
-                    type = "segment",
-                    text = segment,
-                    tags = listOf("segment_$index")
-                )
-            }
-    )
+    private fun parseRawText(text: String): RawTextData {
+        val segments = getSegments(text)
+        return RawTextData(
+            id = "raw_text_document",
+            content_list = segments.mapIndexed { index, segment ->
+                TextSegmentData(type = "segment", text = segment, tags = listOf("segment_$index"))
+            })
+    }
+
+    private fun getSegments(text: String): List<String> =
+        text.split(Regex(splitRegex)).map { it.trim() }.filter { it.isNotEmpty() }
 
     override fun newDocument() = RawTextData()
 

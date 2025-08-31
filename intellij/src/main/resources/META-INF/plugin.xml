@@ -114,16 +114,16 @@
                         text="🔨 Mass Patch"
                         description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
                 </action>
-                <action class="cognotik.actions.agent.CustomFileSetPatchAction"
-                        text="🔨 Custom Patch"
-                        description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
-                </action>
             </group>
             <group id="cognotik.ui.ProjectMenu.Knowledge"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="🧠 Knowledge"
                    description="Knowledge management tools">
+                <action class="cognotik.actions.agent.CustomFileSetPatchAction"
+                        text="🔨 Process Filesets"
+                        description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
+                </action>
                 <action class="cognotik.actions.knowledge.KnowledgeIndexingAction"
                         text="📚 Index Files"
                         description="Index files for semantic search and knowledge retrieval">

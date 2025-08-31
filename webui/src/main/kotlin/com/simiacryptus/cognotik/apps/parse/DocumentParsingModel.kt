@@ -105,12 +105,6 @@ fun EmbeddingModel.getRows(
     fileData: Map<String, Any>?
 ): MutableList<DocumentRecord> {
     val records: MutableList<DocumentRecord> = mutableListOf()
-    val batchQueue = mutableListOf<DocumentRecord>()
-    val batchSize = when {
-        this == EmbeddingModel.Small -> 100
-        this == EmbeddingModel.Large -> 25
-        else -> 50
-    }
     val maxConcurrentBatches = 3
     val semaphore = java.util.concurrent.Semaphore(maxConcurrentBatches)
     
@@ -125,20 +119,19 @@ fun EmbeddingModel.getRows(
         records.add(record)
         if (record.text != null) {
             progressState.add(0.0, 1.0)
-            batchQueue.add(record)
-            
-            if (batchQueue.size >= batchSize) {
-                val batch = batchQueue.toList()
-                batchQueue.clear()
-                futureList.add(pool.submit {
-                    try {
-                        semaphore.acquire()
-                        processBatch(batch, embeddingClient, this, progressState)
-                    } finally {
-                        semaphore.release()
-                    }
-                })
-            }
+            futureList.add(pool.submit {
+                try {
+                    semaphore.acquire()
+                    processBatch(
+                        batch = listOf(record),
+                        embeddingClient = embeddingClient,
+                        model = this,
+                        progressState = progressState
+                    )
+                } finally {
+                    semaphore.release()
+                }
+            })
         }
         when (val subContent = content["content"] ?: content["content_list"]) {
             is List<*> -> {
@@ -162,13 +155,6 @@ fun EmbeddingModel.getRows(
             processContent(content?.jsonCast() ?: emptyMap(), "content_list[$index]")
         }
     }
-    // Process remaining items in batch queue
-    if (batchQueue.isNotEmpty()) {
-        futureList.add(pool.submit {
-            processBatch(batchQueue.toList(), embeddingClient, this, progressState)
-        })
-    }
-    
     return records
 }
 private fun processBatch(
