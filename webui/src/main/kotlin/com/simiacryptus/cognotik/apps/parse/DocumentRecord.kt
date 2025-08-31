@@ -170,7 +170,7 @@ data class DocumentRecord(
                     )
                 }
             }
-            return records
+            return records.distinct()
         }
     }
 }

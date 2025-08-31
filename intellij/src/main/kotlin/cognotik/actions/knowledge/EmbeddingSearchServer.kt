@@ -1,7 +1,10 @@
 package cognotik.actions.knowledge
 
+import cognotik.actions.agent.toFile
+import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -19,21 +22,21 @@ import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import kotlin.streams.asSequence
 
 class EmbeddingSearchServer(
     val settings: EmbeddingSearchAction.SearchSettings,
     val api: ChatClientInterface,
-    val model: EmbeddingModel
+    val model: EmbeddingModel,
+    val files: List<VirtualFile?>,
+    root: File
 ) : ApplicationServer(
     applicationName = "Embedding Search",
     path = "/embeddingSearch",
     showMenubar = false,
-    root = File(System.getProperty("user.dir"))
+    root = root
 ), AutoCloseable {
 
     companion object {
@@ -106,7 +109,7 @@ class EmbeddingSearchServer(
             throw IllegalArgumentException("At least one positive query is required")
         }
         
-        val positiveEmbeddings = settings.positiveQueries.map { query ->
+        val positiveEmbeddings = settings.positiveQueries.mapNotNull { query ->
             try {
                 api.createEmbedding(
                     ApiModel.EmbeddingRequest(
@@ -119,9 +122,9 @@ class EmbeddingSearchServer(
                 log.error("Failed to create embedding for query: $query", e)
                 null
             }
-        }.filterNotNull()
+        }
 
-        val negativeEmbeddings = settings.negativeQueries.map { query ->
+        val negativeEmbeddings = settings.negativeQueries.mapNotNull { query ->
             try {
                 api.createEmbedding(
                     ApiModel.EmbeddingRequest(
@@ -134,53 +137,45 @@ class EmbeddingSearchServer(
                 log.error("Failed to create embedding for negative query: $query", e)
                 null
             }
-        }.filterNotNull()
+        }
 
         if (positiveEmbeddings.isEmpty()) {
             throw IllegalStateException("Failed to create any positive embeddings")
         }
 
         val distanceType = settings.distanceType
-        val filtered = Files.walk(root.toPath()).asSequence()
-            .filter { path ->
-                path.toString().endsWith(".index.data")
-            }.toList().toTypedArray()
-
         val minLength = settings.minLength
         val requiredRegexes = settings.requiredRegexes.map { Pattern.compile(it) }
-
-        fun String.matchesAllRegexes(): Boolean {
-            return requiredRegexes.all { regex -> regex.matcher(this).find() }
-        }
-
-        val searchResults = filtered
+        fun String.matchesAllRegexes() = requiredRegexes.all { regex -> regex.matcher(this).find() }
+        val searchResults = files
             .flatMap { path ->
                 try {
-                    val records = DocumentRecord.readBinary(path.toString())
+                    val inputPath = path?.toFile?.toString() ?: throw IllegalArgumentException("Invalid file path")
+                    val records = DocumentRecord.readBinary(inputPath)
                     records.mapNotNull { record ->
-                    record.vector?.let { vector ->
-                        val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
-                            distanceType.distance(vector, embedding)
+                        record.vector?.let { vector ->
+                            val positiveDistances = positiveEmbeddings.map { embedding ->
+                                distanceType.distance(vector, embedding)
+                            }
+                            val negativeDistances = negativeEmbeddings.map { embedding ->
+                                distanceType.distance(vector, embedding)
+                            }
+                            val overallDistance = if (negativeDistances.isEmpty()) {
+                                positiveDistances.minOrNull() ?: Double.MAX_VALUE
+                            } else {
+                                val minPositive = positiveDistances.minOrNull() ?: Double.MAX_VALUE
+                                val minNegative = negativeDistances.minOrNull() ?: Double.MIN_VALUE
+                                if (minNegative == 0.0) Double.MAX_VALUE else minPositive / minNegative
+                            }
+                            val content = record.text ?: ""
+                            if (content.length >= minLength && content.matchesAllRegexes()) {
+                                EmbeddingSearchResult(
+                                    file = path?.toNioPath()?.let { root.toPath().relativize(it).toString() } ?: "Unknown",
+                                    record = record,
+                                    distance = overallDistance
+                                )
+                            } else null
                         }
-                        val negativeDistances = negativeEmbeddings.filterNotNull().map { embedding ->
-                            distanceType.distance(vector, embedding)
-                        }
-                        val overallDistance = if (negativeDistances.isEmpty()) {
-                            positiveDistances.minOrNull() ?: Double.MAX_VALUE
-                        } else {
-                            val minPositive = positiveDistances.minOrNull() ?: Double.MAX_VALUE
-                            val minNegative = negativeDistances.minOrNull() ?: Double.MIN_VALUE
-                            if (minNegative == 0.0) Double.MAX_VALUE else minPositive / minNegative
-                        }
-                        val content = record.text ?: ""
-                        if (content.length >= minLength && content.matchesAllRegexes()) {
-                            EmbeddingSearchResult(
-                                file = root.toPath().relativize(path).toString(),
-                                record = record,
-                                distance = overallDistance
-                            )
-                        } else null
-                    }
                     }
                 } catch (e: Exception) {
                     log.error("Failed to read index file: $path", e)
@@ -207,30 +202,60 @@ class EmbeddingSearchServer(
                 appendLine("## Result ${index + 1}")
                 appendLine("* Distance: %.3f".format(result.distance))
                 appendLine("* File: ${result.record.sourcePath}")
-                appendLine(getContextSummary(result.record.sourcePath, result.record.jsonPath))
+                appendLine(getContextSummary(result.record))
                 appendLine("Metadata:\n```json\n${result.record.metadata}\n```")
                 appendLine()
             }
         }
     }
 
-    private fun getContextSummary(sourcePath: String, jsonPath: String): String {
+    private fun getContextSummary(record: DocumentRecord): String {
         return try {
-            val sourceFile = File(sourcePath)
+            val sourceFile = File(record.sourcePath)
             if (!sourceFile.exists()) {
-                return "Source file not found: $sourcePath"
+                return "Source file not found: ${record.sourcePath}"
             }
-            val objectMapper = ObjectMapper()
-            val jsonNode = objectMapper.readTree(sourceFile)
-            val contextNode = getNodeAtPath(jsonNode, jsonPath)
-            buildString {
-                appendLine("```json")
-                appendLine(summarizeContext(contextNode, jsonPath, jsonNode))
-                appendLine("```")
+            try {
+                val objectMapper = ObjectMapper()
+                val jsonNode = objectMapper.readTree(sourceFile)
+                val contextNode = getNodeAtPath(jsonNode, record.jsonPath)
+                buildString {
+                    appendLine("```json")
+                    appendLine(summarizeContext(contextNode, record.jsonPath, jsonNode))
+                    appendLine("```")
+                }
+            } catch (e: JsonParseException) {
+                buildString {
+                    appendLine()
+                    appendLine("**Source Path:** ${record.sourcePath}")
+                    appendLine()
+                    appendLine("**JSON Path:** ${record.jsonPath}")
+                    appendLine()
+                    appendLine("```text")
+                    appendLine(record.text)
+                    appendLine("```")
+                    appendLine()
+//                    appendLine("```text")
+//                    appendLine(summarizeTextContext(sourceFile, record.jsonPath))
+//                    appendLine("```")
+                    appendLine()
+                }
             }
         } catch (e: Exception) {
-            log.warn("Error getting context summary for $sourcePath:$jsonPath", e)
+            log.warn("Error getting context summary for ${record.sourcePath}:${record.jsonPath}", e)
             "Context summary unavailable: ${e.message}"
+        }
+    }
+
+    private fun summarizeTextContext(sourceFile: File, jsonPath: String): String {
+        val linePattern = Regex("""content_list\[(\d+)]""")
+        val match = linePattern.matchEntire(jsonPath)
+        if (match != null) {
+            val chunkIndex = match.groupValues[1].toIntOrNull() ?: return "Invalid line index in path: $jsonPath"
+            // TODO: Parse document using parsing model to extract position and surrounding context
+            TODO()
+        } else {
+            return "Unrecognized text path format: $jsonPath"
         }
     }
 

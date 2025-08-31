@@ -3,8 +3,8 @@ package cognotik.actions.knowledge
 import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.getRoot
+import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.models.EmbeddingModel
@@ -19,6 +21,7 @@ import com.simiacryptus.jopenai.opt.DistanceType
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
@@ -36,7 +39,7 @@ class EmbeddingSearchAction : BaseAction() {
         var requiredRegexes: List<String> = emptyList()
     )
 
-    class SettingsUI(private val project: Project?) {
+    class SettingsUI {
         val positiveQueriesArea = JBTextArea(4, 40).apply {
             lineWrap = true
             wrapStyleWord = true
@@ -79,9 +82,9 @@ class EmbeddingSearchAction : BaseAction() {
         }
     }
 
-    override fun handle(e: AnActionEvent) {
-        val project = e.project
-        val settingsUI = SettingsUI(project)
+    override fun handle(event: AnActionEvent) {
+        val project = event.project
+        val settingsUI = SettingsUI()
 
         val dialog = object : DialogWrapper(project, false) {
             init {
@@ -178,10 +181,21 @@ class EmbeddingSearchAction : BaseAction() {
                         "Embedding Search @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                     )
 
+                    fun expandFiles(vararg virtualFiles: VirtualFile): List<VirtualFile?> = virtualFiles.flatMap { virtualFile ->
+                        if (virtualFile.isDirectory) {
+                            expandFiles(*virtualFile.children)
+                        } else if(virtualFile.name.endsWith(".index.data")) {
+                            listOf(virtualFile)
+                        } else {
+                            emptyList()
+                        }
+                    }
                     SessionProxyServer.chats[session] = EmbeddingSearchServer(
                         settings = settings,
                         api = api,
-                        model = EmbeddingModel.OllamaNomadic
+                        model = EmbeddingModel.OllamaNomadic,
+                        files = expandFiles(*event.getSelectedFiles().toTypedArray()),
+                        root = File(event.getRoot())
                     )
 
                     ApplicationServer.appInfoMap[session] = AppInfoData(
@@ -192,7 +206,7 @@ class EmbeddingSearchAction : BaseAction() {
                         showMenubar = false
                     )
 
-                    val server = CognotikAppServer.getServer(e.project)
+                    val server = CognotikAppServer.getServer(event.project)
                     CompletableFuture.runAsync({
                         Thread.sleep(500)
                         try {
