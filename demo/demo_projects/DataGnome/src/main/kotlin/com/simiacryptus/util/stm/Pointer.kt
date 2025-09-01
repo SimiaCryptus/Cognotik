@@ -16,7 +16,6 @@ class Pointer<T : Any>(
     var heapObject: T? = null
 
 
-
     inline fun <reified TT : Any> getValue(): TT {
         if (null != heapObject) return heapObject!! as TT
         val typeInfo: TypeReference<TT> = object : TypeReference<TT>() {}

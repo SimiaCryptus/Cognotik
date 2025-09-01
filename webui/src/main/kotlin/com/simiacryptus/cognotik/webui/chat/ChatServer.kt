@@ -14,8 +14,8 @@ import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.JettyServerUpgradeRequest
 import org.eclipse.jetty.websocket.server.JettyWebSocketServlet
 import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory
-import java.util.concurrent.ConcurrentHashMap
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 
 abstract class ChatServer(
     private val resourceBase: String = "application",
@@ -48,10 +48,10 @@ abstract class ChatServer(
                         val session = Session(req.parameterMap["sessionId"]?.first()!!)
                         trafficLog.debug("WebSocket connection request for session: ${session}")
                         val sessionManager = sessions.computeIfAbsent(session) { s ->
-                                val user =
-                                    authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
-                                trafficLog.debug("Creating new session manager for session: ${s}, user: ${user?.name ?: "anonymous"}")
-                                newSession(user, s)
+                            val user =
+                                authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
+                            trafficLog.debug("Creating new session manager for session: ${s}, user: ${user?.name ?: "anonymous"}")
+                            newSession(user, s)
                         }
                         ChatSocket(sessionManager)
                     } else {
@@ -70,15 +70,16 @@ abstract class ChatServer(
 
     abstract fun newSession(user: User?, session: Session): SocketManager
 
-    open val baseResource: Resource? get() = javaClass.classLoader.getResource(resourceBase)?.let {
-        Resource.newResource(it).apply {
-            if (!exists()) {
-                val message = "Resource not found: $it"
-                trafficLog.error("Base resource not found: $it")
-                throw RuntimeException(message)
+    open val baseResource: Resource?
+        get() = javaClass.classLoader.getResource(resourceBase)?.let {
+            Resource.newResource(it).apply {
+                if (!exists()) {
+                    val message = "Resource not found: $it"
+                    trafficLog.error("Base resource not found: $it")
+                    throw RuntimeException(message)
+                }
             }
         }
-    }
     private val newSessionServlet by lazy { NewSessionServlet() }
     private val webSocketHandler by lazy { WebSocketHandler() }
     private val defaultServlet by lazy { DefaultServlet() }

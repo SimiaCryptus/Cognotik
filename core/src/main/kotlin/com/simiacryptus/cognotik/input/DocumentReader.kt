@@ -10,7 +10,7 @@ interface DocumentReader : AutoCloseable {
 interface PaginatedDocumentReader : DocumentReader {
     fun getPageCount(): Int
     fun getText(startPage: Int, endPage: Int): String
-    
+
     override fun getText(): String = getText(0, getPageCount())
 }
 

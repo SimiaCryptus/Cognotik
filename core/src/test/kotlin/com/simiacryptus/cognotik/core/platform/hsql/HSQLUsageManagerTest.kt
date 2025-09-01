@@ -1,14 +1,13 @@
-import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
-import org.junit.jupiter.api.TestInstance
-
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.chat.model.OpenAIModels
+import com.simiacryptus.jopenai.models.ApiModel
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
@@ -163,6 +162,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
         Assertions.assertTrue(userUsageSummary.isEmpty())
     }
 }
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HSQLUsageManagerTest : UsageTest(HSQLUsageManager())
 

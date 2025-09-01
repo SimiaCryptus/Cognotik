@@ -42,6 +42,5 @@ abstract class ApplicationSocketManager(
     companion object {
 
 
-
     }
 }

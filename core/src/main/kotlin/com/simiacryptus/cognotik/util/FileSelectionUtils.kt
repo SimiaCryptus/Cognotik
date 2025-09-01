@@ -122,23 +122,32 @@ object FileSelectionUtils {
                     log.debug("File ignored by gitignore: ${it.absolutePath}")
                     arrayOf()
                 }
+
                 isLLMIgnored(it.toPath()) -> {
                     log.debug("File ignored by llmignore: ${it.absolutePath}")
                     arrayOf()
                 }
+
                 it.length() > 100_000_000L -> {
                     log.debug("File too large (>100MB): ${it.absolutePath}")
                     arrayOf()
                 }
+
                 it.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> {
                     log.debug("File is a binary type: ${it.absolutePath}")
                     arrayOf()
                 }
+
                 isBinaryFile(it) -> {
                     log.debug("File is detected as binary: ${it.absolutePath}")
                     arrayOf()
                 }
-                it.isDirectory -> expandFileList(*it.listFiles() ?: arrayOf(), treatDocumentsAsText = treatDocumentsAsText)
+
+                it.isDirectory -> expandFileList(
+                    *it.listFiles() ?: arrayOf(),
+                    treatDocumentsAsText = treatDocumentsAsText
+                )
+
                 else -> arrayOf(it)
             }).toList()
         }.toTypedArray()
@@ -194,10 +203,10 @@ object FileSelectionUtils {
         var controlCharCount = 0
         var printableCount = 0
         var i = 0
-        
+
         while (i < bytesRead) {
             val b = bytes[i].toInt() and 0xFF
-            
+
             when {
                 b == 0 -> {
                     nullCount++
@@ -226,7 +235,7 @@ object FileSelectionUtils {
                         b and 0xF8 == 0xF0 -> 4  // 11110xxx - 4 byte sequence
                         else -> 1 // Invalid UTF-8 start byte, treat as single byte
                     }
-                    
+
                     // Validate UTF-8 sequence
                     var validUtf8 = true
                     if (utfLength > 1 && i + utfLength <= bytesRead) {
@@ -240,7 +249,7 @@ object FileSelectionUtils {
                     } else if (utfLength > 1) {
                         validUtf8 = false // Incomplete sequence at end of buffer
                     }
-                    
+
                     if (validUtf8 && utfLength > 1) {
                         printableCount++
                         i += utfLength
@@ -255,7 +264,7 @@ object FileSelectionUtils {
                     i++
                 }
             }
-            
+
         }
 
         // More lenient binary detection logic
@@ -376,6 +385,7 @@ object FileSelectionUtils {
     } catch (e: Throwable) {
         this
     }
+
     fun isDocumentFile(file: File): Boolean {
         val extension = file.extension.lowercase(Locale.getDefault())
         return extension in setOf("pdf", "html", "htm")
@@ -460,7 +470,7 @@ object FileSelectionUtils {
         return null
     }
 
-    fun prefilterFilename(text: String) : String? {
+    fun prefilterFilename(text: String): String? {
         var returnValue = text.trim()
         if (returnValue.isEmpty()) return null
         returnValue = returnValue.split("\\s+".toRegex()).filterNot { it.isBlank() }.firstOrNull() ?: return null

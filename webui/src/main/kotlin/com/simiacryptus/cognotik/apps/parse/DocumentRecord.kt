@@ -59,11 +59,11 @@ data class DocumentRecord(
     }
 
     private fun normalize(string: String): String {
-        if(string.length < 65535) return string
+        if (string.length < 65535) return string
         var string = string.trim()
-        if(string.length < 65535) return string
+        if (string.length < 65535) return string
         string = string.replace(Regex("\\s{2,}"), " ")
-        if(string.length < 65535) return string
+        if (string.length < 65535) return string
         string = string.take(65532)
         return string
     }
@@ -75,8 +75,16 @@ data class DocumentRecord(
         val sourcePath = input.readUTF()
         val jsonPath = input.readUTF()
         val vector = input.readObject() as DoubleArray?
-        val chunkIndex = try { input.readInt() } catch (e: Exception) { 0 }
-        val totalChunks = try { input.readInt() } catch (e: Exception) { 1 }
+        val chunkIndex = try {
+            input.readInt()
+        } catch (e: Exception) {
+            0
+        }
+        val totalChunks = try {
+            input.readInt()
+        } catch (e: Exception) {
+            1
+        }
         return DocumentRecord(
             text,
             metadata,
@@ -94,7 +102,11 @@ data class DocumentRecord(
 
         fun readBinaryStream(inputPath: String, processor: (DocumentRecord) -> Unit) {
             ObjectInputStream(FileInputStream(inputPath)).use { input ->
-                val version = try { input.readInt() } catch (e: Exception) { 1 }
+                val version = try {
+                    input.readInt()
+                } catch (e: Exception) {
+                    1
+                }
                 val size = if (version == RECORD_VERSION) input.readInt() else version
                 var processed = 0
                 while (processed < size) {
@@ -156,6 +168,7 @@ data class DocumentRecord(
                 null
             }
         }
+
         fun indexTextFiles(
             embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
@@ -208,18 +221,26 @@ data class DocumentRecord(
             }
             // Write metadata file
             val metadataPath = outputPath.replace(".index.data", ".index.meta")
-            File(metadataPath).writeText(JsonUtil.toJson(mapOf(
-                "version" to RECORD_VERSION,
-                "recordCount" to records.size,
-                "timestamp" to System.currentTimeMillis(),
-                "vectorDimension" to (records.firstOrNull()?.vector?.size ?: 0)
-            )))
+            File(metadataPath).writeText(
+                JsonUtil.toJson(
+                    mapOf(
+                        "version" to RECORD_VERSION,
+                        "recordCount" to records.size,
+                        "timestamp" to System.currentTimeMillis(),
+                        "vectorDimension" to (records.firstOrNull()?.vector?.size ?: 0)
+                    )
+                )
+            )
         }
 
         fun readBinary(inputPath: String): List<DocumentRecord> {
             val records = mutableListOf<DocumentRecord>()
             ObjectInputStream(FileInputStream(inputPath)).use { input ->
-                val version = try { input.readInt() } catch (e: Exception) { 1 }
+                val version = try {
+                    input.readInt()
+                } catch (e: Exception) {
+                    1
+                }
                 val size = if (version == RECORD_VERSION) input.readInt() else version
                 var processed = 0
                 while (processed < size) {

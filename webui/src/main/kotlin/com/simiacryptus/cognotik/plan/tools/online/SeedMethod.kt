@@ -101,8 +101,8 @@ enum class SeedMethod {
                             "title" to "Direct URL ${index + 1}"
                         )
                     }.also {
-                    log.info("Successfully processed ${it?.size ?: 0} direct URLs")
-                }
+                        log.info("Successfully processed ${it?.size ?: 0} direct URLs")
+                    }
             }
         }
     };

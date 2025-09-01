@@ -76,7 +76,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.get('[data-testid="message-list"]').scrollTo("bottom")
         cy.narrate('mermaid_diagram_example');
         cy.log('DEMO_WAIT: Waiting for mermaid diagram generation to complete');
-        cy.get('.spinner-border',{timeout:12000}).should('not.exist');
+        cy.get('.spinner-border', {timeout: 12000}).should('not.exist');
         cy.log('DEMO_ACTION: Scrolling to view generated mermaid diagram');
         cy.get('[data-testid="message-list"]').scrollTo("bottom")
         cy.log('DEMO_FLOW: Mermaid diagram demonstration completed successfully');
@@ -91,7 +91,7 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
         cy.log('DEMO_FLOW: Usage reporting modal displayed with session statistics');
         cy.wait(200);
         cy.log('DEMO_ACTION: Closing usage modal by clicking overlay');
-       cy.get('[data-testid="modal-overlay"]').click({ x: 0, y: 0 });
+        cy.get('[data-testid="modal-overlay"]').click({x: 0, y: 0});
         cy.log('DEMO_FLOW: Usage reporting demonstration completed');
         cy.log('DEMO_SECTION: Themes and Layout Customization - Demonstrating UI personalization');
 

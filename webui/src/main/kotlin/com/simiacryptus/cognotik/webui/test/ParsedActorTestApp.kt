@@ -32,7 +32,7 @@ open class ParsedActorTestApp<T : Any>(
             message.echo(userMessage.renderMarkdown)
             val response = actor.answer(listOf(userMessage), api = api)
             message.complete(
-              "${response.text}\n```\n${JsonUtil.toJson(response.obj)}\n```".trim().renderMarkdown
+                "${response.text}\n```\n${JsonUtil.toJson(response.obj)}\n```".trim().renderMarkdown
             )
         } catch (e: Throwable) {
             log.warn("Error", e)

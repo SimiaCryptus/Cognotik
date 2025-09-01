@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.platform.file
 
-import java.nio.file.Files
-
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -11,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.nio.file.Files
 import java.util.*
 
 abstract class StorageInterfaceTest(val storage: StorageInterface) {
@@ -207,5 +206,6 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 
 
 }
+
 class DataStorageTest : StorageInterfaceTest(DataStorage(Files.createTempDirectory("sessionDataTest").toFile()))
 

@@ -15,8 +15,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import org.slf4j.LoggerFactory
@@ -36,17 +36,19 @@ open class CodingAgent<T : Interpreter>(
     val details: String? = null,
     val model: LLMModel,
     private val mainTask: SessionTask,
-    val retryable : Boolean = true,
+    val retryable: Boolean = true,
 ) {
 
-    open val actor by lazy { CodingActor(
-        interpreter,
-        symbols = symbols,
-        temperature = temperature,
-        details = details,
-        model = model,
-        fallbackModel = model as ChatModelType
-    ) }
+    open val actor by lazy {
+        CodingActor(
+            interpreter,
+            symbols = symbols,
+            temperature = temperature,
+            details = details,
+            model = model,
+            fallbackModel = model as ChatModelType
+        )
+    }
 
     open val canPlay by lazy {
         ApplicationServices.authorizationManager.isAuthorized(
@@ -72,7 +74,7 @@ open class CodingAgent<T : Interpreter>(
         task: SessionTask = mainTask,
     ) {
         val task = ui.newTask(root = false).apply { task.complete(placeholder) }
-        if(retryable) {
+        if (retryable) {
             Retryable(ui, task) {
                 val task = ui.newTask(root = false)
                 ui.socketManager?.scheduledThreadPoolExecutor!!.schedule({
@@ -92,16 +94,16 @@ open class CodingAgent<T : Interpreter>(
                 task.placeholder
             }
         } else {
-                try {
-                    val statusSB = task.add("Running...")
-                    displayCode(task, codeRequest)
-                    statusSB?.clear()
-                } catch (e: Throwable) {
-                    log.warn("Error", e)
-                    task.error(e)
-                } finally {
-                    task.complete()
-                }
+            try {
+                val statusSB = task.add("Running...")
+                displayCode(task, codeRequest)
+                statusSB?.clear()
+            } catch (e: Throwable) {
+                log.warn("Error", e)
+                task.error(e)
+            } finally {
+                task.complete()
+            }
         }
     }
 
@@ -155,7 +157,8 @@ open class CodingAgent<T : Interpreter>(
     ) {
         task.expanded(
             "Code",
-          response.renderedResponse ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```".renderMarkdown
+            response.renderedResponse
+                ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```".renderMarkdown
         )
     }
 
@@ -253,9 +256,9 @@ open class CodingAgent<T : Interpreter>(
         e: Throwable, task: SessionTask, request: CodingActor.CodeRequest, response: CodeResult
     ) {
         val message = when {
-          e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
-          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
-          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
+            e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
+            e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
+            else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
         }
         task.add(message, true, "div", "error")
         displayCode(

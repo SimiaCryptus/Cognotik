@@ -628,7 +628,6 @@ open class DiffMatchPatch {
         }
 
 
-
         var best = 0
         var length = 1
         while (true) {
@@ -1011,9 +1010,6 @@ open class DiffMatchPatch {
 
             return 6
         }
-
-
-
 
 
         val char1 = one[one.length - 1]
@@ -1520,7 +1516,6 @@ open class DiffMatchPatch {
         for (d in 0 until pattern.length) {
 
 
-
             bin_min = 0
             bin_mid = bin_max
             while (bin_min < bin_mid) {
@@ -1745,8 +1740,6 @@ open class DiffMatchPatch {
         var char_count2 = 0
 
 
-
-
         var prepatch_text: String = text1
         var postpatch_text: String = text1
         for (aDiff: Diff in diffs) {
@@ -1860,8 +1853,6 @@ open class DiffMatchPatch {
         patch_splitMax(patches)
 
         var x = 0
-
-
 
 
         var delta = 0

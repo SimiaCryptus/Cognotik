@@ -13,6 +13,7 @@ class HTMLReader(private val htmlFile: File) : PaginatedDocumentReader {
     fun configure(settings: Settings) {
         this.settings = settings
     }
+
     override fun getText(): String {
         return if (settings?.addLineNumbers == true) {
             fullText.lines().mapIndexed { index, line ->

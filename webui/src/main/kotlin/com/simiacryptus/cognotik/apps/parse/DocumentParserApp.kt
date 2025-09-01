@@ -4,12 +4,7 @@ import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
-import com.simiacryptus.cognotik.input.DocumentReader
-import com.simiacryptus.cognotik.input.PaginatedDocumentReader
-import com.simiacryptus.cognotik.input.RenderableDocumentReader
-import com.simiacryptus.cognotik.input.Settings
-import com.simiacryptus.cognotik.input.TextReader
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -151,7 +146,11 @@ open class DocumentParserApp(
                                     for (pageIndex in batchStart until batchEnd) {
                                         try {
                                             val image = when (reader) {
-                                                is RenderableDocumentReader -> reader.renderImage(pageIndex, settings.dpi)
+                                                is RenderableDocumentReader -> reader.renderImage(
+                                                    pageIndex,
+                                                    settings.dpi
+                                                )
+
                                                 else -> continue // Skip image rendering for non-renderable readers
                                             }
                                             ui.newTask(false).apply<SessionTask> {
@@ -293,13 +292,13 @@ open class DocumentParserApp(
             ui.newTask(false).apply<SessionTask> {
                 pageTabs["Text"] = placeholder
                 add(
-                  generateMarkdownCodeBlock("text", text, settings).renderMarkdown
+                    generateMarkdownCodeBlock("text", text, settings).renderMarkdown
                 )
             }
             ui.newTask(false).apply<SessionTask> {
                 pageTabs["JSON"] = placeholder
                 add(
-                  generateMarkdownCodeBlock("json", JsonUtil.toJson(jsonResult), settings).renderMarkdown
+                    generateMarkdownCodeBlock("json", JsonUtil.toJson(jsonResult), settings).renderMarkdown
                 )
             }
             jsonResult

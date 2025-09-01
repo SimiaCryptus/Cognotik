@@ -80,7 +80,8 @@ class TensorflowProjector(
         }
         val shape = listOf(vectorMap.size, vectorMap.values.first().size)
         val vectorURL = function(VECTOR_FILENAME, vectorTsv) ?: throw IllegalStateException("Failed to write vectors")
-        val metadataURL = function(METADATA_FILENAME, metadataTsv) ?: throw IllegalStateException("Failed to write metadata")
+        val metadataURL =
+            function(METADATA_FILENAME, metadataTsv) ?: throw IllegalStateException("Failed to write metadata")
         val projectorConfig = JsonUtil.toJson(
             mapOf(
                 "embeddings" to listOf(

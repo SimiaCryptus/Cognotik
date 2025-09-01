@@ -7,10 +7,8 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTas
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearchTaskType
 import com.simiacryptus.cognotik.plan.tools.file.InsightTask.Companion.InsightTaskType
-import com.simiacryptus.cognotik.plan.tools.file.InsightTask.InsightTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.ForeachTask.ForeachTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.util.DynamicEnum
@@ -216,12 +214,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
         )
-        val KnowledgeIndexingTask = TaskType( // TODO: This should be automatically done as needed during embedding search
-            "KnowledgeIndexingTask",
-            com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Index content for semantic search capabilities",
-            """
+        val KnowledgeIndexingTask =
+            TaskType( // TODO: This should be automatically done as needed during embedding search
+                "KnowledgeIndexingTask",
+                com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
+                TaskSettingsBase::class.java,
+                "Index content for semantic search capabilities",
+                """
           Indexes documents and code for semantic search capabilities.
           <ul>
             <li>Processes both documentation and source code</li>
@@ -231,7 +230,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Progress tracking and reporting</li>
           </ul>
         """
-        )
+            )
         val SeleniumSessionTask = TaskType(
             "SeleniumSessionTask",
             com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,

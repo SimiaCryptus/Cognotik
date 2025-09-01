@@ -72,10 +72,12 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             Runtime.getRuntime().availableProcessors().coerceAtMost(8)
         )
         try {
-            val searchResults = performEmbeddingSearch(OllamaEmbeddingClient(
-                "",
-                workPool = threadPool,
-            ))
+            val searchResults = performEmbeddingSearch(
+                OllamaEmbeddingClient(
+                    "",
+                    workPool = threadPool,
+                )
+            )
             val formattedResults = formatSearchResults(searchResults)
             task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
             resultFn(formattedResults)
@@ -119,15 +121,15 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             }
             return null
         }
-        
+
         val positiveEmbeddings = taskConfig?.positive_queries?.map { query ->
             createEmbeddingWithRetry(query)
         } ?: emptyList()
-        
+
         val negativeEmbeddings = taskConfig?.negative_queries?.map { query ->
             createEmbeddingWithRetry(query)
         } ?: emptyList()
-        
+
         if (positiveEmbeddings.filterNotNull().isEmpty()) {
             throw IllegalStateException("Failed to create any positive embeddings")
         }
@@ -147,29 +149,31 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
                 val results = mutableListOf<EmbeddingSearchResult>()
                 try {
                     DocumentRecord.readBinaryStream(path.toString()) { record ->
-                    record.vector?.let { vector ->
-                        val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
-                            distanceType.distance(vector, embedding)
-                        }
-                        val negativeDistances = negativeEmbeddings.filterNotNull().map { embedding ->
-                            distanceType.distance(vector, embedding)
-                        }
-                        val overallDistance = if (negativeDistances.isEmpty()) {
-                            positiveDistances.minOrNull() ?: Double.MAX_VALUE
-                        } else {
-                            (positiveDistances.minOrNull() ?: Double.MAX_VALUE) / (negativeDistances.minOrNull()
-                                ?: Double.MIN_VALUE)
-                        }
-                        val content = record.text ?: ""
-                        if (content.length >= minLength && content.matchesAllRegexes()) {
-                            results.add(EmbeddingSearchResult(
-                                file = root.relativize(path).toString(),
-                                record = record,
-                                distance = overallDistance
-                            ))
+                        record.vector?.let { vector ->
+                            val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
+                                distanceType.distance(vector, embedding)
+                            }
+                            val negativeDistances = negativeEmbeddings.filterNotNull().map { embedding ->
+                                distanceType.distance(vector, embedding)
+                            }
+                            val overallDistance = if (negativeDistances.isEmpty()) {
+                                positiveDistances.minOrNull() ?: Double.MAX_VALUE
+                            } else {
+                                (positiveDistances.minOrNull() ?: Double.MAX_VALUE) / (negativeDistances.minOrNull()
+                                    ?: Double.MIN_VALUE)
+                            }
+                            val content = record.text ?: ""
+                            if (content.length >= minLength && content.matchesAllRegexes()) {
+                                results.add(
+                                    EmbeddingSearchResult(
+                                        file = root.relativize(path).toString(),
+                                        record = record,
+                                        distance = overallDistance
+                                    )
+                                )
+                            }
                         }
                     }
-                }
                 } catch (e: Exception) {
                     log.error("Failed to search in file: $path", e)
                 }

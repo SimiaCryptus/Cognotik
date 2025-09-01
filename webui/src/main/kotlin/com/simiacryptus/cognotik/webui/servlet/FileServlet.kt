@@ -4,17 +4,16 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.common.cache.RemovalListener
-import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
+import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.util.data.MutableDataSet
 import jakarta.servlet.WriteListener
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.http.MimeTypes
 import org.slf4j.LoggerFactory
-import com.vladsch.flexmark.html.HtmlRenderer
-import com.vladsch.flexmark.parser.Parser
-import com.vladsch.flexmark.util.data.MutableDataSet
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.ByteBuffer
@@ -52,6 +51,7 @@ abstract class FileServlet : HttpServlet() {
                             resp.writer.write("File not found")
                         }
                     }
+
                     else -> {
                         log.warn("File not found: ${file.absolutePath}")
                         resp.status = HttpServletResponse.SC_NOT_FOUND
@@ -93,7 +93,8 @@ abstract class FileServlet : HttpServlet() {
                 resp.status = HttpServletResponse.SC_OK
                 val currentPathString = pathSegments.drop(1).joinToString("/")
                 val servletPathBase =
-                    req.contextPath + req.servletPath.removeSuffix("/*").removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
+                    req.contextPath + req.servletPath.removeSuffix("/*")
+                        .removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
 
                 val files = file.listFiles()
                     ?.filter { it.isFile }
@@ -193,6 +194,7 @@ abstract class FileServlet : HttpServlet() {
             })
         }
     }
+
     private fun renderMarkdown(mdFile: File, resp: HttpServletResponse, asPdf: Boolean) {
         try {
             val markdownContent = mdFile.readText()
@@ -201,11 +203,11 @@ abstract class FileServlet : HttpServlet() {
             val document = parser.parse(markdownContent)
             val renderer = HtmlRenderer.builder(options).build()
             val html = renderer.render(document)
-            
+
             if (asPdf) {
                 val outputStream = ByteArrayOutputStream()
                 val baseUri = mdFile.parentFile.toURI().toString()
-                
+
                 // Wrap HTML with proper structure for PDF conversion
                 val fullHtml = """
                     <!DOCTYPE html>
@@ -223,12 +225,12 @@ abstract class FileServlet : HttpServlet() {
                     </body>
                     </html>
                 """.trimIndent()
-                
+
                 PdfRendererBuilder()
                     .withHtmlContent(fullHtml, baseUri)
                     .toStream(outputStream)
                     .run()
-                    
+
                 val byteArray = outputStream.toByteArray()
                 resp.contentType = "application/pdf"
                 resp.status = HttpServletResponse.SC_OK
@@ -291,7 +293,13 @@ abstract class FileServlet : HttpServlet() {
         return breadcrumbs.toString()
     }
 
-    private fun directoryHTML(currentPath: String, servletBaseHref: String, zipLink: String, folders: String, files: String) = """
+    private fun directoryHTML(
+        currentPath: String,
+        servletBaseHref: String,
+        zipLink: String,
+        folders: String,
+        files: String
+    ) = """
     |<!DOCTYPE html>
     |<html lang="en">
     |<head>

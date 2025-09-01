@@ -110,7 +110,7 @@ open class RawTextParsingModel(
         metadata: Map<String, Any>? = null
     ): RawTextData {
         require(text.isNotBlank()) { "Input text cannot be blank" }
-        
+
         val segments = getSegments(text)
         log.debug("Parsed {} segments from text of length {}", segments.size, text.length)
         if (log.isTraceEnabled) {
@@ -119,7 +119,7 @@ open class RawTextParsingModel(
                 cacheHits.get(), cacheMisses.get(), tagCache.size
             )
         }
-        
+
         return RawTextData(
             id = documentId,
             content_list = segments.mapIndexed { index, segment ->

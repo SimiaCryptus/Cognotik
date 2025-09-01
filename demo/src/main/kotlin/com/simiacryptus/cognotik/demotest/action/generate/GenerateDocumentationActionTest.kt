@@ -59,7 +59,7 @@ class GenerateDocumentationActionTest : DemoTestBase(
     }
 
     @Test
-    fun testGenerateDocumentation() : Unit = with(remoteRobot) {
+    fun testGenerateDocumentation(): Unit = with(remoteRobot) {
         try {
             tts("Welcome to the AI Coder's Documentation Generator demo. This powerful feature automatically creates comprehensive API documentation by analyzing your code with AI assistance.")?.play(
                 3000

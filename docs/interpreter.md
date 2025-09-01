@@ -2,7 +2,9 @@
 
 ## Overview
 
-The Cognotik Interpreter Subsystem provides a unified interface for executing code in multiple programming languages within the Cognotik framework. It enables dynamic code execution, validation, and integration with AI-powered coding assistants.
+The Cognotik Interpreter Subsystem provides a unified interface for executing code in multiple programming languages
+within the Cognotik framework. It enables dynamic code execution, validation, and integration with AI-powered coding
+assistants.
 
 ## Architecture
 
@@ -143,7 +145,8 @@ val result = interpreter.run("""
 
 ## Output Interception
 
-The `OutputInterceptor` captures stdout/stderr output from code execution, providing both thread-local and global output streams.
+The `OutputInterceptor` captures stdout/stderr output from code execution, providing both thread-local and global output
+streams.
 
 ### Setup
 
@@ -332,6 +335,7 @@ class KotlinInterpreterTest : InterpreterTestBase() {
 ### Adding New Languages
 
 1. **Implement Interpreter Interface**:
+
 ```kotlin
 class PythonInterpreter(private val defs: Map<String, Any>) : Interpreter {
     override fun getLanguage() = "python"
@@ -342,6 +346,7 @@ class PythonInterpreter(private val defs: Map<String, Any>) : Interpreter {
 ```
 
 2. **Add Test Coverage**:
+
 ```kotlin
 class PythonInterpreterTest : InterpreterTestBase() {
     override fun newInterpreter(map: Map<String, Any>) = PythonInterpreter(map)
@@ -349,6 +354,7 @@ class PythonInterpreterTest : InterpreterTestBase() {
 ```
 
 3. **Register with Framework**:
+
 ```kotlin
 // In your application configuration
 val interpreterRegistry = mapOf(

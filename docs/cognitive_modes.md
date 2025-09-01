@@ -1,6 +1,7 @@
 # Developer Guide: Planning and Cognition System
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Architecture](#architecture)
 3. [Cognitive Modes](#cognitive-modes)
@@ -13,9 +14,12 @@
 
 ## Overview
 
-The Planning and Cognition system is a sophisticated AI-driven framework that enables intelligent task planning, execution, and iterative problem-solving. It provides multiple cognitive strategies for handling user requests, from simple task execution to complex goal-oriented planning.
+The Planning and Cognition system is a sophisticated AI-driven framework that enables intelligent task planning,
+execution, and iterative problem-solving. It provides multiple cognitive strategies for handling user requests, from
+simple task execution to complex goal-oriented planning.
 
 ### Key Features
+
 - **Multiple Cognitive Modes**: Different strategies for handling user input
 - **Intelligent Task Planning**: Automated breakdown of complex requests into actionable tasks
 - **Iterative Execution**: Continuous learning and adaptation during execution
@@ -75,12 +79,14 @@ class AutoPlanMode(
 ```
 
 **Key Features:**
+
 - **Iterative Thinking**: Maintains a `ThinkingStatus` that evolves with each iteration
 - **Adaptive Planning**: Chooses tasks based on current context and progress
 - **Parallel Execution**: Runs multiple tasks concurrently when possible
 - **Context Awareness**: Considers previous task results when planning next steps
 
 **Thinking Status Structure:**
+
 ```kotlin
 data class ThinkingStatus(
     var initialPrompt: String? = null,
@@ -93,6 +99,7 @@ data class ThinkingStatus(
 ```
 
 **Usage Example:**
+
 ```kotlin
 val autoMode = AutoPlanMode(ui, api, planSettings, session, user, describer)
 autoMode.initialize()
@@ -115,6 +122,7 @@ class PlanAheadMode(
 ```
 
 **Key Features:**
+
 - **Complete Planning**: Creates full task breakdown upfront
 - **Sequential Execution**: Follows predetermined execution order
 - **Dependency Resolution**: Handles task dependencies automatically
@@ -136,6 +144,7 @@ class TaskChatMode(
 ```
 
 **Key Features:**
+
 - **Conversational Interface**: Maintains chat history
 - **Single Task Focus**: Executes one task per user message
 - **Context Preservation**: Remembers previous interactions
@@ -157,6 +166,7 @@ class GoalOrientedMode(
 ```
 
 **Key Features:**
+
 - **Goal Hierarchy**: Breaks down high-level goals into subgoals
 - **Status Tracking**: Monitors goal and task completion
 - **Dependency Management**: Handles complex interdependencies
@@ -212,6 +222,7 @@ class PlanCoordinator(
 ```
 
 **Key Methods:**
+
 - `executePlan()`: Executes a complete plan
 - `newState()`: Creates initial processing state
 - `await()`: Waits for task completion
@@ -271,6 +282,7 @@ data class PlanProcessingState(
 ### Creating a Custom Cognitive Mode
 
 1. **Implement the Interface**:
+
 ```kotlin
 class CustomMode(
     override val ui: ApplicationInterface,
@@ -297,6 +309,7 @@ class CustomMode(
 ```
 
 2. **Register the Mode**:
+
 ```kotlin
 companion object : CognitiveModeStrategy {
     override val inputCnt = 1
@@ -312,6 +325,7 @@ companion object : CognitiveModeStrategy {
 ```
 
 3. **Add to Registry**:
+
 ```kotlin
 object CognitiveModes {
     val allModes: Map<String, CognitiveModeStrategy> = mapOf(
@@ -327,6 +341,7 @@ object CognitiveModes {
 ### Creating Custom Task Types
 
 1. **Define Task Configuration**:
+
 ```kotlin
 data class CustomTaskConfig(
     override val task_type: String? = "CustomTask",
@@ -337,6 +352,7 @@ data class CustomTaskConfig(
 ```
 
 2. **Implement Task Logic**:
+
 ```kotlin
 class CustomTask : AbstractTask<CustomTaskConfig>() {
     override fun promptSegment(): String = """
@@ -466,17 +482,20 @@ task.complete("Task completed successfully".renderMarkdown())
 ### Debugging Tools
 
 1. **Logging**:
+
 ```kotlin
 private val log = LoggerFactory.getLogger(YourClass::class.java)
 log.debug("Task execution started: $taskId")
 ```
 
 2. **State Inspection**:
+
 ```kotlin
 log.info("Current state: ${JsonUtil.toJson(planProcessingState)}")
 ```
 
 3. **Progress Tracking**:
+
 ```kotlin
 task.verbose("Detailed execution information")
 ```
@@ -484,6 +503,7 @@ task.verbose("Detailed execution information")
 ### Performance Monitoring
 
 Monitor key metrics:
+
 - Task execution time
 - API call frequency
 - Memory usage

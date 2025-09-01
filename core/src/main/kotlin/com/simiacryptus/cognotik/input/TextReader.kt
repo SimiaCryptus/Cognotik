@@ -6,10 +6,11 @@ class TextReader(private val textFile: File) : PaginatedDocumentReader {
     private val fullText: String = textFile.readLines().joinToString("\n")
     private val pages: List<String> by lazy { splitIntoPages(fullText) }
     private var settings: Settings? = null
-    
+
     fun configure(settings: Settings) {
         this.settings = settings
     }
+
     override fun getText(): String {
         return if (settings?.addLineNumbers == true) {
             fullText.lines().mapIndexed { index, line ->

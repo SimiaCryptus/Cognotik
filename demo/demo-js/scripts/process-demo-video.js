@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const {execSync} = require('child_process');
 
 /**
  * Post-process Cypress videos to combine with narration audio
@@ -42,4 +42,4 @@ function processVideo(videoPath, audioDir) {
     }
 }
 
-module.exports = { processVideo };
+module.exports = {processVideo};

@@ -18,12 +18,12 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -52,7 +52,7 @@ open class UnifiedPlanApp(
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^\n|}{)(\]\[]+)+)}""")
     private val expansionPool = Executors.newFixedThreadPool(4)
     override val stickyInput = true
-    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it else it+1 }
+    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it else it + 1 }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T

@@ -70,29 +70,6 @@ object RuleTreeBuilder {
             when {
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 bestNextPrefix == null -> break
                 else -> {
                     val matchedItems = remainingItems.filter { it.startsWith(bestNextPrefix) }.toSet()

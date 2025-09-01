@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.jsonCast
@@ -107,7 +107,7 @@ fun EmbeddingModel.getRows(
     val records: MutableList<DocumentRecord> = mutableListOf()
     val maxConcurrentBatches = 3
     val semaphore = java.util.concurrent.Semaphore(maxConcurrentBatches)
-    
+
     fun processContent(content: Map<String, Any>, path: String = "") {
         val record = DocumentRecord(
             text = content["text"] as? String,
@@ -139,12 +139,15 @@ fun EmbeddingModel.getRows(
                     processContent(childContent?.jsonCast() ?: emptyMap(), "$path.content_list[$index]")
                 }
             }
+
             is Map<*, *> -> {
                 processContent(subContent.jsonCast(), "$path.content")
             }
+
             null -> {
                 // do nothing
             }
+
             else -> {
                 processContent(subContent.jsonCast(), "$path.content")
             }
@@ -157,6 +160,7 @@ fun EmbeddingModel.getRows(
     }
     return records
 }
+
 private fun processBatch(
     batch: List<DocumentRecord>,
     embeddingClient: EmbeddingClientBase,
@@ -168,11 +172,11 @@ private fun processBatch(
         batch.forEach { _ -> progressState.add(1.0, 0.0) }
         return
     }
-    
-        
+
+
     var retryCount = 0
     var lastException: Exception? = null
-    
+
     while (retryCount < 3) {
         try {
             val embeddings = embeddingClient.createEmbedding(
@@ -181,7 +185,7 @@ private fun processBatch(
                     input = texts.joinToString("\n")
                 ), model
             ).data
-            
+
             batch.forEachIndexed { index, record ->
                 if (record.text != null && index < embeddings.size) {
                     record.vector = embeddings[index].embedding ?: DoubleArray(0)

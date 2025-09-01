@@ -2,7 +2,9 @@
 
 ## Overview
 
-The real-time UI system provides a WebSocket-based framework for building interactive web applications with live updates. It enables bidirectional communication between the server and client, allowing for dynamic content updates, user interactions, and session management.
+The real-time UI system provides a WebSocket-based framework for building interactive web applications with live
+updates. It enables bidirectional communication between the server and client, allowing for dynamic content updates,
+user interactions, and session management.
 
 ## Architecture
 
@@ -52,12 +54,14 @@ abstract class ChatServer(
 ```
 
 **Key Responsibilities:**
+
 - WebSocket connection management
 - Session lifecycle management
 - Servlet configuration
 - Resource serving
 
 **Implementation Example:**
+
 ```kotlin
 class MyChatApp : ChatServer("my-resources", showMenubar = true) {
     override val applicationName = "My Chat App"
@@ -91,12 +95,14 @@ interface SocketManager {
 Provides core functionality for socket management with message queuing and processing.
 
 **Key Features:**
+
 - **Message State Management**: Maintains message history with versioning
 - **Queue Processing**: Handles message delivery with concurrent processing
 - **Authorization**: Integrates with authentication/authorization system
 - **File Operations**: Supports file creation and storage
 
 **Message Format:**
+
 ```
 messageID,version,content
 ```
@@ -104,7 +110,9 @@ messageID,version,content
 **Critical Methods:**
 
 #### `newTask(cancelable: Boolean, root: Boolean): SessionTask`
+
 Creates a new task for UI operations:
+
 ```kotlin
 val task = newTask(cancelable = true, root = true)
 task.add("Hello, World!")
@@ -112,13 +120,16 @@ task.complete()
 ```
 
 #### `send(out: String)`
+
 Sends messages to all connected clients:
+
 ```kotlin
 // Format: "messageID,content"
 send("task123,<div>Updated content</div>")
 ```
 
 #### Message Processing Pipeline:
+
 1. **Validation**: Check message format and size limits
 2. **State Update**: Update message state with versioning
 3. **Queue Distribution**: Add to each socket's send queue
@@ -132,6 +143,7 @@ Provides a high-level API for building interactive UI components.
 **Core Methods:**
 
 #### Content Addition
+
 ```kotlin
 // Basic message
 task.add("Simple message")
@@ -147,6 +159,7 @@ task.header("Section Title", level = 2)
 ```
 
 #### Interactive Elements
+
 ```kotlin
 // Expandable sections
 task.expandable("Click to expand", "Hidden content")
@@ -162,6 +175,7 @@ val link = task.hrefLink("Click me") {
 ```
 
 #### Error Handling
+
 ```kotlin
 try {
     // Risky operation
@@ -177,13 +191,16 @@ Concrete implementation providing chat functionality with advanced features.
 **Key Features:**
 
 #### Message Expansion Syntax
+
 - **Parallel**: `{option1|option2|option3}` - Process options in parallel
 - **Sequential**: `<step1;step2;step3>` - Chain operations
 - **Range**: `[[1..10:2]]` - Iterate over numeric ranges
 - **Topic Reference**: `{Person}` - Reference extracted topics
 
 #### Topic Extraction
+
 Automatically identifies and categorizes named entities:
+
 ```kotlin
 data class Topics(
     val topics: Map<String, List<String>>? = emptyMap()
@@ -191,6 +208,7 @@ data class Topics(
 ```
 
 #### Implementation Example:
+
 ```kotlin
 val chatManager = ChatSocketManager(
     session = session,
@@ -208,11 +226,13 @@ val chatManager = ChatSocketManager(
 ## Message Flow
 
 ### 1. Client to Server
+
 ```
 WebSocket Message → ChatSocket.onWebSocketText() → SocketManager.onWebSocketText() → processUserMessage()
 ```
 
 ### 2. Server to Client
+
 ```
 SessionTask.add() → SocketManagerBase.send() → Message Queuing → WebSocket Delivery
 ```
@@ -242,6 +262,7 @@ override fun onRun(userMessage: String, socket: ChatSocket) {
 ## WebSocket Protocol
 
 ### Connection Establishment
+
 ```javascript
 const ws = new WebSocket(`ws://localhost:8080/ws?sessionId=${sessionId}`);
 ```
@@ -249,12 +270,14 @@ const ws = new WebSocket(`ws://localhost:8080/ws?sessionId=${sessionId}`);
 ### Message Types
 
 #### 1. Content Updates
+
 ```
 Format: messageID,version,content
 Example: "abc123,1,<div>Hello World</div>"
 ```
 
 #### 2. Commands
+
 ```
 Format: !commandType,parameters
 Examples:
@@ -263,6 +286,7 @@ Examples:
 ```
 
 #### 3. Heartbeat
+
 ```json
 // Ping
 {"type": "ping"}
@@ -274,10 +298,12 @@ Examples:
 ## Security Model
 
 ### Authentication
+
 - Cookie-based authentication via `AuthenticationInterface.AUTH_COOKIE`
 - User context available throughout the session
 
 ### Authorization
+
 ```kotlin
 // Check read access
 ApplicationServices.authorizationManager.isAuthorized(
@@ -295,6 +321,7 @@ fun canWrite(user: User?) = ApplicationServices.authorizationManager.isAuthorize
 ```
 
 ### Input Validation
+
 - Message size limits (default: 1MB)
 - Path traversal protection for file operations
 - Command validation and sanitization
@@ -304,24 +331,28 @@ fun canWrite(user: User?) = ApplicationServices.authorizationManager.isAuthorize
 ### 1. Message Expansion
 
 #### Parallel Processing
+
 ```kotlin
 // Input: "Tell me about {cats|dogs|birds}"
 // Creates 3 parallel tasks, each processing one animal
 ```
 
 #### Sequential Processing
+
 ```kotlin
 // Input: "Analyze this data, then <summarize;translate to French;create chart>"
 // Chains operations where each step uses the previous output
 ```
 
 #### Range Expansion
+
 ```kotlin
 // Input: "Generate report for year [[2020..2024:1]]"
 // Creates reports for 2020, 2021, 2022, 2023, 2024
 ```
 
 ### 2. Topic Management
+
 ```kotlin
 // Topics are automatically extracted and stored
 private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
@@ -332,6 +363,7 @@ private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
 ```
 
 ### 3. File Management
+
 ```kotlin
 // Save files to session directory
 val url = task.saveFile("report.pdf", pdfBytes)
@@ -344,6 +376,7 @@ file?.writeText("Log entry")
 ### 4. UI Components
 
 #### Tabbed Display
+
 ```kotlin
 val tabs = TabbedDisplay(task, closable = false)
 tabs["Tab 1"] = task1.placeholder
@@ -352,6 +385,7 @@ tabs.update()
 ```
 
 #### Interactive Forms
+
 ```kotlin
 val textInput = textInput { userInput ->
     task.add("You entered: $userInput")
@@ -361,6 +395,7 @@ val textInput = textInput { userInput ->
 ## Error Handling
 
 ### Connection Errors
+
 ```kotlin
 try {
     socket.remote.sendString(message)
@@ -371,6 +406,7 @@ try {
 ```
 
 ### Processing Errors
+
 ```kotlin
 try {
     // Process user message
@@ -381,6 +417,7 @@ try {
 ```
 
 ### Validation Errors
+
 ```kotlin
 // File path validation
 require(!relativePath.contains("..")) {
@@ -397,11 +434,13 @@ if (message.length > maxMessageLength) {
 ## Performance Considerations
 
 ### 1. Message Queuing
+
 - Concurrent processing of send queues
 - Automatic socket cleanup on failures
 - Message deduplication based on content
 
 ### 2. Memory Management
+
 ```kotlin
 // Synchronized access to shared state
 private val stateLock = Any()
@@ -412,6 +451,7 @@ synchronized(stateLock) {
 ```
 
 ### 3. Thread Pool Management
+
 ```kotlin
 // Separate pools for different operations
 val pool = clientManager.getPool(session, owner)
@@ -421,6 +461,7 @@ val scheduledPool = clientManager.getScheduledPool(session, owner, dataStorage)
 ## Best Practices
 
 ### 1. Task Management
+
 ```kotlin
 // Always complete tasks
 val task = newTask()
@@ -434,6 +475,7 @@ try {
 ```
 
 ### 2. Error Handling
+
 ```kotlin
 // Provide user-friendly error messages
 try {
@@ -445,6 +487,7 @@ try {
 ```
 
 ### 3. Resource Management
+
 ```kotlin
 // Clean up resources
 override fun removeSocket(socket: ChatSocket) {
@@ -459,6 +502,7 @@ override fun removeSocket(socket: ChatSocket) {
 ```
 
 ### 4. Security
+
 ```kotlin
 // Always validate user input
 require(relativePath.isNotBlank()) { "File path cannot be blank" }

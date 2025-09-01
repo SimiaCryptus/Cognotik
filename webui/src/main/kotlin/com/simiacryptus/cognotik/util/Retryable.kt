@@ -44,7 +44,8 @@ open class Retryable(
         private val log = org.slf4j.LoggerFactory.getLogger(Retryable::class.java)
         fun retryable(
             ui: ApplicationInterface,
-            pool: ImmediateExecutorService = ui.socketManager?.pool ?: throw IllegalStateException("No socket manager available"),
+            pool: ImmediateExecutorService = ui.socketManager?.pool
+                ?: throw IllegalStateException("No socket manager available"),
             task: SessionTask = ui.newTask(true),
             fn: (SessionTask) -> Unit
         ) {

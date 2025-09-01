@@ -34,6 +34,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
         val punchline: String? = null,
         val type: String? = null,
     )
+
     val model = AnthropicModels.Claude35Haiku
 
     override val childWebApps by lazy {
@@ -69,8 +70,6 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             })),
 
 
-
-
             ChildWebApp(
                 "/test_coding_kotlin",
                 CodingActorTestApp(
@@ -91,11 +90,15 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     )
                 )
             ),
-            ChildWebApp("/test_file_patch", FilePatchTestApp(api = OpenAIClient(
-                workPool = Executors.newCachedThreadPool(),
-                key = emptyMap(),
-                apiBase = emptyMap()
-            ))),
+            ChildWebApp(
+                "/test_file_patch", FilePatchTestApp(
+                    api = OpenAIClient(
+                        workPool = Executors.newCachedThreadPool(),
+                        key = emptyMap(),
+                        apiBase = emptyMap()
+                    )
+                )
+            ),
             ChildWebApp("/stressTest", StressTestApp()),
             ChildWebApp(
                 "/pdfExtractor", DocumentParserApp(

@@ -65,7 +65,7 @@ Cypress.Commands.add('configureTaskSettings', (settings = {}) => {
         temperature: 0.3,
         autoFix: true
     };
-    const config = { ...defaults, ...settings };
+    const config = {...defaults, ...settings};
 
     if (config.model) {
         cy.get('#model-selection').select(config.model);
@@ -106,8 +106,8 @@ Cypress.Commands.add('navigateToStep', (step) => {
 
 // Custom command to mock API responses
 Cypress.Commands.add('mockApiResponses', () => {
-    cy.intercept('POST', '/taskChat/settings', { statusCode: 200 }).as('saveSettings');
-    cy.intercept('POST', '/chat/settings', { statusCode: 200 }).as('saveChatSettings');
+    cy.intercept('POST', '/taskChat/settings', {statusCode: 200}).as('saveSettings');
+    cy.intercept('POST', '/chat/settings', {statusCode: 200}).as('saveChatSettings');
     cy.intercept('GET', '/api/models', {
         fixture: 'models.json'
     }).as('getModels');

@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.util.copy
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -152,7 +151,9 @@ abstract class SessionTask(
         @Description("Additional css class(es) to apply to the main container")
         additionalClasses: String = ""
     ): StringBuilder? {
-        val combinedClasses = (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }.joinToString(" ")
+        val combinedClasses =
+            (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }
+                .joinToString(" ")
         val html = """
             <$tag class="$combinedClasses">
               <div class="expandable-header">
@@ -178,7 +179,9 @@ abstract class SessionTask(
         @Description("Additional css class(es) to apply to the main container")
         additionalClasses: String = ""
     ): StringBuilder? {
-        val combinedClasses = (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }.joinToString(" ")
+        val combinedClasses =
+            (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }
+                .joinToString(" ")
         val html = """
             <$tag class="$combinedClasses">
               <div class="expandable-header">
@@ -212,7 +215,7 @@ abstract class SessionTask(
         tag: String = "div"
     ) = hideable(
         when {
-          e is ValidatedObject.ValidationError -> """
+            e is ValidatedObject.ValidationError -> """
         **Data Validation Error**
 
         """.trimIndent() + e.message + """
@@ -223,9 +226,9 @@ abstract class SessionTask(
         ```
       """
 
-          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n"
+            e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n"
 
-          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
+            else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
 
         }.renderMarkdown(), showSpinner, tag, "error", manager
     )
@@ -271,7 +274,7 @@ abstract class SessionTask(
             }
         }
 
-         fun noop(): SessionTask {
+        fun noop(): SessionTask {
             return object : SessionTask(
                 messageID = "noop",
                 manager = object : SocketManagerBase(Session.newGlobalID(), applicationClass = SessionTask.javaClass) {
@@ -304,7 +307,7 @@ abstract class SessionTask(
                     throw IllegalStateException("Noop")
                 }
             }
-         }
+        }
 
     }
 

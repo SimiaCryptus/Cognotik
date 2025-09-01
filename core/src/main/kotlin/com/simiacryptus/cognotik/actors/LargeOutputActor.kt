@@ -4,8 +4,8 @@ import com.google.common.base.Strings
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
@@ -112,14 +112,15 @@ class LargeOutputActor(
                                     appendLine("Previous context:\n\n```")
                                     appendLine(
                                         accumulatedResponse.substring(0, matchResult.range.first)
-                                        .lines().takeLast(contextLines).joinToString { "  $it" }.takeLast(contextChars)
+                                            .lines().takeLast(contextLines).joinToString { "  $it" }
+                                            .takeLast(contextChars)
                                     )
                                     append("```\n\nContinue the section '")
                                     append(nextSection)
                                     appendLine("'\nMake sure the response flows naturally with the existing content.\nIt should end so that it matches the next section, provided below:\n\n```")
                                     appendLine(
                                         accumulatedResponse.substring(matchResult.range.last)
-                                        .lines().take(contextLines).joinToString { "  $it" }.take(contextChars)
+                                            .lines().take(contextLines).joinToString { "  $it" }.take(contextChars)
                                     )
                                     appendLine("```")
                                 }).toContentList()

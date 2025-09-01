@@ -45,6 +45,7 @@ interface UserSettingsInterface {
         val description: String? = null,
         val command: String? = null,
     )
+
     @JsonSerialize(using = UserSettingsSerializer::class)
     @JsonDeserialize(using = UserSettingsDeserializer::class)
 
@@ -89,6 +90,7 @@ interface UserSettingsInterface {
         val localTools: List<String> = tools.mapNotNull { it.name }
 
     }
+
     class UserSettingsSerializer : JsonSerializer<UserSettings>() {
         override fun serialize(value: UserSettings, gen: JsonGenerator, serializers: SerializerProvider) {
             gen.writeStartObject()
@@ -98,6 +100,7 @@ interface UserSettingsInterface {
             gen.writeEndObject()
         }
     }
+
     class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
         override fun deserialize(p: JsonParser, ctxt: DeserializationContext): UserSettings {
             val node = p.readValueAsTree<ObjectNode>()

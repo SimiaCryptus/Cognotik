@@ -50,10 +50,11 @@ open class PlanAheadMode(
                 session = session,
                 dataStorage = ui.socketManager?.dataStorage!!,
                 ui = ui,
-                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getSessionDir(
-                    user,
-                    session
-                )?.toPath() ?: File(".").toPath(),
+                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+                    ?: ui.socketManager!!.dataStorage?.getSessionDir(
+                        user,
+                        session
+                    )?.toPath() ?: File(".").toPath(),
                 planSettings = planSettings
             )
 

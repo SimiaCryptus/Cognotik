@@ -16,8 +16,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -373,9 +373,9 @@ abstract class PatchApp(
                                 FileSystems.getDefault().getPathMatcher("glob:" + query.fileGlob).matches(file.toPath())
                             }.filter {
                                 it.isFile &&
-                                it.length() < (1 * 1024 * 1024) &&
-                                query.pattern?.isBlank() == false &&
-                                it.readText().contains(query.pattern ?: "", ignoreCase = true)
+                                        it.length() < (1 * 1024 * 1024) &&
+                                        query.pattern?.isBlank() == false &&
+                                        it.readText().contains(query.pattern ?: "", ignoreCase = true)
                             }.map { it.toPath() }.toList()
                         }?.toSet() ?: emptySet()
                         log.info("Search found ${searchResults.size} relevant files")

@@ -20,23 +20,23 @@ class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet() {
         } else {
             listOf(sessionDir)
         }
-        
+
         // First, try to find the exact file
         val exactMatch = dirs.firstOrNull { getFile(it, pathSegments, req).exists() }
         if (exactMatch != null) return exactMatch
-        
+
         // If not found, check if this is a request for HTML/PDF with an equivalent .md file
         val requestedFile = getFile(dirs.first(), pathSegments, req)
         val fileName = requestedFile.name
         if (fileName.endsWith(".html") || fileName.endsWith(".pdf")) {
             val mdFileName = fileName.substringBeforeLast(".") + ".md"
-            val mdMatch = dirs.firstOrNull { 
+            val mdMatch = dirs.firstOrNull {
                 val mdFile = File(getFile(it, pathSegments, req).parentFile, mdFileName)
                 mdFile.exists() && mdFile.isFile
             }
             if (mdMatch != null) return mdMatch
         }
-        
+
         return dirs.first()
     }
 }

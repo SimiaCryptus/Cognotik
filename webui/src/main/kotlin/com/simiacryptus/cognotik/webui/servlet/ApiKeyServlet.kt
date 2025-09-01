@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettin
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.AIModel
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -215,7 +214,8 @@ class ApiKeyServlet : HttpServlet() {
 
     private fun serveEditPage(req: HttpServletRequest, resp: HttpServletResponse, record: ApiKeyRecord) {
         val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-        val usageSummary: Map<String, ApiModel.Usage> = ApplicationServices.usageManager.getUserUsageSummary(user = userinfo!!)
+        val usageSummary: Map<String, ApiModel.Usage> =
+            ApplicationServices.usageManager.getUserUsageSummary(user = userinfo!!)
 
         resp.writer.write(
             """

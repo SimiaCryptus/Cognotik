@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.platform.hsql
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.AIModel
+import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.DriverManager

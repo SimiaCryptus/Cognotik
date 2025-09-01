@@ -1,10 +1,8 @@
 package com.simiacryptus.cognotik.demotest
 
 import org.monte.media.av.Format
-import org.monte.media.av.FormatKeys
 import org.monte.media.av.FormatKeys.MediaType
 import org.monte.media.av.FormatKeys.MediaTypeKey
-import org.monte.media.av.codec.audio.AudioFormatKeys
 import org.monte.media.av.codec.audio.AudioFormatKeys.*
 import org.monte.media.av.codec.video.VideoFormatKeys
 import org.monte.media.math.Rational

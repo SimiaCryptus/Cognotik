@@ -92,7 +92,7 @@ class CmdPatchApp(
             var exitCode = 0
             for ((index, cmdSettings) in settings.commands.withIndex()) {
                 try {
-                    log.info("Executing command ${index+1}/${settings.commands.size}: ${cmdSettings.executable} ${cmdSettings.arguments}")
+                    log.info("Executing command ${index + 1}/${settings.commands.size}: ${cmdSettings.executable} ${cmdSettings.arguments}")
                     val processBuilder = ProcessBuilder(
                         listOf(cmdSettings.executable.toString()) + cmdSettings.arguments.split(" ")
                             .filter(String::isNotBlank)

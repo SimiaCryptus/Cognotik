@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
@@ -91,7 +90,7 @@ class PlanningTask(
             PlanUtil.filterPlan { subPlan?.tasksByID } ?: emptyMap(),
             task,
             api,
-            )
+        )
     }
 
     private fun createSubPlanDiscussable(

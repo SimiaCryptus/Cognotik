@@ -42,7 +42,7 @@ open class CodingActorTestApp(
                 }
             }
             message.complete(
-              "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim().renderMarkdown
+                "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim().renderMarkdown
             )
         } catch (e: Throwable) {
             log.warn("Error", e)

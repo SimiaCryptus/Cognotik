@@ -17,6 +17,7 @@ open class ProcessInterpreter(
 
     final override fun getLanguage(): String = defs["language"]?.toString() ?: "bash"
     override fun getSymbols() = defs
+
     // Default timeout in minutes, can be overridden via defs
     private val timeoutMinutes: Long
         get() = defs["timeoutMinutes"]?.toString()?.toLongOrNull() ?: 15L

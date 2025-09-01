@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.describe.Description
 
 open class LogDataParsingModel(
     private val parsingModel: ChatModelType,

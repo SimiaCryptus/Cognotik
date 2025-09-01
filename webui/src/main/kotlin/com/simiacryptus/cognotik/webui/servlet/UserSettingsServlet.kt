@@ -2,10 +2,8 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.ApiData
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.ToolData
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -85,7 +83,7 @@ class UserSettingsServlet : HttpServlet() {
         } else {
             val settings = JsonUtil.fromJson<UserSettings>(req.getParameter("settings"), UserSettings::class.java)
             val prevSettings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
-            
+
             // Reconstruct APIs with preserved keys when masked
             val reconstructedApis = settings.apis.mapIndexed { index, apiData ->
                 val prevApiData = prevSettings.apis.getOrNull(index)
@@ -98,10 +96,10 @@ class UserSettingsServlet : HttpServlet() {
                     provider = apiData.provider
                 )
             }.toMutableList()
-            
+
             // Merge tools (preserve existing and add new ones)
             val allTools = (prevSettings.tools + settings.tools).distinctBy { it.name }.toMutableList()
-            
+
             val reconstructedSettings = UserSettings(
                 apis = reconstructedApis,
                 tools = allTools,

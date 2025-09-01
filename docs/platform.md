@@ -2,7 +2,10 @@
 
 ## Overview
 
-The Cognotik Platform is a comprehensive application framework designed for building AI-powered applications with session management, user authentication, data storage, and cloud integration capabilities. The platform provides a modular architecture with pluggable components for different storage backends, authentication mechanisms, and cloud providers.
+The Cognotik Platform is a comprehensive application framework designed for building AI-powered applications with
+session management, user authentication, data storage, and cloud integration capabilities. The platform provides a
+modular architecture with pluggable components for different storage backends, authentication mechanisms, and cloud
+providers.
 
 ## Architecture
 
@@ -53,6 +56,7 @@ if (session.isGlobal()) {
 ```
 
 **Session ID Format:**
+
 - Global sessions: `G-YYYYMMDD-XXXX` (accessible to all users)
 - User sessions: `U-YYYYMMDD-XXXX` (user-specific)
 - Legacy format: `YYYYMMDD-XXXX` (treated as global)
@@ -129,6 +133,7 @@ val sessionDir = dataStorage.getSessionDir(user, session)
 ```
 
 **Directory Structure:**
+
 ```
 data/
 ├── global/                    # Global sessions
@@ -210,11 +215,13 @@ interface AuthorizationInterface {
 The `AuthorizationManager` uses resource files for permission management:
 
 **Permission Files:**
+
 - `/permissions/read.txt` - Global read permissions
 - `/permissions/write.txt` - Global write permissions
 - `/permissions/com/example/app/read.txt` - App-specific permissions
 
 **Permission Syntax:**
+
 ```
 user@example.com          # Specific user
 @company.com              # Domain-based
@@ -374,11 +381,13 @@ ApplicationServices.authorizationManager = CustomAuthorizationManager()
 ## Best Practices
 
 ### 1. Session Management
+
 - Always validate session IDs using `Session.validateSessionId()`
 - Use global sessions for public content, user sessions for private content
 - Clean up expired sessions regularly
 
 ### 2. Error Handling
+
 ```kotlin
 try {
     val session = Session.parseSessionID(sessionId)
@@ -390,6 +399,7 @@ try {
 ```
 
 ### 3. Resource Management
+
 ```kotlin
 // Always ensure directories exist
 val sessionDir = dataStorage.getSessionDir(user, session).apply { mkdirs() }
@@ -401,11 +411,13 @@ sessionDir.resolve("data.json").outputStream().use { output ->
 ```
 
 ### 4. Security
+
 - Validate user permissions before operations
 - Use encrypted storage for sensitive data
 - Implement proper session timeout mechanisms
 
 ### 5. Performance
+
 - Cache frequently accessed data
 - Use appropriate thread pools for concurrent operations
 - Monitor usage patterns and optimize accordingly

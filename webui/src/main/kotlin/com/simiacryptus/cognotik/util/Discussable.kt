@@ -146,8 +146,8 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
         var history = history
         history = history + (userResponse to Role.user)
         val newValue = (tabContent.toString()
-            + "<div class=\"user-message\">"
-            + userResponse.renderMarkdown
+                + "<div class=\"user-message\">"
+                + userResponse.renderMarkdown
                 + "</div>")
         tabContent.set(newValue)
         val stringBuilder = task.add("Processing...")

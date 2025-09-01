@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
@@ -100,8 +100,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         return (currentConfig.input_files ?: emptyList())
             .flatMap { filePattern ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$filePattern")
-                FileSelectionUtils.filteredWalk(root.toFile()) {
-                    path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                FileSelectionUtils.filteredWalk(root.toFile()) { path ->
+                    matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
                 }.map { it.toPath() }.flatMap { path ->
                     try {
                         val fileContentLines = if (currentConfig.extractContent && !isTextFile(path.toFile())) {
@@ -126,7 +126,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         val contextLinesCount = currentConfig.context_lines
                         for (match in rawMatches) { // rawMatches are already sorted by line number
                             val matchIdealContextStart = (match.lineNumber - contextLinesCount).coerceAtLeast(1)
-                            val matchIdealContextEnd = (match.lineNumber + contextLinesCount).coerceAtMost(fileContentLines.size)
+                            val matchIdealContextEnd =
+                                (match.lineNumber + contextLinesCount).coerceAtMost(fileContentLines.size)
                             if (currentBlockAggregatedMatches.isEmpty() || matchIdealContextStart > currentBlockContextEndLineInFile + 1) {
                                 // Finalize previous block if it exists
                                 if (currentBlockAggregatedMatches.isNotEmpty()) {
@@ -134,7 +135,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                         (currentBlockContextStartLineInFile - 1).coerceAtLeast(0), // to 0-based index
                                         currentBlockContextEndLineInFile.coerceAtMost(fileContentLines.size) // exclusive end
                                     )
-                                    combinedBlocks.add(DisplayBlock(
+                                    combinedBlocks.add(
+                                        DisplayBlock(
                                         file = relativePath,
                                         contextLines = actualContext,
                                         firstLineNumberInFile = currentBlockContextStartLineInFile,
@@ -154,7 +156,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 // Merge with current block
                                 currentBlockAggregatedMatches.add(match)
                                 // currentBlockContextStartLineInFile remains the earliest start (already set)
-                                currentBlockContextEndLineInFile = max(currentBlockContextEndLineInFile, matchIdealContextEnd)
+                                currentBlockContextEndLineInFile =
+                                    max(currentBlockContextEndLineInFile, matchIdealContextEnd)
                             }
                         }
                         // Add the last processed block
@@ -163,7 +166,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 (currentBlockContextStartLineInFile - 1).coerceAtLeast(0),
                                 currentBlockContextEndLineInFile.coerceAtMost(fileContentLines.size)
                             )
-                            combinedBlocks.add(DisplayBlock(
+                            combinedBlocks.add(
+                                DisplayBlock(
                                 file = relativePath,
                                 contextLines = actualContext,
                                 firstLineNumberInFile = currentBlockContextStartLineInFile,
@@ -183,10 +187,36 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 }
             }
     }
+
     private fun isTextFile(file: java.io.File): Boolean {
-        val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
+        )
         return textExtensions.contains(file.extension.lowercase())
     }
+
     private fun extractDocumentContent(file: java.io.File): String {
         return try {
             file.getReader().use { reader ->
@@ -274,7 +304,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
                 val blockEndLine = block.firstLineNumberInFile + block.contextLines.size - 1
                 val resultHeader = "### Lines ${block.firstLineNumberInFile} - $blockEndLine\n\n"
-                
+
                 val contextBlockString = buildString {
                     appendLine("```")
                     block.contextLines.forEachIndexed { indexInBlock, lineContent ->
@@ -312,6 +342,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 listOf("Error listing files: ${e.message}")
             }
         }
+
         val FileSearchTaskType = TaskType(
             "FileSearchTask",
             com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,

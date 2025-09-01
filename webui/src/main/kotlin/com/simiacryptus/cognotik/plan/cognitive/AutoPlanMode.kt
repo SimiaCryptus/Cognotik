@@ -69,7 +69,8 @@ open class AutoPlanMode(
         log.debug("Starting auto plan chat with initial message: $userMessage")
         val task = ui.newTask(true)
         val apiClient =
-            (api as? ProvidersChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
+            (api as? ProvidersChatClient)?.getChildClient(task)
+                ?: throw IllegalStateException("API must be a ChatClient")
         task.echo(renderMarkdown(userMessage))
 
         var continueLoop = true
@@ -134,7 +135,7 @@ open class AutoPlanMode(
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
                             ui.newTask(false).apply {
-                                inputTabs["Task ${index+1}"] = placeholder
+                                inputTabs["Task ${index + 1}"] = placeholder
                                 add(renderMarkdown(it))
                             }
                             add(renderMarkdown(it))
@@ -172,7 +173,8 @@ open class AutoPlanMode(
                         log.debug("Executing task $currentTaskId")
                         val taskExecutionTask = ui.newTask(false)
                         val taskConfig = currentTask.task.tasks?.get(index)
-                        val taskDescription = taskConfig?.task_description ?: "No description provided for this task item."
+                        val taskDescription =
+                            taskConfig?.task_description ?: "No description provided for this task item."
                         taskExecutionTask.add(currentTask.actorResponse.renderMarkdown)
                         val fullTaskDataJson = JsonUtil.toJson(currentTask)
                         taskExecutionTask.verbose(
@@ -191,7 +193,13 @@ $fullTaskDataJson
                         val future = executor.submit<String> {
                             try {
                                 if (coordinator != null) {
-                                    runTask(iterationApi, coordinator, currentTask.task.tasks?.get(index)!!, userMessage, taskExecutionTask)
+                                    runTask(
+                                        iterationApi,
+                                        coordinator,
+                                        currentTask.task.tasks?.get(index)!!,
+                                        userMessage,
+                                        taskExecutionTask
+                                    )
                                 } else {
                                     log.error("Coordinator is null, cannot run task")
                                     ""
@@ -371,7 +379,10 @@ $fullTaskDataJson
 
         val tasks = expandedTasks.map { taskData ->
             taskData.task.tasks?.map { taskConfigBase ->
-                TaskData(Tasks(mutableListOf(taskConfigBase)), taskData.actorResponse) to (if (taskConfigBase.task_type == null) {
+                TaskData(
+                    Tasks(mutableListOf(taskConfigBase)),
+                    taskData.actorResponse
+                ) to (if (taskConfigBase.task_type == null) {
                     null
                 } else {
                     TaskType.getImpl(coordinator.planSettings, taskConfigBase)

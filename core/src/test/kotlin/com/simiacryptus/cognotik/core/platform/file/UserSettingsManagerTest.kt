@@ -60,4 +60,5 @@ abstract class UserSettingsTest(private val userSettings: UserSettingsInterface)
         log.info("Test completed: getUserSettings successfully returned updated settings after updateUserSettings was called")
     }
 }
+
 class UserSettingsManagerTest : UserSettingsTest(UserSettingsManager())

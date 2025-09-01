@@ -1,8 +1,16 @@
 class UserSettingsModal {
     // Selectors
-    get modal() { return cy.get('#user-settings-modal'); }
-    get saveButton() { return cy.get('#save-user-settings'); }
-    get cancelButton() { return cy.get('#cancel-user-settings'); }
+    get modal() {
+        return cy.get('#user-settings-modal');
+    }
+
+    get saveButton() {
+        return cy.get('#save-user-settings');
+    }
+
+    get cancelButton() {
+        return cy.get('#cancel-user-settings');
+    }
 
     // API Key inputs
     getApiKeyInput(provider) {

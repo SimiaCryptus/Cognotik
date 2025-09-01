@@ -44,7 +44,9 @@ class BasicChatApp(
 
         return ChatSocketManager(
             session = session,
-            model = settings.model.instance(user ?: throw IllegalArgumentException("User must be provided for chat session")),
+            model = settings.model.instance(
+                user ?: throw IllegalArgumentException("User must be provided for chat session")
+            ),
             parsingModel = settings.parsingModel.instance(user),
             systemPrompt = "",
             api = ApplicationServices.clientManager.getChatClient(session, user),

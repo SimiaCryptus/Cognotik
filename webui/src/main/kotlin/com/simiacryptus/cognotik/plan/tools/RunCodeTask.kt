@@ -4,18 +4,14 @@ import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.TRIPLE_TILDE
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.Any
-import kotlin.String
 import kotlin.reflect.KClass
 
 class RunCodeTask<T : Interpreter>(
@@ -68,7 +64,7 @@ class RunCodeTask<T : Interpreter>(
                         planSettings.absoluteWorkingDir?.let { File(it).absolutePath }
                             ?: planSettings.absoluteWorkingDir?.let { File(it).absolutePath }
                             ?: File(".").absolutePath
-                ),
+                        ),
                 "language" to "kotlin",
             ),
             temperature = planSettings.temperature,
@@ -87,7 +83,7 @@ class RunCodeTask<T : Interpreter>(
             ) {
                 val formText = StringBuilder()
                 var formHandle: StringBuilder? = null
-                if(!planSettings.autoFix) formHandle = task.add(
+                if (!planSettings.autoFix) formHandle = task.add(
                     "<div>\n${
                         if (!super.canPlay) "" else super.playButton(task, request, response, formText) { formHandle!! }
                     }\n${
@@ -104,7 +100,7 @@ class RunCodeTask<T : Interpreter>(
                             }
                         }
                     }", additionalClasses = "reply-message"
-                ) else if(autoRunCounter.incrementAndGet() <= 1) {
+                ) else if (autoRunCounter.incrementAndGet() <= 1) {
                     responseAction(task, "Running...", formHandle, formText) {
                         execute(task, response, request)
                     }
@@ -113,12 +109,13 @@ class RunCodeTask<T : Interpreter>(
                 formHandle.toString()
                 task.complete()
             }
+
             override fun execute(
                 task: SessionTask,
                 response: CodingActor.CodeResult
             ): String {
                 val result = super.execute(task, response)
-                if(planSettings.autoFix) {
+                if (planSettings.autoFix) {
                     response.let {
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
                     }.apply { resultFn(this) }

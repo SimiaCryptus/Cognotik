@@ -7,7 +7,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const https = require('https');
-const { createWriteStream } = require('fs');
+const {createWriteStream} = require('fs');
 
 class GroqNarrationAudioGenerator {
     constructor(options = {}) {
@@ -16,7 +16,7 @@ class GroqNarrationAudioGenerator {
         this.voice = options.voice || 'Arista-PlayAI';
         this.speed = options.speed || 1.0;
         this.normalizeVolume = options.normalizeVolume !== false;
-        
+
         if (!this.apiKey) {
             throw new Error('GROQ_API_KEY environment variable is required');
         }
@@ -27,13 +27,13 @@ class GroqNarrationAudioGenerator {
             console.log(`Generating audio for: ${text.substring(0, 50)}...`);
 
             const audioBuffer = await this.callGroqTTS(text);
-            
+
             // Ensure output directory exists
-            await fs.mkdir(path.dirname(outputPath), { recursive: true });
-            
+            await fs.mkdir(path.dirname(outputPath), {recursive: true});
+
             // Write audio file
             await fs.writeFile(outputPath, audioBuffer);
-            
+
             console.log(`Audio saved to: ${outputPath}`);
             return true;
         } catch (error) {
@@ -197,7 +197,7 @@ Environment Variables:
 async function main() {
     try {
         const options = parseArgs();
-        
+
         // Resolve paths
         const scriptDir = path.dirname(__filename);
         const narrationsFile = path.resolve(scriptDir, options.narrationsFile);
@@ -229,12 +229,12 @@ async function main() {
         console.log(`Using Groq TTS with voice: ${options.voice}, speed: ${options.speed}`);
 
         // Create audio directory
-        await fs.mkdir(audioDir, { recursive: true });
+        await fs.mkdir(audioDir, {recursive: true});
 
         // Process narrations
         let updated = false;
         const keys = options.keys || Object.keys(narrations);
-        
+
         for (const key of keys) {
             if (!narrations[key]) {
                 console.warn(`Narration key '${key}' not found, skipping`);
@@ -243,7 +243,7 @@ async function main() {
 
             const narration = narrations[key];
             const text = narration.text;
-            
+
             if (!text) {
                 console.warn(`No text found for key '${key}', skipping`);
                 continue;
@@ -294,4 +294,4 @@ if (require.main === module) {
     main();
 }
 
-module.exports = { GroqNarrationAudioGenerator };
+module.exports = {GroqNarrationAudioGenerator};

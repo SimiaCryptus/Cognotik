@@ -16,11 +16,11 @@ import com.simiacryptus.jopenai.API
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 
 abstract class ApplicationServer(
@@ -60,7 +60,12 @@ abstract class ApplicationServer(
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
     override fun newSession(user: User?, session: Session): SocketManager {
-        logger.info("Creating new session: {} for user: {} in application: {}", session, user?.email ?: "anonymous", applicationName)
+        logger.info(
+            "Creating new session: {} for user: {} in application: {}",
+            session,
+            user?.email ?: "anonymous",
+            applicationName
+        )
         dataStorage.setJson(
             user, session, "info.json", mapOf(
                 "session" to session.toString(),
@@ -100,8 +105,10 @@ abstract class ApplicationServer(
         ui: ApplicationInterface,
         api: API
     ) {
-        logger.warn("userMessage not implemented for application: {} - session: {} user: {}", 
-                   applicationName, session, user?.email ?: "anonymous")
+        logger.warn(
+            "userMessage not implemented for application: {} - session: {} user: {}",
+            applicationName, session, user?.email ?: "anonymous"
+        )
         throw UnsupportedOperationException("userMessage not implemented for $applicationName")
     }
 
@@ -114,11 +121,16 @@ abstract class ApplicationServer(
         userId: User?,
         @Suppress("UNCHECKED_CAST") clazz: Class<T> = settingsClass as Class<T>
     ): T? {
-        logger.debug("Getting settings for session: {} user: {} class: {}", session, userId?.email ?: "anonymous", clazz.simpleName)
+        logger.debug(
+            "Getting settings for session: {} user: {} class: {}",
+            session,
+            userId?.email ?: "anonymous",
+            clazz.simpleName
+        )
         val settingsFile = getSettingsFile(session, userId)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
         var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(settingsFile.readText(), clazz) else null
-        
+
         if (null == settings) {
             logger.debug("No existing settings found, initializing default settings")
             val initSettings = initSettings<T>(session)
@@ -166,12 +178,22 @@ abstract class ApplicationServer(
                     user = user,
                     operationType = OperationType.Read
                 )
-                logger.debug("Authorization check result: {} for user: {} on path: {}", canRead, user?.email ?: "anonymous", requestPath)
+                logger.debug(
+                    "Authorization check result: {} for user: {} on path: {}",
+                    canRead,
+                    user?.email ?: "anonymous",
+                    requestPath
+                )
                 if (canRead) {
                     logger.debug("Access granted for request: {}", requestPath)
                     chain?.doFilter(request, response)
                 } else {
-                    logger.warn("Access denied for user: {} on path: {} in application: {}", user?.email ?: "anonymous", requestPath, applicationName)
+                    logger.warn(
+                        "Access denied for user: {} on path: {} in application: {}",
+                        user?.email ?: "anonymous",
+                        requestPath,
+                        applicationName
+                    )
                     response?.writer?.write("Access Denied")
                     (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
                 }

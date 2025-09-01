@@ -48,9 +48,6 @@ class CrawlerAgentTask(
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
 
 
-
-
-
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,

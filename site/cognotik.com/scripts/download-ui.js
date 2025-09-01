@@ -7,7 +7,7 @@ function updateDownloadUI() {
     const downloadBtn = document.getElementById('download-button');
     const downloadInfoSimple = document.getElementById('download-info-simple'); // For aria-live updates
     const githubReleasesUrl = 'https://github.com/SimiaCryptus/Cognotik/releases';
-    const osNames = { windows: 'Windows', mac: 'macOS', linux: 'Linux', unknown: 'Unknown' };
+    const osNames = {windows: 'Windows', mac: 'macOS', linux: 'Linux', unknown: 'Unknown'};
 
     // Initial state
     // Set initial text and add aria-busy for screen readers

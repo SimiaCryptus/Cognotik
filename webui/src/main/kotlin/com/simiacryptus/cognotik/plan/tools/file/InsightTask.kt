@@ -60,6 +60,7 @@ InsightTask - Directly answer questions or provide a report using the LLM. Readi
 Available files:
 ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 """
+
     private val insightActor by lazy {
         SimpleActor(
             name = "Insight",
@@ -148,7 +149,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
                 listOf(FileSelectionUtils.filteredWalkAsciiTree(root.toFile()) {
-                        //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                    //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
                     when {
                         FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
                         matcher.matches(root.relativize(it.toPath())) -> true
@@ -172,10 +173,36 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     ""
                 }
             }
+
     private fun isTextFile(file: java.io.File): Boolean {
-        val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
+        )
         return textExtensions.contains(file.extension.lowercase())
     }
+
     private fun extractDocumentContent(file: java.io.File) = try {
         file.getReader().use { reader ->
             when (reader) {

@@ -7,8 +7,8 @@ import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.describe.Description
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -107,6 +107,7 @@ class CommandAutoFixTask(
                             resultFn("All Commands completed")
                             semaphore.release()
                         }
+
                         else -> {
                             task.add(
                                 agent.ui.hrefLink("Ignore Error", "href-link cmd-button") {

@@ -85,7 +85,8 @@ class PlanCoordinator(
             val diagramTask = ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
                 diagramBuffer = diagramTask.add(
-                  "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown, additionalClasses = "flow-chart"
+                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
+                    additionalClasses = "flow-chart"
                 ),
                 subTasks = planProcessingState.subTasks,
                 task = diagramTask,
@@ -127,7 +128,7 @@ class PlanCoordinator(
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
-                  "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
+                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
                 )
                 task.complete()
                 return buildString {
@@ -190,10 +191,10 @@ class PlanCoordinator(
                     )
 
                     task1.add(
-                      """
+                        """
               ## Task `""".trimIndent() + taskId + "`" + (subTask.task_description ?: "") + "\n" +
-                          TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
-                          "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
+                                TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
+                                "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
                     )
                     val api = api.getChildClient(sessionTask)
                     val impl = getImpl(planSettings, subTask)

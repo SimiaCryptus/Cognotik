@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.plan
+
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
@@ -7,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.node.ObjectNode
-
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getAvailableTaskTypes
@@ -17,9 +17,10 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTas
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
-import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.describe.TypeDescriber
 import java.io.File
+
 class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): MutableMap<String, TaskSettingsBase> {
         val codec = p.codec as ObjectMapper
@@ -37,15 +38,24 @@ class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSett
                             result[key] = taskSettingsEntry
                         } else {
                             // Log or handle error: Deserialization returned null
-                            ctxt.reportInputMismatch(TaskSettingsBase::class.java, "Failed to deserialize TaskSettingsBase for key '$key', got null")
+                            ctxt.reportInputMismatch(
+                                TaskSettingsBase::class.java,
+                                "Failed to deserialize TaskSettingsBase for key '$key', got null"
+                            )
                         }
                     } catch (e: Exception) {
                         // Log or handle error: Deserialization threw an exception
-                        ctxt.reportInputMismatch(TaskSettingsBase::class.java, "Failed to deserialize TaskSettingsBase for key '$key': ${e.message}")
+                        ctxt.reportInputMismatch(
+                            TaskSettingsBase::class.java,
+                            "Failed to deserialize TaskSettingsBase for key '$key': ${e.message}"
+                        )
                     }
                 } else {
                     // Log or handle error: Value is not an object
-                    ctxt.reportInputMismatch(Map::class.java, "Value for key '$key' in taskSettings is not a JSON object, but ${valueNode.nodeType}")
+                    ctxt.reportInputMismatch(
+                        Map::class.java,
+                        "Value for key '$key' in taskSettings is not a JSON object, but ${valueNode.nodeType}"
+                    )
                 }
             }
         } else {
@@ -83,11 +93,18 @@ open class PlanSettings(
     ) {
 
     @get:JsonIgnore
-    val absoluteWorkingDir get() = when {
-        this.workingDir == null -> null//throw IllegalStateException("Working directory not set")
-        this.workingDir.startsWith("~") -> File(this.workingDir.replaceFirst("~", System.getProperty("user.home"))).absolutePath
-        else -> File(this.workingDir).absolutePath
-    }
+    val absoluteWorkingDir
+        get() = when {
+            this.workingDir == null -> null//throw IllegalStateException("Working directory not set")
+            this.workingDir.startsWith("~") -> File(
+                this.workingDir.replaceFirst(
+                    "~",
+                    System.getProperty("user.home")
+                )
+            ).absolutePath
+
+            else -> File(this.workingDir).absolutePath
+        }
 
     fun getTaskSettings(taskType: TaskType<*, *>): TaskSettingsBase =
         taskSettings[taskType.name] ?: TaskSettingsBase(taskType.name)

@@ -75,7 +75,7 @@ class KnowledgeIndexingTask(
         )
         try {
             val progressState = ProgressState.progressBar(task)
-            val embeddingClient = OllamaEmbeddingClient(workPool = threadPool,)
+            val embeddingClient = OllamaEmbeddingClient(workPool = threadPool)
             indexJsonFile(
                 embeddingClient = embeddingClient,
                 pool = threadPool,

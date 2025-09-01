@@ -2,7 +2,9 @@
 
 ## Overview
 
-Task Types are the core building blocks of the Cognotik planning system. They define reusable, configurable units of work that can be composed into complex workflows. Each Task Type encapsulates specific functionality while providing a consistent interface for configuration, execution, and integration with other tasks.
+Task Types are the core building blocks of the Cognotik planning system. They define reusable, configurable units of
+work that can be composed into complex workflows. Each Task Type encapsulates specific functionality while providing a
+consistent interface for configuration, execution, and integration with other tasks.
 
 ## Architecture
 
@@ -303,12 +305,14 @@ private fun executeWithTimeout(code: String, timeoutMinutes: Long): ExecutionRes
 ### Configuration Design
 
 1. **Use descriptive field names and documentation**:
+
 ```kotlin
 @Description("The maximum number of results to return (1-100)")
 val max_results: Int = 10
 ```
 
 2. **Provide sensible defaults**:
+
 ```kotlin
 val timeout_seconds: Long = 30L,
 val retry_attempts: Int = 3,
@@ -316,6 +320,7 @@ val include_metadata: Boolean = true
 ```
 
 3. **Use enums for constrained choices**:
+
 ```kotlin
 enum class OutputFormat { JSON, CSV, MARKDOWN }
 val output_format: OutputFormat = OutputFormat.JSON
@@ -324,6 +329,7 @@ val output_format: OutputFormat = OutputFormat.JSON
 ### Error Handling
 
 1. **Validate configuration early**:
+
 ```kotlin
 override fun run(...) {
     val config = taskConfig ?: return handleError("Configuration required")
@@ -333,6 +339,7 @@ override fun run(...) {
 ```
 
 2. **Provide meaningful error messages**:
+
 ```kotlin
 private fun handleError(message: String, cause: Throwable? = null): String {
     val fullMessage = "MyCustomTask failed: $message"
@@ -344,6 +351,7 @@ private fun handleError(message: String, cause: Throwable? = null): String {
 ```
 
 3. **Use try-catch for external operations**:
+
 ```kotlin
 private fun safeFileOperation(file: Path): String? {
     return try {
@@ -377,6 +385,7 @@ override fun run(...) {
 ### Resource Management
 
 1. **Clean up resources**:
+
 ```kotlin
 override fun run(...) {
     var resource: ExternalResource? = null
@@ -390,6 +399,7 @@ override fun run(...) {
 ```
 
 2. **Use connection pooling for HTTP clients**:
+
 ```kotlin
 companion object {
     private val httpClient = HttpClient.newBuilder()
@@ -401,6 +411,7 @@ companion object {
 ### Output Formatting
 
 1. **Use consistent markdown formatting**:
+
 ```kotlin
 private fun formatResults(results: List<Result>): String = buildString {
     appendLine("# Task Results")
@@ -425,6 +436,7 @@ private fun formatResults(results: List<Result>): String = buildString {
 ```
 
 2. **Limit output size for large results**:
+
 ```kotlin
 private fun truncateIfNeeded(content: String, maxLength: Int = 10000): String {
     return if (content.length > maxLength) {
@@ -575,6 +587,7 @@ When updating existing task types:
 
 1. **Maintain backward compatibility** in configuration classes
 2. **Add new fields with defaults**:
+
 ```kotlin
 class UpdatedTaskConfigData(
     // Existing fields...
@@ -587,6 +600,7 @@ class UpdatedTaskConfigData(
 ```
 
 3. **Handle legacy configurations**:
+
 ```kotlin
 override fun run(...) {
     val config = taskConfig ?: return handleError("Configuration required")

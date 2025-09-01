@@ -1,5 +1,4 @@
 import com.sass_lang.embedded_protocol.OutputStyle
-import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 group = providers.gradleProperty("libraryGroup").get()
 version = providers.gradleProperty("libraryVersion").get()

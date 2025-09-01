@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskConfigBase
 import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.jopenai.describe.Description
 import java.nio.file.FileSystems
 
@@ -54,17 +54,43 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
                     ""
                 }
             }
+
     private fun isTextFile(file: java.io.File): Boolean {
-        val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
+        )
         return textExtensions.contains(file.extension.lowercase())
     }
+
     private fun extractDocumentContent(file: java.io.File): String {
         return try {
             file.getReader().use { reader ->
-               when (reader) {
-                   is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
-                   else -> reader.getText()
-               }
+                when (reader) {
+                    is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                    else -> reader.getText()
+                }
             }
         } catch (e: Exception) {
             log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)

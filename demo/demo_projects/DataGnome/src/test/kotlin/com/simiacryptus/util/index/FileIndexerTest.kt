@@ -42,8 +42,6 @@ class FileIndexerTest {
     }
 
 
-
-
     private fun smokeSearch(tokenFileFactory: (File) -> TokenFile) {
         val tempDataFile = File.createTempFile("testData", ".txt")
         tempDataFile.writeText("This is a test data file.")

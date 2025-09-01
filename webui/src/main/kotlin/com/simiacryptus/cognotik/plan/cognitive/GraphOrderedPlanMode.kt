@@ -1,7 +1,10 @@
 package com.simiacryptus.cognotik.apps.graph
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.PlanCoordinator
+import com.simiacryptus.cognotik.plan.PlanProcessingState
+import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.platform.Session

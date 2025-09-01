@@ -178,7 +178,6 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
 
-
     // Function to close the modal
     function closeModalHandler() {
         modal.style.display = 'none';

@@ -2,7 +2,9 @@
 
 ## Overview
 
-The Cognotik framework provides a comprehensive set of actor types for building AI-powered applications. Each actor type is designed for specific use cases and extends the base `BaseActor` class to provide specialized functionality for different types of AI interactions.
+The Cognotik framework provides a comprehensive set of actor types for building AI-powered applications. Each actor type
+is designed for specific use cases and extends the base `BaseActor` class to provide specialized functionality for
+different types of AI interactions.
 
 ## Base Actor Architecture
 
@@ -33,12 +35,14 @@ abstract class BaseActor<I, R>(
 **Output**: `String` - AI response text
 
 **Use Cases**:
+
 - General Q&A
 - Text summarization
 - Content generation
 - Simple conversational interfaces
 
 **Example**:
+
 ```kotlin
 val summarizer = SimpleActor(
     prompt = "You are a helpful assistant that summarizes text concisely.",
@@ -50,6 +54,7 @@ val result = summarizer.answer(listOf("Summarize this article: ..."), api)
 ```
 
 **Key Features**:
+
 - Minimal overhead
 - Direct text responses
 - Suitable for most basic AI interactions
@@ -62,12 +67,14 @@ val result = summarizer.answer(listOf("Summarize this article: ..."), api)
 **Output**: `ParsedResponse<T>` - Contains both raw text and parsed object
 
 **Use Cases**:
+
 - Data extraction from unstructured text
 - Form filling
 - Structured content generation
 - API response parsing
 
 **Example**:
+
 ```kotlin
 data class PersonInfo(
     val name: String,
@@ -87,12 +94,14 @@ val person = result.obj // PersonInfo object
 ```
 
 **Key Features**:
+
 - Automatic JSON parsing with retry logic
 - Type-safe object extraction
 - Configurable parsing model for cost optimization
 - YAML schema generation for better parsing accuracy
 
 **Configuration Options**:
+
 - `deserializerRetries`: Number of parsing attempts (default: 2)
 - `parsingModel`: Separate model for parsing (can be cheaper than main model)
 - `describer`: Custom type description for better parsing
@@ -105,12 +114,14 @@ val person = result.obj // PersonInfo object
 **Output**: `CodeResult` - Contains code, execution results, and status
 
 **Use Cases**:
+
 - Code generation from natural language
 - Script automation
 - Data analysis and visualization
 - API integration tasks
 
 **Example**:
+
 ```kotlin
 val coder = CodingActor(
     interpreterClass = KotlinInterpreter::class,
@@ -131,6 +142,7 @@ println(result.result.resultValue) // Execution result
 ```
 
 **Key Features**:
+
 - Multi-language support (Kotlin, Python, JavaScript, etc.)
 - Automatic code execution and validation
 - Error correction with iterative fixing
@@ -138,6 +150,7 @@ println(result.result.resultValue) // Execution result
 - Code formatting and import management
 
 **Configuration Options**:
+
 - `interpreterClass`: Programming language interpreter
 - `symbols`: Pre-defined variables and APIs
 - `fixIterations`: Number of error correction attempts
@@ -145,6 +158,7 @@ println(result.result.resultValue) // Execution result
 - `codeInterceptor`: Custom code transformation
 
 **Code Execution Flow**:
+
 1. Generate initial code
 2. Validate syntax
 3. Execute if `autoEvaluate` is true
@@ -159,12 +173,14 @@ println(result.result.resultValue) // Execution result
 **Output**: `ImageResponse` - Contains both prompt text and generated image
 
 **Use Cases**:
+
 - Content illustration
 - Creative image generation
 - Prototype mockups
 - Visual storytelling
 
 **Example**:
+
 ```kotlin
 val imageGen = ImageActor(
     prompt = "Create detailed image prompts that will generate high-quality images",
@@ -180,6 +196,7 @@ val description = result.text // Enhanced prompt used for generation
 ```
 
 **Key Features**:
+
 - Two-stage generation (text enhancement + image creation)
 - Automatic prompt optimization
 - Multiple image model support
@@ -187,6 +204,7 @@ val description = result.text // Enhanced prompt used for generation
 - Prompt length management for model limits
 
 **Configuration Options**:
+
 - `imageModel`: DALL-E 2, DALL-E 3, etc.
 - `width`/`height`: Image dimensions
 - `textModel`: Model for prompt enhancement

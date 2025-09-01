@@ -25,7 +25,9 @@ open class ClientManager {
     fun getChatClient(
         session: Session,
         user: User?,
-    ) = chatCache.getOrPut(SessionKey(session, user)) { createChatClient(session, user) ?: throw RuntimeException("No API key") }
+    ) = chatCache.getOrPut(SessionKey(session, user)) {
+        createChatClient(session, user) ?: throw RuntimeException("No API key")
+    }
 
     private val poolCache = mutableMapOf<SessionKey, ImmediateExecutorService>()
     protected open fun createPool(session: Session, user: User?) = ImmediateExecutorService(session, user)

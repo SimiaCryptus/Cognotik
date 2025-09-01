@@ -5,8 +5,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
-import com.simiacryptus.jopenai.util.ClientUtil
-import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.Servlet
@@ -34,7 +32,6 @@ abstract class ApplicationDirectory(
     val port: Int = 8081,
 ) {
     var domainName: String = ""
-
         private set
     abstract val childWebApps: List<ChildWebApp>
 

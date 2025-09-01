@@ -1,7 +1,9 @@
 package com.simiacryptus.cognotik.apps.parse
+
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+
 class ProgressState private constructor(
     private val task: SessionTask?,
     private val totalItems: AtomicInteger = AtomicInteger(0),
@@ -17,6 +19,7 @@ class ProgressState private constructor(
             lastUpdateTime.set(now)
         }
     }
+
     private fun updateProgress() {
         val total = totalItems.get()
         val completed = completedItems.get()
@@ -32,15 +35,18 @@ class ProgressState private constructor(
             task?.add(progressBar)
         }
     }
+
     fun complete() {
         completedItems.set(totalItems.get())
         updateProgress()
     }
+
     companion object {
         private const val UPDATE_INTERVAL_MS = 500L
         fun progressBar(task: SessionTask): ProgressState {
             return ProgressState(task)
         }
+
         fun noOp(): ProgressState {
             return ProgressState(null)
         }
