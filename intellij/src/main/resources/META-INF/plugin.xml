@@ -128,10 +128,6 @@
                         text="📚 Index Files"
                         description="Index files for semantic search and knowledge retrieval">
                 </action>
-                <action class="cognotik.actions.knowledge.SaveAsQueryIndexAction"
-                        text="💾 Save as Query Index"
-                        description="Save selected files as a queryable knowledge index for future reference and retrieval">
-                </action>
                 <action class="cognotik.actions.knowledge.EmbeddingSearchAction"
                         text="🔍 Search Embeddings"
                         description="Search through indexed files using semantic similarity">
