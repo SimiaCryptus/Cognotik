@@ -42,7 +42,7 @@ dependencies {
     implementation(libs.jetty.websocket.client)
     implementation(libs.jetty.websocket.servlet)
     implementation(libs.jetty.webapp)
-    implementation(libs.flexmark.core)
+    implementation(libs.flexmark.all)
     implementation(libs.flexmark.ext.tables)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)

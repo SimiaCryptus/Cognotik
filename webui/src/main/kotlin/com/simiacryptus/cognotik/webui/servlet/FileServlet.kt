@@ -4,12 +4,18 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.common.cache.RemovalListener
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder
 import jakarta.servlet.WriteListener
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.http.MimeTypes
 import org.slf4j.LoggerFactory
+import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.util.data.MutableDataSet
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.MappedByteBuffer
@@ -32,9 +38,26 @@ abstract class FileServlet : HttpServlet() {
 
         when {
             !file.exists() -> {
-                log.warn("File not found: ${file.absolutePath}")
-                resp.status = HttpServletResponse.SC_NOT_FOUND
-                resp.writer.write("File not found")
+                // Check if this is a request for HTML or PDF with an equivalent .md file
+                val fileName = file.name
+                when {
+                    (fileName.endsWith(".html") || fileName.endsWith(".pdf")) -> {
+                        val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
+                        if (mdFile.exists() && mdFile.isFile) {
+                            log.info("Found markdown file, rendering: ${mdFile.absolutePath}")
+                            renderMarkdown(mdFile, resp, fileName.endsWith(".pdf"))
+                        } else {
+                            log.warn("File not found: ${file.absolutePath}")
+                            resp.status = HttpServletResponse.SC_NOT_FOUND
+                            resp.writer.write("File not found")
+                        }
+                    }
+                    else -> {
+                        log.warn("File not found: ${file.absolutePath}")
+                        resp.status = HttpServletResponse.SC_NOT_FOUND
+                        resp.writer.write("File not found")
+                    }
+                }
             }
 
             file.isFile -> {
@@ -74,14 +97,12 @@ abstract class FileServlet : HttpServlet() {
 
                 val files = file.listFiles()
                     ?.filter { it.isFile }
-
                     ?.sortedBy { it.name }
                     ?.joinToString("") {
                         """<li><a class="item-link" href="${it.name}"><span class="icon">📄</span>${it.name}</a></li>"""
                     } ?: ""
                 val folders = file.listFiles()
                     ?.filter { !it.isFile }
-
                     ?.sortedBy { it.name }
                     ?.joinToString("") {
                         """<li><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a></li>"""
@@ -172,6 +193,59 @@ abstract class FileServlet : HttpServlet() {
             })
         }
     }
+    private fun renderMarkdown(mdFile: File, resp: HttpServletResponse, asPdf: Boolean) {
+        try {
+            val markdownContent = mdFile.readText()
+            val options = MutableDataSet()
+            val parser = Parser.builder(options).build()
+            val document = parser.parse(markdownContent)
+            val renderer = HtmlRenderer.builder(options).build()
+            val html = renderer.render(document)
+            
+            if (asPdf) {
+                val outputStream = ByteArrayOutputStream()
+                val baseUri = mdFile.parentFile.toURI().toString()
+                
+                // Wrap HTML with proper structure for PDF conversion
+                val fullHtml = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 40px; }
+                            pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; }
+                            code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 2px; }
+                        </style>
+                    </head>
+                    <body>
+                        $html
+                    </body>
+                    </html>
+                """.trimIndent()
+                
+                PdfRendererBuilder()
+                    .withHtmlContent(fullHtml, baseUri)
+                    .toStream(outputStream)
+                    .run()
+                    
+                val byteArray = outputStream.toByteArray()
+                resp.contentType = "application/pdf"
+                resp.status = HttpServletResponse.SC_OK
+                resp.outputStream.write(byteArray)
+            } else {
+                resp.contentType = "text/html"
+                resp.characterEncoding = "UTF-8"
+                resp.status = HttpServletResponse.SC_OK
+                resp.writer.write(html)
+            }
+        } catch (e: Exception) {
+            log.error("Error rendering markdown file: ${mdFile.absolutePath}", e)
+            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            resp.writer.write("Error rendering markdown: ${e.message}")
+        }
+    }
+
 
     private fun getMimeType(fileName: String): String {
         return when {
