@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -44,7 +45,7 @@ class GenericChatAction : BaseAction() {
                     systemPrompt = systemPrompt,
                     api = api,
                     applicationClass = ApplicationServer::class.java,
-                    storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+                    storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
                     budget = 2.0
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(

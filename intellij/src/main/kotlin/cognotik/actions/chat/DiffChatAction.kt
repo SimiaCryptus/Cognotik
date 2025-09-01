@@ -20,6 +20,7 @@ import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.AddApplyDiffLinks.Companion.addApplyDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -115,7 +116,7 @@ class DiffChatAction : BaseAction() {
             api = api,
             model = AppSettingsState.instance.smartModel.chatModel(),
             parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-            storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome)
+            storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         ) {
 
             override val systemPrompt: String

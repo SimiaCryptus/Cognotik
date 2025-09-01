@@ -44,6 +44,7 @@ class KnowledgeIndexingServer(
     private val threadPool = Executors.newFixedThreadPool(
         Runtime.getRuntime().availableProcessors().coerceAtMost(16)
     )
+
     @Volatile
     private var isCancelled = false
 
@@ -113,19 +114,17 @@ class KnowledgeIndexingServer(
             }, ui = ui))
         }
 
-
         val totalSizeKB = files.sumOf { it.length() } / 1024
         val totalSizeMB = totalSizeKB / 1024
         val sizeDisplay = if (totalSizeMB > 1) "${totalSizeMB} MB" else "${totalSizeKB} KB"
-        
-        task.add(MarkdownUtil.renderMarkdown("# Knowledge Indexing", ui = ui))
 
+        task.add(MarkdownUtil.renderMarkdown("# Knowledge Indexing", ui = ui))
         task.add(MarkdownUtil.renderMarkdown(buildString {
             this.appendLine("## Indexing Overview")
             this.appendLine("- **Files to process:** ${files.size}")
             this.appendLine("- **Total size:** $sizeDisplay")
             this.appendLine("- **Embedding model:** ${model.modelName}")
-           this.appendLine("- **Split regex:** `${settings.splitRegex}`")
+            this.appendLine("- **Split regex:** `${settings.splitRegex}`")
             this.appendLine()
 
             if (files.size <= MAX_DISPLAY_FILES) {
@@ -163,7 +162,7 @@ class KnowledgeIndexingServer(
                     task.add(MarkdownUtil.renderMarkdown("⚠️ Indexing cancelled by user", ui = ui))
                     return
                 }
-                
+
                 try {
                     val batchResults = indexTextFiles(
                         embeddingClient = OllamaEmbeddingClient(
@@ -174,7 +173,7 @@ class KnowledgeIndexingServer(
                         progressState = progressState,
                         inputPaths = batch.map { it.absolutePath }.toTypedArray(),
                         model = model,
-                       parsingModel = RawTextParsingModel(api, settings.splitRegex),
+                        parsingModel = RawTextParsingModel(api, settings.splitRegex),
                     )
                     smallResults.addAll(batchResults)
                     batch.forEach { successfulFiles.add(it.name) }
@@ -183,7 +182,7 @@ class KnowledgeIndexingServer(
                     batch.forEach { errors.add("${it.name}: ${e.message}") }
                 }
             }
-            
+
             // Process large files one by one with chunking
             val largeResults = largeFiles.mapNotNull { file ->
                 try {
@@ -197,7 +196,7 @@ class KnowledgeIndexingServer(
                         progressState = progressState,
                         inputPaths = arrayOf(file.absolutePath),
                         model = model,
-                       parsingModel = RawTextParsingModel(api, settings.splitRegex),
+                        parsingModel = RawTextParsingModel(api, settings.splitRegex),
                     ).firstOrNull()
                     if (result != null) {
                         successfulFiles.add(file.name)
@@ -215,7 +214,7 @@ class KnowledgeIndexingServer(
             val failureCount = files.size - successCount
             val endTime = System.currentTimeMillis()
             val totalDuration = (endTime - startTime) / 1000
-            
+
             val completionResult = buildString {
                 if (failureCount == 0) {
                     appendLine("# 🎉 Knowledge Indexing Complete")
@@ -267,6 +266,7 @@ class KnowledgeIndexingServer(
             task.error(e)
         }
     }
+
     private fun formatDuration(seconds: Int): String {
         return when {
             seconds < 60 -> "${seconds}s"

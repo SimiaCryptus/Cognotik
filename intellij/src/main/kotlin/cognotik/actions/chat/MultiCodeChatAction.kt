@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.chatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -25,6 +26,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 
@@ -121,7 +123,7 @@ class MultiCodeChatAction : BaseAction() {
         systemPrompt = "",
         api = api,
         applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+        storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
         budget = 2.0,
     ) {
 
@@ -163,7 +165,13 @@ class MultiCodeChatAction : BaseAction() {
             }
         }</div>"""
 
-        override fun respond(api: ChatClientInterface, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
+        override fun respond(
+            api: ChatClientInterface,
+            task: SessionTask,
+            userMessage: String,
+            currentChatMessages: List<ApiModel.ChatMessage>,
+            transcriptStream: OutputStream?
+        ): String {
 
             val codex = GPT4Tokenizer()
             task.verbose((codeFiles.joinToString("\n") { path ->
@@ -173,7 +181,7 @@ class MultiCodeChatAction : BaseAction() {
             val settings = MultiStepPatchAction.AutoDevApp.Settings()
             api.budget = settings.budget ?: 2.00
 
-            return super.respond(api, task, userMessage, currentChatMessages)
+            return super.respond(api, task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 

@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -59,7 +60,7 @@ class MultiStepPatchAction : BaseAction() {
             try {
                 val session = Session.newGlobalID()
                 val storage =
-                    ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome) as DataStorage?
+                    ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot) as DataStorage?
                 val selectedFile = e.getSelectedFolder()
                 if (null != storage && null != selectedFile) {
                     DataStorage.sessionPaths[session] = selectedFile.toFile

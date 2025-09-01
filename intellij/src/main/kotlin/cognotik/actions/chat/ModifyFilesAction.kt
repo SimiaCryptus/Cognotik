@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.config.chatModel
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -26,6 +27,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import kotlin.io.path.relativeTo
@@ -129,7 +131,7 @@ open class ModifyFilesAction(
         systemPrompt = "",
         api = api,
         applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+        storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
         budget = 2.0,
     ) {
         override val systemPrompt: String
@@ -190,14 +192,20 @@ open class ModifyFilesAction(
             )
         }
 
-        override fun respond(api: ChatClientInterface, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
+        override fun respond(
+            api: ChatClientInterface,
+            task: SessionTask,
+            userMessage: String,
+            currentChatMessages: List<ApiModel.ChatMessage>,
+            transcriptStream: OutputStream?
+        ): String {
             val codex = GPT4Tokenizer()
             task.verbose((getCodeFiles().joinToString("\n") { path ->
                 "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
             }).renderMarkdown())
             val settings = Settings()
             api.budget = settings.budget ?: 2.00
-            return super.respond(api, task, userMessage, currentChatMessages)
+            return super.respond(api, task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 

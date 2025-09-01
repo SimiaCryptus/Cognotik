@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.text.SimpleDateFormat
@@ -69,7 +70,7 @@ class ChatWithCommitDiffAction : BaseAction(
             api = IdeaChatClient.instance,
             model = AppSettingsState.instance.smartModel.chatModel(),
             parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-            storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome)
+            storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
