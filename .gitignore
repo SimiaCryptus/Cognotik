@@ -3,6 +3,11 @@ log/
 *.key*
 reports/
 build/
+# Android
+android/local.properties
+*.iml
+.externalNativeBuild
+.cxx
 .gradle/
 .idea/
 openai.key

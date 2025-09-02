@@ -5,7 +5,9 @@ version = properties("libraryVersion")
 subprojects {
     apply(plugin = "jacoco")
     repositories {
+        google()
         mavenCentral()
+        gradlePluginPortal()
     }
     when (name) {
         "android" -> { /* Skip Java plugin for Android project */ }
@@ -101,9 +103,12 @@ allprojects {
         resolutionStrategy {
             force(
                 "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}",
-                "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}",
-                "org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}"
+                "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}"
             )
+            // Only force SLF4J version for non-Android projects
+            if (project.name != "android") {
+                force("org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}")
+            }
             preferProjectModules()
         }
     }
