@@ -1,4 +1,4 @@
-import java.util.Properties
+import java.util.*
 
 plugins {
     id("com.android.application")
@@ -43,7 +43,7 @@ android {
     defaultConfig {
         applicationId = "com.simiacryptus.cognotik.android"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = version.toString()
         
@@ -86,15 +86,20 @@ android {
             excludes += "META-INF/services/**"
         }
     }
+    // Disable Jetifier to avoid Java 21 bytecode compatibility issues
+    androidComponents {
+        beforeVariants { variantBuilder ->
+            variantBuilder.enableAndroidTest = false
+        }
+    }
 }
 
 dependencies {
     implementation(project(":core"))
-    // Temporarily exclude problematic project dependencies
-    // implementation(project(":webui"))
-    // implementation(project(":jo-penai"))
-    // implementation(project(":kotlin"))
-    // implementation(project(":groovy"))
+    implementation(project(":webui"))
+    implementation(project(":jo-penai"))
+    implementation(project(":kotlin"))
+    implementation(project(":groovy"))
     
     // Android dependencies
     implementation("androidx.core:core-ktx:1.15.0")
@@ -111,7 +116,13 @@ dependencies {
     implementation(libs.commons.io)
     // Use Android-compatible logging - slf4j-android includes slf4j-api
     implementation("org.slf4j:slf4j-android:1.7.36") {
-        exclude(group = "org.slf4j", module = "slf4j-api")
+//        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
+    // Exclude all other SLF4J implementations to avoid conflicts
+    configurations.all {
+        exclude(group = "org.slf4j", module = "slf4j-simple")
+        exclude(group = "ch.qos.logback", module = "logback-classic")
+        exclude(group = "ch.qos.logback", module = "logback-core")
     }
     
     implementation(kotlin("stdlib"))
@@ -126,4 +137,9 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    // Jetty webapp dependencies
+    implementation(libs.jetty.server)
+    implementation(libs.jetty.webapp)
+    implementation(libs.jetty.websocket.server)
+
 }

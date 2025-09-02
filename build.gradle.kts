@@ -108,6 +108,11 @@ allprojects {
             // Only force SLF4J version for non-Android projects
             if (project.name != "android") {
                 force("org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}")
+            } else {
+                // For Android, force slf4j-android and exclude other implementations
+                force("org.slf4j:slf4j-android:1.7.36")
+                exclude(group = "org.slf4j", module = "slf4j-simple")
+                exclude(group = "ch.qos.logback")
             }
             preferProjectModules()
         }

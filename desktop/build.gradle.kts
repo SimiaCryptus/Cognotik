@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.jetty.server)
     implementation(libs.jetty.webapp)
-    implementation(libs.jetty.websocket.server) // Already in TOML
+    implementation(libs.jetty.websocket.server)
     implementation(libs.httpclient5.fluent)
     implementation(libs.gson)
     implementation(libs.h2)

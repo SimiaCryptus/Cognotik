@@ -23,7 +23,9 @@ dependencies {
     implementation(libs.scala.reflect)
     implementation(libs.slf4j.api)
 
-    testImplementation(group = "org.slf4j", name = "slf4j-simple", version = libs.versions.slf4j.get())
+    testImplementation(group = "org.slf4j", name = "slf4j-simple", version = libs.versions.slf4j.get()) {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
     testImplementation(libs.scala.java8.compat)
 
     testImplementation(platform(libs.junit.bom))

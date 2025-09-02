@@ -136,6 +136,7 @@ tasks.register<com.github.gradle.node.npm.task.NpmTask>("installSass") {
 tasks.register<com.github.gradle.node.npm.task.NpxTask>("compileSass") {
     dependsOn("installSass")
     command.set("sass")
+    workingDir.set(file("${project.projectDir}"))
     args.set(listOf(
         "src/main/resources/shared:build/resources/main/css",
         "--style=expanded",
