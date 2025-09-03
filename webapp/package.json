@@ -4,7 +4,7 @@
   "description": "Cognotik AI Assistant Demo Application",
   "main": "server.js",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "browserslist": {
     "production": [
@@ -86,8 +86,8 @@
   },
   "private": true,
   "scripts": {
-    "start": "cross-env NODE_ENV='development' GENERATE_SOURCEMAP=false CI=true react-scripts start",
-    "build": "CI=true react-scripts build",
+    "start": "cross-env NODE_ENV='development' GENERATE_SOURCEMAP=false CI=false react-scripts start",
+    "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix --max-warnings=0",
