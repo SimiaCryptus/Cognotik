@@ -17,21 +17,10 @@ val sdkDir = localProperties.getProperty("sdk.dir")
     ?: findProperty("android.sdk.home") as String?
     ?: System.getenv("ANDROID_HOME")
     ?: System.getenv("ANDROID_SDK_ROOT")
-    ?: System.getProperty("user.home") + "/Android/Sdk"  // Default Linux location
-    ?: System.getProperty("user.home") + "/Library/Android/sdk"  // Default macOS location
+    ?: (System.getProperty("user.home") + "/Android/Sdk")  // Default macOS location
 
-if (sdkDir != null) {
-    println("Using Android SDK at: $sdkDir")
-    // Set the SDK directory for the build
-    System.setProperty("android.home", sdkDir)
-} else {
-    throw GradleException(
-        "Android SDK location not found. Define location with:\n" +
-        "1. sdk.dir in android/local.properties file, or\n" +
-        "2. ANDROID_HOME environment variable, or\n" +
-        "3. ANDROID_SDK_ROOT environment variable"
-    )
-}
+println("Using Android SDK at: $sdkDir")
+System.setProperty("android.home", sdkDir)
 
 group = providers.gradleProperty("libraryGroup").get()
 version = providers.gradleProperty("libraryVersion").get()
@@ -46,7 +35,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = version.toString()
-        
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -80,10 +68,25 @@ android {
             excludes += "META-INF/DEPENDENCIES"
             excludes += "META-INF/LICENSE*"
             excludes += "META-INF/NOTICE*"
+           excludes += "META-INF/FastDoubleParser-LICENSE"
+           excludes += "META-INF/FastDoubleParser-NOTICE"
             excludes += "META-INF/io.netty.versions.properties"
             excludes += "META-INF/native-image/**"
             excludes += "META-INF/versions/**"
             excludes += "META-INF/services/**"
+           // Exclude duplicate Groovy extension module files
+           excludes += "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule"
+           // Exclude duplicate Kotlin builtin files
+           excludes += "kotlin/kotlin.kotlin_builtins"
+           excludes += "kotlin/**/*.kotlin_builtins"
+           excludes += "kotlin/annotation/annotation.kotlin_builtins"
+           excludes += "kotlin/collections/collections.kotlin_builtins"
+           excludes += "kotlin/coroutines/coroutines.kotlin_builtins"
+           excludes += "kotlin/internal/internal.kotlin_builtins"
+           excludes += "kotlin/ranges/ranges.kotlin_builtins"
+           excludes += "kotlin/reflect/reflect.kotlin_builtins"
+           // Exclude duplicate Groovy release info files
+           excludes += "META-INF/groovy-release-info.properties"
         }
     }
     // Disable Jetifier to avoid Java 21 bytecode compatibility issues
@@ -123,17 +126,10 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-simple")
         exclude(group = "ch.qos.logback", module = "logback-classic")
         exclude(group = "ch.qos.logback", module = "logback-core")
+       exclude(group = "commons-logging", module = "commons-logging")
     }
     
     implementation(kotlin("stdlib"))
-    // Remove heavy Kotlin scripting dependencies for Android
-    // implementation(kotlin("scripting-jsr223"))
-    // implementation(kotlin("scripting-jvm"))
-    // implementation(kotlin("scripting-jvm-host"))
-    // implementation(kotlin("script-runtime"))
-    // implementation(kotlin("scripting-compiler-embeddable"))
-    // implementation(kotlin("compiler-embeddable"))
-    
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")

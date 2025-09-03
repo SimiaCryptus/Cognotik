@@ -70,7 +70,7 @@ class CognotikService : Service() {
     
     fun stopCognotikServer() {
         serverJob?.cancel()
-        cognotikApps?.stopServer()
+        //cognotikApps?.stopServer()
         cognotikApps = null
         serverPort = 0
         Log.d(TAG, "Server stopped")

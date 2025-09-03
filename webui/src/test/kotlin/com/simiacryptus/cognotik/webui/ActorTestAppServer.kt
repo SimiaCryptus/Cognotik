@@ -102,7 +102,10 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             ChildWebApp("/stressTest", StressTestApp()),
             ChildWebApp(
                 "/pdfExtractor", DocumentParserApp(
-                    parsingModel = DocumentParsingModel(model, 0.1) as ParsingModel<DocumentData>
+                    parsingModel = DocumentParsingModel(
+                        model, 0.1,
+                        api = TODO()
+                    ) as ParsingModel<DocumentData>
                 )
             ),
         )
