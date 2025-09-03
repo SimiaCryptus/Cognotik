@@ -51,6 +51,17 @@ googleHttpClientGson = "1.47.0"
 commonsCodec = "1.18.0"
 commonsCsv = "1.10.0"
 odftoolkit = "0.12.0"
+androidx-core = "1.15.0"
+androidx-lifecycle = "2.8.7"
+androidx-activity = "1.9.3"
+androidx-appcompat = "1.7.0"
+material = "1.12.0"
+androidx-constraintlayout = "2.1.4"
+androidx-webkit = "1.12.1"
+androidx-emoji2 = "1.4.0"
+slf4jandroid = "1.7.36"
+androidx-test-ext = "1.2.1"
+androidx-test-espresso = "3.6.1"
 
 # plugins
 changelog = "2.2.1"
@@ -143,6 +154,18 @@ google-http-client-gson = { group = "com.google.http-client", name = "google-htt
 commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commonsCodec" }
 commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commonsCsv" }
 odfdom-java = { group = "org.odftoolkit", name = "odfdom-java", version.ref = "odftoolkit" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidx-webkit" }
+androidx-emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "androidx-emoji2" }
+androidx-emoji2-bundled = { group = "androidx.emoji2", name = "emoji2-bundled", version.ref = "androidx-emoji2" }
+slf4jandroid = { group = "org.slf4j", name = "slf4j-android", version.ref = "slf4jandroid" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidx-test-espresso" }
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitJupiter" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }

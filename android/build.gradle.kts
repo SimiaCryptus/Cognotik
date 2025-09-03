@@ -106,22 +106,22 @@ dependencies {
     implementation(project(":groovy"))
     
     // Android dependencies
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.webkit:webkit:1.12.1")
-    implementation("androidx.emoji2:emoji2:1.4.0")
-    implementation("androidx.emoji2:emoji2-bundled:1.4.0")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.webkit)
+    implementation(libs.androidx.emoji2)
+    implementation(libs.androidx.emoji2.bundled)
 
     // Essential dependencies only - avoid server-side libraries
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.commons.io)
     // Use Android-compatible logging - slf4j-android includes slf4j-api
-    implementation("org.slf4j:slf4j-android:1.7.36") {
+    implementation(libs.slf4jandroid) {
 //        exclude(group = "org.slf4j", module = "slf4j-api")
     }
     // Exclude all other SLF4J implementations to avoid conflicts
@@ -133,9 +133,9 @@ dependencies {
     }
     
     implementation(kotlin("stdlib"))
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    testImplementation(libs.junit.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
     // Jetty server dependencies - use only core server, not webapp
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlet)
