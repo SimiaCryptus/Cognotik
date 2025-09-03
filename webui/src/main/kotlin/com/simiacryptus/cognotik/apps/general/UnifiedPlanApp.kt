@@ -49,7 +49,8 @@ open class UnifiedPlanApp(
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
-    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^\n|}{)(\]\[]+)+)}""")
+    @Suppress("RegExpDuplicateCharacterInClass")
+    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^\n|}{()\\\[\]]+)+)}""")
     private val expansionPool = Executors.newFixedThreadPool(4)
     override val stickyInput = true
     override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it else it + 1 }

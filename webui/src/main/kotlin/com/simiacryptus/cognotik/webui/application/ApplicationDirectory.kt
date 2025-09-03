@@ -58,7 +58,7 @@ abstract class ApplicationDirectory(
         applicationName = "Demo",
         key = {
             val encryptedData =
-                javaClass.classLoader!!.getResourceAsStream("client_secret_google_oauth.json.kms")?.readAllBytes()
+                javaClass.classLoader!!.getResourceAsStream("client_secret_google_oauth.json.kms")?.readBytes()
                     ?: throw RuntimeException("Unable to load resource: ${"client_secret_google_oauth.json.kms"}")
             val decrypt = ApplicationServices.cloud?.decrypt(encryptedData)
             decrypt?.byteInputStream()
@@ -188,8 +188,13 @@ abstract class ApplicationDirectory(
     ): WebAppContext {
         val context = WebAppContext()
         JettyWebSocketServletContainerInitializer.configure(context, null)
-        context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
-        context.isParentLoaderPriority = true
+        // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
+        if (!isAndroid()) {
+            context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
+            context.isParentLoaderPriority = true
+        } else {
+            context.classLoader = ApplicationServices::class.java.classLoader
+        }
         context.baseResource = baseResource
         log.debug("New WebAppContext created for path: $path")
         context.contextPath = path
@@ -204,8 +209,13 @@ abstract class ApplicationDirectory(
     protected open fun newWebAppContext(path: String, servlet: Servlet): WebAppContext {
         val context = WebAppContext()
         JettyWebSocketServletContainerInitializer.configure(context, null)
-        context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
-        context.isParentLoaderPriority = true
+        // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
+        if (!isAndroid()) {
+            context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
+            context.isParentLoaderPriority = true
+        } else {
+            context.classLoader = ApplicationServices::class.java.classLoader
+        }
         context.contextPath = path
         log.debug("New WebAppContext created for servlet at path: $path")
         context.resourceBase = "application"
@@ -214,6 +224,14 @@ abstract class ApplicationDirectory(
         servletHolder.getRegistration().setMultipartConfig(MultipartConfigElement("./tmp"))
         context.addServlet(servletHolder, "/")
         return context
+    }
+    private fun isAndroid(): Boolean {
+        return try {
+            Class.forName("android.os.Build")
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
     }
 
     companion object {

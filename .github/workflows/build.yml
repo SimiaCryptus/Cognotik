@@ -66,9 +66,20 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Print Gradle version
         run: ./gradlew --version
+      - name: Check for webapp directory and package-lock.json
+        id: check-webapp
+        run: |
+          if [ -f "webapp/package-lock.json" ]; then
+            echo "has-webapp=true" >> $GITHUB_OUTPUT
+            echo "webapp/package-lock.json exists"
+          else
+            echo "has-webapp=false" >> $GITHUB_OUTPUT
+            echo "webapp/package-lock.json does not exist"
+          fi
+
       - name: Setup Node.js
+        if: steps.check-webapp.outputs.has-webapp == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
