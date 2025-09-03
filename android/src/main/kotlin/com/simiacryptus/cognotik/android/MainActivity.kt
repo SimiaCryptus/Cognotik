@@ -92,18 +92,20 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
     
     private fun ensureEmojiCompatInitialized() {
         try {
-            if (!EmojiCompat.isConfigured()) {
-                Log.w(TAG, "EmojiCompat not configured, initializing in MainActivity")
-                // Use the static initializer from CognotikApplication
-                CognotikApplication.initializeEmojiCompatStatic(application)
-                Log.d(TAG, "EmojiCompat initialized from MainActivity using static method")
-            } else {
-                val emojiCompat = EmojiCompat.get()
+            // Always try to initialize EmojiCompat safely
+            CognotikApplication.initializeEmojiCompatStatic(application)
+            
+            // Check if it's properly configured
+            val emojiCompat = CognotikApplication.safeGetEmojiCompat()
+            if (emojiCompat != null) {
                 val loadState = emojiCompat.loadState
-                Log.d(TAG, "EmojiCompat already configured, load state: $loadState")
+                Log.d(TAG, "EmojiCompat configured successfully, load state: $loadState")
+            } else {
+                Log.w(TAG, "EmojiCompat not available, continuing without emoji support")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to ensure EmojiCompat initialization: ${e.message}", e)
+            // Continue without emoji support rather than crashing
         }
     }
     

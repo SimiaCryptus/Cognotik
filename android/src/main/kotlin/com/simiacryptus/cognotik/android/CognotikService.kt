@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import com.simiacryptus.cognotik.android.CognotikApplication.Companion.initializeEmojiCompatStatic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,6 +32,7 @@ class CognotikService : Service() {
     }
     override fun onCreate() {
         super.onCreate()
+        initializeEmojiCompatStatic(applicationContext)
         Log.i(TAG, "CognotikService created")
         Log.d(TAG, "Service process ID: ${android.os.Process.myPid()}")
         Log.d(TAG, "Service thread: ${Thread.currentThread().name}")

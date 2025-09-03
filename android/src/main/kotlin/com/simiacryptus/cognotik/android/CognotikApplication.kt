@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.android
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.emoji2.bundled.BundledEmojiCompatConfig
 import androidx.emoji2.text.EmojiCompat
@@ -8,21 +9,42 @@ import androidx.emoji2.text.EmojiCompat
 class CognotikApplication : Application() {
     companion object {
         private const val TAG = "CognotikApplication"
+        private val isEmojiCompatInitialized = java.util.concurrent.atomic.AtomicBoolean(false)
+        
         @JvmStatic
-        fun initializeEmojiCompatStatic(application: Application) {
-            if (EmojiCompat.isConfigured()) {
+        fun initializeEmojiCompatStatic(application: Context) {
+            // Use atomic boolean to prevent multiple initialization attempts
+            if (isEmojiCompatInitialized.get() || EmojiCompat.isConfigured()) {
                 Log.d(TAG, "EmojiCompat already configured")
                 return
             }
+            // Double-checked locking pattern for thread safety
+            synchronized(this) {
+                if (isEmojiCompatInitialized.get() || EmojiCompat.isConfigured()) {
+                    Log.d(TAG, "EmojiCompat already configured (double-check)")
+                    return
+                }
+                try {
+                    EmojiCompat.init(
+                        BundledEmojiCompatConfig(application)
+                            .setReplaceAll(true)
+                            .setUseEmojiAsDefaultStyle(true)
+                            .setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_DEFAULT)
+                    )
+                    isEmojiCompatInitialized.set(true)
+                    Log.d(TAG, "EmojiCompat initialized successfully")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to initialize EmojiCompat: ${e.message}", e)
+                }
+            }
+        }
+        @JvmStatic
+        fun safeGetEmojiCompat(): EmojiCompat? {
             try {
-                val config = BundledEmojiCompatConfig(application)
-                    .setReplaceAll(true) // Replace all emojis for consistency
-                    .setUseEmojiAsDefaultStyle(true) // Use emoji as default
-                    .setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_DEFAULT) // Use default strategy for immediate loading
-                EmojiCompat.init(config)
-                Log.d(TAG, "EmojiCompat initialized successfully")
+                return if (EmojiCompat.isConfigured()) EmojiCompat.get() else null
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize EmojiCompat: ${e.message}", e)
+                Log.w(TAG, "EmojiCompat not available: ${e.message}")
+                return null
             }
         }
     }

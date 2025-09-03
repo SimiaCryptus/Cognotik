@@ -170,9 +170,15 @@ abstract class ApplicationDirectory(
     }
 
     protected open fun newWebAppContext(path: String, server: ChatServer): WebAppContext {
-        val baseResource = server.baseResource
+        var baseResource: Resource? = server.baseResource
         if (baseResource == null) {
-            throw IllegalStateException("No base resource")
+            log.warn("No baseResource specified for ChatServer at path: $path, defaulting to root resource")
+            baseResource = Resource.newClassPathResource("/")
+        }
+        if (baseResource == null) {
+            log.error("Failed to determine baseResource for ChatServer at path: $path, using empty resource collection")
+            // Create an empty resource collection as fallback for Android
+            baseResource = ResourceCollection()
         }
         val webAppContext = newWebAppContext(path, baseResource, resourceBase = "application")
         server.configure(webAppContext)
@@ -182,7 +188,7 @@ abstract class ApplicationDirectory(
 
     protected open fun newWebAppContext(
         path: String,
-        baseResource: Resource,
+        baseResource: Resource?,
         resourceBase: String,
         indexServlet: Servlet? = null
     ): WebAppContext {
@@ -195,7 +201,11 @@ abstract class ApplicationDirectory(
         } else {
             context.classLoader = ApplicationServices::class.java.classLoader
         }
-        context.baseResource = baseResource
+        if (baseResource != null) {
+            context.baseResource = baseResource
+        } else {
+            log.warn("No base resource provided for context at path: $path")
+        }
         log.debug("New WebAppContext created for path: $path")
         context.contextPath = path
         context.welcomeFiles = arrayOf("index.html")

@@ -167,7 +167,7 @@ open class ChatSocketManager(
         Regex("""@\[($idSubPattern(?:[|,]$idSubPattern)+)]""") // Matches @[option1|option2|option3]
 
     private val sequenceExpansionPattern =
-        Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)}""") // Matches @{item1 -> item2 -> item3}
+        Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""") // Matches @{item1 -> item2 -> item3}
 
     private val rangeExpansionPattern =
         Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""") // Matches @(start..end:step) or @(start to end by step)
