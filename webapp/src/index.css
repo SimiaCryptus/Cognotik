@@ -9,6 +9,9 @@ body {
     /* Optimize for fixed backgrounds */
     background-attachment: fixed;
     transform: translate3d(0, 0, 0);
+    /* Ensure proper color printing - using modern property */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
 }
 
 .chat-input {

@@ -10,7 +10,16 @@ const BASE_API_URL = (() => {
     return baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
 })();
 
-let loadConfigPromise: Promise<any> | null = null;
+interface AppConfigResponse {
+    applicationName?: string;
+    inputCnt?: number;
+    stickyInput?: boolean;
+    loadImages?: boolean;
+    showMenubar?: boolean;
+    [key: string]: unknown;
+}
+
+let loadConfigPromise: Promise<AppConfigResponse | null> | null = null;
 
 export const isArchive = window.location.pathname.includes('/archive/');
 
@@ -33,6 +42,7 @@ export const themeStorage = {
     },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const fetchAppConfig = async (sessionId: string, endpoint = 'appInfo'): Promise<any> => {
     if (loadConfigPromise) {
         return loadConfigPromise;

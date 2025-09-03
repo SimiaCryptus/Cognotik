@@ -1,15 +1,17 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useTheme} from '../../hooks/useTheme';
-import {themes, layoutThemes, LayoutThemeName} from '../../themes/themes';
+import {LayoutThemeName, layoutThemes, themes} from '../../themes/themes';
 import {useDispatch, useSelector} from 'react-redux';
-import {setModalContent, showModal, setLayoutTheme} from '../../store/slices/uiSlice';
-import { RootState } from '../../store';
+import {setLayoutTheme, setModalContent, showModal} from '../../store/slices/uiSlice';
+import {RootState} from '../../store';
 
 const LOG_PREFIX = '[ThemeMenu Component]';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logWithPrefix = (message: string, ...args: any[]) => {
     console.log(`${LOG_PREFIX} ${message}`, ...args);
 };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logDebug = (message: string, ...args: any[]) => {
     if (process.env.NODE_ENV === 'development') {
         logWithPrefix(`[DEBUG] ${message}`, ...args);
@@ -193,54 +195,6 @@ export const ThemeMenu: React.FC = () => {
         };
     }, [isOpen, isLayoutOpen]);
 
-    React.useEffect(() => {
-        const handleKeyboardShortcut = (event: KeyboardEvent) => {
-
-            const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-            const isShortcutTriggered = isMac
-                ? (event.ctrlKey && event.key.toLowerCase() === 't')
-                : (event.altKey && event.key.toLowerCase() === 't');
-            if (isShortcutTriggered) {
-                event.preventDefault();
-                const themeSelectorContent = Object.keys(themes).map(themeName => `
-                        <button
-
-                            onclick="window.dispatchEvent(new CustomEvent('themeChange', {detail: '${themeName}'}))"
-                            style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; background-color: ${themeName === currentTheme ? '#ddd;' : 'transparent'}; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
-                        >
-                            ${themeName}
-                        </button>
-                    `).join('');
-
-                const layoutSelectorContent = Object.keys(layoutThemes).map(layoutName => `
-                        <button
-                            onclick="window.dispatchEvent(new CustomEvent('layoutThemeChange', {detail: '${layoutName}'}))"
-                            style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; background-color: ${layoutName === currentLayoutThemeName ? '#ddd;' : 'transparent'}; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
-                        >
-                            ${layoutName}
-                        </button>
-                    `).join('');
-
-                const modalContent = `
-                <div style="padding: 10px;">
-                    <h3 style="margin-top: 0; margin-bottom: 10px;">Color Theme</h3>
-                    ${themeSelectorContent}
-                    <h3 style="margin-top: 20px; margin-bottom: 10px;">Layout Theme</h3>
-                    ${layoutSelectorContent}
-                </div>
-            `;
-                dispatch(showModal('Theme & Layout Selection'));
-                dispatch(setModalContent(modalContent));
-                const shortcutKey = isMac ? 'Ctrl+T' : 'Alt+T';
-                logDebug(`Theme & Layout modal opened via keyboard shortcut (${shortcutKey})`);
-            }
-        };
-        document.addEventListener('keydown', handleKeyboardShortcut);
-        return () => {
-            document.removeEventListener('keydown', handleKeyboardShortcut);
-        };
-    }, [currentTheme, dispatch]); // Added currentLayoutThemeName
-
     const handleThemeChange = React.useCallback(async (themeName: keyof typeof themes) => {
         logDebug('Theme change initiated', {
             from: currentTheme,
@@ -329,7 +283,53 @@ export const ThemeMenu: React.FC = () => {
         logDebug('Layout theme changed', { layout: layoutName });
     };
     const currentLayoutThemeName = useSelector((state: RootState) => state.ui.layoutTheme);
+    React.useEffect(() => {
+        const handleKeyboardShortcut = (event: KeyboardEvent) => {
 
+            const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+            const isShortcutTriggered = isMac
+                ? (event.ctrlKey && event.key.toLowerCase() === 't')
+                : (event.altKey && event.key.toLowerCase() === 't');
+            if (isShortcutTriggered) {
+                event.preventDefault();
+                const themeSelectorContent = Object.keys(themes).map(themeName => `
+                        <button
+
+                            onclick="window.dispatchEvent(new CustomEvent('themeChange', {detail: '${themeName}'}))"
+                            style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; background-color: ${themeName === currentTheme ? '#ddd;' : 'transparent'}; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                        >
+                            ${themeName}
+                        </button>
+                    `).join('');
+
+                const layoutSelectorContent = Object.keys(layoutThemes).map(layoutName => `
+                        <button
+                            onclick="window.dispatchEvent(new CustomEvent('layoutThemeChange', {detail: '${layoutName}'}))"
+                            style="display: block; width: 100%; margin: 8px 0; padding: 8px; text-align: left; background-color: ${layoutName === currentLayoutThemeName ? '#ddd;' : 'transparent'}; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                        >
+                            ${layoutName}
+                        </button>
+                    `).join('');
+
+                const modalContent = `
+                <div style="padding: 10px;">
+                    <h3 style="margin-top: 0; margin-bottom: 10px;">Color Theme</h3>
+                    ${themeSelectorContent}
+                    <h3 style="margin-top: 20px; margin-bottom: 10px;">Layout Theme</h3>
+                    ${layoutSelectorContent}
+                </div>
+            `;
+                dispatch(showModal('Theme & Layout Selection'));
+                dispatch(setModalContent(modalContent));
+                const shortcutKey = isMac ? 'Ctrl+T' : 'Alt+T';
+                logDebug(`Theme & Layout modal opened via keyboard shortcut (${shortcutKey})`);
+            }
+        };
+        document.addEventListener('keydown', handleKeyboardShortcut);
+        return () => {
+            document.removeEventListener('keydown', handleKeyboardShortcut);
+        };
+    }, [currentTheme, currentLayoutThemeName, dispatch])
 
     return (
         <ThemeMenuContainer ref={menuRef}>

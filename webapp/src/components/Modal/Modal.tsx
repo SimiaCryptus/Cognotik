@@ -68,7 +68,7 @@ export const Modal: React.FC = () => {
         } else {
             console.debug(`${LOG_PREFIX} ${logMessage}`);
         }
-    }, [modalOpen, modalType]);
+    }, [modalOpen, modalType, modalContent]);
 
     if (!modalOpen) {
         return null;

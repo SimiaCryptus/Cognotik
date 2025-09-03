@@ -7,39 +7,14 @@
 
 /* Dark mode improvements */
 /* Improve dark mode media query placement */
-/* @media (prefers-color-scheme: dark) {
-    :root {
-    }
 
-    ol li::before {
-        color: var(--theme-primary);
-    }
 
-    ol ol li::before {
-        color: var(--theme-hover);
-    }
 
-    .App {
-        background-color: var(--theme-background);
-        color: var(--theme-text);
-    }
 
-    .tab-button {
-        color: var(--theme-primary);
-    }
 
-    .tab-button:hover {
-        background: var(--theme-surface);
-    }
 
-    .cmd-button {
-        background-color: var(--success-color);
-    }
 
-    .cmd-button:hover {
-        background-color: var(--hover-color);
-    }
-} */ /* Commenting out prefers-color-scheme as theme provider handles it */
+/* Commenting out prefers-color-scheme as theme provider handles it */
 
 /* Improve tab button accessibility */
 .tab-button {

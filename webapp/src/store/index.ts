@@ -5,19 +5,9 @@ import uiReducer from './slices/uiSlice';
 import userReducer from './slices/userSlice';
 import connectionReducer from './slices/connectionSlice';
 
-const getTimestamp = () => {
-    const now = new Date();
-    return `${now.toLocaleTimeString()}.${now.getMilliseconds().toString().padStart(3, '0')}`;
-};
 
-const CRITICAL_ACTIONS = [
-    'user/login',
-    'user/logout',
-    'config/update',
-    'messages/error'
-];
 
-const logger: Middleware = (store) => (next) => (action: unknown) => {
+const logger: Middleware = () => (next) => (action: unknown) => {
     return next(action);
 };
 
@@ -46,5 +36,6 @@ export const store = configureStore({
 });
 
 export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
 console.info(`Redux Store Initialized in ${process.env.NODE_ENV} Mode`);

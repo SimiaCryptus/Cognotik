@@ -84,7 +84,7 @@ const configSlice = createSlice({
     name: 'config',
     initialState,
     reducers: {
-        setAppInfo: (state, action: PayloadAction<any>) => {
+        setAppInfo: (state, action: PayloadAction<Partial<AppConfig>>) => {
             if (action.payload) {
                 if (action.payload.applicationName) {
                     state.applicationName = action.payload.applicationName;

@@ -15,6 +15,9 @@
     background-color: var(--theme-background, #ffffff);
     color: var(--theme-text, #000000);
     transition: background-color 0.3s ease, color 0.3s ease;
+    /* Ensure proper color printing - using modern property */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
 }
 
 .message-list-container[data-testid] {

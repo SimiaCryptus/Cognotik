@@ -20,46 +20,7 @@ const themeLogger = {
     }
 };
 
-interface ThemeSizing {
-    spacing: {
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        xl: string;
-    };
-    borderRadius: {
-        sm: string;
-        md: string;
-        lg: string;
-    };
-    console: {
-        minHeight: string;
-        maxHeight: string;
-        padding: string;
-    };
-}
 
-interface ThemeTypography {
-    fontFamily: string;
-    fontSize: {
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        xl: string;
-    };
-    fontWeight: {
-        regular: number;
-        medium: number;
-        bold: number;
-    };
-    console: {
-        fontFamily: string;
-        fontSize: string;
-        lineHeight: string;
-    };
-}
 
 type ExtendedTheme = BaseTheme;
 

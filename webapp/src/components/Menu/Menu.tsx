@@ -14,34 +14,6 @@ interface MenuContainerProps {
 }
 
 const isDevelopment = process.env.NODE_ENV === 'development';
-
-function long64(): string {
-    const buffer = new ArrayBuffer(8);
-    const view = new DataView(buffer);
-    view.setBigInt64(0, BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)));
-    return btoa(String.fromCharCode(...Array.from(new Uint8Array(buffer))))
-        .replace(/=/g, '')
-        .replace(/\//g, '.')
-        .replace(/\+/g, '-');
-}
-
-function id2() {
-    return Array.from(long64())
-        .filter((it) => {
-            if (it >= 'a' && it <= 'z') return true;
-            if (it >= 'A' && it <= 'Z') return true;
-            if (it >= '0' && it <= '9') return true;
-            return false;
-        })
-        .slice(0, 4)
-        .join('');
-}
-
-function newGlobalID(): string {
-    const yyyyMMdd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return (`G-${yyyyMMdd}-${id2()}`);
-}
-
 const MenuContainer = styled.div<MenuContainerProps>`
     display: flex;
     justify-content: space-between;

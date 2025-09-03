@@ -14,21 +14,21 @@ class Logger {
         this.level = options.level || 'info';
     }
 
-    debug(message: string, ...args: any[]) {
+    debug(message: string, ...args: unknown[]) {
         if (process.env.NODE_ENV === 'development') {
             console.debug(`${this.prefix} ${message}`, ...args);
         }
     }
 
-    info(message: string, ...args: any[]) {
+    info(message: string, ...args: unknown[]) {
         console.info(`${this.prefix} ${message}`, ...args);
     }
 
-    warn(message: string, ...args: any[]) {
+    warn(message: string, ...args: unknown[]) {
         console.warn(`${this.prefix} ${message}`, ...args);
     }
 
-    error(message: string, ...args: any[]) {
+    error(message: string, ...args: unknown[]) {
         console.error(`${this.prefix} ${message}`, ...args);
     }
 }

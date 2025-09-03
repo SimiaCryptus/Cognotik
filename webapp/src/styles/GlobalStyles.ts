@@ -1,7 +1,7 @@
 import type {DefaultTheme} from 'styled-components';
 import {createGlobalStyle} from 'styled-components';
 
-const logStyleChange = (component: string, property: string, value: any) => {
+const logStyleChange = (component: string, property: string, value: unknown) => {
 
     if (process.env.NODE_ENV !== 'development') {
         return;

@@ -2,7 +2,6 @@ import {WebSocketLike} from '../types/websocket';
 import {store} from '../store';
 import {Message} from "../types/messages";
 import {WebSocketConfig} from "../types/config";
-import {debounce} from "../utils/tabHandling";
 
 export class WebSocketService implements WebSocketLike {
 
@@ -23,11 +22,16 @@ export class WebSocketService implements WebSocketLike {
     public extensions = '';
     public protocol = '';
     public url = '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public onopen: ((this: WebSocket, ev: Event) => any) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public onclose: ((this: WebSocket, ev: CloseEvent) => any) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public onerror: ((this: WebSocket, ev: Event) => any) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public onmessage: ((this: WebSocket, ev: MessageEvent) => any) | null = null;
     public ws: WebSocket | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private eventListeners: { [key: string]: ((...args: any[]) => void)[] } = {};
     private forcedClose = false;
     private timers = {
@@ -62,6 +66,7 @@ export class WebSocketService implements WebSocketLike {
         this.ws = null;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public on(event: string, callback: (...args: any[]) => void): void {
         if (!this.eventListeners[event]) {
             this.eventListeners[event] = [];
@@ -69,6 +74,7 @@ export class WebSocketService implements WebSocketLike {
         this.eventListeners[event].push(callback);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public off(event: string, callback: (...args: any[]) => void): void {
         if (!this.eventListeners[event]) return;
         this.eventListeners[event] = this.eventListeners[event].filter(cb => cb !== callback);
@@ -153,6 +159,7 @@ export class WebSocketService implements WebSocketLike {
 
             if (!this.isConnected() && !this.isReconnecting) {
                 const lastMessageTime = Math.max(...this.messageHandlers
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .map(h => (h as any).lastMessageTime || 0)
                     .filter(t => t > 0));
 
@@ -182,10 +189,12 @@ export class WebSocketService implements WebSocketLike {
         }
     }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     removeMessageHandler(handler: (data: any) => void): void {
         this.messageHandlers = this.messageHandlers.filter((h) => h !== handler);
     }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     addMessageHandler(handler: (data: any) => void): void {
         this.messageHandlers.push(handler);
     }
@@ -198,6 +207,7 @@ export class WebSocketService implements WebSocketLike {
         }
     }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     private emit(event: string, ...args: any[]): void {
         if (!this.eventListeners[event]) return;
         this.eventListeners[event].forEach(callback => callback(...args));
@@ -231,7 +241,7 @@ export class WebSocketService implements WebSocketLike {
     private queueMessage(message: string): void {
         this.messageQueue.push(message);
         if (!this.isProcessingQueue) {
-            this.processMessageQueue().then(r => {
+            this.processMessageQueue().then(() => {
                 this.debugLog('[WebSocket] Message queue processed:');
             });
         }
@@ -269,6 +279,7 @@ export class WebSocketService implements WebSocketLike {
         this.connect(this.sessionId);
     }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     private debugLog(message: string, ...args: any[]) {
         if (this.DEBUG) {
             console.debug(`[WebSocket] ${message}`, ...args);
@@ -349,7 +360,7 @@ export class WebSocketService implements WebSocketLike {
                 clearTimeout(this.connectionTimeout);
             }
         };
-        const debouncedProcessMessages = debounce((messages: Message[]) => {
+        const debouncedProcessMessages = (messages: Message[]) => {
             const batch = [...messages];
             this.aggregateBuffer = [];
 
@@ -372,7 +383,7 @@ export class WebSocketService implements WebSocketLike {
             };
             processChunk(0, 10);
 
-        }, this.AGGREGATE_INTERVAL);
+        };
         this.ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
