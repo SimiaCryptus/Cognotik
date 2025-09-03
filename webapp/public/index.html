@@ -2,6 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
+    <script>
+      // Early BigInt polyfill for older browsers/Node.js versions
+      if (typeof BigInt === 'undefined') {
+        window.BigInt = function(value) {
+          if (typeof value === 'number') {
+            return {
+              toString: function(radix) { return value.toString(radix || 10); },
+              valueOf: function() { return value; }
+            };
+          }
+          if (typeof value === 'string') {
+            var num = parseInt(value, 10);
+            return {
+              toString: function(radix) { return num.toString(radix || 10); },
+              valueOf: function() { return num; }
+            };
+          }
+          return value;
+        };
+      }
+    </script>
     <link href="%PUBLIC_URL%/favicon.svg" rel="icon"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
     <meta content="#000000" name="theme-color"/>

@@ -1,10 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es6",
+   "target": "es2018",
+    "downlevelIteration": true,
+    "module": "esnext",
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+     "es2018"
     ],
     "types": [
       "node",
@@ -23,13 +26,11 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "skipDefaultLibCheck": true,
     "baseUrl": "src",
     "paths": {
       "@components/*": [
@@ -53,15 +54,11 @@
       "@utils/*": [
         "utils/*"
       ]
-    },
-    "plugins": [
-      {
-        "name": "typescript-styled-plugin"
-      }
-    ]
+    }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "src/react-app-env.d.ts"
   ],
   "exclude": [
     "node_modules",

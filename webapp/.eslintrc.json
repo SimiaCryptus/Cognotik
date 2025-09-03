@@ -1,8 +1,8 @@
 {
   "env": {
     "browser": true,
-    "es2021": false,
-    "node": true
+    "es2021": true,
+    "node": false
   },
   "globals": {
     "process": "readonly"
