@@ -95,7 +95,7 @@ dependencies {
 
 node {
     version.set("20.19.5")
-    npmVersion.set("10.8.2")
+    npmVersion.set("11.6.0")
     download.set(true)
     nodeProjectDir.set(file("${project.projectDir}/../webapp"))
 }

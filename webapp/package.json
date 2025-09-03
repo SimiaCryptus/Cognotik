@@ -86,8 +86,8 @@
   },
   "private": true,
   "scripts": {
-    "start": "cross-env NODE_ENV='development' react-scripts start",
-    "build": "react-scripts build",
+    "start": "cross-env NODE_ENV='development' GENERATE_SOURCEMAP=false CI=true react-scripts start",
+    "build": "CI=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix --max-warnings=0",
