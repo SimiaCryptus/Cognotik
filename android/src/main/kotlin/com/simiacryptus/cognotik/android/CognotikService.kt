@@ -17,7 +17,7 @@ class CognotikService : Service() {
     private val binder = CognotikBinder()
     private var cognotikApps: AndroidCognotikApps? = null
     private var serverJob: Job? = null
-    private var serverPort: Int = 0
+    private var serverPort: Int = 12891
     private var startTime: Long = 0
     
     interface ServerStatusListener {
@@ -32,7 +32,12 @@ class CognotikService : Service() {
     }
     override fun onCreate() {
         super.onCreate()
-        initializeEmojiCompatStatic(applicationContext)
+        try {
+            initializeEmojiCompatStatic(applicationContext)
+        } catch (e: Exception) {
+            Log.w(TAG, "EmojiCompat initialization failed in service: ${e.message}")
+            // Continue without emoji support rather than crashing
+        }
         Log.i(TAG, "CognotikService created")
         Log.d(TAG, "Service process ID: ${android.os.Process.myPid()}")
         Log.d(TAG, "Service thread: ${Thread.currentThread().name}")

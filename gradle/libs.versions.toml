@@ -57,6 +57,7 @@ androidx-activity = "1.9.3"
 androidx-appcompat = "1.7.0"
 material = "1.12.0"
 androidx-constraintlayout = "2.1.4"
+androidx-swiperefreshlayout = "1.1.0"
 androidx-webkit = "1.12.1"
 androidx-emoji2 = "1.4.0"
 slf4jandroid = "1.7.36"
@@ -160,6 +161,7 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "androidx-swiperefreshlayout" }
 androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidx-webkit" }
 androidx-emoji2 = { group = "androidx.emoji2", name = "emoji2", version.ref = "androidx-emoji2" }
 androidx-emoji2-bundled = { group = "androidx.emoji2", name = "emoji2-bundled", version.ref = "androidx-emoji2" }

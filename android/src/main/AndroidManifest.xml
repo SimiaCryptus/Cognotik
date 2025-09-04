@@ -17,7 +17,7 @@
             android:supportsRtl="true">
 
         <activity
-                android:name=".MainActivity"
+                android:name=".CognotikActivity"
                 android:exported="true"
                 android:screenOrientation="portrait"
                 android:launchMode="singleTask"

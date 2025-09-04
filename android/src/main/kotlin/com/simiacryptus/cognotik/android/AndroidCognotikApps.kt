@@ -32,7 +32,7 @@ class AndroidCognotikApps private constructor(
     private val context: Context,
     localName: String = "localhost", 
     publicName: String = "localhost",
-    port: Int = 8080
+    port: Int = 12891
 ) : ApplicationDirectory(
     localName = localName, 
     publicName = publicName, 
@@ -47,7 +47,7 @@ class AndroidCognotikApps private constructor(
         /**
          * Create a new instance with the given context and port
          */
-        fun create(context: Context, port: Int = 8080): AndroidCognotikApps {
+        fun create(context: Context, port: Int = 12891): AndroidCognotikApps {
             log.info("Creating AndroidCognotikApps instance with port: $port")
             log.debug("Context: ${context.javaClass.simpleName}, Files dir: ${context.filesDir.absolutePath}")
             return AndroidCognotikApps(context, "localhost", "localhost", port)
@@ -180,7 +180,7 @@ class AndroidCognotikApps private constructor(
     /**
      * Find an available port for the Android app, avoiding system ports
      */
-    fun findAvailablePort(startPort: Int = 8080): Int {
+    fun findAvailablePort(startPort: Int = 12891): Int {
         log.debug("Searching for available port starting from: $startPort")
         var port = startPort
         var attempts = 0

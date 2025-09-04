@@ -29,10 +29,13 @@ class CognotikApplication : Application() {
                         BundledEmojiCompatConfig(application)
                             .setReplaceAll(true)
                             .setUseEmojiAsDefaultStyle(true)
-                            .setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_DEFAULT)
+                            .setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_MANUAL)
+                            .setEmojiSpanIndicatorEnabled(false)
                     )
                     isEmojiCompatInitialized.set(true)
                     Log.d(TAG, "EmojiCompat initialized successfully")
+                    // Manually load the metadata since we're using LOAD_STRATEGY_MANUAL
+                    EmojiCompat.get().load()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to initialize EmojiCompat: ${e.message}", e)
                 }

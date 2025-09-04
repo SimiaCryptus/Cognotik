@@ -123,6 +123,7 @@ dependencies {
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.emoji2)
     implementation(libs.androidx.emoji2.bundled)
+    implementation(libs.androidx.swiperefreshlayout)
 
     // Essential dependencies only - avoid server-side libraries
     implementation(libs.gson)

@@ -15,13 +15,16 @@ import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.emoji2.text.EmojiCompat
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
+class CognotikActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
     
     private lateinit var statusText: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var webView: WebView
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var refreshFab: FloatingActionButton
     
     private var cognotikService: CognotikService? = null
     private var isBound = false
@@ -33,7 +36,7 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
             Log.i(TAG, "Service connected: ${className.className}")
             val binder = service as CognotikService.CognotikBinder
             cognotikService = binder.getService()
-            cognotikService?.setStatusListener(this@MainActivity)
+            cognotikService?.setStatusListener(this@CognotikActivity)
             isBound = true
             Log.d(TAG, "Service binding completed")
             
@@ -42,7 +45,7 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
             Log.d(TAG, "Server already running: $isRunning")
             
             if (isRunning) {
-                val port = cognotikService?.getServerPort() ?: 0
+                val port = cognotikService?.getServerPort() ?: 12891
                 Log.i(TAG, "Using existing server on port: $port")
                 onServerStarted(port)
             } else {
@@ -64,22 +67,27 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
         super.onCreate(savedInstanceState)
         activityStartTime = System.currentTimeMillis()
         Log.i(TAG, "MainActivity onCreate started")
-        
-        // Check and ensure EmojiCompat is initialized
-        ensureEmojiCompatInitialized()
+
+        // Initialize EmojiCompat early in onCreate
+        try {
+            ensureEmojiCompatInitialized()
+        } catch (e: Exception) {
+            Log.w(TAG, "EmojiCompat initialization failed, continuing without emoji support: ${e.message}")
+        }
 
         setContentView(R.layout.activity_main)
         
         statusText = findViewById(R.id.statusText)
         progressBar = findViewById(R.id.progressBar)
         webView = findViewById(R.id.webView)
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
+        refreshFab = findViewById(R.id.refreshFab)
         Log.d(TAG, "Views initialized")
-        
-        
+
         setupWebView()
+        setupRefreshControls()
         Log.d(TAG, "WebView setup completed")
-        
-        
+
         // Bind to the service
         val intent = Intent(this, CognotikService::class.java)
         Log.d(TAG, "Starting CognotikService...")
@@ -108,8 +116,7 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
             // Continue without emoji support rather than crashing
         }
     }
-    
-    
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         Log.d(TAG, "Setting up WebView configuration...")
@@ -137,6 +144,10 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 Log.i(TAG, "WebView page loaded successfully: $url")
+                // Hide refresh indicator when page finishes loading
+                runOnUiThread {
+                    swipeRefreshLayout.isRefreshing = false
+                }
             }
             
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
@@ -147,6 +158,10 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
             override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
                 super.onReceivedError(view, errorCode, description, failingUrl)
                 Log.e(TAG, "WebView error: $errorCode - $description for URL: $failingUrl")
+                // Hide refresh indicator on error
+                runOnUiThread {
+                    swipeRefreshLayout.isRefreshing = false
+                }
             }
         }
         
@@ -171,7 +186,32 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
         }
         Log.d(TAG, "WebView clients configured")
     }
+
+    private fun setupRefreshControls() {
+        Log.d(TAG, "Setting up refresh controls...")
+        // Setup swipe-to-refresh
+        swipeRefreshLayout.setOnRefreshListener {
+            Log.d(TAG, "Swipe refresh triggered")
+            refreshWebView()
+        }
+        // Setup floating action button
+        refreshFab.setOnClickListener {
+            Log.d(TAG, "Refresh FAB clicked")
+            refreshWebView()
+        }
+        Log.d(TAG, "Refresh controls configured")
+    }
+
+    private fun refreshWebView() {
+        Log.i(TAG, "Refreshing WebView")
+        webView.reload()
+        // Show refresh indicator briefly
+        if (!swipeRefreshLayout.isRefreshing) {
+            swipeRefreshLayout.isRefreshing = true
+        }
+    }
     
+   
     override fun onServerStarted(port: Int) {
         val totalElapsed = System.currentTimeMillis() - activityStartTime
         val serverElapsed = if (serverStartTime > 0) System.currentTimeMillis() - serverStartTime else 0
@@ -185,7 +225,8 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
             Log.d(TAG, "Updating UI for server start")
             statusText.text = getString(R.string.server_running, port)
             progressBar.visibility = View.GONE
-            webView.visibility = View.VISIBLE
+            swipeRefreshLayout.visibility = View.VISIBLE
+            refreshFab.visibility = View.VISIBLE
             
             // Load the Cognotik web interface
             val url = "http://localhost:$port"
@@ -223,8 +264,7 @@ class MainActivity : AppCompatActivity(), CognotikService.ServerStatusListener {
         super.onResume()
         Log.d(TAG, "MainActivity resumed")
     }
-    
-    
+
     override fun onDestroy() {
         Log.i(TAG, "MainActivity being destroyed")
         super.onDestroy()
