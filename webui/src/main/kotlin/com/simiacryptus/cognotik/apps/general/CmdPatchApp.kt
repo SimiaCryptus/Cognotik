@@ -7,9 +7,9 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.ChatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -20,10 +20,10 @@ fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMa
 class CmdPatchApp(
     root: Path,
     settings: Settings,
-    api: ChatClient,
+    api: ChatClientInterface,
     val files: Array<out File>?,
-    model: ChatModel,
-    parsingModel: ChatModel,
+    model: ChatModelType,
+    parsingModel: ChatModelType,
 ) : PatchApp(root.toFile(), settings, api, model, parsingModel = parsingModel) {
 
     companion object {
@@ -74,7 +74,7 @@ class CmdPatchApp(
             .distinct().sorted()
             .joinToString("\n") { path ->
                 "* ${path} - ${
-                    root.toPath().resolve(path).toFile().length() ?: "?"
+                    root.toPath().resolve(path).toFile().length()
                 } bytes".trim()
             }
         log.debug("Project summary generated (${str.length} chars)")
@@ -92,7 +92,7 @@ class CmdPatchApp(
             var exitCode = 0
             for ((index, cmdSettings) in settings.commands.withIndex()) {
                 try {
-                    log.info("Executing command ${index+1}/${settings.commands.size}: ${cmdSettings.executable} ${cmdSettings.arguments}")
+                    log.info("Executing command ${index + 1}/${settings.commands.size}: ${cmdSettings.executable} ${cmdSettings.arguments}")
                     val processBuilder = ProcessBuilder(
                         listOf(cmdSettings.executable.toString()) + cmdSettings.arguments.split(" ")
                             .filter(String::isNotBlank)
@@ -192,7 +192,7 @@ class CmdPatchApp(
                         }
                     }
                 } catch (e: Throwable) {
-                    task.error(null, e)
+                    task.error(e)
                     return OutputResult(1, "Error executing command: ${e.message}")
                 }
             }
@@ -205,7 +205,6 @@ class CmdPatchApp(
         log.debug("Processing output string (${buffer.length} chars)")
         var output = buffer.toString()
         output = output.replace(Regex("\\x1B\\[[0-?]*[ -/]*[@-~]"), "")
-
         output = truncate(output)
         log.debug("Processed output string (${output.length} chars)")
         return output

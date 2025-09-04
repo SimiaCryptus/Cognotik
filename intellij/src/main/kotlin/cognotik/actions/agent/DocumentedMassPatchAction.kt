@@ -1,7 +1,6 @@
 package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.generate.items
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -10,12 +9,15 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
+import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
-import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.getSelectedFiles
+import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.awt.BorderLayout
@@ -31,10 +33,14 @@ class DocumentedMassPatchAction : BaseAction() {
 
     class SettingsUI {
         @Name("Documentation Files")
-        val documentationFiles = CheckBoxList<Path>()
+        val documentationFiles = CheckBoxList<Path>().apply {
+            selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+        }
 
         @Name("Code Files")
-        val codeFiles = CheckBoxList<Path>()
+        val codeFiles = CheckBoxList<Path>().apply {
+            selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+        }
 
         @Name("AI Instruction")
         val transformationMessage = JBTextArea(4, 40)
@@ -93,9 +99,9 @@ class DocumentedMassPatchAction : BaseAction() {
     }
 
     private fun getConfig(project: Project?, e: AnActionEvent): Settings? {
-        var root = UITools.getSelectedFolder(e)?.toNioPath()
+        var root = e.getSelectedFolder()?.toNioPath()
         val allFiles: List<Path> = root?.let { Files.walk(it).toList() }
-            ?: UITools.getSelectedFiles(e).map { it.toNioPath() }
+            ?: e.getSelectedFiles().map { it.toNioPath() }
         if (root == null) {
             root = e.project?.basePath?.let { File(it).toPath() }
         }
@@ -140,19 +146,55 @@ class DocumentedMassPatchAction : BaseAction() {
 
         override fun createCenterPanel(): JComponent {
             return JPanel(BorderLayout()).apply {
-                val splitPane = JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
-                    topComponent = JPanel(BorderLayout()).apply {
+                val mainPanel = JPanel(BorderLayout()).apply {
+                    val docPanel = JPanel(BorderLayout()).apply {
                         add(JLabel("Documentation Files"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.documentationFiles), BorderLayout.CENTER)
                     }
-                    bottomComponent = JPanel(BorderLayout()).apply {
+                    
+                    val codePanel = JPanel(BorderLayout()).apply {
                         add(JLabel("Code Files"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.codeFiles), BorderLayout.CENTER)
                     }
-                    preferredSize = Dimension(400, 500)
+                    
+                    val buttonPanel = JPanel().apply {
+                        layout = BoxLayout(this, BoxLayout.X_AXIS)
+                        border = JBUI.Borders.empty(10)
+                        
+                        add(Box.createHorizontalGlue())
+                        
+                        val moveDownButton = JButton("↓").apply {
+                            toolTipText = "Move selected documentation file to code files"
+                            addActionListener {
+                               moveSelectedItems(settingsUI.documentationFiles, settingsUI.codeFiles)
+                            }
+                        }
+                        add(moveDownButton)
+                        
+                        add(Box.createHorizontalStrut(10))
+                        
+                        val moveUpButton = JButton("↑").apply {
+                            toolTipText = "Move selected code file to documentation files"
+                            addActionListener {
+                               moveSelectedItems(settingsUI.codeFiles, settingsUI.documentationFiles)
+                            }
+                        }
+                        add(moveUpButton)
+                        
+                        add(Box.createHorizontalGlue())
+                    }
+                    
+                    val centerPanel = JPanel(BorderLayout()).apply {
+                        add(docPanel, BorderLayout.NORTH)
+                        add(buttonPanel, BorderLayout.CENTER)
+                        add(codePanel, BorderLayout.SOUTH)
+                    }
+                    
+                    add(centerPanel, BorderLayout.CENTER)
+                    preferredSize = Dimension(500, 600)
                 }
 
-                add(splitPane, BorderLayout.CENTER)
+                add(mainPanel, BorderLayout.CENTER)
                 add(JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
                     add(JLabel("AI Instruction"))
@@ -160,6 +202,39 @@ class DocumentedMassPatchAction : BaseAction() {
                     add(Box.createVerticalStrut(10))
                     add(settingsUI.autoApply)
                 }, BorderLayout.SOUTH)
+            }
+        }
+       private fun moveSelectedItems(sourceList: CheckBoxList<Path>, targetList: CheckBoxList<Path>) {
+           val selectedIndices = sourceList.selectedIndices
+           if (selectedIndices.isEmpty()) return
+           
+           val selectedItems = selectedIndices.map { sourceList.items[it] }
+            
+            // Remove from source list
+            val sourceItems = sourceList.items.toMutableList()
+           selectedItems.forEach { sourceItems.remove(it) }
+            
+            // Add to target list
+            val targetItems = targetList.items.toMutableList()
+           targetItems.addAll(selectedItems)
+            
+            // Update both lists
+            val root = userSettings.documentationFiles.firstOrNull()?.parent 
+                ?: userSettings.codeFilePaths.firstOrNull()?.parent
+            sourceList.setItems(sourceItems) { path ->
+                root?.relativize(path)?.toString() ?: path.toString()
+            }
+            targetList.setItems(targetItems) { path ->
+                root?.relativize(path)?.toString() ?: path.toString()
+            }
+            
+           // Select the moved items in target list
+           val newIndices = selectedItems.mapNotNull { item ->
+               val index = targetItems.indexOf(item)
+               if (index >= 0) index else null
+           }.toIntArray()
+           if (newIndices.isNotEmpty()) {
+               targetList.selectedIndices = newIndices
             }
         }
 
@@ -178,7 +253,7 @@ class DocumentedMassPatchAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        UITools.getSelectedFolder(event) ?: UITools.getSelectedFiles(event).let {
+        event.getSelectedFolder() ?: event.getSelectedFiles().let {
             when (it.size) {
                 0 -> null
                 1 -> null

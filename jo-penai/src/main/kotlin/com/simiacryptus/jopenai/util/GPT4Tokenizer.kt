@@ -7,7 +7,7 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 @Suppress("unused")
 @OptIn(ExperimentalStdlibApi::class)

@@ -11,8 +11,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.*
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
+import com.simiacryptus.cognotik.util.getSelectedFiles
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 
@@ -28,7 +28,7 @@ class ApplyPatchAction : BaseAction(
 
     override fun handle(event: AnActionEvent) {
         val project = event.project ?: return
-        val virtualFiles = UITools.getSelectedFiles(event) ?: return
+        val virtualFiles = event.getSelectedFiles() ?: return
 
         val patchContent = showPatchInputDialog() ?: return
         if (patchContent.trim().isEmpty()) {
@@ -111,7 +111,7 @@ class ApplyPatchAction : BaseAction(
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        val selectedFiles = UITools.getSelectedFiles(event)
+        val selectedFiles = event.getSelectedFiles()
         when {
             null == selectedFiles -> return false
             selectedFiles.size == 0 -> return false

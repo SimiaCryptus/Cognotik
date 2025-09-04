@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
+import java.util.function.IntFunction
 
 @JsonDeserialize(using = ListWrapper.ListWrapperDeserializer::class)
 @JsonSerialize(using = ListWrapper.ListWrapperSerializer::class)
@@ -44,6 +45,10 @@ open class ListWrapper<T : Any>(
         return joinToString(", ", prefix = "[", postfix = "]")
     }
 
+    override fun <T : Any?> toArray(generator: IntFunction<Array<out T?>?>): Array<out T?>? {
+        return super.toArray(generator);
+    }
+
     class ListWrapperDeserializer<T : Any> : JsonDeserializer<ListWrapper<T>>() {
         private val log = LoggerFactory.getLogger(ListWrapperDeserializer::class.java)
         override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ListWrapper<T> {
@@ -60,7 +65,7 @@ open class ListWrapper<T : Any>(
                     else javaType
                 }
                 val objectMapper = JsonUtil.objectMapper()
-                val items = (node as ArrayNode).toList().map { jsonElement ->
+                val items = (node as ArrayNode).toList().mapNotNull { jsonElement ->
                     val jsonString = jsonElement.toString()
                     try {
                         log.info("Deserializing item: {}", jsonString)
@@ -71,7 +76,7 @@ open class ListWrapper<T : Any>(
                         e.printStackTrace()
                         null
                     }
-                }.filterNotNull()
+                }
                 log.info("Deserialized ListWrapper with items: {}", items)
                 return ListWrapper(items)
             }

@@ -42,11 +42,11 @@ function initLogoAnimation() {
 
         // Multicolored stops
         const stops = [
-            { offset: '0%', color: '#ff00cc' },
-            { offset: '25%', color: '#3333ff' },
-            { offset: '50%', color: '#00ffcc' },
-            { offset: '75%', color: '#ffcc00' },
-            { offset: '100%', color: '#ff0066' }
+            {offset: '0%', color: '#ff00cc'},
+            {offset: '25%', color: '#3333ff'},
+            {offset: '50%', color: '#00ffcc'},
+            {offset: '75%', color: '#ffcc00'},
+            {offset: '100%', color: '#ff0066'}
         ];
         stops.forEach(stop => {
             const s = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
@@ -75,13 +75,13 @@ function initLogoAnimation() {
 
             let step = size - 1;
             let offset = 1;
-            while(step > 1) {
+            while (step > 1) {
                 const half = step / 2;
                 // Diamond step
                 for (let y = 0; y < size - 1; y += step) { // Iterate y outer for cache coherency (minor)
                     for (let x = 0; x < size - 1; x += step) {
                         const avg = (grid[x][y] + grid[x][y + step] +
-                                     grid[x + step][y] + grid[x + step][y + step]) / 4;
+                            grid[x + step][y] + grid[x + step][y + step]) / 4;
                         grid[x + half][y + half] = avg + rnd() * offset;
                     }
                 }
@@ -89,10 +89,22 @@ function initLogoAnimation() {
                 for (let y = 0; y < size; y += half) { // Iterate y outer
                     for (let x = (y + half) % step; x < size; x += step) {
                         let sum = 0, count = 0;
-                        if (x - half >= 0) { sum += grid[x - half][y]; count++; }
-                        if (x + half < size) { sum += grid[x + half][y]; count++; }
-                        if (y - half >= 0) { sum += grid[x][y - half]; count++; }
-                        if (y + half < size) { sum += grid[x][y + half]; count++; }
+                        if (x - half >= 0) {
+                            sum += grid[x - half][y];
+                            count++;
+                        }
+                        if (x + half < size) {
+                            sum += grid[x + half][y];
+                            count++;
+                        }
+                        if (y - half >= 0) {
+                            sum += grid[x][y - half];
+                            count++;
+                        }
+                        if (y + half < size) {
+                            sum += grid[x][y + half];
+                            count++;
+                        }
                         grid[x][y] = (sum / count) + rnd() * offset;
                     }
                 }
@@ -152,22 +164,22 @@ function initLogoAnimation() {
 
         function animateGradient() {
             t += 0.01;
-           // Only animate gradient center if user is not interacting
-           if (!isUserInteracting) {
+            // Only animate gradient center if user is not interacting
+            if (!isUserInteracting) {
 
-               // Animate gradient center (cx,cy) in a Lissajous curve path for more visual interest
-               const cx = 50 + 25 * Math.sin(t * 0.8);
-               const cy = 50 + 25 * Math.cos(t * 1.1);
-               // Animate focal point (fx,fy) and radius (r) for more dynamism
-               const fx = 50 + 20 * Math.cos(t * 0.65 + Math.PI / 3); // Different speeds and phases
-               const fy = 50 + 20 * Math.sin(t * 0.95 + Math.PI / 1.5);
-               const radius = 65 + 15 * Math.sin(t * 0.45); // Pulsating radius
-               grad.setAttribute('cx', `${cx}%`);
-               grad.setAttribute('cy', `${cy}%`);
-               grad.setAttribute('fx', `${fx}%`);
-               grad.setAttribute('fy', `${fy}%`);
-               grad.setAttribute('r', `${radius}%`);
-           }
+                // Animate gradient center (cx,cy) in a Lissajous curve path for more visual interest
+                const cx = 50 + 25 * Math.sin(t * 0.8);
+                const cy = 50 + 25 * Math.cos(t * 1.1);
+                // Animate focal point (fx,fy) and radius (r) for more dynamism
+                const fx = 50 + 20 * Math.cos(t * 0.65 + Math.PI / 3); // Different speeds and phases
+                const fy = 50 + 20 * Math.sin(t * 0.95 + Math.PI / 1.5);
+                const radius = 65 + 15 * Math.sin(t * 0.45); // Pulsating radius
+                grad.setAttribute('cx', `${cx}%`);
+                grad.setAttribute('cy', `${cy}%`);
+                grad.setAttribute('fx', `${fx}%`);
+                grad.setAttribute('fy', `${fy}%`);
+                grad.setAttribute('r', `${radius}%`);
+            }
 
             // Update each color stop based on a 2D slice of a 3D plasma field.
             grad.querySelectorAll('stop').forEach((stop, i) => {
@@ -188,11 +200,12 @@ function initLogoAnimation() {
 
             animationFrameId = requestAnimationFrame(animateGradient);
         }
+
         animateGradient();
 
         function onPointerMove(e) {
-           clearTimeout(leaveTimeoutId); // Clear any pending leave transition
-           isUserInteracting = true;
+            clearTimeout(leaveTimeoutId); // Clear any pending leave transition
+            isUserInteracting = true;
             // Get bounding rect of SVG
             const rect = heroLogo.getBoundingClientRect();
             let x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -208,28 +221,30 @@ function initLogoAnimation() {
             grad.setAttribute('fx', `${fxInteractive}%`);
             grad.setAttribute('fy', `${fyInteractive}%`);
         }
+
         function onPointerLeave() {
-           // Delay setting isUserInteracting to false for a smoother transition back to auto-animation
-           leaveTimeoutId = setTimeout(() => {
-               isUserInteracting = false;
-               // Optionally, smoothly animate back to center or let the auto-animation take over
-               // grad.style.transition = 'cx 0.5s ease, cy 0.5s ease'; // Add transition in CSS if desired
-               // grad.setAttribute('cx', '50%');
-               // grad.setAttribute('cy', '50%');
-           }, 200); // 200ms delay
+            // Delay setting isUserInteracting to false for a smoother transition back to auto-animation
+            leaveTimeoutId = setTimeout(() => {
+                isUserInteracting = false;
+                // Optionally, smoothly animate back to center or let the auto-animation take over
+                // grad.style.transition = 'cx 0.5s ease, cy 0.5s ease'; // Add transition in CSS if desired
+                // grad.setAttribute('cx', '50%');
+                // grad.setAttribute('cy', '50%');
+            }, 200); // 200ms delay
         }
-       // Add a small delay when pointer leaves to make transition smoother
-       function onPointerEnter() {
-           clearTimeout(leaveTimeoutId); // Clear timeout if pointer re-enters quickly
-           isUserInteracting = true;
-       }
-       
+
+        // Add a small delay when pointer leaves to make transition smoother
+        function onPointerEnter() {
+            clearTimeout(leaveTimeoutId); // Clear timeout if pointer re-enters quickly
+            isUserInteracting = true;
+        }
+
         heroLogo.addEventListener('pointermove', onPointerMove);
         heroLogo.addEventListener('pointerleave', onPointerLeave);
         heroLogo.addEventListener('pointerenter', onPointerEnter);
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initLogoAnimation();
 });

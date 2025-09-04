@@ -1,7 +1,6 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.MultiStepPatchAction.AutoDevApp.Settings
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -10,26 +9,25 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.chatModel
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType.ChatModel
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import kotlin.io.path.relativeTo
@@ -38,12 +36,19 @@ open class ModifyFilesAction(
     protected val showLineNumbers: Boolean = false
 ) : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
     override fun isEnabled(event: AnActionEvent): Boolean {
-        if (FileSelectionUtils.expandFileList(
-                *PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)?.map { it.toFile }?.toTypedArray<File>()
-                    ?: arrayOf()
-            ).isEmpty()
-        ) return false
+        try {
+            val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext)
+            val files = virtualFiles?.map { it.toFile }?.toTypedArray<File>()
+            val expandFileList = FileSelectionUtils.expandFileList(*files ?: arrayOf())
+            if (expandFileList.isEmpty()) {
+                return false
+            }
+        } catch (e: Exception) {
+            log.error("Error checking if action is enabled", e)
+            return false
+        }
         return super.isEnabled(event)
     }
 
@@ -91,11 +96,11 @@ open class ModifyFilesAction(
         if (showLineNumbers) "MultiDiffChatWithLineNumbers" else "MultiDiffChat"
 
     private fun getRoot(event: AnActionEvent): Path? {
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         return if (null != folder) {
             folder.toFile.toPath()
         } else {
-            getModuleRootForFile(UITools.getSelectedFile(event)?.parent?.toFile ?: return null).toPath()
+            getModuleRootForFile(event.getSelectedFile()?.parent?.toFile ?: return null).toPath()
         }
     }
 
@@ -126,7 +131,7 @@ open class ModifyFilesAction(
         systemPrompt = "",
         api = api,
         applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+        storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
         budget = 2.0,
     ) {
         override val systemPrompt: String
@@ -176,7 +181,7 @@ open class ModifyFilesAction(
                 response = html,
                 handle = { newCodeMap ->
                     newCodeMap.forEach { (path, newCode) ->
-                        task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                        task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                     }
                 },
                 ui = ui,
@@ -187,23 +192,25 @@ open class ModifyFilesAction(
             )
         }
 
-        override fun respond(api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
-
+        override fun respond(
+            api: ChatClientInterface,
+            task: SessionTask,
+            userMessage: String,
+            currentChatMessages: List<ApiModel.ChatMessage>,
+            transcriptStream: OutputStream?
+        ): String {
             val codex = GPT4Tokenizer()
             task.verbose((getCodeFiles().joinToString("\n") { path ->
                 "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
             }).renderMarkdown())
-
             val settings = Settings()
             api.budget = settings.budget ?: 2.00
-
-            return super.respond(api, task, userMessage, currentChatMessages)
+            return super.respond(api, task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
-
     }
 }
 

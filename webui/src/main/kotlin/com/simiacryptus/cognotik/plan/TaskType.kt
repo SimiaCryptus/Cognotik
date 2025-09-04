@@ -6,8 +6,9 @@ import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
-import com.simiacryptus.cognotik.plan.tools.file.InsightTask.InsightTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearchTaskType
+import com.simiacryptus.cognotik.plan.tools.file.InsightTask.Companion.InsightTaskType
 import com.simiacryptus.cognotik.plan.tools.plan.ForeachTask.ForeachTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.util.DynamicEnum
@@ -113,40 +114,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
         )
-        val InsightTask = TaskType(
-            "InsightTask",
-            InsightTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
-            """
-            Provides direct answers and insights using the LLM, optionally referencing project files.
-            <ul>
-              <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
-              <li>Reading files is optional; the task can operate with or without file input</li>
-              <li>User feedback and iterative refinement are supported but not required</li>
-              <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
-              <li>Can answer detailed questions about code, design, or project context</li>
-              <li>Supports both one-shot and interactive discussion modes</li>
-              <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
-            </ul>
-            """
-        )
-        val FileSearchTask = TaskType(
-            "FileSearchTask",
-            com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Search project files using patterns with contextual results",
-            """
-                      Performs pattern-based searches across project files with context.
-                      <ul>
-                        <li>Supports both substring and regex search patterns</li>
-                        <li>Shows configurable context lines around matches</li>
-                        <li>Groups results by file with line numbers</li>
-                        <li>Filters for text-based files automatically</li>
-                        <li>Provides organized, readable output format</li>
-                      </ul>
-                    """
-        )
+        val InsightTask = InsightTaskType
+        val FileSearchTask = FileSearchTaskType
+
         val EmbeddingSearchTask = TaskType(
             "EmbeddingSearchTask",
             com.simiacryptus.cognotik.plan.tools.knowledge.EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
@@ -163,25 +133,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                       </ul>
                     """
         )
-        val FileModificationTask = TaskType(
-            "FileModificationTask",
-            FileModificationTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Create new files or modify existing code with AI-powered assistance",
-            """
-                      Creates or modifies source files with AI assistance while maintaining code quality.
-                      <ul>
-                        <li>Shows proposed changes in diff format for easy review</li>
-                        <li>Supports both automated application and manual approval modes</li>
-                        <li>Maintains project coding standards and style consistency</li>
-                        <li>Handles complex multi-file operations and refactoring</li>
-                        <li>Provides clear documentation of all changes with rationale</li>
-                        <li>Implements proper error handling and edge cases</li>
-                        <li>Updates imports and dependencies automatically</li>
-                        <li>Preserves existing code formatting and structure</li>
-                      </ul>
-                    """
-        )
+        val FileModificationTask = FileModificationTaskType
         val RunShellCommandTask = TaskType(
             "RunShellCommandTask",
             RunShellCommandTaskConfigData::class.java,
@@ -234,7 +186,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             "ForeachTask",
             ForeachTaskConfigData::class.java,
             TaskSettingsBase::class.java,
-            "Execute subtasks for each item in a list",
+            "Execute subtasks for each item in a list (experimental)",
             """
           Executes a set of subtasks for each item in a given list.
           <ul>
@@ -262,12 +214,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
         )
-        val KnowledgeIndexingTask = TaskType(
-            "KnowledgeIndexingTask",
-            com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Index content for semantic search capabilities",
-            """
+        val KnowledgeIndexingTask =
+            TaskType( // TODO: This should be automatically done as needed during embedding search
+                "KnowledgeIndexingTask",
+                com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData::class.java,
+                TaskSettingsBase::class.java,
+                "Index content for semantic search capabilities",
+                """
           Indexes documents and code for semantic search capabilities.
           <ul>
             <li>Processes both documentation and source code</li>
@@ -277,7 +230,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             <li>Progress tracking and reporting</li>
           </ul>
         """
-        )
+            )
         val SeleniumSessionTask = TaskType(
             "SeleniumSessionTask",
             com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,

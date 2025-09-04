@@ -15,14 +15,14 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.JsonDescriber
-import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -53,9 +53,9 @@ open class OutlineApp(
         ) + "</div>")
 
     data class Settings(
-        val models: List<ChatModel> = listOf(
+        val models: List<ChatModelType> = listOf(
         ),
-        val parsingModel: ChatModel? = null,
+        val parsingModel: ChatModelType? = null,
         val temperature: Double = 0.3,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,
@@ -103,9 +103,9 @@ class OutlineAgent(
     val session: Session,
     val user: User?,
     val temperature: Double,
-    val models: List<ChatModel>,
-    val firstLevelModel: ChatModel,
-    val parsingModel: ChatModel,
+    val models: List<ChatModelType>,
+    val firstLevelModel: ChatModelType,
+    val parsingModel: ChatModelType,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -132,7 +132,7 @@ class OutlineAgent(
 
     fun buildMap() {
         val task = ui.newTask(false)
-        val api = (api as ChatClient).getChildClient(task)
+        val api = (api as ChatClientInterface).getChildClient(task)
         tabbedDisplay["Content"] = task.placeholder
         val outlineManager = try {
             task.echo(this.userMessage.renderMarkdown)
@@ -142,7 +142,7 @@ class OutlineAgent(
             task.complete()
             OutlineManager(OutlineManager.OutlinedText(root.text, root.obj))
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
             throw e
         }
 
@@ -206,7 +206,7 @@ class OutlineAgent(
             projectorMessage.complete(response)
         } catch (e: Exception) {
             log.warn("Error", e)
-            projectorMessage.error(ui, e)
+            projectorMessage.error(e)
         }
     }
 
@@ -224,7 +224,7 @@ class OutlineAgent(
             finalRenderMessage.complete(finalEssay.renderMarkdown)
         } catch (e: Exception) {
             log.warn("Error", e)
-            finalRenderMessage.error(ui, e)
+            finalRenderMessage.error(e)
         }
     }
 
@@ -241,7 +241,7 @@ class OutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModel>,
+        models: List<ChatModelType>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -249,13 +249,13 @@ class OutlineAgent(
         if (terminalNodeMap.isEmpty()) {
             val errorMessage = "No terminal nodes: ${node.text}"
             log.warn(errorMessage)
-            task.error(ui, RuntimeException(errorMessage))
+            task.error(RuntimeException(errorMessage))
             return
         }
         for ((item, childNode) in terminalNodeMap) {
             activeThreadCounter.incrementAndGet()
             val task = ui.newTask(false)
-            val api = (api as ChatClient).getChildClient(task)
+            val api = (api as ChatClientInterface).getChildClient(task)
             tabbedDisplay[item] = task.placeholder
             ApplicationServices.clientManager.getPool(session, user).submit {
                 try {
@@ -267,13 +267,13 @@ class OutlineAgent(
                             val existingNode = manager.expansionMap[childNode]!!
                             val errorMessage = "Conflict: ${existingNode} vs ${newNode}"
                             log.warn(errorMessage)
-                            task.error(ui, RuntimeException(errorMessage))
+                            task.error(RuntimeException(errorMessage))
                         }
                     }
                     if (models.size > 1) processRecursive(manager, newNode, models.drop(1), task)
                 } catch (e: Exception) {
                     log.warn("Error in processRecursive", e)
-                    task.error(ui, e)
+                    task.error(e)
                 } finally {
                     activeThreadCounter.decrementAndGet()
                 }
@@ -287,7 +287,7 @@ class OutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModel,
+        model: ChatModelType,
         api: API,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
@@ -321,13 +321,13 @@ interface OutlineActors {
 
         val log = LoggerFactory.getLogger(OutlineActors::class.java)
 
-        fun actorMap(temperature: Double, firstLevelModel: ChatModel, parsingModel: ChatModel) = mapOf(
+        fun actorMap(temperature: Double, firstLevelModel: ChatModelType, parsingModel: ChatModelType) = mapOf(
             ActorType.INITIAL to initialAuthor(temperature, firstLevelModel, parsingModel),
             ActorType.EXPAND to expansionAuthor(temperature, parsingModel),
             ActorType.FINAL to finalWriter(temperature, firstLevelModel, maxIterations = 10),
         )
 
-        private fun initialAuthor(temperature: Double, model: ChatModel, parsingModel: ChatModel) = ParsedActor(
+        private fun initialAuthor(temperature: Double, model: ChatModelType, parsingModel: ChatModelType) = ParsedActor(
             NodeList::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = model,
@@ -356,7 +356,7 @@ interface OutlineActors {
 
         private fun expansionAuthor(
             temperature: Double,
-            parsingModel: ChatModel
+            parsingModel: ChatModelType
         ): ParsedActor<NodeList> =
             ParsedActor(
                 resultClass = NodeList::class.java,
@@ -368,7 +368,7 @@ interface OutlineActors {
                 exampleInstance = exampleNodeList(),
             )
 
-        private fun finalWriter(temperature: Double, model: ChatModel, maxIterations: Int) = LargeOutputActor(
+        private fun finalWriter(temperature: Double, model: ChatModelType, maxIterations: Int) = LargeOutputActor(
             model = model,
             temperature = temperature,
             maxIterations = maxIterations,

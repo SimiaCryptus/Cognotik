@@ -114,7 +114,7 @@ open class OAuthGoogle(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(OAuthGoogle::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(OAuthGoogle::class.java)
 
         fun String.urlDecode(): String = try {
             URLDecoder.decode(this, StandardCharsets.UTF_8.toString())

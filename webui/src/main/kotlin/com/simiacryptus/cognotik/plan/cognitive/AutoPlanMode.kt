@@ -15,12 +15,12 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.*
 import java.util.concurrent.Future
@@ -69,7 +69,8 @@ open class AutoPlanMode(
         log.debug("Starting auto plan chat with initial message: $userMessage")
         val task = ui.newTask(true)
         val apiClient =
-            (api as? ChatClient)?.getChildClient(task) ?: throw IllegalStateException("API must be a ChatClient")
+            (api as? ProvidersChatClient)?.getChildClient(task)
+                ?: throw IllegalStateException("API must be a ChatClient")
         task.echo(renderMarkdown(userMessage))
 
         var continueLoop = true
@@ -88,7 +89,7 @@ open class AutoPlanMode(
         executor.execute {
             val socketManager = ui.socketManager ?: run {
                 log.error("SocketManager is null, cannot proceed.")
-                task.error(ui, IllegalStateException("SocketManager is null"))
+                task.error(IllegalStateException("SocketManager is null"))
                 return@execute
             }
             try {
@@ -134,7 +135,7 @@ open class AutoPlanMode(
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
                             ui.newTask(false).apply {
-                                inputTabs["Task ${index+1}"] = placeholder
+                                inputTabs["Task ${index + 1}"] = placeholder
                                 add(renderMarkdown(it))
                             }
                             add(renderMarkdown(it))
@@ -172,7 +173,8 @@ open class AutoPlanMode(
                         log.debug("Executing task $currentTaskId")
                         val taskExecutionTask = ui.newTask(false)
                         val taskConfig = currentTask.task.tasks?.get(index)
-                        val taskDescription = taskConfig?.task_description ?: "No description provided for this task item."
+                        val taskDescription =
+                            taskConfig?.task_description ?: "No description provided for this task item."
                         taskExecutionTask.add(currentTask.actorResponse.renderMarkdown)
                         val fullTaskDataJson = JsonUtil.toJson(currentTask)
                         taskExecutionTask.verbose(
@@ -191,13 +193,19 @@ $fullTaskDataJson
                         val future = executor.submit<String> {
                             try {
                                 if (coordinator != null) {
-                                    runTask(iterationApi, coordinator, currentTask.task.tasks?.get(index)!!, userMessage, taskExecutionTask)
+                                    runTask(
+                                        iterationApi,
+                                        coordinator,
+                                        currentTask.task.tasks?.get(index)!!,
+                                        userMessage,
+                                        taskExecutionTask
+                                    )
                                 } else {
                                     log.error("Coordinator is null, cannot run task")
                                     ""
                                 }
                             } catch (e: Exception) {
-                                taskExecutionTask.error(ui, e)
+                                taskExecutionTask.error(e)
                                 log.error("Error executing task", e)
                                 "Error executing task: ${e.message}"
                             }
@@ -235,7 +243,7 @@ $fullTaskDataJson
                         )
                     } catch (e: Exception) {
                         log.error("Error updating thinking status", e)
-                        thinkingStatusTask.error(ui, e)
+                        thinkingStatusTask.error(e)
                         iterationTabbedDisplay["Errors"]?.append(renderMarkdown("Error updating thinking status: ${e.message}"))
                     }
                 }
@@ -243,7 +251,7 @@ $fullTaskDataJson
                 log.debug("Main execution loop completed")
                 task.complete("Auto Plan Chat completed.")
             } catch (e: Throwable) {
-                task.error(ui, e)
+                task.error(e)
                 log.error("Error in startAutoPlanChat", e)
             } finally {
                 log.debug("Finalizing auto plan chat")
@@ -263,7 +271,7 @@ $fullTaskDataJson
     }
 
     private fun runTask(
-        api: ChatClient,
+        api: ChatClientInterface,
         coordinator: PlanCoordinator,
         currentTask: TaskConfigBase,
         userMessage: String,
@@ -302,7 +310,7 @@ $fullTaskDataJson
     }
 
     private fun getNextTask(
-        api: ChatClient,
+        api: ChatClientInterface,
         coordinator: PlanCoordinator,
         userMessage: String,
         thinkingStatus: ThinkingStatus,
@@ -371,7 +379,10 @@ $fullTaskDataJson
 
         val tasks = expandedTasks.map { taskData ->
             taskData.task.tasks?.map { taskConfigBase ->
-                TaskData(Tasks(mutableListOf(taskConfigBase)), taskData.actorResponse) to (if (taskConfigBase.task_type == null) {
+                TaskData(
+                    Tasks(mutableListOf(taskConfigBase)),
+                    taskData.actorResponse
+                ) to (if (taskConfigBase.task_type == null) {
                     null
                 } else {
                     TaskType.getImpl(coordinator.planSettings, taskConfigBase)
@@ -408,7 +419,7 @@ $fullTaskDataJson
     private fun processTaskExpansionRecursive(
         currentText: String,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         parsedActor: ParsedActor<Tasks>,
         processor: FixedConcurrencyProcessor
     ): List<TaskData> {
@@ -419,7 +430,7 @@ $fullTaskDataJson
                 listOf(TaskData(chosenTasks, currentText))
             } catch (e: Exception) {
                 log.error("Error parsing task text: $currentText", e)
-                task.error(ui, e)
+                task.error(e)
                 emptyList()
             }
         } else {
@@ -440,7 +451,7 @@ $fullTaskDataJson
     private fun initThinking(
         planSettings: PlanSettings,
         userMessage: String,
-        api: ChatClient,
+        api: ChatClientInterface,
     ): ThinkingStatus {
         return ParsedActor(
             name = "ThinkingStatusInitializer",
@@ -487,7 +498,7 @@ $fullTaskDataJson
     }
 
     private fun updateThinking(
-        api: ChatClient,
+        api: ChatClientInterface,
         thinkingStatus: ThinkingStatus,
         completedTasks: List<ExecutionRecord>,
     ): ThinkingStatus = ParsedActor(

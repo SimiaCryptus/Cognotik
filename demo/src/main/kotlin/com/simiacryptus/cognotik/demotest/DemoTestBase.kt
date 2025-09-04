@@ -20,7 +20,7 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.Robot
 import java.io.File
 import java.lang.Thread.sleep
@@ -35,12 +35,11 @@ import java.time.LocalDateTime
 abstract class DemoTestBase(
     recordingConfig: RecordingConfig = RecordingConfig(),
     splashScreenConfig: SplashScreenConfig = SplashScreenConfig(),
-    val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.5.zip",
+    val pluginPathname: String = "/home/andrew/code/Cognotik/intellij/build/distributions/intellij-2.0.6.zip",
     protected val narrationFile: String? = null
 ) :
-    //ScreenRec(recordingConfig = recordingConfig, splashScreenConfig = splashScreenConfig)
-    NoScreenRec()
-{
+//ScreenRec(recordingConfig = recordingConfig, splashScreenConfig = splashScreenConfig)
+    NoScreenRec() {
     protected lateinit var remoteRobot: RemoteRobot
     protected val robot: Robot = Robot()
     private var testStartTime: LocalDateTime? = null
@@ -50,7 +49,7 @@ abstract class DemoTestBase(
     protected val narrationManager: NarrationManager? by lazy {
         narrationFile?.let { NarrationManager(it) }
     }
-    
+
     private fun initializeWebDriver(): RemoteWebDriver {
         try {
             val driver = getChrome()
@@ -109,7 +108,7 @@ abstract class DemoTestBase(
 
         remoteRobot = RemoteRobot("http://127.0.0.1:$robotPort", OkHttpClient())
 
-        waitFor(Duration.ofSeconds(120), Duration.ofSeconds(5)) {
+        waitFor(Duration.ofSeconds(300), Duration.ofSeconds(5)) {
             try {
                 /* //div[@class='JRootPane'] */
                 remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@class='JRootPane']"))
@@ -189,8 +188,11 @@ abstract class DemoTestBase(
         waitFor(Duration.ofSeconds(20)) {
             ->
             try {
-                remoteRobot.keyboard { for(_i in 0..2) escape() }
-                for(_i in 0..2) remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JDialog']"))
+                remoteRobot.keyboard { for (_i in 0..2) escape() }
+                for (_i in 0..2) remoteRobot.findAll(
+                    CommonContainerFixture::class.java,
+                    byXpath("//div[@class='JDialog']")
+                )
                     .firstOrNull()?.apply {
                         click()
                         keyboard {
@@ -199,7 +201,8 @@ abstract class DemoTestBase(
                         }
                     }
 
-                remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@text='Cancel']")).firstOrNull()?.click()
+                remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@text='Cancel']")).firstOrNull()
+                    ?.click()
                 remoteRobot.findAll(CommonContainerFixture::class.java, byXpath("//div[@class='JButton']")).apply {
                     if (size == 1) {
                         first().click()
@@ -207,13 +210,16 @@ abstract class DemoTestBase(
                 }
 
                 log.debug("Attempting to find and click main menu")
-                val openButton = remoteRobot.findAll(JLabelFixture::class.java, byXpath("//div[@defaulticon='open.svg']")).firstOrNull()
-                if(null != openButton) {
+                val openButton =
+                    remoteRobot.findAll(JLabelFixture::class.java, byXpath("//div[@defaulticon='open.svg']"))
+                        .firstOrNull()
+                if (null != openButton) {
                     log.debug("Found 'Open' button, clicking it")
                     openButton.click()
                 } else {
                     log.debug("'Open' button not found, trying to find main menu")
-                    val menu = remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@tooltiptext='Main Menu']"))
+                    val menu =
+                        remoteRobot.find(CommonContainerFixture::class.java, byXpath("//div[@tooltiptext='Main Menu']"))
                     menu.click()
                     log.debug("Finding 'Open...' menu item")
                     val open = remoteRobot.find(

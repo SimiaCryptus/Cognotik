@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.models.ApiModel.Role
@@ -17,9 +16,10 @@ class Discussable<T : Any>(
     private val outputFn: (T) -> String,
     private val ui: ApplicationInterface,
     private val reviseResponse: (List<Pair<String, Role>>) -> T,
-    private val atomicRef: AtomicReference<T> = AtomicReference(),
+    private val atomicRef: AtomicReference<T?> = AtomicReference(),
     private val semaphore: Semaphore = Semaphore(0),
-    private val heading: String
+    private val heading: String,
+    private val blocking: Boolean = true,
 ) : Callable<T> {
 
     val tabs = object : TabbedDisplay(task) {
@@ -33,7 +33,7 @@ ${
         }
 ${
             ui.hrefLink("♻") {
-                val newTask = ui.newTask(false)
+                val newTask = ui.newTask(blocking)
                 val header = newTask.header("Retrying...", 4)
                 val idx: Int = size
                 this.set(label(idx), newTask.placeholder)
@@ -47,7 +47,7 @@ ${
 </div>
 """
     }
-    private val acceptGuard = AtomicBoolean(false)
+    private val acceptGuard = AtomicBoolean(blocking)
 
     private fun main(tabIndex: Int, task: SessionTask) {
         log.info("Starting main function for tabIndex: $tabIndex")
@@ -67,7 +67,7 @@ ${
             task.complete()
         } catch (e: Throwable) {
             log.error("Error in discussable", e)
-            task.error(ui, e)
+            task.error(e)
             task.complete(ui.hrefLink("🔄 Retry") {
                 main(tabIndex = tabIndex, task = task)
             })
@@ -80,7 +80,7 @@ ${
         design: T,
         history: List<Pair<String, Role>>,
         task: SessionTask,
-    ) = ui.newTask(false).apply {
+    ) = ui.newTask(blocking).apply {
         log.info("Creating feedback form for tabIndex: $tabIndex")
         val feedbackSB = add("<div />")!!
         feedbackSB.clear()
@@ -89,7 +89,7 @@ ${
 <div style="display: flex; flex-direction: column;">
 ${acceptLink(tabIndex, tabContent, design, feedbackSB, feedbackTask = this)}
 </div>
-${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
+${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
 """
         )
         complete()
@@ -109,14 +109,13 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
     }
 
     private fun textInput(
-        design: T,
         tabContent: StringBuilder,
         history: List<Pair<String, Role>>,
         task: SessionTask,
         feedbackSB: StringBuilder,
         feedbackTask: SessionTask,
     ): String {
-        val feedbackGuard = AtomicBoolean(false)
+        val feedbackGuard = AtomicBoolean(blocking)
         return ui.textInput { userResponse ->
             log.info("User response received: $userResponse")
             if (feedbackGuard.getAndSet(true)) return@textInput
@@ -124,15 +123,15 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
             try {
                 feedbackSB.clear()
                 feedbackTask.complete()
-                feedback(tabContent, userResponse, history, design, task)
+                feedback(tabContent, userResponse, history, task)
             } catch (e: Exception) {
                 log.error("Error processing user feedback", e)
-                task.error(ui, e)
+                task.error(e)
                 feedbackSB.set(prev)
                 feedbackTask.complete()
                 throw e
             } finally {
-                feedbackGuard.set(false)
+                feedbackGuard.set(blocking)
             }
         }
     }
@@ -141,22 +140,21 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
         tabContent: StringBuilder,
         userResponse: String,
         history: List<Pair<String, Role>>,
-        design: T,
         task: SessionTask,
     ) {
         log.info("Processing feedback for user response: $userResponse")
         var history = history
         history = history + (userResponse to Role.user)
         val newValue = (tabContent.toString()
-            + "<div class=\"user-message\">"
-            + userResponse.renderMarkdown
+                + "<div class=\"user-message\">"
+                + userResponse.renderMarkdown
                 + "</div>")
         tabContent.set(newValue)
         val stringBuilder = task.add("Processing...")
         tabs.update()
         val newDesign = reviseResponse(history)
         log.info("Revised design: $newDesign")
-        val newTask = ui.newTask(root = false)
+        val newTask = ui.newTask(root = blocking)
         tabContent.set(newValue + "\n" + newTask.placeholder)
         tabs.update()
         stringBuilder?.clear()
@@ -186,29 +184,29 @@ ${textInput(design, tabContent, history, task, feedbackSB, feedbackTask = this)}
             }
         } catch (e: Exception) {
             log.error("Error accepting design", e)
-            task.error(ui, e)
-            acceptGuard.set(false)
+            task.error(e)
+            acceptGuard.set(blocking)
             throw e
         }
         atomicRef.set(design)
         semaphore.release()
     }
 
-    override fun call(): T {
+    override fun call(): T? {
         try {
 
             if (heading.isNotBlank()) task.echo(heading)
             val idx = tabs.size
-            val newTask = ui.newTask(false)
+            val newTask = ui.newTask(blocking)
             val header = newTask.header("Processing...", 4)
             tabs[tabs.label(idx)] = newTask.placeholder
             try {
                 main(idx, newTask)
 
-                semaphore.acquire()
+                if (blocking) semaphore.acquire()
             } catch (e: Throwable) {
                 log.error("Error in main function", e)
-                task.error(ui, e)
+                task.error(e)
             } finally {
                 header?.clear()
                 newTask.complete()
@@ -222,13 +220,13 @@ Error in Discussable
 ${e.message}
 """, e
             )
-            task.error(ui, e)
-            return null as T
+            task.error(e)
+            return null
         }
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(Discussable::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(Discussable::class.java)
     }
 }
 

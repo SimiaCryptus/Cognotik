@@ -5,8 +5,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
-import com.simiacryptus.jopenai.util.ClientUtil
-import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.Servlet
@@ -22,7 +20,7 @@ import org.eclipse.jetty.util.resource.ResourceCollection
 import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.Desktop
 import java.net.URI
 import java.util.*
@@ -34,7 +32,6 @@ abstract class ApplicationDirectory(
     val port: Int = 8081,
 ) {
     var domainName: String = ""
-
         private set
     abstract val childWebApps: List<ChildWebApp>
 
@@ -47,7 +44,7 @@ abstract class ApplicationDirectory(
     private fun domainName(isServer: Boolean) =
         if (isServer) "https://$publicName" else "http://$localName:$port"
 
-    open val welcomeResources = ResourceCollection(*allResources("welcome").map(::newResource).toTypedArray())
+    open val welcomeResources: Resource = ResourceCollection(*allResources("welcome").map(::newResource).toTypedArray())
     open val userInfoServlet: HttpServlet = UserInfoServlet()
     open val userSettingsServlet: HttpServlet = UserSettingsServlet()
     open val logoutServlet: HttpServlet = LogoutServlet()
@@ -61,7 +58,7 @@ abstract class ApplicationDirectory(
         applicationName = "Demo",
         key = {
             val encryptedData =
-                javaClass.classLoader!!.getResourceAsStream("client_secret_google_oauth.json.kms")?.readAllBytes()
+                javaClass.classLoader!!.getResourceAsStream("client_secret_google_oauth.json.kms")?.readBytes()
                     ?: throw RuntimeException("Unable to load resource: ${"client_secret_google_oauth.json.kms"}")
             val decrypt = ApplicationServices.cloud?.decrypt(encryptedData)
             decrypt?.byteInputStream()
@@ -173,9 +170,15 @@ abstract class ApplicationDirectory(
     }
 
     protected open fun newWebAppContext(path: String, server: ChatServer): WebAppContext {
-        val baseResource = server.baseResource
+        var baseResource: Resource? = server.baseResource
         if (baseResource == null) {
-            throw IllegalStateException("No base resource")
+            log.warn("No baseResource specified for ChatServer at path: $path, defaulting to root resource")
+            baseResource = Resource.newClassPathResource("/")
+        }
+        if (baseResource == null) {
+            log.error("Failed to determine baseResource for ChatServer at path: $path, using empty resource collection")
+            // Create an empty resource collection as fallback for Android
+            baseResource = ResourceCollection()
         }
         val webAppContext = newWebAppContext(path, baseResource, resourceBase = "application")
         server.configure(webAppContext)
@@ -185,15 +188,24 @@ abstract class ApplicationDirectory(
 
     protected open fun newWebAppContext(
         path: String,
-        baseResource: Resource,
+        baseResource: Resource?,
         resourceBase: String,
         indexServlet: Servlet? = null
     ): WebAppContext {
         val context = WebAppContext()
         JettyWebSocketServletContainerInitializer.configure(context, null)
-        context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
-        context.isParentLoaderPriority = true
-        context.baseResource = baseResource
+        // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
+        if (!isAndroid()) {
+            context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
+            context.isParentLoaderPriority = true
+        } else {
+            context.classLoader = ApplicationServices::class.java.classLoader
+        }
+        if (baseResource != null) {
+            context.baseResource = baseResource
+        } else {
+            log.warn("No base resource provided for context at path: $path")
+        }
         log.debug("New WebAppContext created for path: $path")
         context.contextPath = path
         context.welcomeFiles = arrayOf("index.html")
@@ -207,8 +219,13 @@ abstract class ApplicationDirectory(
     protected open fun newWebAppContext(path: String, servlet: Servlet): WebAppContext {
         val context = WebAppContext()
         JettyWebSocketServletContainerInitializer.configure(context, null)
-        context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
-        context.isParentLoaderPriority = true
+        // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
+        if (!isAndroid()) {
+            context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
+            context.isParentLoaderPriority = true
+        } else {
+            context.classLoader = ApplicationServices::class.java.classLoader
+        }
         context.contextPath = path
         log.debug("New WebAppContext created for servlet at path: $path")
         context.resourceBase = "application"
@@ -217,6 +234,14 @@ abstract class ApplicationDirectory(
         servletHolder.getRegistration().setMultipartConfig(MultipartConfigElement("./tmp"))
         context.addServlet(servletHolder, "/")
         return context
+    }
+    private fun isAndroid(): Boolean {
+        return try {
+            Class.forName("android.os.Build")
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
     }
 
     companion object {

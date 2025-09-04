@@ -15,7 +15,7 @@ import org.junit.jupiter.api.TestInstance
 import org.openqa.selenium.By
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.event.KeyEvent
 import java.time.Duration
 import kotlin.io.path.name

@@ -3,27 +3,31 @@ package com.simiacryptus.cognotik.webui.session
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.cognotik.webui.chat.ChatSocket
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.image.BufferedImage
+import java.io.BufferedOutputStream
 import java.io.File
 import java.util.*
 import java.util.function.Consumer
 
+
 abstract class SessionTask(
     val messageID: String,
     private var buffer: MutableList<StringBuilder> = mutableListOf(),
-    private val spinner: String = SessionTask.spinner
+    private val spinner: String = SessionTask.spinner,
+    val manager: SocketManagerBase
 ) {
 
     val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
 
     private val currentText: String
-        get() = buffer.filter { it.isNotBlank() }.joinToString("")
+        get() = buffer.toTypedArray().filter { it.isNotBlank() }.joinToString("")
 
     fun append(
         htmlToAppend: String,
@@ -70,7 +74,6 @@ abstract class SessionTask(
 
     @Description("Adds a hideable message to the task output.")
     fun hideable(
-        ui: ApplicationInterface?,
         @Description("The message to add")
         message: String,
         @Description("Whether to show the spinner for the task (default: true)")
@@ -78,18 +81,23 @@ abstract class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
-        additionalClasses: String = ""
+        additionalClasses: String = "",
+        socketManagerBase: SocketManagerBase
     ): StringBuilder? {
         var windowBuffer: StringBuilder? = null
         val closeButton = """<span class="close">${
-            ui?.hrefLink("&times;", "close-button href-link") {
-                windowBuffer?.clear()
-                send()
-            }
+            socketManagerBase.hrefLink(
+                "&times;",
+                "close-button href-link",
+                null,
+                ApplicationInterface.Companion.oneAtATime { it: Unit ->
+                    windowBuffer?.clear()
+                    send()
+                })
         }</span>"""
         windowBuffer = append(
             """<$tag class="${
-                (additionalClasses.split(" ").toSet() + setOf("response-message")).joinToString(" ")
+                (additionalClasses.split(" ").toSet() + setOf("response-message", "hideable-message")).joinToString(" ")
             }">$closeButton$message</$tag>""",
             showSpinner
         )
@@ -143,7 +151,9 @@ abstract class SessionTask(
         @Description("Additional css class(es) to apply to the main container")
         additionalClasses: String = ""
     ): StringBuilder? {
-        val combinedClasses = (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }.joinToString(" ")
+        val combinedClasses =
+            (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }
+                .joinToString(" ")
         val html = """
             <$tag class="$combinedClasses">
               <div class="expandable-header">
@@ -169,7 +179,9 @@ abstract class SessionTask(
         @Description("Additional css class(es) to apply to the main container")
         additionalClasses: String = ""
     ): StringBuilder? {
-        val combinedClasses = (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }.joinToString(" ")
+        val combinedClasses =
+            (additionalClasses.split(" ").toSet() + setOf("expandable-guide")).filter { it.isNotBlank() }
+                .joinToString(" ")
         val html = """
             <$tag class="$combinedClasses">
               <div class="expandable-header">
@@ -195,7 +207,6 @@ abstract class SessionTask(
 
     @Description("Displays an error in the task output.")
     fun error(
-        ui: ApplicationInterface?,
         @Description("The error to display")
         e: Throwable,
         @Description("Whether to show the spinner for the task (default: false)")
@@ -203,9 +214,8 @@ abstract class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div"
     ) = hideable(
-        ui,
         when {
-          e is ValidatedObject.ValidationError -> """
+            e is ValidatedObject.ValidationError -> """
         **Data Validation Error**
 
         """.trimIndent() + e.message + """
@@ -214,12 +224,13 @@ abstract class SessionTask(
         ```text
         """.trimIndent() + e.stackTraceTxt + """
         ```
-      """.renderMarkdown
+      """
 
-          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n".renderMarkdown
+            e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n"
 
-          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
-        }, showSpinner, tag, "error"
+            else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
+
+        }.renderMarkdown(), showSpinner, tag, "error", manager
     )
 
     @Description("Displays a final message in the task output. This will hide the spinner.")
@@ -232,7 +243,7 @@ abstract class SessionTask(
         additionalClasses: String = ""
     ) = append(
         if (message.isNotBlank()) """<$tag class="${
-            (additionalClasses.split(" ").toSet() + setOf("response-message")).joinToString(" ")
+            (additionalClasses.split(" ").toSet() + setOf("response-message", "completion-message")).joinToString(" ")
         }">$message</$tag>""" else "", false
     )
 
@@ -241,6 +252,14 @@ abstract class SessionTask(
         @Description("The image to display")
         image: BufferedImage
     ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
+
+    fun newSession(
+    ): SocketManagerBase {
+        val newSession = Session.newGlobalID()
+        val linkedManager = manager.createLinkedManager(newSession)
+        SessionProxyServer.agents[newSession] = linkedManager
+        return linkedManager
+    }
 
     companion object {
         val log = LoggerFactory.getLogger(SessionTask::class.java)
@@ -252,6 +271,41 @@ abstract class SessionTask(
             java.io.ByteArrayOutputStream().use { os ->
                 javax.imageio.ImageIO.write(this, "png", os)
                 return os.toByteArray()
+            }
+        }
+
+        fun noop(): SessionTask {
+            return object : SessionTask(
+                messageID = "noop",
+                manager = object : SocketManagerBase(Session.newGlobalID(), applicationClass = SessionTask.javaClass) {
+                    override fun onRun(
+                        userMessage: String,
+                        socket: ChatSocket
+                    ) {
+                        TODO("Not yet implemented")
+                    }
+                }
+            ) {
+                override fun createFile(relativePath: String): Pair<String, File?> {
+                    throw IllegalStateException("Noop")
+                }
+
+                override fun send(html: String) {
+                    // Do nothing
+                }
+
+                override fun saveFile(relativePath: String, data: ByteArray): String {
+                    throw IllegalStateException("Noop")
+                }
+
+                override fun hrefLink(
+                    linkText: String,
+                    classname: String,
+                    id: String?,
+                    handler: Consumer<Unit>
+                ): String {
+                    throw IllegalStateException("Noop")
+                }
             }
         }
 
@@ -277,18 +331,21 @@ val Throwable.stackTraceTxt: String
         return sw.toString()
     }
 
-fun ChatClient.getChildClient(task: SessionTask): ChatClient = this.getChildClient().apply {
-    val createFile = task.createFile(".logs/api-${UUID.randomUUID()}.log")
+fun ChatClientInterface.getChildClient(task: SessionTask): ChatClientInterface {
+    val childClient = this.getChildClient()
+    childClient.logStreams += task.newLogStream()
+    return childClient
+}
 
-    createFile.second?.apply {
-        val buffered = this.outputStream().buffered()
-        buffered.write("API Logging Started\n".toByteArray())
-        buffered.write("Stack Trace:\n".toByteArray())
-        val stackTrace = Thread.currentThread().stackTrace
-        stackTrace.forEach { element ->
-            buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
-        }
-        logStreams += buffered
-        task.verbose("""API log: <a href='${createFile.first}' target='_blank'><pre>${absolutePath}</pre></a>""")
+fun SessionTask.newLogStream(): BufferedOutputStream {
+    val pair = createFile(".logs/api-${UUID.randomUUID()}.log")
+    val createFile = pair.second ?: throw IllegalStateException("Failed to create log file")
+    val buffered = createFile.outputStream().buffered()
+    buffered.write("API Logging Started\n".toByteArray())
+    buffered.write("Stack Trace:\n".toByteArray())
+    Thread.currentThread().stackTrace.forEach { element ->
+        buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
     }
+    verbose("""API log: <a href='${pair.first}' target='_blank'><pre>${createFile.absolutePath}</pre></a>""")
+    return buffered
 }

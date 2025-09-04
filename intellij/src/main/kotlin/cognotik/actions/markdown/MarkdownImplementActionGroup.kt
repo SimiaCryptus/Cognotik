@@ -10,9 +10,10 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.cognotik.util.hasSelection
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 class MarkdownImplementActionGroup : ActionGroup() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -32,7 +33,7 @@ class MarkdownImplementActionGroup : ActionGroup() {
         fun isEnabled(e: AnActionEvent): Boolean {
             return try {
                 val computerLanguage = ComputerLanguage.getComputerLanguage(e) ?: return false
-                ComputerLanguage.Markdown == computerLanguage && UITools.hasSelection(e)
+                ComputerLanguage.Markdown == computerLanguage && e.hasSelection()
             } catch (ex: Exception) {
                 log.error("Error checking action enablement", ex)
                 false
@@ -68,7 +69,7 @@ class MarkdownImplementActionGroup : ActionGroup() {
             return ChatProxy(
                 clazz = ConversionAPI::class.java,
                 api = api,
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 temperature = AppSettingsState.instance.temperature,
                 deserializerRetries = 5
             ).create()

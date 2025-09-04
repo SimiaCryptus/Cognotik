@@ -6,13 +6,12 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.models.ApiModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 
 open class CodingActorTestApp(
@@ -26,7 +25,7 @@ open class CodingActorTestApp(
     override fun userMessage(
         session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API
     ) {
-        (api as ChatClient).budget = 2.00
+        (api as ChatClientInterface).budget = 2.00
         val message = ui.newTask()
         try {
             message.echo(userMessage.renderMarkdown)
@@ -43,11 +42,11 @@ open class CodingActorTestApp(
                 }
             }
             message.complete(
-              "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim().renderMarkdown
+                "```${actor.language.lowercase(Locale.getDefault())}\n${response.code}\n```\n$playLink".trim().renderMarkdown
             )
         } catch (e: Throwable) {
             log.warn("Error", e)
-            message.error(ui, e)
+            message.error(e)
         }
     }
 

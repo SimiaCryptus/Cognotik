@@ -5,19 +5,19 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.ChatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 
 class ValidationPatchApp(
     root: File,
     settings: Settings,
-    api: ChatClient,
+    api: ChatClientInterface,
     val files: Array<out File>?,
-    model: ChatModel,
-    parsingModel: ChatModel,
+    model: ChatModelType,
+    parsingModel: ChatModelType,
 ) : PatchApp(root, settings, api, model, parsingModel) {
 
     companion object {
@@ -58,7 +58,7 @@ class ValidationPatchApp(
                 if (errors.isEmpty()) tabs.delete(file.toString())
                 fileTask.complete("File passed validation checks.")
             } catch (e: Exception) {
-                fileTask.error(null, e)
+                fileTask.error(e)
                 log.error("Error validating file: $file", e)
                 validationErrors.add(
                     ValidationError(

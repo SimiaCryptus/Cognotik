@@ -10,15 +10,13 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.ui.JBUI
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.imageModel
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.ImageActor
 import com.simiacryptus.cognotik.actors.ImageResponse
-import com.simiacryptus.cognotik.util.getModuleRootForFile
-import com.simiacryptus.jopenai.models.chatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.imageModel
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.jopenai.chat.model.chatModelType
+import com.simiacryptus.util.LoggerFactory
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.io.ByteArrayOutputStream
@@ -97,18 +95,18 @@ class CreateImageAction : BaseAction() {
                 val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
                 log.debug("Found ${virtualFiles?.size ?: 0} virtual files")
                 progress.text = "Determining root directory..."
-                val folder = UITools.getSelectedFolder(e)
+                val folder = e.getSelectedFolder()
                 rootRef.set(
                     if (null != folder) {
                         log.debug("Using selected folder as root: ${folder.toFile}")
                         folder.toFile.toPath()
                     } else if (1 == virtualFiles?.size) {
                         log.debug("Using parent of single file as root")
-                        UITools.getSelectedFile(e)?.parent?.toNioPath()
+                        e.getSelectedFile()?.parent?.toNioPath()
                     } else {
                         log.debug("Using module root as root directory")
                         getModuleRootForFile(
-                            UITools.getSelectedFile(e)?.parent?.toFile ?: throw RuntimeException("No file selected")
+                            e.getSelectedFile()?.parent?.toFile ?: throw RuntimeException("No file selected")
                         ).toPath()
                     }
                 )
@@ -131,7 +129,7 @@ class CreateImageAction : BaseAction() {
                     ${codeSummary()}
                     Special instructions: ${dialog.getInstructions()}
                     """.trimIndent(),
-                    textModel = AppSettingsState.instance.smartModel.chatModel(),
+                    textModel = AppSettingsState.instance.smartModel.chatModelType(),
                     imageModel = AppSettingsState.instance.mainImageModel.imageModel()
                 ).apply { setImageAPI(IdeaOpenAIClient.instance) }
                 log.debug("Sending request to image generation API")
@@ -201,7 +199,7 @@ class CreateImageAction : BaseAction() {
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
-        UITools.getSelectedFile(event) ?: return false
+        event.getSelectedFile() ?: return false
         return true
     }
 

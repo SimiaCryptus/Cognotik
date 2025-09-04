@@ -1,5 +1,6 @@
 package cognotik.actions.agent
 
+import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
@@ -15,16 +16,17 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.util.LoggerFactory
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
 class DocumentedMassPatchServer(
-    val config: DocumentedMassPatchAction.Settings, val api: ChatClient, val autoApply: Boolean
+    val config: DocumentedMassPatchAction.Settings, val api: ChatClientInterface, val autoApply: Boolean
     /**
      * Server for handling documented mass code patches
      * @param config Settings containing project and file configurations
@@ -54,7 +56,7 @@ class DocumentedMassPatchServer(
          The diff format should use + for line additions, - for line deletions.
          The diff should include 2 lines of context before and after every change.
          """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -72,7 +74,6 @@ class DocumentedMassPatchServer(
         _root = config.project?.basePath?.let { Path.of(it) } ?: Path.of(".")
         val task = ui.newTask(true)
         val api = api.getChildClient(task)
-
         val tabs = TabbedDisplay(task)
         val userMessage = config.settings?.transformationMessage ?: "Review and update code according to documentation"
 
@@ -85,11 +86,13 @@ class DocumentedMassPatchServer(
              """.trimIndent()
         } ?: ""
 
+        val status: StringBuilder = task.add("Starting...<br/>")!!
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(socketManager.pool, 4)
-        config.settings?.codeFilePaths?.map { path: Path ->
+        val futures = config.settings?.codeFilePaths?.map { path: Path ->
             fixedConcurrencyProcessor.submit {
                 try {
-                    task.add("Processing ${path}...")
+                    status.append("Processing ${path}...<br/>")
+                    task.update()
                     val codeSummary = """
                              $docSummary
 
@@ -108,7 +111,7 @@ class DocumentedMassPatchServer(
                         val design =
                             mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
                         if (design.isNotBlank()) {
-                            task.add(
+                            fileTask.add(
                                 AddApplyFileDiffLinks.instrumentFileDiffs(
                                     self = ui.socketManager!!,
                                     root = _root,
@@ -121,7 +124,7 @@ class DocumentedMassPatchServer(
                                     ui = ui,
                                     api = api as API,
                                     shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastModel.chatModel(),
+                                    model = AppSettingsState.instance.fastModel.chatModelType(),
                                     defaultFile = path.toString()
                                 ).renderMarkdown
                             )
@@ -151,7 +154,7 @@ class DocumentedMassPatchServer(
                                             ui = ui,
                                             api = api as API,
                                             shouldAutoApply = { autoApply },
-                                            model = AppSettingsState.instance.fastModel.chatModel(),
+                                            model = AppSettingsState.instance.fastModel.chatModelType(),
                                             defaultFile = path.toString()
                                         )
                                     }
@@ -174,18 +177,26 @@ class DocumentedMassPatchServer(
                             semaphore = Semaphore(0),
                         ).call()
                     }
-                    task.add("Completed processing ${path}")
+                    status.append("Completed processing ${path}<br/>")
+                    task.update()
                 } catch (e: Exception) {
                     log.warn("Error processing $path", e)
-                    task.error(ui, e)
+                    task.error(e)
                 }
             }
-        }//?.toTypedArray()?.forEach { it.get() }
+        }
+        fixedConcurrencyProcessor.submit {
+            futures?.forEach {
+                Futures.getUnchecked(it)
+            }
+            status.append("All files processed successfully.<br/>")
+            task.update()
+        }
         return socketManager
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(DocumentedMassPatchServer::class.java)
+        private val log = LoggerFactory.getLogger(DocumentedMassPatchServer::class.java)
     }
 }
 

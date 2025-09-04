@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
@@ -8,20 +10,17 @@ import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
 import com.simiacryptus.util.toJson
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.nio.file.FileSystems
-import java.nio.file.Files
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.streams.asSequence
 
 class InsightTask(
     planSettings: PlanSettings,
@@ -34,6 +33,8 @@ class InsightTask(
         val inquiry_goal: String? = null,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,
+        @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)")
+        val extractContent: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -59,6 +60,7 @@ InsightTask - Directly answer questions or provide a report using the LLM. Readi
 Available files:
 ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 """
+
     private val insightActor by lazy {
         SimpleActor(
             name = "Insight",
@@ -85,7 +87,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -139,7 +141,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         ).apply {
             task.add(MarkdownUtil.renderMarkdown(this, ui = agent.ui))
         }
-        resultFn(inquiryResult)
+        resultFn(inquiryResult ?: "(no response)")
     }
 
     private fun getInputFileCode(): String =
@@ -147,7 +149,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
                 listOf(FileSelectionUtils.filteredWalkAsciiTree(root.toFile()) {
-                        //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                    //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
                     when {
                         FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
                         matcher.matches(root.relativize(it.toPath())) -> true
@@ -160,14 +162,83 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             .joinToString("\n\n") { relativePath ->
                 val file = root.resolve(relativePath).toFile()
                 try {
-                    "# $relativePath\n\n$TRIPLE_TILDE\n${codeFiles[file.toPath()] ?: file.readText()}\n$TRIPLE_TILDE"
+                    val content = if (taskConfig?.extractContent == true && !isTextFile(file)) {
+                        extractDocumentContent(file)
+                    } else {
+                        codeFiles[file.toPath()] ?: file.readText()
+                    }
+                    "# $relativePath\n\n$TRIPLE_TILDE\n$content\n$TRIPLE_TILDE"
                 } catch (e: Throwable) {
                     log.warn("Error reading file: $relativePath", e)
                     ""
                 }
             }
 
+    private fun isTextFile(file: java.io.File): Boolean {
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
+        )
+        return textExtensions.contains(file.extension.lowercase())
+    }
+
+    private fun extractDocumentContent(file: java.io.File) = try {
+        file.getReader().use { reader ->
+            when (reader) {
+                is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                else -> reader.getText()
+            }
+        }
+    } catch (e: Exception) {
+        log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+        try {
+            file.readText()
+        } catch (e2: Exception) {
+            "Error reading file: ${e2.message}"
+        }
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(InsightTask::class.java)
+        val InsightTaskType = TaskType(
+            "InsightTask",
+            InsightTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
+            """
+            Provides direct answers and insights using the LLM, optionally referencing project files.
+            <ul>
+              <li>Primarily processes and responds to user inquiries using the language model, without producing side effects or modifying files</li>
+              <li>Reading files is optional; the task can operate with or without file input</li>
+              <li>User feedback and iterative refinement are supported but not required</li>
+              <li>Generates comprehensive markdown reports, explanations, and recommendations</li>
+              <li>Can answer detailed questions about code, design, or project context</li>
+              <li>Supports both one-shot and interactive discussion modes</li>
+              <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
+            </ul>
+            """
+        )
+
     }
 }

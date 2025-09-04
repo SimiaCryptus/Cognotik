@@ -26,22 +26,6 @@ class RuleTreeBuilderTest {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Test
     fun testPrefixExpand() {
         val allowedPrefixes = setOf("app", "ban")

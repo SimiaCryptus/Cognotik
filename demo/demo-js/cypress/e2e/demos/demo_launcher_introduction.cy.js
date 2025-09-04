@@ -12,17 +12,17 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.log('DEMO_SECTION: Beginning Introduction Phase');
         cy.narrate('intro_welcome');
         cy.log('NARRATION: Delivered welcome introduction');
-        
+
         cy.log('DEMO_SECTION: Explaining Cognitive/Task Mode Model');
         cy.narrate('cognitive_architecture_intro');
         cy.log('NARRATION: Explained cognitive model overview');
-        
+
         cy.log('DEMO_SECTION: Demonstrating User Settings');
         cy.narrate('workspace_setup');
         cy.log('NARRATION: Introduced user settings concept');
         cy.get('#user-settings-btn').click();
         cy.log('UI_ACTION: Opened user settings modal');
-        
+
         cy.log('DEMO_SUBSECTION: API Keys Configuration');
         cy.narrate('byok_approach_explanation');
         cy.narrate('byok_approach_explanation');
@@ -31,7 +31,7 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.log('UI_ACTION: Switched to API keys tab');
         cy.wait(1000);
         cy.log('DEMO_FLOW: Waited for tab transition');
-        
+
         cy.get('#api-keys-container').should('be.visible');
         cy.log('UI_VERIFICATION: API keys container is visible');
         cy.narrate('ai_provider_ecosystem');
@@ -63,11 +63,11 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
 
         cy.get('#close-user-settings-modal').click();
         cy.log('UI_ACTION: Closed user settings modal');
-        
+
         cy.log('DEMO_SECTION: Step 1 - Cognitive Modes Configuration');
         cy.narrate('step1_cognitive_modes');
         cy.log('NARRATION: Introduced cognitive modes step');
-        
+
         cy.get('#cognitive-mode > :nth-child(4) > :nth-child(1) > :nth-child(1)').click()
         cy.log('UI_ACTION: Selected chat mode option');
         cy.get('#cognitive-mode > :nth-child(4) > :nth-child(1) > :nth-child(1) > .tooltip').click();
@@ -104,7 +104,7 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.log('UI_ACTION: Selected single task (chat) mode');
         cy.get('#next-to-task-settings').click();
         cy.log('UI_ACTION: Proceeded to task settings step');
-        
+
         cy.log('DEMO_SECTION: Step 2 - Task Settings Configuration');
         cy.narrate('step2_task_settings');
         cy.log('NARRATION: Introduced task settings step');
@@ -116,7 +116,7 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.log('UI_VERIFICATION: Model selection dropdown is visible');
         cy.get('#parsing-model').should('be.visible');
         cy.log('UI_VERIFICATION: Parsing model selection is visible');
-        
+
         cy.log('DEMO_SUBSECTION: Working Directory Configuration');
         cy.narrate('working_directory_concept');
         cy.log('NARRATION: Explained working directory concept');
@@ -126,7 +126,7 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.log('UI_ACTION: Generated working directory');
         cy.narrate('generate_directory_demo');
         cy.log('NARRATION: Demonstrated directory generation');
-        
+
         cy.log('DEMO_SUBSECTION: Temperature Setting');
         cy.narrate('temperature_control');
         cy.log('NARRATION: Explained temperature parameter');
@@ -134,27 +134,27 @@ describe('Cognotik Launcher - Comprehensive Introduction', () => {
         cy.get('#temperature').trigger('input');
         cy.get('#temperature-value').should('contain', '0.2');
         cy.log('UI_VERIFICATION: Temperature value updated to 0.2');
-        
+
         cy.log('DEMO_SUBSECTION: Auto Fix Configuration');
         cy.narrate('auto_fix_automation');
         cy.log('NARRATION: Explained auto fix functionality');
         cy.get('#auto-fix').check();
         cy.log('UI_ACTION: Enabled auto fix option');
-        
+
         cy.get('#next-to-task-selection').click();
         cy.log('UI_ACTION: Proceeded to task selection step');
-        
+
         cy.log('DEMO_SECTION: Step 3 - Task Types Selection');
         cy.narrate('step3_task_types');
         cy.log('NARRATION: Introduced task types step');
-        
+
         cy.log('DEMO_SUBSECTION: Insight Task');
         cy.get('#task-toggles > :nth-child(1) > div > .tooltip').click();
         cy.log('UI_ACTION: Opened insight task tooltip');
         cy.narrate('insight_analysis_capabilities');
         cy.log('NARRATION: Explained insight task functionality');
         //cy.get('#task-InsightTask').check();
-        
+
         cy.log('DEMO_SUBSECTION: File Modification Task');
         cy.get('#task-toggles > :nth-child(2) > div > .tooltip').click();
         cy.log('UI_ACTION: Opened file modification task tooltip');

@@ -15,11 +15,10 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.jopenai.models.AnthropicModels
+import com.simiacryptus.jopenai.chat.model.AnthropicModels
 import org.eclipse.jetty.webapp.WebAppContext
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.BufferedWriter
@@ -155,13 +154,13 @@ open class CognotikApps(
         }
 
         private data class ServerOptions(
-            val port: Int = 7682,
+            val port: Int = 12891,
             val host: String = "localhost",
             val publicName: String = "apps.simiacrypt.us"
         )
 
         private fun parseServerOptions(vararg args: String): ServerOptions {
-            var port = 7682
+            var port = 12891
             var host = "localhost"
             var publicName = "apps.simiacrypt.us"
             var i = 0

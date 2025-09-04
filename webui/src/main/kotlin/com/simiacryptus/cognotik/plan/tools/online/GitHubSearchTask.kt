@@ -6,8 +6,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.APIProvider
 import java.net.URI
@@ -53,13 +52,16 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
-        val searchResults = performGitHubSearch(agent.user?.let {
-            ApplicationServices.userSettingsManager.getUserSettings(it)
-        }?.apiKeys?.get(APIProvider.Github) ?: throw RuntimeException("GitHub API token is required"))
+        val searchResults = performGitHubSearch(
+            agent.user
+            ?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }
+            ?.apis?.firstOrNull { it.provider == APIProvider.Github }?.key?.trim()
+            ?: throw RuntimeException("GitHub API token is required")
+        )
         // formattedResults is the "actor answer text" that will be passed to the task chooser (PlanCoordinator)
         val actorAnswerText = formatSearchResults(searchResults)
         // Output the actor answer text to the task execution's SessionTask (UI tab)
@@ -87,8 +89,8 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
                 .uri(
                     URI.create(
                         URI("https://api.github.com")
-                          .resolve("/search/${taskConfig?.search_type}")
-                          .toURL().toString() + "?" + queryParams.joinToString("&")
+                            .resolve("/search/${taskConfig?.search_type}")
+                            .toURL().toString() + "?" + queryParams.joinToString("&")
                     )
                 )
                 .header("Accept", "application/vnd.github+json")

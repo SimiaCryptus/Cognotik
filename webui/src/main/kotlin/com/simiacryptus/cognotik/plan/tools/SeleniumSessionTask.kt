@@ -6,8 +6,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.Selenium
 import com.simiacryptus.cognotik.util.Selenium2S3
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.chrome.ChromeDriver
@@ -16,7 +15,7 @@ import org.openqa.selenium.devtools.HasDevTools
 import org.openqa.selenium.devtools.v136.log.Log
 import org.openqa.selenium.devtools.v136.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -125,7 +124,7 @@ class SeleniumSessionTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -171,7 +170,7 @@ class SeleniumSessionTask(
                     log.debug("Command completed in ${duration}ms")
                     result
                 } catch (e: Exception) {
-                    task.error(agent.ui, e)
+                    task.error(e)
                     log.error("Error executing command: $command", e)
                     e.message ?: "Error executing command"
                 }

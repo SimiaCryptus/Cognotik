@@ -4,18 +4,16 @@ Audio generation script for Cypress test narrations.
 This script processes the narrations.json file and generates audio files using ChatTTS.
 """
 
+import ChatTTS
 import argparse
 import json
+import numpy as np
 import os
+import soundfile as sf
 import sys
 from pathlib import Path
-from typing import Dict, Any
-
-import numpy as np
-import soundfile as sf
-
-import ChatTTS
 from tools.audio import pcm_arr_to_mp3_view
+from typing import Dict, Any
 
 
 class NarrationAudioGenerator:

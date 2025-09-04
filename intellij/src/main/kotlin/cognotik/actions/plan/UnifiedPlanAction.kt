@@ -1,7 +1,6 @@
 package cognotik.actions.plan
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -18,17 +17,16 @@ import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.chatModel
 import java.io.File
 import java.text.SimpleDateFormat
 
@@ -40,11 +38,11 @@ class UnifiedPlanAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(e: AnActionEvent) {
-        val root: String = UITools.getRoot(e)
+        val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
             e.project, PlanSettings(
-                defaultModel = AppSettingsState.instance.smartModel.chatModel(),
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                defaultModel = AppSettingsState.instance.smartModel.chatModelType(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
@@ -262,8 +260,8 @@ class UnifiedPlanAction : BaseAction() {
     }
 
     private fun getProjectRoot(e: AnActionEvent): File? {
-        val folder = UITools.getSelectedFolder(e)
-        return folder?.toFile ?: UITools.getSelectedFile(e)?.parent?.toFile?.let { file ->
+        val folder = e.getSelectedFolder()
+        return folder?.toFile ?: e.getSelectedFile()?.parent?.toFile?.let { file ->
             getModuleRootForFile(file)
         }
     }
@@ -287,10 +285,10 @@ class UnifiedPlanAction : BaseAction() {
                 command = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
             ),
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+            model = AppSettingsState.instance.smartModel.chatModelType(),
+            parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
             showMenubar = false,
             api = api.getChildClient().apply {
                 budget = apiBudget

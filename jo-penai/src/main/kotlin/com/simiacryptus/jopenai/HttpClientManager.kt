@@ -13,10 +13,12 @@ import org.apache.hc.core5.http.HttpHeaders
 import org.apache.hc.core5.http.io.SocketConfig
 import org.apache.hc.core5.util.Timeout
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.*
@@ -26,8 +28,8 @@ import kotlin.math.pow
 open class HttpClientManager(
     private val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    private val workPool: ExecutorService,
-) : API() {
+    val workPool: ExecutorService,
+) : API {
     val createdBy = Thread.currentThread().stackTrace
 
     companion object {
@@ -46,20 +48,19 @@ open class HttpClientManager(
         fun createHttpClient(userAgent: String = DEFAULT_USER_AGENT): CloseableHttpClient = HttpClientBuilder.create()
             .setRetryStrategy(DefaultHttpRequestRetryStrategy(
                 /* maxRetries = */ 0,
-                /* defaultRetryInterval = */ Timeout.ofSeconds(1)
+                /* defaultRetryInterval = */ Timeout.ofSeconds(15)
             ))
             .setConnectionManager(with(PoolingHttpClientConnectionManager()) {
                 defaultSocketConfig = with(SocketConfig.custom()) {
-                    setSoTimeout(Timeout.ofSeconds(600))
+                    setSoTimeout(Timeout.ofSeconds(3000))
                     setSoReuseAddress(false)
-                    setSoLinger(Timeout.ofSeconds(0))
-                    setDefaultConnectionConfig(ConnectionConfig.custom().apply {
-                        setConnectTimeout(Timeout.ofSeconds(60))
-                        setSocketTimeout(Timeout.ofSeconds(600))
-                        setSoKeepAlive(true)
-                        //setTimeToLive(Timeout.ofSeconds(600))
-                    }.build())
                     setSoKeepAlive(true)
+                    setDefaultConnectionConfig(ConnectionConfig.custom().apply {
+                        setConnectTimeout(Timeout.ofSeconds(30))
+                        setSocketTimeout(Timeout.ofSeconds(3000))
+                        setSoKeepAlive(true)
+                        setTimeToLive(Timeout.ofSeconds(6000))
+                    }.build())
                     build()
                 }
                 defaultMaxPerRoute = 64
@@ -107,6 +108,11 @@ open class HttpClientManager(
             else -> null
         }
 
+        fun toString(exception: Throwable): String {
+            val writer = StringWriter()
+            exception.printStackTrace(PrintWriter(writer))
+            return writer.toString()
+        }
     }
 
     protected fun captureCallerStack(): String {
@@ -122,7 +128,7 @@ open class HttpClientManager(
 
     val stackCalls: MutableMap<Thread, String> = ConcurrentHashMap()
 
-    private fun <T> withPool(fn: () -> T): T {
+    private fun <T> withPool(logStreams1: MutableList<java.io.BufferedOutputStream> = this.logStreams, fn: () -> T): T {
         val callerStack = captureCallerStack()
 
         val future = workPool.submit(Callable {
@@ -130,31 +136,31 @@ open class HttpClientManager(
             return@Callable fn()
         })
 
-        fun handleException(future: Future<*>, e: Throwable, callerStack: String): Nothing {
+        fun handleException(future: Future<*>, e: Throwable, callerStack: String, logStreams: MutableList<java.io.BufferedOutputStream> = logStreams1): Nothing {
             future.cancel(true)
             when (e) {
                 is InterruptedException -> {
-                    log(Level.INFO, "InterruptedException in withPool. Caller stack:\n$callerStack")
+                    log(Level.INFO, "InterruptedException in withPool. Caller stack:\n$callerStack", logStreams)
                     throw e
                 }
 
                 is ExecutionException -> {
-                    log(Level.WARN, "ExecutionException in withPool. Caller stack:\n$callerStack")
-                    handleException(future, e.cause ?: throw e, callerStack)
+                    log(Level.WARN, "ExecutionException in withPool. Caller stack:\n$callerStack", logStreams)
+                    handleException(future, e.cause ?: throw e, callerStack, logStreams)
                 }
 
                 is CancellationException -> {
-                    log(Level.INFO, "CancellationException in withPool. Caller stack:\n$callerStack")
+                    log(Level.INFO, "CancellationException in withPool. Caller stack:\n$callerStack", logStreams)
                     throw e
                 }
 
                 is TimeoutException -> {
-                    log(Level.WARN, "TimeoutException in withPool. Caller stack:\n$callerStack")
+                    log(Level.WARN, "TimeoutException in withPool. Caller stack:\n$callerStack", logStreams)
                     throw e
                 }
 
                 else -> {
-                    log(Level.WARN, "Exception in withPool. Caller stack:\n$callerStack\n${e.message}")
+                    log(Level.WARN, "Exception in withPool. Caller stack:\n$callerStack\n${e.message}", logStreams)
                     throw e
                 }
             }
@@ -162,35 +168,46 @@ open class HttpClientManager(
         return try {
             future.get()
         } catch (e: Exception) {
-            handleException(future, e, callerStack)
+            handleException(future, e, callerStack, logStreams)
         }
     }
 
     private fun <T> withExpBackoffRetry(
         retryCount: Int,
         sleepScale: Long = TimeUnit.SECONDS.toMillis(5),
-        fn: () -> T
+        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+        fn: () -> T,
     ): T {
         var lastException: Throwable? = null
         var i = 0
         while (i++ <= retryCount) {
-            val sleepPeriod = sleepScale * 2.0.pow(i.toDouble()).toLong()
+            val sleepPeriod = (sleepScale * 2.0.pow(i.toDouble()).toLong()).coerceAtMost(TimeUnit.MINUTES.toMillis(5))
             try {
                 return fn()
             } catch (e: Throwable) {
                 val exception = unwrapException(e)
                 throwIfNonrecoverable(exception, sleepPeriod)
-                this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount): " + exception.message)
-                Thread.sleep(sleepPeriod)
+                this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount) after ${sleepPeriod}ms: ${toString(exception)}", logStreams)
+                if (i <= retryCount) {
+                    Thread.sleep(sleepPeriod)
+                }
                 lastException = exception
             }
         }
-        throw lastException!!
+        throw lastException ?: RuntimeException("Retry failed without exception")
     }
 
-    open fun throwIfNonrecoverable(exception: Throwable, sleepPeriod: Long) {
+    open fun throwIfNonrecoverable(
+        exception: Throwable,
+        sleepPeriod: Long,
+        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+    ) {
         when (exception) {
-            is RateLimitException -> Thread.sleep((TimeUnit.SECONDS.toMillis(exception.delay)).coerceAtLeast(sleepPeriod))
+            is RateLimitException -> {
+                val delayMs = TimeUnit.SECONDS.toMillis(exception.delay).coerceAtLeast(sleepPeriod)
+                log(Level.INFO, "Rate limited, waiting ${delayMs}ms before retry", logStreams)
+                Thread.sleep(delayMs)
+            }
             is AIServiceException -> if (exception.isFatal) throw exception
             is Exception -> return
             else -> throw exception
@@ -211,13 +228,18 @@ open class HttpClientManager(
         return e
     }
 
-    private fun <T> withTimeout(duration: Duration, fn: () -> T): T {
-        var thread = Thread.currentThread()
+    private fun <T> withTimeout(
+        duration: Duration,
+        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+        fn: () -> T
+    ): T {
+        val thread = Thread.currentThread()
         val start = Date()
         val cancellationFuture = scheduledPool.schedule({
             log(
                 Level.WARN,
-                "Request timed out after $duration at ${Date()} (started $start); closing client for thread $thread"
+                "Request timed out after $duration at ${Date()} (started $start); closing client for thread $thread",
+                logStreams
             )
             thread.interrupt()
         }, duration.toMillis(), TimeUnit.MILLISECONDS)
@@ -231,24 +253,25 @@ open class HttpClientManager(
     fun <T> withReliability(
         requestTimeoutSeconds: Long = (5 * 60),
         retryCount: Int = 0,
-        fn: () -> T
+        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+        fn: () -> T,
     ): T =
-        withExpBackoffRetry(retryCount) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), fn) }
+        withExpBackoffRetry(retryCount, logStreams = logStreams) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), logStreams = logStreams, fn) }
 
-    fun <T> withPerformanceLogging(fn: () -> T): T {
+    fun <T> withPerformanceLogging(logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams, fn: () -> T): T {
         val start = Date()
         try {
             return fn()
         } finally {
-            log(Level.DEBUG, "Request completed in ${Date().time - start.time}ms")
+            log(Level.DEBUG, "Request completed in ${Date().time - start.time}ms", logStreams)
         }
     }
 
     fun <T> withClient(fn: Function<CloseableHttpClient, T>): T = fn.apply(client)
 
-    protected open fun log(level: Level = logLevel, msg: String) {
-        val message = msg.trim().lineSequence()
-            .map {
+    protected open fun log(level: Level = logLevel, msg: String, logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams) {
+        val message = msg.trim().takeIf { it.isNotEmpty() }?.lineSequence()
+           ?.map {
                 when {
                     it.isBlank() -> {
                         when {
@@ -260,25 +283,27 @@ open class HttpClientManager(
                     else -> "\t" + it
                 }
             }
-            .joinToString("\n")
+            ?.joinToString("\n") ?: ""
+        
+        val timestamp = "%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)
+        val logEntry = "[$level] [$timestamp] ${message.replace("\n", "\n\t")}\n"
+        
         logStreams.forEach { stream ->
-            stream.write(
-                "[$level] [${"%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)}] ${
-                    message.replace(
-                        "\n",
-                        "\n\t"
-                    )
-                }\n".toByteArray()
-            )
-            stream.flush()
+            try {
+                stream.write(logEntry.toByteArray())
+                stream.flush()
+            } catch (e: Exception) {
+                // Avoid logging errors in the logging mechanism itself
+                System.err.println("Failed to write to log stream: ${e.message}")
+            }
         }
+        
         when (level) {
             Level.ERROR -> log.error(message)
             Level.WARN -> log.warn(message)
             Level.INFO -> log.info(message)
             Level.DEBUG -> log.debug(message)
             Level.TRACE -> log.trace(message)
-            else -> log.debug(message)
         }
     }
 

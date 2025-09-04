@@ -1,7 +1,7 @@
 package com.simiacryptus.text
 
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 /**
  * Builds a suffix array from the provided text.

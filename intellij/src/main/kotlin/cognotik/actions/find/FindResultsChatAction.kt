@@ -1,7 +1,6 @@
 package cognotik.actions.find
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.MultiStepPatchAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -14,23 +13,22 @@ import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon
@@ -55,7 +53,7 @@ class FindResultsChatAction(
 
         try {
             val root = getModuleRootForFile(
-                UITools.getSelectedFile(event)?.parent?.toFile
+                event.getSelectedFile()?.parent?.toFile
                     ?: throw RuntimeException("No file selected")
             )
 
@@ -181,10 +179,10 @@ class FindResultsChatAction(
             api: API
         ) {
             val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
-            if (api is ChatClient) api.budget = settings.budget ?: 2.00
+            if (api is ProvidersChatClient) api.budget = settings.budget ?: 2.00
 
             val task = ui.newTask()
-            val api = (api as ChatClient).getChildClient(task)
+            val api = (api as ChatClientInterface).getChildClient(task)
 
             task.echo(renderMarkdown(userMessage))
 
@@ -199,7 +197,7 @@ class FindResultsChatAction(
                              You are a helpful AI that helps people understand code.
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
-                            model = AppSettingsState.instance.smartModel.chatModel()
+                            model = AppSettingsState.instance.smartModel.chatModelType()
                         ).answer(listOf(userMessage), api = api)
                     ) + "</div>"
                 )

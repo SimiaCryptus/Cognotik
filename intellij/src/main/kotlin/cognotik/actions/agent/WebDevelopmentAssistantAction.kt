@@ -1,7 +1,6 @@
 ﻿package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.vfs.VirtualFile
@@ -22,17 +21,17 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Path
@@ -49,7 +48,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        val file = UITools.getSelectedFolder(event) ?: return false
+        val file = event.getSelectedFolder() ?: return false
         return file.isDirectory
     }
 
@@ -57,7 +56,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
         try {
             val project = e.project ?: return
             val session = Session.newGlobalID()
-            val selectedFile = UITools.getSelectedFolder(e) ?: return
+            val selectedFile = e.getSelectedFolder() ?: return
             DataStorage.sessionPaths[session] = selectedFile.toFile
             SessionProxyServer.metadataStorage.setSessionName(
                 null,
@@ -114,11 +113,11 @@ class WebDevelopmentAssistantAction : BaseAction() {
             try {
                 val settings = getSettings(session, user) ?: Settings(
                     model = AppSettingsState.instance.smartModel
-                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured"),
+                        .let { ChatModelType.values().get(it) } ?:  throw IllegalStateException("No model configured"),
                     parsingModel = AppSettingsState.instance.fastModel
-                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured")
+                        .let { ChatModelType.values().get(it) } ?:  throw IllegalStateException("No model configured")
                 )
-                if (api is ChatClient) {
+                if (api is ProvidersChatClient) {
                     api.budget = settings.budget ?: DEFAULT_BUDGET
                 }
                 WebDevAgent(
@@ -140,8 +139,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel,
-            val parsingModel: ChatModel,
+            val model: ChatModelType,
+            val parsingModel: ChatModelType,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -149,9 +148,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
         @Suppress("UNCHECKED_CAST")
         override fun <T : Any> initSettings(session: Session): T? = Settings(
             model = AppSettingsState.instance.smartModel
-                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+                .let { ChatModelType.values().get(it) } ?: throw IllegalStateException("No model configured"),
             parsingModel = AppSettingsState.instance.fastModel
-                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+                .let { ChatModelType.values().get(it) } ?: throw IllegalStateException("No model configured"),
         ) as T
     }
 
@@ -161,8 +160,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModel,
-        val parsingModel: ChatModel,
+        val model: ChatModelType,
+        val parsingModel: ChatModelType,
         val root: File,
     ) {
         val actors = mapOf(
@@ -284,12 +283,12 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 var messageWithTools = userMessage
 
                 task.echo(
-                  "```json\n${JsonUtil.toJson(architectureResponse.obj)/*.indent("  ")*/}\n```".renderMarkdown
+                    "```json\n${JsonUtil.toJson(architectureResponse?.obj)/*.indent("  ")*/}\n```".renderMarkdown
                 )
                 val fileTabs = TabbedDisplay(task)
-                architectureResponse.obj.files.filter {
+                architectureResponse?.obj?.files?.filter {
                     !it.name!!.startsWith("http")
-                }.map { (path, description) ->
+                }?.map { (path, description) ->
                     val task = ui.newTask(false).apply { fileTabs[path.toString()] = placeholder }
                     task.header("Drafting $path", 1)
                     codeFiles.add(File(path).toPath())
@@ -299,9 +298,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "js" -> draftResourceCode(
                                 task = task,
                                 request = javascriptActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -312,9 +311,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "css" -> draftResourceCode(
                                 task = task,
                                 request = cssActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -325,9 +324,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "html" -> draftResourceCode(
                                 task = task,
                                 request = htmlActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -338,9 +337,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "png" -> draftImage(
                                 task = task,
                                 request = etcActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -351,9 +350,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             "jpg" -> draftImage(
                                 task = task,
                                 request = etcActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -364,9 +363,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
                             else -> draftResourceCode(
                                 task = task,
                                 request = etcActor.chatMessages(
-                                    listOf(
+                                    listOfNotNull(
                                         messageWithTools,
-                                        architectureResponse.text,
+                                        architectureResponse?.text,
                                         "Render $path - $description"
                                     )
                                 ),
@@ -376,13 +375,13 @@ class WebDevelopmentAssistantAction : BaseAction() {
 
                         }
                     }
-                }.toTypedArray().forEach { it.get() }
+                }?.toTypedArray()?.forEach { it.get() }
 
 
                 iterateCode(task)
             } catch (e: Throwable) {
                 log.warn("Error", e)
-                task.error(ui, e)
+                task.error(e)
             }
         }
 
@@ -488,14 +487,14 @@ class WebDevelopmentAssistantAction : BaseAction() {
                 ).call()
                 task.complete(
                   "<img src='${
-                    task.saveFile(
+                      if (null != code) task.saveFile(
                       path.toString(),
                       write(code, path)
-                    )
+                      ) else ""
                   }' style='max-width: 100%;'/>".renderMarkdown
                 )
             } catch (e: Throwable) {
-                val error = task.error(ui, e)
+                val error = task.error(e)
                 task.complete(ui.hrefLink("♻", "href-link regen-button") {
                     error?.clear()
                     draftImage(task, request, actor, path)
@@ -568,7 +567,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                         )
                     },
                 ).call()
-                code = extractCode(code)
+                code = extractCode(code ?: "")
                 task.complete(
                     "<a href='${
                         task.saveFile(
@@ -578,7 +577,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     }'>$path</a> Updated"
                 )
             } catch (e: Throwable) {
-                val error = task.error(ui, e)
+                val error = task.error(e)
                 task.complete(ui.hrefLink("♻", "href-link regen-button") {
                     error?.clear()
                     draftResourceCode(task, request, actor, path, *languages)

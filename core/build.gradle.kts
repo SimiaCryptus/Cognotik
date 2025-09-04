@@ -34,6 +34,13 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.gson)
     implementation(libs.httpclient5)
+    implementation(libs.jsoup)
+    implementation(libs.pdfbox)
+    implementation(libs.poi)
+    implementation(libs.poi.ooxml)
+    implementation(libs.poiscratchpad)
+    implementation(libs.commons.csv)
+    implementation(libs.odfdom.java)
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
@@ -52,13 +59,21 @@ dependencies {
 
     compileOnly(platform(libs.aws.bom))
     compileOnly(libs.aws.sdk)
-    compileOnly(libs.logback.classic)
-    compileOnly(libs.logback.core)
+    compileOnly(libs.logback.classic) {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
+    compileOnly(libs.logback.core) {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
 
     testImplementation(platform(libs.aws.bom))
     testImplementation(libs.aws.sdk)
-    testImplementation(libs.logback.classic)
-    testImplementation(libs.logback.core)
+    testImplementation(libs.logback.classic) {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
+    testImplementation(libs.logback.core) {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+    }
     testImplementation(libs.mockito)
 
 }

@@ -3,12 +3,12 @@ package com.simiacryptus.cognotik.actors
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.util.*
 import javax.script.ScriptException
@@ -25,8 +25,8 @@ open class CodingActor(
     ),
     name: String? = interpreterClass.simpleName,
     val details: String? = null,
-    model: TextModel,
-    val fallbackModel: ChatModel,
+    model: LLMModel,
+    val fallbackModel: ChatModelType,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
     var codeInterceptor: CodeInterceptor = { it }
@@ -138,7 +138,7 @@ ${details ?: ""}
         var result = CodeResultImpl(
             *messages,
             input = input,
-            api = (api as ChatClient)
+            api = (api as ChatClientInterface)
         )
         if (!input.autoEvaluate) return result
         for (i in 0..input.fixIterations) try {
@@ -240,7 +240,7 @@ ${details ?: ""}
     inner class CodeResultImpl(
         vararg val messages: ChatMessage,
         private val input: CodeRequest,
-        private val api: ChatClient,
+        private val api: ChatClientInterface,
         private val givenCode: String? = null,
         private val givenResponse: String? = null,
     ) : CodeResult {
@@ -272,7 +272,7 @@ ${details ?: ""}
         override val code: String = givenCode ?: implementation.first
 
         private fun implement(
-            model: TextModel,
+            model: LLMModel,
         ): Pair<String, String> {
             val request = ChatRequest(messages = ArrayList(this.messages.toList()))
             for (codingAttempt in 0..input.fixRetries) {
@@ -397,11 +397,11 @@ ${TT}
     }
 
     private fun fixCommand(
-        api: ChatClient,
+        api: ChatClientInterface,
         previousCode: String,
         error: Throwable,
         vararg promptMessages: ChatMessage,
-        model: TextModel
+        model: LLMModel
     ): String = chat(
         api = api,
         request = ChatRequest(
@@ -433,11 +433,11 @@ Correct the code and try again.
         model = model
     )
 
-    private fun chat(api: ChatClient, request: ChatRequest, model: TextModel) =
+    private fun chat(api: ChatClientInterface, request: ChatRequest, model: LLMModel) =
         api.chat(request.copy(model = model.modelName, temperature = temperature), model)
             .choices.first().message?.content.orEmpty().trim()
 
-    override fun withModel(model: ChatModel): CodingActor = CodingActor(
+    override fun withModel(model: ChatModelType): CodingActor = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
         describer = describer,
@@ -451,7 +451,7 @@ Correct the code and try again.
     )
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(CodingActor::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(CodingActor::class.java)
 
         fun String.indent(indent: String = "  ") = this.lineSequence()
             .map {

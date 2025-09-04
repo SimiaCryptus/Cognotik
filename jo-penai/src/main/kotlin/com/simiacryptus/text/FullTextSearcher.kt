@@ -1,6 +1,6 @@
 package com.simiacryptus.text
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 class FullTextSearcher(
     val text: String,

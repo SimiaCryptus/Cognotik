@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import org.apache.commons.text.similarity.LevenshteinDistance
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
@@ -12,10 +12,16 @@ object FileSelectionUtils {
     val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
 
     fun filteredWalkAsciiTree(
-        rootFile: File, maxFilesPerDir: Int = 20, fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
+        rootFile: File,
+        maxFilesPerDir: Int = 20,
+        treatDocumentsAsText: Boolean = false,
+        fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
     ): String {
         val sb = StringBuilder()
-        if (!fn(rootFile)) {
+        val filterFn = if (treatDocumentsAsText) {
+            { file: File -> fn(file) || isDocumentFile(file) }
+        } else fn
+        if (!filterFn(rootFile)) {
             log.debug("Skipping root file for tree: ${rootFile.absolutePath}")
             return "" // Root itself doesn't match, so empty tree
         }
@@ -30,7 +36,7 @@ object FileSelectionUtils {
             entriesToConsider.forEachIndexed { index, child ->
                 buildAsciiSubTree(
                     child, "", // Initial parentContinuationPrefix for children of the root
-                    index == entriesToConsider.size - 1, maxFilesPerDir, fn, sb
+                    index == entriesToConsider.size - 1, maxFilesPerDir, filterFn, sb
                 )
             }
         }
@@ -67,13 +73,19 @@ object FileSelectionUtils {
     }
 
     fun filteredWalk(
-        file: File, maxFilesPerDir: Int = 20, fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
+        file: File,
+        maxFilesPerDir: Int = 20,
+        treatDocumentsAsText: Boolean = false,
+        fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
     ): List<File> {
+        val filterFn = if (treatDocumentsAsText) {
+            { f: File -> fn(f) || isDocumentFile(f) }
+        } else fn
         val result = mutableListOf<File>()
-        if (fn(file)) {
+        if (filterFn(file)) {
             if (file.isDirectory) {
                 file.listFiles()?.take(maxFilesPerDir)?.forEach { child ->
-                    result.addAll(filteredWalk(child, maxFilesPerDir, fn))
+                    result.addAll(filteredWalk(child, maxFilesPerDir, treatDocumentsAsText, fn))
                 }
             } else {
                 result.add(file)
@@ -97,7 +109,7 @@ object FileSelectionUtils {
         return files
     }
 
-    fun expandFileList(vararg data: File): Array<File> {
+    fun expandFileList(vararg data: File, treatDocumentsAsText: Boolean = false): Array<File> {
         return data.flatMap {
             if (!it.exists()) {
                 log.debug("File does not exist during expansion: ${it.absolutePath}")
@@ -105,27 +117,48 @@ object FileSelectionUtils {
             }
             (when {
                 it.name.endsWith(".data") -> arrayOf(it)
-                isGitignore(it.toPath()) -> arrayOf()
-                isLLMIgnored(it.toPath()) -> arrayOf()
+                treatDocumentsAsText && isDocumentFile(it) -> arrayOf(it)
+                isGitignore(it.toPath()) -> {
+                    log.debug("File ignored by gitignore: ${it.absolutePath}")
+                    arrayOf()
+                }
+
+                isLLMIgnored(it.toPath()) -> {
+                    log.debug("File ignored by llmignore: ${it.absolutePath}")
+                    arrayOf()
+                }
+
                 it.length() > 100_000_000L -> {
                     log.debug("File too large (>100MB): ${it.absolutePath}")
                     arrayOf()
                 }
 
-                it.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> arrayOf()
+                it.extension.lowercase(Locale.getDefault()) in FileExtensions.BINARY_EXTENSIONS -> {
+                    log.debug("File is a binary type: ${it.absolutePath}")
+                    arrayOf()
+                }
 
-                isBinaryFile(it) -> arrayOf()
-                it.isDirectory -> expandFileList(*it.listFiles() ?: arrayOf())
+                isBinaryFile(it) -> {
+                    log.debug("File is detected as binary: ${it.absolutePath}")
+                    arrayOf()
+                }
+
+                it.isDirectory -> expandFileList(
+                    *it.listFiles() ?: arrayOf(),
+                    treatDocumentsAsText = treatDocumentsAsText
+                )
+
                 else -> arrayOf(it)
             }).toList()
         }.toTypedArray()
     }
 
-    fun isLLMTextFile(file: File): Boolean {
+    fun isLLMTextFile(file: File, treatDocumentsAsText: Boolean = false): Boolean {
         return when {
             !file.exists() -> false
             file.isDirectory -> false
             file.name.endsWith(".data") -> true
+            treatDocumentsAsText && isDocumentFile(file) -> true
             file.length() > 100_000_000L -> false // 100MB limit
             isGitignore(file.toPath()) -> false
             isLLMIgnored(file.toPath()) -> false
@@ -152,7 +185,6 @@ object FileSelectionUtils {
             }
         } catch (e: Exception) {
             log.debug("Error reading file for binary detection: ${file.absolutePath}", e)
-
             false
         }
     }
@@ -167,52 +199,84 @@ object FileSelectionUtils {
             return false // UTF-8 with BOM is text
         }
 
-
-        var binaryCount = 0
         var nullCount = 0
-        var validUtf8Sequences = 0
-        
-        for (i in 0 until bytesRead) {
+        var controlCharCount = 0
+        var printableCount = 0
+        var i = 0
+
+        while (i < bytesRead) {
             val b = bytes[i].toInt() and 0xFF
-            // Check for valid UTF-8 sequences
-            if (b and 0x80 == 0) {
-                // ASCII character
-                validUtf8Sequences++
-            } else if (b and 0xE0 == 0xC0 && i + 1 < bytesRead) {
-                // 2-byte UTF-8 sequence
-                val next = bytes[i + 1].toInt() and 0xFF
-                if (next and 0xC0 == 0x80) {
-                    validUtf8Sequences++
-                }
-            }
-            
+
             when {
                 b == 0 -> {
-                    binaryCount++
                     nullCount++
+                    i++
                 }
+                // Allow common control characters: tab(9), newline(10), carriage return(13), form feed(12)
+                b in listOf(9, 10, 12, 13) -> {
+                    printableCount++
+                    i++
+                }
+                // Other control characters (but not as strict)
+                b in 1..8 || b in 11..11 || b in 14..31 -> {
+                    controlCharCount++
+                    i++
+                }
+                // ASCII printable characters
+                b in 32..126 -> {
+                    printableCount++
+                    i++
+                }
+                // Handle UTF-8 sequences properly
+                b and 0x80 != 0 -> {
+                    val utfLength = when {
+                        b and 0xE0 == 0xC0 -> 2  // 110xxxxx - 2 byte sequence
+                        b and 0xF0 == 0xE0 -> 3  // 1110xxxx - 3 byte sequence  
+                        b and 0xF8 == 0xF0 -> 4  // 11110xxx - 4 byte sequence
+                        else -> 1 // Invalid UTF-8 start byte, treat as single byte
+                    }
 
+                    // Validate UTF-8 sequence
+                    var validUtf8 = true
+                    if (utfLength > 1 && i + utfLength <= bytesRead) {
+                        for (j in 1 until utfLength) {
+                            val continuationByte = bytes[i + j].toInt() and 0xFF
+                            if (continuationByte and 0xC0 != 0x80) {
+                                validUtf8 = false
+                                break
+                            }
+                        }
+                    } else if (utfLength > 1) {
+                        validUtf8 = false // Incomplete sequence at end of buffer
+                    }
 
-                // Allow common control characters: tab(9), newline(10), carriage return(13)
-                b in 1..8 -> binaryCount++
-                b in 11..12 -> binaryCount++
-                b in 14..31 -> binaryCount++
-
-                b >= 127 -> binaryCount++
-
+                    if (validUtf8 && utfLength > 1) {
+                        printableCount++
+                        i += utfLength
+                    } else {
+                        controlCharCount++
+                        i++
+                    }
+                }
+                // High ASCII (128-255) - could be extended ASCII or invalid UTF-8
+                else -> {
+                    controlCharCount++
+                    i++
+                }
             }
+
         }
 
-        // Enhanced binary detection logic
+        // More lenient binary detection logic
         val nullRatio = nullCount.toDouble() / bytesRead
-        val binaryRatio = binaryCount.toDouble() / bytesRead
-        val utf8Ratio = validUtf8Sequences.toDouble() / bytesRead
+        val controlRatio = controlCharCount.toDouble() / bytesRead
+        val printableRatio = printableCount.toDouble() / bytesRead
 
         return when {
-            nullRatio > 0.01 -> true // More than 1% null bytes
-            binaryRatio > 0.30 -> true // More than 30% non-printable
-            utf8Ratio > 0.95 -> false // High UTF-8 confidence
-            else -> binaryRatio > 0.15 // Lower threshold with UTF-8 consideration
+            nullRatio > 0.05 -> true // More than 5% null bytes (more lenient)
+            printableRatio > 0.70 -> false // More than 70% printable characters (including UTF-8)
+            controlRatio > 0.50 -> true // More than 50% control/invalid characters
+            else -> false
         }
     }
 
@@ -322,6 +386,12 @@ object FileSelectionUtils {
         this
     }
 
+    fun isDocumentFile(file: File): Boolean {
+        val extension = file.extension.lowercase(Locale.getDefault())
+        return extension in setOf("pdf", "html", "htm")
+    }
+
+
     fun fuzzyResolveToRelativePath(root: Path, filename: String): String? {
         log.debug("Resolving filename '{}' relative to root '{}'", filename, root)
         if (!root.toFile().exists() || !root.toFile().isDirectory) {
@@ -329,69 +399,52 @@ object FileSelectionUtils {
             return null
         }
 
-        val backtickPattern = "`([^`]+)`".toRegex()
-        var resolvedFilename = filename.trim()
-        if (resolvedFilename.isEmpty()) {
-            log.debug("Empty filename provided")
-            return null
-        }
+        var returnValue = prefilterFilename(filename) ?: return null
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
-
-        resolvedFilename = resolvedFilename.split("\\s+".toRegex()).firstOrNull() ?: ""
-        if (resolvedFilename.isEmpty()) return null
-
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
-
-        if (backtickPattern.containsMatchIn(resolvedFilename)) {
-            resolvedFilename = backtickPattern.find(resolvedFilename)?.groupValues?.get(1) ?: resolvedFilename
-            log.trace("Extracted filename from backticks: {}", resolvedFilename)
-        }
-
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         // Handle absolute paths
         try {
-            val path = File(resolvedFilename).toPath()
+            val path = File(returnValue).toPath()
             if (path.startsWith(root)) {
-                resolvedFilename = path.toString().relativizeFrom(root)
-                log.debug("Relativized path to: {}", resolvedFilename)
+                returnValue = path.toString().relativizeFrom(root)
+                log.debug("Relativized path to: {}", returnValue)
             }
         } catch (e: Throwable) {
-            log.debug("Error resolving filename '{}': {}", resolvedFilename, e.message)
+            log.debug("Error resolving filename '{}': {}", returnValue, e.message)
         }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         // Recursive search with better performance
         try {
-            val resolvedPath = root.resolve(resolvedFilename)
+            val resolvedPath = root.resolve(returnValue)
             if (!resolvedPath.toFile().exists() || !resolvedPath.toFile().isFile) {
                 log.debug("File not found directly under root, searching recursively")
-                val targetFileName = File(resolvedFilename).name
+                val targetFileName = File(returnValue).name
                 val foundFile = root.toFile().listFilesRecursively()
                     .asSequence()
                     .filter { it.isFile }
                     .find {
                         val normalizedPath = it.toString().replace("\\", "/")
-                        val normalizedTarget = resolvedFilename.replace("\\", "/")
+                        val normalizedTarget = returnValue.replace("\\", "/")
                         normalizedPath.endsWith(normalizedTarget) ||
                                 it.name.equals(targetFileName, ignoreCase = true)
                     }
                 if (foundFile != null) {
-                    resolvedFilename = foundFile.toString().relativizeFrom(root)
-                    log.debug("Found file recursively at: {}", resolvedFilename)
+                    returnValue = foundFile.toString().relativizeFrom(root)
+                    log.debug("Found file recursively at: {}", returnValue)
                 }
             }
         } catch (e: Throwable) {
-            log.debug("Error searching for file '{}' recursively: {}", resolvedFilename, e.message)
+            log.debug("Error searching for file '{}' recursively: {}", returnValue, e.message)
         }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         // Fuzzy matching with improved algorithm
         try {
-            if (!root.resolve(resolvedFilename).toFile().exists()) {
+            if (!root.resolve(returnValue).toFile().exists()) {
                 log.debug("File not found, attempting fuzzy match")
                 val levenshtein = LevenshteinDistance()
-                val targetName = File(resolvedFilename).name
+                val targetName = File(returnValue).name
                 val maxDistance = maxOf(2, targetName.length / 4) // More conservative threshold
 
                 val closest = root.toFile().listFilesRecursively()
@@ -405,16 +458,27 @@ object FileSelectionUtils {
                     .minByOrNull { it.second }?.first
 
                 if (closest != null) {
-                    resolvedFilename = closest.toString().relativizeFrom(root)
-                    log.debug("Found closest match: {}", resolvedFilename)
+                    returnValue = closest.toString().relativizeFrom(root)
+                    log.debug("Found closest match: {}", returnValue)
                 }
             }
         } catch (e: Throwable) {
-            log.debug("Error finding fuzzy match for '{}': {}", resolvedFilename, e.message)
+            log.debug("Error finding fuzzy match for '{}': {}", returnValue, e.message)
         }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
 
-        if (root.resolve(resolvedFilename).toFile().exists()) return resolvedFilename
         return null
+    }
+
+    fun prefilterFilename(text: String): String? {
+        var returnValue = text.trim()
+        if (returnValue.isEmpty()) return null
+        returnValue = returnValue.split("\\s+".toRegex()).filterNot { it.isBlank() }.firstOrNull() ?: return null
+        val backtickPattern = "`([^`]+)`".toRegex()
+        if (backtickPattern.containsMatchIn(returnValue)) {
+            returnValue = backtickPattern.find(returnValue)?.groupValues?.get(1) ?: returnValue
+        }
+        return returnValue
     }
 
     private object FileExtensions {

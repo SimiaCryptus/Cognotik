@@ -190,7 +190,7 @@ class SessionShareServlet(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(SessionShareServlet::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(SessionShareServlet::class.java)
         private val currentlyProcessing = mutableSetOf<String>()
         fun validateUrl(previousShare: String): Boolean = when {
             currentlyProcessing.contains(previousShare) -> true

@@ -1,6 +1,6 @@
 package com.simiacryptus.util.stm
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 class BlobDB : BlobStorage {
     private val data = mutableMapOf<Int, ByteArray>()

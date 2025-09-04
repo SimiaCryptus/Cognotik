@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import com.simiacryptus.jopenai.exceptions.ModerationException
 import com.simiacryptus.jopenai.models.*
 import com.simiacryptus.jopenai.models.ApiModel.*
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.allowedCharset
 import com.simiacryptus.jopenai.util.ClientUtil.checkError
 import com.simiacryptus.util.JsonUtil
@@ -19,7 +20,7 @@ import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import org.slf4j.event.Level
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -47,7 +48,7 @@ open class OpenAIClient(
     var user: Any? = null
     var session: Any? = null
 
-    open fun onUsage(model: OpenAIModel?, tokens: Usage) {
+    open fun onUsage(model: AIModel?, tokens: Usage) {
     }
 
     @Throws(IOException::class, InterruptedException::class)
@@ -93,7 +94,7 @@ open class OpenAIClient(
     open val provider = APIProvider.OpenAI
 
     open fun complete(
-        request: CompletionRequest, model: TextModel
+        request: CompletionRequest, model: LLMModel
     ): CompletionResponse = withReliability {
         withPerformanceLogging {
             if (request.suffix == null) {
@@ -481,7 +482,7 @@ open class OpenAIClient(
                     result, EmbeddingResponse::class.java
                 )
                 if (response.usage != null) {
-                    val model = EmbeddingModels.values().values.find { it.modelName.equals(request.model, true) }
+                    val model = EmbeddingModel.values().values.find { it.modelName.equals(request.model, true) }
                     onUsage(
                         model,
                         response.usage.copy(cost = model?.pricing(response.usage))

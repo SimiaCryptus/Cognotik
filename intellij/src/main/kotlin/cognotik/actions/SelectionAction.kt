@@ -13,10 +13,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiRecursiveElementVisitor
-import com.simiacryptus.cognotik.util.ComputerLanguage
-import com.simiacryptus.cognotik.util.LanguageUtils
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.util.*
 
 abstract class SelectionAction<T : Any>(
     private val requiresSelection: Boolean = true
@@ -48,7 +46,7 @@ abstract class SelectionAction<T : Any>(
     final override fun handle(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val config = getConfig(e.project)
-        val indent = UITools.getIndent(e)
+        val indent = e.getIndent()
         val caretModel = editor.caretModel
         val primaryCaret = caretModel.primaryCaret
         var selectionStart = primaryCaret.selectionStart
@@ -64,7 +62,7 @@ abstract class SelectionAction<T : Any>(
         selectionEnd = end.coerceIn(0, (text.length - 1).coerceAtLeast(0))
         selectionStart = start.coerceIn(0, (text.length - 1).coerceAtLeast(0))
 
-        UITools.redoableTask(e) {
+        e.redoableTask {
             val document = e.getData(CommonDataKeys.EDITOR)?.document
             var rangeMarker: RangeMarker? = null
             WriteCommandAction.runWriteCommandAction(e.project) {
@@ -93,7 +91,7 @@ abstract class SelectionAction<T : Any>(
                         document?.removeGuardedBlock(rangeMarker!!)
                     }
             }
-            UITools.writeableFn(e) {
+            e.writeableFn {
                 log.debug(
                     "Start: $selectionStart; End: $selectionEnd; Selected text: \n\t${selectedText.indent("\t")}; New text: \n\t${
                         newText.indent(
@@ -101,7 +99,7 @@ abstract class SelectionAction<T : Any>(
                         )
                     }"
                 )
-                UITools.replaceString(editor.document, selectionStart, selectionEnd, newText)
+                editor.document.replaceSubString(selectionStart, selectionEnd, newText)
             }
         }
     }

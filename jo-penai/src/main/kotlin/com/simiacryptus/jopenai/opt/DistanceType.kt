@@ -1,6 +1,6 @@
 package com.simiacryptus.jopenai.opt
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 import kotlin.math.abs
 import kotlin.math.pow

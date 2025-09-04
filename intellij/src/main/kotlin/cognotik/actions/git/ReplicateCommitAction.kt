@@ -1,7 +1,6 @@
 package cognotik.actions.git
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -30,8 +29,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.util.JsonUtil
 import java.io.File
 import java.nio.file.Files
@@ -55,7 +54,7 @@ class ReplicateCommitAction : BaseAction() {
 
             val dataContext = event.dataContext
             val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-            val folder = UITools.getSelectedFolder(event)
+            val folder = event.getSelectedFolder()
             var root = if (null != folder) {
                 folder.toFile.toPath()
             } else {
@@ -235,8 +234,8 @@ class ReplicateCommitAction : BaseAction() {
                          1) predict the files that need to be fixed
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                    model = AppSettingsState.instance.smartModel.chatModelType(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
@@ -266,7 +265,7 @@ class ReplicateCommitAction : BaseAction() {
 
                   """.trimIndent() + codeSummary + "\n" + patchFormatPrompt +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
-                            model = AppSettingsState.instance.smartModel.chatModel()
+                            model = AppSettingsState.instance.smartModel.chatModelType()
                         ).answer(
                             listOf(
                                 """
@@ -300,7 +299,7 @@ class ReplicateCommitAction : BaseAction() {
                 task.placeholder
             }
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
         }
     }
 
@@ -339,12 +338,12 @@ class ReplicateCommitAction : BaseAction() {
     }
 
     private fun getUserSettings(event: AnActionEvent?): Settings? {
-        val root = UITools.getSelectedFolder(event ?: return null)?.toNioPath() ?: event.project?.basePath?.let {
+        val root = (event ?: return null).getSelectedFolder()?.toNioPath() ?: event.project?.basePath?.let {
             File(
                 it
             ).toPath()
         }
-        val files = UITools.getSelectedFiles(event).map { it.path.let { File(it).toPath() } }.toMutableSet()
+        val files = event.getSelectedFiles().map { it.path.let { File(it).toPath() } }.toMutableSet()
         if (files.isEmpty()) Files.walk(root)
             .filter { Files.isRegularFile(it) && !Files.isDirectory(it) }
             .toList().filterNotNull().forEach { files.add(it) }

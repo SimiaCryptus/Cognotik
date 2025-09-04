@@ -2,7 +2,7 @@ package com.simiacryptus.util.stm
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.type.TypeReference
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.lang.IllegalStateException
 
 class Pointer<T : Any>(
@@ -14,7 +14,6 @@ class Pointer<T : Any>(
 
     @JsonIgnore
     var heapObject: T? = null
-
 
 
     inline fun <reified TT : Any> getValue(): TT {

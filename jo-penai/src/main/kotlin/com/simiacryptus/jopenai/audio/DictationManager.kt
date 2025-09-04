@@ -2,7 +2,7 @@ package com.simiacryptus.jopenai.audio
 
 import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.models.AudioModels
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

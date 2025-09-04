@@ -23,11 +23,11 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -184,20 +184,16 @@ class PluginStartupActivity : ProjectActivity {
     }
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(PluginStartupActivity::class.java)
-
+        val log = LoggerFactory.getLogger(PluginStartupActivity::class.java)
         fun addUserSuppliedModels(userModels: List<AppSettingsState.UserSuppliedModel>) {
             userModels.forEach { model ->
-                ChatModel.values[model.displayName] = ChatModel(
+                ChatModelType.values[model.displayName] = ChatModelType(
                     name = model.displayName,
                     modelName = model.modelId,
                     maxTotalTokens = 4096,
-
-                    provider = model.provider,
+                    provider = model.provider!!,
                     inputTokenPricePerK = 0.0,
-
-                    outputTokenPricePerK = 0.0
-
+                    outputTokenPricePerK = 0.0,
                 )
             }
         }

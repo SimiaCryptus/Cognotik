@@ -7,10 +7,9 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -68,7 +67,7 @@ class DataTableCompilationTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -88,7 +87,7 @@ class DataTableCompilationTask(
         val matchedFiles = result.distinct()
         if (matchedFiles.isEmpty()) {
             val errorMsg = "No files matched the provided patterns: ${taskConfig?.file_patterns?.joinToString(", ")}"
-            task.error(ui = agent.ui, Exception(errorMsg))
+            task.error(Exception(errorMsg))
             resultFn(errorMsg)
             return
         }

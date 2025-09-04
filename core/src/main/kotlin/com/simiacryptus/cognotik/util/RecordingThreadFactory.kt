@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.concurrent.ThreadFactory
 
 class RecordingThreadFactory(

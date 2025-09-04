@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 
 class AddApplyDiffLinks {
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(AddApplyDiffLinks::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(AddApplyDiffLinks::class.java)
 
         private val diffApplier = SimpleDiffApplier()
 
@@ -93,7 +93,7 @@ class AddApplyDiffLinks {
                 } catch (e: Throwable) {
                     hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
                     buttons.complete()
-                    task.error(ui, e)
+                    task.error(e)
                 }
             })!!
             val patch = patch(code(), diffVal).newCode
@@ -122,7 +122,7 @@ class AddApplyDiffLinks {
                             buttons.complete()
                             hrefLink.clear()
                         } catch (e: Throwable) {
-                            task.error(ui, e)
+                            task.error(e)
                         }
                     })!!
                 val test1 = IterativePatchUtil.generatePatch(code().replace("\r", ""), patch)

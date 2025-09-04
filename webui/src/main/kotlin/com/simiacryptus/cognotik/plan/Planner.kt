@@ -7,10 +7,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 
@@ -28,7 +28,7 @@ open class Planner {
         contextFn: () -> List<String> = { emptyList() },
         describer: TypeDescriber
     ): TaskBreakdownWithPrompt {
-        val api = (api as ChatClient).getChildClient(task)
+        val api = (api as ChatClientInterface).getChildClient(task)
         val toInput = inputFn(codeFiles, files, root)
         task.echo(userMessage.renderMarkdown())
         return if (!planSettings.autoFix)
@@ -56,7 +56,7 @@ open class Planner {
                         )
                     } catch (e: Throwable) {
                         log.warn("Error rendering task breakdown", e)
-                        task.error(ui, e)
+                        task.error(e)
                         e.message ?: e.javaClass.simpleName
                     }
                 },
@@ -72,8 +72,8 @@ open class Planner {
             ).call().let {
                 TaskBreakdownWithPrompt(
                     prompt = userMessage,
-                    plan = PlanUtil.filterPlan { it.obj } ?: emptyMap(),
-                    planText = it.text
+                    plan = PlanUtil.filterPlan { it?.obj } ?: emptyMap(),
+                    planText = it?.text ?: "(no plan generated)"
                 )
             }
         else {

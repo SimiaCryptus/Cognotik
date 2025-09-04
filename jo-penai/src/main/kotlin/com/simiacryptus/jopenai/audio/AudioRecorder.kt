@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.audio
 
 import org.apache.commons.io.input.buffer.CircularByteBuffer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem

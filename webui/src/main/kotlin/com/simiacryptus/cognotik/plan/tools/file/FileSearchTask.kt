@@ -1,13 +1,14 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -28,6 +29,8 @@ class FileSearchTask(
         val context_lines: Int = 2,
         @Description("The specific files (or file patterns) to be searched")
         val input_files: List<String>? = null,
+        @Description("Whether to extract and search text content from non-text files (PDF, HTML, etc.)")
+        val extractContent: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -54,7 +57,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -97,11 +100,15 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         return (currentConfig.input_files ?: emptyList())
             .flatMap { filePattern ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$filePattern")
-                FileSelectionUtils.filteredWalk(root.toFile()) {
-                    path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                FileSelectionUtils.filteredWalk(root.toFile()) { path ->
+                    matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
                 }.map { it.toPath() }.flatMap { path ->
                     try {
-                        val fileContentLines = Files.readAllLines(path)
+                        val fileContentLines = if (currentConfig.extractContent && !isTextFile(path.toFile())) {
+                            extractDocumentContent(path.toFile()).lines()
+                        } else {
+                            Files.readAllLines(path)
+                        }
                         val relativePath = root.relativize(path).toString()
 
                         // 1. Find all individual raw matches (line number and content)
@@ -119,7 +126,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         val contextLinesCount = currentConfig.context_lines
                         for (match in rawMatches) { // rawMatches are already sorted by line number
                             val matchIdealContextStart = (match.lineNumber - contextLinesCount).coerceAtLeast(1)
-                            val matchIdealContextEnd = (match.lineNumber + contextLinesCount).coerceAtMost(fileContentLines.size)
+                            val matchIdealContextEnd =
+                                (match.lineNumber + contextLinesCount).coerceAtMost(fileContentLines.size)
                             if (currentBlockAggregatedMatches.isEmpty() || matchIdealContextStart > currentBlockContextEndLineInFile + 1) {
                                 // Finalize previous block if it exists
                                 if (currentBlockAggregatedMatches.isNotEmpty()) {
@@ -127,7 +135,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                         (currentBlockContextStartLineInFile - 1).coerceAtLeast(0), // to 0-based index
                                         currentBlockContextEndLineInFile.coerceAtMost(fileContentLines.size) // exclusive end
                                     )
-                                    combinedBlocks.add(DisplayBlock(
+                                    combinedBlocks.add(
+                                        DisplayBlock(
                                         file = relativePath,
                                         contextLines = actualContext,
                                         firstLineNumberInFile = currentBlockContextStartLineInFile,
@@ -147,7 +156,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 // Merge with current block
                                 currentBlockAggregatedMatches.add(match)
                                 // currentBlockContextStartLineInFile remains the earliest start (already set)
-                                currentBlockContextEndLineInFile = max(currentBlockContextEndLineInFile, matchIdealContextEnd)
+                                currentBlockContextEndLineInFile =
+                                    max(currentBlockContextEndLineInFile, matchIdealContextEnd)
                             }
                         }
                         // Add the last processed block
@@ -156,7 +166,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 (currentBlockContextStartLineInFile - 1).coerceAtLeast(0),
                                 currentBlockContextEndLineInFile.coerceAtMost(fileContentLines.size)
                             )
-                            combinedBlocks.add(DisplayBlock(
+                            combinedBlocks.add(
+                                DisplayBlock(
                                 file = relativePath,
                                 contextLines = actualContext,
                                 firstLineNumberInFile = currentBlockContextStartLineInFile,
@@ -175,6 +186,53 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     }
                 }
             }
+    }
+
+    private fun isTextFile(file: java.io.File): Boolean {
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
+        )
+        return textExtensions.contains(file.extension.lowercase())
+    }
+
+    private fun extractDocumentContent(file: java.io.File): String {
+        return try {
+            file.getReader().use { reader ->
+                when (reader) {
+                    is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                    else -> reader.getText()
+                }
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+            try {
+                file.readText()
+            } catch (e2: Exception) {
+                "Error reading file: ${e2.message}"
+            }
+        }
     }
 
 
@@ -246,7 +304,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
                 val blockEndLine = block.firstLineNumberInFile + block.contextLines.size - 1
                 val resultHeader = "### Lines ${block.firstLineNumberInFile} - $blockEndLine\n\n"
-                
+
                 val contextBlockString = buildString {
                     appendLine("```")
                     block.contextLines.forEachIndexed { indexInBlock, lineContent ->
@@ -274,9 +332,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         return sb.toString().take(maxLength) // Final safeguard
     }
 
-    // SearchResult data class is removed, replaced by DisplayBlock and MatchInBlock defined earlier
-    // getContext method is removed as it's no longer used
-
     companion object {
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
         fun getAvailableFiles(path: Path): List<String> {
@@ -287,5 +342,22 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 listOf("Error listing files: ${e.message}")
             }
         }
+
+        val FileSearchTaskType = TaskType(
+            "FileSearchTask",
+            com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Search project files using patterns with contextual results",
+            """
+                      Performs pattern-based searches across project files with context.
+                      <ul>
+                        <li>Supports both substring and regex search patterns</li>
+                        <li>Shows configurable context lines around matches</li>
+                        <li>Groups results by file with line numbers</li>
+                        <li>Filters for text-based files automatically</li>
+                        <li>Provides organized, readable output format</li>
+                      </ul>
+                    """
+        )
     }
 }

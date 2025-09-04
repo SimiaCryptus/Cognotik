@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.platform.model.CloudPlatformInterface
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider

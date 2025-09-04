@@ -1,13 +1,13 @@
 package com.simiacryptus.jopenai.models
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.concurrent.atomic.AtomicReference
 
 @Suppress("unused")
 enum class AudioModels(
     override val modelName: String,
     val type: AudioModelType,
-) : OpenAIModel {
+) : AIModel {
     GPT4oTranscribe("gpt-4o-transcribe", AudioModelType.Transcription),
     GPT4oMiniTranscribe("gpt-4o-mini-transcribe", AudioModelType.Transcription),
     Whisper("whisper-1", AudioModelType.Transcription),
@@ -16,7 +16,7 @@ enum class AudioModels(
     GPT4oMiniTTS("gpt-4o-mini-tts", AudioModelType.TextToSpeech)
     ;
 
-    private val _api = AtomicReference<OpenAIModel?>(null)
+    private val _api = AtomicReference<AIModel?>(null)
     private val log = LoggerFactory.getLogger(AudioModels::class.java)
 
     enum class AudioModelType {

@@ -14,21 +14,18 @@ abstract class ApplicationSocketManager(
     dataStorage: StorageInterface?,
     applicationClass: Class<*>,
 ) : SocketManagerBase(
-    session = session,
+    sessionId = session,
     dataStorage = dataStorage,
     owner = owner,
     applicationClass = applicationClass,
 ) {
     override fun onRun(userMessage: String, socket: ChatSocket) {
         userMessage(
-            session = session,
+            session = sessionId,
             user = socket.user,
             userMessage = userMessage,
             socketManager = this,
-            api = ApplicationServices.clientManager.getChatClient(
-                session,
-                socket.user
-            )
+            api = ApplicationServices.clientManager.getChatClient(sessionId, socket.user)
         )
     }
 
@@ -43,7 +40,6 @@ abstract class ApplicationSocketManager(
     )
 
     companion object {
-
 
 
     }

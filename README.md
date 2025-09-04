@@ -1,8 +1,8 @@
 # Cognotik: Comprehensive AI-Powered Development Platform
 
 [![Build](https://github.com/SimiaCryptus/Cognotik/workflows/Build/badge.svg)](https://github.com/SimiaCryptus/Cognotik/actions)
-[![Version](https://img.shields.io/jetbrains/plugin/v/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
+[![Version](https://img.shields.io/jetbrains/plugin/v/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ![logo.svg](logo.svg)

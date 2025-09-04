@@ -43,9 +43,10 @@ enum class SeedMethod {
                 val userSettings = user?.let {
                     ApplicationServices.userSettingsManager.getUserSettings(it)
                 }
-                val key = userSettings?.apiKeys?.get(APIProvider.GoogleSearch)?.let { it.trim() }
+                val key = userSettings
+                    ?.apis?.firstOrNull { it.provider == APIProvider.GoogleSearch }?.key?.trim()
                     ?: throw RuntimeException("Google API token is required")
-                val engineId = userSettings?.apiBase?.get(APIProvider.GoogleSearch)?.let { it.trim() }
+                val engineId = userSettings.apiBase[APIProvider.GoogleSearch]?.trim()
                     ?: throw RuntimeException("Search engine id is required")
                 log.debug("Preparing Google Search API request with engine ID: $engineId")
                 val uriBuilder =
@@ -100,8 +101,8 @@ enum class SeedMethod {
                             "title" to "Direct URL ${index + 1}"
                         )
                     }.also {
-                    log.info("Successfully processed ${it?.size ?: 0} direct URLs")
-                }
+                        log.info("Successfully processed ${it?.size ?: 0} direct URLs")
+                    }
             }
         }
     };
@@ -109,6 +110,6 @@ enum class SeedMethod {
     abstract fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(SeedMethod::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(SeedMethod::class.java)
     }
 }

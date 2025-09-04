@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.proxy
 
 import com.simiacryptus.util.JsonUtil.toJson
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import kotlin.reflect.full.memberProperties
 
 interface ValidatedObject {

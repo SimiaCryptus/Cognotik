@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskConfigBase
@@ -18,6 +20,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
         task_description: String? = null,
         @Description("REQUIRED: The files to be generated as output for the task (relative paths)") val files: List<String>? = null,
         @Description("Additional files used to inform the change, including relevant files created by previous tasks") val related_files: List<String>? = null,
+        @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)") val extractContent: Boolean = false,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
     ) : TaskConfigBase(
@@ -40,15 +43,67 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
             .joinToString("\n\n") { relativePath ->
                 val file = root.resolve(relativePath).toFile()
                 try {
-                    "# $relativePath\n\n$TRIPLE_TILDE\n${codeFiles[file.toPath()] ?: file.readText()}\n$TRIPLE_TILDE"
+                    val content = if (taskConfig?.extractContent == true && !isTextFile(file)) {
+                        extractDocumentContent(file)
+                    } else {
+                        codeFiles[file.toPath()] ?: file.readText()
+                    }
+                    "# $relativePath\n\n$TRIPLE_TILDE\n$content\n$TRIPLE_TILDE"
                 } catch (e: Throwable) {
                     log.warn("Error reading file: $relativePath", e)
                     ""
                 }
             }
 
+    private fun isTextFile(file: java.io.File): Boolean {
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
+        )
+        return textExtensions.contains(file.extension.lowercase())
+    }
+
+    private fun extractDocumentContent(file: java.io.File): String {
+        return try {
+            file.getReader().use { reader ->
+                when (reader) {
+                    is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                    else -> reader.getText()
+                }
+            }
+        } catch (e: Exception) {
+            log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+            try {
+                file.readText()
+            } catch (e2: Exception) {
+                "Error reading file: ${e2.message}"
+            }
+        }
+    }
+
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(AbstractFileTask::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AbstractFileTask::class.java)
         const val TRIPLE_TILDE = "```"
 
     }

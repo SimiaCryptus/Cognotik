@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.remoterobot.fixtures)
     implementation(libs.remoterobot.robot)
 
+
     implementation(libs.logback.classic)
     implementation(libs.logback.core)
     implementation(libs.slf4j.api)
@@ -78,6 +79,7 @@ tasks.test {
         "--add-opens", "java.base/java.lang=ALL-UNNAMED",
         "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
         "--add-opens", "java.base/java.util=ALL-UNNAMED"
+        // JVM Arg: --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED
     )
 }
 

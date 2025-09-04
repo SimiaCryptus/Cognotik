@@ -16,11 +16,11 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
@@ -77,7 +77,7 @@ class PlanCoordinator(
         userMessage: String,
         api: API,
     ): PlanProcessingState {
-        val api = (api as ChatClient).getChildClient(task)
+        val api = (api as ChatClientInterface).getChildClient(task)
         val tabs = TabbedDisplay(task)
         val planProcessingState = newState(plan)
         this.planProcessingState = planProcessingState
@@ -85,7 +85,8 @@ class PlanCoordinator(
             val diagramTask = ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
                 diagramBuffer = diagramTask.add(
-                  "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown, additionalClasses = "flow-chart"
+                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
+                    additionalClasses = "flow-chart"
                 ),
                 subTasks = planProcessingState.subTasks,
                 task = diagramTask,
@@ -99,7 +100,7 @@ class PlanCoordinator(
             )
         } catch (e: Throwable) {
             log.warn("Error during incremental code generation process", e)
-            task.error(ui, e)
+            task.error(e)
         }
         return planProcessingState
     }
@@ -123,11 +124,11 @@ class PlanCoordinator(
         tabs: TabbedDisplay,
     ) {
         val sessionTask = ui.newTask(false).apply { tabs["Session"] = placeholder }
-        val api = (api as ChatClient).getChildClient(sessionTask)
+        val api = (api as ChatClientInterface).getChildClient(sessionTask)
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
-                  "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
+                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
                 )
                 task.complete()
                 return buildString {
@@ -190,10 +191,10 @@ class PlanCoordinator(
                     )
 
                     task1.add(
-                      """
+                        """
               ## Task `""".trimIndent() + taskId + "`" + (subTask.task_description ?: "") + "\n" +
-                          TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
-                          "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
+                                TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
+                                "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
                     )
                     val api = api.getChildClient(sessionTask)
                     val impl = getImpl(planSettings, subTask)
@@ -212,7 +213,7 @@ class PlanCoordinator(
                     )
                 } catch (e: Throwable) {
                     log.warn("Error during task execution", e)
-                    task1.error(ui, e)
+                    task1.error(e)
                 } finally {
                     planProcessingState.completedTasks.add(element = taskId)
                     subTask.state = AbstractTask.TaskState.Completed

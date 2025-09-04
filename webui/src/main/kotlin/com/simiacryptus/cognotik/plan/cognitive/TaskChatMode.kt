@@ -15,13 +15,12 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -82,7 +81,7 @@ open class TaskChatMode(
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-        val api = (this@TaskChatMode.api as ChatClient).getChildClient(task)
+        val api = (this@TaskChatMode.api as ChatClientInterface).getChildClient(task)
         api.budget = planSettings.budget
 
         val coordinator = PlanCoordinator(
@@ -90,10 +89,11 @@ open class TaskChatMode(
             session = session,
             dataStorage = ui.socketManager?.dataStorage!!,
             ui = ui,
-            root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.socketManager?.dataStorage?.getSessionDir(
-                user,
-                session
-            )?.toPath() ?: File(".").toPath(),
+            root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+                ?: ui.socketManager?.dataStorage?.getSessionDir(
+                    user,
+                    session
+                )?.toPath() ?: File(".").toPath(),
             planSettings = planSettings
         )
 
@@ -176,7 +176,7 @@ open class TaskChatMode(
             processBufferedMessages()
         } catch (e: Exception) {
             log.error("Error executing task", e)
-            task.error(null, e)
+            task.error(e)
 
             synchronized(messagesLock) {
                 isProcessing = false

@@ -3,21 +3,22 @@ class NarrationManager {
     constructor() {
         this.narrations = {};
         this.audioEnabled = Cypress.env('ENABLE_NARRATION') || false;
-       this.narrationsLoaded = false;
+        this.narrationsLoaded = false;
         this.audioContext = null;
         this.audioElements = [];
     }
 
     loadNarrations() {
-       if (!this.narrationsLoaded) {
-           return cy.fixture('narrations.json').then((data) => {
-               this.narrations = data;
-               this.narrationsLoaded = true;
-               return data;
-           });
-       }
-       return cy.wrap(this.narrations);
+        if (!this.narrationsLoaded) {
+            return cy.fixture('narrations.json').then((data) => {
+                this.narrations = data;
+                this.narrationsLoaded = true;
+                return data;
+            });
+        }
+        return cy.wrap(this.narrations);
     }
+
     initializeAudioContext() {
         if (!this.audioContext) {
             return cy.window().then((win) => {
@@ -53,7 +54,7 @@ class NarrationManager {
                     audio.src = `/audio/${narration.audio}`;
                     audio.preload = 'auto';
                     audio.volume = 1.0;
-                    
+
                     // Add to DOM temporarily (hidden)
                     audio.style.display = 'none';
                     win.document.body.appendChild(audio);
@@ -102,6 +103,7 @@ class NarrationManager {
             return cy.wrap(null);
         });
     }
+
     cleanup() {
         // Clean up any remaining audio elements
         this.audioElements.forEach(audio => {
@@ -113,15 +115,15 @@ class NarrationManager {
     }
 
     logNarration(key) {
-       // Ensure narrations are loaded before proceeding
-       if (!this.narrationsLoaded) {
-           return this.loadNarrations().then(() => {
-               const narration = this.narrations[key];
-               if (narration) {
-                   cy.log(`📖 ${narration.text}`);
-               }
-           });
-       }
+        // Ensure narrations are loaded before proceeding
+        if (!this.narrationsLoaded) {
+            return this.loadNarrations().then(() => {
+                const narration = this.narrations[key];
+                if (narration) {
+                    cy.log(`📖 ${narration.text}`);
+                }
+            });
+        }
 
         const narration = this.narrations[key];
         if (narration) {
@@ -139,12 +141,12 @@ Cypress.Commands.add('narrate', (key, options = {}) => {
 });
 
 Cypress.Commands.add('logNarration', (key) => {
-   return narrationManager.loadNarrations().then(() => {
-       const narration = narrationManager.narrations[key];
-       if (narration) {
-           cy.log(`📖 ${narration.text}`);
-       }
-   });
+    return narrationManager.loadNarrations().then(() => {
+        const narration = narrationManager.narrations[key];
+        if (narration) {
+            cy.log(`📖 ${narration.text}`);
+        }
+    });
 });
 
 export default narrationManager;

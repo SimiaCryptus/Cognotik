@@ -9,8 +9,8 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import javax.swing.*
 
 class EnhancedOutlineConfigDialog(
@@ -28,7 +28,7 @@ class EnhancedOutlineConfigDialog(
         settings.phases.forEach { addElement(it) }
     }
     private var selectedIndex = -1
-    private val availableModels = ChatModel.values().toList()
+    private val availableModels = ChatModelType.values().toList()
 
     private fun addPhase(listComponent: JBList<PhaseSettings>) {
         val dialog = ModelSelectionDialog(project, availableModels)
@@ -133,7 +133,7 @@ class EnhancedOutlineConfigDialog(
                 comboBox(availableModels).apply {
                     component.selectedItem = parsingModel
                     component.addActionListener {
-                        parsingModel = component.selectedItem as ChatModel
+                        parsingModel = component.selectedItem as ChatModelType
                     }
                 }
                     .align(Align.FILL)
@@ -212,20 +212,20 @@ class EnhancedOutlineConfigDialog(
         val showProjector: Boolean = true,
         val writeFinalEssay: Boolean = true,
         val budget: Double = 2.0,
-        val parsingModel: ChatModel = AppSettingsState.instance.smartModel.chatModel(),
+        val parsingModel: ChatModelType = AppSettingsState.instance.smartModel.chatModelType(),
         val phases: List<PhaseSettings> = listOf(
             PhaseSettings(
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 extract = "Extract the core concepts and key ideas",
                 question = "What are the main topics and themes to explore?"
             ),
             PhaseSettings(
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 extract = "Extract detailed insights and supporting points",
                 question = "How can we elaborate on this concept further?"
             ),
             PhaseSettings(
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 extract = "Extract comprehensive summary and connections",
                 question = "How do all these ideas connect into a cohesive whole?"
             )
@@ -233,7 +233,7 @@ class EnhancedOutlineConfigDialog(
     )
 
     data class PhaseSettings(
-        val model: ChatModel,
+        val model: ChatModelType,
         val extract: String,
         val question: String
     )

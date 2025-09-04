@@ -1,20 +1,20 @@
 package com.simiacryptus.jopenai.opt
 
-import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.opt.PromptOptimization.GeneticApi.Prompt
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import kotlin.math.pow
 
 open class PromptOptimization(
     val api: OpenAIClient,
-    val chatClient: ChatClient,
-    val model: ChatModel,
+    val chatClient: ChatClientInterface,
+    val model: ChatModelType,
     private val mutationRate: Double = 0.5,
     private val mutationTypes: Map<String, Double> = mapOf(
         "Rephrase" to 1.0,

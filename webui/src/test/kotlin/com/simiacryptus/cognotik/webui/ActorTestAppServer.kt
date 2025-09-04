@@ -21,9 +21,9 @@ import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.webui.test.*
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.AnthropicModels
+import com.simiacryptus.jopenai.chat.model.AnthropicModels
 import org.eclipse.jetty.webapp.WebAppContext
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -34,6 +34,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
         val punchline: String? = null,
         val type: String? = null,
     )
+
     val model = AnthropicModels.Claude35Haiku
 
     override val childWebApps by lazy {
@@ -69,8 +70,6 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             })),
 
 
-
-
             ChildWebApp(
                 "/test_coding_kotlin",
                 CodingActorTestApp(
@@ -91,15 +90,22 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     )
                 )
             ),
-            ChildWebApp("/test_file_patch", FilePatchTestApp(api = OpenAIClient(
-                workPool = Executors.newCachedThreadPool(),
-                key = emptyMap(),
-                apiBase = emptyMap()
-            ))),
+            ChildWebApp(
+                "/test_file_patch", FilePatchTestApp(
+                    api = OpenAIClient(
+                        workPool = Executors.newCachedThreadPool(),
+                        key = emptyMap(),
+                        apiBase = emptyMap()
+                    )
+                )
+            ),
             ChildWebApp("/stressTest", StressTestApp()),
             ChildWebApp(
                 "/pdfExtractor", DocumentParserApp(
-                    parsingModel = DocumentParsingModel(model, 0.1) as ParsingModel<DocumentData>
+                    parsingModel = DocumentParsingModel(
+                        model, 0.1,
+                        api = TODO()
+                    ) as ParsingModel<DocumentData>
                 )
             ),
         )

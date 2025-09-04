@@ -1,7 +1,7 @@
 package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.apps.general.OutlineApp
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.text.SimpleDateFormat
 
 class OutlineAction : BaseAction() {

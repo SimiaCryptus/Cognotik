@@ -208,6 +208,6 @@ object MarkdownUtil {
         return options
     }
 
-    private val log = org.slf4j.LoggerFactory.getLogger(MarkdownUtil::class.java)
+    private val log = com.simiacryptus.util.LoggerFactory.getLogger(MarkdownUtil::class.java)
 }
 

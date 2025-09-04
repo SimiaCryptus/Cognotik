@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik.demotest
 
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.InputStream
-import kotlin.text.split
 
 data class NarrationEntry(
     val text: String? = null,
@@ -18,27 +17,30 @@ data class NarrationMap(
 class NarrationManager(private val narrationFile: String) {
 
     private val narrations: Map<String, NarrationEntry>
-    
+
     companion object {
         private val log = LoggerFactory.getLogger(NarrationManager::class.java)
     }
-    
+
     init {
         narrations = loadNarrations()
     }
-    
+
     private fun loadNarrations(): Map<String, NarrationEntry> {
         return try {
-            val resourceStream = this::class.java.classLoader.getResourceAsStream(narrationFile)?.readAllBytes()?.let { String(it) }
-                ?: throw IllegalArgumentException("Narration file not found: $narrationFile")
-            val map = JsonUtil.fromJson<NarrationMap>("{'narrations':$resourceStream}", NarrationMap::class.java).narrations ?: emptyMap()
+            val resourceStream =
+                this::class.java.classLoader.getResourceAsStream(narrationFile)?.readAllBytes()?.let { String(it) }
+                    ?: throw IllegalArgumentException("Narration file not found: $narrationFile")
+            val map =
+                JsonUtil.fromJson<NarrationMap>("{'narrations':$resourceStream}", NarrationMap::class.java).narrations
+                    ?: emptyMap()
             map
         } catch (e: Exception) {
             log.error("Failed to load narrations from $narrationFile", e)
             emptyMap()
         }
     }
-    
+
     fun getNarration(key: String): NarrationEntry? {
         return narrations[key]?.also {
             log.debug("Retrieved narration for key: $key")

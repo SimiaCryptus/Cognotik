@@ -17,7 +17,7 @@ import kotlin.system.exitProcess
  * This should not use the logging system, we want to prevent creating log files in the current directory.
  */
 object DaemonClient {
-    private const val DEFAULT_PORT = 7683
+    private const val DEFAULT_PORT = 12891
     private const val DEFAULT_HOST = "localhost"
     private const val PID_FILE = "cognotik_server.pid"
     private const val SOCKET_PORT_OFFSET = 1

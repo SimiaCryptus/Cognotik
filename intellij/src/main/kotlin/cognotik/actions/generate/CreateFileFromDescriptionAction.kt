@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.io.File
 
@@ -109,7 +109,7 @@ class CreateFileFromDescriptionAction :
         directive: String
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
-        val model = AppSettingsState.instance.smartModel.chatModel()
+        val model = AppSettingsState.instance.smartModel.chatModelType()
         val chatRequest = ChatRequest(
             model = model.modelName,
             temperature = AppSettingsState.instance.temperature,
@@ -135,7 +135,7 @@ class CreateFileFromDescriptionAction :
         try {
             val response = api.chat(
                 chatRequest,
-                AppSettingsState.instance.smartModel.chatModel()
+                AppSettingsState.instance.smartModel.chatModelType()
             ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")

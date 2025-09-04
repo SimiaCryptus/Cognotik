@@ -9,10 +9,9 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 
 /**
@@ -41,7 +40,7 @@ open class PlanAheadMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val chatApi = api as? ChatClient
+            val chatApi = api as? ProvidersChatClient
                 ?: throw IllegalStateException("PlanAheadMode requires a ChatClient API implementation.")
             val apiClient = chatApi.getChildClient(task) // Create a task-specific child client
             apiClient.budget = planSettings.budget ?: 2.0 // Set budget on the child client
@@ -51,10 +50,11 @@ open class PlanAheadMode(
                 session = session,
                 dataStorage = ui.socketManager?.dataStorage!!,
                 ui = ui,
-                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.socketManager!!.dataStorage?.getSessionDir(
-                    user,
-                    session
-                )?.toPath() ?: File(".").toPath(),
+                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+                    ?: ui.socketManager!!.dataStorage?.getSessionDir(
+                        user,
+                        session
+                    )?.toPath() ?: File(".").toPath(),
                 planSettings = planSettings
             )
 
@@ -78,7 +78,7 @@ open class PlanAheadMode(
                 api = apiClient // Use the budgeted and task-specific client
             )
         } catch (e: Throwable) {
-            task.error(ui, e) // Report error on the current task
+            task.error(e) // Report error on the current task
             log.error("Error in execute", e)
         }
     }

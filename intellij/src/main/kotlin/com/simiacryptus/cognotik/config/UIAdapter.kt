@@ -3,7 +3,8 @@ package com.simiacryptus.cognotik.config
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.options.Configurable
 import com.simiacryptus.cognotik.util.UITools
-import org.slf4j.LoggerFactory
+import com.simiacryptus.cognotik.util.buildFormViaReflection
+import com.simiacryptus.util.LoggerFactory
 import javax.swing.JComponent
 
 abstract class UIAdapter<C : Any, S : Any>(
@@ -78,7 +79,7 @@ abstract class UIAdapter<C : Any, S : Any>(
     }
 
     open fun build(component: C): JComponent =
-        UITools.buildFormViaReflection(component, false)!!
+        component.buildFormViaReflection(false)!!
 
     open fun read(component: C, settings: S) {
         UITools.readKotlinUIViaReflection(settings, component, Any::class)

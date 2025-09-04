@@ -6,11 +6,10 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
@@ -21,7 +20,7 @@ class CommandAutoFixTask(
     class CommandAutoFixTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
-        model: ChatModel? = null,
+        model: ChatModelType? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 
@@ -61,7 +60,7 @@ class CommandAutoFixTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -108,6 +107,7 @@ class CommandAutoFixTask(
                             resultFn("All Commands completed")
                             semaphore.release()
                         }
+
                         else -> {
                             task.add(
                                 agent.ui.hrefLink("Ignore Error", "href-link cmd-button") {

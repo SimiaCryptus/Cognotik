@@ -4,10 +4,10 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.OpenAIModel
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -38,12 +38,13 @@ class ApiKeyServlet : HttpServlet() {
         )
         val action = req.getParameter("action")
         val apiKey = req.getParameter("apiKey")
+        val provider = req.getParameter("provider")
 
         when (action.lowercase(Locale.ROOT)) {
             "edit" -> {
                 val record = apiKeyRecords.find { it.apiKey == apiKey && it.owner == user.email }
                 if (record != null) {
-                    serveEditPage(resp, record)
+                    serveEditPage(req, resp, record)
                 } else {
                     resp.writer.write("API Key record not found")
                 }
@@ -62,15 +63,14 @@ class ApiKeyServlet : HttpServlet() {
             }
 
             "create" -> {
-
+                val userSettings = userSettingsManager.getUserSettings(user)
                 serveEditPage(
+                    req,
                     resp,
                     ApiKeyRecord(
                         user.email,
                         UUID.randomUUID().toString(),
-                        userSettingsManager.getUserSettings(user).apiKeys[APIProvider.OpenAI]
-                            ?: "",
-
+                        userSettings.apiKeys[APIProvider.valueOf(provider)] ?: "",
                         0.0,
                         ""
                     )
@@ -112,11 +112,12 @@ class ApiKeyServlet : HttpServlet() {
             } else if (record == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
             } else {
+                val userSettings = userSettingsManager.getUserSettings(user)
                 userSettingsManager.updateUserSettings(
-                    user, userSettingsManager.getUserSettings(user).copy(
+                    user, UserSettings(
                         apiKeys = mapOf(APIProvider.OpenAI to apiKey),
-
-                        apiBase = mapOf(APIProvider.OpenAI to "https://apps.simiacrypt.us/proxy")
+                        apiBase = mapOf(APIProvider.OpenAI to "https://apps.simiacrypt.us/proxy"),
+                        localTools = userSettings.localTools
                     )
                 )
                 resp.sendRedirect("/")
@@ -211,8 +212,10 @@ class ApiKeyServlet : HttpServlet() {
         )
     }
 
-    private fun serveEditPage(resp: HttpServletResponse, record: ApiKeyRecord) {
-        val usageSummary = ApplicationServices.usageManager.getUserUsageSummary(record.apiKey)
+    private fun serveEditPage(req: HttpServletRequest, resp: HttpServletResponse, record: ApiKeyRecord) {
+        val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
+        val usageSummary: Map<String, ApiModel.Usage> =
+            ApplicationServices.usageManager.getUserUsageSummary(user = userinfo!!)
 
         resp.writer.write(
             """
@@ -282,10 +285,10 @@ class ApiKeyServlet : HttpServlet() {
       <!-- Usage Summary -->
       <h2>Usage Summary</h2>
       ${
-                usageSummary.entries.joinToString { (model: OpenAIModel, usage: ApiModel.Usage) ->
+                usageSummary.entries.joinToString { (model: String, usage: ApiModel.Usage) ->
                     """
           <div>
-            <h3>${model.modelName}</h3>
+            <h3>${model}</h3>
             <p>total_tokens: ${usage.total_tokens}</p>
             <p>Cost: ${usage.cost}</p>
           </div>

@@ -9,9 +9,18 @@
     "maxTasksPerIteration": 3,
     "maxIterations": 100,
     "taskSettings": {
-      "InsightTask": { "enabled": true, "task_type": "InsightTask" },
-      "FileModificationTask": { "enabled": true, "task_type": "FileModificationTask" },
-      "RunShellCommandTask": { "enabled": false, "task_type": "RunShellCommandTask" }
+      "InsightTask": {
+        "enabled": true,
+        "task_type": "InsightTask"
+      },
+      "FileModificationTask": {
+        "enabled": true,
+        "task_type": "FileModificationTask"
+      },
+      "RunShellCommandTask": {
+        "enabled": false,
+        "task_type": "RunShellCommandTask"
+      }
     }
   }
 }

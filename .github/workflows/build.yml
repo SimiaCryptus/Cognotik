@@ -3,6 +3,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -13,17 +14,24 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
     outputs:
       version: ${{ steps.properties.outputs.version }}
       changelog: ${{ steps.properties.outputs.changelog }}
       pluginVerifierHomeDir: ${{ steps.properties.outputs.pluginVerifierHomeDir }}
+      artifact: ${{ steps.artifact.outputs.filename }}
     steps:
 
       - name: Maximize Build Space
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: Configure Git
         run: |
@@ -36,23 +44,46 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: 17
+          cache: gradle
 
       - name: Print Java version
         run: |
           java -version
           echo "JAVA_HOME=$JAVA_HOME"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+          cache-read-only: false
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Print Gradle version
-        run: ./gradlew --version
+      - name: Check for webapp directory and package-lock.json
+        id: check-webapp
+        run: |
+          if [ -f "webapp/package-lock.json" ]; then
+            echo "has-webapp=true" >> $GITHUB_OUTPUT
+            echo "webapp/package-lock.json exists"
+          else
+            echo "has-webapp=false" >> $GITHUB_OUTPUT
+            echo "webapp/package-lock.json does not exist"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-webapp.outputs.has-webapp == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: webapp/package-lock.json
 
       - name: Export Properties
         id: properties
@@ -94,6 +125,7 @@ jobs:
         with:
           name: ${{ steps.artifact.outputs.filename }}
           path: intellij/build/distributions/*
+          retention-days: 30
 
       - name: List uploaded artifacts
         run: |
@@ -105,30 +137,41 @@ jobs:
     runs-on: windows-latest
     needs: [ build ]
     env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: 17
+          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+
       - name: Print Java version
         run: |
           java -version
           echo "JAVA_HOME=$JAVA_HOME"
+
       - name: Install WiX Toolset
         run: |
           choco install wixtoolset -y
+
       - name: Ensure App Image Directory Exists
         shell: pwsh
         run: |
           if (-Not (Test-Path "build\\jpackage\\Cognotik")) {
               New-Item -ItemType Directory -Force -Path "build\\jpackage\\Cognotik"
           }
+
       - name: Update Cognotik Version
         shell: pwsh
         run: |
@@ -139,12 +182,10 @@ jobs:
           $updatedContent = $content -replace "libraryVersion\s*=\s*[0-9.]+", "libraryVersion = $version"
           Set-Content -Path $gradlePropertiesPath -Value $updatedContent
           Write-Output "Updated gradle.properties with new version"
-      - name: Make Gradle wrapper executable
-        run: |
-          # Ensure the wrapper is executable on Windows
-          chmod +x ./gradlew.bat
+
       - name: Build Windows MSI Installer
-        run: ./gradlew.bat :desktop:package
+        run: ./gradlew :desktop:package
+
       - name: List MSI artifacts
         run: |
           echo "MSI artifacts in jpackage directory:"
@@ -153,100 +194,144 @@ jobs:
           } else {
             Write-Output "desktop/build/jpackage directory not found."
           }
+
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
           name: skyenet-windows-installer
           path: desktop/build/jpackage/*.msi
+          retention-days: 30
+
   build-linux-installer:
     name: Build Linux Installer
     runs-on: ubuntu-latest
     needs: [ build ]
     env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
     steps:
       - name: Maximize Build Space
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Configure Git
         run: |
           git config --global init.defaultBranch main
           git --version
           echo "Git configuration:"
           git config --list
+
       - name: Fetch Sources
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: 17
+          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+
       - name: Print Java version
         run: |
           java -version
           echo "JAVA_HOME=$JAVA_HOME"
+
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
+
       - name: Build Linux DEB Installer
         run: ./gradlew :desktop:package
+
       - name: List DEB artifacts
         run: |
           echo "DEB artifacts in jpackage directory:"
           ls -la desktop/build/jpackage/*.deb || echo "No DEB files found"
+
       - name: Upload DEB artifact
         uses: actions/upload-artifact@v4
         with:
           name: skyenet-linux-installer
           path: desktop/build/jpackage/*.deb
+          retention-days: 30
+
   build-mac-installer:
     name: Build Mac Installer
     runs-on: macos-latest
     needs: [ build ]
     env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: 17
+          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+
       - name: Print Java version
         run: |
           java -version
           echo "JAVA_HOME=$JAVA_HOME"
+
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
+
       - name: Build Mac DMG Installer
         run: ./gradlew :desktop:package
+
       - name: List DMG artifacts
         run: |
           echo "DMG artifacts in jpackage directory:"
           ls -la desktop/build/jpackage/*.dmg || echo "No DMG files found"
+
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
         with:
           name: skyenet-mac-installer
           path: desktop/build/jpackage/*.dmg
+          retention-days: 30
 
   test:
     name: Test
     needs: [ build ]
     runs-on: ubuntu-latest
     env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
     steps:
 
       - name: Maximize Build Space
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: Configure Git
         run: |
@@ -259,12 +344,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: 17
+          cache: gradle
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
 
       - name: Print Java version
         run: |
@@ -280,7 +371,7 @@ jobs:
       - name: Run Tests
         run: |
           echo "Starting test execution..."
-          ./gradlew test check
+          ./gradlew test check -x :android:test -x :android:check
           echo "Test execution completed"
 
       - name: Collect Tests Result
@@ -289,17 +380,26 @@ jobs:
         with:
           name: tests-result
           path: intellij/build/reports/tests
+          retention-days: 7
 
   verify:
     name: Verify plugin
     needs: [ build ]
     runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
     steps:
 
       - name: Maximize Build Space
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: Configure Git
         run: |
@@ -312,6 +412,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Gradle Wrapper Validation
         uses: gradle/actions/wrapper-validation@v3
@@ -321,6 +422,7 @@ jobs:
         with:
           distribution: zulu
           java-version: 17
+          cache: gradle
 
       - name: Print Java version
         run: |
@@ -343,6 +445,8 @@ jobs:
         with:
           path: ${{ needs.build.outputs.pluginVerifierHomeDir }}/ides
           key: plugin-verifier-${{ hashFiles('intellij/build/listProductsReleases.txt') }}
+          restore-keys: |
+            plugin-verifier-
 
       - name: Run Plugin Verification tasks
         run: ./gradlew :intellij:verifyPlugin
@@ -353,6 +457,7 @@ jobs:
         with:
           name: pluginVerifier-result
           path: intellij/build/reports/pluginVerifier
+          retention-days: 7
 
 
 
@@ -361,6 +466,8 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: [ build, test, verify, build-windows-installer, build-linux-installer, build-mac-installer ]
     runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info -Dorg.gradle.jvmargs=-Xmx4g"
     permissions:
       contents: write
     steps:
@@ -369,6 +476,12 @@ jobs:
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: Configure Git
         run: |
@@ -381,6 +494,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Gradle Wrapper Validation
         uses: gradle/actions/wrapper-validation@v3
@@ -390,6 +504,7 @@ jobs:
         with:
           distribution: zulu
           java-version: 17
+          cache: gradle
 
       - name: Print Java version
         run: |
@@ -430,18 +545,21 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ steps.artifact.outputs.filename }}
+          name: ${{ needs.build.outputs.artifact }}
           path: ./artifact
+
       - name: Download Windows Installer
         uses: actions/download-artifact@v4
         with:
           name: skyenet-windows-installer
           path: ./windows-installer
+
       - name: Download Linux Installer
         uses: actions/download-artifact@v4
         with:
           name: skyenet-linux-installer
           path: ./linux-installer
+
       - name: Download Mac Installer
         uses: actions/download-artifact@v4
         with:
@@ -454,7 +572,7 @@ jobs:
         run: |
           echo "Uploading plugin asset..."
           gh release upload "v${{ needs.build.outputs.version }}" \
-            "./artifact/intellij-${{ needs.build.outputs.version }}/intellij-${{ needs.build.outputs.version }}.zip"
+            "./artifact/"*.zip
 
       - name: Upload Windows Installer Asset
         env:
@@ -470,6 +588,7 @@ jobs:
           echo "Found MSI file: $MSI_FILE"
           gh release upload "v${{ needs.build.outputs.version }}" \
             "$MSI_FILE"
+
       - name: Upload Linux Installer Asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -484,6 +603,7 @@ jobs:
           echo "Found DEB file: $DEB_FILE"
           gh release upload "v${{ needs.build.outputs.version }}" \
             "$DEB_FILE"
+
       - name: Upload Mac Installer Asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

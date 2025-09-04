@@ -1,26 +1,71 @@
 // cypress/support/page-objects/WelcomePage.js
 class WelcomePage {
     // Selectors
-    get userSettingsBtn() { return cy.get('#user-settings-btn'); }
-    get cognitiveMode() { return cy.get('#cognitive-mode'); }
-    get autoPlanMode() { return cy.get('input[name="cognitive-mode"][value="auto-plan"]'); }
-    get basicChatBtn() { return cy.get('#open-basic-chat'); }
-    get nextToTaskSettings() { return cy.get('#next-to-task-settings'); }
-    get nextToTaskSelection() { return cy.get('#next-to-task-selection'); }
-    get nextToLaunch() { return cy.get('#next-to-launch'); }
-    get launchSession() { return cy.get('#launch-session'); }
+    get userSettingsBtn() {
+        return cy.get('#user-settings-btn');
+    }
+
+    get cognitiveMode() {
+        return cy.get('#cognitive-mode');
+    }
+
+    get autoPlanMode() {
+        return cy.get('input[name="cognitive-mode"][value="auto-plan"]');
+    }
+
+    get basicChatBtn() {
+        return cy.get('#open-basic-chat');
+    }
+
+    get nextToTaskSettings() {
+        return cy.get('#next-to-task-settings');
+    }
+
+    get nextToTaskSelection() {
+        return cy.get('#next-to-task-selection');
+    }
+
+    get nextToLaunch() {
+        return cy.get('#next-to-launch');
+    }
+
+    get launchSession() {
+        return cy.get('#launch-session');
+    }
 
     // Auto-plan settings
-    get maxTaskHistory() { return cy.get('#max-task-history'); }
-    get maxTasksPerIteration() { return cy.get('#max-tasks-per-iteration'); }
+    get maxTaskHistory() {
+        return cy.get('#max-task-history');
+    }
+
+    get maxTasksPerIteration() {
+        return cy.get('#max-tasks-per-iteration');
+    }
 
     // Task settings
-    get modelSelection() { return cy.get('#model-selection'); }
-    get parsingModel() { return cy.get('#parsing-model'); }
-    get workingDir() { return cy.get('#working-dir'); }
-    get temperature() { return cy.get('#temperature'); }
-    get temperatureValue() { return cy.get('#temperature-value'); }
-    get autoFix() { return cy.get('#auto-fix'); }
+    get modelSelection() {
+        return cy.get('#model-selection');
+    }
+
+    get parsingModel() {
+        return cy.get('#parsing-model');
+    }
+
+    get workingDir() {
+        return cy.get('#working-dir');
+    }
+
+    get temperature() {
+        return cy.get('#temperature');
+    }
+
+    get temperatureValue() {
+        return cy.get('#temperature-value');
+    }
+
+    get autoFix() {
+        return cy.get('#auto-fix');
+    }
 
     // Methods
     visit() {

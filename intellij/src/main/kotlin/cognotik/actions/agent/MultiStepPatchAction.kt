@@ -2,49 +2,46 @@ package cognotik.actions.agent
 
 import ai.grazie.utils.mpp.UUID
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.set
 
 class MultiStepPatchAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -52,7 +49,7 @@ class MultiStepPatchAction : BaseAction() {
     val path = "/autodev"
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        UITools.getSelectedFile(event) ?: return false
+        event.getSelectedFile() ?: return false
         return true
     }
 
@@ -63,8 +60,8 @@ class MultiStepPatchAction : BaseAction() {
             try {
                 val session = Session.newGlobalID()
                 val storage =
-                    ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome) as DataStorage?
-                val selectedFile = UITools.getSelectedFolder(e)
+                    ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot) as DataStorage?
+                val selectedFile = e.getSelectedFolder()
                 if (null != storage && null != selectedFile) {
                     DataStorage.sessionPaths[session] = selectedFile.toFile
                 }
@@ -117,16 +114,16 @@ class MultiStepPatchAction : BaseAction() {
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
-                model = AppSettingsState.instance.smartModel.chatModel()
+                model = AppSettingsState.instance.smartModel.chatModelType()
             )
-            if (api is ChatClient) api.budget = settings.budget ?: DEFAULT_BUDGET
+            if (api is ProvidersChatClient) api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
                 api = api,
                 session = session,
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                 event = event,
             ).start(
                 userMessage = userMessage,
@@ -136,7 +133,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel? = AppSettingsState.instance.smartModel.chatModel(),
+            val model: ChatModelType? = AppSettingsState.instance.smartModel.chatModelType(),
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -150,8 +147,8 @@ class MultiStepPatchAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModel,
-        val parsingModel: ChatModel,
+        val model: ChatModelType,
+        val parsingModel: ChatModelType,
         val event: AnActionEvent,
     ) {
         val actors = mapOf(
@@ -197,7 +194,7 @@ class MultiStepPatchAction : BaseAction() {
             }
 
             val task = ui.newTask()
-            val api = (api as ChatClient).getChildClient(task)
+            val api = (api as ChatClientInterface).getChildClient(task)
 
             val toInput = { it: String -> listOf(codeSummary(), it) }
             val architectureResponse = Discussable(
@@ -229,7 +226,7 @@ class MultiStepPatchAction : BaseAction() {
 
             try {
                 val taskTabs = TabbedDisplay(task)
-                architectureResponse.obj.tasks.map { (paths, description) ->
+                architectureResponse?.obj?.tasks?.map { (paths, description) ->
                     var description = (description ?: UUID.random().toString()).trim()
 
                     while (description.startsWith("#")) {
@@ -284,12 +281,12 @@ class MultiStepPatchAction : BaseAction() {
                                     )
                                 )
                             } catch (e: Exception) {
-                                task.error(ui, e)
+                                task.error(e)
                                 ""
                             }
                         }
                     }
-                }.toTypedArray().forEach { it.get() }
+                }?.toTypedArray()?.forEach { it.get() }
             } catch (e: Exception) {
                 log.warn("Error", e)
             }

@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors

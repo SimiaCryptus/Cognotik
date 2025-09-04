@@ -90,10 +90,10 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
 
         cy.log('DEMO_FLOW: Waiting for second processing tab (detailed processing view)');
         waitScrollAndGet(() =>
-            cy.get('[data-testid="message-list"]').eq(0)
-                .find('> .response').eq(1)
-                .find('> .message-body > .tabs-container > [data-tab="0"]')
-                .find('> div > .tabs-container > .tabs > [data-for-tab="1"]', {timeout: stdTimeout})
+                cy.get('[data-testid="message-list"]').eq(0)
+                    .find('> .response').eq(1)
+                    .find('> .message-body > .tabs-container > [data-tab="0"]')
+                    .find('> div > .tabs-container > .tabs > [data-for-tab="1"]', {timeout: stdTimeout})
             , stdTimeout).click();
         cy.log('DEMO_FLOW: Second processing tab clicked - showing detailed task execution');
 
@@ -102,11 +102,11 @@ describe('Cognotik - Comprehensive Demo Walkthrough', () => {
                 cy.narrate('insight_analysis_capabilities');
             }
             waitScrollAndGet(() =>
-                cy.get('[data-testid="message-list"]').eq(0)
-                    .find('> .response').eq(1)
-                    .find('> .message-body > .tabs-container > [data-tab="0"]')
-                    .find('> div > .tabs-container > [data-tab="1"]')
-                    .find('> div > .tabs-container > .tabs > [data-for-tab="' + index + '"]', {timeout: stdTimeout})
+                    cy.get('[data-testid="message-list"]').eq(0)
+                        .find('> .response').eq(1)
+                        .find('> .message-body > .tabs-container > [data-tab="0"]')
+                        .find('> div > .tabs-container > [data-tab="1"]')
+                        .find('> div > .tabs-container > .tabs > [data-for-tab="' + index + '"]', {timeout: stdTimeout})
                 , stdTimeout).click();
             cy.log(`DEMO_FLOW: Page ${index} opened`);
             cy.wait(1000);

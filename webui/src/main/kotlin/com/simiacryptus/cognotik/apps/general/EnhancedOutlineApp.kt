@@ -15,24 +15,24 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
 data class PhaseConfig(
     val extract: String,
     val expansionQuestion: String,
-    val model: ChatModel
+    val model: ChatModelType
 )
 
 data class EnhancedSettings(
-    val parsingModel: ChatModel,
+    val parsingModel: ChatModelType,
     val temperature: Double = 0.3,
     val minTokensForExpansion: Int = 16,
     val showProjector: Boolean = true,
@@ -108,7 +108,7 @@ class EnhancedOutlineAgent(
     val user: User?,
     val temperature: Double,
     val phaseConfigs: List<PhaseConfig>,
-    val parsingModel: ChatModel,
+    val parsingModel: ChatModelType,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -142,7 +142,7 @@ class EnhancedOutlineAgent(
 
     fun buildMap() {
         val task = ui.newTask(false)
-        val childApi = (api as ChatClient).getChildClient(task)
+        val childApi = (api as ChatClientInterface).getChildClient(task)
         tabbedDisplay["Content"] = task.placeholder
         val outlineManager = try {
             task.echo(this.userMessage.renderMarkdown)
@@ -152,7 +152,7 @@ class EnhancedOutlineAgent(
             task.complete()
             OutlineManager(OutlineManager.OutlinedText(root.text, root.obj))
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
             throw e
         }
 
@@ -214,7 +214,7 @@ class EnhancedOutlineAgent(
             projectorMessage.complete(response)
         } catch (e: Exception) {
             log.warn("Error", e)
-            projectorMessage.error(ui, e)
+            projectorMessage.error(e)
         }
     }
 
@@ -232,7 +232,7 @@ class EnhancedOutlineAgent(
             finalRenderMessage.complete(finalEssay.renderMarkdown)
         } catch (e: Exception) {
             log.warn("Error", e)
-            finalRenderMessage.error(ui, e)
+            finalRenderMessage.error(e)
         }
     }
 
@@ -249,7 +249,7 @@ class EnhancedOutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModel>,
+        models: List<ChatModelType>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -257,13 +257,13 @@ class EnhancedOutlineAgent(
         if (terminalNodeMap.isEmpty()) {
             val errorMessage = "No terminal nodes: ${node.text}"
             log.warn(errorMessage)
-            task.error(ui, RuntimeException(errorMessage))
+            task.error(RuntimeException(errorMessage))
             return
         }
         for ((item, childNode) in terminalNodeMap) {
             activeThreadCounter.incrementAndGet()
             val subTask = ui.newTask(false)
-            val childApi = (api as ChatClient).getChildClient(subTask)
+            val childApi = (api as ChatClientInterface).getChildClient(subTask)
             tabbedDisplay[item] = subTask.placeholder
             ApplicationServices.clientManager.getPool(session, user).submit {
                 try {
@@ -275,13 +275,13 @@ class EnhancedOutlineAgent(
                             val existingNode = manager.expansionMap[childNode]!!
                             val errorMessage = "Conflict: ${existingNode} vs ${newNode}"
                             log.warn(errorMessage)
-                            subTask.error(ui, RuntimeException(errorMessage))
+                            subTask.error(RuntimeException(errorMessage))
                         }
                     }
                     if (models.size > 1) processRecursive(manager, newNode, models.drop(1), subTask)
                 } catch (e: Exception) {
                     log.warn("Error in processRecursive", e)
-                    subTask.error(ui, e)
+                    subTask.error(e)
                 } finally {
                     activeThreadCounter.decrementAndGet()
                 }
@@ -295,7 +295,7 @@ class EnhancedOutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModel,
+        model: ChatModelType,
         api: API,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
@@ -325,8 +325,8 @@ object EnhancedOutlineActors {
 
     fun actorMap(
         temperature: Double,
-        firstLevelModel: ChatModel,
-        parsingModel: ChatModel,
+        firstLevelModel: ChatModelType,
+        parsingModel: ChatModelType,
         phaseConfigs: List<PhaseConfig>
     ) = mapOf(
         ActorType.INITIAL to enhancedInitialAuthor(
@@ -341,8 +341,8 @@ object EnhancedOutlineActors {
 
     private fun enhancedInitialAuthor(
         temperature: Double,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: ChatModelType,
+        parsingModel: ChatModelType,
         phaseConfig: PhaseConfig?
     ) = ParsedActor(
         resultClass = NodeList::class.java,
@@ -360,7 +360,7 @@ object EnhancedOutlineActors {
 
     private fun enhancedExpansionAuthor(
         temperature: Double,
-        parsingModel: ChatModel,
+        parsingModel: ChatModelType,
         phaseConfig: PhaseConfig?
     ) = ParsedActor(
         resultClass = NodeList::class.java,
@@ -374,7 +374,7 @@ object EnhancedOutlineActors {
 
     private fun enhancedFinalWriter(
         temperature: Double,
-        model: ChatModel,
+        model: ChatModelType,
         maxIterations: Int
     ) = LargeOutputActor(
         model = model,

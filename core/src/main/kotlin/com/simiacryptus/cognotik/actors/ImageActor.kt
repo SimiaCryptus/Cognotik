@@ -2,12 +2,12 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.ImageGenerationRequest
-import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toChatMessage
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import java.awt.image.BufferedImage
@@ -17,7 +17,7 @@ import javax.imageio.ImageIO
 open class ImageActor(
     prompt: String = "Transform the user request into an image generation prompt that the user will like",
     name: String? = null,
-    textModel: TextModel,
+    textModel: LLMModel,
     val imageModel: ImageModels = ImageModels.DallE2,
     temperature: Double = 0.3,
     val width: Int = 1024,
@@ -82,7 +82,7 @@ open class ImageActor(
         return ImageResponseImpl(text, api = this.openAI ?: throw RuntimeException("No API"))
     }
 
-    override fun withModel(model: ChatModel): ImageActor = ImageActor(
+    override fun withModel(model: ChatModelType): ImageActor = ImageActor(
         prompt = prompt,
         name = name,
         textModel = model,

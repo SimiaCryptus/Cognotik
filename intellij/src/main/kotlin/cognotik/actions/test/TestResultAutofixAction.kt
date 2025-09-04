@@ -1,7 +1,7 @@
 package cognotik.actions.test
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.execution.testframework.AbstractTestProxy
 import com.intellij.execution.testframework.sm.runner.SMTestProxy
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -24,10 +24,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.util.JsonUtil
 import org.jetbrains.annotations.NotNull
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -211,8 +211,8 @@ class TestResultAutofixAction : BaseAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartModel.chatModel(),
-                        parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                        model = AppSettingsState.instance.smartModel.chatModelType(),
+                        parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                     ).answer(listOf(testInfo), api = IdeaChatClient.instance)
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")
@@ -252,7 +252,7 @@ class TestResultAutofixAction : BaseAction() {
                     return@Retryable task.placeholder
                 } catch (e: Exception) {
                     log.error("Error in autofix process: ${e.message}", e)
-                    task.error(ui, e)
+                    task.error(e)
                     throw e
                 }
             }
@@ -283,7 +283,7 @@ $projectStructure
                 The diff format should use + for line additions, - for line deletions.
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel()
+                model = AppSettingsState.instance.smartModel.chatModelType()
             ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
             task.add("Processing suggested fixes...")
 

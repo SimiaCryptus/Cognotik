@@ -4,8 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.simiacryptus.cognotik.SystemTrayManager.Companion.confirm
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import org.slf4j.LoggerFactory
-import scala.reflect.internal.util.NoPosition.showError
+import com.simiacryptus.util.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.BorderLayout.*
 import java.awt.Desktop
@@ -537,7 +536,12 @@ object UpdateManager {
                         doUpdate()
                     } catch (e: Exception) {
                         log.error("Failed to update: ${e.message}", e)
-                        showError("Failed to update")
+                        JOptionPane.showMessageDialog(
+                            null,
+                            "Update failed: ${e.message}",
+                            "Update Error",
+                            JOptionPane.ERROR_MESSAGE
+                        )
                     }
                 }.start()
             }

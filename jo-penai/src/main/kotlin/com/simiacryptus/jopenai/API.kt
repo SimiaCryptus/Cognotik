@@ -1,3 +1,3 @@
 package com.simiacryptus.jopenai
 
-open class API
+interface API

@@ -3,8 +3,7 @@ package com.simiacryptus.cognotik.plan
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import java.io.File
 import java.nio.file.Path
 
@@ -54,12 +53,12 @@ abstract class AbstractTask<T : TaskConfigBase>(
         agent: PlanCoordinator,
         messages: List<String> = listOf(),
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings,
     )
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(AbstractTask::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AbstractTask::class.java)
     }
 }

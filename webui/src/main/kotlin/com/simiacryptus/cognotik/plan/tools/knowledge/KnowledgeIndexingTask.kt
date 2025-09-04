@@ -1,17 +1,18 @@
 package com.simiacryptus.cognotik.plan.tools.knowledge
 
-import com.simiacryptus.cognotik.apps.parse.CodeParsingModel
-import com.simiacryptus.cognotik.apps.parse.DocumentParsingModel
-import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.saveAsBinary
+import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFile
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
+import com.simiacryptus.jopenai.models.EmbeddingModel
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class KnowledgeIndexingTask(
     planSettings: PlanSettings,
@@ -21,10 +22,6 @@ class KnowledgeIndexingTask(
     class KnowledgeIndexingTaskConfigData(
         @Description("The file paths to process and index")
         val file_paths: List<String>,
-        @Description("The type of parsing to use (document, code)")
-        val parsing_type: String = "document",
-        @Description("The chunk size for parsing (default 0.1)")
-        val chunk_size: Double = 0.1,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -46,47 +43,45 @@ class KnowledgeIndexingTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
         val filePaths = taskConfig?.file_paths ?: return
-        val files = filePaths.map { File(it) }.filter { it.exists() }
+        val files = filePaths.map { path ->
+            File(path).also { file ->
+                if (!file.exists()) {
+                    log.warn("File does not exist: $path")
+                }
+            }
+        }.filter { it.exists() }
 
         if (files.isEmpty()) {
-            val result = "No valid files found to process"
+            val result = buildString {
+                appendLine("# No Valid Files Found")
+                appendLine()
+                appendLine("The following paths were specified but could not be found:")
+                filePaths.forEach { path ->
+                    appendLine("* $path")
+                }
+            }
             task.add(MarkdownUtil.renderMarkdown(result, ui = agent.ui))
             resultFn(result)
             return
         }
 
-        val threadPool = Executors.newFixedThreadPool(8)
+        val threadPool = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors().coerceAtMost(16)
+        )
         try {
-            val parsingModel = when (taskConfig.parsing_type.lowercase()) {
-                "code" -> CodeParsingModel(taskSettings.model ?: planSettings.defaultModel, taskConfig.chunk_size)
-                else -> DocumentParsingModel(taskSettings.model ?: planSettings.defaultModel, taskConfig.chunk_size)
-            }
-
-            val progressState = ProgressState()
-            var currentProgress = 0.0
-            progressState.onUpdate += {
-                val newProgress = it.progress / it.max
-                if (newProgress != currentProgress) {
-                    currentProgress = newProgress
-                    task.add(
-                        MarkdownUtil.renderMarkdown(
-                            "Processing: ${(currentProgress * 100).toInt()}%",
-                            ui = agent.ui
-                        )
-                    )
-                }
-            }
-
-            saveAsBinary(
-                openAIClient = TODO(),
+            val progressState = ProgressState.progressBar(task)
+            val embeddingClient = OllamaEmbeddingClient(workPool = threadPool)
+            indexJsonFile(
+                embeddingClient = embeddingClient,
                 pool = threadPool,
                 progressState = progressState,
-                inputPaths = files.map { it.absolutePath }.toTypedArray()
+                inputPaths = files.map { it.absolutePath }.toTypedArray(),
+                model = EmbeddingModel.Large
             )
 
             val result = buildString {
@@ -101,9 +96,18 @@ class KnowledgeIndexingTask(
             resultFn(result)
         } finally {
             threadPool.shutdown()
+            try {
+                if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                    threadPool.shutdownNow()
+                }
+            } catch (e: InterruptedException) {
+                threadPool.shutdownNow()
+                Thread.currentThread().interrupt()
+            }
         }
     }
 
     companion object {
+        private val log = LoggerFactory.getLogger(KnowledgeIndexingTask::class.java)
     }
 }

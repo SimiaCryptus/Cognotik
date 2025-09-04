@@ -1,7 +1,10 @@
 package com.simiacryptus.cognotik.apps.graph
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.PlanCoordinator
+import com.simiacryptus.cognotik.plan.PlanProcessingState
+import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.platform.Session
@@ -11,11 +14,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 
 /**
@@ -50,7 +52,7 @@ open class GraphOrderedPlanMode(
     override fun contextData(): List<String> = emptyList()
 
     private fun execute(userMessage: String, task: SessionTask) {
-        val apiClient = (api as ChatClient).getChildClient(task)
+        val apiClient = (api as ChatClientInterface).getChildClient(task)
         try {
             apiClient.budget = planSettings.budget
             task.add("Reading graph file: $graphFile")
@@ -90,7 +92,7 @@ open class GraphOrderedPlanMode(
                     )).let(::renderMarkdown))
             task.add("Plan execution completed")
         } catch (e: Exception) {
-            task.error(ui, e)
+            task.error(e)
             task.add("Error during ordered planning: ${e.message}")
             log.error("Error during ordered planning: ${e.message}", e)
         }
@@ -100,7 +102,7 @@ open class GraphOrderedPlanMode(
         cumulativeTasks: MutableMap<String, TaskConfigBase>,
         graphFileContent: String,
         userMessage: String,
-        api: ChatClient
+        api: ChatClientInterface
     ) {
         log.debug("Starting dependency analysis for ${cumulativeTasks.size} tasks")
 

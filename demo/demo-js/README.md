@@ -1,6 +1,7 @@
 # Cognotik Demo - JavaScript Testing Suite
 
-A comprehensive testing framework for the Cognotik AI assistant interface, featuring unit tests, end-to-end tests, and cross-browser compatibility testing.
+A comprehensive testing framework for the Cognotik AI assistant interface, featuring unit tests, end-to-end tests, and
+cross-browser compatibility testing.
 
 ## 📋 Table of Contents
 
@@ -20,7 +21,9 @@ A comprehensive testing framework for the Cognotik AI assistant interface, featu
 
 ## 🎯 Overview
 
-This testing suite provides comprehensive coverage for the Cognotik welcome interface, ensuring reliability, accessibility, and cross-browser compatibility. The suite includes both unit tests using Jest and end-to-end tests using Cypress.
+This testing suite provides comprehensive coverage for the Cognotik welcome interface, ensuring reliability,
+accessibility, and cross-browser compatibility. The suite includes both unit tests using Jest and end-to-end tests using
+Cypress.
 
 ### Key Components Tested
 
@@ -35,6 +38,7 @@ This testing suite provides comprehensive coverage for the Cognotik welcome inte
 ## ✨ Features
 
 ### Testing Capabilities
+
 - **Unit Testing**: Component-level testing with Jest
 - **E2E Testing**: Full workflow testing with Cypress
 - **Cross-Browser Testing**: Chrome, Firefox, Edge compatibility
@@ -44,6 +48,7 @@ This testing suite provides comprehensive coverage for the Cognotik welcome inte
 - **Error Handling**: Comprehensive error scenario coverage
 
 ### Development Tools
+
 - **Page Object Model**: Maintainable test structure
 - **Custom Commands**: Reusable test utilities
 - **Mock Data**: Fixtures for consistent testing
@@ -53,16 +58,19 @@ This testing suite provides comprehensive coverage for the Cognotik welcome inte
 ## 🔧 Prerequisites
 
 ### System Requirements
+
 - **Node.js**: Version 16.0 or higher
 - **npm**: Version 8.0 or higher
 - **Git**: For version control
 
 ### Browser Requirements
+
 - **Chrome**: Version 90+ (recommended for development)
 - **Firefox**: Version 88+
 - **Edge**: Version 90+
 
 ### Development Environment
+
 ```bash
 # Check Node.js version
 node --version  # Should be 16.0+
@@ -74,12 +82,14 @@ npm --version   # Should be 8.0+
 ## 📦 Installation
 
 ### 1. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd demo/demo-js
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 # Install all dependencies
 npm install
@@ -89,6 +99,7 @@ npm install --save-dev jest @testing-library/jest-dom cypress eslint
 ```
 
 ### 3. Install Cypress (if not included)
+
 ```bash
 # Install Cypress globally (optional)
 npm install -g cypress
@@ -98,6 +109,7 @@ npx cypress install
 ```
 
 ### 4. Verify Installation
+
 ```bash
 # Run a quick test to verify setup
 npm run test:unit -- --passWithNoTests
@@ -139,16 +151,19 @@ demo/demo-js/
 ## 🧪 Testing Framework
 
 ### Unit Testing (Jest)
+
 - **Framework**: Jest with Testing Library
 - **Purpose**: Component logic and utility function testing
 - **Coverage**: DOM manipulation, data validation, state management
 
 ### End-to-End Testing (Cypress)
+
 - **Framework**: Cypress
 - **Purpose**: Full user workflow testing
 - **Coverage**: User interactions, API integration, navigation flows
 
 ### Page Object Model
+
 ```javascript
 // Example usage
 import { WelcomePage, UserSettingsModal } from '../support/page-objects';
@@ -168,6 +183,7 @@ userSettings
 ## 🚀 Running Tests
 
 ### Quick Start
+
 ```bash
 # Run all tests
 npm test
@@ -185,6 +201,7 @@ npm run test:e2e:open
 ### Detailed Test Commands
 
 #### Unit Tests
+
 ```bash
 # Run unit tests with coverage
 npm run test:coverage
@@ -197,6 +214,7 @@ npm run test:unit -- tests/specific-test.js
 ```
 
 #### End-to-End Tests
+
 ```bash
 # Run E2E tests headlessly
 npm run test:e2e:headless
@@ -213,6 +231,7 @@ npx cypress run --config viewportWidth=375,viewportHeight=667
 ```
 
 #### Cross-Browser Testing
+
 ```bash
 # Test in Chrome
 npm run test:e2e:chrome
@@ -224,8 +243,8 @@ npm run test:e2e:firefox
 npm run test:e2e -- --browser chrome,firefox,edge
 ```
 
-
 #### Running a demo for recording
+
 ```shell
 npx cypress run --browser chrome --spec "cypress/e2e/demos/demo_launcher_introduction.cy.js" --headed --no-runner-ui
 ```
@@ -233,7 +252,9 @@ npx cypress run --browser chrome --spec "cypress/e2e/demos/demo_launcher_introdu
 ## 📊 Test Categories
 
 ### 1. User Settings Tests (`user-settings.cy.js`)
+
 Tests the user settings modal functionality:
+
 - API key configuration
 - Settings persistence
 - Validation and error handling
@@ -250,42 +271,54 @@ it('should save API keys to localStorage', () => {
 ```
 
 ### 2. Complete Workflow Tests (`complete-workflow.cy.js`)
+
 Tests end-to-end user journeys:
+
 - Full configuration workflow
 - Auto-plan setup and launch
 - Basic chat configuration
 - Navigation between steps
 
 ### 3. Accessibility Tests (`accessibility.cy.js`)
+
 Ensures WCAG compliance:
+
 - ARIA labels and roles
 - Keyboard navigation
 - Color contrast
 - Screen reader compatibility
 
 ### 4. Responsive Design Tests (`responsive.cy.js`)
+
 Tests across different viewports:
+
 - Mobile (375x667)
 - Tablet (768x1024)
 - Desktop (1280x720)
 - Large Desktop (1920x1080)
 
 ### 5. Error Handling Tests (`error-handling.cy.js`)
+
 Tests error scenarios:
+
 - Missing API keys
 - Network failures
 - Invalid configurations
 - Server errors
 
 ### 6. Performance Tests (`performance.cy.js`)
+
 Measures application performance:
+
 - Page load times
 - API response times
 - Memory usage
 - Rendering performance
 
 ### 7. Cross-Browser Tests (`cross-browser.cy.js`)
+
 Ensures compatibility across browsers:
+
 - Chrome compatibility
 - Firefox compatibility
 - Edge compatibility
@@ -294,6 +327,7 @@ Ensures compatibility across browsers:
 ## ⚙️ Configuration
 
 ### Cypress Configuration (`cypress.config.js`)
+
 ```javascript
 module.exports = defineConfig({
   e2e: {
@@ -308,6 +342,7 @@ module.exports = defineConfig({
 ```
 
 ### Jest Configuration (in `package.json`)
+
 ```json
 {
   "jest": {
@@ -323,6 +358,7 @@ module.exports = defineConfig({
 ```
 
 ### ESLint Configuration (`.eslintrc.js`)
+
 ```javascript
 module.exports = {
   env: {
@@ -340,6 +376,7 @@ module.exports = {
 ### 1. Writing New Tests
 
 #### Unit Test Example
+
 ```javascript
 // tests/user-settings.test.js
 import { saveUserSettings } from '../src/user-settings.js';
@@ -358,6 +395,7 @@ describe('User Settings', () => {
 ```
 
 #### E2E Test Example
+
 ```javascript
 // cypress/e2e/new-feature.cy.js
 describe('New Feature', () => {
@@ -379,6 +417,7 @@ describe('New Feature', () => {
 ```
 
 ### 2. Using Custom Commands
+
 ```javascript
 // Custom command usage
 cy.clearAppData();                    // Clear all storage
@@ -392,6 +431,7 @@ cy.mockApiResponses();                // Mock API calls
 ```
 
 ### 3. Using Page Objects
+
 ```javascript
 import { WelcomePage } from '../support/page-objects';
 
@@ -410,6 +450,7 @@ page
 ```
 
 ### 4. Test Data Management
+
 ```javascript
 // Using fixtures
 cy.fixture('user-settings').then((settings) => {
@@ -428,6 +469,7 @@ const testData = {
 ## 🔧 CI/CD Integration
 
 ### GitHub Actions Example
+
 ```yaml
 # .github/workflows/test.yml
 name: Test Suite
@@ -464,6 +506,7 @@ jobs:
 ```
 
 ### Docker Integration
+
 ```dockerfile
 # Dockerfile.test
 FROM cypress/browsers:node18.12.0-chrome107-ff107
@@ -482,6 +525,7 @@ RUN npm run test:e2e:headless
 ### Common Issues
 
 #### 1. Cypress Installation Issues
+
 ```bash
 # Clear Cypress cache
 npx cypress cache clear
@@ -495,6 +539,7 @@ npx cypress verify
 ```
 
 #### 2. Test Timeouts
+
 ```javascript
 // Increase timeout for specific test
 cy.get('#slow-element', { timeout: 20000 }).should('be.visible');
@@ -504,6 +549,7 @@ defaultCommandTimeout: 15000
 ```
 
 #### 3. Flaky Tests
+
 ```javascript
 // Add retry logic
 it('flaky test', { retries: 2 }, () => {
@@ -517,6 +563,7 @@ cy.wait('@apiCall');
 ```
 
 #### 4. Browser Compatibility Issues
+
 ```javascript
 // Check browser support
 cy.window().then((win) => {
@@ -527,6 +574,7 @@ cy.window().then((win) => {
 ```
 
 ### Debug Mode
+
 ```bash
 # Run Cypress in debug mode
 DEBUG=cypress:* npx cypress run
@@ -536,6 +584,7 @@ npx cypress run --spec "cypress/e2e/debug-test.cy.js" --headed --no-exit
 ```
 
 ### Performance Issues
+
 ```bash
 # Run tests with performance monitoring
 npm run test:e2e -- --config video=false,screenshotOnRunFailure=false
@@ -547,6 +596,7 @@ node --max-old-space-size=4096 node_modules/.bin/cypress run
 ## 🤝 Contributing
 
 ### Code Style Guidelines
+
 - Use ESLint configuration provided
 - Follow Page Object Model for E2E tests
 - Write descriptive test names
@@ -554,6 +604,7 @@ node --max-old-space-size=4096 node_modules/.bin/cypress run
 - Add comments for complex test logic
 
 ### Pull Request Process
+
 1. **Fork the repository**
 2. **Create feature branch**: `git checkout -b feature/new-tests`
 3. **Write tests**: Follow existing patterns
@@ -562,12 +613,14 @@ node --max-old-space-size=4096 node_modules/.bin/cypress run
 6. **Submit PR**: Include test coverage information
 
 ### Test Coverage Goals
+
 - **Unit Tests**: 80%+ code coverage
 - **E2E Tests**: 100% critical path coverage
 - **Cross-Browser**: Chrome, Firefox, Edge support
 - **Accessibility**: WCAG 2.1 AA compliance
 
 ### Adding New Test Categories
+
 1. Create new test file in appropriate directory
 2. Follow naming convention: `feature-name.cy.js` or `feature-name.test.js`
 3. Add to test suite documentation

@@ -8,7 +8,7 @@ plugins {
 dependencies {
     val testImplementation by configurations
     val testRuntimeOnly by configurations
-    
+
     testImplementation(platform("org.junit:junit-bom:5.10.1"))
     testImplementation("org.junit.jupiter:junit-jupiter-api")
     testImplementation("org.junit.jupiter:junit-jupiter-params")

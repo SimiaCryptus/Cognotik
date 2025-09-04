@@ -9,18 +9,17 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
@@ -35,19 +34,21 @@ open class CodingAgent<T : Interpreter>(
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
-    val model: TextModel,
+    val model: LLMModel,
     private val mainTask: SessionTask,
-    val retryable : Boolean = true,
+    val retryable: Boolean = true,
 ) {
 
-    open val actor by lazy { CodingActor(
-        interpreter,
-        symbols = symbols,
-        temperature = temperature,
-        details = details,
-        model = model,
-        fallbackModel = model as ChatModel
-    ) }
+    open val actor by lazy {
+        CodingActor(
+            interpreter,
+            symbols = symbols,
+            temperature = temperature,
+            details = details,
+            model = model,
+            fallbackModel = model as ChatModelType
+        )
+    }
 
     open val canPlay by lazy {
         ApplicationServices.authorizationManager.isAuthorized(
@@ -64,7 +65,7 @@ open class CodingAgent<T : Interpreter>(
             start(codeRequest, mainTask)
         } catch (e: Throwable) {
             log.warn("Error", e)
-            mainTask.error(ui, e)
+            mainTask.error(e)
         }
     }
 
@@ -73,7 +74,7 @@ open class CodingAgent<T : Interpreter>(
         task: SessionTask = mainTask,
     ) {
         val task = ui.newTask(root = false).apply { task.complete(placeholder) }
-        if(retryable) {
+        if (retryable) {
             Retryable(ui, task) {
                 val task = ui.newTask(root = false)
                 ui.socketManager?.scheduledThreadPoolExecutor!!.schedule({
@@ -84,7 +85,7 @@ open class CodingAgent<T : Interpreter>(
                             statusSB?.clear()
                         } catch (e: Throwable) {
                             log.warn("Error", e)
-                            task.error(ui, e)
+                            task.error(e)
                         } finally {
                             task.complete()
                         }
@@ -93,16 +94,16 @@ open class CodingAgent<T : Interpreter>(
                 task.placeholder
             }
         } else {
-                try {
-                    val statusSB = task.add("Running...")
-                    displayCode(task, codeRequest)
-                    statusSB?.clear()
-                } catch (e: Throwable) {
-                    log.warn("Error", e)
-                    task.error(ui, e)
-                } finally {
-                    task.complete()
-                }
+            try {
+                val statusSB = task.add("Running...")
+                displayCode(task, codeRequest)
+                statusSB?.clear()
+            } catch (e: Throwable) {
+                log.warn("Error", e)
+                task.error(e)
+            } finally {
+                task.complete()
+            }
         }
     }
 
@@ -118,7 +119,7 @@ open class CodingAgent<T : Interpreter>(
                 actor.CodeResultImpl(
                     messages = actor.chatMessages(codeRequest),
                     input = codeRequest,
-                    api = api as ChatClient,
+                    api = api as ChatClientInterface,
                     givenCode = lastUserMessage.removePrefix("```").removeSuffix("```")
                 )
             } else {
@@ -139,7 +140,7 @@ open class CodingAgent<T : Interpreter>(
             displayCode(task, response)
             displayFeedback(task, append(codeRequest, response), response)
         } catch (e: Throwable) {
-            task.error(ui, e)
+            task.error(e)
             log.warn("Error", e)
         }
     }
@@ -156,7 +157,8 @@ open class CodingAgent<T : Interpreter>(
     ) {
         task.expanded(
             "Code",
-          response.renderedResponse ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```".renderMarkdown
+            response.renderedResponse
+                ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```".renderMarkdown
         )
     }
 
@@ -228,7 +230,7 @@ open class CodingAgent<T : Interpreter>(
             )
         } catch (e: Throwable) {
             log.warn("Error", e)
-            task.error(ui, e)
+            task.error(e)
         }
     }
 
@@ -254,9 +256,9 @@ open class CodingAgent<T : Interpreter>(
         e: Throwable, task: SessionTask, request: CodingActor.CodeRequest, response: CodeResult
     ) {
         val message = when {
-          e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
-          e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
-          else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
+            e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
+            e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
+            else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
         }
         task.add(message, true, "div", "error")
         displayCode(

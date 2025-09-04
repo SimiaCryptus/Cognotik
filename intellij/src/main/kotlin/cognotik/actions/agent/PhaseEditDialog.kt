@@ -4,13 +4,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import javax.swing.JComponent
 
 class PhaseEditDialog(
     project: Project?,
     private val phase: EnhancedOutlineConfigDialog.PhaseSettings,
-    private val availableModels: List<Pair<String, ChatModel>>
+    private val availableModels: List<Pair<String, ChatModelType>>
 ) : DialogWrapper(project) {
     companion object {
         private const val COLUMNS_LARGE = 50
@@ -30,7 +30,7 @@ class PhaseEditDialog(
             comboBox(availableModels).apply {
                 component.selectedItem = model
                 component.addActionListener {
-                    model = component.selectedItem as ChatModel
+                    model = component.selectedItem as ChatModelType
                 }
             }
         }

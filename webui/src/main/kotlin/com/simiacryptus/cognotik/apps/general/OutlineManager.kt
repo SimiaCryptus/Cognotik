@@ -175,6 +175,6 @@ open class OutlineManager(val rootNode: OutlinedText) {
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(OutlineManager::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(OutlineManager::class.java)
     }
 }

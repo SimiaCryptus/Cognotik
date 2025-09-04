@@ -8,12 +8,13 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils.fuzzyResolveToRelativePath
+import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -25,7 +26,7 @@ open class AddApplyFileDiffLinks {
     companion object {
         var loggingEnabled = { false }
         private val diffApplier = SimpleDiffApplier()
-        private val log = org.slf4j.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
             debug("Initializing AddApplyFileDiffLinks")
         }
 
@@ -81,7 +82,7 @@ open class AddApplyFileDiffLinks {
             ui: ApplicationInterface,
             api: API,
             shouldAutoApply: (Path) -> Boolean = { false },
-            model: ChatModel? = null,
+            model: ChatModelType? = null,
             defaultFile: String? = null,
         ): String {
             log.debug("Instrumenting file diffs for root: {}", root)
@@ -119,7 +120,7 @@ open class AddApplyFileDiffLinks {
         ""
     }
 
-    protected open fun createPatchFixerActor(chatModel: ChatModel): SimpleActor {
+    protected open fun createPatchFixerActor(chatModel: ChatModelType): SimpleActor {
         return SimpleActor(
             prompt = """
         You are a helpful AI that helps people with coding.
@@ -138,7 +139,7 @@ open class AddApplyFileDiffLinks {
         ui: ApplicationInterface,
         api: API,
         shouldAutoApply: (Path) -> Boolean = { false },
-        model: ChatModel? = null,
+        model: ChatModelType? = null,
         defaultFile: String? = null,
     ): String {
         self.apply {
@@ -178,11 +179,13 @@ open class AddApplyFileDiffLinks {
             val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
             val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
-            fun getFile(root: Path, header: String) = fuzzyResolveToRelativePath(root, header)?.let { root.resolve(it) }?.toFile()
+            fun getFile(root: Path, header: String) =
+                fuzzyResolveToRelativePath(root, header)?.let { root.resolve(it) }?.toFile()
 
             val codeblocks = resolvedMatches.filter { (header, block) ->
                 try {
-                    true == getFile(root, header ?: return@filter false)?.exists()
+                    val resolvedPath = fuzzyResolveToRelativePath(root, header ?: return@filter false)
+                    resolvedPath == null || !root.resolve(resolvedPath).toFile().exists()
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
                     false
@@ -190,7 +193,8 @@ open class AddApplyFileDiffLinks {
             }.flatMap { it.second }.map { it.range to it }.toList()
             val patchBlocks = resolvedMatches.filter { (header, block) ->
                 try {
-                    true == getFile(root, header ?: return@filter false)?.exists()
+                    val resolvedPath = fuzzyResolveToRelativePath(root, header ?: return@filter false)
+                    resolvedPath != null && root.resolve(resolvedPath).toFile().exists()
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
                     false
@@ -201,7 +205,7 @@ open class AddApplyFileDiffLinks {
                 val diffValue = diffBlock.second.groupValues[2].trim()
                 val header =
                     headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
-                val filename = fuzzyResolveToRelativePath(root, header)
+                val filename = fuzzyResolveToRelativePath(root, normalizeFilename(header))
                 if (filename.isNullOrBlank()) return@foldIndexed markdown
                 val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, api, shouldAutoApply)
                 markdown.replace(diffBlock.second.value, newValue)
@@ -215,7 +219,7 @@ open class AddApplyFileDiffLinks {
                 }
                 val header = headers.lastOrNull { it.first.last < codeBlock.first.first }?.second ?: defaultFile
                 if (header.isNullOrBlank()) return markdown
-                val filename = fuzzyResolveToRelativePath(root, header)
+                val filename = prefilterFilename(normalizeFilename(header))
                 if (filename.isNullOrBlank()) return markdown
                 val newMarkdown = renderNewFile(root, filename, codeValue, handle, ui, lang, shouldAutoApply)
                 markdown.replace(codeBlock.second.value, newMarkdown)
@@ -229,19 +233,66 @@ open class AddApplyFileDiffLinks {
         val markdownHeaderPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
 
-
-
         val fileHeaderPattern = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
         val headers = mutableListOf<Pair<IntRange, String>>()
         markdownHeaderPattern.findAll(response).forEach { match ->
-            headers.add(match.range to match.groupValues[1])
+            headers.add(match.range to normalizeFilename(match.groupValues[1]))
         }
         fileHeaderPattern.findAll(response).forEach { match ->
-            headers.add(match.range to match.groupValues[1])
+            headers.add(match.range to normalizeFilename(match.groupValues[1]))
         }
         return headers.filter { it.first.last <= block.range.first }
             .maxByOrNull { it.first.last }?.second
     }
+
+    protected open fun normalizeFilename(filename: String): String {
+        return filename.trim()
+            // Remove common prefixes
+            .removePrefix("File:")
+            .removePrefix("file:")
+            .removePrefix("Path:")
+            .removePrefix("path:")
+            .removePrefix("Filename:")
+            .removePrefix("filename:")
+            .removePrefix("Modified:")
+            .removePrefix("modified:")
+            .removePrefix("Updated:")
+            .removePrefix("updated:")
+            .removePrefix("Changed:")
+            .removePrefix("changed:")
+            .removePrefix("Edit:")
+            .removePrefix("edit:")
+            .removePrefix("Patch:")
+            .removePrefix("patch:")
+            // Remove common suffixes
+            .removeSuffix(":")
+            .removeSuffix(".")
+            // Remove quotes and backticks
+            .removePrefix("\"").removeSuffix("\"")
+            .removePrefix("'").removeSuffix("'")
+            .removePrefix("`").removeSuffix("`")
+            // Clean up whitespace
+            .trim()
+            // Remove markdown formatting
+            .replace("**", "")
+            .replace("*", "")
+            // Remove code block language indicators that might be mistaken for filenames
+            .let { name ->
+                if (name.matches(
+                        Regex(
+                            "^(java|kotlin|kt|js|javascript|python|py|cpp|c|cs|go|rust|rs|php|rb|ruby|swift|scala|clj|clojure|sh|bash|sql|html|css|xml|json|yaml|yml|toml|ini|cfg|conf|config|properties|gradle|maven|pom|dockerfile|docker|makefile|make|cmake|bazel|build)$",
+                            RegexOption.IGNORE_CASE
+                        )
+                    )
+                ) {
+                    ""
+                } else {
+                    name
+                }
+            }
+            .trim()
+    }
+
 
     private fun SocketManagerBase.renderNewFile(
         root: Path,
@@ -278,7 +329,7 @@ open class AddApplyFileDiffLinks {
                     commandTask.complete()
                 } catch (e: Throwable) {
                     hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                    commandTask.error(null, e)
+                    commandTask.error(e)
                 }
             })!!
             return "\n```${codeLang}\n${codeValue}\n```\n\n${commandTask.placeholder}\n"
@@ -293,7 +344,7 @@ open class AddApplyFileDiffLinks {
         ui: ApplicationInterface,
         api: API?,
         shouldAutoApply: (Path) -> Boolean,
-        model: ChatModel? = null,
+        model: ChatModelType? = null,
     ): String {
 
         val filepath = root.resolve(filename)
@@ -311,7 +362,7 @@ open class AddApplyFileDiffLinks {
         val echoDiff = try {
             IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
         } catch (e: Throwable) {
-          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
+            "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
         }
 
         fun createRevertButton(filepath: Path, originalCode: String, handle: (Map<Path, String>) -> Unit): String {
@@ -330,7 +381,7 @@ open class AddApplyFileDiffLinks {
                     revertTask.complete()
                 } catch (e: Throwable) {
                     revertButton.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                    revertTask.error(null, e)
+                    revertTask.error(e)
                 }
             })!!
             return revertTask.placeholder
@@ -381,9 +432,14 @@ open class AddApplyFileDiffLinks {
         val patch2TaskSB = patch2Task.add("")
 
         lateinit var revert: String
+        lateinit var applyButton: String
         var originalCode = prevCode
-        val applyDiff = applydiffTask.complete(hrefLink("Apply Diff", classname = "href-link cmd-button") {
+        var isApplied = false
+
+        applyButton = hrefLink("Apply Diff", classname = "href-link cmd-button") {
+            if (isApplied) return@hrefLink // Prevent re-triggering
             try {
+                isApplied = true
                 val startTime = Instant.now()
                 originalCode = load(filepath)
                 newCode = diffApplier.apply(originalCode, "```diff\n$diffVal\n```", null).patchResult
@@ -401,20 +457,25 @@ open class AddApplyFileDiffLinks {
                 hrefLink.set("<div class=\"cmd-button\">Diff Applied</div>$revert")
                 applydiffTask.complete()
             } catch (e: Throwable) {
+                isApplied = false
                 hrefLink.set("""<div class="cmd-button">Error: ${e.message}</div>""")
-                applydiffTask.error(null, e)
+                applydiffTask.error(e)
             }
-        })!!
+        }
+
+        val applyDiff = applydiffTask.complete(applyButton)!!
         hrefLink = applyDiff
+
         revert = hrefLink("Revert", classname = "href-link cmd-button") {
             try {
+                isApplied = false
                 filepath.toFile().writeText(originalCode, Charsets.UTF_8)
                 handle(mapOf(relativize to originalCode))
-                hrefLink.set("""<div class="cmd-button">Reverted</div>""" + applyDiff)
+                hrefLink.set("""<div class="cmd-button">Reverted</div>""" + applyButton)
                 applydiffTask.complete()
             } catch (e: Throwable) {
                 hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
-                applydiffTask.error(null, e)
+                applydiffTask.error(e)
             }
         }
 
@@ -427,7 +488,7 @@ open class AddApplyFileDiffLinks {
                         val echoDiff = try {
                             IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
                         } catch (e: Throwable) {
-                          "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
+                            "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
                         }
                         var answer = patchFixer.answer(
                             listOf(
@@ -475,7 +536,7 @@ open class AddApplyFileDiffLinks {
         val echoDiff2 = try {
             IterativePatchUtil.generatePatch(prevCode, newCode2)
         } catch (e: Throwable) {
-          "\n```\n${e.stackTraceToString()}\n```".renderMarkdown()
+            "\n```\n${e.stackTraceToString()}\n```".renderMarkdown()
         }
         newCode2TaskSB?.set(
             renderMarkdown(

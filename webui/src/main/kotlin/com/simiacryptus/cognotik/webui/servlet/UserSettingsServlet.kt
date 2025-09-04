@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -21,21 +21,19 @@ class UserSettingsServlet : HttpServlet() {
         } else {
             try {
                 val settings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
-                val visibleSettings = settings.copy(
-                    apiKeys = APIProvider.values().map {
-                        it to when (settings.apiKeys[it]) {
-                            null -> ""
-                            "" -> ""
-                            else -> mask
-                        }
-                    }.toMap(),
-                    apiBase = APIProvider.values().map {
-                        it to when (settings.apiBase[it]) {
-                            null -> it.base
-                            "" -> it.base
-                            else -> settings.apiBase[it]
-                        }!!
-                    }.toMap(),
+                val visibleSettings = UserSettings(
+                    apis = settings.apis.map { apiData ->
+                        ApiData(
+                            key = when (apiData.key) {
+                                null, "" -> ""
+                                else -> mask
+                            },
+                            baseUrl = apiData.baseUrl ?: apiData.provider?.base,
+                            provider = apiData.provider
+                        )
+                    }.toMutableList(),
+                    tools = settings.tools.toMutableList(),
+                    etc = settings.etc.toMutableMap()
                 )
                 val json = JsonUtil.toJson(visibleSettings)
 
@@ -85,21 +83,27 @@ class UserSettingsServlet : HttpServlet() {
         } else {
             val settings = JsonUtil.fromJson<UserSettings>(req.getParameter("settings"), UserSettings::class.java)
             val prevSettings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
-            val reconstructedSettings = prevSettings.copy(
-                apiKeys = settings.apiKeys.mapValues {
-                    when (it.value) {
-                        "" -> ""
-                        mask -> prevSettings.apiKeys[it.key]!!
-                        else -> settings.apiKeys[it.key]!!
-                    }
-                },
-                apiBase = settings.apiBase.mapValues {
-                    when (it.value) {
-                        null, "" -> it.key.base!!
-                        else -> settings.apiBase[it.key] ?: prevSettings.apiBase[it.key] ?: it.key.base!!
-                    }
-                },
-                localTools = (prevSettings.localTools + settings.localTools).distinct(),
+
+            // Reconstruct APIs with preserved keys when masked
+            val reconstructedApis = settings.apis.mapIndexed { index, apiData ->
+                val prevApiData = prevSettings.apis.getOrNull(index)
+                ApiData(
+                    key = when (apiData.key) {
+                        mask -> prevApiData?.key ?: ""
+                        else -> apiData.key
+                    },
+                    baseUrl = apiData.baseUrl,
+                    provider = apiData.provider
+                )
+            }.toMutableList()
+
+            // Merge tools (preserve existing and add new ones)
+            val allTools = (prevSettings.tools + settings.tools).distinctBy { it.name }.toMutableList()
+
+            val reconstructedSettings = UserSettings(
+                apis = reconstructedApis,
+                tools = allTools,
+                etc = settings.etc
             )
             ApplicationServices.userSettingsManager.updateUserSettings(userinfo, reconstructedSettings)
             resp.sendRedirect("/")

@@ -1,71 +1,54 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
-data class ProgressState(
-    var progress: Double = 0.0,
-    var max: Double = 0.0,
-    val onUpdate: MutableList<(ProgressState) -> Unit> = mutableListOf(),
+class ProgressState private constructor(
+    private val task: SessionTask?,
+    private val totalItems: AtomicInteger = AtomicInteger(0),
+    private val completedItems: AtomicInteger = AtomicInteger(0),
+    private val lastUpdateTime: AtomicLong = AtomicLong(System.currentTimeMillis())
 ) {
-    fun add(progress: Double, max: Double) {
-        this.progress += progress
-        this.max += max
-        onUpdate.forEach { it(this) }
+    fun add(completed: Double, total: Double) {
+        completedItems.addAndGet(completed.toInt())
+        totalItems.addAndGet(total.toInt())
+        val now = System.currentTimeMillis()
+        if (now - lastUpdateTime.get() > UPDATE_INTERVAL_MS) {
+            updateProgress()
+            lastUpdateTime.set(now)
+        }
+    }
+
+    private fun updateProgress() {
+        val total = totalItems.get()
+        val completed = completedItems.get()
+        if (total > 0) {
+            val percentage = (completed * 100.0 / total).toInt()
+            val progressBar = buildString {
+                append("[")
+                val filled = percentage / 2
+                repeat(filled) { append("█") }
+                repeat(50 - filled) { append("░") }
+                append("] $percentage% ($completed/$total)")
+            }
+            task?.add(progressBar)
+        }
+    }
+
+    fun complete() {
+        completedItems.set(totalItems.get())
+        updateProgress()
     }
 
     companion object {
-        fun progressBar(
-            task: SessionTask,
-        ): ProgressState {
-            val stringBuilder = task.add(
-                """
-                    <style>
-                    .progress {
-                        width: 100%;
-                        background-color: #f0f0f0;
-                        border-radius: 5px;
-                        margin: 10px 0;
-                    }
-                    .progress-bar {
-                        height: 20px;
-                        background-color: #4CAF50;
-                        border-radius: 5px;
-                        transition: width 0.5s ease-in-out;
-                    }
-                    </style>
-                    <div class="progress">
-                      <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                """
-            )!!
-            return ProgressState(0.0, 0.0).apply {
-                onUpdate += {
-                    val progress = it.progress / it.max
-                    stringBuilder.set(
-                        """
-                    <style>
-                    .progress {
-                        width: 100%;
-                        background-color: #f0f0f0;
-                        border-radius: 5px;
-                        margin: 10px 0;
-                    }
-                    .progress-bar {
-                        height: 20px;
-                        background-color: #4CAF50;
-                        border-radius: 5px;
-                        transition: width 0.5s ease-in-out;
-                    }
-                    </style>
-                    <div class="progress">
-                      <div class="progress-bar" role="progressbar" style="width: ${progress * 100}%" aria-valuenow="${progress * 100}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                """.trimIndent()
-                    )
-                    task.update()
-                }
-            }
+        private const val UPDATE_INTERVAL_MS = 500L
+        fun progressBar(task: SessionTask): ProgressState {
+            return ProgressState(task)
+        }
+
+        fun noOp(): ProgressState {
+            return ProgressState(null)
         }
     }
 }

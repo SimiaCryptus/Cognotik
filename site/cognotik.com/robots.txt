@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Sitemap: https://cognotik.com/sitemap.xml
+# Block access to scripts and assets that don't need indexing
+Disallow: /scripts/
+Disallow: /styles/
+Disallow: /assets/demo.mp4
+# Allow important assets
+Allow: /logo.svg
+Allow: /assets/og-image.png

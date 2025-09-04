@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.diff.PatchLineType.*
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 enum class PatchLineType {
     Added, Deleted, Unchanged

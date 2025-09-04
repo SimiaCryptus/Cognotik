@@ -9,16 +9,19 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
+import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.EmbeddingModels
+import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.jopenai.opt.DistanceType
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import kotlin.streams.asSequence
 
@@ -61,35 +64,74 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
-        val searchResults = performEmbeddingSearch(TODO())
-        val formattedResults = formatSearchResults(searchResults)
-        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
-        resultFn(formattedResults)
+        val threadPool = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors().coerceAtMost(8)
+        )
+        try {
+            val searchResults = performEmbeddingSearch(
+                OllamaEmbeddingClient(
+                    "",
+                    workPool = threadPool,
+                )
+            )
+            val formattedResults = formatSearchResults(searchResults)
+            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
+            resultFn(formattedResults)
+        } finally {
+            threadPool.shutdown()
+            try {
+                if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                    threadPool.shutdownNow()
+                }
+            } catch (e: InterruptedException) {
+                threadPool.shutdownNow()
+                Thread.currentThread().interrupt()
+            }
+        }
     }
 
-    private fun performEmbeddingSearch(api: OpenAIClient): List<EmbeddingSearchResult> {
-        val positiveEmbeddings = taskConfig?.positive_queries?.map { query ->
-            api.createEmbedding(
-                ApiModel.EmbeddingRequest(
-                    input = query,
-                    model = EmbeddingModels.Large.modelName
-                )
-            ).data[0].embedding
-        } ?: emptyList()
-        val negativeEmbeddings = taskConfig?.negative_queries?.map { query ->
-            api.createEmbedding(
-                ApiModel.EmbeddingRequest(
-                    input = query,
-                    model = EmbeddingModels.Large.modelName
-                )
-            ).data[0].embedding
-        } ?: emptyList()
-        if (positiveEmbeddings.isEmpty()) {
+    private fun performEmbeddingSearch(api: EmbeddingClientBase): List<EmbeddingSearchResult> {
+        val model = EmbeddingModel.Large
+        // Validate queries first
+        if (taskConfig?.positive_queries?.isEmpty() != false) {
             throw IllegalArgumentException("At least one positive query is required")
+        }
+        // Create embeddings with retry logic
+        fun createEmbeddingWithRetry(query: String, maxRetries: Int = 3): DoubleArray? {
+            repeat(maxRetries) { attempt ->
+                try {
+                    return api.createEmbedding(
+                        ApiModel.EmbeddingRequest(
+                            input = query,
+                            model = model.modelName
+                        ),
+                        model
+                    ).data[0].embedding
+                } catch (e: Exception) {
+                    if (attempt == maxRetries - 1) {
+                        log.error("Failed to create embedding for query after $maxRetries attempts: $query", e)
+                        return null
+                    }
+                    Thread.sleep(1000L * (attempt + 1))
+                }
+            }
+            return null
+        }
+
+        val positiveEmbeddings = taskConfig?.positive_queries?.map { query ->
+            createEmbeddingWithRetry(query)
+        } ?: emptyList()
+
+        val negativeEmbeddings = taskConfig?.negative_queries?.map { query ->
+            createEmbeddingWithRetry(query)
+        } ?: emptyList()
+
+        if (positiveEmbeddings.filterNotNull().isEmpty()) {
+            throw IllegalStateException("Failed to create any positive embeddings")
         }
         val distanceType = taskConfig?.distance_type ?: DistanceType.Cosine
         val filtered = Files.walk(root).asSequence()
@@ -104,31 +146,38 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
 
         val searchResults = filtered
             .flatMap { path ->
-                val records = DocumentRecord.readBinary(path.toString())
-                records.mapNotNull { record ->
-                    record.vector?.let { vector ->
-                        val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
-                            distanceType.distance(vector, embedding)
+                val results = mutableListOf<EmbeddingSearchResult>()
+                try {
+                    DocumentRecord.readBinaryStream(path.toString()) { record ->
+                        record.vector?.let { vector ->
+                            val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
+                                distanceType.distance(vector, embedding)
+                            }
+                            val negativeDistances = negativeEmbeddings.filterNotNull().map { embedding ->
+                                distanceType.distance(vector, embedding)
+                            }
+                            val overallDistance = if (negativeDistances.isEmpty()) {
+                                positiveDistances.minOrNull() ?: Double.MAX_VALUE
+                            } else {
+                                (positiveDistances.minOrNull() ?: Double.MAX_VALUE) / (negativeDistances.minOrNull()
+                                    ?: Double.MIN_VALUE)
+                            }
+                            val content = record.text ?: ""
+                            if (content.length >= minLength && content.matchesAllRegexes()) {
+                                results.add(
+                                    EmbeddingSearchResult(
+                                        file = root.relativize(path).toString(),
+                                        record = record,
+                                        distance = overallDistance
+                                    )
+                                )
+                            }
                         }
-                        val negativeDistances = negativeEmbeddings.filterNotNull().map { embedding ->
-                            distanceType.distance(vector, embedding)
-                        }
-                        val overallDistance = if (negativeDistances.isEmpty()) {
-                            positiveDistances.minOrNull() ?: Double.MAX_VALUE
-                        } else {
-                            (positiveDistances.minOrNull() ?: Double.MAX_VALUE) / (negativeDistances.minOrNull()
-                                ?: Double.MIN_VALUE)
-                        }
-                        val content = record.text ?: ""
-                        if (content.length >= minLength && content.matchesAllRegexes()) {
-                            EmbeddingSearchResult(
-                                file = root.relativize(path).toString(),
-                                record = record,
-                                distance = overallDistance
-                            )
-                        } else null
                     }
+                } catch (e: Exception) {
+                    log.error("Failed to search in file: $path", e)
                 }
+                results
             }
             .toList()
         return searchResults
@@ -152,13 +201,22 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
     }
 
     private fun getContextSummary(sourcePath: String, jsonPath: String): String {
-        val objectMapper = ObjectMapper()
-        val jsonNode = objectMapper.readTree(File(sourcePath))
-        val contextNode = getNodeAtPath(jsonNode, jsonPath)
-        return buildString {
-            appendLine("```json")
-            appendLine(summarizeContext(contextNode, jsonPath, jsonNode))
-            appendLine("```")
+        return try {
+            val sourceFile = File(sourcePath)
+            if (!sourceFile.exists()) {
+                return "Source file not found: $sourcePath"
+            }
+            val objectMapper = ObjectMapper()
+            val jsonNode = objectMapper.readTree(sourceFile)
+            val contextNode = getNodeAtPath(jsonNode, jsonPath)
+            buildString {
+                appendLine("```json")
+                appendLine(summarizeContext(contextNode, jsonPath, jsonNode))
+                appendLine("```")
+            }
+        } catch (e: Exception) {
+            log.error("Error getting context summary for $sourcePath:$jsonPath", e)
+            "Context summary unavailable: ${e.message}"
         }
     }
 

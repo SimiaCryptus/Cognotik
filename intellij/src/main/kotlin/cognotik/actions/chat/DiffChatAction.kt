@@ -1,7 +1,7 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.chatModel
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
@@ -19,14 +20,14 @@ import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.AddApplyDiffLinks.Companion.addApplyDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.models.chatModel
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.text.SimpleDateFormat
 import com.intellij.openapi.application.ApplicationManager as IntellijAppManager
 
@@ -115,7 +116,7 @@ class DiffChatAction : BaseAction() {
             api = api,
             model = AppSettingsState.instance.smartModel.chatModel(),
             parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-            storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome)
+            storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         ) {
 
             override val systemPrompt: String

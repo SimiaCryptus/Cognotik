@@ -15,11 +15,11 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModel
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -30,9 +30,9 @@ import java.util.concurrent.TimeUnit
 abstract class PatchApp(
     override val root: File,
     protected val settings: Settings,
-    private val api: ChatClient,
-    val model: ChatModel,
-    val parsingModel: ChatModel,
+    private val api: ChatClientInterface,
+    val model: ChatModelType,
+    val parsingModel: ChatModelType,
     private val promptPrefix: String = """The following command was run and produced an error:""",
 ) : ApplicationServer(
     applicationName = "Magic Code Fixer",
@@ -273,7 +273,7 @@ abstract class PatchApp(
         val fixTask = ui.newTask(false).apply { tabs["Fix"] = placeholder }
         try {
             log.info("Creating child API client for fix task")
-            val api = api.getChildClient(task = fixTask)
+            val api = api.getChildClient(fixTask)
             val plan = if (outputResult.errors == null) {
                 log.info("No pre-parsed errors, parsing errors from output")
                 parsedErrorsParsedResponse(settings = settings, output = outputResult, api = api)
@@ -294,9 +294,9 @@ abstract class PatchApp(
             fixTask.add(
                 AgentPatterns.displayMapInTabs(
                     mapOf(
-                      "Text" to plan.text.renderMarkdown,
-                      "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown,
-                      "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown
+                        "Text" to plan.text.renderMarkdown,
+                        "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(parsedErrors)}\n$tripleTilde".renderMarkdown,
+                        "Process Details" to "Exit Code: ${outputResult.exitCode}\nCommand Output:\n$tripleTilde\n${outputResult.output}\n$tripleTilde".renderMarkdown
                     ).filter { it.value.isNotBlank() },
                 )
             )
@@ -313,7 +313,7 @@ abstract class PatchApp(
             )
         } catch (e: Exception) {
             log.error("Error during fix process", e)
-            fixTask.error(ui, e)
+            fixTask.error(e)
         }
         return outputResult
     }
@@ -332,7 +332,7 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         settings: Settings,
         changed: MutableSet<Path>,
-        api: ChatClient,
+        api: ChatClientInterface,
         progressHeader: StringBuilder?
     ) {
         log.info("Starting fixAllErrors")
@@ -371,8 +371,12 @@ abstract class PatchApp(
                             log.debug("Executing search query: pattern=${query.pattern}, glob=${query.fileGlob}")
                             filteredWalk(settings.workingDirectory ?: root).filter { file ->
                                 FileSystems.getDefault().getPathMatcher("glob:" + query.fileGlob).matches(file.toPath())
-                            }.filter { it.readText().contains(query.pattern ?: "", ignoreCase = true) }
-                                .map { it.toPath() }.toList()
+                            }.filter {
+                                it.isFile &&
+                                        it.length() < (1 * 1024 * 1024) &&
+                                        query.pattern?.isBlank() == false &&
+                                        it.readText().contains(query.pattern ?: "", ignoreCase = true)
+                            }.map { it.toPath() }.toList()
                         }?.toSet() ?: emptySet()
                         log.info("Search found ${searchResults.size} relevant files")
                         if (searchResults.isNotEmpty()) {
@@ -402,7 +406,7 @@ abstract class PatchApp(
     }
 
     private fun parsedErrorsParsedResponse(
-        settings: Settings, output: OutputResult, api: ChatClient
+        settings: Settings, output: OutputResult, api: ChatClientInterface
     ): ParsedResponse<ParsedErrors> {
         log.info("Parsing errors from command output")
         val plan = ParsedActor(
@@ -468,7 +472,7 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         autoFix: Boolean,
         changed: MutableSet<Path>,
-        api: ChatClient,
+        api: ChatClientInterface,
         task: SessionTask,
     ) {
         log.info("Starting fix for error: ${error.message}")
@@ -536,7 +540,13 @@ abstract class PatchApp(
                     changed.add(path)
                     true
                 } else {
-                    log.debug("Not auto-applying fix to: $path (autoFix=$autoFix, already changed=${changed.contains(path)})")
+                    log.debug(
+                        "Not auto-applying fix to: $path (autoFix=$autoFix, already changed=${
+                            changed.contains(
+                                path
+                            )
+                        })"
+                    )
                     false
                 }
             },

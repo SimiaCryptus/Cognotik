@@ -2,7 +2,7 @@ package com.simiacryptus.util.stm
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 class Serialization {
     private val objectMapper: ObjectMapper

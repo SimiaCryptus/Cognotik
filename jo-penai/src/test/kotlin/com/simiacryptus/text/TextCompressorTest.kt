@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 
 class TextCompressorTest {
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(TextCompressorTest::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(TextCompressorTest::class.java)
     }
 
     @Test

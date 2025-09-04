@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.platform.file
 
-import java.nio.file.Files
-
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -11,11 +9,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.nio.file.Files
 import java.util.*
 
 abstract class StorageInterfaceTest(val storage: StorageInterface) {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(StorageInterfaceTest::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(StorageInterfaceTest::class.java)
     }
 
     @Test
@@ -44,7 +43,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val user = User(email = "test@example.com")
         val session = Session("G-20230101-1234")
 
-        log.debug("Retrieving messages for user: {} and session: {}", user.email, session.sessionId)
+        log.debug("Retrieving messages for user: {} and session: {}", user.email, session)
         val messages = storage.getMessages(user, session)
 
         log.info("Asserting messages type is LinkedHashMap")
@@ -59,7 +58,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val user = User(email = "test@example.com")
         val session = Session("G-20230101-1234")
 
-        log.debug("Getting session directory for user: {} and session: {}", user.email, session.sessionId)
+        log.debug("Getting session directory for user: {} and session: {}", user.email, session)
         val sessionDir = storage.getSessionDir(user, session)
 
         log.info("Asserting session directory is of type File")
@@ -74,7 +73,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val user = User(email = "test@example.com")
         val session = Session("G-20230101-1234")
 
-        log.debug("Getting session name for user: {} and session: {}", user.email, session.sessionId)
+        log.debug("Getting session name for user: {} and session: {}", user.email, session)
         val sessionName = storage.getSessionName(user, session)
 
         log.info("Asserting session name is not null and is of type String")
@@ -89,10 +88,10 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 
         val user = User(email = "test@example.com")
         val session = Session("G-20230101-1234")
-        log.debug("Updating message for user: {} and session: {}", user.email, session.sessionId)
+        log.debug("Updating message for user: {} and session: {}", user.email, session)
         storage.updateMessage(user, session, "msg001", "<p>Hello, World!</p><p>Hello, World!</p>")
 
-        log.debug("Getting session time for user: {} and session: {}", user.email, session.sessionId)
+        log.debug("Getting session time for user: {} and session: {}", user.email, session)
         val sessionTime = storage.getSessionTime(user, session)
 
         log.info("Asserting session time is not null and is of type Date")
@@ -125,7 +124,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val filename = "settings.json"
         val settings = mapOf("theme" to "dark")
 
-        log.debug("Setting JSON for user: {} and session: {}", user.email, session.sessionId)
+        log.debug("Setting JSON for user: {} and session: {}", user.email, session)
         val result = storage.setJson(user, session, filename, settings)
 
         log.info("Asserting JSON setting result is not null and matches input")
@@ -144,7 +143,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val value = "Hello, World!"
 
         try {
-            log.debug("Updating message for user: {} and session: {}", user.email, session.sessionId)
+            log.debug("Updating message for user: {} and session: {}", user.email, session)
             storage.updateMessage(user, session, messageId, value)
             log.info("Message updated successfully")
 
@@ -194,7 +193,7 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
         val session = Session("G-20230101-1234")
 
         try {
-            log.debug("Deleting session for user: {} and session: {}", user.email, session.sessionId)
+            log.debug("Deleting session for user: {} and session: {}", user.email, session)
             storage.deleteSession(user, session)
             log.info("Session deleted successfully")
 
@@ -207,5 +206,6 @@ abstract class StorageInterfaceTest(val storage: StorageInterface) {
 
 
 }
+
 class DataStorageTest : StorageInterfaceTest(DataStorage(Files.createTempDirectory("sessionDataTest").toFile()))
 

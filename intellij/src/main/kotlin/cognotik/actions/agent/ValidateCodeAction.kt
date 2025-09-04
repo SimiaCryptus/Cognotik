@@ -1,20 +1,22 @@
 package cognotik.actions.agent
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.apps.general.ValidationPatchApp
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.getSelectedFiles
+import com.simiacryptus.cognotik.util.getSelectedFolders
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.jopenai.chat.model.chatModelType
+import com.simiacryptus.util.LoggerFactory
 import java.text.SimpleDateFormat
 
 /**
@@ -29,8 +31,8 @@ class ValidateCodeAction : BaseAction() {
                 progress.isIndeterminate = true
                 progress.text = "Setting up validation..."
 
-                val files = UITools.getSelectedFiles(event)
-                val folders = UITools.getSelectedFolders(event)
+                val files = event.getSelectedFiles()
+                val folders = event.getSelectedFolders()
                 if (files.isEmpty() && folders.isEmpty()) {
                     UITools.showErrorDialog("Please select files or folders to validate", "No Selection")
                     return@runAsync
@@ -54,8 +56,8 @@ class ValidateCodeAction : BaseAction() {
                     settings = settings,
                     api = api,
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel()
+                    model = AppSettingsState.instance.smartModel.chatModelType(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModelType()
                 )
 
                 SessionProxyServer.chats[session] = patchApp
@@ -92,8 +94,8 @@ class ValidateCodeAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (event.project == null) return false
-        val hasSelection = UITools.getSelectedFiles(event).isNotEmpty() ||
-                UITools.getSelectedFolders(event).isNotEmpty()
+        val hasSelection = event.getSelectedFiles().isNotEmpty() ||
+                event.getSelectedFolders().isNotEmpty()
         return hasSelection
     }
 

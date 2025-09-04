@@ -2,15 +2,15 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.util.MultiExeption
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.TextModel
+import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.function.Function
 
 open class ParsedActor<T : Any>(
@@ -18,9 +18,9 @@ open class ParsedActor<T : Any>(
     val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
     prompt: String = "",
     name: String? = resultClass?.simpleName,
-    model: TextModel,
+    model: LLMModel,
     temperature: Double = 0.3,
-    val parsingModel: TextModel,
+    val parsingModel: LLMModel,
     val deserializerRetries: Int = 2,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
@@ -75,7 +75,7 @@ open class ParsedActor<T : Any>(
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = (api as ChatClient).chat(
+                val content = (api as ChatClientInterface).chat(
                     ApiModel.ChatRequest(
                         messages = listOf(
                             ApiModel.ChatMessage(role = ApiModel.Role.system, content = prompt.toContentList()),
@@ -156,7 +156,7 @@ open class ParsedActor<T : Any>(
             throw e
         }
 
-    override fun withModel(model: ChatModel): ParsedActor<T> = ParsedActor(
+    override fun withModel(model: ChatModelType): ParsedActor<T> = ParsedActor(
         resultClass = resultClass,
         prompt = prompt,
         name = name,

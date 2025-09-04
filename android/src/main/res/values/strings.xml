@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cognotik</string>
+    <string name="server_starting">Starting Cognotik server...</string>
+    <string name="server_running">Server running on port %d</string>
+    <string name="server_error">Error starting server: %s</string>
+    <string name="loading">Loading...</string>
+    <string name="refresh_webview">Refresh WebView</string>
+</resources>

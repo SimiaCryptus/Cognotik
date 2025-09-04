@@ -438,7 +438,7 @@ open class Selenium2S3(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(Selenium2S3::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(Selenium2S3::class.java)
 
         init {
             Runtime.getRuntime().addShutdownHook(Thread {

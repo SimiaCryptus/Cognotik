@@ -17,14 +17,13 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.ChatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -36,12 +35,13 @@ open class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     val planSettings: PlanSettings,
-    val model: ChatModel,
-    val parsingModel: ChatModel,
+    val model: ChatModelType,
+    val parsingModel: ChatModelType,
     showMenubar: Boolean = true,
     val api: API? = null,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
+    val useExpansionSyntax: Boolean = true,
 ) : ApplicationServer(
     applicationName = applicationName,
     path = path,
@@ -50,10 +50,18 @@ open class UnifiedPlanApp(
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
-    private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^\n|}{)(\]\[]+)+)}""")
+    
+    // Updated expansion patterns to match ChatSocketManager
+    private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+"""
+    private val expansionExpressionPattern = Regex("""@\[($idSubPattern(?:[|,]$idSubPattern)+)]""")
+    private val sequenceExpansionPattern = Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""")
+    private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
+    private val topicReferencePattern = Regex("""@([A-Z][a-zA-Z0-9_]*)""")
+    
     private val expansionPool = Executors.newFixedThreadPool(4)
+    private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
-    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it else it+1 }
+    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it else it + 1 }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
@@ -65,9 +73,33 @@ open class UnifiedPlanApp(
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
         val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+        // Add expansion syntax guide if enabled
+        if (useExpansionSyntax) {
+            ui.newTask(true).expandable(
+                "Query Expansion Syntax Guide", """
+                <div class="expandable-guide">
+                  <p>You can use the following syntaxes in your messages to automatically expand your queries:</p>
+                  <h4 class="expandable-section-title">Parallel Expansion</h4>
+                  <p class="expandable-description">Use <code>@[option1|option2|option3]</code> to run the same prompt with each option in parallel.</p>
+                  <p class="expandable-example"><em>Example:</em> <code>Analyze the performance of @[React|Vue|Angular] frameworks</code></p>
+                  <h4 class="expandable-section-title">Sequence Expansion</h4>
+                  <p class="expandable-description">Use <code>@{step1 -> step2 -> step3}</code> to run a sequence of prompts, where the output of each feeds into the next.</p>
+                  <p class="expandable-example"><em>Example:</em> <code>Create a plan, then @{implement the first step -> test the implementation -> document the results}</code></p>
+                  <h4 class="expandable-section-title">Range Expansion</h4>
+                  <p class="expandable-description">Use <code>@(start..end:step)</code> to iterate over a range of numbers.</p>
+                  <p class="expandable-example"><em>Example:</em> <code>Generate test cases for input values @(1..10:2)</code></p>
+                  <h4 class="expandable-section-title">Topic Reference Expansion</h4>
+                  <p class="expandable-description">Use <code>@topicType</code> to refer to previously identified topics.</p>
+                  <p class="expandable-example"><em>Example:</em> <code>Create documentation for @Function</code></p>
+                  <p class="expandable-footer">You can combine these syntaxes for more complex expansions.</p>
+                </div>
+                """.trimIndent()
+            )
+        }
+        
         ui.newTask(true).expandable(
             "Session Info", """
-                Session ID: `${session.sessionId}`
+                Session ID: `${session}`
                 
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
                 
@@ -78,6 +110,7 @@ open class UnifiedPlanApp(
                 Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
                 
                 Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+                Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
             """.trimIndent().renderMarkdown()
         )
         return socketManager
@@ -95,16 +128,19 @@ open class UnifiedPlanApp(
             settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
-            if (expansionExpressionPattern.find(userMessage) != null) {
-                processMessageWithExpansions(session, user, userMessage, ui, api)
+            val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
+            
+            if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
+                processMessageWithExpansions(session, user, expandedMessage, ui, api)
                 return
             }
+            
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)
                 }
-                if (api is ChatClient) api.budget = settings.budget
+                if (api is ProvidersChatClient) api.budget = settings.budget
 
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
@@ -116,12 +152,37 @@ open class UnifiedPlanApp(
                 ).apply { initialize() }
             }
 
-            cognitiveMode.handleUserMessage(userMessage, ui.newTask(true))
+            cognitiveMode.handleUserMessage(expandedMessage, ui.newTask(true))
 
         } catch (e: Throwable) {
             log.error("Error processing user message", e)
-            ui.newTask().error(ui, e)
+            ui.newTask().error(e)
         }
+    }
+    /**
+     * Expands topic references in the message using previously identified topics
+     */
+    private fun expandTopics(userMessage: String): String {
+        return topicReferencePattern.replace(userMessage) { matchResult ->
+            val topicType = matchResult.groupValues[1]
+            val topicList = aggregateTopics[topicType]
+            val entities = synchronized(topicList ?: Any()) {
+                topicList?.toList()
+            }
+            if (!entities.isNullOrEmpty()) {
+                "@[${entities.joinToString("|")}]"
+            } else {
+                matchResult.value
+            }
+        }
+    }
+    /**
+     * Checks if the message contains any expansion syntax
+     */
+    private fun hasExpansionSyntax(message: String): Boolean {
+        return expansionExpressionPattern.find(message) != null ||
+                sequenceExpansionPattern.find(message) != null ||
+                rangeExpansionPattern.find(message) != null
     }
 
     /**
@@ -150,7 +211,7 @@ open class UnifiedPlanApp(
 
     /**
      * Recursively processes a message with expansion expressions.
-     * For each level of expansion, it creates tabs for each option.
+     * Handles parallel, sequence, and range expansions similar to ChatSocketManager.
      */
     private fun processMessageRecursive(
         session: Session,
@@ -162,51 +223,163 @@ open class UnifiedPlanApp(
         processor: FixedConcurrencyProcessor
     ) {
 
-        val match = expansionExpressionPattern.find(currentMessage)
-        if (match == null) {
+        // Check for range expansion first
+        val rangeMatch = rangeExpansionPattern.find(currentMessage)
+        if (rangeMatch != null) {
+            expandRange(session, user, currentMessage, ui, api, task, processor, rangeMatch)
+            return
+        }
 
-            val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-                val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-                if (api is ChatClient) api.budget = settings.budget
-                cognitiveStrategy.getCognitiveMode(
-                    ui = ui,
-                    api = api,
-                    planSettings = settings,
+        // Check for sequence expansion
+        val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
+        if (sequenceMatch != null) {
+            expandSequence(session, user, currentMessage, ui, api, task, processor, sequenceMatch)
+            return
+        }
+
+        // Check for parallel expansion
+        val parallelMatch = expansionExpressionPattern.find(currentMessage)
+        if (parallelMatch != null && parallelMatch.groupValues[1].split('|', ',').size > 1) {
+            expandParallel(session, user, currentMessage, ui, api, task, processor, parallelMatch)
+            return
+        }
+
+        // No expansion found, process normally
+
+
+
+
+
+        val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
+            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+            if (api is ProvidersChatClient) api.budget = settings.budget
+            cognitiveStrategy.getCognitiveMode(
+                ui = ui,
+                api = api,
+                planSettings = settings,
+                session = session,
+                user = user,
+                describer = describer
+            ).apply { initialize() }
+        }
+
+        cognitiveMode.handleUserMessage(currentMessage, task)
+    }
+
+    /**
+     * Expands range expressions in the format @(start..end:step)
+     */
+    private fun expandRange(
+        session: Session,
+        user: User?,
+        currentMessage: String,
+        ui: ApplicationInterface,
+        api: API,
+        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        processor: FixedConcurrencyProcessor,
+        rangeMatch: MatchResult
+    ) {
+        val start = rangeMatch.groupValues[1].toInt()
+        val end = rangeMatch.groupValues[2].toInt()
+        val step = rangeMatch.groupValues[3].takeIf { it.isNotEmpty() }?.toInt() ?: 1
+        
+        val items = generateSequence(start) { it + step }
+            .takeWhile { if (step > 0) it <= end else it >= end }
+            .toList()
+            .map { it.toString() }
+            
+        expandSequenceItems(session, user, currentMessage, ui, api, task, processor, rangeMatch.value, items)
+    }
+
+    /**
+     * Expands sequence expressions in the format @{step1 -> step2 -> step3}
+     */
+    private fun expandSequence(
+        session: Session,
+        user: User?,
+        currentMessage: String,
+        ui: ApplicationInterface,
+        api: API,
+        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        processor: FixedConcurrencyProcessor,
+        sequenceMatch: MatchResult
+    ) {
+        val items = sequenceMatch.groupValues[1].split(Regex("""\s*->\s*"""))
+        expandSequenceItems(session, user, currentMessage, ui, api, task, processor, sequenceMatch.value, items)
+    }
+
+    /**
+     * Expands parallel expressions in the format @[option1|option2|option3]
+     */
+    private fun expandParallel(
+        session: Session,
+        user: User?,
+        currentMessage: String,
+        ui: ApplicationInterface,
+        api: API,
+        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        processor: FixedConcurrencyProcessor,
+        parallelMatch: MatchResult
+    ) {
+        val options = parallelMatch.groupValues[1].split('|', ',')
+        val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
+        
+        options.map { option ->
+            processor.submit {
+                val subUi = ApplicationInterface(ui.socketManager)
+                val subTask = subUi.newTask(false).apply { tabs[option] = placeholder }
+                val nextMessage = currentMessage.replaceFirst(parallelMatch.value, option)
+                
+                processMessageRecursive(
                     session = session,
                     user = user,
-                    describer = describer
-                ).apply { initialize() }
+                    currentMessage = nextMessage,
+                    ui = subUi,
+                    api = api,
+                    task = subTask,
+                    processor = processor
+                )
             }
+        }.forEach { it.get() }
+        
+        tabs.update()
+    }
 
-            cognitiveMode.handleUserMessage(currentMessage, task)
-        } else {
-
-            val expression = match.groupValues[1]
-            val options = expression.split('|')
-            val tabs = TabbedDisplay(task)
-            options.map { option ->
-                processor.submit {
-
-                    val subUi = ApplicationInterface(ui.socketManager)
-                    val subTask = subUi.newTask(false).apply { tabs[option] = placeholder }
-
-                    val nextMessage = currentMessage.replaceFirst(match.value, option)
-
-                    processMessageRecursive(
-                        session = session,
-                        user = user,
-                        currentMessage = nextMessage,
-                        ui = subUi,
-                        api = api,
-                        task = subTask,
-                        processor = processor
-                    )
-                }
-            }.toTypedArray().forEach { it.get() }
+    /**
+     * Expands sequence items (used by both range and sequence expansions)
+     */
+    private fun expandSequenceItems(
+        session: Session,
+        user: User?,
+        currentMessage: String,
+        ui: ApplicationInterface,
+        api: API,
+        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        processor: FixedConcurrencyProcessor,
+        expression: String,
+        items: List<String>
+    ) {
+        val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
+        
+        for (item in items) {
+            val subUi = ApplicationInterface(ui.socketManager)
+            val subTask = subUi.newTask(false).apply { tabs[item] = placeholder }
+            val nextMessage = currentMessage.replaceFirst(expression, item)
+            
+            processMessageRecursive(
+                session = session,
+                user = user,
+                currentMessage = nextMessage,
+                ui = subUi,
+                api = api,
+                task = subTask,
+                processor = processor
+            )
         }
+        
+        tabs.update()
     }
 
     companion object {
     }
 }
-

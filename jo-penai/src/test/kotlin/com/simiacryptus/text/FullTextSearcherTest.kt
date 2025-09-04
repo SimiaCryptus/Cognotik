@@ -5,7 +5,7 @@ package com.simiacryptus.text
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 /**
  * Unit tests for the fulltextsearch package:

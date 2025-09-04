@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.util.AgentPatterns
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.util.JsonUtil
 import java.util.*
@@ -28,9 +27,9 @@ object PlanUtil {
             "Text" to withPrompt.planText.renderMarkdown(),
             "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown(),
             "Diagram" to (("```mermaid\n" + buildMermaidGraph(
-              (filterPlan {
-                withPrompt.plan
-              } ?: emptyMap()).toMutableMap()
+                (filterPlan {
+                    withPrompt.plan
+                } ?: emptyMap()).toMutableMap()
             ) + "\n```\n").renderMarkdown())
         )
     )
@@ -180,6 +179,6 @@ object PlanUtil {
         return dependencies
     }
 
-    val log = org.slf4j.LoggerFactory.getLogger(PlanUtil::class.java)
+    val log = com.simiacryptus.util.LoggerFactory.getLogger(PlanUtil::class.java)
 
 }

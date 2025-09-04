@@ -6,15 +6,17 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.chatModel
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
-import com.simiacryptus.jopenai.models.chatModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.text.SimpleDateFormat
 
 class GenericChatAction : BaseAction() {
@@ -31,20 +33,19 @@ class GenericChatAction : BaseAction() {
                 progress.text = "Setting up chat session..."
 
                 val session = Session.newGlobalID()
-                cognotik.actions.SessionProxyServer.metadataStorage.setSessionName(
+                SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                cognotik.actions.SessionProxyServer.agents[session] = ChatSocketManager(
+                SessionProxyServer.agents[session] = ChatSocketManager(
                     session = session,
                     model = AppSettingsState.instance.smartModel.chatModel(),
                     parsingModel = AppSettingsState.instance.fastModel.chatModel(),
-                    initialAssistantPrompt = "",
                     systemPrompt = systemPrompt,
                     api = api,
                     applicationClass = ApplicationServer::class.java,
-                    storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+                    storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
                     budget = 2.0
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(

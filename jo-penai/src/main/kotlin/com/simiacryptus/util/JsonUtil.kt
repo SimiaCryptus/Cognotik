@@ -56,7 +56,7 @@ object JsonUtil {
             ).registerModule(JavaTimeModule())
     }
 
-    fun toJson(data: Any): String {
+    fun toJson(data: Any?): String {
         return objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
     }
 
@@ -77,4 +77,8 @@ fun <T : Any> T.copy(fn: T.() -> Unit): T {
 
 fun Any.toJson(): String {
     return JsonUtil.toJson(this)
+}
+
+inline fun <reified T> Any.jsonCast(): T {
+    return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, T::class.java) }
 }

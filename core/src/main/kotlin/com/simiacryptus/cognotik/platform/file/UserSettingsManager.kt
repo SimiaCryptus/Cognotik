@@ -48,7 +48,7 @@ open class UserSettingsManager : UserSettingsInterface {
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(UserSettingsManager::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(UserSettingsManager::class.java)
     }
 
 }

@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
 import com.simiacryptus.jopenai.describe.TypeDescriber
 
 /**

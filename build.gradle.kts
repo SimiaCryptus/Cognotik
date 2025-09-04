@@ -3,21 +3,29 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 subprojects {
-    apply(plugin = "java")
-    apply(plugin = "kotlin")
     apply(plugin = "jacoco")
     repositories {
+        google()
         mavenCentral()
+        gradlePluginPortal()
+    }
+    when (name) {
+        "android" -> { /* Skip Java plugin for Android project */ }
+//        "webui" -> {}
+        else -> {
+            apply(plugin = "java")
+            apply(plugin = "kotlin")
+        }
     }
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_17.toString()
-            freeCompilerArgs = listOf("-Xjsr305=strict")
-            javaParameters = true
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.set(listOf("-Xjsr305=strict"))
+            javaParameters.set(true)
         }
     }
     // Configure JaCoCo for code coverage
@@ -53,7 +61,7 @@ subprojects {
             excludes = listOf("jdk.internal.*")
         }
     }
-    
+
     tasks.register("analyzeDependencies") {
         description = "Analyzes project dependencies for potential issues"
         doLast {
@@ -72,12 +80,21 @@ subprojects {
 }
 
 allprojects {
-    apply(plugin = "java")
-    java {
-        toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+    // Only apply Java plugin to non-Android projects
+    when (name) {
+        "android" -> { /* Skip Java plugin for Android project */ }
+//        "webui" -> {}
+        else -> {
+            apply(plugin = "java")
+            java {
+                toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
     }
+
+
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
     }
@@ -86,9 +103,17 @@ allprojects {
         resolutionStrategy {
             force(
                 "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}",
-                "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}",
-                "org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}"
+                "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}"
             )
+            // Only force SLF4J version for non-Android projects
+            if (project.name != "android") {
+                force("org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}")
+            } else {
+                // For Android, force slf4j-android and exclude other implementations
+                force("org.slf4j:slf4j-android:1.7.36")
+                exclude(group = "org.slf4j", module = "slf4j-simple")
+                exclude(group = "ch.qos.logback")
+            }
             preferProjectModules()
         }
     }

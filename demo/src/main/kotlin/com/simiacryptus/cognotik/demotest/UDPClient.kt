@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.demotest
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.util.concurrent.ConcurrentLinkedQueue

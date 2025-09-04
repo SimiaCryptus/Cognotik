@@ -1,12 +1,12 @@
 package com.simiacryptus.jopenai.models
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 @Suppress("unused")
 enum class ImageModels(
     override val modelName: String,
     val maxPrompt: Int
-) : OpenAIModel {
+) : AIModel {
 
     DallE2("dall-e-2", 1000) {
         override fun pricing(width: Int, height: Int): Double {

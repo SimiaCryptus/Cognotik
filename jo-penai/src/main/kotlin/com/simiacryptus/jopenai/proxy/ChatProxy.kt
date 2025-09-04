@@ -1,17 +1,17 @@
 package com.simiacryptus.jopenai.proxy
 
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
 import com.simiacryptus.jopenai.models.ApiModel.ChatRequest
-import com.simiacryptus.jopenai.models.ChatModel
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import com.simiacryptus.util.JsonUtil.toJson
 
 open class ChatProxy<T : Any>(
     clazz: Class<out T>,
-    val api: ChatClient,
-    var model: ChatModel,
+    val api: ChatClientInterface,
+    var model: ChatModelType,
     temperature: Double = 0.5,
     private val moderated: Boolean = false,
     val deserializerRetries: Int = 2,
@@ -75,7 +75,7 @@ open class ChatProxy<T : Any>(
 
     companion object {
 
-        private val log = org.slf4j.LoggerFactory.getLogger(ChatProxy::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(ChatProxy::class.java)
         private fun trimPrefix(completion: String): String {
             val braceIndex = completion.indexOf('{')
             val bracketIndex = completion.indexOf('[')

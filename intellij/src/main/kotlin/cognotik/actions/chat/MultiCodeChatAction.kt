@@ -1,7 +1,6 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.MultiStepPatchAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -9,26 +8,25 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.chatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType.ChatModel
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 
@@ -83,11 +81,11 @@ class MultiCodeChatAction : BaseAction() {
     }
 
     private fun getRoot(event: AnActionEvent): Path? {
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         return if (null != folder) {
             folder.toFile.toPath()
         } else {
-            getModuleRootForFile(UITools.getSelectedFile(event)?.parent?.toFile ?: return null).toPath()
+            getModuleRootForFile(event.getSelectedFile()?.parent?.toFile ?: return null).toPath()
         }
     }
 
@@ -125,7 +123,7 @@ class MultiCodeChatAction : BaseAction() {
         systemPrompt = "",
         api = api,
         applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(AppSettingsState.instance.pluginHome),
+        storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
         budget = 2.0,
     ) {
 
@@ -158,7 +156,7 @@ class MultiCodeChatAction : BaseAction() {
                     response = html,
                     handle = { newCodeMap ->
                         newCodeMap.forEach { (path, newCode) ->
-                            task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
+                            task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                         }
                     },
                     ui = ui,
@@ -167,7 +165,13 @@ class MultiCodeChatAction : BaseAction() {
             }
         }</div>"""
 
-        override fun respond(api: ChatClient, task: SessionTask, userMessage: String, currentChatMessages: List<ApiModel.ChatMessage>): String {
+        override fun respond(
+            api: ChatClientInterface,
+            task: SessionTask,
+            userMessage: String,
+            currentChatMessages: List<ApiModel.ChatMessage>,
+            transcriptStream: OutputStream?
+        ): String {
 
             val codex = GPT4Tokenizer()
             task.verbose((codeFiles.joinToString("\n") { path ->
@@ -177,7 +181,7 @@ class MultiCodeChatAction : BaseAction() {
             val settings = MultiStepPatchAction.AutoDevApp.Settings()
             api.budget = settings.budget ?: 2.00
 
-            return super.respond(api, task, userMessage, currentChatMessages)
+            return super.respond(api, task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 

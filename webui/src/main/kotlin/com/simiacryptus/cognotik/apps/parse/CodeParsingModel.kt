@@ -2,12 +2,14 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModel
 
 open class CodeParsingModel(
-    private val parsingModel: ChatModel,
-    private val temperature: Double
+    private val parsingModel: ChatModelType,
+    private val temperature: Double,
+    override val api: ChatClientInterface
 ) : ParsingModel<CodeParsingModel.CodeData> {
 
     override fun merge(
@@ -90,6 +92,6 @@ open class CodeParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(CodeParsingModel::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(CodeParsingModel::class.java)
     }
 }

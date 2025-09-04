@@ -68,6 +68,7 @@ function loadNarrationKeys(narrationsPath) {
         return [];
     }
 }
+
 /**
  * Load full narrations object
  */
@@ -80,6 +81,7 @@ function loadNarrations(narrationsPath) {
         return {};
     }
 }
+
 /**
  * Generate markdown report with compiled narration scripts
  */
@@ -99,15 +101,15 @@ Generated on: ${timestamp}
     for (const file of sortedFiles) {
         const relativePath = path.relative(projectRoot, file);
         const keys = fileUsage[file];
-        
+
         markdown += `### ${relativePath}\n\n`;
-        
+
         // Add each narration used in this demo
         for (const key of keys) {
             if (narrations[key]) {
                 const content = narrations[key];
                 markdown += `<a id="${key}"></a>\n\n`;
-                
+
                 if (typeof content === 'string') {
                     markdown += `${content}\n\n`;
                 } else if (typeof content === 'object') {
@@ -120,7 +122,7 @@ Generated on: ${timestamp}
                 markdown += `*This narration key is used but not defined in narrations.json*\n\n`;
             }
         }
-        
+
         markdown += `\n\n`;
     }
 
@@ -265,7 +267,7 @@ function analyzeNarrationUsage() {
     console.log(`📚 Found ${definedKeys.length} defined narration keys\n`);
     // Load full narrations object for markdown report
     const narrations = loadNarrations(narrationsPath);
-    
+
     // Find duplicate keys
     const duplicateKeys = findDuplicateKeys(narrationsPath);
     const duplicateCount = Object.keys(duplicateKeys).length;
@@ -300,7 +302,7 @@ function analyzeNarrationUsage() {
     const usedKeysArray = Array.from(usedKeys);
 
     // Find missing keys (used but not defined)
-   const missingKeys = usedKeysArray.filter(key => !definedKeys.includes(key));
+    const missingKeys = usedKeysArray.filter(key => !definedKeys.includes(key));
 
     // Find unused keys (defined but not used)
     const unusedKeys = definedKeys.filter(key => !usedKeys.has(key));
@@ -337,16 +339,16 @@ function analyzeNarrationUsage() {
         missingKeys.forEach(key => {
             console.log(`  • ${key}`);
             // Show where it's used
-           const filesUsingKey = [];
+            const filesUsingKey = [];
             for (const [file, keys] of Object.entries(fileUsage)) {
                 if (keys.includes(key)) {
-                   filesUsingKey.push(path.relative(projectRoot, file));
+                    filesUsingKey.push(path.relative(projectRoot, file));
                 }
             }
-           filesUsingKey.forEach((file, index) => {
-               const prefix = index === filesUsingKey.length - 1 ? '    └─' : '    ├─';
-               console.log(`${prefix} Used in: ${file}`);
-           });
+            filesUsingKey.forEach((file, index) => {
+                const prefix = index === filesUsingKey.length - 1 ? '    └─' : '    ├─';
+                console.log(`${prefix} Used in: ${file}`);
+            });
         });
         console.log();
     }

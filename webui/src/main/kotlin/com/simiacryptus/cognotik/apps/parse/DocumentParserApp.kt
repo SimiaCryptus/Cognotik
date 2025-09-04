@@ -4,10 +4,10 @@ import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
+import com.simiacryptus.cognotik.input.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -16,9 +16,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.util.JsonUtil
-import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
@@ -30,14 +29,7 @@ open class DocumentParserApp(
     applicationName: String = "Document Extractor",
     path: String = "/pdfExtractor",
     val parsingModel: ParsingModel<DocumentData>,
-    val reader: (File) -> DocumentReader = {
-        when {
-            it.name.endsWith(".pdf", ignoreCase = true) -> PDFReader(it)
-            it.name.endsWith(".html", ignoreCase = true) -> HTMLReader(it)
-            it.name.endsWith(".htm", ignoreCase = true) -> HTMLReader(it)
-            else -> TextReader(it)
-        }
-    },
+    val reader: (File) -> DocumentReader = { it.getReader() },
     val fileInputs: List<Path>? = null,
     val fastMode: Boolean = true
 ) : ApplicationServer(
@@ -97,7 +89,7 @@ open class DocumentParserApp(
         maxPages: Int,
         settings: Settings,
         pagesPerBatch: Int,
-        api: ChatClient,
+        api: ChatClientInterface,
         progressBar: ProgressState? = null
     ) {
         try {
@@ -117,7 +109,7 @@ open class DocumentParserApp(
             val docTabs = TabbedDisplay(task)
             fileInputs.map { it.toFile() }.forEach { file ->
                 if (!file.exists()) {
-                    task.error(ui, IllegalArgumentException("File not found: $file"))
+                    task.error(IllegalArgumentException("File not found: $file"))
                     return
                 }
                 ui.socketManager?.pool?.submit {
@@ -130,7 +122,10 @@ open class DocumentParserApp(
                         }
                         var previousPageText = ""
 
-                        val pageCount = minOf(reader.getPageCount(), maxPages)
+                        val pageCount = when (reader) {
+                            is PaginatedDocumentReader -> minOf(reader.getPageCount(), maxPages)
+                            else -> minOf(1, maxPages)
+                        }
                         val pageSets = 0 until pageCount step pagesPerBatch
                         progressBar?.add(0.0, pageCount.toDouble())
                         var runningDocument = parsingModel.newDocument()
@@ -139,7 +134,10 @@ open class DocumentParserApp(
                             val api = api.getChildClient(pageTask)
                             try {
                                 val batchEnd = min(batchStart + pagesPerBatch, pageCount)
-                                val text = reader.getText(batchStart, batchEnd)
+                                val text = when (reader) {
+                                    is PaginatedDocumentReader -> reader.getText(batchStart, batchEnd)
+                                    else -> reader.getText()
+                                }
                                 val label =
                                     if ((batchStart + 1) != batchEnd) "Pages ${batchStart}-${batchEnd}" else "Page ${batchStart}"
                                 val pageTabs =
@@ -147,7 +145,14 @@ open class DocumentParserApp(
                                 if (settings.showImages) {
                                     for (pageIndex in batchStart until batchEnd) {
                                         try {
-                                            val image = reader.renderImage(pageIndex, settings.dpi)
+                                            val image = when (reader) {
+                                                is RenderableDocumentReader -> reader.renderImage(
+                                                    pageIndex,
+                                                    settings.dpi
+                                                )
+
+                                                else -> continue // Skip image rendering for non-renderable readers
+                                            }
                                             ui.newTask(false).apply<SessionTask> {
                                                 pageTabs["Image ${1 + (pageIndex - batchStart)}"] = placeholder
                                                 image(image)
@@ -176,7 +181,6 @@ open class DocumentParserApp(
                                 }
                                 if (text.isBlank()) {
                                     pageTask.error(
-                                        ui,
                                         IllegalArgumentException("No text extracted from pages $batchStart to $batchEnd")
                                     )
                                     return@mapNotNull null
@@ -230,7 +234,7 @@ open class DocumentParserApp(
                                     Futures.immediateFuture(runningDocument)
                                 }
                             } catch (e: Throwable) {
-                                pageTask.error(ui, e)
+                                pageTask.error(e)
                                 null
                             }
                         }.toTypedArray()
@@ -238,7 +242,7 @@ open class DocumentParserApp(
                             try {
                                 it.get()
                             } catch (e: Throwable) {
-                                task.error(ui, e)
+                                task.error(e)
                                 null
                             }
                         }.fold(parsingModel.newDocument())
@@ -261,7 +265,7 @@ open class DocumentParserApp(
                 }
             }
         } catch (e: Throwable) {
-            task.error(ui, e)
+            task.error(e)
         }
     }
 
@@ -288,18 +292,18 @@ open class DocumentParserApp(
             ui.newTask(false).apply<SessionTask> {
                 pageTabs["Text"] = placeholder
                 add(
-                  generateMarkdownCodeBlock("text", text, settings).renderMarkdown
+                    generateMarkdownCodeBlock("text", text, settings).renderMarkdown
                 )
             }
             ui.newTask(false).apply<SessionTask> {
                 pageTabs["JSON"] = placeholder
                 add(
-                  generateMarkdownCodeBlock("json", JsonUtil.toJson(jsonResult), settings).renderMarkdown
+                    generateMarkdownCodeBlock("json", JsonUtil.toJson(jsonResult), settings).renderMarkdown
                 )
             }
             jsonResult
         } catch (e: Throwable) {
-            pageTask.error(ui, e)
+            pageTask.error(e)
             null
         } finally {
             progressBar?.add(1.0, 0.0)
@@ -325,33 +329,13 @@ open class DocumentParserApp(
             "\n```$language\n$content\n```\n"
         }
 
-    data class Settings(
-        val dpi: Float = 120f,
-        val maxPages: Int = Int.MAX_VALUE,
-        val outputFormat: String = "PNG",
-        val fileInputs: List<String>? = null,
-        val showImages: Boolean = true,
-        val pagesPerBatch: Int = 1,
-        val saveImageFiles: Boolean = false,
-        val saveTextFiles: Boolean = false,
-        val saveFinalJson: Boolean = true,
-        val fastMode: Boolean = true,
-        val addLineNumbers: Boolean = false
-    )
-
     override val settingsClass: Class<*> get() = Settings::class.java
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = Settings() as T
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(DocumentParserApp::class.java)
-    }
-
-    interface DocumentReader : AutoCloseable {
-        fun getPageCount(): Int
-        fun getText(startPage: Int, endPage: Int): String
-        fun renderImage(pageIndex: Int, dpi: Float): BufferedImage
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentParserApp::class.java)
     }
 
 }

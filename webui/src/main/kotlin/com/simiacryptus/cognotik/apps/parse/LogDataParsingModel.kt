@@ -1,12 +1,14 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.jopenai.API
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ChatModel
 
 open class LogDataParsingModel(
-    private val parsingModel: ChatModel,
-    private val temperature: Double
+    private val parsingModel: ChatModelType,
+    private val temperature: Double,
+    override val api: ChatClientInterface
 ) : ParsingModel<LogDataParsingModel.LogData> {
     private val maxIterations = 10
 
@@ -187,7 +189,7 @@ open class LogDataParsingModel(
     )
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(LogDataParsingModel::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(LogDataParsingModel::class.java)
     }
 }
 

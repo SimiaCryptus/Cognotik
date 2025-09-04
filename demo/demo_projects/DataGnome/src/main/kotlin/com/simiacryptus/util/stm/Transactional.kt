@@ -1,6 +1,6 @@
 package com.simiacryptus.util.stm
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 abstract class Transactional {
 

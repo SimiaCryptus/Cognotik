@@ -7,8 +7,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.describe.TypeDescriber
 import com.simiacryptus.jopenai.models.ApiModel
@@ -52,7 +51,7 @@ class PlanningTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -69,15 +68,15 @@ class PlanningTask(
                 agent.ui,
                 planSettings,
                 agent.describer
-            ).call().obj
+            ).call()?.obj
         } else {
             val design = planSettings.planningActor(agent.describer).answer(
                 toInput("Expand ${taskConfig?.task_description ?: ""}"),
                 api = api
             )
-            com.simiacryptus.cognotik.plan.PlanUtil.render(
+            PlanUtil.render(
                 withPrompt = TaskBreakdownWithPrompt(
-                    plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { design.obj.tasksByID } ?: emptyMap(),
+                    plan = PlanUtil.filterPlan { design.obj.tasksByID } ?: emptyMap(),
                     planText = design.text,
                     prompt = userMessage
                 ),
@@ -88,10 +87,10 @@ class PlanningTask(
         executeSubTasks(
             agent,
             userMessage,
-            com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { subPlan.tasksByID } ?: emptyMap(),
+            PlanUtil.filterPlan { subPlan?.tasksByID } ?: emptyMap(),
             task,
             api,
-            )
+        )
     }
 
     private fun createSubPlanDiscussable(
@@ -108,9 +107,9 @@ class PlanningTask(
         heading = "",
         initialResponse = { it: String -> planSettings.planningActor(describer).answer(toInput(it), api = api) },
         outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
-            com.simiacryptus.cognotik.plan.PlanUtil.render(
+            PlanUtil.render(
                 withPrompt = TaskBreakdownWithPrompt(
-                    plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { design.obj.tasksByID } ?: emptyMap(),
+                    plan = PlanUtil.filterPlan { design.obj.tasksByID } ?: emptyMap(),
                     planText = design.text,
                     prompt = userMessage
                 ),
@@ -148,7 +147,7 @@ class PlanningTask(
             )
         ).executePlan(
             diagramBuffer = subPlanTask.add(
-                com.simiacryptus.cognotik.plan.PlanUtil.diagram(
+                PlanUtil.diagram(
                     coordinator.ui,
                     planProcessingState.subTasks
                 )
@@ -156,7 +155,7 @@ class PlanningTask(
             subTasks = subPlan,
             task = subPlanTask,
             planProcessingState = planProcessingState,
-            taskIdProcessingQueue = com.simiacryptus.cognotik.plan.PlanUtil.executionOrder(subPlan).toMutableList(),
+            taskIdProcessingQueue = PlanUtil.executionOrder(subPlan).toMutableList(),
             pool = coordinator.pool,
             userMessage = userMessage,
             plan = subPlan,

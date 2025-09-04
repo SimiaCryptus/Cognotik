@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.audio
 
 import edu.emory.mathcs.jtransforms.fft.FloatFFT_1D
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.sound.sampled.AudioFileFormat

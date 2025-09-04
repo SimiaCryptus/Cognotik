@@ -1,9 +1,9 @@
 package com.simiacryptus.jopenai
 
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.models.APIProvider
 import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.util.ClientUtil
+import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
 import org.junit.jupiter.api.DynamicNode
 import org.junit.jupiter.api.DynamicTest
@@ -36,7 +36,7 @@ class ModelTests {
             }
         }.flatMap { provider ->
 
-            ChatModel.values()
+            ChatModelType.values()
                 .filter { it.value.provider == provider }
                 .values
                 .filter { model ->
@@ -54,11 +54,11 @@ class ModelTests {
         }.toTypedArray()
     }
 
-    private fun testChatWithModel(model: ChatModel) {
-        val client = ChatClient(
+    private fun testChatWithModel(model: ChatModelType) {
+        val client = ProvidersChatClient(
             workPool = Executors.newCachedThreadPool(),
-            key = TODO(),
-            apiBase = TODO()
+            apiKeyMap = TODO(),
+            apiBaseMap = TODO()
         )
         val request = ApiModel.ChatRequest(
             model = model.modelName,

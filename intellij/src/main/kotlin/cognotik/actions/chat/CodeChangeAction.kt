@@ -1,39 +1,35 @@
 package cognotik.actions.chat
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import cognotik.actions.agent.MultiStepPatchAction.AutoDevApp.Settings
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.ChatClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.jopenai.chat.ProvidersChatClient
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.models.chatModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -100,11 +96,11 @@ class CodeChangeAction : BaseAction() {
     }
 
     private fun getRoot(event: AnActionEvent): Path? {
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         return if (null != folder) {
             folder.toFile.toPath()
         } else {
-            getModuleRootForFile(UITools.getSelectedFile(event)?.parent?.toFile ?: return null).toPath()
+            getModuleRootForFile(event.getSelectedFile()?.parent?.toFile ?: return null).toPath()
         }
     }
 
@@ -164,12 +160,12 @@ class CodeChangeAction : BaseAction() {
         ) {
             try {
                 val settings = getSettings(session, user) ?: Settings()
-                if (api is ChatClient) api.budget = settings.budget ?: 2.00
+                if (api is ProvidersChatClient) api.budget = settings.budget ?: 2.00
 
                 val task = ui.newTask()
                 task.add("Analyzing files...")
 
-                val api = (api as ChatClient).getChildClient(task)
+                val api = (api as ChatClientInterface).getChildClient(task)
 
                 val fileAnalyzer = ParsedActor(
                     resultClass = FileAnalysis::class.java,
@@ -180,8 +176,8 @@ class CodeChangeAction : BaseAction() {
                         2) Related files that provide important context
                         Be selective and only include files that are directly relevant.
                     """.trimIndent(),
-                    model = AppSettingsState.instance.fastModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                    model = AppSettingsState.instance.fastModel.chatModelType(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
                 )
 
                 val allFiles = getCodeFiles()
@@ -205,7 +201,7 @@ class CodeChangeAction : BaseAction() {
                             You will be answering questions about the following code:
 
                         """.trimIndent() + codeSummary(relevantPaths) + patchFormatPrompt,
-                        model = AppSettingsState.instance.smartModel.chatModel()
+                        model = AppSettingsState.instance.smartModel.chatModelType()
                     )
                 }
 
@@ -247,7 +243,7 @@ class CodeChangeAction : BaseAction() {
                 ).call()
             } catch (e: Exception) {
                 log.error("Error processing user message", e)
-                ui.newTask().error(ui, e)
+                ui.newTask().error(e)
             }
         }
     }

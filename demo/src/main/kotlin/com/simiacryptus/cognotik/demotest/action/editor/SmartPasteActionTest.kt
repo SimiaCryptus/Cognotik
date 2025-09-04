@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.demotest.DemoTestBase
 import com.simiacryptus.cognotik.demotest.SplashScreenConfig
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.time.Duration

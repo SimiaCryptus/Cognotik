@@ -5,7 +5,6 @@ package cognotik.actions.agent
  */
 
 import cognotik.actions.BaseAction
-import cognotik.actions.SessionProxyServer
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.ComboBox
@@ -17,27 +16,25 @@ import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.CommandConfig
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.CommandConfig
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.commonRoot
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.toJson
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import javax.swing.*
-import kotlin.collections.set
 
 class CommandAutofixAction : BaseAction() {
 
@@ -52,8 +49,8 @@ class CommandAutofixAction : BaseAction() {
             UITools.runAsync(e.project, "Initializing Command Autofix", true) { progress ->
                 progress.isIndeterminate = true
                 progress.text = "Getting settings..."
-                val files = UITools.getSelectedFiles(e)
-                val folders = UITools.getSelectedFolders(e).map { it.toFile.toPath() }
+                val files = e.getSelectedFiles()
+                val folders = e.getSelectedFolders().map { it.toFile.toPath() }
                 val root = (folders + files.map { it.toFile.toPath() }).filterNotNull().toTypedArray().commonRoot()
                 lateinit var settingsUI: SettingsUI
                 val settings = run {
@@ -97,7 +94,7 @@ class CommandAutofixAction : BaseAction() {
                                 AppSettingsState.instance.recentWorkingDirs?.apply {
                                     if (size > MAX_RECENT_ARGUMENTS) dropLast(size - MAX_RECENT_DIRS)
                                 }
-                                require(executable.exists()) { "Executable file does not exist: ${executable}" }
+                                require(executable.exists()) { "Executable file does not exist: $executable" }
                                 PatchApp.CommandSettings(
                                     executable = executable,
                                     arguments = argument,
@@ -125,8 +122,8 @@ class CommandAutofixAction : BaseAction() {
                         budget = settingsUI.apiBudgetField.value as Double
                     },
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel()
+                    model = AppSettingsState.instance.smartModel.chatModelType(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModelType()
                 )
                 val session = Session.newGlobalID()
                 SessionProxyServer.chats[session] = patchApp
@@ -163,7 +160,7 @@ class CommandAutofixAction : BaseAction() {
      */
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (event.project == null) return false
-        val folder = UITools.getSelectedFolder(event)
+        val folder = event.getSelectedFolder()
         val hasBasePath = event.project?.basePath != null
         return folder != null || hasBasePath
     }

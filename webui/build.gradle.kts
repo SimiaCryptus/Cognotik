@@ -1,13 +1,9 @@
-import com.sass_lang.embedded_protocol.OutputStyle
-import org.gradle.api.tasks.testing.logging.TestLogEvent
-
 group = providers.gradleProperty("libraryGroup").get()
 version = providers.gradleProperty("libraryVersion").get()
 
 plugins {
     `java-library`
-    id("io.freefair.sass-base") version "8.13"
-    id("io.freefair.sass-java") version "8.13"
+    id("com.github.node-gradle.node") version "7.0.1"
 }
 
 repositories {
@@ -24,7 +20,7 @@ dependencies {
     compileOnly(project(":kotlin"))
     testImplementation(project(":kotlin"))
     testImplementation(project(":groovy"))
-    testImplementation(project(":scala"))
+//    testImplementation(project(":scala"))
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.slf4j")
@@ -42,7 +38,7 @@ dependencies {
     implementation(libs.jetty.websocket.client)
     implementation(libs.jetty.websocket.servlet)
     implementation(libs.jetty.webapp)
-    implementation(libs.flexmark.core)
+    implementation(libs.flexmark.all)
     implementation(libs.flexmark.ext.tables)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
@@ -67,9 +63,11 @@ dependencies {
     compileOnly(libs.graalvm.js.language)
     compileOnly(libs.kotlinx.coroutines)
     compileOnly(libs.aws.sdk)
+
     compileOnly("org.openapitools:openapi-generator:7.3.0") {
         exclude(group = "org.slf4j")
     }
+
     compileOnly("org.openapitools:openapi-generator-cli:7.3.0") {
         exclude(group = "org.slf4j")
     }
@@ -97,10 +95,61 @@ dependencies {
     testImplementation(kotlin("script-runtime"))
 }
 
-sass {
-    omitSourceMapUrl.set(false)
-    outputStyle.set(OutputStyle.EXPANDED)
-    sourceMapContents.set(false)
-    sourceMapEmbed.set(false)
-    sourceMapEnabled.set(true)
+node {
+    version.set("20.19.5")
+    npmVersion.set("11.6.0")
+    download.set(true)
+    nodeProjectDir.set(file("${project.projectDir}/../webapp"))
+}
+
+// Add webapp build tasks
+tasks.register<com.github.gradle.node.npm.task.NpmTask>("buildWebapp") {
+    dependsOn(tasks.npmInstall)
+    args.set(listOf("run", "build"))
+    inputs.dir("../webapp/src")
+    inputs.files("../webapp/package.json", "../webapp/package-lock.json")
+    outputs.dir("../webapp/build")
+}
+
+// Copy webapp build output to resources
+tasks.register<Copy>("copyWebappBuild") {
+    dependsOn("buildWebapp")
+    from("../webapp/build")
+    into("src/main/resources/application")
+}
+
+tasks.register<Copy>("copyWebappStatic") {
+    dependsOn("buildWebapp")
+    from("../webapp/build/static")
+    into("src/main/resources/welcome/static")
+}
+
+// Clean webapp build artifacts
+tasks.register<Delete>("cleanWebapp") {
+    delete("../webapp/build")
+    delete("src/main/resources/application")
+    delete("src/main/resources/welcome/static")
+}
+tasks.clean {
+    dependsOn("cleanWebapp")
+}
+
+
+tasks.register<com.github.gradle.node.npm.task.NpmTask>("installSass") {
+    args.set(listOf("install", "sass", "--save-dev"))
+}
+
+tasks.register<com.github.gradle.node.npm.task.NpxTask>("compileSass") {
+    dependsOn("installSass")
+    command.set("sass")
+    workingDir.set(file("${project.projectDir}"))
+    args.set(listOf(
+        "src/main/resources/shared:build/resources/main/css",
+        "--style=expanded",
+        "--source-map"
+    ))
+}
+
+tasks.named("processResources") {
+    dependsOn("compileSass", "copyWebappBuild", "copyWebappStatic")
 }

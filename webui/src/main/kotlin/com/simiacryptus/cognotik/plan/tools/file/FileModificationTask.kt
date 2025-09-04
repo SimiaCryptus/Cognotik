@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
@@ -10,10 +11,9 @@ import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.ChatClient
-import com.simiacryptus.jopenai.OpenAIClient
+import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -25,6 +25,7 @@ class FileModificationTask(
     class FileModificationTaskConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
+        extractContent: Boolean = false,
         @Description("Specific modifications to be made to the files")
         val modifications: Any? = null,
         @Description("Whether to include git diff with HEAD")
@@ -38,6 +39,7 @@ class FileModificationTask(
         task_dependencies = task_dependencies,
         related_files = related_files,
         files = files,
+        extractContent = extractContent,
         state = state
     )
 
@@ -152,7 +154,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClient,
+        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -245,5 +247,25 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
     companion object {
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
+
+        val FileModificationTaskType = TaskType(
+            "FileModificationTask",
+            FileModificationTaskConfigData::class.java,
+            TaskSettingsBase::class.java,
+            "Create new files or modify existing code with AI-powered assistance",
+            """
+                      Creates or modifies source files with AI assistance while maintaining code quality.
+                      <ul>
+                        <li>Shows proposed changes in diff format for easy review</li>
+                        <li>Supports both automated application and manual approval modes</li>
+                        <li>Maintains project coding standards and style consistency</li>
+                        <li>Handles complex multi-file operations and refactoring</li>
+                        <li>Provides clear documentation of all changes with rationale</li>
+                        <li>Implements proper error handling and edge cases</li>
+                        <li>Updates imports and dependencies automatically</li>
+                        <li>Preserves existing code formatting and structure</li>
+                      </ul>
+                    """
+        )
     }
 }

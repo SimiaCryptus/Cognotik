@@ -1,14 +1,20 @@
 package com.simiacryptus.jopenai.models
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
+import com.simiacryptus.jopenai.models.LLMModel
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 open class EditModels(
     modelName: String,
     maxTokens: Int,
     private val tokenPricePerK: Double,
-) : TextModel(modelName, maxTokens) {
+    provider: APIProvider = APIProvider.OpenAI,
+) : LLMModel(
+    modelName = modelName,
+    provider = provider,
+    maxTotalTokens = maxTokens
+) {
     private val log: Logger = LoggerFactory.getLogger(EditModels::class.java)
 
     init {

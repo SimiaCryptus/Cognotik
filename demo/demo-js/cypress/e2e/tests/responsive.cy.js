@@ -1,10 +1,10 @@
 // cypress/e2e/responsive.cy.js
 describe('Responsive Design Tests', () => {
     const viewports = [
-        { name: 'mobile', width: 375, height: 667 },
-        { name: 'tablet', width: 768, height: 1024 },
-        { name: 'desktop', width: 1280, height: 720 },
-        { name: 'large-desktop', width: 1920, height: 1080 }
+        {name: 'mobile', width: 375, height: 667},
+        {name: 'tablet', width: 768, height: 1024},
+        {name: 'desktop', width: 1280, height: 720},
+        {name: 'large-desktop', width: 1920, height: 1080}
     ];
 
     viewports.forEach(viewport => {

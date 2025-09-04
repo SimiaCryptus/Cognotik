@@ -7,7 +7,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.chatModel
+import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import javax.swing.JOptionPane
 
@@ -38,7 +38,7 @@ open class CustomEditAction : SelectionAction<String>(requiresSelection = true) 
             val chatProxy = ChatProxy(
                 clazz = VirtualAPI::class.java,
                 api = api,
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartModel.chatModelType(),
                 temperature = AppSettingsState.instance.temperature,
             )
             chatProxy.addExample(
