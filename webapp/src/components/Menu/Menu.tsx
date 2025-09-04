@@ -19,7 +19,7 @@ function long64(): string {
     const buffer = new ArrayBuffer(8);
     const view = new DataView(buffer);
     view.setBigInt64(0, BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)));
-    return btoa(String.fromCharCode(...Array.from(new Uint8Array(buffer))))
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
         .replace(/=/g, '')
         .replace(/\//g, '.')
         .replace(/\+/g, '-');

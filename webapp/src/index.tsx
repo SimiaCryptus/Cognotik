@@ -1,6 +1,6 @@
 import {Provider} from 'react-redux';
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 import App from './App';
 import {store} from './store';
 import './index.css';
@@ -14,16 +14,14 @@ if (!rootElement) {
     throw new Error('Failed to find the root element');
 }
 
-const root = ReactDOM.createRoot(rootElement);
+const root = createRoot(rootElement);
 mermaid.initialize({startOnLoad: true});
 
 try {
     root.render(
-        <React.StrictMode>
         <Provider store={store}>
             <App/>
         </Provider>
-        </React.StrictMode>
     );
     console.log('[App] Application started successfully ✅');
 } catch (error) {
