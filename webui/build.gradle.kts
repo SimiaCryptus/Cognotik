@@ -63,9 +63,11 @@ dependencies {
     compileOnly(libs.graalvm.js.language)
     compileOnly(libs.kotlinx.coroutines)
     compileOnly(libs.aws.sdk)
+
     compileOnly("org.openapitools:openapi-generator:7.3.0") {
         exclude(group = "org.slf4j")
     }
+
     compileOnly("org.openapitools:openapi-generator-cli:7.3.0") {
         exclude(group = "org.slf4j")
     }
@@ -99,6 +101,7 @@ node {
     download.set(true)
     nodeProjectDir.set(file("${project.projectDir}/../webapp"))
 }
+
 // Add webapp build tasks
 tasks.register<com.github.gradle.node.npm.task.NpmTask>("buildWebapp") {
     dependsOn(tasks.npmInstall)
@@ -107,17 +110,20 @@ tasks.register<com.github.gradle.node.npm.task.NpmTask>("buildWebapp") {
     inputs.files("../webapp/package.json", "../webapp/package-lock.json")
     outputs.dir("../webapp/build")
 }
+
 // Copy webapp build output to resources
 tasks.register<Copy>("copyWebappBuild") {
     dependsOn("buildWebapp")
     from("../webapp/build")
     into("src/main/resources/application")
 }
+
 tasks.register<Copy>("copyWebappStatic") {
     dependsOn("buildWebapp")
     from("../webapp/build/static")
     into("src/main/resources/welcome/static")
 }
+
 // Clean webapp build artifacts
 tasks.register<Delete>("cleanWebapp") {
     delete("../webapp/build")

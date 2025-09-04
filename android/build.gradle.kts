@@ -17,10 +17,18 @@ val sdkDir = localProperties.getProperty("sdk.dir")
     ?: findProperty("android.sdk.home") as String?
     ?: System.getenv("ANDROID_HOME")
     ?: System.getenv("ANDROID_SDK_ROOT")
+    ?: System.getenv("ANDROID_SDK_HOME")
     ?: (System.getProperty("user.home") + "/Android/Sdk")  // Default macOS location
 
-println("Using Android SDK at: $sdkDir")
-System.setProperty("android.home", sdkDir)
+if (sdkDir != null && File(sdkDir).exists()) {
+    println("Using Android SDK at: $sdkDir")
+    System.setProperty("android.home", sdkDir)
+} else {
+    println("Android SDK not found at: $sdkDir")
+    if (System.getenv("CI") != null) {
+        println("Running in CI environment - Android SDK not required for non-Android tasks")
+    }
+}
 
 group = providers.gradleProperty("libraryGroup").get()
 version = providers.gradleProperty("libraryVersion").get()

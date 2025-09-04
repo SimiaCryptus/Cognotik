@@ -371,7 +371,7 @@ jobs:
       - name: Run Tests
         run: |
           echo "Starting test execution..."
-          ./gradlew test check
+          ./gradlew test check -x :android:test -x :android:check
           echo "Test execution completed"
 
       - name: Collect Tests Result
