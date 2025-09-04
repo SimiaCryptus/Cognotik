@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.platform.hsql
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Timestamp

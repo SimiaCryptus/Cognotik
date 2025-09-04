@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.SettingsWidgetFactory.SettingsWidget
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.Desktop
 import java.net.DatagramPacket
 import java.net.DatagramSocket

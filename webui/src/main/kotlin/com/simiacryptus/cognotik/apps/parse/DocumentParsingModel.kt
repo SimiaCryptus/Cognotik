@@ -90,7 +90,7 @@ open class DocumentParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(DocumentParsingModel::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentParsingModel::class.java)
 
     }
 

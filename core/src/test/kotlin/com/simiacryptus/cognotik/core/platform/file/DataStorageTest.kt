@@ -14,7 +14,7 @@ import java.util.*
 
 abstract class StorageInterfaceTest(val storage: StorageInterface) {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(StorageInterfaceTest::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(StorageInterfaceTest::class.java)
     }
 
     @Test

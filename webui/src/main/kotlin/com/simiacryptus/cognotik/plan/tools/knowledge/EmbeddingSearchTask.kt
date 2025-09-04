@@ -17,7 +17,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.EmbeddingModel
 import com.simiacryptus.jopenai.opt.DistanceType
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.Executors

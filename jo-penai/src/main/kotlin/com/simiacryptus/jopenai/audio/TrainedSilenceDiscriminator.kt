@@ -1,6 +1,6 @@
 package com.simiacryptus.jopenai.audio
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import kotlin.math.ln
 

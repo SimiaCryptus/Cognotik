@@ -96,6 +96,13 @@ class CognotikActivity : AppCompatActivity(), CognotikService.ServerStatusListen
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         val elapsedTime = System.currentTimeMillis() - activityStartTime
         Log.i(TAG, "MainActivity onCreate completed in ${elapsedTime}ms")
+
+        // HACK: In 5 seconds, refresh the WebView to ensure content is loaded (doesn't even workaround the issue?)
+        // TODO: Remove me once the underlying issue is resolved
+        webView.postDelayed({
+            Log.d(TAG, "Post-delay: refreshing WebView after 5 seconds")
+            refreshWebView()
+        }, 5000);
     }
     
     private fun ensureEmojiCompatInitialized() {
@@ -278,6 +285,6 @@ class CognotikActivity : AppCompatActivity(), CognotikService.ServerStatusListen
     }
     
     companion object {
-        private const val TAG = "MainActivity"
+        private const val TAG = "CognotikActivity"
     }
 }

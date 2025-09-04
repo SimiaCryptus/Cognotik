@@ -200,7 +200,7 @@ open class DataStorage(
 
     companion object {
 
-        val log = org.slf4j.LoggerFactory.getLogger(DataStorage::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(DataStorage::class.java)
         val sessionPaths = mutableMapOf<Session, File>()
 
     }

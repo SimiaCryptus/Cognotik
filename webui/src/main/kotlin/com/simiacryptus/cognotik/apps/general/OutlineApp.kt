@@ -22,7 +22,7 @@ import com.simiacryptus.jopenai.describe.JsonDescriber
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
 import com.simiacryptus.util.JsonUtil
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 

@@ -117,6 +117,6 @@ abstract class SilenceDiscriminator(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(SilenceDiscriminator::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(SilenceDiscriminator::class.java)
     }
 }

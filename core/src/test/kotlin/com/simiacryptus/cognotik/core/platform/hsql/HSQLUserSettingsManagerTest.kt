@@ -8,7 +8,7 @@ import com.simiacryptus.jopenai.models.ApiModel
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import kotlin.random.Random
 
 abstract class UsageTest(private val impl: UsageInterface) {

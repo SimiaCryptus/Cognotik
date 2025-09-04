@@ -335,7 +335,7 @@ open class DocumentParserApp(
     override fun <T : Any> initSettings(session: Session): T = Settings() as T
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(DocumentParserApp::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentParserApp::class.java)
     }
 
 }

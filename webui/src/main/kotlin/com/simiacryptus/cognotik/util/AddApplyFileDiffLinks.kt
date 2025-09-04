@@ -26,7 +26,7 @@ open class AddApplyFileDiffLinks {
     companion object {
         var loggingEnabled = { false }
         private val diffApplier = SimpleDiffApplier()
-        private val log = org.slf4j.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
             debug("Initializing AddApplyFileDiffLinks")
         }
 

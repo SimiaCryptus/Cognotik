@@ -7,7 +7,7 @@ import com.simiacryptus.jopenai.describe.DescriptorUtil.getAllAnnotations
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
 import com.simiacryptus.jopenai.describe.DescriptorUtil.resolveGenericType
 import com.simiacryptus.util.DynamicEnum
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.lang.reflect.*
 import java.util.*
 import kotlin.reflect.*

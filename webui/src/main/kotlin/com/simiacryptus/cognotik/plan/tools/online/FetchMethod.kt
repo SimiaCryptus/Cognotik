@@ -111,6 +111,6 @@ enum class FetchMethod {
     abstract fun createStrategy(task: CrawlerAgentTask): FetchStrategy
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(FetchMethod::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(FetchMethod::class.java)
     }
 }

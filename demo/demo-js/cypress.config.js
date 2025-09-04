@@ -3,7 +3,7 @@ const {defineConfig} = require('cypress');
 
 module.exports = defineConfig({
     e2e: {
-        baseUrl: 'http://localhost:7682/',
+        baseUrl: 'http://localhost:12891/',
         supportFile: 'cypress/support/e2e.js',
         specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
         watchForFileChanges: false, // Disable watching for file changes to avoid unnecessary reloads

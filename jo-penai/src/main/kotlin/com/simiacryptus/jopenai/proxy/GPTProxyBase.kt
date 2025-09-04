@@ -159,7 +159,7 @@ abstract class GPTProxyBase<T : Any>(
     )
 
     companion object {
-        private val log: Logger = org.slf4j.LoggerFactory.getLogger(GPTProxyBase::class.java)
+        private val log: Logger = com.simiacryptus.util.LoggerFactory.getLogger(GPTProxyBase::class.java)
 
         fun fixup(jsonResult: String, type: Type): String {
             var jsonResult1 = jsonResult

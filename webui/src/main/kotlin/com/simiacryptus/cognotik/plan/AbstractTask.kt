@@ -59,6 +59,6 @@ abstract class AbstractTask<T : TaskConfigBase>(
     )
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(AbstractTask::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AbstractTask::class.java)
     }
 }

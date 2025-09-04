@@ -13,7 +13,7 @@ import javax.sound.sampled.AudioFormat
 
 open class DictationState {
     companion object : DictationState() {
-        val log = org.slf4j.LoggerFactory.getLogger(DictationState::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(DictationState::class.java)
     }
 
     val configuration = EventDispatcher()

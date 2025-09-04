@@ -5,7 +5,7 @@ import org.jsoup.nodes.Document
 import org.jsoup.nodes.Entities
 
 object HtmlSimplifier {
-    private val log = org.slf4j.LoggerFactory.getLogger(HtmlSimplifier::class.java)
+    private val log = com.simiacryptus.util.LoggerFactory.getLogger(HtmlSimplifier::class.java)
 
     /** Elements that can execute scripts or load external content */
     private val SCRIPT_ELEMENTS = setOf(

@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.chat.model
 
 import com.simiacryptus.jopenai.models.APIProvider
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 object AWSModels {
     private val log = LoggerFactory.getLogger(AWSModels::class.java)

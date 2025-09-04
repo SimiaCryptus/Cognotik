@@ -15,7 +15,7 @@ import org.openqa.selenium.devtools.HasDevTools
 import org.openqa.selenium.devtools.v136.log.Log
 import org.openqa.selenium.devtools.v136.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 

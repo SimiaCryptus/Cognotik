@@ -89,6 +89,6 @@ open class AuthorizationManager : AuthorizationInterface {
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(AuthorizationManager::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AuthorizationManager::class.java)
     }
 }

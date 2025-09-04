@@ -226,7 +226,7 @@ ${e.message}
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(Discussable::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(Discussable::class.java)
     }
 }
 

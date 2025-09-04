@@ -20,7 +20,7 @@ import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference

@@ -27,7 +27,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.util.JsonUtil
 import org.jetbrains.annotations.NotNull
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat

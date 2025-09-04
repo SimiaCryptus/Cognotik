@@ -1,6 +1,6 @@
 package com.simiacryptus.jopenai.models
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.concurrent.atomic.AtomicReference
 
 @Suppress("unused")

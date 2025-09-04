@@ -1,6 +1,6 @@
 package com.simiacryptus.jopenai.exceptions
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.IOException
 
 class RequestOverloadException(

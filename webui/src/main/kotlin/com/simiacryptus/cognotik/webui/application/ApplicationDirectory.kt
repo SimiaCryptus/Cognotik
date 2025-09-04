@@ -20,7 +20,7 @@ import org.eclipse.jetty.util.resource.ResourceCollection
 import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.Desktop
 import java.net.URI
 import java.util.*
@@ -44,7 +44,7 @@ abstract class ApplicationDirectory(
     private fun domainName(isServer: Boolean) =
         if (isServer) "https://$publicName" else "http://$localName:$port"
 
-    open val welcomeResources = ResourceCollection(*allResources("welcome").map(::newResource).toTypedArray())
+    open val welcomeResources: Resource = ResourceCollection(*allResources("welcome").map(::newResource).toTypedArray())
     open val userInfoServlet: HttpServlet = UserInfoServlet()
     open val userSettingsServlet: HttpServlet = UserSettingsServlet()
     open val logoutServlet: HttpServlet = LogoutServlet()

@@ -14,7 +14,7 @@ import scala.tools.nsc.interpreter.shell.ReplReporterImpl
 import scala.tools.nsc.interpreter.{IMain, Results}
 
 object ScalaLocalInterpreter {
-  private val log = org.slf4j.LoggerFactory.getLogger(getClass)
+  private val log = com.simiacryptus.util.LoggerFactory.getLogger(getClass)
 
   def getTypeTag(value: Any): Type = {
     val mirror = runtimeMirror(value.getClass.getClassLoader)

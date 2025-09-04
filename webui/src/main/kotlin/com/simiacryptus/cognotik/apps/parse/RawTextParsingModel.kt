@@ -301,7 +301,7 @@ open class RawTextParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(RawTextParsingModel::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(RawTextParsingModel::class.java)
 
         /**
          * Common regex patterns for text splitting

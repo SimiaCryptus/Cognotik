@@ -27,7 +27,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.intellij.lang.annotations.Language
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.text.SimpleDateFormat
 import com.intellij.openapi.application.ApplicationManager as IntellijAppManager
 

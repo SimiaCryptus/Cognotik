@@ -45,7 +45,7 @@ class ChatSocket(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(ChatSocket::class.java)
-        private val trafficLog = org.slf4j.LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(ChatSocket::class.java)
+        private val trafficLog = com.simiacryptus.util.LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
     }
 }

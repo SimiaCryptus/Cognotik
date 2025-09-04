@@ -75,7 +75,7 @@ open class ChatProxy<T : Any>(
 
     companion object {
 
-        private val log = org.slf4j.LoggerFactory.getLogger(ChatProxy::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(ChatProxy::class.java)
         private fun trimPrefix(completion: String): String {
             val braceIndex = completion.indexOf('{')
             val bracketIndex = completion.indexOf('[')

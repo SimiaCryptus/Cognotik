@@ -13,7 +13,7 @@ import com.simiacryptus.jopenai.chat.ProvidersChatClient
 import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.LLMModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.BufferedOutputStream
 import java.util.concurrent.ScheduledThreadPoolExecutor
 

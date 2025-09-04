@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.util.IdeaOpenAIClient
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import javax.swing.Icon
 
 abstract class BaseAction(

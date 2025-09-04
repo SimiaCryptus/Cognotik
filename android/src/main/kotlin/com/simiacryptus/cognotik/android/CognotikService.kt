@@ -130,7 +130,6 @@ class CognotikService : Service() {
     }
     
     fun getServerPort(): Int {
-        Log.d(TAG, "Server port requested: $serverPort")
         return serverPort
     }
     

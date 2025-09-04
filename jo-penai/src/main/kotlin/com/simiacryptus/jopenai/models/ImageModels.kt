@@ -1,6 +1,6 @@
 package com.simiacryptus.jopenai.models
 
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 @Suppress("unused")
 enum class ImageModels(

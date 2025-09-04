@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.API
 import com.simiacryptus.jopenai.chat.ChatClientInterface
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 open class ImageActorTestApp(
     private val actor: ImageActor,

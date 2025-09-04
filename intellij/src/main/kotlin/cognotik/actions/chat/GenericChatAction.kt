@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.text.SimpleDateFormat
 
 class GenericChatAction : BaseAction() {

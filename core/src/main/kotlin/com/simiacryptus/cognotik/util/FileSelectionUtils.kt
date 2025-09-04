@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import org.apache.commons.text.similarity.LevenshteinDistance
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path

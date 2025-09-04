@@ -24,7 +24,7 @@ import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.chat.model.ChatModelType.ChatModel
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.util.GPT4Tokenizer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Path

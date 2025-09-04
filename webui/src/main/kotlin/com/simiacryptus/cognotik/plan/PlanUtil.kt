@@ -179,6 +179,6 @@ object PlanUtil {
         return dependencies
     }
 
-    val log = org.slf4j.LoggerFactory.getLogger(PlanUtil::class.java)
+    val log = com.simiacryptus.util.LoggerFactory.getLogger(PlanUtil::class.java)
 
 }

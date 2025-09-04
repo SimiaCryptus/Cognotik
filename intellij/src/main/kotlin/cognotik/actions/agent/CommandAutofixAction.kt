@@ -28,7 +28,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.toJson
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File

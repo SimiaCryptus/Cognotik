@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.models
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File

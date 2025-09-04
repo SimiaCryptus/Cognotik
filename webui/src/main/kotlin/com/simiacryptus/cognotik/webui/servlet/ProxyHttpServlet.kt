@@ -269,7 +269,7 @@ open class ProxyHttpServlet(
     }
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(ProxyHttpServlet::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(ProxyHttpServlet::class.java)
 
         @JvmStatic
         fun main(args: Array<String>) {

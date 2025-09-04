@@ -97,7 +97,7 @@ data class DocumentRecord(
     }
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(DocumentRecord::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentRecord::class.java)
         private const val RECORD_VERSION = 2
 
         fun readBinaryStream(inputPath: String, processor: (DocumentRecord) -> Unit) {

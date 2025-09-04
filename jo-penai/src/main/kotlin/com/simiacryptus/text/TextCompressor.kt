@@ -1,7 +1,7 @@
 package com.simiacryptus.text
 
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 /**
  * Identifies and abbreviates repeated subsequences in text while preserving uniqueness.

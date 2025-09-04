@@ -15,13 +15,17 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
+import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
 import com.simiacryptus.jopenai.chat.model.AnthropicModels
 import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
 import org.eclipse.jetty.webapp.WebAppContext
-import org.slf4j.LoggerFactory
+import org.eclipse.jetty.util.resource.Resource
+import org.eclipse.jetty.util.resource.PathResource
+import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
+import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -29,8 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * like system tray, daemon client socket server, and JavaFX dependencies.
  */
 class AndroidCognotikApps private constructor(
-    private val context: Context,
-    localName: String = "localhost", 
+    private val androidContext: Context,
+    localName: String = "localhost",
     publicName: String = "localhost",
     port: Int = 12891
 ) : ApplicationDirectory(
@@ -50,12 +54,93 @@ class AndroidCognotikApps private constructor(
         fun create(context: Context, port: Int = 12891): AndroidCognotikApps {
             log.info("Creating AndroidCognotikApps instance with port: $port")
             log.debug("Context: ${context.javaClass.simpleName}, Files dir: ${context.filesDir.absolutePath}")
-            return AndroidCognotikApps(context, "localhost", "localhost", port)
+            return AndroidCognotikApps(
+                androidContext = context,
+                localName = "localhost",
+                publicName = "localhost",
+                port = port
+            )
         }
     }
 
     override fun authenticatedWebsite() = object : OAuthBase("") {
         override fun configure(context: WebAppContext, addFilter: Boolean) = context
+    }
+    private fun createAndroidWelcomeResources(): Resource {
+        try {
+            // Create a temporary directory for welcome resources
+            val welcomeDir = File(androidContext.filesDir, "welcome")
+            if (!welcomeDir.exists()) {
+                welcomeDir.mkdirs()
+                log.debug("Created welcome directory: ${welcomeDir.absolutePath}")
+            }
+            // Create a simple index.html file if it doesn't exist
+            val indexFile = File(welcomeDir, "index.html")
+            if (!indexFile.exists()) {
+                val htmlContent = """
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Cognotik Apps</title>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            h1 { color: #333; }
+                            .app-list { list-style: none; padding: 0; }
+                            .app-item { margin: 10px 0; }
+                            .app-link { 
+                                display: inline-block; 
+                                padding: 10px 20px; 
+                                background: #007bff; 
+                                color: white; 
+                                text-decoration: none; 
+                                border-radius: 5px; 
+                            }
+                            .app-link:hover { background: #0056b3; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Welcome to Cognotik Apps</h1>
+                        <p>Select an application:</p>
+                        <ul class="app-list">
+                            <li class="app-item"><a href="/chat" class="app-link">Chat</a></li>
+                            <li class="app-item"><a href="/taskChat" class="app-link">Task Runner</a></li>
+                            <li class="app-item"><a href="/autoPlan" class="app-link">Auto Plan</a></li>
+                            <li class="app-item"><a href="/planAhead" class="app-link">Plan Ahead</a></li>
+                            <li class="app-item"><a href="/goalOriented" class="app-link">Goal Oriented</a></li>
+                        </ul>
+                    </body>
+                    </html>
+                """.trimIndent()
+                indexFile.writeText(htmlContent)
+                log.debug("Created index.html file")
+            }
+            return PathResource(welcomeDir.toPath())
+        } catch (e: Exception) {
+            log.error("Failed to create Android welcome resources", e)
+            // Return an empty PathResource as fallback
+            val emptyDir = File(androidContext.filesDir, "empty")
+            emptyDir.mkdirs()
+            return PathResource(emptyDir.toPath())
+        }
+    }
+    
+    override val welcomeResources: Resource by lazy {
+        try {
+            log.debug("Initializing welcome resources for Android")
+            createAndroidWelcomeResources()
+        } catch (e: Exception) {
+            log.error("Failed to load welcome resources", e)
+            // Create minimal fallback
+            val fallbackDir = File(androidContext.filesDir, "fallback")
+            fallbackDir.mkdirs()
+            PathResource(fallbackDir.toPath())
+        }
+    }
+    override val welcomeServlet: WelcomeServlet by lazy {
+        log.debug("Creating WelcomeServlet for Android")
+        WelcomeServlet(this)
     }
 
     override fun setupPlatform() {
@@ -111,7 +196,7 @@ class AndroidCognotikApps private constructor(
     
     private fun createChildWebApps(): List<ChildWebApp> {
         val parsingModel = model
-        val filesDir = context.filesDir.absolutePath
+        val filesDir = androidContext.filesDir.absolutePath
         log.info("Using files directory: $filesDir")
         log.debug("Parsing model: ${parsingModel.javaClass.simpleName}")
         log.debug("Default model: ${model.javaClass.simpleName}")
@@ -209,21 +294,30 @@ class AndroidCognotikApps private constructor(
         log.info("Starting Android Cognotik server...")
         log.debug("Current thread: ${Thread.currentThread().name}")
         
-        // Ensure platform is set up before accessing childWebApps
-        log.debug("Setting up platform...")
-        setupPlatform()
-        log.debug("Finding available port...")
         
         
-        val actualPort = findAvailablePort(port)
-        log.info("Server will use port: $actualPort")
         
         try {
+            // Ensure platform is set up before accessing childWebApps
+            log.debug("Setting up platform...")
+            setupPlatform()
+            log.debug("Finding available port...")
+            val actualPort = findAvailablePort(port)
+            log.info("Server will use port: $actualPort")
+            
             // Create a new instance with the correct port
             log.debug("Creating server instance with port: $actualPort")
-            val serverInstance = create(context, actualPort)
+            val serverInstance = create(androidContext, actualPort)
             log.debug("Setting up platform for server instance...")
             serverInstance.setupPlatform() // Ensure platform is set up
+            // Pre-initialize lazy properties to catch any initialization errors early
+            log.debug("Pre-initializing welcome resources...")
+            val resources = serverInstance.welcomeResources
+            log.debug("Welcome resources initialized: ${resources.javaClass.simpleName}")
+            log.debug("Pre-initializing child web apps...")
+            val apps = serverInstance.childWebApps
+            log.debug("Child web apps initialized: ${apps.size} apps")
+            
             log.debug("Starting server main process...")
             serverInstance._main() // Start the server
             log.info("Android Cognotik server started successfully on port $actualPort")

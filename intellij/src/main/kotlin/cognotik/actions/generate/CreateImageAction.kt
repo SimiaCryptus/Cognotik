@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.imageModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.jopenai.chat.model.chatModelType
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.io.ByteArrayOutputStream

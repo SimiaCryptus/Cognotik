@@ -24,7 +24,7 @@ import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.chat.model.ChatModelType.Companion.values
 import com.simiacryptus.util.JsonUtil.fromJson
 import com.simiacryptus.util.JsonUtil.toJson
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.File
 

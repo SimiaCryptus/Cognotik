@@ -8,7 +8,7 @@ import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.opt.PromptOptimization.GeneticApi.Prompt
 import com.simiacryptus.jopenai.proxy.ChatProxy
 import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import kotlin.math.pow
 
 open class PromptOptimization(

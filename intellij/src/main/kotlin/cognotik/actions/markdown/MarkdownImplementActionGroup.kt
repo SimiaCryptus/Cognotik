@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.hasSelection
 import com.simiacryptus.jopenai.chat.model.chatModelType
 import com.simiacryptus.jopenai.proxy.ChatProxy
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 class MarkdownImplementActionGroup : ActionGroup() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT

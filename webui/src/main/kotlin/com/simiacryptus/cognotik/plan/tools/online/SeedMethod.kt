@@ -110,6 +110,6 @@ enum class SeedMethod {
     abstract fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(SeedMethod::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(SeedMethod::class.java)
     }
 }

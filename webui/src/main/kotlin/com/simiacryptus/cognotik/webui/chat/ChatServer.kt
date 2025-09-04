@@ -93,8 +93,8 @@ abstract class ChatServer(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(ChatServer::class.java)
-        private val trafficLog = org.slf4j.LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(ChatServer::class.java)
+        private val trafficLog = com.simiacryptus.util.LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
         fun JettyServerUpgradeRequest.getCookie(name: String) = cookies?.find { it.name == name }?.value
     }
 }

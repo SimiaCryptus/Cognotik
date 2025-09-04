@@ -4,7 +4,7 @@ import KotlinLexer
 import KotlinParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 class KotlinGrammarValidator : GrammarValidator {
     companion object {

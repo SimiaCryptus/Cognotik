@@ -56,20 +56,20 @@ android {
             )
         }
     }
-    
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    
+
     kotlinOptions {
         jvmTarget = "17"
     }
-    
+
     buildFeatures {
         viewBinding = true
     }
-    
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -77,25 +77,27 @@ android {
             excludes += "META-INF/DEPENDENCIES"
             excludes += "META-INF/LICENSE*"
             excludes += "META-INF/NOTICE*"
-           excludes += "META-INF/FastDoubleParser-LICENSE"
-           excludes += "META-INF/FastDoubleParser-NOTICE"
+            excludes += "META-INF/FastDoubleParser-LICENSE"
+            excludes += "META-INF/FastDoubleParser-NOTICE"
             excludes += "META-INF/io.netty.versions.properties"
             excludes += "META-INF/native-image/**"
             excludes += "META-INF/versions/**"
             excludes += "META-INF/services/**"
-           // Exclude duplicate Groovy extension module files
-           excludes += "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule"
-           // Exclude duplicate Kotlin builtin files
-           excludes += "kotlin/kotlin.kotlin_builtins"
-           excludes += "kotlin/**/*.kotlin_builtins"
-           excludes += "kotlin/annotation/annotation.kotlin_builtins"
-           excludes += "kotlin/collections/collections.kotlin_builtins"
-           excludes += "kotlin/coroutines/coroutines.kotlin_builtins"
-           excludes += "kotlin/internal/internal.kotlin_builtins"
-           excludes += "kotlin/ranges/ranges.kotlin_builtins"
-           excludes += "kotlin/reflect/reflect.kotlin_builtins"
-           // Exclude duplicate Groovy release info files
-           excludes += "META-INF/groovy-release-info.properties"
+            // Exclude duplicate Groovy extension module files
+            excludes += "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule"
+            // Exclude duplicate Kotlin builtin files
+            excludes += "kotlin/kotlin.kotlin_builtins"
+            excludes += "kotlin/**/*.kotlin_builtins"
+            excludes += "kotlin/annotation/annotation.kotlin_builtins"
+            excludes += "kotlin/collections/collections.kotlin_builtins"
+            excludes += "kotlin/coroutines/coroutines.kotlin_builtins"
+            excludes += "kotlin/internal/internal.kotlin_builtins"
+            excludes += "kotlin/ranges/ranges.kotlin_builtins"
+            excludes += "kotlin/reflect/reflect.kotlin_builtins"
+            // Exclude duplicate Groovy release info files
+            excludes += "META-INF/groovy-release-info.properties"
+            // Exclude duplicate license files
+            excludes += "license/**"
         }
     }
     // Disable Jetifier to avoid Java 21 bytecode compatibility issues
@@ -107,12 +109,15 @@ android {
 }
 
 dependencies {
-    implementation(project(":core"))
-    implementation(project(":webui"))
     implementation(project(":jo-penai"))
+    implementation(project(":core"))
     implementation(project(":kotlin"))
     implementation(project(":groovy"))
-    
+    implementation(project(":webui")) {
+        exclude(group = "org.eclipse.jetty")
+    }
+    implementation(project(":desktop"))
+
     // Android dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -129,26 +134,25 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.commons.io)
-    // Use Android-compatible logging - slf4j-android includes slf4j-api
-    implementation(libs.slf4jandroid) {
-//        exclude(group = "org.slf4j", module = "slf4j-api")
-    }
-    // Exclude all other SLF4J implementations to avoid conflicts
-    configurations.all {
-        exclude(group = "org.slf4j", module = "slf4j-simple")
-        exclude(group = "ch.qos.logback", module = "logback-classic")
-        exclude(group = "ch.qos.logback", module = "logback-core")
-       exclude(group = "commons-logging", module = "commons-logging")
-    }
-    
+    implementation(libs.slf4jandroid)
     implementation(kotlin("stdlib"))
-    testImplementation(libs.junit.junit)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
+
     // Jetty server dependencies - use only core server, not webapp
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlet)
     implementation(libs.jetty.websocket.server)
     implementation(libs.jetty.websocket.servlet)
+
+    // Exclude to avoid conflicts
+    configurations.all {
+        exclude(group = "org.slf4j", module = "slf4j-simple")
+        exclude(group = "ch.qos.logback", module = "logback-classic")
+        exclude(group = "ch.qos.logback", module = "logback-core")
+        exclude(group = "commons-logging", module = "commons-logging")
+    }
+
+    testImplementation(libs.junit.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
 
 }

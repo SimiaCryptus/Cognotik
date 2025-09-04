@@ -103,7 +103,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
     }
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(AbstractFileTask::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AbstractFileTask::class.java)
         const val TRIPLE_TILDE = "```"
 
     }

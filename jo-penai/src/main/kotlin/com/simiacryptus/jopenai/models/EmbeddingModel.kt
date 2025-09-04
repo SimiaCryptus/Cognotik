@@ -1,7 +1,7 @@
 package com.simiacryptus.jopenai.models
 
 import com.simiacryptus.jopenai.models.ApiModel.Usage
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 open class EmbeddingModel(
     modelName: String,

@@ -56,7 +56,12 @@ class CognotikApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Log.i(TAG, "CognotikApplication onCreate started")
-        
+
+        // Configure SLF4J for Android
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "DEBUG")
+        System.setProperty("org.slf4j.simpleLogger.showDateTime", "true")
+        System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy-MM-dd HH:mm:ss")
+
         // Initialize EmojiCompat now that context is available
         initializeEmojiCompat()
         

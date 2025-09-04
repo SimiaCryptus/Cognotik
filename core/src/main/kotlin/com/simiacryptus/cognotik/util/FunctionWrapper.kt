@@ -167,6 +167,6 @@ class JsonFunctionRecorder(baseDir: File) : FunctionInterceptor, Closeable {
     }
 
     companion object {
-        val log = org.slf4j.LoggerFactory.getLogger(JsonFunctionRecorder::class.java)
+        val log = com.simiacryptus.util.LoggerFactory.getLogger(JsonFunctionRecorder::class.java)
     }
 }

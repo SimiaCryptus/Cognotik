@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import com.simiacryptus.jopenai.chat.ChatClientInterface
 import com.simiacryptus.jopenai.describe.Description
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.io.File

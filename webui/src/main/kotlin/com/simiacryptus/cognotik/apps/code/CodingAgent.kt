@@ -19,7 +19,7 @@ import com.simiacryptus.jopenai.chat.model.ChatModelType
 import com.simiacryptus.jopenai.models.ApiModel
 import com.simiacryptus.jopenai.models.LLMModel
 import com.simiacryptus.jopenai.proxy.ValidatedObject
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass

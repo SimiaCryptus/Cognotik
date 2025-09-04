@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.demotest
 
 import com.simiacryptus.util.JsonUtil
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.io.InputStream
 
 data class NarrationEntry(

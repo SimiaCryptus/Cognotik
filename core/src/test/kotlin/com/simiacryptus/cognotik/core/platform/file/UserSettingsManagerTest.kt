@@ -9,7 +9,7 @@ import java.util.*
 
 abstract class UserSettingsTest(private val userSettings: UserSettingsInterface) {
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(UserSettingsTest::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(UserSettingsTest::class.java)
     }
 
     @Test

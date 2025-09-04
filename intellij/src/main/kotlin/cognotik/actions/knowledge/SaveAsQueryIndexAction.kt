@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
 import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
 import com.simiacryptus.jopenai.models.EmbeddingModel
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import java.util.concurrent.Executors
 
 class SaveAsQueryIndexAction : BaseAction() {

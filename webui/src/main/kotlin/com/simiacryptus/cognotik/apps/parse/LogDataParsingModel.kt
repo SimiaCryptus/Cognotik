@@ -189,7 +189,7 @@ open class LogDataParsingModel(
     )
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(LogDataParsingModel::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(LogDataParsingModel::class.java)
     }
 }
 

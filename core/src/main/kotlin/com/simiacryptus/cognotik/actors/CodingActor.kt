@@ -451,7 +451,7 @@ Correct the code and try again.
     )
 
     companion object {
-        private val log = org.slf4j.LoggerFactory.getLogger(CodingActor::class.java)
+        private val log = com.simiacryptus.util.LoggerFactory.getLogger(CodingActor::class.java)
 
         fun String.indent(indent: String = "  ") = this.lineSequence()
             .map {

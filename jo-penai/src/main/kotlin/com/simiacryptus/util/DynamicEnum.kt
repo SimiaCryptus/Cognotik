@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 
 open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
     companion object {

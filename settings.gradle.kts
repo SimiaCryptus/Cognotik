@@ -25,9 +25,9 @@ include(":groovy")
 include(":scala")
 include(":kotlin")
 include(":webui")
+include(":desktop")
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
     include(":android")
 }
-include(":desktop")
 include(":intellij")
 include(":demo")

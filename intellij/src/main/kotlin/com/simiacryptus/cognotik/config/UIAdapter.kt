@@ -4,7 +4,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.options.Configurable
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.buildFormViaReflection
-import org.slf4j.LoggerFactory
+import com.simiacryptus.util.LoggerFactory
 import javax.swing.JComponent
 
 abstract class UIAdapter<C : Any, S : Any>(
