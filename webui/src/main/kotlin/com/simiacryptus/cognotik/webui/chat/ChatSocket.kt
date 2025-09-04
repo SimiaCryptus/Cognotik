@@ -13,22 +13,41 @@ class ChatSocket(
 
     override fun onWebSocketConnect(session: Session) {
         super.onWebSocketConnect(session)
-        trafficLog.info("WebSocket connected: ${session.remoteAddress}, user: ${SocketManagerBase.getUser(session)?.name ?: "anonymous"}")
-        sessionState.addSocket(this, session)
-        trafficLog.debug("Socket added to session manager, active connections: ${sessionState.getActiveSockets().size}")
+        try {
+            trafficLog.info("WebSocket connected: ${session.remoteAddress}, user: ${SocketManagerBase.getUser(session)?.name ?: "anonymous"}")
+            sessionState.addSocket(this, session)
+            trafficLog.debug("Socket added to session manager, active connections: ${sessionState.getActiveSockets().size}")
 
-        val lastMessageTime =
-            session.upgradeRequest.parameterMap["lastMessageTime"]?.firstOrNull()?.toLongOrNull() ?: 0L
-        trafficLog.debug("Replaying messages since: $lastMessageTime")
-        sessionState.getReplay(lastMessageTime).forEach {
-            try {
-                trafficLog.trace("Replaying message: ${it.take(100)}${if (it.length > 100) "..." else ""}")
-                remote.sendString(it)
-            } catch (e: Exception) {
-                log.warn("Error replaying message to ${session.remoteAddress}", e)
-                trafficLog.error("Failed to replay message to ${session.remoteAddress}: ${e.message}")
+            val firstOrNull = session.upgradeRequest.parameterMap["lastMessageTime"]?.firstOrNull()
+            val lastMessageTime =
+                when(firstOrNull) {
+                    "-Infinity" -> Long.MIN_VALUE
+                    "Infinity" -> Long.MAX_VALUE
+                    "null" -> 0L
+                    "" -> 0L
+                    null -> 0L
+                    else -> firstOrNull.toLongOrNull()
+                } ?: 0L
+            trafficLog.debug("Replaying messages since: $lastMessageTime")
+            sessionState.getReplay(lastMessageTime).forEach {
+                try {
+                    trafficLog.trace("Replaying message: ${it.take(100)}${if (it.length > 100) "..." else ""}")
+                    remote.sendString(it)
+                } catch (e: Exception) {
+                    log.warn("Error replaying message to ${session.remoteAddress}", e)
+                    trafficLog.error("Failed to replay message to ${session.remoteAddress}: ${e.message}")
+                }
             }
+        } catch (e: Exception) {
+            log.warn("Error during WebSocket connection setup", e)
+            trafficLog.error("WebSocket connection error from ${session.remoteAddress}: ${e.message}", e)
+            session.close(1011, "WebSocket connection error: ${e.message}")
         }
+    }
+
+    override fun onWebSocketError(cause: Throwable?) {
+        log.warn("WebSocket error", cause)
+        super.onWebSocketError(cause)
     }
 
     override fun onWebSocketText(message: String) {

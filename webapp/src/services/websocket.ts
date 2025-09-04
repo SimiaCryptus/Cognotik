@@ -349,6 +349,7 @@ export class WebSocketService implements WebSocketLike {
                 clearTimeout(this.connectionTimeout);
             }
         };
+        // @ts-expect-error TS2345
         const debouncedProcessMessages = debounce((messages: Message[]) => {
             const batch = [...messages];
             this.aggregateBuffer = [];
