@@ -20,7 +20,7 @@ dependencies {
     compileOnly(project(":kotlin"))
     testImplementation(project(":kotlin"))
     testImplementation(project(":groovy"))
-    testImplementation(project(":scala"))
+//    testImplementation(project(":scala"))
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.slf4j")
