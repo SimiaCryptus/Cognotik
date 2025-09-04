@@ -216,6 +216,16 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
 
     const messageListRef = useRef<HTMLDivElement>(null);
 
+    const referencesVersions = React.useMemo(() => {
+        const versions: Record<string, number> = {};
+        messages.forEach(msg => {
+            if (msg.id?.startsWith('z')) {
+                versions[msg.id] = msg.version || 0;
+            }
+        });
+        return versions;
+    }, [messages]);
+
     const finalMessages = React.useMemo(() => {
             const filteredMessages = processMessages(messages);
             return filteredMessages.map((message) => {
@@ -241,7 +251,7 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
                 };
             });
         },
-        [messages, verboseMode, processMessages]);
+        [messages, referencesVersions, verboseMode]);
 
 
     useEffect(() => {
@@ -287,30 +297,33 @@ const MessageList: React.FC<MessageListProps> = ({messages: propMessages}) => {
         };
     }, [finalMessages]);
 
-    const debouncedPostRenderUpdate = debounce(() => {
-        try {
-            if (!messageListRef.current) return;
-            if (DEBUG_TAB_SYSTEM) {
-                console.debug('[MessageList] Running debounced post-render update. Container:', CONTAINER_ID);
-            }
-            restoreTabStates(getAllTabStates());
-            updateTabs();
-            initNewCollapsibleElements();
-            requestIdleCallback(() => {
-                if (messageListRef.current) {
-                    messageListRef.current.querySelectorAll('pre code:not(.prismjs-processed)').forEach(block => {
-                        if (block instanceof HTMLElement && block.offsetParent !== null) {
-                            Prism.highlightElement(block);
-                            block.classList.add('prismjs-processed'); // Mark as processed
-                        }
-                    });
+    const debouncedPostRenderUpdate = React.useCallback(
+        debounce(() => {
+            try {
+                if (!messageListRef.current) return;
+                if (DEBUG_TAB_SYSTEM) {
+                    console.debug('[MessageList] Running debounced post-render update. Container:', CONTAINER_ID);
                 }
-            });
-            renderMermaidDiagrams(messageListRef.current);
-        } catch (updateError) {
-            console.error('[MessageList] Error during post-render update:', updateError, 'Container:', CONTAINER_ID);
-        }
-    }, 250);
+                restoreTabStates(getAllTabStates());
+                updateTabs();
+                initNewCollapsibleElements();
+                requestIdleCallback(() => {
+                    if (messageListRef.current) {
+                        messageListRef.current.querySelectorAll('pre code:not(.prismjs-processed)').forEach(block => {
+                            if (block instanceof HTMLElement && block.offsetParent !== null) {
+                                Prism.highlightElement(block);
+                                block.classList.add('prismjs-processed'); // Mark as processed
+                            }
+                        });
+                    }
+                });
+                renderMermaidDiagrams(messageListRef.current);
+            } catch (updateError) {
+                console.error('[MessageList] Error during post-render update:', updateError, 'Container:', CONTAINER_ID);
+            }
+        }, 250),
+        []
+    );
 
     useTheme();
     if (DEBUG_LOGGING) {

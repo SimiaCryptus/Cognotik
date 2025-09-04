@@ -1,17 +1,18 @@
 import {store} from '../store';
 import {showModal, toggleVerbose} from '../store/slices/uiSlice';
 import WebSocketService from '../services/websocket';
+import {debounce} from './tabHandling';
 
 export const setupUIHandlers = () => {
 
-    const handleKeyboardShortcut = (event: KeyboardEvent) => {
+    const handleKeyboardShortcut = debounce((event: KeyboardEvent) => {
         if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'V') {
             event.preventDefault();
             store.dispatch(toggleVerbose());
 
             console.info('Verbose mode toggled via keyboard shortcut');
         }
-    };
+    }, 250);
 
     document.addEventListener('keydown', handleKeyboardShortcut);
 

@@ -22,9 +22,9 @@ const diagnostics = {
 const tabStateVersions = new Map<string, number>();
 let currentStateVersion = 0;
 
-export function debounce<T extends (...args: unknown[]) => void>(func: T, wait: number) {
+export function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     let timeout: ReturnType<typeof setTimeout>;
-    return function executedFunction(this: unknown, ...args: Parameters<T>) {
+    return function executedFunction(this: any, ...args: Parameters<T>) {
         const later = () => {
             clearTimeout(timeout);
             func.apply(this, args);
@@ -293,7 +293,6 @@ export function initCollapsibleElements() {
 
 export function initNewCollapsibleElements() {
     document.querySelectorAll('.expandable-header').forEach(header => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((header as any).__collapsibleListenerAttached) {
             const content = header.nextElementSibling;
             const icon = header.querySelector('.expand-icon');
@@ -313,7 +312,6 @@ export function initNewCollapsibleElements() {
                 icon.textContent = content.classList.contains('expanded') ? '▲' : '▼';
             }
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (header as any).__collapsibleListenerAttached = true;
     });
 }

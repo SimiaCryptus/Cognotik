@@ -16,7 +16,7 @@ export const useTheme = (initialTheme?: ThemeName): [ThemeName, (theme: ThemeNam
             console.info('Theme loaded from storage:', savedTheme);
             dispatch(setTheme(savedTheme));
         }
-    }, [dispatch, currentTheme]);
+    }, []);
 
     const updateTheme = useCallback(
         (newTheme: ThemeName) => {
@@ -24,7 +24,7 @@ export const useTheme = (initialTheme?: ThemeName): [ThemeName, (theme: ThemeNam
             dispatch(setTheme(newTheme));
             themeStorage.setTheme(newTheme);
         },
-        [dispatch, currentTheme]
+        [dispatch]
     );
 
     React.useEffect(() => {

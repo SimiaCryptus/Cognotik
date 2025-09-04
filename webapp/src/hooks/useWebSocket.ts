@@ -114,7 +114,7 @@ export const useWebSocket = (sessionId: string) => {
                 clearTimeout(connectionTimeout);
             }
         };
-    }, [sessionId, dispatch, isConnected]);
+    }, [sessionId, dispatch]);
 
     return {
         error,

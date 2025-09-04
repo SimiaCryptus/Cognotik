@@ -1,7 +1,7 @@
 import React, {memo, useCallback, useState} from 'react';
 import styled from 'styled-components';
 import {useSelector} from 'react-redux';
-import type {RootState} from '../store';
+import {RootState} from '../store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
@@ -104,7 +104,7 @@ const InputContainer = styled.div<InputContainerProps>`
 
     }
     border-top: 1px solid ${(props) => props.theme.colors.border};
-    display: ${({$hide}) => $hide ? 'none' : 'block'};
+    display: ${({theme, $hide}) => $hide ? 'none' : 'block'};
     position: sticky;
     bottom: 0;
     z-index: 10;
@@ -310,7 +310,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
         } else {
             log('Empty message submission prevented');
         }
-    }, [message, onSendMessage, isSubmitting, isWebSocketConnected]);
+    }, [message, onSendMessage, isSubmitting, isWebSocketConnected, DEBUG]);
 
     const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newMessage = e.target.value;
@@ -498,7 +498,7 @@ const InputArea = memo(function InputArea({onSendMessage, isWebSocketConnected =
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
-                                                code({className, children, ...props}) {
+                                                code({node, className, children, ...props}) {
                                                     return (
                                                         <pre className={className}>
                                                             <code {...props}>{children}</code>

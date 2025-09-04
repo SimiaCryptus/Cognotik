@@ -67,7 +67,7 @@ const initialState: UiState = {
     lastUpdate: Date.now()
 };
 
-const logStateChange = (action: string, payload: unknown = null, prevState: unknown = null) => {
+const logStateChange = (action: string, payload: any = null, prevState: any = null) => {
 
     const criticalActions = ['theme', 'verbosemode', 'layouttheme']; // Use consistent casing for comparison
     if (!criticalActions.includes(action.toLowerCase().replace(/\s+/g, ''))) {

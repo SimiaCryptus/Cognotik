@@ -1,17 +1,18 @@
 import React, {useEffect, useState} from 'react';
-import {useDispatch} from 'react-redux';
-import styled from 'styled-components';
-import {fetchAppConfig} from '../services/appConfig';
-import {isArchive} from '../utils/constants';
-import {useWebSocket} from '../hooks/useWebSocket';
-import {addMessage} from '../store/slices/messageSlice';
-import MessageList from './MessageList';
-import InputArea from './InputArea';
-import Spinner from './common/Spinner';
-import {MessageType} from '../types/messages';
-import {WebSocketService} from '../services/websocket';
-
-const LOG_PREFIX = '[ChatInterface]';
+ import {useDispatch, useSelector} from 'react-redux';
+ import styled from 'styled-components';
+ import {fetchAppConfig} from '../services/appConfig';
+ import {isArchive} from '../utils/constants';
+ import {logger} from '../utils/logger';
+ import {useWebSocket} from '../hooks/useWebSocket';
+ import {addMessage} from '../store/slices/messageSlice';
+ import MessageList from './MessageList';
+ import InputArea from './InputArea';
+ import Spinner from './common/Spinner';
+ import {Message, MessageType} from '../types/messages';
+ import {WebSocketService} from '../services/websocket';
+ import {RootState} from '../store';
+ const LOG_PREFIX = '[ChatInterface]';
  interface WebSocketMessage {
      data: string;
      isHtml: boolean;
@@ -37,9 +38,14 @@ const LOG_PREFIX = '[ChatInterface]';
                                                           isConnected,
                                                       }) => {
      const DEBUG = process.env.NODE_ENV === 'development';
+     const debugLog = (message: string, data?: any) => {
+         logger.debug(`${LOG_PREFIX} ${message}`, data);
+     };
+     const [messages, setMessages] = useState<Message[]>([]);
      const [sessionId] = useState(() => propSessionId || window.location.hash.slice(1) || 'new');
      const dispatch = useDispatch();
      const ws = useWebSocket(sessionId);
+     const appConfig = useSelector((state: RootState) => state.config);
      useEffect(() => {
 
          if (isArchive) return;
@@ -87,6 +93,9 @@ const LOG_PREFIX = '[ChatInterface]';
                      version: data.timestamp,
                      sanitized: false
                  };
+                 if (isComponentMounted) {
+                     setMessages(prev => [...prev, newMessage]);
+                 }
                  dispatch(addMessage(newMessage));
                  return;
              }
