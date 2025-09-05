@@ -31,6 +31,10 @@ abstract class ApplicationDirectory(
     val publicName: String = "localhost",
     val port: Int = 8081,
 ) {
+    init {
+        log.info("Creating ApplicationDirectory instance with localName='$localName', publicName='$publicName', port=$port")
+    }
+    
     var domainName: String = ""
         private set
     abstract val childWebApps: List<ChildWebApp>
@@ -42,30 +46,46 @@ abstract class ApplicationDirectory(
     )
 
     private fun domainName(isServer: Boolean) =
-        if (isServer) "https://$publicName" else "http://$localName:$port"
+        if (isServer) "https://$publicName" else "http://$localName:$port".also {
+            log.debug("Generated domain name: $it (isServer: $isServer)")
+        }
 
     open val welcomeResources: Resource = ResourceCollection(*allResources("welcome").map(::newResource).toTypedArray())
+        .also { log.debug("Initialized welcome resources with ${allResources("welcome").size} resource(s)") }
     open val userInfoServlet: HttpServlet = UserInfoServlet()
+        .also { log.debug("Initialized UserInfoServlet") }
     open val userSettingsServlet: HttpServlet = UserSettingsServlet()
+        .also { log.debug("Initialized UserSettingsServlet") }
     open val logoutServlet: HttpServlet = LogoutServlet()
+        .also { log.debug("Initialized LogoutServlet") }
     open val usageServlet: HttpServlet = UsageServlet()
+        .also { log.debug("Initialized UsageServlet") }
     open val proxyHttpServlet: HttpServlet = ProxyHttpServlet()
+        .also { log.debug("Initialized ProxyHttpServlet") }
     open val welcomeServlet: HttpServlet = WelcomeServlet(this)
+        .also { log.debug("Initialized WelcomeServlet") }
     open val apiKeyServlet: HttpServlet = ApiKeyServlet()
+        .also { log.debug("Initialized ApiKeyServlet") }
 
     open fun authenticatedWebsite(): OAuthBase? = OAuthGoogle(
         redirectUri = "$domainName/oauth2callback",
         applicationName = "Demo",
         key = {
+            log.debug("Loading OAuth configuration from encrypted resource")
             val encryptedData =
                 javaClass.classLoader!!.getResourceAsStream("client_secret_google_oauth.json.kms")?.readBytes()
-                    ?: throw RuntimeException("Unable to load resource: ${"client_secret_google_oauth.json.kms"}")
+                    ?: throw RuntimeException("Unable to load resource: ${"client_secret_google_oauth.json.kms"}").also {
+                        log.error("Failed to load OAuth configuration resource")
+                    }
+            log.debug("Successfully loaded encrypted OAuth data (${encryptedData.size} bytes)")
             val decrypt = ApplicationServices.cloud?.decrypt(encryptedData)
+            log.debug("OAuth configuration decrypted successfully")
             decrypt?.byteInputStream()
         }
-    )
+    ).also { log.info("OAuth authentication configured with Google provider") }
 
     open fun setupPlatform() {
+        log.info("Setting up platform (default implementation - no action taken)")
     }
 
     protected open fun _main(vararg args: String) {
@@ -91,35 +111,48 @@ abstract class ApplicationDirectory(
 
     protected open fun browse() {
         try {
+            log.info("Attempting to open browser to: $domainName/")
             Desktop.getDesktop().browse(URI("$domainName/"))
+            log.info("Browser opened successfully")
         } catch (e: Throwable) {
+            log.warn("Failed to open browser automatically: ${e.message}")
 
         }
     }
 
     open fun webAppContexts() = listOfNotNull(
+        run { log.debug("Creating web app contexts"); null },
         newWebAppContext("/logout", logoutServlet),
         newWebAppContext("/proxy", proxyHttpServlet),
         newWebAppContext("/userInfo", userInfoServlet).let {
+            log.debug("Configuring userInfo context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
         },
         newWebAppContext("/userSettings", userSettingsServlet).let {
+            log.debug("Configuring userSettings context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
         },
         newWebAppContext("/usage", usageServlet).let {
+            log.debug("Configuring usage context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
         },
         newWebAppContext("/apiKeys", apiKeyServlet).let {
+            log.debug("Configuring apiKeys context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
         },
         newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).let {
+            log.debug("Configuring root context with welcome resources")
             authenticatedWebsite()?.configure(it, false) ?: it
         },
         newWebAppContext("/api", welcomeServlet).let {
+            log.debug("Configuring API context")
             authenticatedWebsite()?.configure(it, false) ?: it
         },
     ).toTypedArray() + childWebApps.map {
+        log.debug("Adding child web app context for path: ${it.path}")
         newWebAppContext(it.path, it.server)
+    }.also { contexts ->
+        log.info("Created ${contexts.size} web app contexts total")
     }
 
     open fun init(isServer: Boolean): ApplicationDirectory {
@@ -134,18 +167,23 @@ abstract class ApplicationDirectory(
         host: String,
         vararg webAppContexts: WebAppContext
     ): Server {
+        log.info("Starting Jetty server on $host:$port with ${webAppContexts.size} web app contexts")
         val contexts = ContextHandlerCollection()
 
         log.info("Starting server on port: $port")
         contexts.handlers = (
                 listOf(
+                    run { log.debug("Adding statistics servlet context"); null },
                     newWebAppContext("/stats", StatisticsServlet())
                 ) +
                         webAppContexts.map {
+                            log.debug("Adding CORS filter to context: ${it.contextPath}")
                             it.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
                             it
                         }
-                ).toTypedArray()
+                ).filterNotNull().toTypedArray()
+        
+        log.debug("Created context handler collection with ${contexts.handlers.size} handlers")
         val server = Server(port)
 
         val serverConnector = ServerConnector(server, 4, 8, httpConnectionFactory())
@@ -153,16 +191,20 @@ abstract class ApplicationDirectory(
         serverConnector.host = host
         serverConnector.acceptQueueSize = 1000
         serverConnector.idleTimeout = 30000
+        log.debug("Server connector configured: host=$host, port=$port, acceptQueueSize=1000, idleTimeout=30000ms")
 
         server.connectors = arrayOf(serverConnector)
         server.handler = contexts
+        log.info("Starting Jetty server...")
         server.start()
         if (!server.isStarted) throw IllegalStateException("Server failed to start")
+        log.info("Jetty server started successfully and is ready to accept connections")
         log.info("Server initialization completed successfully.")
         return server
     }
 
     protected open fun httpConnectionFactory(): HttpConnectionFactory {
+        log.debug("Creating HTTP connection factory with forwarded request customizer")
         val httpConfig = HttpConfiguration()
         httpConfig.addCustomizer(ForwardedRequestCustomizer())
         log.debug("HTTP connection factory created with custom configuration.")
@@ -170,6 +212,7 @@ abstract class ApplicationDirectory(
     }
 
     protected open fun newWebAppContext(path: String, server: ChatServer): WebAppContext {
+        log.debug("Creating WebAppContext for ChatServer at path: $path")
         var baseResource: Resource? = server.baseResource
         if (baseResource == null) {
             log.warn("No baseResource specified for ChatServer at path: $path, defaulting to root resource")
@@ -180,7 +223,9 @@ abstract class ApplicationDirectory(
             // Create an empty resource collection as fallback for Android
             baseResource = ResourceCollection()
         }
+        log.debug("Base resource determined for path $path: ${baseResource?.javaClass?.simpleName}")
         val webAppContext = newWebAppContext(path, baseResource, resourceBase = "application")
+        log.debug("Configuring ChatServer for WebAppContext at path: $path")
         server.configure(webAppContext)
         log.info("WebAppContext configured for path: $path with ChatServer")
         return webAppContext
@@ -192,16 +237,21 @@ abstract class ApplicationDirectory(
         resourceBase: String,
         indexServlet: Servlet? = null
     ): WebAppContext {
+        log.debug("Creating WebAppContext: path=$path, resourceBase=$resourceBase, hasIndexServlet=${indexServlet != null}")
         val context = WebAppContext()
+        log.debug("Configuring WebSocket support for context: $path")
         JettyWebSocketServletContainerInitializer.configure(context, null)
         // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
         if (!isAndroid()) {
+            log.debug("Using WebAppClassLoader for context: $path")
             context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
             context.isParentLoaderPriority = true
         } else {
+            log.debug("Using standard class loader for Android compatibility in context: $path")
             context.classLoader = ApplicationServices::class.java.classLoader
         }
         if (baseResource != null) {
+            log.debug("Setting base resource for context $path: ${baseResource.javaClass.simpleName}")
             context.baseResource = baseResource
         } else {
             log.warn("No base resource provided for context at path: $path")
@@ -210,20 +260,26 @@ abstract class ApplicationDirectory(
         context.contextPath = path
         context.welcomeFiles = arrayOf("index.html")
         if (indexServlet != null) {
+            log.debug("Adding index servlet to context: $path")
             context.addServlet(ServletHolder("$path/index", indexServlet), "/")
             context.addServlet(ServletHolder("$path/index", indexServlet), "/index.html")
         }
+        log.debug("WebAppContext configuration completed for path: $path")
         return context
     }
 
     protected open fun newWebAppContext(path: String, servlet: Servlet): WebAppContext {
+        log.debug("Creating WebAppContext for servlet at path: $path (servlet type: ${servlet.javaClass.simpleName})")
         val context = WebAppContext()
+        log.debug("Configuring WebSocket support for servlet context: $path")
         JettyWebSocketServletContainerInitializer.configure(context, null)
         // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
         if (!isAndroid()) {
+            log.debug("Using WebAppClassLoader for servlet context: $path")
             context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
             context.isParentLoaderPriority = true
         } else {
+            log.debug("Using standard class loader for Android compatibility in servlet context: $path")
             context.classLoader = ApplicationServices::class.java.classLoader
         }
         context.contextPath = path
@@ -231,23 +287,32 @@ abstract class ApplicationDirectory(
         context.resourceBase = "application"
         context.welcomeFiles = arrayOf("index.html")
         val servletHolder = ServletHolder(servlet)
+        log.debug("Configuring multipart support for servlet at path: $path")
         servletHolder.getRegistration().setMultipartConfig(MultipartConfigElement("./tmp"))
         context.addServlet(servletHolder, "/")
+        log.debug("Servlet WebAppContext configuration completed for path: $path")
         return context
     }
+    
     private fun isAndroid(): Boolean {
-        return try {
+        val result = try {
             Class.forName("android.os.Build")
             true
         } catch (e: ClassNotFoundException) {
             false
         }
+        log.debug("Android platform detection result: $result")
+        return result
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(ApplicationDirectory::class.java)
-        fun allResources(resourceName: String) =
-            Thread.currentThread().contextClassLoader.getResources(resourceName).toList()
+        fun allResources(resourceName: String): List<java.net.URL> {
+            log.debug("Loading all resources for name: $resourceName")
+            val resources = Thread.currentThread().contextClassLoader.getResources(resourceName).toList()
+            log.debug("Found ${resources.size} resource(s) for name: $resourceName")
+            return resources
+        }
     }
 
 }

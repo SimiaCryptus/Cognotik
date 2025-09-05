@@ -6,6 +6,7 @@ import com.simiacryptus.jopenai.describe.DescriptorUtil.componentType
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
 import com.simiacryptus.jopenai.describe.DescriptorUtil.resolveGenericType
 import com.simiacryptus.util.DynamicEnum
+import com.simiacryptus.util.EnabledStrategy
 import java.lang.reflect.*
 import kotlin.reflect.*
 import kotlin.reflect.full.functions
@@ -466,9 +467,13 @@ open class JsonDescriber(
 
     open fun getEnumValues(clazz: Class<*>): List<String> {
         return when {
-            clazz.isEnum -> clazz.enumConstants.map { it.toString() }
+            clazz.isEnum -> clazz.enumConstants.filter { 
+                if (it is EnabledStrategy) it.isEnabled() else true
+            }.map { it.toString() }
             DynamicEnum::class.java.isAssignableFrom(clazz) -> {
-                DynamicEnum.values(clazz as Class<out DynamicEnum<*>>).map { it.name }
+                DynamicEnum.values(clazz as Class<out DynamicEnum<*>>).filter {
+                    if (it is EnabledStrategy) it.isEnabled() else true
+                }.map { it.name }
             }
 
             else -> emptyList()

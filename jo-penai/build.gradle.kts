@@ -45,6 +45,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.jtransforms)
     implementation(libs.commons.io)
+    // Optional Android dependency
+    compileOnly(libs.android)
 
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))

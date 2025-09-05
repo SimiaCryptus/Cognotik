@@ -1,17 +1,23 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
 import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.tools.online.FetchConfig.isSeleniumEnabled
 import com.simiacryptus.cognotik.util.HtmlSimplifier
 import com.simiacryptus.cognotik.util.Selenium2S3
 import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
+import com.simiacryptus.util.EnabledStrategy
 import java.io.File
 import java.net.URI
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.ExecutorService
 
-interface FetchStrategy {
+interface FetchStrategy : EnabledStrategy {
     fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String
+}
+
+object FetchConfig {
+    var isSeleniumEnabled: Boolean = false
 }
 
 enum class FetchMethod {
@@ -102,8 +108,13 @@ enum class FetchMethod {
                     }
                 } catch (e: Exception) {
                     log.warn("Selenium fetch failed for URL: $url, falling back to HttpClient. Error: ${e.message}", e)
+                    isSeleniumEnabled = false
                     HttpClient.createStrategy(task).fetch(url, webSearchDir, index, pool, planSettings)
                 }
+            }
+
+            override fun isEnabled(): Boolean {
+                return isSeleniumEnabled;
             }
         }
     };

@@ -41,6 +41,8 @@ dependencies {
     implementation(libs.poiscratchpad)
     implementation(libs.commons.csv)
     implementation(libs.odfdom.java)
+    implementation("jakarta.mail:jakarta.mail-api:2.1.2")
+    implementation("org.eclipse.angus:angus-mail:2.0.2")
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)

@@ -44,7 +44,7 @@ class CrawlerAgentTask(
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
         @Description("Method to seed the crawler (GoogleSearch or DirectUrls)") val seed_method: SeedMethod = SeedMethod.GoogleSearch,
-        @Description("Method used to fetch content from  URLs (HttpClient or Selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
+        @Description("Method used to fetch content from  URLs") val fetch_method: FetchMethod = FetchMethod.HttpClient,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
 
 

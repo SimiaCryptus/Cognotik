@@ -7,6 +7,7 @@ import com.simiacryptus.jopenai.describe.DescriptorUtil.getAllAnnotations
 import com.simiacryptus.jopenai.describe.DescriptorUtil.isArray
 import com.simiacryptus.jopenai.describe.DescriptorUtil.resolveGenericType
 import com.simiacryptus.util.DynamicEnum
+import com.simiacryptus.util.EnabledStrategy
 import com.simiacryptus.util.LoggerFactory
 import java.lang.reflect.*
 import java.util.*
@@ -593,9 +594,17 @@ ${it.name}:
 
     open fun getEnumValues(clazz: Class<*>): List<String> {
         return when {
-            clazz.isEnum -> clazz.enumConstants.map { it.toString() }
+            clazz.isEnum -> clazz.enumConstants
+                .filter { constant -> 
+                    if (constant is EnabledStrategy) constant.isEnabled() else true 
+                }
+                .map { it.toString() }
             DynamicEnum::class.java.isAssignableFrom(clazz) -> {
-                DynamicEnum.values(clazz as Class<out DynamicEnum<*>>).map { it.name }
+                DynamicEnum.values(clazz as Class<out DynamicEnum<*>>)
+                    .filter { dynamicEnum -> 
+                        if (dynamicEnum is EnabledStrategy) dynamicEnum.isEnabled() else true 
+                    }
+                    .map { it.name }
             }
 
             else -> emptyList()

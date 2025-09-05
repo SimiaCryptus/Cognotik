@@ -1,6 +1,6 @@
 package com.simiacryptus.diff
 
-import com.simiacryptus.cognotik.util.PythonPatchUtil
+import com.simiacryptus.cognotik.diff.PythonPatchUtil
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

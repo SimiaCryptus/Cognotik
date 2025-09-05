@@ -129,7 +129,7 @@ abstract class ChatClientBase(
     ) {
         log(
             Level.INFO,
-            "Usage recorded for session: {}, user: {}, model: {}, tokens: {}".format(session, user, model, tokens),
+            "Usage recorded for session: %s, user: %s, model: %s, tokens: %s".format(session, user, model, tokens),
             logStreams
         )
         budget?.let { currentBudget ->

@@ -43,7 +43,7 @@ class SimpleDiffApplier {
         val matches = DIFF_PATTERN.findAll(response).distinct()
         var currentCode = originalCode
 
-        val validator = Companion.getValidator(filename)
+        val validator = getValidator(filename)
         val originalCodeErrors = validator.validateGrammar(originalCode)
         val newErrors = matches.flatMap { diffBlock ->
             val diffVal: String = diffBlock.groupValues[1]

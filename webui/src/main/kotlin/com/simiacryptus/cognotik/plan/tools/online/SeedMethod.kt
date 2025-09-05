@@ -6,13 +6,14 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.util.EnabledStrategy
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-interface SeedStrategy {
+interface SeedStrategy : EnabledStrategy {
     fun getSeedItems(
         taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
         planSettings: PlanSettings
@@ -79,6 +80,88 @@ enum class SeedMethod {
                 return items.take(searchLimit)
             }
 
+            override fun isEnabled(): Boolean {
+                return user?.let {
+                    val userSettings = ApplicationServices.userSettingsManager.getUserSettings(it)
+                    userSettings.apis.any { api -> api.provider == APIProvider.GoogleSearch && api.key?.isNotBlank() == true } &&
+                            userSettings.apiBase[APIProvider.GoogleSearch]?.isNotBlank() == true
+                } ?: false
+            }
+        }
+
+    },
+    DuckDuckGoSearch {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
+            override fun getSeedItems(
+                taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
+                planSettings: PlanSettings
+            ): List<Map<String, Any>>? {
+                log.info("Starting DuckDuckGo Search seed method with query: ${taskConfig?.search_query}")
+                if (taskConfig?.search_query.isNullOrBlank()) {
+                    log.error("Search query is missing for DuckDuckGo Search seed method")
+                    throw IllegalArgumentException("Search query is required when using DuckDuckGo Search seed method")
+                }
+                val client = HttpClient.newBuilder().build()
+                val query = taskConfig?.search_query?.trim()
+                log.debug("Using search query: $query")
+                val encodedQuery = URLEncoder.encode(query, "UTF-8")
+                val searchLimit = 20
+                log.debug("Preparing DuckDuckGo Search API request")
+                // DuckDuckGo Instant Answer API
+                val uriBuilder = "https://api.duckduckgo.com/?q=$encodedQuery&format=json&no_html=1&skip_disambig=1"
+                val request = HttpRequest.newBuilder()
+                    .uri(URI.create(uriBuilder))
+                    .header("User-Agent", "CognoTik-Crawler/1.0")
+                    .GET()
+                    .build()
+                log.info("Sending request to DuckDuckGo Search API")
+                val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+                val statusCode = response.statusCode()
+                if (statusCode != 200) {
+                    log.error("DuckDuckGo API request failed with status $statusCode: ${response.body()}")
+                    throw RuntimeException("DuckDuckGo API request failed with status $statusCode: ${response.body()}")
+                }
+                log.debug("Parsing DuckDuckGo Search API response")
+                val searchData: Map<String, Any> = ObjectMapper().readValue(response.body())
+                val relatedTopics = searchData["RelatedTopics"] as? List<Map<String, Any>> ?: emptyList()
+                val results = searchData["Results"] as? List<Map<String, Any>> ?: emptyList()
+                // Combine results and related topics
+                val allItems = mutableListOf<Map<String, Any>>()
+                // Add main results first
+                results.forEach { result ->
+                    val firstUrl = result["FirstURL"] as? String
+                    val text = result["Text"] as? String
+                    if (!firstUrl.isNullOrBlank() && !text.isNullOrBlank()) {
+                        allItems.add(mapOf(
+                            "link" to firstUrl,
+                            "title" to text,
+                            "snippet" to text
+                        ))
+                    }
+                }
+                // Add related topics
+                relatedTopics.forEach { topic ->
+                    val firstUrl = topic["FirstURL"] as? String
+                    val text = topic["Text"] as? String
+                    if (!firstUrl.isNullOrBlank() && !text.isNullOrBlank()) {
+                        allItems.add(mapOf(
+                            "link" to firstUrl,
+                            "title" to text.substringBefore(" - "),
+                            "snippet" to text
+                        ))
+                    }
+                }
+                if (allItems.isEmpty()) {
+                    log.warn("No search results found for query: $query")
+                    throw RuntimeException("No search results found for query: $query")
+                }
+                log.info(
+                    "Successfully retrieved ${allItems.size} search results, returning ${
+                        Math.min(allItems.size, searchLimit)
+                    } items"
+                )
+                return allItems.take(searchLimit)
+            }
         }
     },
     DirectUrls {

@@ -126,7 +126,7 @@ open class ChatSocketManager(
         val task = newTask()
         val (link, file) = task.createFile("transcript.md")
         val markdownTranscript = file?.outputStream()
-        task.add(
+        task.complete(
             "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"

@@ -1,7 +1,7 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.diff
 
-import org.apache.commons.text.similarity.LevenshteinDistance
 import com.simiacryptus.util.LoggerFactory
+import org.apache.commons.text.similarity.LevenshteinDistance
 import kotlin.math.floor
 import kotlin.math.max
 
@@ -296,7 +296,7 @@ object PythonPatchUtil {
             when {
                 codeLine.matchingLine?.type == LineType.DELETE -> {
                     val patchLine = codeLine.matchingLine!!
-                    log.debug("Deleting line: $codeLine")
+                    log.debug("Deleting line: {}", codeLine)
                     usedPatchLines.add(patchLine)
                     checkAfterForInserts(patchLine, usedPatchLines, patchedText)
                     lastMatchedPatchIndex = patchLine.index
@@ -304,7 +304,7 @@ object PythonPatchUtil {
 
                 codeLine.matchingLine != null -> {
                     val patchLine = codeLine.matchingLine!!
-                    log.debug("Patching line: $codeLine <-> $patchLine")
+                    log.debug("Patching line: {} <-> {}", codeLine, patchLine)
                     checkBeforeForInserts(patchLine, usedPatchLines, patchedText)
                     usedPatchLines.add(patchLine)
                     if (normalizeLine(codeLine.line ?: "") == normalizeLine(patchLine.line ?: "")) {
@@ -317,7 +317,7 @@ object PythonPatchUtil {
                 }
 
                 else -> {
-                    log.debug("Added unmatched source line: $codeLine")
+                    log.debug("Added unmatched source line: {}", codeLine)
                     patchedText.add(codeLine.line ?: "")
                 }
             }
@@ -325,7 +325,7 @@ object PythonPatchUtil {
         if (lastMatchedPatchIndex == -1) {
             patchLines.filter { it.type == LineType.ADD && !usedPatchLines.contains(it) }
                 .forEach { line ->
-                    log.debug("Added patch line: $line")
+                    log.debug("Added patch line: {}", line)
                     patchedText.add(line.line ?: "")
                 }
         }
@@ -344,7 +344,7 @@ object PythonPatchUtil {
             if (prevPatchLine.type != LineType.ADD || usedPatchLines.contains(prevPatchLine)) {
                 break
             }
-            log.debug("Added unmatched patch line: $prevPatchLine")
+            log.debug("Added unmatched patch line: {}", prevPatchLine)
             buffer.add(prevPatchLine.line ?: "")
             usedPatchLines.add(prevPatchLine)
             prevPatchLine = prevPatchLine.previousLine
@@ -368,7 +368,7 @@ object PythonPatchUtil {
             if (nextPatchLine == null) break
             if (nextPatchLine.type != LineType.ADD) break
             if (usedPatchLines.contains(nextPatchLine)) break
-            log.debug("Added unmatched patch line: $nextPatchLine")
+            log.debug("Added unmatched patch line: {}", nextPatchLine)
             patchedText.add(nextPatchLine.line ?: "")
             usedPatchLines.add(nextPatchLine)
             nextPatchLine = nextPatchLine.nextLine

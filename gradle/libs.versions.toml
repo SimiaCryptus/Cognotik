@@ -1,5 +1,6 @@
 [versions]
 # libraries
+android = "4.1.1.4"
 jetty = "11.0.25"
 junit4 = "4.13.2"
 slf4j = "2.0.16"
@@ -74,6 +75,7 @@ junitJupiter = "5.12.2"
 android-gradle-plugin = "8.9.3"
 
 [libraries]
+android = { module = "com.google.android:android", version.ref = "android" }
 jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
 jetty-webapp = { group = "org.eclipse.jetty", name = "jetty-webapp", version.ref = "jetty" }
 jetty-websocket-servlet = { group = "org.eclipse.jetty.websocket", name = "websocket-servlet", version.ref = "jetty" }
