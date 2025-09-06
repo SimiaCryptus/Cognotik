@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 
 @JsonTypeIdResolver(TaskSettingsBase.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")
 open class TaskSettingsBase(
     val task_type: String? = null,
     var enabled: Boolean = false,
-    var model: ChatModelType? = null
+    var model: ChatModel? = null
 ) {
     class PlanTaskTypeIdResolver : TypeIdResolverBase() {
         override fun idFromValue(value: Any): String? {

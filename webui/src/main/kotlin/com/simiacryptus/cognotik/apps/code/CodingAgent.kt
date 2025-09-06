@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.proxy.ValidatedObject
@@ -47,7 +47,7 @@ open class CodingAgent<T : Interpreter>(
             temperature = temperature,
             details = details,
             model = model,
-            fallbackModel = model as ChatModelType
+            fallbackModel = model as ChatModel
         )
     }
 

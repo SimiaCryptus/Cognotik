@@ -22,7 +22,7 @@ import com.simiacryptus.cognotik.input.getReader
  import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
  import com.simiacryptus.cognotik.webui.session.SessionTask
  import com.simiacryptus.cognotik.chat.ChatClientInterface
- import com.simiacryptus.cognotik.chat.model.ChatModelType.ChatModel
+ import com.simiacryptus.cognotik.chat.model.ChatModel.Chatter
  import com.simiacryptus.cognotik.models.ApiModel
  import com.simiacryptus.cognotik.util.GPT4Tokenizer
  import com.simiacryptus.cognotik.util.LoggerFactory
@@ -113,8 +113,8 @@ class MultiCodeChatAction : BaseAction() {
     /** Chat manager that handles the chat interface and code modifications */
     inner class CodeChatManager(
         session: Session,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: Chatter,
+        parsingModel: Chatter,
         val root: File,
         private val codeFiles: Set<Path>
     ) : ChatSocketManager(

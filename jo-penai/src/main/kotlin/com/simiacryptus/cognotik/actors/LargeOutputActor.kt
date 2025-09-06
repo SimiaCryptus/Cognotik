@@ -4,7 +4,7 @@ import com.google.common.base.Strings
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.ClientUtil.toChatMessage
@@ -206,7 +206,7 @@ class LargeOutputActor(
         return accumulatedResponse
     }
 
-    override fun withModel(model: ChatModelType): LargeOutputActor {
+    override fun withModel(model: ChatModel): LargeOutputActor {
         return LargeOutputActor(
             prompt = this.prompt,
             name = this.name,

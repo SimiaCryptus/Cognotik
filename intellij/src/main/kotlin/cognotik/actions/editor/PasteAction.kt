@@ -13,7 +13,7 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.proxy.ChatProxy
 import org.jsoup.Jsoup
@@ -27,7 +27,7 @@ import java.awt.datatransfer.DataFlavor.*
  * Base class for paste actions that convert clipboard content to appropriate code format
  * Supports both text and HTML clipboard content with automatic language detection
  */
-abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatModelType) : SelectionAction<String>(false) {
+abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatModel) : SelectionAction<String>(false) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     /**
@@ -200,7 +200,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
             }
         } ?: false
 
-        fun converter(chatClient: ChatClientInterface, chatModel: ChatModelType, temp: Double) = ChatProxy(
+        fun converter(chatClient: ChatClientInterface, chatModel: ChatModel, temp: Double) = ChatProxy(
             clazz = VirtualAPI::class.java,
             api = chatClient,
             model = chatModel,

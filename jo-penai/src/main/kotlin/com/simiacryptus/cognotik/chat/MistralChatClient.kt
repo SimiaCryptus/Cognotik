@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.chat
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
@@ -70,7 +70,7 @@ class MistralChatClient(
                 checkError(result)
                 val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
 
-                if (response.usage != null && model is ChatModelType) {
+                if (response.usage != null && model is ChatModel) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
                 }
 

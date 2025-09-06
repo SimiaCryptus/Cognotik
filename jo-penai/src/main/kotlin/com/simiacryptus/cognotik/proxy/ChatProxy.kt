@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.ChatRequest
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 open class ChatProxy<T : Any>(
     clazz: Class<out T>,
     val api: ChatClientInterface,
-    var model: ChatModelType,
+    var model: ChatModel,
     temperature: Double = 0.5,
     private val moderated: Boolean = false,
     val deserializerRetries: Int = 2,

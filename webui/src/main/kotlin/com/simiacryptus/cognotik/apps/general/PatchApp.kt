@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -31,8 +31,8 @@ abstract class PatchApp(
     override val root: File,
     protected val settings: Settings,
     private val api: ChatClientInterface,
-    val model: ChatModelType,
-    val parsingModel: ChatModelType,
+    val model: ChatModel,
+    val parsingModel: ChatModel,
     private val promptPrefix: String = """The following command was run and produced an error:""",
 ) : ApplicationServer(
     applicationName = "Magic Code Fixer",

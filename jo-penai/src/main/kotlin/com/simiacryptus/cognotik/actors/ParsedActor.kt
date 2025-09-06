@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.actors
 import com.simiacryptus.cognotik.util.MultiExeption
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
@@ -156,7 +156,7 @@ open class ParsedActor<T : Any>(
             throw e
         }
 
-    override fun withModel(model: ChatModelType): ParsedActor<T> = ParsedActor(
+    override fun withModel(model: ChatModel): ParsedActor<T> = ParsedActor(
         resultClass = resultClass,
         prompt = prompt,
         name = name,

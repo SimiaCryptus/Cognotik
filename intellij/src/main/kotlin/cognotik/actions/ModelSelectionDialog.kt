@@ -4,16 +4,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import javax.swing.JComponent
 
 class ModelSelectionDialog(
     project: Project?,
-    private val availableModels: List<Pair<String, ChatModelType>>,
-    private val initialSelection: ChatModelType? = null
+    private val availableModels: List<Pair<String, ChatModel>>,
+    private val initialSelection: ChatModel? = null
 ) : DialogWrapper(project, true) {
 
-    var selectedModel: ChatModelType? = null
+    var selectedModel: ChatModel? = null
 
     init {
         init()

@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicReference
 open class ChatSocketManager(
     session: Session,
     var useExpansionSyntax: Boolean = true,
-    var model: ChatModelType.ChatModel,
-    var parsingModel: ChatModelType.ChatModel,
+    var model: ChatModel.Chatter,
+    var parsingModel: ChatModel.Chatter,
     val userInterfacePrompt: String = (if (!useExpansionSyntax) "" else """
     <div class="expandable-guide">
       <div class="expandable-header">

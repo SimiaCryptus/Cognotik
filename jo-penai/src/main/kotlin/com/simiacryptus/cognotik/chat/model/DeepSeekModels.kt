@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.chat.model
 import com.simiacryptus.cognotik.models.APIProvider
 
 object DeepSeekModels {
-    val DeepSeekChat = ChatModelType(
+    val DeepSeekChat = ChatModel(
         name = "DeepSeekChat",
         modelName = "deepseek-chat",
         maxTotalTokens = 64000,
@@ -12,7 +12,7 @@ object DeepSeekModels {
         inputTokenPricePerK = 0.14 / 1000.0,
         outputTokenPricePerK = 0.28 / 1000.0
     )
-    val DeepSeekCoder = ChatModelType(
+    val DeepSeekCoder = ChatModel(
         name = "DeepSeekCoder",
         modelName = "deepseek-coder",
         maxTotalTokens = 64000,
@@ -21,7 +21,7 @@ object DeepSeekModels {
         inputTokenPricePerK = 0.14 / 1000.0,
         outputTokenPricePerK = 0.28 / 1000.0
     )
-    val DeepSeekReasoner = ChatModelType(
+    val DeepSeekReasoner = ChatModel(
         name = "DeepSeekReasoner",
         modelName = "deepseek-reasoner",
         maxTotalTokens = 64000,

@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import icons.MyIcons
 import java.awt.BorderLayout
 import java.awt.Component
@@ -144,15 +144,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             slider.minorTickSpacing = 1
             slider.snapToTicks = true
             val panel = JPanel(BorderLayout(5, 5))
-            val reasoningPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-            val reasoningLabel = JLabel(getMessage("label.reasoningEffort"))
-            val reasoningCombo = JComboBox(arrayOf("Low", "Medium", "High"))
-            reasoningCombo.selectedItem = AppSettingsState.Companion.instance.reasoningEffort
-            reasoningCombo.addActionListener {
-                AppSettingsState.Companion.instance.reasoningEffort = reasoningCombo.selectedItem as String
-            }
-            reasoningPanel.add(reasoningLabel)
-            reasoningPanel.add(reasoningCombo)
 
             val label = JLabel(String.format("%.2f", AppSettingsState.Companion.instance.temperature))
             label.accessibleContext.accessibleDescription = getMessage("label.temperature")
@@ -167,7 +158,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
 
             panel.add(slider, BorderLayout.CENTER)
-            panel.add(reasoningPanel, BorderLayout.SOUTH)
             panel.add(label, BorderLayout.EAST)
             panel
         }
@@ -320,7 +310,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-        fun models() = ChatModelType.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
+        fun models() = ChatModel.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
             .sortedBy { "${it.second.provider.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
@@ -435,7 +425,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         """.trimIndent().trim()
         }
 
-        private fun isVisible(it: ChatModelType): Boolean {
+        private fun isVisible(it: ChatModel): Boolean {
             return true
         }
 

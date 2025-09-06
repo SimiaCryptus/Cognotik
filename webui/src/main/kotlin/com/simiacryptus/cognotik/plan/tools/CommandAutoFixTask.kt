@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
@@ -20,7 +20,7 @@ class CommandAutoFixTask(
     class CommandAutoFixTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
-        model: ChatModelType? = null,
+        model: ChatModel? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 

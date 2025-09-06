@@ -10,6 +10,7 @@ var transcriptionModel: String = AudioModels.Whisper.modelName
  */
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
@@ -20,8 +21,8 @@ import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.chat.model.ChatModelType
-import com.simiacryptus.cognotik.chat.model.ChatModelType.Companion.values
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -57,7 +58,6 @@ data class AppSettingsState(
     var sampleSize: Int = 16,
     var channels: Int = 1,
     var temperature: Double = 0.1,
-    var reasoningEffort: String = "Low",
     var smartModel: String = "",
     var fastModel: String = "",
     var mainImageModel: String = "",
@@ -108,7 +108,7 @@ data class AppSettingsState(
 
     @JsonIgnore
     private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
-        val mapper = com.fasterxml.jackson.databind.ObjectMapper()
+        val mapper = ObjectMapper()
         val appSettings = fromJson<AppSettingsState>(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
 
         if (jsonNode.has("apiKey") && !jsonNode.has("apiKeys")) {
@@ -137,7 +137,7 @@ data class AppSettingsState(
         state.value ?: return
         val fromJson = try {
 
-            val mapper = com.fasterxml.jackson.databind.ObjectMapper()
+            val mapper = ObjectMapper()
             val jsonNode = mapper.readTree(state.value)
 
             handleLegacyApiKeys(jsonNode)
@@ -236,7 +236,6 @@ data class AppSettingsState(
         if (awsRegion != other.awsRegion) return false
         if (awsBucket != other.awsBucket) return false
         if (selectedMicLine != other.selectedMicLine) return false
-        if (reasoningEffort != other.reasoningEffort) return false
         return true
     }
 
@@ -275,7 +274,6 @@ data class AppSettingsState(
         result = 31 * result + (awsRegion?.hashCode() ?: 0)
         result = 31 * result + (awsBucket?.hashCode() ?: 0)
         result = 31 * result + (selectedMicLine?.hashCode() ?: 0)
-        result = 31 * result + reasoningEffort.hashCode()
         return result
     }
 
@@ -321,21 +319,13 @@ data class AppSettingsState(
 }
 
 
-fun String.chatModel() = (values().entries.find {
-    it.key.equals(this, true) || it.value.modelName.equals(this, true)
-}?.value ?: ChatModelType(
-    name = this,
-    modelName = this,
-    maxTotalTokens = 4096,
-    provider = APIProvider.Companion.OpenAI,
-    inputTokenPricePerK = 0.0,
-    outputTokenPricePerK = 0.0
-)).let { chatModel ->
-    chatModel.instance(
-        key = AppSettingsState.instance.apiKeys?.get(chatModel.provider.name)
-            ?: throw IllegalArgumentException("API key for ${chatModel.provider.name} is not set"),
-        base = AppSettingsState.instance.apiBase?.get(chatModel.provider.name) ?: chatModel.provider.base
-            ?: throw IllegalArgumentException("API base for ${chatModel.provider.name} is not set"),
+fun String.chatModel(): ChatModel.Chatter {
+    return this.chatModelType().instance(
+        key = AppSettingsState.instance.apiKeys?.get(this.chatModelType().provider.name)
+            ?: throw IllegalArgumentException("API key for ${this.chatModelType().provider.name} is not set"),
+        base = AppSettingsState.instance.apiBase?.get(this.chatModelType().provider.name)
+            ?: this.chatModelType().provider.base
+            ?: throw IllegalArgumentException("API base for ${this.chatModelType().provider.name} is not set"),
         logLevel = Level.INFO,
         logStreams = mutableListOf()
     )

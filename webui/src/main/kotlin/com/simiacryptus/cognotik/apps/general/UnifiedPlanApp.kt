@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientBase
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
@@ -35,8 +35,8 @@ open class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     val planSettings: PlanSettings,
-    val model: ChatModelType,
-    val parsingModel: ChatModelType,
+    val model: ChatModel,
+    val parsingModel: ChatModel,
     showMenubar: Boolean = true,
     val api: API? = null,
     val cognitiveStrategy: CognitiveModeStrategy,

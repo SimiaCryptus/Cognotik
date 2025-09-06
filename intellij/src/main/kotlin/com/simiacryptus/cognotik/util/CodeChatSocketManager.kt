@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType.ChatModel
+import com.simiacryptus.cognotik.chat.model.ChatModel.Chatter
 
 open class CodeChatSocketManager(
     session: Session,
@@ -15,8 +15,8 @@ open class CodeChatSocketManager(
     val filename: String,
     val codeSelection: String,
     api: ChatClientInterface,
-    model: ChatModel,
-    parsingModel: ChatModel,
+    model: Chatter,
+    parsingModel: Chatter,
     storage: StorageInterface?,
 ) : ChatSocketManager(
     session = session,

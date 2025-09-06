@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel.*
@@ -28,7 +28,7 @@ open class CodingActor(
     name: String? = interpreterClass.simpleName,
     val details: String? = null,
     model: LLMModel,
-    val fallbackModel: ChatModelType,
+    val fallbackModel: ChatModel,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
     var codeInterceptor: CodeInterceptor = { it }
@@ -439,7 +439,7 @@ Correct the code and try again.
         api.chat(request.copy(model = model.modelName, temperature = temperature), model)
             .choices.first().message?.content.orEmpty().trim()
 
-    override fun withModel(model: ChatModelType): CodingActor = CodingActor(
+    override fun withModel(model: ChatModel): CodingActor = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
         describer = describer,

@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -188,7 +188,7 @@ class PluginStartupActivity : ProjectActivity {
         val log = LoggerFactory.getLogger(PluginStartupActivity::class.java)
         fun addUserSuppliedModels(userModels: List<AppSettingsState.UserSuppliedModel>) {
             userModels.forEach { model ->
-                ChatModelType.values[model.displayName] = ChatModelType(
+                ChatModel.values[model.displayName] = ChatModel(
                     name = model.displayName,
                     modelName = model.modelId,
                     maxTotalTokens = 4096,

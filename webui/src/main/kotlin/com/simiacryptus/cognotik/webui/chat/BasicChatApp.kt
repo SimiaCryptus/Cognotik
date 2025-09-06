@@ -6,13 +6,13 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.instance
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import java.io.File
 
 class BasicChatApp(
     root: File,
-    val model: ChatModelType,
-    val parsingModel: ChatModelType,
+    val model: ChatModel,
+    val parsingModel: ChatModel,
     applicationName: String = "Chat",
     val settings: Settings? = null,
 ) : ApplicationServer(
@@ -25,8 +25,8 @@ class BasicChatApp(
     override val inputCnt get() = 0
 
     data class Settings(
-        val model: ChatModelType,
-        val parsingModel: ChatModelType,
+        val model: ChatModel,
+        val parsingModel: ChatModel,
         val temperature: Double = 0.3,
         val budget: Double = 2.0,
     )

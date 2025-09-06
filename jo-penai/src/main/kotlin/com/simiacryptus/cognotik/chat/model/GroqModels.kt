@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 
 object GroqModels {
 
-    val Llama33_70bVersatile = ChatModelType(
+    val Llama33_70bVersatile = ChatModel(
         name = "Llama33_70bVersatile",
         modelName = "llama-3.3-70b-versatile",
         maxTotalTokens = 128000,
@@ -14,7 +14,7 @@ object GroqModels {
         outputTokenPricePerK = 0.79
     )
 
-    val Gemma2_9b = ChatModelType(
+    val Gemma2_9b = ChatModel(
         name = "Gemma2_9b",
         modelName = "gemma2-9b-it",
         maxTotalTokens = 8192,
@@ -24,7 +24,7 @@ object GroqModels {
         outputTokenPricePerK = 0.20
     )
 
-    val Llama33_70bSpecDec = ChatModelType(
+    val Llama33_70bSpecDec = ChatModel(
         name = "Llama33_70bSpecDec",
         modelName = "llama-3.3-70b-specdec",
         maxTotalTokens = 8192,
@@ -34,7 +34,7 @@ object GroqModels {
         outputTokenPricePerK = 0.99
     )
 
-    val Llama31_8bInstant = ChatModelType(
+    val Llama31_8bInstant = ChatModel(
         name = "Llama31_8bInstant",
         modelName = "llama-3.1-8b-instant",
         maxTotalTokens = 128000,
@@ -44,7 +44,7 @@ object GroqModels {
         outputTokenPricePerK = 0.08
     )
 
-    val Llama32_1bPreview = ChatModelType(
+    val Llama32_1bPreview = ChatModel(
         name = "Llama32_1bPreview",
         modelName = "llama-3.2-1b-preview",
         maxTotalTokens = 128000,
@@ -54,7 +54,7 @@ object GroqModels {
         outputTokenPricePerK = 0.04
     )
 
-    val Llama32_3bPreview = ChatModelType(
+    val Llama32_3bPreview = ChatModel(
         name = "Llama32_3bPreview",
         modelName = "llama-3.2-3b-preview",
         maxTotalTokens = 128000,
@@ -64,7 +64,7 @@ object GroqModels {
         outputTokenPricePerK = 0.06
     )
 
-    val LlamaGuard38b = ChatModelType(
+    val LlamaGuard38b = ChatModel(
         name = "LlamaGuard38b",
         modelName = "llama-guard-3-8b",
         maxTotalTokens = 8192,
@@ -74,7 +74,7 @@ object GroqModels {
         outputTokenPricePerK = 0.20
     )
 
-    val Llama370b8192 = ChatModelType(
+    val Llama370b8192 = ChatModel(
         name = "Llama370b8192",
         modelName = "llama3-70b-8192",
         maxTotalTokens = 8192,
@@ -84,7 +84,7 @@ object GroqModels {
         outputTokenPricePerK = 0.79
     )
 
-    val Llama38b8192 = ChatModelType(
+    val Llama38b8192 = ChatModel(
         name = "Llama38b8192",
         modelName = "llama3-8b-8192",
         maxTotalTokens = 8192,
@@ -94,7 +94,7 @@ object GroqModels {
         outputTokenPricePerK = 0.08
     )
 
-    val Qwen25_32b = ChatModelType(
+    val Qwen25_32b = ChatModel(
         name = "Qwen25_32b",
         modelName = "qwen-2.5-32b",
         maxTotalTokens = 128000,
@@ -103,7 +103,7 @@ object GroqModels {
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
-    val Qwen25Coder32b = ChatModelType(
+    val Qwen25Coder32b = ChatModel(
         name = "Qwen25Coder32b",
         modelName = "qwen-2.5-coder-32b",
         maxTotalTokens = 128000,
@@ -112,7 +112,7 @@ object GroqModels {
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
-    val QwenQwq32b = ChatModelType(
+    val QwenQwq32b = ChatModel(
         name = "QwenQwq32b",
         modelName = "qwen-qwq-32b",
         maxTotalTokens = 128000,
@@ -121,7 +121,7 @@ object GroqModels {
         inputTokenPricePerK = 0.30,
         outputTokenPricePerK = 0.30
     )
-    val MistralSaba24b = ChatModelType(
+    val MistralSaba24b = ChatModel(
         name = "MistralSaba24b",
         modelName = "mistral-saba-24b",
         maxTotalTokens = 32000,
@@ -131,7 +131,7 @@ object GroqModels {
         outputTokenPricePerK = 0.25
     )
 
-    val DeepseekQwen32b = ChatModelType(
+    val DeepseekQwen32b = ChatModel(
         name = "DeepseekQwen32b",
         modelName = "deepseek-r1-distill-qwen-32b",
         maxTotalTokens = 128000,
@@ -141,7 +141,7 @@ object GroqModels {
         outputTokenPricePerK = 0.30
     )
 
-    val DeepseekLlama70b = ChatModelType(
+    val DeepseekLlama70b = ChatModel(
         name = "DeepseekLlama70b",
         modelName = "deepseek-r1-distill-llama-70b",
        maxTotalTokens = 131072,
@@ -151,7 +151,7 @@ object GroqModels {
         outputTokenPricePerK = 0.79
     )
 
-    val Llama32_11bVision = ChatModelType(
+    val Llama32_11bVision = ChatModel(
         name = "Llama32_11bVision",
         modelName = "llama-3.2-11b-vision-preview",
         maxTotalTokens = 128000,
@@ -161,7 +161,7 @@ object GroqModels {
         outputTokenPricePerK = 0.10
     )
 
-    val Llama32_90bVision = ChatModelType(
+    val Llama32_90bVision = ChatModel(
         name = "Llama32_90bVision",
         modelName = "llama-3.2-90b-vision-preview",
         maxTotalTokens = 128000,
@@ -170,7 +170,7 @@ object GroqModels {
         inputTokenPricePerK = 0.70,
         outputTokenPricePerK = 0.70
     )
-   val LlamaPromptGuard2_22m = ChatModelType(
+   val LlamaPromptGuard2_22m = ChatModel(
        name = "LlamaPromptGuard2_22m",
        modelName = "meta-llama/llama-prompt-guard-2-22m",
        maxTotalTokens = 512,
@@ -179,7 +179,7 @@ object GroqModels {
        inputTokenPricePerK = 0.05,
        outputTokenPricePerK = 0.05
    )
-   val LlamaPromptGuard2_86m = ChatModelType(
+   val LlamaPromptGuard2_86m = ChatModel(
        name = "LlamaPromptGuard2_86m",
        modelName = "meta-llama/llama-prompt-guard-2-86m",
        maxTotalTokens = 512,
@@ -188,7 +188,7 @@ object GroqModels {
        inputTokenPricePerK = 0.05,
        outputTokenPricePerK = 0.05
    )
-   val KimiK2Instruct = ChatModelType(
+   val KimiK2Instruct = ChatModel(
        name = "KimiK2Instruct",
        modelName = "moonshotai/kimi-k2-instruct",
        maxTotalTokens = 131072,
@@ -197,7 +197,7 @@ object GroqModels {
        inputTokenPricePerK = 0.30,
        outputTokenPricePerK = 0.30
    )
-   val GptOss120b = ChatModelType(
+   val GptOss120b = ChatModel(
        name = "GptOss120b",
        modelName = "openai/gpt-oss-120b",
        maxTotalTokens = 131072,
@@ -206,7 +206,7 @@ object GroqModels {
        inputTokenPricePerK = 1.00,
        outputTokenPricePerK = 1.00
    )
-   val GptOss20b = ChatModelType(
+   val GptOss20b = ChatModel(
        name = "GptOss20b",
        modelName = "openai/gpt-oss-20b",
        maxTotalTokens = 131072,
@@ -215,7 +215,7 @@ object GroqModels {
        inputTokenPricePerK = 0.50,
        outputTokenPricePerK = 0.50
    )
-   val PlayAiTts = ChatModelType(
+   val PlayAiTts = ChatModel(
        name = "PlayAiTts",
        modelName = "playai-tts",
        maxTotalTokens = 8192,
@@ -224,7 +224,7 @@ object GroqModels {
        inputTokenPricePerK = 0.10,
        outputTokenPricePerK = 0.10
    )
-   val PlayAiTtsArabic = ChatModelType(
+   val PlayAiTtsArabic = ChatModel(
        name = "PlayAiTtsArabic",
        modelName = "playai-tts-arabic",
        maxTotalTokens = 8192,
@@ -233,7 +233,7 @@ object GroqModels {
        inputTokenPricePerK = 0.10,
        outputTokenPricePerK = 0.10
    )
-   val Qwen3_32b = ChatModelType(
+   val Qwen3_32b = ChatModel(
        name = "Qwen3_32b",
        modelName = "qwen/qwen3-32b",
        maxTotalTokens = 131072,
@@ -243,7 +243,7 @@ object GroqModels {
        outputTokenPricePerK = 0.30
    )
 
-    val Llama4Scout17b = ChatModelType(
+    val Llama4Scout17b = ChatModel(
         name = "Llama4Scout17b",
         modelName = "meta-llama/llama-4-scout-17b-16e-instruct",
         maxTotalTokens = 131072,
@@ -252,7 +252,7 @@ object GroqModels {
         inputTokenPricePerK = 0.20,
         outputTokenPricePerK = 0.20
     )
-    val Llama4Maverick17b = ChatModelType(
+    val Llama4Maverick17b = ChatModel(
         name = "Llama4Maverick17b",
         modelName = "meta-llama/llama-4-maverick-17b-128e-instruct",
         maxTotalTokens = 131072,
@@ -261,7 +261,7 @@ object GroqModels {
         inputTokenPricePerK = 0.20,
         outputTokenPricePerK = 0.20
     )
-    val Allam2_7b = ChatModelType(
+    val Allam2_7b = ChatModel(
         name = "Allam2_7b",
         modelName = "allam-2-7b",
         maxTotalTokens = 4096,

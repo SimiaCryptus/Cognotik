@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.opt.PromptOptimization.GeneticApi.Prompt
 import com.simiacryptus.cognotik.proxy.ChatProxy
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
@@ -14,7 +14,7 @@ import kotlin.math.pow
 open class PromptOptimization(
     val api: OpenAIClient,
     val chatClient: ChatClientInterface,
-    val model: ChatModelType,
+    val model: ChatModel,
     private val mutationRate: Double = 0.5,
     private val mutationTypes: Map<String, Double> = mapOf(
         "Rephrase" to 1.0,

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.OpenAIClient
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.ImageGenerationRequest
@@ -82,7 +82,7 @@ open class ImageActor(
         return ImageResponseImpl(text, api = this.openAI ?: throw RuntimeException("No API"))
     }
 
-    override fun withModel(model: ChatModelType): ImageActor = ImageActor(
+    override fun withModel(model: ChatModel): ImageActor = ImageActor(
         prompt = prompt,
         name = name,
         textModel = model,

@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.ProvidersChatClient
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -100,9 +100,9 @@ open class ClientManager {
 }
 
 
-fun ChatModelType.instance(
+fun ChatModel.instance(
     user: User?
-): ChatModelType.ChatModel {
+): ChatModel.Chatter {
     val userSettings = if (user == null) {
         null
     } else {

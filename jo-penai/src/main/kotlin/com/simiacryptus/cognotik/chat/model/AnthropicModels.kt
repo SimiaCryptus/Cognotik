@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.chat.model
 import com.simiacryptus.cognotik.models.APIProvider
 
 object AnthropicModels {
-    val Claude41Opus = ChatModelType(
+    val Claude41Opus = ChatModel(
         name = "Claude41Opus",
         modelName = "claude-opus-4-1-20250805",
         maxTotalTokens = 200000,
@@ -12,7 +12,7 @@ object AnthropicModels {
         inputTokenPricePerK = 30.0 / 1000.0,
         outputTokenPricePerK = 120.0 / 1000.0,
     )
-    val Claude4Sonnet = ChatModelType(
+    val Claude4Sonnet = ChatModel(
         name = "Claude4Sonnet",
         modelName = "claude-sonnet-4-20250514",
         maxTotalTokens = 200000,
@@ -22,7 +22,7 @@ object AnthropicModels {
         outputTokenPricePerK = 24.0 / 1000.0,
     )
 
-    val Claude35Haiku = ChatModelType(
+    val Claude35Haiku = ChatModel(
         name = "Claude35Haiku",
         modelName = "claude-3-5-haiku-latest",
         maxTotalTokens = 200000,

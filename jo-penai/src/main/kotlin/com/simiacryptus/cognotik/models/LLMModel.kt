@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel.Usage
 
 @JsonDeserialize(using = LLMModelDeserializer::class)
@@ -16,18 +16,14 @@ open class LLMModel(
     val provider: APIProvider,
     val maxTotalTokens: Int = -1,
     val maxOutTokens: Int = maxTotalTokens,
-    val hasTemperature: Boolean = true,
-    val hasReasoningEffort: Boolean = false,
 ) : AIModel {
-
     open fun pricing(usage: Usage): Double = 0.0
-
 }
 
 class LLMModelSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<LLMModel>(LLMModel::class.java) {
     override fun serialize(value: LLMModel, gen: JsonGenerator, provider: SerializerProvider) {
         ((listOf(
-            ChatModelType.Companion.values(),
+            ChatModel.Companion.values(),
             EmbeddingModel.Companion.values(),
         ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelName)
             .let { gen.writeString(it) }
@@ -38,7 +34,7 @@ class LLMModelDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<LLM
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LLMModel {
         val modelName = p.readValueAs(String::class.java)
         listOf(
-            ChatModelType.Companion.values(),
+            ChatModel.Companion.values(),
             EmbeddingModel.Companion.values(),
             EditModels.Companion.values(),
         ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }

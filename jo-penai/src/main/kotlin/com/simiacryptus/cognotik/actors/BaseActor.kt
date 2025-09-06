@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
@@ -32,5 +32,5 @@ abstract class BaseActor<I, R>(
     open fun answer(input: I, api: API): R = respond(input = input, api = api, *chatMessages(input))
 
     abstract fun chatMessages(questions: I): Array<ApiModel.ChatMessage>
-    abstract fun withModel(model: ChatModelType): BaseActor<I, R>
+    abstract fun withModel(model: ChatModel): BaseActor<I, R>
 }

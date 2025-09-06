@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.JsonDescriber
 import com.simiacryptus.cognotik.util.GPT4Tokenizer
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -53,9 +53,9 @@ open class OutlineApp(
         ) + "</div>")
 
     data class Settings(
-        val models: List<ChatModelType> = listOf(
+        val models: List<ChatModel> = listOf(
         ),
-        val parsingModel: ChatModelType? = null,
+        val parsingModel: ChatModel? = null,
         val temperature: Double = 0.3,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,
@@ -103,9 +103,9 @@ class OutlineAgent(
     val session: Session,
     val user: User?,
     val temperature: Double,
-    val models: List<ChatModelType>,
-    val firstLevelModel: ChatModelType,
-    val parsingModel: ChatModelType,
+    val models: List<ChatModel>,
+    val firstLevelModel: ChatModel,
+    val parsingModel: ChatModel,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -241,7 +241,7 @@ class OutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModelType>,
+        models: List<ChatModel>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -287,7 +287,7 @@ class OutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModelType,
+        model: ChatModel,
         api: API,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
@@ -321,13 +321,13 @@ interface OutlineActors {
 
         val log = LoggerFactory.getLogger(OutlineActors::class.java)
 
-        fun actorMap(temperature: Double, firstLevelModel: ChatModelType, parsingModel: ChatModelType) = mapOf(
+        fun actorMap(temperature: Double, firstLevelModel: ChatModel, parsingModel: ChatModel) = mapOf(
             ActorType.INITIAL to initialAuthor(temperature, firstLevelModel, parsingModel),
             ActorType.EXPAND to expansionAuthor(temperature, parsingModel),
             ActorType.FINAL to finalWriter(temperature, firstLevelModel, maxIterations = 10),
         )
 
-        private fun initialAuthor(temperature: Double, model: ChatModelType, parsingModel: ChatModelType) = ParsedActor(
+        private fun initialAuthor(temperature: Double, model: ChatModel, parsingModel: ChatModel) = ParsedActor(
             NodeList::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = model,
@@ -356,7 +356,7 @@ interface OutlineActors {
 
         private fun expansionAuthor(
             temperature: Double,
-            parsingModel: ChatModelType
+            parsingModel: ChatModel
         ): ParsedActor<NodeList> =
             ParsedActor(
                 resultClass = NodeList::class.java,
@@ -368,7 +368,7 @@ interface OutlineActors {
                 exampleInstance = exampleNodeList(),
             )
 
-        private fun finalWriter(temperature: Double, model: ChatModelType, maxIterations: Int) = LargeOutputActor(
+        private fun finalWriter(temperature: Double, model: ChatModel, maxIterations: Int) = LargeOutputActor(
             model = model,
             temperature = temperature,
             maxIterations = maxIterations,

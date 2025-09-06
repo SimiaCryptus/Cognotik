@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
@@ -33,7 +33,7 @@ open class SimpleActor(
         )
     }
 
-    override fun withModel(model: ChatModelType): SimpleActor = SimpleActor(
+    override fun withModel(model: ChatModel): SimpleActor = SimpleActor(
         prompt = prompt,
         name = name,
         model = model,

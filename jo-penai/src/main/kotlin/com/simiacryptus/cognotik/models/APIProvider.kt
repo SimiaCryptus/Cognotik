@@ -27,12 +27,12 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         logStreams: MutableList<BufferedOutputStream> = mutableListOf()
     ): ChatClientInterface
 
-    abstract fun getChatModels(): List<ChatModelType>
+    abstract fun getChatModels(): List<ChatModel>
 
     companion object {
         val Google: APIProvider = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
 
-            override fun getChatModels(): List<ChatModelType> = GoogleModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = GoogleModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -50,7 +50,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
 
-            override fun getChatModels(): List<ChatModelType> = emptyList()
+            override fun getChatModels(): List<ChatModel> = emptyList()
 
             override fun getChatClient(
                 key: String,
@@ -62,7 +62,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
-            override fun getChatModels(): List<ChatModelType> = OpenAIModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = OpenAIModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -80,7 +80,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
 
-            override fun getChatModels(): List<ChatModelType> = AnthropicModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = AnthropicModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -98,7 +98,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
 
-            override fun getChatModels(): List<ChatModelType> = AWSModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = AWSModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -116,7 +116,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
 
-            override fun getChatModels(): List<ChatModelType> = GroqModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = GroqModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -134,7 +134,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
 
-            override fun getChatModels(): List<ChatModelType> = PerplexityModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = PerplexityModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -152,7 +152,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
 
-            override fun getChatModels(): List<ChatModelType> = ModelsLabModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = ModelsLabModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -170,7 +170,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
 
-            override fun getChatModels(): List<ChatModelType> = MistralModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = MistralModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -188,7 +188,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
 
-            override fun getChatModels(): List<ChatModelType> = DeepSeekModels.values.values.toList()
+            override fun getChatModels(): List<ChatModel> = DeepSeekModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -206,7 +206,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val GoogleSearch: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
 
-            override fun getChatModels(): List<ChatModelType> = emptyList()
+            override fun getChatModels(): List<ChatModel> = emptyList()
 
             override fun getChatClient(
                 key: String,
@@ -224,7 +224,7 @@ abstract class APIProvider private constructor(name: String, val base: String? =
         }
         val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
 
-            override fun getChatModels(): List<ChatModelType> = emptyList()
+            override fun getChatModels(): List<ChatModel> = emptyList()
 
             override fun getChatClient(
                 key: String,

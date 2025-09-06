@@ -28,7 +28,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientBase
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ApiModel
@@ -133,7 +133,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModelType? = AppSettingsState.instance.smartModel.chatModelType(),
+            val model: ChatModel? = AppSettingsState.instance.smartModel.chatModelType(),
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -147,8 +147,8 @@ class MultiStepPatchAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModelType,
-        val parsingModel: ChatModelType,
+        val model: ChatModel,
+        val parsingModel: ChatModel,
         val event: AnActionEvent,
     ) {
         val actors = mapOf(

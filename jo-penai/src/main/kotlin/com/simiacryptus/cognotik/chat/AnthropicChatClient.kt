@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.chat
 
-import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
@@ -65,7 +65,7 @@ class AnthropicChatClient(
 
                 val response = JsonUtil.objectMapper().readValue(responseJson, ApiModel.ChatResponse::class.java)
 
-                if (response.usage != null && model is ChatModelType) {
+                if (response.usage != null && model is ChatModel) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
                 }
 

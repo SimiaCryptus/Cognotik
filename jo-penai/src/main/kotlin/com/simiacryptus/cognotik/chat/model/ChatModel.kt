@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.Usage
 import com.simiacryptus.cognotik.models.EmbeddingModel
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.chat.model.ChatModelType.Companion.values
+import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
 import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -23,7 +23,7 @@ import kotlin.collections.toMutableMap
 
 @JsonDeserialize(using = ChatModelsDeserializer::class)
 @JsonSerialize(using = ChatModelsSerializer::class)
-open class ChatModelType(
+open class ChatModel(
     val name: String,
     modelName: String,
     maxTotalTokens: Int,
@@ -31,27 +31,23 @@ open class ChatModelType(
     provider: APIProvider,
     val inputTokenPricePerK: Double,
     val outputTokenPricePerK: Double,
-    hasTemperature: Boolean = true,
-    hasReasoningEffort: Boolean = false,
 ) : LLMModel(
     modelName = modelName,
     maxTotalTokens = maxTotalTokens,
     maxOutTokens = maxOutTokens,
     provider = provider,
-    hasTemperature = hasTemperature,
-    hasReasoningEffort = hasReasoningEffort,
 ) {
     override fun toString() = modelName
 
     override fun pricing(usage: Usage) =
         ((usage.prompt_tokens ?: 0L) * inputTokenPricePerK + (usage.completion_tokens ?: 0L) * outputTokenPricePerK) / 1000.0
 
-    interface ChatModel {
+    interface Chatter {
         fun chat(
             chatRequest: ApiModel.ChatRequest,
             workPool: ExecutorService,
         ): ApiModel.ChatResponse
-        val modelType: ChatModelType
+        val modelType: ChatModel
     }
 
     fun instance(
@@ -59,8 +55,8 @@ open class ChatModelType(
         base: String = provider.base!!,
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    ) = object : ChatModel {
-        override val modelType = this@ChatModelType
+    ) = object : Chatter {
+        override val modelType = this@ChatModel
         override fun chat(
             chatRequest: ApiModel.ChatRequest,
             workPool: ExecutorService
@@ -72,7 +68,7 @@ open class ChatModelType(
             logStreams = logStreams
         ).chat(
             chatRequest = chatRequest,
-            model = this@ChatModelType,
+            model = this@ChatModel,
             logStreams = logStreams
         )
     }
@@ -80,7 +76,7 @@ open class ChatModelType(
     companion object {
 
         fun values() = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
-        val values: MutableMap<String, ChatModelType?> by lazy { defaultValues().toMutableMap() }
+        val values: MutableMap<String, ChatModel?> by lazy { defaultValues().toMutableMap() }
 
         private fun defaultValues() = OpenAIModels.values +
                 PerplexityModels.values +
@@ -94,17 +90,17 @@ open class ChatModelType(
     }
 }
 
-class ChatModelsSerializer : StdSerializer<ChatModelType>(ChatModelType::class.java) {
-    override fun serialize(value: ChatModelType, gen: JsonGenerator, provider: SerializerProvider) {
-        val modelKey = ChatModelType.Companion.values().entries.find { it.value == value }?.key
+class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
+    override fun serialize(value: ChatModel, gen: JsonGenerator, provider: SerializerProvider) {
+        val modelKey = values().entries.find { it.value == value }?.key
         gen.writeString(modelKey ?: value.modelName)
     }
 }
 
-class ChatModelsDeserializer : JsonDeserializer<ChatModelType>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModelType {
+class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
         val modelName = p.readValueAs(String::class.java)
-        return ChatModelType.Companion.values()[modelName] ?: ChatModelType(
+        return values()[modelName] ?: ChatModel(
             name = modelName,
             modelName = modelName,
             maxTotalTokens = 4096,
@@ -115,9 +111,9 @@ class ChatModelsDeserializer : JsonDeserializer<ChatModelType>() {
     }
 }
 
-fun String.chatModelType() = (ChatModelType.Companion.values().entries.find {
+fun String.chatModelType(): ChatModel = (values().entries.find {
     it.key.equals(this, true) || it.value.modelName.equals(this, true)
-}?.value ?: ChatModelType(
+}?.value ?: ChatModel(
     name = this,
     modelName = this,
     maxTotalTokens = 4096,
