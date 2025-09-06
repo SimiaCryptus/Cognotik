@@ -24,10 +24,9 @@ import com.intellij.util.ui.FormBuilder
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.exceptions.ModerationException
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.exceptions.ModerationException
+import com.simiacryptus.cognotik.models.APIProvider
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension

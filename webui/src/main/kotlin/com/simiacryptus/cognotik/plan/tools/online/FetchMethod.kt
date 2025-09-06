@@ -5,7 +5,8 @@ import com.simiacryptus.cognotik.plan.tools.online.FetchConfig.isSeleniumEnabled
 import com.simiacryptus.cognotik.util.HtmlSimplifier
 import com.simiacryptus.cognotik.util.Selenium2S3
 import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
-import com.simiacryptus.util.EnabledStrategy
+import com.simiacryptus.cognotik.util.EnabledStrategy
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.net.URI
 import java.net.http.HttpRequest
@@ -75,7 +76,6 @@ enum class FetchMethod {
             }
         }
     },
-
     Selenium {
         override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = object : FetchStrategy {
             override fun fetch(
@@ -122,6 +122,6 @@ enum class FetchMethod {
     abstract fun createStrategy(task: CrawlerAgentTask): FetchStrategy
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(FetchMethod::class.java)
+        val log = LoggerFactory.getLogger(FetchMethod::class.java)
     }
 }

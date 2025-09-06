@@ -14,14 +14,15 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.util.GPT4Tokenizer
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.util.GPT4Tokenizer
+import com.simiacryptus.cognotik.util.JsonUtil
 import org.intellij.lang.annotations.Language
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.describe.JsonDescriber
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -350,7 +351,7 @@ object EnhancedOutlineActors {
         model = model,
         temperature = temperature,
         parsingModel = parsingModel,
-        describer = object : com.simiacryptus.jopenai.describe.JsonDescriber(
+        describer = object : JsonDescriber(
             mutableSetOf("com.simiacryptus", "com.simiacryptus")
         ) {
             override val includeMethods: Boolean get() = false

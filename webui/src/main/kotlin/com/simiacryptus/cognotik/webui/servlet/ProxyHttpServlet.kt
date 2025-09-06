@@ -3,7 +3,8 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -269,7 +270,7 @@ open class ProxyHttpServlet(
     }
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(ProxyHttpServlet::class.java)
+        val log = LoggerFactory.getLogger(ProxyHttpServlet::class.java)
 
         @JvmStatic
         fun main(args: Array<String>) {

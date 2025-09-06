@@ -11,9 +11,9 @@ import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit

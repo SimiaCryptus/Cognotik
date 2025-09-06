@@ -11,11 +11,11 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap

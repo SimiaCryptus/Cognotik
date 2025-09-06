@@ -12,9 +12,9 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.PsiUtil.getAll
 import com.simiacryptus.cognotik.util.PsiUtil.getSmallestIntersecting
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.proxy.ChatProxy
-import com.simiacryptus.util.StringUtil
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.proxy.ChatProxy
+import com.simiacryptus.cognotik.util.StringUtil
 import java.awt.Component
 import javax.swing.JOptionPane
 

@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
+import com.simiacryptus.cognotik.API
 import kotlin.random.Random
 
 class StressTestApp(

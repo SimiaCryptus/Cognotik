@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.jopenai.API
+import com.simiacryptus.cognotik.API
 
 abstract class ApplicationSocketManager(
     session: Session,

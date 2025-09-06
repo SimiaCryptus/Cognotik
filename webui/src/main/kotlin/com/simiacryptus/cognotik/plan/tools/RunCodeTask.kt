@@ -5,10 +5,10 @@ import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger

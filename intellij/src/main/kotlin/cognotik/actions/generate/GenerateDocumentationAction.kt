@@ -19,9 +19,9 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.getSelectedFile
 import com.simiacryptus.cognotik.util.getSelectedFolder
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
 import java.awt.Dimension

@@ -7,7 +7,7 @@ import org.monte.media.av.codec.audio.AudioFormatKeys.*
 import org.monte.media.av.codec.video.VideoFormatKeys
 import org.monte.media.math.Rational
 import org.monte.media.screenrecorder.ScreenRecorder
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.AWTException
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle

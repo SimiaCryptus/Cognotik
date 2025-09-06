@@ -4,7 +4,8 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -179,6 +180,6 @@ object PlanUtil {
         return dependencies
     }
 
-    val log = com.simiacryptus.util.LoggerFactory.getLogger(PlanUtil::class.java)
+    val log = LoggerFactory.getLogger(PlanUtil::class.java)
 
 }

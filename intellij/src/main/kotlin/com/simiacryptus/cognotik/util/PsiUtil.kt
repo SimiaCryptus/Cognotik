@@ -5,7 +5,6 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
-import com.simiacryptus.util.StringUtil
 import java.util.ArrayList
 import java.util.Arrays
 import java.util.HashSet

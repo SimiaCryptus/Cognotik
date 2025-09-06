@@ -12,9 +12,9 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.chat.model.ChatModelType
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -26,7 +26,7 @@ open class AddApplyFileDiffLinks {
     companion object {
         var loggingEnabled = { false }
         private val diffApplier = SimpleDiffApplier()
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
+        private val log = LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
             debug("Initializing AddApplyFileDiffLinks")
         }
 

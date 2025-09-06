@@ -1,11 +1,13 @@
 package com.simiacryptus.text
 
+import com.simiacryptus.cognotik.text.TextCompressor
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class TextCompressorTest {
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(TextCompressorTest::class.java)
+        val log = LoggerFactory.getLogger(TextCompressorTest::class.java)
     }
 
     @Test

@@ -14,7 +14,7 @@ data class DiffApplicationResult(
 
 class SimpleDiffApplier {
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(SimpleDiffApplier::class.java)
+        val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(SimpleDiffApplier::class.java)
 
         private const val MAX_DIFF_SIZE_CHARS = 100000
 

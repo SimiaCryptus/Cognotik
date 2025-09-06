@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.jopenai.models.ApiModel
+import com.simiacryptus.cognotik.models.ApiModel
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

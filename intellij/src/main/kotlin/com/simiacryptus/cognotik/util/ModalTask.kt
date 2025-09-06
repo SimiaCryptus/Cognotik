@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.util
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit

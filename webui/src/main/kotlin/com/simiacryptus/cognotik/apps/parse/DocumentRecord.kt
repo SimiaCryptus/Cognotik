@@ -1,8 +1,9 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
+import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
@@ -97,7 +98,7 @@ data class DocumentRecord(
     }
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentRecord::class.java)
+        val log = LoggerFactory.getLogger(DocumentRecord::class.java)
         private const val RECORD_VERSION = 2
 
         fun readBinaryStream(inputPath: String, processor: (DocumentRecord) -> Unit) {

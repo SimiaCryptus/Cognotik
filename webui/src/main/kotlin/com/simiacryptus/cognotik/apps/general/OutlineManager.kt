@@ -1,7 +1,8 @@
 package com.simiacryptus.cognotik.apps.general
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.simiacryptus.jopenai.proxy.ValidatedObject
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.proxy.ValidatedObject
 
 open class OutlineManager(val rootNode: OutlinedText) {
 
@@ -175,6 +176,6 @@ open class OutlineManager(val rootNode: OutlinedText) {
     }
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(OutlineManager::class.java)
+        private val log = LoggerFactory.getLogger(OutlineManager::class.java)
     }
 }

@@ -20,9 +20,6 @@ repositories {
 dependencies {
 
     implementation(libs.hsqldb)
-    implementation(project(":jo-penai")) {
-        exclude(group = "org.jetbrains.kotlin")
-    }
     implementation(project(":antlr")) {
         exclude(group = "org.jetbrains.kotlin")
     }
@@ -47,6 +44,9 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
+    implementation(libs.jackson.jaxrs.json)
+    implementation(libs.jackson.datatype.jsr310)
+
 
     compileOnly(libs.asm)
     compileOnly(kotlin("stdlib"))
@@ -58,6 +58,9 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.kotlin.test.junit5)
+
+    // Optional Android dependency
+    compileOnly(libs.android)
 
     compileOnly(platform(libs.aws.bom))
     compileOnly(libs.aws.sdk)

@@ -4,7 +4,7 @@ import jakarta.servlet.*
 import jakarta.servlet.annotation.WebFilter
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.IOException
 
 @WebFilter(asyncSupported = true, urlPatterns = ["/*"])

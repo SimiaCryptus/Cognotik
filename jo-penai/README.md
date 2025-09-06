@@ -95,7 +95,7 @@ val model = "gpt-4o".chatModel()
 All models can be serialized to and from JSON/YAML using Jackson, thanks to custom serializers/deserializers:
 
 ```kotlin
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.jopenai.models.ChatModel
 
 val model = ChatModel.values()["GPT4o"]!!

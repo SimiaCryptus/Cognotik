@@ -25,10 +25,10 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.JsonUtil.fromJson
-import com.simiacryptus.util.toJson
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.chat
 
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import org.eclipse.jetty.websocket.api.Session
@@ -64,7 +65,7 @@ class ChatSocket(
     }
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(ChatSocket::class.java)
-        private val trafficLog = com.simiacryptus.util.LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
+        private val log = LoggerFactory.getLogger(ChatSocket::class.java)
+        private val trafficLog = LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
     }
 }

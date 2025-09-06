@@ -6,9 +6,9 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.APIProvider
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.models.APIProvider
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest

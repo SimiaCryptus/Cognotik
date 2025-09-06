@@ -20,10 +20,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.webui.test.*
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.chat.model.AnthropicModels
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import org.eclipse.jetty.webapp.WebAppContext
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 

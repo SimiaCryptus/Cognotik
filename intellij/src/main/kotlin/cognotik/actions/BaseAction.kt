@@ -10,9 +10,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IdeaOpenAIClient
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.util.LoggerFactory
 import javax.swing.Icon
 
 abstract class BaseAction(

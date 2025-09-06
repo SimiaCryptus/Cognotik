@@ -7,10 +7,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.DynamicEnum
-import com.simiacryptus.util.DynamicEnumDeserializer
-import com.simiacryptus.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 
 @JsonDeserialize(using = CloudNodeTypesDeserializer::class)
 @JsonSerialize(using = CloudNodeTypesSerializer::class)

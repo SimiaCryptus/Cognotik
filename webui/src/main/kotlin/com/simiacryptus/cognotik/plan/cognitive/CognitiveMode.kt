@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.describe.TypeDescriber
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.describe.TypeDescriber
 
 /**
  * The CognitiveMode interface defines the “cognitive” strategy

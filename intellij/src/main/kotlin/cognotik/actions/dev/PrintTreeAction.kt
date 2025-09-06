@@ -7,7 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.PsiUtil
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 
 /**
  * The PrintTreeAction class is an IntelliJ action that enables developers to print the tree structure of a PsiFile.

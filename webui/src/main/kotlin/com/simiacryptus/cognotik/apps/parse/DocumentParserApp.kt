@@ -15,9 +15,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
@@ -335,7 +336,7 @@ open class DocumentParserApp(
     override fun <T : Any> initSettings(session: Session): T = Settings() as T
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentParserApp::class.java)
+        private val log = LoggerFactory.getLogger(DocumentParserApp::class.java)
     }
 
 }

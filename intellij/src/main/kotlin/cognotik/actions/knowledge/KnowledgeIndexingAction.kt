@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.EmbeddingModel
+import com.simiacryptus.cognotik.models.EmbeddingModel
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File

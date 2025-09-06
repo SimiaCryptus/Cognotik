@@ -4,7 +4,7 @@ import com.simiacryptus.util.files.LongArrayMappedFile
 import com.simiacryptus.util.files.XElements
 import com.simiacryptus.util.files.elements
 import com.simiacryptus.util.files.until
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.*
 

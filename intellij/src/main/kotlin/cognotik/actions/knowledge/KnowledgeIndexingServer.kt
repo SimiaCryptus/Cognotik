@@ -11,10 +11,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
+import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

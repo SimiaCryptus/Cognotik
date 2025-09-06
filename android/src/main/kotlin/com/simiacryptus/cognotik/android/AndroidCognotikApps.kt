@@ -16,16 +16,15 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
-import com.simiacryptus.jopenai.chat.model.AnthropicModels
-import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.chat.model.AnthropicModels
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.resource.PathResource
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
-import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**

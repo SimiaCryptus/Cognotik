@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.Selenium
 import com.simiacryptus.cognotik.util.Selenium2S3
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
@@ -15,7 +15,7 @@ import org.openqa.selenium.devtools.HasDevTools
 import org.openqa.selenium.devtools.v136.log.Log
 import org.openqa.selenium.devtools.v136.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 

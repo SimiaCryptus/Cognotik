@@ -13,13 +13,14 @@ import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.LLMModel
-import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.proxy.ValidatedObject
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.FailedToImplementException
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
@@ -257,7 +258,7 @@ open class CodingAgent<T : Interpreter>(
     ) {
         val message = when {
             e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
-            e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
+            e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
             else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
         }
         task.add(message, true, "div", "error")

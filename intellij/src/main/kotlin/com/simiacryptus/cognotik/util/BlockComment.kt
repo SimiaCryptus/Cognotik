@@ -4,7 +4,6 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.util.TextBlock.Companion.DELIMITER
 import com.simiacryptus.cognotik.util.TextBlock.Companion.TAB_REPLACEMENT
-import com.simiacryptus.util.StringUtil
 import java.util.*
 import java.util.stream.Collectors
 

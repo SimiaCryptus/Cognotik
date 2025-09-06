@@ -19,8 +19,8 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.model.chatModelType
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.model.chatModelType
 import java.text.SimpleDateFormat
 
 class ShellCommandAction : BaseAction() {

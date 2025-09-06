@@ -8,9 +8,9 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.models.ApiModel.*
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import java.io.File
 
 class CreateFileFromDescriptionAction :

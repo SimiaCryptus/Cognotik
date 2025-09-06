@@ -5,11 +5,11 @@ import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
+import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

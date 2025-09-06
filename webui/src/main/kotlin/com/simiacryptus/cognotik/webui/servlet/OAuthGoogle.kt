@@ -9,6 +9,7 @@ import com.google.api.services.oauth2.Oauth2
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
@@ -114,7 +115,7 @@ open class OAuthGoogle(
     }
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(OAuthGoogle::class.java)
+        private val log = LoggerFactory.getLogger(OAuthGoogle::class.java)
 
         fun String.urlDecode(): String = try {
             URLDecoder.decode(this, StandardCharsets.UTF_8.toString())

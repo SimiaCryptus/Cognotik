@@ -8,10 +8,10 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ProvidersChatClient
+import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 
 /**

@@ -28,10 +28,10 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path

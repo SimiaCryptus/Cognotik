@@ -7,7 +7,8 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskConfigBase
 import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.describe.Description
 import java.nio.file.FileSystems
 
 abstract class AbstractFileTask<T : FileTaskConfigBase>(
@@ -103,7 +104,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
     }
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AbstractFileTask::class.java)
+        private val log = LoggerFactory.getLogger(AbstractFileTask::class.java)
         const val TRIPLE_TILDE = "```"
 
     }

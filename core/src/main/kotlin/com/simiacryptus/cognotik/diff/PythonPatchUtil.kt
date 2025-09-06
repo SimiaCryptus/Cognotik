@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.diff
 
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.commons.text.similarity.LevenshteinDistance
 import kotlin.math.floor
 import kotlin.math.max

@@ -18,13 +18,13 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.chat.model.ChatModelType.Companion.values
-import com.simiacryptus.util.JsonUtil.fromJson
-import com.simiacryptus.util.JsonUtil.toJson
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ImageModels
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModelType.Companion.values
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.File
 

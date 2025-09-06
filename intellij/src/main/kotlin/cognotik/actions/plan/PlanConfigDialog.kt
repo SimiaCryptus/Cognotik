@@ -17,9 +17,9 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.util.JsonUtil.fromJson
-import com.simiacryptus.util.JsonUtil.toJson
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import java.awt.CardLayout
 import java.awt.Component
 import java.awt.Dimension

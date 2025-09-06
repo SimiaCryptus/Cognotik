@@ -6,10 +6,9 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.ApiModel.EmbeddingRequest
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.models.ApiModel.EmbeddingRequest
+import com.simiacryptus.cognotik.models.EmbeddingModel
 import java.io.IOException
 import java.util.*
 

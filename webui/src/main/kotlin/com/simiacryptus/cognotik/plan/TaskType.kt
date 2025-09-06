@@ -11,9 +11,9 @@ import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSe
 import com.simiacryptus.cognotik.plan.tools.file.InsightTask.Companion.InsightTaskType
 import com.simiacryptus.cognotik.plan.tools.plan.ForeachTask.ForeachTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
-import com.simiacryptus.util.DynamicEnum
-import com.simiacryptus.util.DynamicEnumDeserializer
-import com.simiacryptus.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 
 @JsonDeserialize(using = TaskTypeDeserializer::class)
 @JsonSerialize(using = TaskTypeSerializer::class)

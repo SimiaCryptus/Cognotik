@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DatabindContext
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.describe.Description
 
 @JsonTypeIdResolver(TaskConfigBase.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")

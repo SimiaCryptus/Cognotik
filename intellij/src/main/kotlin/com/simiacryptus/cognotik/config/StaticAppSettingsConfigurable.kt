@@ -5,10 +5,10 @@ import com.simiacryptus.cognotik.PluginStartupActivity.Companion.addUserSupplied
 import com.simiacryptus.cognotik.config.AppSettingsState.UserSuppliedModel
 import com.simiacryptus.cognotik.util.EncryptionUtil
 import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.JsonUtil.fromJson
-import com.simiacryptus.util.toJson
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.toJson
 import java.awt.*
 import java.io.File
 import java.io.FileOutputStream

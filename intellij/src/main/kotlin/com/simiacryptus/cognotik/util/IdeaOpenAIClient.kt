@@ -2,13 +2,11 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.AIModel
-import com.simiacryptus.jopenai.models.LLMModel
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.AIModel
 import org.apache.hc.core5.http.HttpRequest
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 

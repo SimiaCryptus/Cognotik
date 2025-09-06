@@ -14,9 +14,9 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.IndentedText
 import com.simiacryptus.cognotik.util.getIndent
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.proxy.ChatProxy
-import com.simiacryptus.util.StringUtil
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.proxy.ChatProxy
+import com.simiacryptus.cognotik.util.StringUtil
 
 
 class DescribeAction : SelectionAction<String>() {

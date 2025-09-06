@@ -37,9 +37,9 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.util.JsonUtil
 import java.text.SimpleDateFormat
 import javax.swing.JOptionPane
 

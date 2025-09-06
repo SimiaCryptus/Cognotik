@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.cognotik.chat.model.ChatModelType
 import javax.swing.JComponent
 
 class PhaseEditDialog(

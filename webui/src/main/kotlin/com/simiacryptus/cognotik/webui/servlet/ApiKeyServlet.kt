@@ -6,9 +6,9 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataSt
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

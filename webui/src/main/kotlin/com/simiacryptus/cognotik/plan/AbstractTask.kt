@@ -1,9 +1,10 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import java.io.File
 import java.nio.file.Path
 
@@ -59,6 +60,6 @@ abstract class AbstractTask<T : TaskConfigBase>(
     )
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AbstractTask::class.java)
+        private val log = LoggerFactory.getLogger(AbstractTask::class.java)
     }
 }

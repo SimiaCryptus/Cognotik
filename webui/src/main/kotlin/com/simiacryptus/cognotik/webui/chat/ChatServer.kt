@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.servlet.DefaultServlet
@@ -93,8 +94,8 @@ abstract class ChatServer(
     }
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(ChatServer::class.java)
-        private val trafficLog = com.simiacryptus.util.LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
+        private val log = LoggerFactory.getLogger(ChatServer::class.java)
+        private val trafficLog = LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
         fun JettyServerUpgradeRequest.getCookie(name: String) = cookies?.find { it.name == name }?.value
     }
 }

@@ -6,8 +6,8 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.util.Consumer
-import com.simiacryptus.jopenai.audio.AudioState
-import com.simiacryptus.jopenai.audio.DictationManager
+import com.simiacryptus.cognotik.audio.AudioState
+import com.simiacryptus.cognotik.audio.DictationManager
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
 import java.awt.event.MouseEvent

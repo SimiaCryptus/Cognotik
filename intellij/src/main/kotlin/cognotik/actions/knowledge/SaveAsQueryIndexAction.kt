@@ -13,10 +13,10 @@ import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.findRecursively
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
-import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
+import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.concurrent.Executors
 
 class SaveAsQueryIndexAction : BaseAction() {

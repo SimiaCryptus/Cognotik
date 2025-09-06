@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.API
+import com.simiacryptus.cognotik.API
 import java.nio.file.Files
 
 open class FilePatchTestApp(

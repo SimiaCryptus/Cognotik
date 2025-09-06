@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 
 interface ParsingModel<T : ParsingModel.DocumentData> {
     val api: ChatClientInterface

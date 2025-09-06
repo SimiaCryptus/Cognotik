@@ -24,10 +24,10 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.util.JsonUtil
 import org.jetbrains.annotations.NotNull
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat

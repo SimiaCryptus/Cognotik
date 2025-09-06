@@ -16,8 +16,8 @@ import com.simiacryptus.cognotik.util.getRoot
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.jopenai.opt.DistanceType
+import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.opt.DistanceType
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout

@@ -1,10 +1,11 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.describe.Description
 
 open class CodeParsingModel(
     private val parsingModel: ChatModelType,
@@ -92,6 +93,6 @@ open class CodeParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(CodeParsingModel::class.java)
+        val log = LoggerFactory.getLogger(CodeParsingModel::class.java)
     }
 }

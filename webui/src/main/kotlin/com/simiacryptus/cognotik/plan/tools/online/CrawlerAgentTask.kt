@@ -11,13 +11,13 @@ import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.Selenium
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.toJson
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -43,8 +43,8 @@ class CrawlerAgentTask(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
-        @Description("Method to seed the crawler (GoogleSearch or DirectUrls)") val seed_method: SeedMethod = SeedMethod.GoogleSearch,
-        @Description("Method used to fetch content from  URLs") val fetch_method: FetchMethod = FetchMethod.HttpClient,
+        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.DuckDuckGoSearch,
+        @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
 
 
@@ -117,7 +117,7 @@ class CrawlerAgentTask(
         val webSearchDir = File(agent.root.toFile(), ".websearch")
         if (!webSearchDir.exists()) webSearchDir.mkdirs()
 
-        val seedMethod = taskConfig?.seed_method ?: SeedMethod.GoogleSearch
+        val seedMethod = taskConfig?.seed_method ?: SeedMethod.DuckDuckGoSearch
         val seedItems = seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
 
         val pageQueue = mutableListOf<LinkData>().apply {

@@ -1,15 +1,16 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.jsonCast
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.jsonCast
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
@@ -90,7 +91,7 @@ open class DocumentParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentParsingModel::class.java)
+        val log = LoggerFactory.getLogger(DocumentParsingModel::class.java)
 
     }
 

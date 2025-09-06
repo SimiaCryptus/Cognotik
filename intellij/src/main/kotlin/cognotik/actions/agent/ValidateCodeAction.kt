@@ -15,8 +15,8 @@ import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolders
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.text.SimpleDateFormat
 
 /**

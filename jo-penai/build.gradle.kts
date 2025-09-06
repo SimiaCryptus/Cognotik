@@ -18,6 +18,8 @@ repositories {
 
 dependencies {
 
+    implementation(project(":core"))
+
     implementation(platform(libs.aws.bom)) // Use BOM alias
     implementation(libs.aws.bedrockruntime)
     implementation(libs.aws.auth)
@@ -27,11 +29,6 @@ dependencies {
     implementation(libs.httpclient5)
     implementation(libs.jackson.databind.nullable)
     implementation(libs.jakarta.annotations.api)
-
-    implementation(libs.jackson.annotations)
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.jaxrs.json)
-    implementation(libs.jackson.datatype.jsr310)
 
     implementation(libs.slf4j.api)
     testImplementation(libs.logback.classic)

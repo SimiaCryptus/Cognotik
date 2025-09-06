@@ -1,8 +1,9 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -301,7 +302,7 @@ open class RawTextParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(RawTextParsingModel::class.java)
+        private val log = LoggerFactory.getLogger(RawTextParsingModel::class.java)
 
         /**
          * Common regex patterns for text splitting

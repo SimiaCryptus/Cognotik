@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik
 import ch.qos.logback.classic.Level
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.LogLevel
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
@@ -23,11 +24,11 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -202,7 +203,7 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 LoggerFactory.getLogger(name).apply {
                     when (this) {
-                        is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.INFO)
+                        is Logger -> setLevel(LogLevel.INFO)
                         is ch.qos.logback.classic.Logger -> setLevel(Level.INFO)
                         else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
                     }
@@ -216,7 +217,7 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 LoggerFactory.getLogger(name).apply {
                     when (this) {
-                        is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.DEBUG)
+                        is Logger -> setLevel(LogLevel.DEBUG)
                         is ch.qos.logback.classic.Logger -> setLevel(Level.DEBUG)
                         else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
                     }

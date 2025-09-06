@@ -17,9 +17,9 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.models.ImageModels
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.models.ImageModels
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionEvent
