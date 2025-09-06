@@ -1,25 +1,24 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
+import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.ProvidersChatClient
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
@@ -99,7 +98,7 @@ open class GoalOrientedMode(
 
         val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
         val processor = FixedConcurrencyProcessor(executor, maxConcurrency)
-        val apiClient = (api as? ProvidersChatClient)?.getChildClient(task)
+        val apiClient = (api as? ChatClientInterface)?.getChildClient(task)
             ?: throw IllegalStateException("API must be a ChatClient")
         apiClient.budget = planSettings.budget
         val sessionLog = StringBuilder()

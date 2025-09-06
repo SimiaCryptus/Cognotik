@@ -6,30 +6,29 @@ import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.chat.ChatClientBase
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.proxy.ValidatedObject
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.ProvidersChatClient
-import com.simiacryptus.cognotik.chat.model.chatModelType
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Role
-import com.simiacryptus.cognotik.proxy.ValidatedObject
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -160,7 +159,7 @@ class CodeChangeAction : BaseAction() {
         ) {
             try {
                 val settings = getSettings(session, user) ?: Settings()
-                if (api is ProvidersChatClient) api.budget = settings.budget ?: 2.00
+                if (api is ChatClientBase) api.budget = settings.budget ?: 2.00
 
                 val task = ui.newTask()
                 task.add("Analyzing files...")

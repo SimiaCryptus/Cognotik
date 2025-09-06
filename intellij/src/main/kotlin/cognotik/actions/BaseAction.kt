@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -28,7 +27,6 @@ abstract class BaseAction(
 
     val api: ChatClientInterface
         @JvmName("getChatClient") get() = IdeaChatClient.instance
-    val api2 = IdeaOpenAIClient.instance
 
     final override fun update(event: AnActionEvent) {
         val currentThread = Thread.currentThread()

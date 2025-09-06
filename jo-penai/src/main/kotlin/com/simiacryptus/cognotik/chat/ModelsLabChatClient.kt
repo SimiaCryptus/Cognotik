@@ -89,7 +89,7 @@ class ModelsLabChatClient(
 
                 "processing" -> {
                     val seconds = response?.eta ?: 1
-                    ProvidersChatClient.Companion.log.info("Chat response is still processing; waiting ${seconds}s and trying again.")
+                    log.info("Chat response is still processing; waiting ${seconds}s and trying again.")
                     Thread.sleep(seconds * 1000L)
                     val key = "" /*client.apiKeyMap[APIProvider.ModelsLab]*/
                     val url = "" /*"${client.apiBaseMap}/llm/get_queued_response"*/

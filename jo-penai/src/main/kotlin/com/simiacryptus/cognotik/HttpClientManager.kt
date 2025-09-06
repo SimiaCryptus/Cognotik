@@ -26,7 +26,7 @@ import java.util.function.Function
 import kotlin.math.pow
 
 open class HttpClientManager(
-    private val logLevel: Level = Level.INFO,
+    val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
 ) : API {

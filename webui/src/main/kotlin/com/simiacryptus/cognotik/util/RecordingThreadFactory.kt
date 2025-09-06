@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.util
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import java.util.concurrent.ThreadFactory
 
 class RecordingThreadFactory(
     val session: Session,

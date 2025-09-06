@@ -2,7 +2,6 @@
 
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.util.JsonUtil
 import java.awt.image.BufferedImage
 import java.io.Closeable
 import java.io.File

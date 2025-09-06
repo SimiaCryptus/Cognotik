@@ -26,8 +26,8 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientBase
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.ProvidersChatClient
 import com.simiacryptus.cognotik.chat.model.ChatModelType
 import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.describe.Description
@@ -116,7 +116,7 @@ class MultiStepPatchAction : BaseAction() {
                 budget = DEFAULT_BUDGET,
                 model = AppSettingsState.instance.smartModel.chatModelType()
             )
-            if (api is ProvidersChatClient) api.budget = settings.budget ?: DEFAULT_BUDGET
+            if (api is ChatClientBase) api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
                 api = api,
                 session = session,

@@ -12,9 +12,13 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
+import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientBase
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -25,10 +29,6 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.ProvidersChatClient
-import com.simiacryptus.cognotik.chat.model.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon
@@ -179,7 +179,7 @@ class FindResultsChatAction(
             api: API
         ) {
             val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
-            if (api is ProvidersChatClient) api.budget = settings.budget ?: 2.00
+            if (api is ChatClientBase) api.budget = settings.budget ?: 2.00
 
             val task = ui.newTask()
             val api = (api as ChatClientInterface).getChildClient(task)

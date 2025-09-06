@@ -4,38 +4,32 @@ import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.vfs.VirtualFile
+import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.actors.*
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientBase
+import com.simiacryptus.cognotik.chat.model.ChatModelType
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ApiModel.Role
+import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.proxy.ValidatedObject
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.OpenAIClient
-import com.simiacryptus.cognotik.chat.ProvidersChatClient
-import com.simiacryptus.cognotik.chat.model.ChatModelType
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Role
-import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.proxy.ValidatedObject
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.actors.ImageActor
-import com.simiacryptus.cognotik.actors.ImageResponse
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.SimpleActor
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Path
@@ -121,7 +115,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     parsingModel = AppSettingsState.instance.fastModel
                         .let { ChatModelType.values().get(it) } ?:  throw IllegalStateException("No model configured")
                 )
-                if (api is ProvidersChatClient) {
+                if (api is ChatClientBase) {
                     api.budget = settings.budget ?: DEFAULT_BUDGET
                 }
                 WebDevAgent(

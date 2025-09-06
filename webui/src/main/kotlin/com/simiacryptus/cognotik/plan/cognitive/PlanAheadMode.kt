@@ -1,17 +1,17 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanCoordinator.Companion.initialPlan
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.ProvidersChatClient
-import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 
 /**
@@ -40,7 +40,7 @@ open class PlanAheadMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val chatApi = api as? ProvidersChatClient
+            val chatApi = api as? ChatClientInterface
                 ?: throw IllegalStateException("PlanAheadMode requires a ChatClient API implementation.")
             val apiClient = chatApi.getChildClient(task) // Create a task-specific child client
             apiClient.budget = planSettings.budget ?: 2.0 // Set budget on the child client

@@ -1,5 +1,9 @@
 package com.simiacryptus.cognotik.apps.general
 
+import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientBase
+import com.simiacryptus.cognotik.chat.model.ChatModelType
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
@@ -11,16 +15,12 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.ProvidersChatClient
-import com.simiacryptus.cognotik.chat.model.ChatModelType
-import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -140,7 +140,7 @@ open class UnifiedPlanApp(
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)
                 }
-                if (api is ProvidersChatClient) api.budget = settings.budget
+                if (api is ChatClientBase) api.budget = settings.budget
 
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
@@ -252,7 +252,7 @@ open class UnifiedPlanApp(
 
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-            if (api is ProvidersChatClient) api.budget = settings.budget
+            if (api is ChatClientBase) api.budget = settings.budget
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
                 api = api,
