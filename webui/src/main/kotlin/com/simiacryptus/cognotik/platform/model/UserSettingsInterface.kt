@@ -27,17 +27,6 @@ interface UserSettingsInterface {
             workPool = workPool
         ) ?: throw IllegalStateException("Provider not set or invalid")
 
-        fun models(
-            logLevel: Level = Level.INFO,
-            logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-        ) = provider?.getChatModels()?.map {
-            it.instance(
-                key = key ?: "",
-                base = baseUrl ?: provider.base ?: "",
-                logLevel = logLevel,
-                logStreams = logStreams
-            )
-        } ?: emptyList()
     }
 
     data class ToolData(

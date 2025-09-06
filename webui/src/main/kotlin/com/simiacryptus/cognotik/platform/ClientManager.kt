@@ -98,19 +98,3 @@ open class ClientManager {
         private val log = LoggerFactory.getLogger(ClientManager::class.java)
     }
 }
-
-
-fun ChatModel.instance(
-    user: User?
-): ChatModel.Chatter {
-    val userSettings = if (user == null) {
-        null
-    } else {
-        userSettingsManager.getUserSettings(user)
-    }
-    val apiData = userSettings?.apis?.filter { it.provider == this.provider }?.firstOrNull()
-    return this.instance(
-        key = apiData?.key ?: throw RuntimeException("No API key for model ${this.name}"),
-        base = apiData.baseUrl ?: this.provider.base ?: "",
-    )
-}

@@ -55,6 +55,7 @@ open class ChatModel(
         base: String = provider.base!!,
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+        temperature: Double = 0.1,
     ) = object : Chatter {
         override val modelType = this@ChatModel
         override fun chat(

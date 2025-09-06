@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.webui.chat
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.instance
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
 import java.io.File
 
 class BasicChatApp(
@@ -41,13 +41,21 @@ class BasicChatApp(
 
     override fun newSession(user: User?, session: Session): ChatSocketManager {
         val settings = this.settings ?: getSettings(session, user)!!
-
+        val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
+        val userSettings = userSettingsManager.getUserSettings(user)
+        fun instance(model: ChatModel) = userSettings.apis.firstOrNull { it.provider == model.provider }?.let { apiData ->
+                model.instance(
+                    key = apiData.key ?: throw RuntimeException("No API key for model ${model.name}"),
+                    base = apiData.baseUrl ?: model.provider.base ?: "",
+                    temperature = settings.temperature,
+                )
+            }
         return ChatSocketManager(
             session = session,
-            model = settings.model.instance(
-                user ?: throw IllegalArgumentException("User must be provided for chat session")
-            ),
-            parsingModel = settings.parsingModel.instance(user),
+            model = instance(settings.model)
+                ?: throw RuntimeException("No API key for model ${settings.model.name}"),
+            parsingModel = instance(settings.parsingModel)
+                ?: throw RuntimeException("No API key for model ${settings.parsingModel.name}"),
             systemPrompt = "",
             api = ApplicationServices.clientManager.getChatClient(session, user),
             temperature = settings.temperature,
@@ -56,6 +64,7 @@ class BasicChatApp(
             fastTopicParsing = true,
             budget = settings.budget,
         )
+
     }
 }
 

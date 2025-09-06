@@ -327,6 +327,7 @@ fun String.chatModel(): ChatModel.Chatter {
             ?: this.chatModelType().provider.base
             ?: throw IllegalArgumentException("API base for ${this.chatModelType().provider.name} is not set"),
         logLevel = Level.INFO,
-        logStreams = mutableListOf()
+        logStreams = mutableListOf(),
+        temperature = AppSettingsState.instance.temperature
     )
 }

@@ -102,9 +102,7 @@ object ClientUtil {
 
     fun checkError(result: String, model: LLMModel? = null) {
         try {
-
             val jsonElement = Gson().fromJson(result, com.google.gson.JsonElement::class.java) ?: return
-
             if (jsonElement.isJsonObject) {
                 val jsonObject = jsonElement.asJsonObject
                 if (jsonObject.has("error")) {
@@ -116,7 +114,6 @@ object ClientUtil {
                     throw IOException(errorMessage)
                 }
             } else if (jsonElement.isJsonArray) {
-
                 val jsonArray = jsonElement.asJsonArray
                 for (element in jsonArray) {
                     if (element.isJsonObject) {
