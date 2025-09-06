@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.actors.*
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientBase
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
@@ -115,7 +115,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     parsingModel = AppSettingsState.instance.fastModel
                         .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured")
                 )
-                if (api is ChatClientBase) {
+                if (api is ChatClientInterface) {
                     api.budget = settings.budget ?: DEFAULT_BUDGET
                 }
                 WebDevAgent(

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.ChatClientBase
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
@@ -140,7 +140,7 @@ open class UnifiedPlanApp(
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)
                 }
-                if (api is ChatClientBase) api.budget = settings.budget
+                if (api is ChatClientInterface) api.budget = settings.budget
 
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
@@ -252,7 +252,7 @@ open class UnifiedPlanApp(
 
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-            if (api is ChatClientBase) api.budget = settings.budget
+            if (api is ChatClientInterface) api.budget = settings.budget
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
                 api = api,

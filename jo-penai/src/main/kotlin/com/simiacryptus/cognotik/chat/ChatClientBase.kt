@@ -143,7 +143,7 @@ abstract class ChatClientBase(
         }
     }
 
-    inner class ChildClient() : ChatClientBase(
+    private inner class ChildClient() : ChatClientBase(
         logLevel = Level.INFO,
         workPool = workPool,
         logStreams = this@ChatClientBase.logStreams.toTypedArray().toMutableList(),
@@ -177,7 +177,7 @@ abstract class ChatClientBase(
         }
     }
 
-    override fun getChildClient(): ChildClient = ChildClient()
+    override fun getChildClient(): ChatClientInterface = ChildClient()
 
     companion object {
         val log = LoggerFactory.getLogger(ChatClientBase::class.java)

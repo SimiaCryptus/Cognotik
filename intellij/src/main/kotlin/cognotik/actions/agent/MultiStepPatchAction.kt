@@ -6,37 +6,35 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.proxy.ValidatedObject
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.ChatClientBase
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.chatModelType
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Role
-import com.simiacryptus.cognotik.proxy.ValidatedObject
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -116,7 +114,7 @@ class MultiStepPatchAction : BaseAction() {
                 budget = DEFAULT_BUDGET,
                 model = AppSettingsState.instance.smartModel.chatModelType()
             )
-            if (api is ChatClientBase) api.budget = settings.budget ?: DEFAULT_BUDGET
+            if (api is ChatClientInterface) api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
                 api = api,
                 session = session,

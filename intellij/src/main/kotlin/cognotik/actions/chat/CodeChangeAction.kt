@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.chat.ChatClientBase
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.config.AppSettingsState
@@ -159,7 +158,7 @@ class CodeChangeAction : BaseAction() {
         ) {
             try {
                 val settings = getSettings(session, user) ?: Settings()
-                if (api is ChatClientBase) api.budget = settings.budget ?: 2.00
+                if (api is ChatClientInterface) api.budget = settings.budget ?: 2.00
 
                 val task = ui.newTask()
                 task.add("Analyzing files...")

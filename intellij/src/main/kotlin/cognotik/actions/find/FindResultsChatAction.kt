@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientBase
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.chatModelType
 import com.simiacryptus.cognotik.config.AppSettingsState
@@ -179,7 +178,7 @@ class FindResultsChatAction(
             api: API
         ) {
             val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
-            if (api is ChatClientBase) api.budget = settings.budget ?: 2.00
+            if (api is ChatClientInterface) api.budget = settings.budget ?: 2.00
 
             val task = ui.newTask()
             val api = (api as ChatClientInterface).getChildClient(task)
