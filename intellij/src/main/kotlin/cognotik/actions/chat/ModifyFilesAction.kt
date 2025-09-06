@@ -213,7 +213,3 @@ open class ModifyFilesAction(
         private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
     }
 }
-
-class ModifyFilesWithLineNumbersAction : ModifyFilesAction(showLineNumbers = true) {
-    override fun getActionName(): String = "MultiDiffChatWithLineNumbers"
-}

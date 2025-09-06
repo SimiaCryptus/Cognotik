@@ -127,7 +127,7 @@ tasks.register<Copy>("copyWebappStatic") {
 // Clean webapp build artifacts
 tasks.register<Delete>("cleanWebapp") {
     delete("../webapp/build")
-    delete("src/main/resources/application")
+    delete("src/main/resources/application/static")
     delete("src/main/resources/welcome/static")
 }
 tasks.clean {
