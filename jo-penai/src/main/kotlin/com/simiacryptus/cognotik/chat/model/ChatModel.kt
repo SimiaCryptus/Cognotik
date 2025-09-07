@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.models.ApiModel.Usage
 import com.simiacryptus.cognotik.models.EmbeddingModel
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
+import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -46,8 +47,14 @@ open class ChatModel(
         fun chat(
             chatRequest: ApiModel.ChatRequest,
             workPool: ExecutorService,
+        ): ApiModel.ChatResponse = chat(
+            messages = chatRequest.messages,
+        )
+        fun chat(
+            messages: List<ChatMessage> = listOf()
         ): ApiModel.ChatResponse
         val modelType: ChatModel
+        val workPool: ExecutorService
     }
 
     fun instance(
@@ -55,12 +62,13 @@ open class ChatModel(
         base: String = provider.base!!,
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+        workPool: ExecutorService,
         temperature: Double = 0.1,
     ) = object : Chatter {
         override val modelType = this@ChatModel
+        override val workPool = workPool
         override fun chat(
-            chatRequest: ApiModel.ChatRequest,
-            workPool: ExecutorService
+            messages: List<ChatMessage>
         ) = provider.getChatClient(
             key = key,
             base = base,
@@ -68,9 +76,12 @@ open class ChatModel(
             logLevel = logLevel,
             logStreams = logStreams
         ).chat(
-            chatRequest = chatRequest,
+            chatRequest = ApiModel.ChatRequest(
+                model = modelName,
+                messages = messages,
+                temperature = temperature,
+            ),
             model = this@ChatModel,
-            logStreams = logStreams
         )
     }
 

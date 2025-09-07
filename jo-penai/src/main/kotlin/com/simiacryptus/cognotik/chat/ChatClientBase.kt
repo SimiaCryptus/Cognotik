@@ -160,6 +160,8 @@ abstract class ChatClientBase(
             this@ChatClientBase.authorize(request, apiProvider)
         }
 
+        override fun chat(messages: List<ApiModel.ChatMessage>) = this@ChatClientBase.chat(messages)
+
         override fun chat(
             chatRequest: ApiModel.ChatRequest,
             model: LLMModel,
