@@ -66,8 +66,8 @@ open class ModifyFilesAction(
                 session,
                 "${getActionName()} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
             )
-            val model = AppSettingsState.instance.smartModel.chatModel()
-            val parsingModel = AppSettingsState.instance.fastModel.chatModel()
+            val model = AppSettingsState.instance.smartModel.chatModel(session)
+            val parsingModel = AppSettingsState.instance.fastModel.chatModel(session)
             SessionProxyServer.agents[session] = PatchChatManager(
                 session = session,
                 model = model,

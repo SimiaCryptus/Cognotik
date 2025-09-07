@@ -77,8 +77,8 @@ class ChatWithCommitAction : AnAction() {
             codeSelection = diffInfo,
             filename = "commit_changes.diff",
             api = IdeaChatClient.instance,
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+            model = AppSettingsState.instance.smartModel.chatModel(session),
+            parsingModel = AppSettingsState.instance.fastModel.chatModel(session),
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

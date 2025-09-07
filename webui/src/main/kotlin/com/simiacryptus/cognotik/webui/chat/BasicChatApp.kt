@@ -48,6 +48,7 @@ class BasicChatApp(
                     key = apiData.key ?: throw RuntimeException("No API key for model ${model.name}"),
                     base = apiData.baseUrl ?: model.provider.base ?: "",
                     temperature = settings.temperature,
+                    workPool = ApplicationServices.clientManager.getPool(session, user),
                 )
             }
         return ChatSocketManager(

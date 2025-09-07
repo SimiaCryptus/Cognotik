@@ -114,8 +114,8 @@ class DiffChatAction : BaseAction() {
             codeSelection = rawText,
             filename = filename,
             api = api,
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+            model = AppSettingsState.instance.smartModel.chatModel(session),
+            parsingModel = AppSettingsState.instance.fastModel.chatModel(session),
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         ) {
 

@@ -23,6 +23,8 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -319,7 +321,7 @@ data class AppSettingsState(
 }
 
 
-fun String.chatModel(): ChatModel.Chatter {
+fun String.chatModel(session: Session): ChatModel.Chatter {
     return this.chatModelType().instance(
         key = AppSettingsState.instance.apiKeys?.get(this.chatModelType().provider.name)
             ?: throw IllegalArgumentException("API key for ${this.chatModelType().provider.name} is not set"),
@@ -328,6 +330,7 @@ fun String.chatModel(): ChatModel.Chatter {
             ?: throw IllegalArgumentException("API base for ${this.chatModelType().provider.name} is not set"),
         logLevel = Level.INFO,
         logStreams = mutableListOf(),
-        temperature = AppSettingsState.instance.temperature
+        temperature = AppSettingsState.instance.temperature,
+        workPool = ApplicationServices.clientManager.getPool(session, null)
     )
 }
