@@ -41,8 +41,10 @@ class GenericChatAction : BaseAction() {
                 )
                 SessionProxyServer.agents[session] = ChatSocketManager(
                     session = session,
-                    model = AppSettingsState.instance.smartModel.chatModel().instance(session),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel().instance(session),
+                    model = AppSettingsState.instance.smartModel.chatModel().instance(ApplicationServices.clientManager.getPool(
+                        session, null)),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModel().instance(ApplicationServices.clientManager.getPool(
+                        session, null)),
                     systemPrompt = systemPrompt,
                     api = api,
                     applicationClass = ApplicationServer::class.java,

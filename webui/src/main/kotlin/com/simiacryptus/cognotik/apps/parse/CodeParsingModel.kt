@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.Description
@@ -60,7 +59,7 @@ open class CodeParsingModel(
 
     open val exampleInstance = CodeData()
 
-    override fun getFastParser(api: API): (String) -> CodeData {
+    override fun getFastParser(api: ChatClientInterface): (String) -> CodeData {
         val parser = ParsedActor(
             resultClass = CodeData::class.java,
             exampleInstance = exampleInstance,

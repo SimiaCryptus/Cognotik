@@ -6,7 +6,6 @@ import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
@@ -154,7 +153,7 @@ class CodeChangeAction : BaseAction() {
             user: User?,
             userMessage: String,
             ui: ApplicationInterface,
-            api: API
+            api: ChatClientInterface
         ) {
             try {
                 val settings = getSettings(session, user) ?: Settings()

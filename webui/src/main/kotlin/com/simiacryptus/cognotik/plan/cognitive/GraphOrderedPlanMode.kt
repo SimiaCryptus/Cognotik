@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -27,7 +26,7 @@ import java.io.File
  */
 open class GraphOrderedPlanMode(
     override val ui: ApplicationInterface,
-    override val api: API,
+    override val api: ChatClientInterface,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -238,7 +237,7 @@ open class GraphOrderedPlanMode(
         planSettings: PlanSettings,
         userMessage: String,
         graphFile: String,
-        api: API
+        api: ChatClientInterface
     ): MutableMap<String, TaskConfigBase> {
         val tasks = mutableMapOf<String, TaskConfigBase>()
         nodes.forEach {
@@ -264,7 +263,7 @@ open class GraphOrderedPlanMode(
         graphTxt: String,
         node: SoftwareNodeType.NodeBase<*>,
         userMessage: String,
-        api: API
+        api: ChatClientInterface
     ): Map<String, TaskConfigBase>? {
         val maxRetries = 3
         val retryDelayMillis = 1000L
@@ -333,7 +332,7 @@ open class GraphOrderedPlanMode(
 
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: API,
+            api: ChatClientInterface,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

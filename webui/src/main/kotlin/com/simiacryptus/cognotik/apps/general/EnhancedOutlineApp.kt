@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
@@ -75,7 +74,7 @@ class EnhancedOutlineApp(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: API
+        api: ChatClientInterface
     ) {
         val settings = this.settings ?: getSettings(session, user)!!
         EnhancedOutlineAgent(
@@ -102,7 +101,7 @@ class EnhancedOutlineApp(
 }
 
 class EnhancedOutlineAgent(
-    val api: API,
+    val api: ChatClientInterface,
     val api2: OpenAIClient,
     val dataStorage: StorageInterface,
     val session: Session,
@@ -297,7 +296,7 @@ class EnhancedOutlineAgent(
         outlineManager: OutlineManager,
         message: SessionTask,
         model: ChatModel,
-        api: API,
+        api: ChatClientInterface,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
             log.debug("Skipping: ${parent.text}")

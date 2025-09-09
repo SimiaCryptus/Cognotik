@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.Selenium
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -292,7 +291,7 @@ class CrawlerAgentTask(
         resultFn(finalOutput)
     }
 
-    private fun createFinalSummary(analysisResults: String, api: API): String {
+    private fun createFinalSummary(analysisResults: String, api: ChatClientInterface): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
         val maxSize = /*taskConfig?.max_final_output_size ?:*/ max_final_output_size
 
@@ -427,7 +426,7 @@ class CrawlerAgentTask(
     private fun transformContent(
         content: String,
         analysisGoal: String,
-        api: API,
+        api: ChatClientInterface,
         planSettings: PlanSettings,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
@@ -456,7 +455,7 @@ class CrawlerAgentTask(
         planSettings: PlanSettings,
         analysisGoal: String,
         content: String,
-        api: API,
+        api: ChatClientInterface,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
         val summaryPrompt = listOf(

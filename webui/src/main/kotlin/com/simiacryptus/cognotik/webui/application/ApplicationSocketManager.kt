@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 
 abstract class ApplicationSocketManager(
     session: Session,
@@ -36,7 +36,7 @@ abstract class ApplicationSocketManager(
         user: User?,
         userMessage: String,
         socketManager: ApplicationSocketManager,
-        api: API
+        api: ChatClientInterface
     )
 
     companion object {

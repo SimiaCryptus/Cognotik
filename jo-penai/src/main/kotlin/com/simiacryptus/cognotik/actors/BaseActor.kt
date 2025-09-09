@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
@@ -15,14 +14,14 @@ abstract class BaseActor<I, R>(
 ) {
     abstract fun respond(
         input: I,
-        api: API,
+        api: ChatClientInterface,
         vararg messages: ApiModel.ChatMessage = this.chatMessages(input),
     ): R
 
-    protected open fun response(vararg input: ApiModel.ChatMessage, model: AIModel = this.model, api: API): ApiModel.ChatResponse =
+    protected open fun response(vararg input: ApiModel.ChatMessage, model: AIModel = this.model, api: ChatClientInterface): ApiModel.ChatResponse =
         chatter(api).chat(input.toList())
 
-    protected open fun chatter(api: API): Chatter = (api as ChatClientInterface).let {
+    protected open fun chatter(api: ChatClientInterface): Chatter = (api as ChatClientInterface).let {
         model.instance(
             key = it.key(model.provider),
             base = it.apiBase(model.provider),
@@ -32,7 +31,7 @@ abstract class BaseActor<I, R>(
         )
     }
 
-    open fun answer(input: I, api: API): R = respond(input = input, api = api, *chatMessages(input))
+    open fun answer(input: I, api: ChatClientInterface): R = respond(input = input, api = api, *chatMessages(input))
 
     abstract fun chatMessages(questions: I): Array<ApiModel.ChatMessage>
     abstract fun withModel(model: ChatModel): BaseActor<I, R>

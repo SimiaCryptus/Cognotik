@@ -12,7 +12,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
@@ -175,7 +174,7 @@ class FindResultsChatAction(
             user: User?,
             userMessage: String,
             ui: ApplicationInterface,
-            api: API
+            api: ChatClientInterface
         ) {
             val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
             if (api is ChatClientInterface) api.budget = settings.budget ?: 2.00

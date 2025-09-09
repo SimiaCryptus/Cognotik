@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.models.ApiModel
@@ -755,7 +754,7 @@ class CustomFileSetPatchServer(
                         }
                     },
                     ui = ui,
-                    api = api as API,
+                    api = api as ChatClientInterface,
                     shouldAutoApply = { autoApply },
                     model = AppSettingsState.instance.fastModel.chatModel(),
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
@@ -858,7 +857,7 @@ class CustomFileSetPatchServer(
                                 }
                             },
                             ui = ui,
-                            api = api as API,
+                            api = api as ChatClientInterface,
                             shouldAutoApply = { false },
                             model = AppSettingsState.instance.fastModel.chatModel(),
                             defaultFile = fileSet.files.firstOrNull()

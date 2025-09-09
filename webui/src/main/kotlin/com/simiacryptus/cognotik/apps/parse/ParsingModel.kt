@@ -1,16 +1,15 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 
 interface ParsingModel<T : ParsingModel.DocumentData> {
     val api: ChatClientInterface
     fun merge(runningDocument: T, newData: T): T
-    fun getFastParser(api: API = this.api): (String) -> T = { prompt ->
+    fun getFastParser(api: ChatClientInterface = this.api): (String) -> T = { prompt ->
         getSmartParser(this.api)(newDocument(), prompt)
     }
 
-    fun getSmartParser(api: API = this.api): (T, String) -> T = { runningDocument, prompt ->
+    fun getSmartParser(api: ChatClientInterface = this.api): (T, String) -> T = { runningDocument, prompt ->
         getFastParser(this.api)(prompt)
     }
 

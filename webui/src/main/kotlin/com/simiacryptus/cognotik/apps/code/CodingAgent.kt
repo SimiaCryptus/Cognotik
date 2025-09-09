@@ -13,11 +13,9 @@ import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.proxy.ValidatedObject
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.FailedToImplementException
@@ -26,7 +24,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 open class CodingAgent<T : Interpreter>(
-    val api: API,
+    val api: ChatClientInterface,
     val dataStorage: StorageInterface,
     val session: Session,
     val user: User?,

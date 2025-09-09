@@ -37,7 +37,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import java.text.SimpleDateFormat
@@ -163,7 +163,7 @@ class AnalyzeProblemAction : AnAction() {
             return socketManager
         }
 
-        private fun analyzeProblem(ui: ApplicationInterface, task: SessionTask, api: API) {
+        private fun analyzeProblem(ui: ApplicationInterface, task: SessionTask, api: ChatClientInterface) {
             try {
                 Retryable(ui, task) {
                     val task = ui.newTask(false)
@@ -222,7 +222,7 @@ class AnalyzeProblemAction : AnAction() {
             task: SessionTask,
             error: ParsedError,
             summary: String,
-            api: API
+            api: ChatClientInterface
         ): String {
             val response = SimpleActor(
                 prompt = """

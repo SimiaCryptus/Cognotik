@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
 import java.util.concurrent.atomic.AtomicInteger
@@ -92,7 +91,7 @@ open class RawTextParsingModel(
         )
     }
 
-    override fun getFastParser(api: API): (String) -> RawTextData {
+    override fun getFastParser(api: ChatClientInterface): (String) -> RawTextData {
         return { text -> parseRawText(text) }
     }
 

@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanCoordinator
@@ -19,7 +18,7 @@ import java.io.File
  */
 open class PlanAheadMode(
     override val ui: ApplicationInterface,
-    override val api: API,
+    override val api: ChatClientInterface,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -87,7 +86,7 @@ open class PlanAheadMode(
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: API,
+            api: ChatClientInterface,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

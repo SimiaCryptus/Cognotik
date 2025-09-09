@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.Description
@@ -27,14 +26,14 @@ open class LogDataParsingModel(
 
     open val exampleInstance = LogData()
 
-    override fun getFastParser(api: API): (String) -> LogData {
+    override fun getFastParser(api: ChatClientInterface): (String) -> LogData {
         val patternGenerator = LogPatternGenerator(parsingModel, temperature)
         return { originalText ->
             parseText(originalText, patternGenerator, api, emptyList())
         }
     }
 
-    override fun getSmartParser(api: API): (LogData, String) -> LogData {
+    override fun getSmartParser(api: ChatClientInterface): (LogData, String) -> LogData {
         val patternGenerator = LogPatternGenerator(parsingModel, temperature)
         return { runningDocument, prompt ->
             parseText(prompt, patternGenerator, api, runningDocument.patterns ?: emptyList())
@@ -44,7 +43,7 @@ open class LogDataParsingModel(
     private fun parseText(
         originalText: String,
         patternGenerator: LogPatternGenerator,
-        api: API,
+        api: ChatClientInterface,
         existingPatterns: List<PatternData>
     ): LogData {
         var remainingText = originalText

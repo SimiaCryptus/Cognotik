@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 
 open class SimpleActor(
@@ -18,7 +17,7 @@ open class SimpleActor(
     temperature = temperature,
 ) {
 
-    override fun respond(input: List<String>, api: API, vararg messages: ApiModel.ChatMessage): String =
+    override fun respond(input: List<String>, api: ChatClientInterface, vararg messages: ApiModel.ChatMessage): String =
         response(*messages, api = api).choices.first().message?.content ?: throw RuntimeException("No response")
 
     override fun chatMessages(questions: List<String>) = arrayOf(

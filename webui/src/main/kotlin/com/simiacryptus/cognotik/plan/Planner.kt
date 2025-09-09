@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
@@ -24,7 +23,7 @@ open class Planner {
         userMessage: String,
         ui: ApplicationInterface,
         planSettings: PlanSettings,
-        api: API,
+        api: ChatClientInterface,
         contextFn: () -> List<String> = { emptyList() },
         describer: TypeDescriber
     ): TaskBreakdownWithPrompt {
@@ -93,7 +92,7 @@ open class Planner {
     }
 
     open fun newPlan(
-        api: API,
+        api: ChatClientInterface,
         planSettings: PlanSettings,
         inStrings: List<String>,
         describer: TypeDescriber

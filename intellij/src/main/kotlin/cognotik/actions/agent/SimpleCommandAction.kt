@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -171,7 +171,7 @@ class SimpleCommandAction : BaseAction() {
             user: User?,
             userMessage: String,
             ui: ApplicationInterface,
-            api: API
+            api: ChatClientInterface
         ) {
             val task = ui.newTask()
             task.echo(renderMarkdown(userMessage))

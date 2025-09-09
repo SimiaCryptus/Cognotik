@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -86,7 +86,7 @@ abstract class ApplicationServer(
                 user: User?,
                 userMessage: String,
                 socketManager: ApplicationSocketManager,
-                api: API
+                api: ChatClientInterface
             ) = this@ApplicationServer.userMessage(
                 session = session,
                 user = user,
@@ -103,7 +103,7 @@ abstract class ApplicationServer(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: API
+        api: ChatClientInterface
     ) {
         logger.warn(
             "userMessage not implemented for application: {} - session: {} user: {}",

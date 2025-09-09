@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.actors
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.util.FailedToImplementException
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
@@ -133,7 +132,7 @@ ${details ?: ""}
 
     override fun respond(
         input: CodeRequest,
-        api: API,
+        api: ChatClientInterface,
         vararg messages: ChatMessage,
     ): CodeResult {
         var result = CodeResultImpl(

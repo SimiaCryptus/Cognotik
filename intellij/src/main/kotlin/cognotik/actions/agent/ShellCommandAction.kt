@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.chatModel
 import java.text.SimpleDateFormat
 
@@ -77,7 +77,7 @@ class ShellCommandAction : BaseAction() {
                 user: User?,
                 userMessage: String,
                 ui: ApplicationInterface,
-                api: API
+                api: ChatClientInterface
             ) {
                 progress.text = "Processing command..."
                 val task = ui.newTask()

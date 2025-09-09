@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -67,7 +66,7 @@ open class DocumentParserApp(
         return socketManager
     }
 
-    override fun userMessage(session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API) {
+    override fun userMessage(session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: ChatClientInterface) {
         val settings = getSettings(session, user, Settings::class.java) ?: Settings()
         ui.socketManager!!.pool.submit {
             run(

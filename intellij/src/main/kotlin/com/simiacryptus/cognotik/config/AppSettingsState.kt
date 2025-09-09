@@ -18,20 +18,18 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.File
+import java.util.concurrent.ExecutorService
 
 data class CommandConfig(
     val commands: List<PatchApp.CommandSettings>,
@@ -319,7 +317,7 @@ data class AppSettingsState(
 }
 
 fun ChatModel.instance(
-    session: Session
+    service: ExecutorService
 ) = instance(
     key = AppSettingsState.instance.apiKeys?.get(provider.name)
         ?: throw IllegalArgumentException("API key for ${provider.name} is not set"),
@@ -327,18 +325,9 @@ fun ChatModel.instance(
         ?: provider.base
         ?: throw IllegalArgumentException("API base for ${provider.name} is not set"),
     logLevel = Level.INFO,
-    logStreams = mutableListOf<BufferedOutputStream>(),
+    logStreams = mutableListOf(),
     temperature = AppSettingsState.instance.temperature,
-    workPool = ApplicationServices.clientManager.getPool(session, null)
+    workPool = service
 )
 
 
-fun ChatModel.instance(
-    api: ChatClientInterface
-): Chatter = instance(
-    key = api.key(provider),
-    base = api.apiBase(provider),
-    logStreams = api.logStreams,
-    workPool = api.workPool,
-    temperature = AppSettingsState.instance.temperature
-)

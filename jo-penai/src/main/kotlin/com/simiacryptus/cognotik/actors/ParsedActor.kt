@@ -1,10 +1,8 @@
 package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.util.MultiExeption
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
@@ -52,7 +50,7 @@ open class ParsedActor<T : Any>(
         )
     }
 
-    private inner class ParsedResponseImpl(api: API, vararg messages: ApiModel.ChatMessage) :
+    private inner class ParsedResponseImpl(api: ChatClientInterface, vararg messages: ApiModel.ChatMessage) :
         ParsedResponse<T>(resultClass!!) {
         override val text =
             response(*messages, api = api).choices.firstOrNull()?.message?.content
@@ -61,7 +59,7 @@ open class ParsedActor<T : Any>(
         override val obj get() = _obj
     }
 
-    fun getParser(api: API, promptSuffix: String? = null) = Function<String, T> { input ->
+    fun getParser(api: ChatClientInterface, promptSuffix: String? = null) = Function<String, T> { input ->
         describer.coverMethods = false
         val describe = if (null == resultClass) "" else {
             describer.describe(resultClass!!)
@@ -143,7 +141,7 @@ open class ParsedActor<T : Any>(
         throw MultiExeption(exceptions)
     }
 
-    override fun respond(input: List<String>, api: API, vararg messages: ApiModel.ChatMessage): ParsedResponse<T> =
+    override fun respond(input: List<String>, api: ChatClientInterface, vararg messages: ApiModel.ChatMessage): ParsedResponse<T> =
         try {
             ParsedResponseImpl(api, *messages)
         } catch (e: Exception) {

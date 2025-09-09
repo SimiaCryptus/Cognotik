@@ -136,7 +136,7 @@ class CreateFileFromDescriptionAction :
         try {
             val response = run {
                 val model1 = AppSettingsState.instance.smartModel.chatModel()
-                model1.instance(api).chat(chatRequest.messages).choices.firstOrNull()?.message?.content?.trim()
+                model1.instance(api.workPool).chat(chatRequest.messages).choices.firstOrNull()?.message?.content?.trim()
             } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")

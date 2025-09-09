@@ -23,7 +23,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -66,7 +66,7 @@ class UnifiedPlanAction : BaseAction() {
 
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
+                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -94,7 +94,7 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 0
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
+                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -122,7 +122,7 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
+                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -158,7 +158,7 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
+                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,

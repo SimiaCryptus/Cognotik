@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import java.io.File
@@ -80,7 +80,7 @@ open class AddApplyFileDiffLinks {
             response: String,
             handle: (Map<Path, String>) -> Unit = {},
             ui: ApplicationInterface,
-            api: API,
+            api: ChatClientInterface,
             shouldAutoApply: (Path) -> Boolean = { false },
             model: ChatModel? = null,
             defaultFile: String? = null,
@@ -137,7 +137,7 @@ open class AddApplyFileDiffLinks {
         response: String,
         handle: (Map<Path, String>) -> Unit = {},
         ui: ApplicationInterface,
-        api: API,
+        api: ChatClientInterface,
         shouldAutoApply: (Path) -> Boolean = { false },
         model: ChatModel? = null,
         defaultFile: String? = null,
@@ -342,7 +342,7 @@ open class AddApplyFileDiffLinks {
         diffVal: String,
         handle: (Map<Path, String>) -> Unit,
         ui: ApplicationInterface,
-        api: API?,
+        api: ChatClientInterface,
         shouldAutoApply: (Path) -> Boolean,
         model: ChatModel? = null,
     ): String {
@@ -495,7 +495,7 @@ open class AddApplyFileDiffLinks {
                                 "\nCode:\n```${
                                     filename.split('.').lastOrNull() ?: ""
                                 }\n$prevCode\n```\n\nPatch:\n```diff\n$diffVal\n```\n\nEffective Patch:\n```diff\n$echoDiff\n```\n\nPlease provide a fix for the diff above in the form of a diff patch.\n"
-                            ), api as OpenAIClient
+                            ), api
                         )
                         answer = instrument(ui.socketManager!!, root, answer, handle, ui, api, model = model)
                         header?.clear()

@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -75,7 +74,7 @@ class PlanCoordinator(
         plan: Map<String, TaskConfigBase>,
         task: SessionTask,
         userMessage: String,
-        api: API,
+        api: ChatClientInterface,
     ): PlanProcessingState {
         val api = (api as ChatClientInterface).getChildClient(task)
         val tabs = TabbedDisplay(task)
@@ -120,7 +119,7 @@ class PlanCoordinator(
         pool: ExecutorService,
         userMessage: String,
         plan: Map<String, TaskConfigBase>,
-        api: API,
+        api: ChatClientInterface,
         tabs: TabbedDisplay,
     ) {
         val sessionTask = ui.newTask(false).apply { tabs["Session"] = placeholder }

@@ -3,10 +3,9 @@ package com.simiacryptus.cognotik.actors
 import com.google.common.base.Strings
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.ClientUtil.toChatMessage
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -77,7 +76,7 @@ class LargeOutputActor(
         return arrayOf(systemMessage) + userMessages
     }
 
-    override fun respond(input: List<String>, api: API, vararg messages: ApiModel.ChatMessage): String {
+    override fun respond(input: List<String>, api: ChatClientInterface, vararg messages: ApiModel.ChatMessage): String {
         var accumulatedResponse = ""
         var iterations = 0
         if (input.isEmpty()) return ""

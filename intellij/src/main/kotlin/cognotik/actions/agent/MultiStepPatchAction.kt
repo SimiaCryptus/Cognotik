@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.ParsedResponse
@@ -108,7 +107,7 @@ class MultiStepPatchAction : BaseAction() {
             user: User?,
             userMessage: String,
             ui: ApplicationInterface,
-            api: API
+            api: ChatClientInterface
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
@@ -141,7 +140,7 @@ class MultiStepPatchAction : BaseAction() {
     }
 
     class AutoDevAgent(
-        val api: API,
+        val api: ChatClientInterface,
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,

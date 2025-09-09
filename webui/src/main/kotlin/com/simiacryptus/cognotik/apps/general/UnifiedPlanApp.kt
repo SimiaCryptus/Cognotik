@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -38,7 +37,7 @@ open class UnifiedPlanApp(
     val model: ChatModel,
     val parsingModel: ChatModel,
     showMenubar: Boolean = true,
-    val api: API? = null,
+    val api: ChatClientInterface? = null,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
     val useExpansionSyntax: Boolean = true,
@@ -121,7 +120,7 @@ open class UnifiedPlanApp(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: API
+        api: ChatClientInterface
     ) {
         try {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
@@ -194,7 +193,7 @@ open class UnifiedPlanApp(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: API
+        api: ChatClientInterface
     ) {
         val task = ui.newTask()
         val processor = FixedConcurrencyProcessor(expansionPool, 4)
@@ -218,7 +217,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
+        api: ChatClientInterface,
         task: com.simiacryptus.cognotik.webui.session.SessionTask,
         processor: FixedConcurrencyProcessor
     ) {
@@ -274,7 +273,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
+        api: ChatClientInterface,
         task: com.simiacryptus.cognotik.webui.session.SessionTask,
         processor: FixedConcurrencyProcessor,
         rangeMatch: MatchResult
@@ -299,7 +298,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
+        api: ChatClientInterface,
         task: com.simiacryptus.cognotik.webui.session.SessionTask,
         processor: FixedConcurrencyProcessor,
         sequenceMatch: MatchResult
@@ -316,7 +315,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
+        api: ChatClientInterface,
         task: com.simiacryptus.cognotik.webui.session.SessionTask,
         processor: FixedConcurrencyProcessor,
         parallelMatch: MatchResult
@@ -353,7 +352,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
+        api: ChatClientInterface,
         task: com.simiacryptus.cognotik.webui.session.SessionTask,
         processor: FixedConcurrencyProcessor,
         expression: String,

@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
@@ -29,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 open class TaskChatMode(
     override val ui: ApplicationInterface,
-    override val api: API,
+    override val api: ChatClientInterface,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -234,7 +233,7 @@ open class TaskChatMode(
         override val inputCnt = 0
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: API,
+            api: ChatClientInterface,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

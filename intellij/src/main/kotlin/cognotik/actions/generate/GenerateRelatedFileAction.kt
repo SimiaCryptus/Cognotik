@@ -158,18 +158,19 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
         val response =
-            AppSettingsState.instance.smartModel.chatModel().instance(api).chat(listOf(
-                ChatMessage(
-                    Role.system, """
+            AppSettingsState.instance.smartModel.chatModel().instance(api.workPool).chat(
+                listOf(
+                    ChatMessage(
+                        Role.system, """
             You will combine natural language instructions with a user provided code example to create a new file.
             Provide a new filename and the code to be written to the file.
             Paths should be relative to the project root and should not exist.
             Output the file path using the a line with the format "File: <path>".
             Output the file code directly after the header line with no additional decoration.
             """.trimIndent().toContentList(), null
-                ),
-                ChatMessage(
-                    Role.user, ("""
+                    ),
+                    ChatMessage(
+                        Role.user, ("""
                               Create a new file based on the following directive: """.trimIndent() + directive + """
 
                               The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
@@ -178,8 +179,8 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                               """.trimIndent() + baseFile.code + """
                               ```
                               """.trimIndent()).toContentList(), null
+                    )
                 )
-            )
             ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
                 "No response from API"
             )

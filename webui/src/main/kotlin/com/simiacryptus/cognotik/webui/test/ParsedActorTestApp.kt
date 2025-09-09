@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -24,7 +23,7 @@ open class ParsedActorTestApp<T : Any>(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: API
+        api: ChatClientInterface
     ) {
         (api as ChatClientInterface).budget = 2.00
         val message = ui.newTask()

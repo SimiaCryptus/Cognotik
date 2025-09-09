@@ -1,13 +1,12 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.ImageGenerationRequest
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.ClientUtil.toChatMessage
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import java.awt.image.BufferedImage
@@ -43,7 +42,7 @@ open class ImageActor(
 
     inner class ImageResponseImpl(
         override val text: String,
-        private val api: API
+        private val api: OpenAIClient
     ) : ImageResponse {
         private val _image: BufferedImage by lazy { render(text, api) }
         override val image: BufferedImage get() = _image
@@ -51,7 +50,7 @@ open class ImageActor(
 
     open fun render(
         text: String,
-        api: API,
+        api: OpenAIClient,
     ): BufferedImage {
         val url = (api as OpenAIClient).createImage(
             ImageGenerationRequest(
@@ -63,7 +62,7 @@ open class ImageActor(
         return ImageIO.read(URL(url))
     }
 
-    override fun respond(input: List<String>, api: API, vararg messages: ChatMessage): ImageResponse {
+    override fun respond(input: List<String>, api: ChatClientInterface, vararg messages: ChatMessage): ImageResponse {
         var text = response(*messages, api = api).choices.first().message?.content
             ?: throw RuntimeException("No response")
         while (imageModel.maxPrompt <= text.length && null != openAI) {

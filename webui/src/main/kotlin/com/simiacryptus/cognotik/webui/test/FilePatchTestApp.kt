@@ -7,12 +7,12 @@ import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import java.nio.file.Files
 
 open class FilePatchTestApp(
     applicationName: String = "FilePatchTestApp",
-    val api: API
+    val api: ChatClientInterface
 ) : ApplicationServer(
     applicationName = applicationName,
     path = "/codingActorTest",

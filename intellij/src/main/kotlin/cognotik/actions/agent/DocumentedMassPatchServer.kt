@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.chat.model.chatModel
@@ -122,7 +121,7 @@ class DocumentedMassPatchServer(
                                         }
                                     },
                                     ui = ui,
-                                    api = api as API,
+                                    api = api as ChatClientInterface,
                                     shouldAutoApply = { autoApply },
                                     model = AppSettingsState.instance.fastModel.chatModel(),
                                     defaultFile = path.toString()
@@ -152,7 +151,7 @@ class DocumentedMassPatchServer(
                                                 }
                                             },
                                             ui = ui,
-                                            api = api as API,
+                                            api = api as ChatClientInterface,
                                             shouldAutoApply = { autoApply },
                                             model = AppSettingsState.instance.fastModel.chatModel(),
                                             defaultFile = path.toString()

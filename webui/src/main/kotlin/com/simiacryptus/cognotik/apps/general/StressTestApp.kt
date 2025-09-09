@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import kotlin.random.Random
 
 class StressTestApp(
@@ -23,7 +23,7 @@ class StressTestApp(
         user: User?,
         userMessage: String,
         ui: ApplicationInterface,
-        api: API
+        api: ChatClientInterface
     ) {
         if (wasRun) {
             return

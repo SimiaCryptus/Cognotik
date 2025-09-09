@@ -4,7 +4,6 @@ import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.actors.*
@@ -106,7 +105,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
             user: User?,
             userMessage: String,
             ui: ApplicationInterface,
-            api: API
+            api: ChatClientInterface
         ) {
             try {
                 val settings = getSettings(session, user) ?: Settings(
@@ -153,7 +152,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
     }
 
     class WebDevAgent(
-        val api: API,
+        val api: ChatClientInterface,
         val api2: OpenAIClient,
         val session: Session,
         val user: User?,
