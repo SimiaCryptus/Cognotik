@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.models.*
 import com.simiacryptus.cognotik.models.ApiModel.*
@@ -51,6 +52,14 @@ open class ProvidersChatClient(
     private fun validateChatRequest(chatRequest: ChatRequest) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain at least one message" }
         require(!chatRequest.model.isNullOrBlank()) { "Model must be specified" }
+    }
+
+    override fun apiBase(provider: APIProvider): String {
+        return apiBaseMap[provider] ?: throw IllegalArgumentException("No API Base configured for provider $provider")
+    }
+
+    override fun key(provider: APIProvider): String {
+        return apiKeyMap[provider] ?: throw IllegalArgumentException("No API Key configured for provider $provider")
     }
 
     override fun moderate(text: String): Unit = withReliability {
@@ -118,7 +127,8 @@ open class ProvidersChatClient(
     }
 
     override fun chat(
-        chatRequest: ChatRequest, model: LLMModel,
+        chatRequest: ChatRequest,
+        model: ChatModel,
         logStreams: MutableList<BufferedOutputStream>
     ): ChatResponse {
         validateChatRequest(chatRequest)

@@ -35,7 +35,7 @@ open class CodingAgent<T : Interpreter>(
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
-    val model: LLMModel,
+    val model: ChatModel,
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
 ) {

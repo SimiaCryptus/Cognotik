@@ -66,7 +66,13 @@ open class ChatProxy<T : Any>(
             api.moderate(json)
         }
 
-        val completion = api.chat(request, model).choices.first().message?.content.orEmpty()
+        val completion = model.instance(
+                key = api.key(model.provider),
+                base = api.apiBase(model.provider),
+                logStreams = api.logStreams,
+                workPool = api.workPool,
+                temperature = request.temperature
+            ).chat(request.messages).choices.first().message?.content.orEmpty()
         log.info("Received completion: {}", completion)
         val trimPrefix = trimPrefix(completion)
         val trimSuffix = trimSuffix(trimPrefix)

@@ -4,10 +4,10 @@ import com.simiacryptus.cognotik.util.MultiExeption
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -18,9 +18,9 @@ open class ParsedActor<T : Any>(
     val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
     prompt: String = "",
     name: String? = resultClass?.simpleName,
-    model: LLMModel,
+    model: ChatModel,
     temperature: Double = 0.3,
-    val parsingModel: LLMModel,
+    val parsingModel: ChatModel,
     val deserializerRetries: Int = 2,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
@@ -75,19 +75,14 @@ open class ParsedActor<T : Any>(
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = (api as ChatClientInterface).chat(
-                    ApiModel.ChatRequest(
-                        messages = listOf(
-                            ApiModel.ChatMessage(role = ApiModel.Role.system, content = prompt.toContentList()),
-                            ApiModel.ChatMessage(
-                                role = ApiModel.Role.user,
-                                content = "The user message to parse:\n\n$input".toContentList()
-                            ),
+                val content = chatter(api).chat(
+                    listOf(
+                        ApiModel.ChatMessage(role = ApiModel.Role.system, content = prompt.toContentList()),
+                        ApiModel.ChatMessage(
+                            role = ApiModel.Role.user,
+                            content = "The user message to parse:\n\n$input".toContentList()
                         ),
-                        temperature = temperature,
-                        model = parsingModel.modelName,
-                    ),
-                    model = parsingModel,
+                    )
                 ).choices.first().message?.content
                 var contentUnwrapped = content?.trim() ?: throw RuntimeException("No response")
 

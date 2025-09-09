@@ -1,16 +1,14 @@
 package com.simiacryptus.cognotik.util
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.simiacryptus.cognotik.chat.ProvidersChatClient
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel.*
+import com.simiacryptus.cognotik.models.ApiModel.Usage
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import java.io.BufferedOutputStream
 import java.io.File
 import java.util.concurrent.Executors
@@ -26,6 +24,14 @@ open class IdeaChatClient(
     workPool = Executors.newCachedThreadPool(),
 ) {
 
+    override fun apiBase(provider: APIProvider): String {
+        return apiBaseMap[provider] ?: provider.base ?: throw IllegalArgumentException("No API Base configured for provider $provider")
+    }
+
+    override fun key(provider: APIProvider): String {
+        return apiKeyMap[provider] ?: throw IllegalArgumentException("No API Key configured for provider $provider")
+    }
+
     init {
         require(key.size == apiBase.size) {
             "API Key not configured for all providers: ${key.keys} != ${APIProvider.values().toList()}"
@@ -38,37 +44,6 @@ open class IdeaChatClient(
     ) {
         ApplicationServices.usageManager.incrementUsage(currentSession, localUser, model, tokens)
         super.onUsage(model, tokens, logStreams)
-    }
-
-    @Suppress("NAME_SHADOWING")
-    override fun chat(
-        chatRequest: ChatRequest,
-        model: LLMModel,
-        logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ChatResponse {
-        val storeMetadata = AppSettingsState.instance.storeMetadata
-        var chatRequest = chatRequest.copy(
-            store = storeMetadata?.let { it.isNotBlank() },
-            metadata = storeMetadata?.let { JsonUtil.fromJson(it, Map::class.java) }
-        )
-        val lastEvent = lastEvent
-        if(lastEvent != null) chatRequest = chatRequest.copy(
-            store = chatRequest.store,
-            metadata = chatRequest.metadata?.let {
-                it + mapOf(
-                    "project" to lastEvent.project?.name,
-                    "action" to lastEvent.presentation.text,
-                    "language" to lastEvent.getData(CommonDataKeys.PSI_FILE)?.language?.displayName,
-                )
-            }
-        )
-        val response = super.chat(chatRequest, model, logStreams)
-        if (null != response.usage) {
-            UITools.logAction(
-                "Chat Response: ${toJson(response.usage!!)}"
-            )
-        }
-        return response
     }
 
     companion object {

@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 open class SimpleActor(
     prompt: String,
     name: String? = null,
-    model: LLMModel,
+    model: ChatModel,
     temperature: Double = 0.3,
 ) : BaseActor<List<String>, String>(
     prompt = prompt,

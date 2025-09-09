@@ -8,12 +8,9 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
-import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.Usage
-import com.simiacryptus.cognotik.models.EmbeddingModel
-import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.LLMModel
@@ -43,20 +40,6 @@ open class ChatModel(
     override fun pricing(usage: Usage) =
         ((usage.prompt_tokens ?: 0L) * inputTokenPricePerK + (usage.completion_tokens ?: 0L) * outputTokenPricePerK) / 1000.0
 
-    interface Chatter {
-        fun chat(
-            chatRequest: ApiModel.ChatRequest,
-            workPool: ExecutorService,
-        ): ApiModel.ChatResponse = chat(
-            messages = chatRequest.messages,
-        )
-        fun chat(
-            messages: List<ChatMessage> = listOf()
-        ): ApiModel.ChatResponse
-        val modelType: ChatModel
-        val workPool: ExecutorService
-    }
-
     fun instance(
         key: String,
         base: String = provider.base!!,
@@ -64,17 +47,17 @@ open class ChatModel(
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
         workPool: ExecutorService,
         temperature: Double = 0.1,
-    ) = object : Chatter {
+    ) : Chatter = object : Chatter {
         override val modelType = this@ChatModel
         override val workPool = workPool
         override fun chat(
             messages: List<ChatMessage>
         ) = provider.getChatClient(
-            key = key,
-            base = base,
-            workPool = workPool,
-            logLevel = logLevel,
-            logStreams = logStreams
+                key = key,
+                base = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams
         ).chat(
             chatRequest = ApiModel.ChatRequest(
                 model = modelName,
@@ -82,7 +65,7 @@ open class ChatModel(
                 temperature = temperature,
             ),
             model = this@ChatModel,
-        )
+            )
     }
 
     companion object {
@@ -123,7 +106,7 @@ class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
     }
 }
 
-fun String.chatModelType(): ChatModel = (values().entries.find {
+fun String.chatModel(): ChatModel = (values().entries.find {
     it.key.equals(this, true) || it.value.modelName.equals(this, true)
 }?.value ?: ChatModel(
     name = this,
@@ -133,7 +116,3 @@ fun String.chatModelType(): ChatModel = (values().entries.find {
     inputTokenPricePerK = 0.0,
     outputTokenPricePerK = 0.0
 ))
-fun getModel(modelName: String?): AIModel? = values().values.find { it.modelName == modelName }
-    ?: EmbeddingModel.values().values.find { it.modelName == modelName }
-    ?: ImageModels.values().find { it.modelName == modelName }
-

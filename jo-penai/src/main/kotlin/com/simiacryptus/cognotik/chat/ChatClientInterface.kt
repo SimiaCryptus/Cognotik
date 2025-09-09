@@ -1,18 +1,18 @@
 package com.simiacryptus.cognotik.chat
 
 import com.simiacryptus.cognotik.API
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.LLMModel
 import java.io.BufferedOutputStream
+import java.util.concurrent.ExecutorService
 
 interface ChatClientInterface : API {
     var budget: Number?
     val logStreams: MutableList<BufferedOutputStream>
-
-    fun chat(
-        messages: List<ChatMessage> = listOf(),
-    ): ApiModel.ChatResponse = throw IllegalStateException("Use chat with model and request parameters")
+    val workPool : ExecutorService
 
     /**
      * Sends a chat request to the configured model and returns the response
@@ -25,11 +25,19 @@ interface ChatClientInterface : API {
     @Deprecated("Use chat with messages parameter instead via preauthenticated chat models")
     fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: LLMModel,
+        model: ChatModel,
         logStreams: MutableList<BufferedOutputStream> = this.logStreams
-    ): ApiModel.ChatResponse = chat(
-        messages = chatRequest.messages
-    )
+    ) = model.instance(
+            key = key(model.provider),
+            base = apiBase(model.provider),
+            logStreams = logStreams,
+            workPool = workPool,
+            temperature = chatRequest.temperature
+        ).chat(chatRequest.messages)
+
+    fun apiBase(provider: APIProvider): String
+
+    fun key(provider: APIProvider): String
 
     /**
      * Moderates the given text for policy violations

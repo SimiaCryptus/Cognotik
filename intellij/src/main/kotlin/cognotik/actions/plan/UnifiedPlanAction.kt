@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import java.io.File
@@ -41,8 +41,8 @@ class UnifiedPlanAction : BaseAction() {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
             e.project, PlanSettings(
-                defaultModel = AppSettingsState.instance.smartModel.chatModelType(),
-                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                defaultModel = AppSettingsState.instance.smartModel.chatModel(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
@@ -285,10 +285,10 @@ class UnifiedPlanAction : BaseAction() {
                 command = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
             ),
-            model = AppSettingsState.instance.smartModel.chatModelType(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+            model = AppSettingsState.instance.smartModel.chatModel(),
+            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
             showMenubar = false,
             api = api.getChildClient().apply {
                 budget = apiBudget

@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.nio.file.Path
@@ -56,7 +56,7 @@ class DocumentedMassPatchServer(
          The diff format should use + for line additions, - for line deletions.
          The diff should include 2 lines of context before and after every change.
          """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModelType(),
+                model = AppSettingsState.instance.smartModel.chatModel(),
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -124,7 +124,7 @@ class DocumentedMassPatchServer(
                                     ui = ui,
                                     api = api as API,
                                     shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastModel.chatModelType(),
+                                    model = AppSettingsState.instance.fastModel.chatModel(),
                                     defaultFile = path.toString()
                                 ).renderMarkdown
                             )
@@ -154,7 +154,7 @@ class DocumentedMassPatchServer(
                                             ui = ui,
                                             api = api as API,
                                             shouldAutoApply = { autoApply },
-                                            model = AppSettingsState.instance.fastModel.chatModelType(),
+                                            model = AppSettingsState.instance.fastModel.chatModel(),
                                             defaultFile = path.toString()
                                         )
                                     }

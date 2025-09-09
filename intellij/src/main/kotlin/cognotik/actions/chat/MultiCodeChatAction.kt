@@ -10,8 +10,7 @@ package cognotik.actions.chat
  import com.simiacryptus.cognotik.CognotikAppServer
  import com.simiacryptus.cognotik.apps.general.renderMarkdown
  import com.simiacryptus.cognotik.config.AppSettingsState
- import com.simiacryptus.cognotik.config.chatModel
-import com.simiacryptus.cognotik.input.getReader
+ import com.simiacryptus.cognotik.input.getReader
  import com.simiacryptus.cognotik.platform.ApplicationServices
  import com.simiacryptus.cognotik.platform.Session
  import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
@@ -22,7 +21,9 @@ import com.simiacryptus.cognotik.input.getReader
  import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
  import com.simiacryptus.cognotik.webui.session.SessionTask
  import com.simiacryptus.cognotik.chat.ChatClientInterface
- import com.simiacryptus.cognotik.chat.model.ChatModel.Chatter
+ import com.simiacryptus.cognotik.chat.model.Chatter
+ import com.simiacryptus.cognotik.chat.model.chatModel
+ import com.simiacryptus.cognotik.config.instance
  import com.simiacryptus.cognotik.models.ApiModel
  import com.simiacryptus.cognotik.util.GPT4Tokenizer
  import com.simiacryptus.cognotik.util.LoggerFactory
@@ -57,8 +58,8 @@ class MultiCodeChatAction : BaseAction() {
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                val model = AppSettingsState.instance.smartModel.chatModel(session)
-                val parsingModel = AppSettingsState.instance.fastModel.chatModel(session)
+                val model = AppSettingsState.instance.smartModel.chatModel().instance(session)
+                val parsingModel = AppSettingsState.instance.fastModel.chatModel().instance(session)
                 SessionProxyServer.agents[session] = CodeChatManager(
                     session = session,
                     model = model,

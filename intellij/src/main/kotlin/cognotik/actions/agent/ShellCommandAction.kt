@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import java.text.SimpleDateFormat
 
 class ShellCommandAction : BaseAction() {
@@ -102,7 +102,7 @@ class ShellCommandAction : BaseAction() {
                         - Provide clear output formatting
                         - Support command cancellation
                     """.trimIndent(),
-                    model = AppSettingsState.instance.smartModel.chatModelType(),
+                    model = AppSettingsState.instance.smartModel.chatModel(),
                     mainTask = task,
                 ) {
                     override fun displayFeedback(

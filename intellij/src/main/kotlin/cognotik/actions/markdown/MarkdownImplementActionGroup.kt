@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.hasSelection
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.proxy.ChatProxy
 import com.simiacryptus.cognotik.util.LoggerFactory
 
@@ -69,7 +69,7 @@ class MarkdownImplementActionGroup : ActionGroup() {
             return ChatProxy(
                 clazz = ConversionAPI::class.java,
                 api = api,
-                model = AppSettingsState.instance.smartModel.chatModelType(),
+                model = AppSettingsState.instance.smartModel.chatModel(),
                 temperature = AppSettingsState.instance.temperature,
                 deserializerRetries = 5
             ).create()

@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
@@ -112,7 +112,7 @@ class MultiStepPatchAction : BaseAction() {
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
-                model = AppSettingsState.instance.smartModel.chatModelType()
+                model = AppSettingsState.instance.smartModel.chatModel()
             )
             if (api is ChatClientInterface) api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
@@ -121,7 +121,7 @@ class MultiStepPatchAction : BaseAction() {
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
                 event = event,
             ).start(
                 userMessage = userMessage,
@@ -131,7 +131,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel? = AppSettingsState.instance.smartModel.chatModelType(),
+            val model: ChatModel? = AppSettingsState.instance.smartModel.chatModel(),
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java

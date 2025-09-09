@@ -395,7 +395,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.apiLog.isSelected = settings.apiLog
             component.devActions.isSelected = settings.devActions
             component.mainImageModel.selectedItem = settings.mainImageModel
-            component.storeMetadata.text = settings.storeMetadata ?: ""
             component.temperature.text = settings.temperature.toString()
             component.pluginHome.text = settings.pluginHome.absolutePath
             component.shellCommand.text = settings.shellCommand
@@ -459,7 +458,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.temperature = component.temperature.text.safeDouble()
-            settings.storeMetadata = component.storeMetadata.text.takeIf { it.isNotBlank() }
             settings.mainImageModel = (component.mainImageModel.selectedItem as String)
             settings.pluginHome = File(component.pluginHome.text)
             settings.shellCommand = component.shellCommand.text

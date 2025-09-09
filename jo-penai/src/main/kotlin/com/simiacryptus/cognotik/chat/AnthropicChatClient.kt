@@ -37,7 +37,7 @@ class AnthropicChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: LLMModel,
+        model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
     ): ApiModel.ChatResponse {
         validateChatRequest(chatRequest, model)

@@ -18,17 +18,19 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
+import java.io.BufferedOutputStream
 import java.io.File
 
 data class CommandConfig(
@@ -63,6 +65,7 @@ data class AppSettingsState(
     var smartModel: String = "",
     var fastModel: String = "",
     var mainImageModel: String = "",
+    var transcriptionModel: String? = null,
     var analyticsEnabled: Boolean = false,
     var listeningPort: Int = 8081,
     var listeningEndpoint: String = "localhost",
@@ -72,8 +75,6 @@ data class AppSettingsState(
     var apiLog: Boolean = false,
     var devActions: Boolean = false,
     var disableAutoOpenUrls: Boolean = false,
-    var storeMetadata: String? = null,
-    var transcriptionModel: String? = null,
     var pluginHome: File = run {
         var logPath = System.getProperty("idea.plugins.path")
         if (logPath == null) {
@@ -225,7 +226,6 @@ data class AppSettingsState(
         if (suppressErrors != other.suppressErrors) return false
         if (apiLog != other.apiLog) return false
         if (devActions != other.devActions) return false
-        if (storeMetadata != other.storeMetadata) return false
         if (FileUtil.filesEqual(pluginHome, other.pluginHome)) return false
         if (recentCommandsJson != other.recentCommandsJson) return false
         if (showWelcomeScreen != other.showWelcomeScreen) return false
@@ -264,7 +264,6 @@ data class AppSettingsState(
         result = 31 * result + suppressErrors.hashCode()
         result = 31 * result + apiLog.hashCode()
         result = 31 * result + devActions.hashCode()
-        result = 31 * result + (storeMetadata?.hashCode() ?: 0)
         result = 31 * result + FileUtil.fileHashCode(pluginHome)
         result = 31 * result + recentCommandsJson.hashCode()
         result = 31 * result + showWelcomeScreen.hashCode()
@@ -317,20 +316,29 @@ data class AppSettingsState(
         val apiBudget: Double? = 10.0,
         val taskSettings: Map<String, TaskSettingsBase>
     )
-
 }
 
+fun ChatModel.instance(
+    session: Session
+) = instance(
+    key = AppSettingsState.instance.apiKeys?.get(provider.name)
+        ?: throw IllegalArgumentException("API key for ${provider.name} is not set"),
+    base = AppSettingsState.instance.apiBase?.get(provider.name)
+        ?: provider.base
+        ?: throw IllegalArgumentException("API base for ${provider.name} is not set"),
+    logLevel = Level.INFO,
+    logStreams = mutableListOf<BufferedOutputStream>(),
+    temperature = AppSettingsState.instance.temperature,
+    workPool = ApplicationServices.clientManager.getPool(session, null)
+)
 
-fun String.chatModel(session: Session): ChatModel.Chatter {
-    return this.chatModelType().instance(
-        key = AppSettingsState.instance.apiKeys?.get(this.chatModelType().provider.name)
-            ?: throw IllegalArgumentException("API key for ${this.chatModelType().provider.name} is not set"),
-        base = AppSettingsState.instance.apiBase?.get(this.chatModelType().provider.name)
-            ?: this.chatModelType().provider.base
-            ?: throw IllegalArgumentException("API base for ${this.chatModelType().provider.name} is not set"),
-        logLevel = Level.INFO,
-        logStreams = mutableListOf(),
-        temperature = AppSettingsState.instance.temperature,
-        workPool = ApplicationServices.clientManager.getPool(session, null)
-    )
-}
+
+fun ChatModel.instance(
+    api: ChatClientInterface
+): Chatter = instance(
+    key = api.key(provider),
+    base = api.apiBase(provider),
+    logStreams = api.logStreams,
+    workPool = api.workPool,
+    temperature = AppSettingsState.instance.temperature
+)

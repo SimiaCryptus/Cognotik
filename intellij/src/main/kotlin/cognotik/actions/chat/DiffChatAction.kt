@@ -11,8 +11,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.chatModel
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
@@ -114,8 +115,8 @@ class DiffChatAction : BaseAction() {
             codeSelection = rawText,
             filename = filename,
             api = api,
-            model = AppSettingsState.instance.smartModel.chatModel(session),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(session),
+            model = AppSettingsState.instance.smartModel.chatModel().instance(session),
+            parsingModel = AppSettingsState.instance.fastModel.chatModel().instance(session),
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         ) {
 

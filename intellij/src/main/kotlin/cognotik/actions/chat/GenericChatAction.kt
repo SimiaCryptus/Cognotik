@@ -5,8 +5,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.chatModel
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -40,8 +41,8 @@ class GenericChatAction : BaseAction() {
                 )
                 SessionProxyServer.agents[session] = ChatSocketManager(
                     session = session,
-                    model = AppSettingsState.instance.smartModel.chatModel(session),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel(session),
+                    model = AppSettingsState.instance.smartModel.chatModel().instance(session),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModel().instance(session),
                     systemPrompt = systemPrompt,
                     api = api,
                     applicationClass = ApplicationServer::class.java,

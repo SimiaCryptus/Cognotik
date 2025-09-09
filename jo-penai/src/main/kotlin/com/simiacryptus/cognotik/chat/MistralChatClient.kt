@@ -55,7 +55,7 @@ class MistralChatClient(
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
-        model: LLMModel,
+        model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
     ): ApiModel.ChatResponse {
         log.info("Starting Mistral chat with model: ${model.modelName}")

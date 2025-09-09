@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel.*
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import java.util.*
 import javax.script.ScriptException
@@ -27,7 +26,7 @@ open class CodingActor(
     ),
     name: String? = interpreterClass.simpleName,
     val details: String? = null,
-    model: LLMModel,
+    model: ChatModel,
     val fallbackModel: ChatModel,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
@@ -274,7 +273,7 @@ ${details ?: ""}
         override val code: String = givenCode ?: implementation.first
 
         private fun implement(
-            model: LLMModel,
+            model: ChatModel,
         ): Pair<String, String> {
             val request = ChatRequest(messages = ArrayList(this.messages.toList()))
             for (codingAttempt in 0..input.fixRetries) {
@@ -403,7 +402,7 @@ ${TT}
         previousCode: String,
         error: Throwable,
         vararg promptMessages: ChatMessage,
-        model: LLMModel
+        model: ChatModel
     ): String = chat(
         api = api,
         request = ChatRequest(
@@ -435,9 +434,16 @@ Correct the code and try again.
         model = model
     )
 
-    private fun chat(api: ChatClientInterface, request: ChatRequest, model: LLMModel) =
-        api.chat(request.copy(model = model.modelName, temperature = temperature), model)
+    private fun chat(api: ChatClientInterface, request: ChatRequest, model: ChatModel): String {
+        return model.instance(
+            key = api.key(model.provider),
+            base = api.apiBase(model.provider),
+            logStreams = api.logStreams,
+            workPool = api.workPool,
+            temperature = temperature
+        ).chat(request.messages)
             .choices.first().message?.content.orEmpty().trim()
+    }
 
     override fun withModel(model: ChatModel): CodingActor = CodingActor(
         interpreterClass = interpreterClass,

@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.API
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -109,7 +109,7 @@ class CustomFileSetPatchServer(
 
             return SimpleActor(
                 prompt = prompt,
-                model = AppSettingsState.instance.smartModel.chatModelType(),
+                model = AppSettingsState.instance.smartModel.chatModel(),
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -757,7 +757,7 @@ class CustomFileSetPatchServer(
                     ui = ui,
                     api = api as API,
                     shouldAutoApply = { autoApply },
-                    model = AppSettingsState.instance.fastModel.chatModelType(),
+                    model = AppSettingsState.instance.fastModel.chatModel(),
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
                         ?: "").renderMarkdown)
         } else {
@@ -860,7 +860,7 @@ class CustomFileSetPatchServer(
                             ui = ui,
                             api = api as API,
                             shouldAutoApply = { false },
-                            model = AppSettingsState.instance.fastModel.chatModelType(),
+                            model = AppSettingsState.instance.fastModel.chatModel(),
                             defaultFile = fileSet.files.firstOrNull()
                                 ?.let { (_root?.relativize(it) ?: it).toString() } ?: "")
                     }

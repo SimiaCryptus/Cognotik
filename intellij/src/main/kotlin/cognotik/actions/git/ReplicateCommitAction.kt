@@ -29,7 +29,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.API
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
@@ -234,8 +234,8 @@ class ReplicateCommitAction : BaseAction() {
                          1) predict the files that need to be fixed
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
-                    model = AppSettingsState.instance.smartModel.chatModelType(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                    model = AppSettingsState.instance.smartModel.chatModel(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
@@ -265,7 +265,7 @@ class ReplicateCommitAction : BaseAction() {
 
                   """.trimIndent() + codeSummary + "\n" + patchFormatPrompt +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
-                            model = AppSettingsState.instance.smartModel.chatModelType()
+                            model = AppSettingsState.instance.smartModel.chatModel()
                         ).answer(
                             listOf(
                                 """

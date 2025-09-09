@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.proxy.ChatProxy
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -243,12 +243,12 @@ private fun String.makeAbsolute(): String {
     }
 }
 
-class SmartPasteAction : PasteActionBase({ it.smartModel.chatModelType() })
+class SmartPasteAction : PasteActionBase({ it.smartModel.chatModel() })
 
 /**
  * Fast paste action using faster but simpler model
  */
-class FastPasteAction : PasteActionBase({ it.fastModel.chatModelType() }) {
+class FastPasteAction : PasteActionBase({ it.fastModel.chatModel() }) {
     companion object {
     }
 

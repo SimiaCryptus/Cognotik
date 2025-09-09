@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicReference
 open class ChatSocketManager(
     session: Session,
     var useExpansionSyntax: Boolean = true,
-    var model: ChatModel.Chatter,
-    var parsingModel: ChatModel.Chatter,
+    var model: Chatter,
+    var parsingModel: Chatter,
     val userInterfacePrompt: String = (if (!useExpansionSyntax) "" else """
     <div class="expandable-guide">
       <div class="expandable-header">
@@ -324,13 +324,7 @@ open class ChatSocketManager(
             val finalMessages = baseMessages + ApiModel.ChatMessage(ApiModel.Role.user, currentMessage.toContentList())
             val responseRef = AtomicReference<String>()
             try {
-                val chatResponse = api.chat(
-                    ApiModel.ChatRequest(
-                        messages = finalMessages,
-                        temperature = temperature,
-                        model = model.modelType.modelName,
-                    ), model.modelType
-                )
+                val chatResponse = model.chat(finalMessages)
                 val newValue = chatResponse.choices.firstOrNull()?.message?.content.orEmpty()
                 responseRef.set(newValue)
             } catch (e: Exception) {

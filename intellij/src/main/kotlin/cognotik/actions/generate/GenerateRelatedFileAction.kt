@@ -13,8 +13,8 @@ import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.util.getSelectedFiles
-import com.simiacryptus.cognotik.chat.model.chatModelType
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.chat.model.chatModel
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
@@ -157,11 +157,8 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
     private fun generateFile(baseFile: ProjectFile, directive: String, progress: ProgressIndicator): ProjectFile = try {
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
-        val model = AppSettingsState.instance.smartModel.chatModelType()
-        val chatRequest = ApiModel.ChatRequest(
-            model = model.modelName,
-            temperature = AppSettingsState.instance.temperature,
-            messages = listOf(
+        val response =
+            AppSettingsState.instance.smartModel.chatModel().instance(api).chat(listOf(
                 ChatMessage(
                     Role.system, """
             You will combine natural language instructions with a user provided code example to create a new file.
@@ -183,9 +180,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                               """.trimIndent()).toContentList(), null
                 )
             )
-        )
-        val response =
-            api.chat(chatRequest, model).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
+            ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
                 "No response from API"
             )
         var outputPath = baseFile.path

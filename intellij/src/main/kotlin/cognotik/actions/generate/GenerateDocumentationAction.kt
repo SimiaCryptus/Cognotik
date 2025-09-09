@@ -15,11 +15,15 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.util.getSelectedFile
 import com.simiacryptus.cognotik.util.getSelectedFolder
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import org.apache.commons.io.IOUtils
@@ -268,24 +272,19 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
         }
     }
 
-    private fun transformContent(path: Path, fileContent: String, transformationMessage: String) = api.chat(
-        ApiModel.ChatRequest(
-            model = AppSettingsState.instance.smartModel,
-            temperature = AppSettingsState.instance.temperature,
-            messages = listOf(
-                ApiModel.ChatMessage(
-                    ApiModel.Role.system, """
+    private fun transformContent(path: Path, fileContent: String, transformationMessage: String) = run {
+        AppSettingsState.instance.smartModel.chatModel().instance(api).chat(listOf(
+            ApiModel.ChatMessage(
+                ApiModel.Role.system, """
                         You will combine natural language instructions with a user provided code example to document code.
                         """.trimIndent().toContentList(), null
-                ),
-                ApiModel.ChatMessage(
-                    ApiModel.Role.user,
-                    "## Project:\n${findGitRoot(path)?.let { getProjectStructure(it) }}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
-                ),
             ),
-        ),
-        AppSettingsState.instance.smartModel.chatModelType()
-    ).choices.first().message?.content?.trim() ?: fileContent
+            ApiModel.ChatMessage(
+                ApiModel.Role.user,
+                "## Project:\n${findGitRoot(path)?.let { getProjectStructure(it) }}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
+            ),
+        )).choices.first().message?.content?.trim()
+    } ?: fileContent
 
     fun findGitRoot(path: Path?): Path? {
         var current: Path? = path

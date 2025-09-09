@@ -15,8 +15,9 @@ import com.intellij.openapi.vcs.changes.TextRevisionNumber
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.chatModel
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.IdeaChatClient
@@ -68,8 +69,8 @@ class ChatWithCommitDiffAction : BaseAction(
             codeSelection = diffInfo,
             filename = "commit_changes.diff",
             api = IdeaChatClient.instance,
-            model = AppSettingsState.instance.smartModel.chatModel(session),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(session),
+            model = AppSettingsState.instance.smartModel.chatModel().instance(session),
+            parsingModel = AppSettingsState.instance.fastModel.chatModel().instance(session),
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

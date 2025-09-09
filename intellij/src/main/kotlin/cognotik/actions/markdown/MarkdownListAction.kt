@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.PsiUtil.getAll
 import com.simiacryptus.cognotik.util.PsiUtil.getSmallestIntersecting
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.proxy.ChatProxy
 import com.simiacryptus.cognotik.util.StringUtil
 import java.awt.Component
@@ -68,7 +68,7 @@ class MarkdownListAction : BaseAction() {
             val chatProxy = ChatProxy(
                 clazz = ListAPI::class.java,
                 api = api,
-                model = AppSettingsState.instance.smartModel.chatModelType(),
+                model = AppSettingsState.instance.smartModel.chatModel(),
                 temperature = AppSettingsState.instance.temperature,
                 deserializerRetries = 5
             )

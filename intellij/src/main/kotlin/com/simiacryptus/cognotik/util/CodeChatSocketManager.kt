@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel.Chatter
+import com.simiacryptus.cognotik.chat.model.Chatter
 
 open class CodeChatSocketManager(
     session: Session,

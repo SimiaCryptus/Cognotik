@@ -25,7 +25,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -122,8 +122,8 @@ class CommandAutofixAction : BaseAction() {
                         budget = settingsUI.apiBudgetField.value as Double
                     },
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartModel.chatModelType(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModelType()
+                    model = AppSettingsState.instance.smartModel.chatModel(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModel()
                 )
                 val session = Session.newGlobalID()
                 SessionProxyServer.chats[session] = patchApp

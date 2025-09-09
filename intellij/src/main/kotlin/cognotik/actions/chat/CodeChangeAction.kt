@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
@@ -174,8 +174,8 @@ class CodeChangeAction : BaseAction() {
                         2) Related files that provide important context
                         Be selective and only include files that are directly relevant.
                     """.trimIndent(),
-                    model = AppSettingsState.instance.fastModel.chatModelType(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                    model = AppSettingsState.instance.fastModel.chatModel(),
+                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
                 )
 
                 val allFiles = getCodeFiles()
@@ -199,7 +199,7 @@ class CodeChangeAction : BaseAction() {
                             You will be answering questions about the following code:
 
                         """.trimIndent() + codeSummary(relevantPaths) + patchFormatPrompt,
-                        model = AppSettingsState.instance.smartModel.chatModelType()
+                        model = AppSettingsState.instance.smartModel.chatModel()
                     )
                 }
 

@@ -137,7 +137,14 @@ open class PromptOptimization(
             val startTemp = 0.3
             chatRequest = chatRequest.copy(temperature = startTemp)
             for (retry in 0..testCase.retries) {
-                response = chatClient.chat(chatRequest, model)
+                val instance = model.instance(
+                    key = chatClient.key(model.provider),
+                    base = chatClient.apiBase(model.provider),
+                    logStreams = api.logStreams,
+                    workPool = chatClient.workPool,
+                    temperature = chatRequest.temperature
+                )
+                response = instance.chat(chatRequest.messages)
                 matched = turn.expectations.all { it.matches(api, response) }
                 if (matched) {
                     break

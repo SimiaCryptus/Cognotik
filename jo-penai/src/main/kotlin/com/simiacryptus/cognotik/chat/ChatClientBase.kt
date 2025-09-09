@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.chat
 
 import com.simiacryptus.cognotik.HttpClientManager
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.Usage
@@ -30,7 +31,17 @@ abstract class SingleProviderChatClient(
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams
-)
+) {
+    override fun key(provider: APIProvider): String {
+        require(provider == this.provider) { "This client is configured for provider $this.provider but got request for $provider" }
+        return apiKey
+    }
+
+    override fun apiBase(provider: APIProvider): String {
+        require(provider == this.provider) { "This client is configured for provider $this.provider but got request for $provider" }
+        return apiBase
+    }
+}
 
 abstract class ChatClientBase(
     workPool: ExecutorService,
@@ -143,7 +154,7 @@ abstract class ChatClientBase(
         }
     }
 
-    private inner class ChildClient() : ChatClientBase(
+    private inner class ChildClient(val parent: ChatClientBase) : ChatClientBase(
         logLevel = Level.INFO,
         workPool = workPool,
         logStreams = this@ChatClientBase.logStreams.toTypedArray().toMutableList(),
@@ -160,15 +171,8 @@ abstract class ChatClientBase(
             this@ChatClientBase.authorize(request, apiProvider)
         }
 
-        override fun chat(messages: List<ApiModel.ChatMessage>) = this@ChatClientBase.chat(messages)
-
-        override fun chat(
-            chatRequest: ApiModel.ChatRequest,
-            model: LLMModel,
-            logStreams: MutableList<BufferedOutputStream>
-        ): ApiModel.ChatResponse {
-            return this@ChatClientBase.chat(chatRequest, model, logStreams)
-        }
+        override fun apiBase(provider: APIProvider) = parent.apiBase(provider)
+        override fun key(provider: APIProvider) = parent.key(provider)
 
         override fun onUsage(
             model: LLMModel, tokens: Usage,
@@ -179,7 +183,7 @@ abstract class ChatClientBase(
         }
     }
 
-    override fun getChildClient(): ChatClientInterface = ChildClient()
+    override fun getChildClient(): ChatClientInterface = ChildClient(this)
 
     companion object {
         val log = LoggerFactory.getLogger(ChatClientBase::class.java)

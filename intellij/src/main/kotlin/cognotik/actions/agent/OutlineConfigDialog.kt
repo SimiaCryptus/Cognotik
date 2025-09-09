@@ -10,7 +10,7 @@ import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.chatModelType
+import com.simiacryptus.cognotik.chat.model.chatModel
 import javax.swing.*
 
 class OutlineConfigDialog(
@@ -198,14 +198,14 @@ class OutlineConfigDialog(
 
     data class OutlineSettings(
         val expansionSteps: List<ExpansionStep> = listOf(
-            ExpansionStep(AppSettingsState.instance.smartModel.chatModelType()),
-            ExpansionStep(AppSettingsState.instance.smartModel.chatModelType())
+            ExpansionStep(AppSettingsState.instance.smartModel.chatModel()),
+            ExpansionStep(AppSettingsState.instance.smartModel.chatModel())
         ),
         val temperature: Double = AppSettingsState.instance.temperature,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,
         val writeFinalEssay: Boolean = true,
         val budget: Double = 2.0,
-        val parsingModel: ChatModel = AppSettingsState.instance.smartModel.chatModelType()
+        val parsingModel: ChatModel = AppSettingsState.instance.smartModel.chatModel()
     )
 }
