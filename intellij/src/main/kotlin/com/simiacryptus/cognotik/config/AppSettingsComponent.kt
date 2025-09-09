@@ -209,7 +209,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     val choosePluginHome = com.intellij.openapi.ui.TextFieldWithBrowseButton(pluginHome).apply {
         val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
         val browserDescriptor =
-            com.intellij.openapi.ui.ComponentWithBrowseButton.BrowseFolderActionListener<JTextField>(
+            com.intellij.openapi.ui.ComponentWithBrowseButton.BrowseFolderActionListener(
                 "Select Plugin Home Directory",
                 null,
                 this,
@@ -376,13 +376,13 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
 
     fun getExecutables(): Set<String> {
         val model =
-            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<String>)?.model as? DefaultListModel<String>
+            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
         return model?.elements()?.toList()?.toSet() ?: emptySet()
     }
 
     fun setExecutables(executables: Set<String>) {
         val model =
-            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<String>)?.model as? DefaultListModel<String>
+            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
         model?.clear()
         executables.forEach { model?.addElement(it) }
     }

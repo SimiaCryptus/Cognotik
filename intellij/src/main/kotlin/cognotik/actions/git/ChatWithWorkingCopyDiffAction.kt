@@ -134,6 +134,6 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
     override fun update(e: AnActionEvent) {
         val project = e.project ?: return
         val vcs = e.getData(VcsDataKeys.VCS)
-        e.presentation.isEnabledAndVisible = project != null && vcs != null
+        e.presentation.isEnabledAndVisible = vcs != null
     }
 }

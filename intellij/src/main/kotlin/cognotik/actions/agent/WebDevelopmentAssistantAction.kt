@@ -114,9 +114,7 @@ class WebDevelopmentAssistantAction : BaseAction() {
                     parsingModel = AppSettingsState.instance.fastModel
                         .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured")
                 )
-                if (api is ChatClientInterface) {
-                    api.budget = settings.budget ?: DEFAULT_BUDGET
-                }
+                api.budget = settings.budget ?: DEFAULT_BUDGET
                 WebDevAgent(
                     api = api,
                     api2 = IdeaOpenAIClient.instance,

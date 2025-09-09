@@ -50,6 +50,7 @@ open class ChatModel(
     ) : Chatter = object : Chatter {
         override val modelType = this@ChatModel
         override val workPool = workPool
+        override val logStreams: MutableList<BufferedOutputStream> get() = logStreams
         override fun chat(
             messages: List<ChatMessage>
         ) = provider.getChatClient(
@@ -65,6 +66,7 @@ open class ChatModel(
                 temperature = temperature,
             ),
             model = this@ChatModel,
+            logStreams = this.logStreams
             )
     }
 

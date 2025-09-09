@@ -310,7 +310,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-        fun models() = ChatModel.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
+        fun models() = ChatModel.Companion.values().filter { isVisible(it.value) }.toList()
             .sortedBy { "${it.second.provider.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
