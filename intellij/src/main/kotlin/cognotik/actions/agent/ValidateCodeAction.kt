@@ -7,16 +7,12 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.apps.general.ValidationPatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getSelectedFiles
-import com.simiacryptus.cognotik.util.getSelectedFolders
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.text.SimpleDateFormat
 
 /**
@@ -56,8 +52,8 @@ class ValidateCodeAction : BaseAction() {
                     settings = settings,
                     api = api,
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel()
+                    model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
+                    parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool)
                 )
 
                 SessionProxyServer.chats[session] = patchApp

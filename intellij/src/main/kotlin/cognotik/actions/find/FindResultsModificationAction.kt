@@ -16,6 +16,7 @@ import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -27,7 +28,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.chat.model.chatModel
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -147,7 +147,7 @@ class FindResultsModificationAction(
                     val api = api.getChildClient(task)
                     val response = SimpleActor(
                         prompt = prompt,
-                        model = AppSettingsState.instance.smartModel.chatModel()
+                        model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
                     ).answer(
                         listOf(
                             fileListingMarkdown

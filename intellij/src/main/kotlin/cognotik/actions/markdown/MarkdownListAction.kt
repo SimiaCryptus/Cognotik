@@ -9,12 +9,11 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.proxy.ChatProxy
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.PsiUtil.getAll
 import com.simiacryptus.cognotik.util.PsiUtil.getSmallestIntersecting
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.proxy.ChatProxy
-import com.simiacryptus.cognotik.util.StringUtil
 import java.awt.Component
 import javax.swing.JOptionPane
 
@@ -68,7 +67,7 @@ class MarkdownListAction : BaseAction() {
             val chatProxy = ChatProxy(
                 clazz = ListAPI::class.java,
                 api = api,
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
                 temperature = AppSettingsState.instance.temperature,
                 deserializerRetries = 5
             )

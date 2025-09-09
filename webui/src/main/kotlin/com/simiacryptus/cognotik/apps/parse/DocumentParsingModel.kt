@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.models.ApiModel
@@ -14,7 +15,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
 open class DocumentParsingModel(
-    private val parsingModel: ChatModel,
+    private val parsingModel: Chatter,
     private val temperature: Double,
     override val api: ChatClientInterface,
 ) : ParsingModel<DocumentParsingModel.DocumentData> {

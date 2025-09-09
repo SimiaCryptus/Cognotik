@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.util.GPT4Tokenizer
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.intellij.lang.annotations.Language
@@ -28,11 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger
 data class PhaseConfig(
     val extract: String,
     val expansionQuestion: String,
-    val model: ChatModel
+    val model: Chatter
 )
 
 data class EnhancedSettings(
-    val parsingModel: ChatModel,
+    val parsingModel: Chatter,
     val temperature: Double = 0.3,
     val minTokensForExpansion: Int = 16,
     val showProjector: Boolean = true,
@@ -108,7 +109,7 @@ class EnhancedOutlineAgent(
     val user: User?,
     val temperature: Double,
     val phaseConfigs: List<PhaseConfig>,
-    val parsingModel: ChatModel,
+    val parsingModel: Chatter,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -240,7 +241,7 @@ class EnhancedOutlineAgent(
         nodeList: NodeList,
         manager: OutlineManager
     ): String =
-        if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.maxTotalTokens * 0.6).toInt()) {
+        if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.modelType.maxTotalTokens * 0.6).toInt()) {
             manager.expandNodes(nodeList)?.joinToString("\n") { buildFinalEssay(it, manager) } ?: ""
         } else {
             summary.answer(listOf(nodeList.getTextOutline()), api = api)
@@ -249,7 +250,7 @@ class EnhancedOutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModel>,
+        models: List<Chatter>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -295,7 +296,7 @@ class EnhancedOutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModel,
+        model: Chatter,
         api: ChatClientInterface,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
@@ -325,8 +326,8 @@ object EnhancedOutlineActors {
 
     fun actorMap(
         temperature: Double,
-        firstLevelModel: ChatModel,
-        parsingModel: ChatModel,
+        firstLevelModel: Chatter,
+        parsingModel: Chatter,
         phaseConfigs: List<PhaseConfig>
     ) = mapOf(
         ActorType.INITIAL to enhancedInitialAuthor(
@@ -341,8 +342,8 @@ object EnhancedOutlineActors {
 
     private fun enhancedInitialAuthor(
         temperature: Double,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: Chatter,
+        parsingModel: Chatter,
         phaseConfig: PhaseConfig?
     ) = ParsedActor(
         resultClass = NodeList::class.java,
@@ -360,7 +361,7 @@ object EnhancedOutlineActors {
 
     private fun enhancedExpansionAuthor(
         temperature: Double,
-        parsingModel: ChatModel,
+        parsingModel: Chatter,
         phaseConfig: PhaseConfig?
     ) = ParsedActor(
         resultClass = NodeList::class.java,
@@ -374,7 +375,7 @@ object EnhancedOutlineActors {
 
     private fun enhancedFinalWriter(
         temperature: Double,
-        model: ChatModel,
+        model: Chatter,
         maxIterations: Int
     ) = LargeOutputActor(
         model = model,

@@ -233,10 +233,10 @@ open class ChatSocketManager(
         val topicsParsedActor = ParsedActor(
             resultClass = Topics::class.java,
             prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
-            model = model.modelType,
+            model = model,
             temperature = temperature,
             name = "Topics",
-            parsingModel = parsingModel.modelType,
+            parsingModel = parsingModel,
         )
         return if (fastTopicParsing) {
             topicsParsedActor.getParser(api).apply(response)

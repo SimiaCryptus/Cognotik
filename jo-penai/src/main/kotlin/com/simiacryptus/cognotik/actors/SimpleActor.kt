@@ -2,13 +2,14 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 
 open class SimpleActor(
     prompt: String,
     name: String? = null,
-    model: ChatModel,
+    model: Chatter,
     temperature: Double = 0.3,
 ) : BaseActor<List<String>, String>(
     prompt = prompt,
@@ -32,7 +33,7 @@ open class SimpleActor(
         )
     }
 
-    override fun withModel(model: ChatModel): SimpleActor = SimpleActor(
+    override fun withModel(model: Chatter): SimpleActor = SimpleActor(
         prompt = prompt,
         name = name,
         model = model,

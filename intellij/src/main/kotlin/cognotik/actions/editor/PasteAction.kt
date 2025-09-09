@@ -10,16 +10,19 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.chatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.proxy.ChatProxy
+import com.simiacryptus.cognotik.util.ComputerLanguage
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.slf4j.Logger
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor.*
 
@@ -27,7 +30,7 @@ import java.awt.datatransfer.DataFlavor.*
  * Base class for paste actions that convert clipboard content to appropriate code format
  * Supports both text and HTML clipboard content with automatic language detection
  */
-abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatModel) : SelectionAction<String>(false) {
+abstract class PasteActionBase(private val model: (AppSettingsState) -> Chatter) : SelectionAction<String>(false) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     /**
@@ -200,7 +203,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatMode
             }
         } ?: false
 
-        fun converter(chatClient: ChatClientInterface, chatModel: ChatModel, temp: Double) = ChatProxy(
+        fun converter(chatClient: ChatClientInterface, chatModel: Chatter, temp: Double) = ChatProxy(
             clazz = VirtualAPI::class.java,
             api = chatClient,
             model = chatModel,
@@ -243,12 +246,12 @@ private fun String.makeAbsolute(): String {
     }
 }
 
-class SmartPasteAction : PasteActionBase({ it.smartModel.chatModel() })
+class SmartPasteAction : PasteActionBase({ it.smartChatModel.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }!! })
 
 /**
  * Fast paste action using faster but simpler model
  */
-class FastPasteAction : PasteActionBase({ it.fastModel.chatModel() }) {
+class FastPasteAction : PasteActionBase({ it.fastChatModel.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }!! }) {
     companion object {
     }
 

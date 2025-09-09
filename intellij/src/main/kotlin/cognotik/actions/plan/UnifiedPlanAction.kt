@@ -8,7 +8,11 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
@@ -23,10 +27,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import java.io.File
 import java.text.SimpleDateFormat
 
@@ -41,8 +41,8 @@ class UnifiedPlanAction : BaseAction() {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
             e.project, PlanSettings(
-                defaultModel = AppSettingsState.instance.smartModel.chatModel(),
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                defaultModel = AppSettingsState.instance.smartChatModel.instance(api.workPool),
+                parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
@@ -285,10 +285,10 @@ class UnifiedPlanAction : BaseAction() {
                 command = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
             ),
-            model = AppSettingsState.instance.smartModel.chatModel(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+            model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
+            parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
             showMenubar = false,
             api = api.getChildClient().apply {
                 budget = apiBudget

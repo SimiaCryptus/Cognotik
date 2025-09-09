@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.ChatRequest
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 open class ChatProxy<T : Any>(
     clazz: Class<out T>,
     val api: ChatClientInterface,
-    var model: ChatModel,
+    var model: Chatter,
     temperature: Double = 0.5,
     private val moderated: Boolean = false,
     val deserializerRetries: Int = 2,
@@ -57,7 +57,7 @@ open class ChatProxy<T : Any>(
                         )
             )
         )
-        request = request.copy(model = model.modelName)
+        request = request.copy(model = model.modelType.modelName)
         request = request.copy(temperature = temperature)
         val json = toJson(request)
         log.debug("Request JSON: {}", json)
@@ -66,13 +66,7 @@ open class ChatProxy<T : Any>(
             api.moderate(json)
         }
 
-        val completion = model.instance(
-                key = api.key(model.provider),
-                base = api.apiBase(model.provider),
-                logStreams = api.logStreams,
-                workPool = api.workPool,
-                temperature = request.temperature
-            ).chat(request.messages).choices.first().message?.content.orEmpty()
+        val completion = model.chat(request.messages).choices.first().message?.content.orEmpty()
         log.info("Received completion: {}", completion)
         val trimPrefix = trimPrefix(completion)
         val trimSuffix = trimSuffix(trimPrefix)

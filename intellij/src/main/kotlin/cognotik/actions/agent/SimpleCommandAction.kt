@@ -9,7 +9,10 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -21,11 +24,6 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -212,8 +210,8 @@ class SimpleCommandAction : BaseAction() {
                          1) predict the files that need to be fixed
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                    model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
+                    parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                 ).answer(
                     listOf(
                         "\nExecute the following directive:\n\n$tripleTilde\n$userMessage\n$tripleTilde\n"
@@ -242,7 +240,7 @@ class SimpleCommandAction : BaseAction() {
 
                 If needed, new files can be created by using code blocks labeled with the filename in the same manner.
                 """.trimIndent(),
-                            model = AppSettingsState.instance.smartModel.chatModel()
+                            model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
                         ).answer(
                             listOf(
                                 "We are working on executing the following directive:\n\n$tripleTilde\n$userMessage\n$tripleTilde\n\nFocus on the task at hand:\n  ${

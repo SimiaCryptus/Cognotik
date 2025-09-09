@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.JsonDescriber
 import com.simiacryptus.cognotik.util.GPT4Tokenizer
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -52,9 +53,9 @@ open class OutlineApp(
         ) + "</div>")
 
     data class Settings(
-        val models: List<ChatModel> = listOf(
+        val models: List<Chatter> = listOf(
         ),
-        val parsingModel: ChatModel? = null,
+        val parsingModel: Chatter? = null,
         val temperature: Double = 0.3,
         val minTokensForExpansion: Int = 16,
         val showProjector: Boolean = true,
@@ -102,9 +103,9 @@ class OutlineAgent(
     val session: Session,
     val user: User?,
     val temperature: Double,
-    val models: List<ChatModel>,
-    val firstLevelModel: ChatModel,
-    val parsingModel: ChatModel,
+    val models: List<Chatter>,
+    val firstLevelModel: Chatter,
+    val parsingModel: Chatter,
     private val minSize: Int,
     val writeFinalEssay: Boolean,
     val showProjector: Boolean,
@@ -231,7 +232,7 @@ class OutlineAgent(
         nodeList: NodeList,
         manager: OutlineManager
     ): String =
-        if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.maxTotalTokens * 0.6).toInt()) {
+        if (tokenizer.estimateTokenCount(nodeList.getTextOutline()) > (summary.model.modelType.maxTotalTokens * 0.6).toInt()) {
             manager.expandNodes(nodeList)?.joinToString("\n") { buildFinalEssay(it, manager) } ?: ""
         } else {
             summary.answer(listOf(nodeList.getTextOutline()), api = api)
@@ -240,7 +241,7 @@ class OutlineAgent(
     private fun processRecursive(
         manager: OutlineManager,
         node: OutlineManager.OutlinedText,
-        models: List<ChatModel>,
+        models: List<Chatter>,
         task: SessionTask
     ) {
         val tabbedDisplay = TabbedDisplay(task)
@@ -286,7 +287,7 @@ class OutlineAgent(
         sectionName: String,
         outlineManager: OutlineManager,
         message: SessionTask,
-        model: ChatModel,
+        model: Chatter,
         api: ChatClientInterface,
     ): OutlineManager.OutlinedText? {
         if (tokenizer.estimateTokenCount(parent.text) <= minSize) {
@@ -320,13 +321,13 @@ interface OutlineActors {
 
         val log = LoggerFactory.getLogger(OutlineActors::class.java)
 
-        fun actorMap(temperature: Double, firstLevelModel: ChatModel, parsingModel: ChatModel) = mapOf(
+        fun actorMap(temperature: Double, firstLevelModel: Chatter, parsingModel: Chatter) = mapOf(
             ActorType.INITIAL to initialAuthor(temperature, firstLevelModel, parsingModel),
             ActorType.EXPAND to expansionAuthor(temperature, parsingModel),
             ActorType.FINAL to finalWriter(temperature, firstLevelModel, maxIterations = 10),
         )
 
-        private fun initialAuthor(temperature: Double, model: ChatModel, parsingModel: ChatModel) = ParsedActor(
+        private fun initialAuthor(temperature: Double, model: Chatter, parsingModel: Chatter) = ParsedActor(
             NodeList::class.java,
             prompt = """You are a helpful writing assistant. Respond in detail to the user's prompt""",
             model = model,
@@ -355,7 +356,7 @@ interface OutlineActors {
 
         private fun expansionAuthor(
             temperature: Double,
-            parsingModel: ChatModel
+            parsingModel: Chatter
         ): ParsedActor<NodeList> =
             ParsedActor(
                 resultClass = NodeList::class.java,
@@ -367,7 +368,7 @@ interface OutlineActors {
                 exampleInstance = exampleNodeList(),
             )
 
-        private fun finalWriter(temperature: Double, model: ChatModel, maxIterations: Int) = LargeOutputActor(
+        private fun finalWriter(temperature: Double, model: Chatter, maxIterations: Int) = LargeOutputActor(
             model = model,
             temperature = temperature,
             maxIterations = maxIterations,

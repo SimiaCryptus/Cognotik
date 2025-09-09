@@ -10,8 +10,8 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.models.ApiModel
@@ -157,7 +157,7 @@ class CodeChangeAction : BaseAction() {
         ) {
             try {
                 val settings = getSettings(session, user) ?: Settings()
-                if (api is ChatClientInterface) api.budget = settings.budget ?: 2.00
+                api.budget = settings.budget ?: 2.00
 
                 val task = ui.newTask()
                 task.add("Analyzing files...")
@@ -173,8 +173,8 @@ class CodeChangeAction : BaseAction() {
                         2) Related files that provide important context
                         Be selective and only include files that are directly relevant.
                     """.trimIndent(),
-                    model = AppSettingsState.instance.fastModel.chatModel(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                    model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                    parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                 )
 
                 val allFiles = getCodeFiles()
@@ -198,7 +198,7 @@ class CodeChangeAction : BaseAction() {
                             You will be answering questions about the following code:
 
                         """.trimIndent() + codeSummary(relevantPaths) + patchFormatPrompt,
-                        model = AppSettingsState.instance.smartModel.chatModel()
+                        model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
                     )
                 }
 

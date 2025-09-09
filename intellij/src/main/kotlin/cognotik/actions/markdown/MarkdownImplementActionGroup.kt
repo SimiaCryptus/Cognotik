@@ -8,12 +8,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.proxy.ChatProxy
 import com.simiacryptus.cognotik.util.ComputerLanguage
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.hasSelection
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.proxy.ChatProxy
-import com.simiacryptus.cognotik.util.LoggerFactory
 
 class MarkdownImplementActionGroup : ActionGroup() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -69,7 +69,7 @@ class MarkdownImplementActionGroup : ActionGroup() {
             return ChatProxy(
                 clazz = ConversionAPI::class.java,
                 api = api,
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
                 temperature = AppSettingsState.instance.temperature,
                 deserializerRetries = 5
             ).create()

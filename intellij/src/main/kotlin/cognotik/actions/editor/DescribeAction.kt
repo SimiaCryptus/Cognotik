@@ -11,12 +11,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.proxy.ChatProxy
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.IndentedText
-import com.simiacryptus.cognotik.util.getIndent
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.proxy.ChatProxy
 import com.simiacryptus.cognotik.util.StringUtil
+import com.simiacryptus.cognotik.util.getIndent
 
 
 class DescribeAction : SelectionAction<String>() {
@@ -62,7 +62,7 @@ class DescribeAction : SelectionAction<String>() {
         get() = ChatProxy(
             clazz = DescribeAction_VirtualAPI::class.java,
             api = api,
-            model = AppSettingsState.instance.smartModel.chatModel(),
+            model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
             temperature = AppSettingsState.instance.temperature,
             deserializerRetries = 5
         ).create()

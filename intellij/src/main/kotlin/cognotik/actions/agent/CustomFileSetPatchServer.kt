@@ -2,11 +2,15 @@ package cognotik.actions.agent
 
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -14,11 +18,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -108,7 +107,7 @@ class CustomFileSetPatchServer(
 
             return SimpleActor(
                 prompt = prompt,
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -756,7 +755,7 @@ class CustomFileSetPatchServer(
                     ui = ui,
                     api = api as ChatClientInterface,
                     shouldAutoApply = { autoApply },
-                    model = AppSettingsState.instance.fastModel.chatModel(),
+                    model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
                         ?: "").renderMarkdown)
         } else {
@@ -859,7 +858,7 @@ class CustomFileSetPatchServer(
                             ui = ui,
                             api = api as ChatClientInterface,
                             shouldAutoApply = { false },
-                            model = AppSettingsState.instance.fastModel.chatModel(),
+                            model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                             defaultFile = fileSet.files.firstOrNull()
                                 ?.let { (_root?.relativize(it) ?: it).toString() } ?: "")
                     }

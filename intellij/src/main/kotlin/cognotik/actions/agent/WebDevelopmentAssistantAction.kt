@@ -10,7 +10,9 @@ import com.simiacryptus.cognotik.actors.*
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.models.ApiModel
@@ -110,9 +112,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
             try {
                 val settings = getSettings(session, user) ?: Settings(
                     model = AppSettingsState.instance.smartModel
-                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured"),
+                        .let { ChatModel.values().get(it)?.instance(ApplicationServices.clientManager.getPool(session, user)) } ?:  throw IllegalStateException("No model configured"),
                     parsingModel = AppSettingsState.instance.fastModel
-                        .let { ChatModel.values().get(it) } ?:  throw IllegalStateException("No model configured")
+                        .let { ChatModel.values().get(it)?.instance(ApplicationServices.clientManager.getPool(session, user)) } ?:  throw IllegalStateException("No model configured")
                 )
                 api.budget = settings.budget ?: DEFAULT_BUDGET
                 WebDevAgent(
@@ -134,8 +136,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel,
-            val parsingModel: ChatModel,
+            val model: Chatter,
+            val parsingModel: Chatter,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -143,9 +145,9 @@ class WebDevelopmentAssistantAction : BaseAction() {
         @Suppress("UNCHECKED_CAST")
         override fun <T : Any> initSettings(session: Session): T? = Settings(
             model = AppSettingsState.instance.smartModel
-                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+                .let { ChatModel.values().get(it)?.instance(ApplicationServices.clientManager.getPool(session, null)) } ?: throw IllegalStateException("No model configured"),
             parsingModel = AppSettingsState.instance.fastModel
-                .let { ChatModel.values().get(it) } ?: throw IllegalStateException("No model configured"),
+                .let { ChatModel.values().get(it)?.instance(ApplicationServices.clientManager.getPool(session, null)) } ?: throw IllegalStateException("No model configured"),
         ) as T
     }
 
@@ -155,8 +157,8 @@ class WebDevelopmentAssistantAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModel,
-        val parsingModel: ChatModel,
+        val model: Chatter,
+        val parsingModel: Chatter,
         val root: File,
     ) {
         val actors = mapOf(

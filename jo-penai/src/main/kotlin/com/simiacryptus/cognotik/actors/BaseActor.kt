@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.models.ApiModel
 abstract class BaseActor<I, R>(
     open val prompt: String,
     val name: String? = null,
-    val model: ChatModel,
+    val model: Chatter,
     val temperature: Double = 0.3,
 ) {
     abstract fun respond(
@@ -18,21 +18,11 @@ abstract class BaseActor<I, R>(
         vararg messages: ApiModel.ChatMessage = this.chatMessages(input),
     ): R
 
-    protected open fun response(vararg input: ApiModel.ChatMessage, model: AIModel = this.model, api: ChatClientInterface): ApiModel.ChatResponse =
-        chatter(api).chat(input.toList())
-
-    protected open fun chatter(api: ChatClientInterface): Chatter = (api as ChatClientInterface).let {
-        model.instance(
-            key = it.key(model.provider),
-            base = it.apiBase(model.provider),
-            logStreams = it.logStreams,
-            workPool = it.workPool,
-            temperature = temperature
-        )
-    }
+    protected open fun response(vararg input: ApiModel.ChatMessage, model: AIModel = this.model.modelType, api: ChatClientInterface): ApiModel.ChatResponse =
+        this.model.chat(input.toList())
 
     open fun answer(input: I, api: ChatClientInterface): R = respond(input = input, api = api, *chatMessages(input))
 
     abstract fun chatMessages(questions: I): Array<ApiModel.ChatMessage>
-    abstract fun withModel(model: ChatModel): BaseActor<I, R>
+    abstract fun withModel(model: Chatter): BaseActor<I, R>
 }

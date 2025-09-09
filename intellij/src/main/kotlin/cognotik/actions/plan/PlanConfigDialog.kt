@@ -18,6 +18,9 @@ import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import java.awt.CardLayout
@@ -175,7 +178,7 @@ class PlanConfigDialog(
                 if (itemCount > 0) {
                     val currentModel = settings.getTaskSettings(taskType).model
                     selectedItem = when {
-                        currentModel != null -> currentModel.modelName
+                        currentModel != null -> currentModel.modelType.modelName
                         else -> AppSettingsState.instance.smartModel
                     }
                 }
@@ -222,7 +225,7 @@ class PlanConfigDialog(
                     val newSettings = CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         settings.getTaskSettings(taskType).enabled,
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem },
+                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
                         entries.filter { it.enabled }.map { it.command }.toMutableList())
                     settings.setTaskSettings(taskType, newSettings)
                 }
@@ -297,13 +300,13 @@ class PlanConfigDialog(
             }
 
             val currentModel = settings.getTaskSettings(taskType).model
-            modelComboBox.selectedItem = currentModel?.modelName ?: AppSettingsState.instance.smartModel
+            modelComboBox.selectedItem = currentModel?.modelType?.modelName ?: AppSettingsState.instance.smartModel
             enabledCheckbox.addItemListener {
                 val newSettings = when (taskType) {
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem },
+                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
                         (0 until (commandList?.model?.rowCount ?: 0)).filter { row ->
                             (commandList?.model?.getValueAt(
                                 row,
@@ -313,7 +316,7 @@ class PlanConfigDialog(
                             .map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
+                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }
                     }
                 }
                 settings.setTaskSettings(taskType, newSettings)
@@ -324,13 +327,13 @@ class PlanConfigDialog(
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem },
+                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
                         (0 until (commandList?.model?.rowCount ?: 0)).map { row ->
                             commandList?.model?.getValueAt(row, 1) as String
                         }.toMutableList())
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
+                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }
                     }
                 }
                 settings.setTaskSettings(taskType, newSettings)
@@ -342,16 +345,16 @@ class PlanConfigDialog(
                 TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
-                    model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem },
+                    model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
                     commandAutoFixCommands = (0 until (commandList?.model?.rowCount ?: 0)).filter { row ->
                         commandList?.model?.getValueAt(row, 0) as Boolean
                     }.map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
 
                 else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                    this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
+                    this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }
                 }
             }
-            if (validateModelSelection(taskType, newSettings.model)) {
+            if (validateModelSelection(taskType, newSettings.model?.modelType)) {
                 settings.setTaskSettings(taskType, newSettings)
             }
         }
@@ -508,7 +511,7 @@ class PlanConfigDialog(
         val hasUnsavedChanges = TaskType.values().any { taskType ->
             val currentSettings = settings.getTaskSettings(taskType)
             val savedSettings = config.taskSettings[taskType.name]
-            currentSettings.enabled != savedSettings?.enabled || currentSettings.model?.modelName != savedSettings.model?.modelName
+            currentSettings.enabled != savedSettings?.enabled || currentSettings.model?.modelType?.modelName != savedSettings.model?.modelType?.modelName
         }
         if (hasUnsavedChanges) {
             val confirmResult = JOptionPane.showConfirmDialog(
@@ -532,7 +535,7 @@ class PlanConfigDialog(
             config.taskSettings.forEach { (taskTypeName: String, serializedSettings: TaskSettingsBase) ->
                 val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
                 val availableModels = getVisibleModels()
-                val selectedModel = availableModels.find { it.modelName == serializedSettings.model?.modelName }
+                val selectedModel = availableModels.find { it.modelName == serializedSettings.model?.modelType?.modelName }
                     ?: availableModels.firstOrNull()
                 settings.setTaskSettings(taskType, serializedSettings)
                 taskConfigs[taskType.name]?.apply {

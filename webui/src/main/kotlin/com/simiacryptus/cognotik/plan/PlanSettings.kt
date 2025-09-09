@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModifi
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import java.io.File
 
@@ -68,8 +69,8 @@ class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSett
 
 
 open class PlanSettings(
-    var defaultModel: ChatModel,
-    var parsingModel: ChatModel,
+    var defaultModel: Chatter,
+    var parsingModel: Chatter,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -114,8 +115,8 @@ open class PlanSettings(
     }
 
     fun copy(
-        model: ChatModel = this.defaultModel,
-        parsingModel: ChatModel = this.parsingModel,
+        model: Chatter = this.defaultModel,
+        parsingModel: Chatter = this.parsingModel,
         command: List<String> = this.shellCmd,
         temperature: Double = this.temperature,
         budget: Double = this.budget,

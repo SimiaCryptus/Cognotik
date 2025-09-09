@@ -7,11 +7,10 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.models.ApiModel.*
-import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.UITools
 import java.io.File
 
 class CreateFileFromDescriptionAction :
@@ -110,7 +109,7 @@ class CreateFileFromDescriptionAction :
         directive: String
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
-        val model = AppSettingsState.instance.smartModel.chatModel()
+        val model = AppSettingsState.instance.smartChatModel
         val chatRequest = ChatRequest(
             model = model.modelName,
             temperature = AppSettingsState.instance.temperature,
@@ -135,8 +134,7 @@ class CreateFileFromDescriptionAction :
         )
         try {
             val response = run {
-                val model1 = AppSettingsState.instance.smartModel.chatModel()
-                model1.instance(api.workPool).chat(chatRequest.messages).choices.firstOrNull()?.message?.content?.trim()
+                AppSettingsState.instance.smartChatModel.instance(api.workPool).chat(chatRequest.messages).choices.firstOrNull()?.message?.content?.trim()
             } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")

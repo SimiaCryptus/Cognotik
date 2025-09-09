@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.actors
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.ImageGenerationRequest
@@ -16,7 +17,7 @@ import javax.imageio.ImageIO
 open class ImageActor(
     prompt: String = "Transform the user request into an image generation prompt that the user will like",
     name: String? = null,
-    textModel: ChatModel,
+    textModel: Chatter,
     val imageModel: ImageModels = ImageModels.DallE2,
     temperature: Double = 0.3,
     val width: Int = 1024,
@@ -81,7 +82,7 @@ open class ImageActor(
         return ImageResponseImpl(text, api = this.openAI ?: throw RuntimeException("No API"))
     }
 
-    override fun withModel(model: ChatModel): ImageActor = ImageActor(
+    override fun withModel(model: Chatter): ImageActor = ImageActor(
         prompt = prompt,
         name = name,
         textModel = model,

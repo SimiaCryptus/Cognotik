@@ -3,10 +3,11 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 
 class LogPatternGenerator(
-    private val parsingModel: ChatModel,
+    private val parsingModel: Chatter,
     private val temperature: Double
 ) {
     data class PatternResponse(

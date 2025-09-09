@@ -7,7 +7,9 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.code.CodingAgent
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -19,8 +21,6 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModel
 import java.text.SimpleDateFormat
 
 class ShellCommandAction : BaseAction() {
@@ -102,7 +102,7 @@ class ShellCommandAction : BaseAction() {
                         - Provide clear output formatting
                         - Support command cancellation
                     """.trimIndent(),
-                    model = AppSettingsState.instance.smartModel.chatModel(),
+                    model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
                     mainTask = task,
                 ) {
                     override fun displayFeedback(

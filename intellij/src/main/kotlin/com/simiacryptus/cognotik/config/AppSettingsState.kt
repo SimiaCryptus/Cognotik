@@ -19,15 +19,14 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.util.ImmediateExecutorService
+import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
-import java.io.BufferedOutputStream
 import java.io.File
 import java.util.concurrent.ExecutorService
 
@@ -99,6 +98,9 @@ data class AppSettingsState(
     val recentArguments: MutableList<String>? = mutableListOf(),
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
 ) : PersistentStateComponent<SimpleEnvelope> {
+
+    val smartChatModel: ChatModel get() = smartModel.chatModel()
+    val fastChatModel: ChatModel get() = fastModel.chatModel()
 
     @JsonIgnore
     override fun getState(): SimpleEnvelope {

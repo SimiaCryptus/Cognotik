@@ -10,14 +10,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.cognotik.util.getModuleRootForFile
-import com.simiacryptus.cognotik.util.getSelectedFiles
-import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.getModuleRootForFile
+import com.simiacryptus.cognotik.util.getSelectedFiles
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
@@ -158,7 +157,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
         val response =
-            AppSettingsState.instance.smartModel.chatModel().instance(api.workPool).chat(
+            AppSettingsState.instance.smartChatModel.instance(api.workPool).chat(
                 listOf(
                     ChatMessage(
                         Role.system, """

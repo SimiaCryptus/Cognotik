@@ -3,10 +3,11 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 
 open class LogDataParsingModel(
-    private val parsingModel: ChatModel,
+    private val parsingModel: Chatter,
     private val temperature: Double,
     override val api: ChatClientInterface
 ) : ParsingModel<LogDataParsingModel.LogData> {

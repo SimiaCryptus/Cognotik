@@ -1,6 +1,5 @@
 package cognotik.actions.problems
 
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.toFile
 import cognotik.actions.test.TestResultAutofixAction.Companion.findGitRoot
 import cognotik.actions.test.TestResultAutofixAction.Companion.getProjectStructure
@@ -19,27 +18,23 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.AgentPatterns
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.util.JsonUtil
 import java.text.SimpleDateFormat
 import javax.swing.JOptionPane
 
@@ -176,8 +171,8 @@ class AnalyzeProblemAction : AnAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartModel.chatModel(),
-                        parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                        model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
+                        parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                     ).answer(listOf(problemInfo), api = IdeaChatClient.instance)
 
                     task.add(
@@ -238,7 +233,7 @@ class AnalyzeProblemAction : AnAction() {
             The diff format should use + for line additions, - for line deletions.
             The diff should include 2 lines of context before and after every change.
             """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel()
+                model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
             ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
 
             return "<div>${

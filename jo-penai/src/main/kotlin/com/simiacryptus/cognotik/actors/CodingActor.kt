@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel.*
@@ -25,8 +25,8 @@ open class CodingActor(
     ),
     name: String? = interpreterClass.simpleName,
     val details: String? = null,
-    model: ChatModel,
-    val fallbackModel: ChatModel,
+    model: Chatter,
+    val fallbackModel: Chatter,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
     var codeInterceptor: CodeInterceptor = { it }
@@ -153,7 +153,7 @@ ${details ?: ""}
                 )
                 throw ex
             }
-            val respondWithCode = fixCommand(api, result.code, ex, *messages, model = model)
+            val respondWithCode = fixCommand(api, result.code, ex, model = model, messages)
             val blocks = extractTextBlocks(respondWithCode)
             val renderedResponse = getRenderedResponse(blocks)
             val codedInstruction = codeInterceptor(getCode(language, blocks))
@@ -272,7 +272,7 @@ ${details ?: ""}
         override val code: String = givenCode ?: implementation.first
 
         private fun implement(
-            model: ChatModel,
+            model: Chatter,
         ): Pair<String, String> {
             val request = ChatRequest(messages = ArrayList(this.messages.toList()))
             for (codingAttempt in 0..input.fixRetries) {
@@ -341,7 +341,7 @@ ${TT}
                                 )
                             log.debug("Validation failed - ${ex.message}")
                             _status = CodeResult.Status.Correcting
-                            val respondWithCode = fixCommand(api, workingCode, ex, *messages, model = model)
+                            val respondWithCode = fixCommand(api, workingCode, ex, model = model, messages)
                             val codeBlocks = extractTextBlocks(respondWithCode)
                             workingRenderedResponse = getRenderedResponse(codeBlocks)
                             workingCode = codeInterceptor(getCode(language, codeBlocks))
@@ -400,8 +400,8 @@ ${TT}
         api: ChatClientInterface,
         previousCode: String,
         error: Throwable,
-        vararg promptMessages: ChatMessage,
-        model: ChatModel
+        model: Chatter,
+        vararg promptMessages: Array<out ChatMessage>
     ): String = chat(
         api = api,
         request = ChatRequest(
@@ -428,23 +428,17 @@ Correct the code and try again.
 """.trim().toContentList()
                     )
                 )
-            )
+            ) as ArrayList<ChatMessage>
         ),
         model = model
     )
 
-    private fun chat(api: ChatClientInterface, request: ChatRequest, model: ChatModel): String {
-        return model.instance(
-            key = api.key(model.provider),
-            base = api.apiBase(model.provider),
-            logStreams = api.logStreams,
-            workPool = api.workPool,
-            temperature = temperature
-        ).chat(request.messages)
+    private fun chat(api: ChatClientInterface, request: ChatRequest, model: Chatter): String {
+        return model.chat(request.messages)
             .choices.first().message?.content.orEmpty().trim()
     }
 
-    override fun withModel(model: ChatModel): CodingActor = CodingActor(
+    override fun withModel(model: Chatter): CodingActor = CodingActor(
         interpreterClass = interpreterClass,
         symbols = symbols,
         describer = describer,

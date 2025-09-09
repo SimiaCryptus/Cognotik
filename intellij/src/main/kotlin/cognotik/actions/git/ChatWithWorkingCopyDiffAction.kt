@@ -1,21 +1,20 @@
 package cognotik.actions.git
 
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.CodeChatSocketManager
-import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.CodeChatSocketManager
+import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.text.SimpleDateFormat
@@ -45,16 +44,15 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
         val session = Session.newGlobalID()
+        val pool = ApplicationServices.clientManager.getPool(session, null)
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = "diff",
             codeSelection = diffInfo,
             filename = "working_copy_changes.diff",
             api = IdeaChatClient.instance,
-            model = AppSettingsState.instance.smartModel.chatModel().instance(ApplicationServices.clientManager.getPool(
-                session, null)),
-            parsingModel = AppSettingsState.instance.fastModel.chatModel().instance(ApplicationServices.clientManager.getPool(
-                session, null)),
+            model = AppSettingsState.instance.smartChatModel.instance(pool),
+            parsingModel = AppSettingsState.instance.fastChatModel.instance(pool),
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

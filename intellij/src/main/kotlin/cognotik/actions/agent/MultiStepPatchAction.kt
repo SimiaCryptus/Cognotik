@@ -12,9 +12,9 @@ import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.chatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.models.ApiModel
@@ -111,16 +111,16 @@ class MultiStepPatchAction : BaseAction() {
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
-                model = AppSettingsState.instance.smartModel.chatModel()
+                model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
             )
-            if (api is ChatClientInterface) api.budget = settings.budget ?: DEFAULT_BUDGET
+            api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
                 api = api,
                 session = session,
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastModel.chatModel(),
+                parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                 event = event,
             ).start(
                 userMessage = userMessage,
@@ -130,7 +130,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModel? = AppSettingsState.instance.smartModel.chatModel(),
+            val model: Chatter? = null,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -144,8 +144,8 @@ class MultiStepPatchAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModel,
-        val parsingModel: ChatModel,
+        val model: Chatter,
+        val parsingModel: Chatter,
         val event: AnActionEvent,
     ) {
         val actors = mapOf(

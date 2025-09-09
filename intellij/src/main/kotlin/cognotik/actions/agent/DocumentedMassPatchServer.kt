@@ -1,25 +1,21 @@
 package cognotik.actions.agent
 
 import com.google.common.util.concurrent.Futures
-import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.chat.model.chatModel
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
@@ -55,7 +51,7 @@ class DocumentedMassPatchServer(
          The diff format should use + for line additions, - for line deletions.
          The diff should include 2 lines of context before and after every change.
          """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModel(),
+                model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -123,7 +119,7 @@ class DocumentedMassPatchServer(
                                     ui = ui,
                                     api = api as ChatClientInterface,
                                     shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastModel.chatModel(),
+                                    model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                                     defaultFile = path.toString()
                                 ).renderMarkdown
                             )
@@ -153,7 +149,7 @@ class DocumentedMassPatchServer(
                                             ui = ui,
                                             api = api as ChatClientInterface,
                                             shouldAutoApply = { autoApply },
-                                            model = AppSettingsState.instance.fastModel.chatModel(),
+                                            model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                                             defaultFile = path.toString()
                                         )
                                     }

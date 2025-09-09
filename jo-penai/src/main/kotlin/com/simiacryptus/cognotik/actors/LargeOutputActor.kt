@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.ClientUtil.toChatMessage
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
@@ -36,7 +37,7 @@ class LargeOutputActor(
         5. For the initial iteration, provide a high level document structure with a few expansion markers. Each '...sectionName...' will be expanded in subsequent iterations.
     """.trimIndent(),
     name: String? = null,
-    model: ChatModel,
+    model: Chatter,
     temperature: Double = 0.3,
     private val maxIterations: Int = 3,
     private val namedEllipsisPattern: Regex = Regex("""\.\.\.(?<sectionName>[\w\s\-_]+?)\.\.\."""),
@@ -205,7 +206,7 @@ class LargeOutputActor(
         return accumulatedResponse
     }
 
-    override fun withModel(model: ChatModel): LargeOutputActor {
+    override fun withModel(model: Chatter): LargeOutputActor {
         return LargeOutputActor(
             prompt = this.prompt,
             name = this.name,

@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.proxy.ValidatedObject
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -33,7 +34,7 @@ open class CodingAgent<T : Interpreter>(
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
-    val model: ChatModel,
+    val model: Chatter,
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
 ) {
@@ -45,7 +46,7 @@ open class CodingAgent<T : Interpreter>(
             temperature = temperature,
             details = details,
             model = model,
-            fallbackModel = model as ChatModel
+            fallbackModel = model
         )
     }
 
