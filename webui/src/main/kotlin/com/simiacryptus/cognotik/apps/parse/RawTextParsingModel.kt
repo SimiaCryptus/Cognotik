@@ -1,22 +1,20 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A parsing model for raw text documents that splits text into segments
  * and manages their merging and tagging.
  *
- * @property api The chat client interface for AI operations
  * @property splitRegex Regular expression pattern for splitting text into segments
  * @property maxSegmentLength Maximum length for a single text segment (optional)
  * @property minSegmentLength Minimum length for a single text segment
  * @property maxCacheSize Maximum number of entries in the tag cache
  */
 open class RawTextParsingModel(
-    override val api: ChatClientInterface,
     private val splitRegex: String = SplitPatterns.DEFAULT,
     private val maxSegmentLength: Int? = null,
     private val minSegmentLength: Int = 10,

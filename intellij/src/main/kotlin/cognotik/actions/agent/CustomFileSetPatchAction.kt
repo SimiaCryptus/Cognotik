@@ -985,7 +985,6 @@ class CustomFileSetPatchAction : BaseAction() {
 
                     SessionProxyServer.chats[session] = CustomFileSetPatchServer(
                         config = Settings(userSettings, project),
-                        api = api,
                         autoApply = userSettings.autoApply,
                         outputMode = userSettings.outputMode
                     )

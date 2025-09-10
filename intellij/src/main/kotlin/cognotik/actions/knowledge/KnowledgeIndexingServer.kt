@@ -3,25 +3,25 @@ package cognotik.actions.knowledge
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFiles
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.apps.parse.RawTextParsingModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class KnowledgeIndexingServer(
     val settings: KnowledgeIndexingAction.IndexingSettings,
-    val api: ChatClientInterface,
     val model: EmbeddingModel
 ) : ApplicationServer(
     applicationName = "Knowledge Indexing",
@@ -169,10 +169,14 @@ class KnowledgeIndexingServer(
                             workPool = ui.socketManager!!.pool,
                         ),
                         pool = threadPool,
-                        progressState = progressState,
-                        inputPaths = batch.map { it.absolutePath }.toTypedArray(),
+                        parsingModel = RawTextParsingModel(settings.splitRegex),
                         model = model,
-                        parsingModel = RawTextParsingModel(api, settings.splitRegex),
+                        progressState = progressState,
+                        api = ApplicationServices.clientManager.getChatClient(
+                            session = ui.socketManager?.sessionId!!,
+                            user = IdeaChatClient.localUser,
+                        ),
+                        inputPaths = batch.map { it.absolutePath }.toTypedArray(),
                     )
                     smallResults.addAll(batchResults)
                     batch.forEach { successfulFiles.add(it.name) }
@@ -192,10 +196,14 @@ class KnowledgeIndexingServer(
                             workPool = ui.socketManager!!.pool,
                         ),
                         pool = threadPool,
-                        progressState = progressState,
-                        inputPaths = arrayOf(file.absolutePath),
+                        parsingModel = RawTextParsingModel(settings.splitRegex),
                         model = model,
-                        parsingModel = RawTextParsingModel(api, settings.splitRegex),
+                        progressState = progressState,
+                        api = ApplicationServices.clientManager.getChatClient(
+                            session = ui.socketManager?.sessionId!!,
+                            user = IdeaChatClient.localUser,
+                        ),
+                        inputPaths = arrayOf(file.absolutePath)
                     ).firstOrNull()
                     if (result != null) {
                         successfulFiles.add(file.name)

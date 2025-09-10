@@ -7,7 +7,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.toContentList
@@ -109,9 +108,8 @@ class CreateFileFromDescriptionAction :
         directive: String
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
-        val model = AppSettingsState.instance.smartChatModel
         val chatRequest = ChatRequest(
-            model = model.modelName,
+            model = AppSettingsState.instance.smartChatModel.modelName,
             temperature = AppSettingsState.instance.temperature,
             messages = listOf(
                 ChatMessage(
@@ -134,7 +132,7 @@ class CreateFileFromDescriptionAction :
         )
         try {
             val response = run {
-                AppSettingsState.instance.smartChatModel.instance(api.workPool).chat(chatRequest.messages).choices.firstOrNull()?.message?.content?.trim()
+                AppSettingsState.instance.smartChatClient.chat(chatRequest.messages).choices.firstOrNull()?.message?.content?.trim()
             } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")

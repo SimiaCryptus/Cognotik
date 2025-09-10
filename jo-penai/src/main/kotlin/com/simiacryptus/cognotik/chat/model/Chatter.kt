@@ -10,6 +10,10 @@ interface Chatter {
     val workPool: ExecutorService
     val logStreams: MutableList<java.io.BufferedOutputStream> get() = mutableListOf()
 
+    var budget: Number? // TODO: implement budget tracking
+        get() = null
+        set(value) {}
+
     fun chat(
         messages: List<ApiModel.ChatMessage> = listOf()
     ): ApiModel.ChatResponse

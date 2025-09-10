@@ -21,6 +21,7 @@ interface SeedStrategy : EnabledStrategy {
     ): List<Map<String, Any>>?
 }
 
+@Suppress("unused")
 enum class SeedMethod {
     DuckDuckGoSearch {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {

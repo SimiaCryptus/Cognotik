@@ -1,7 +1,6 @@
 package cognotik.actions.chat
 
  import cognotik.actions.BaseAction
- import cognotik.actions.agent.MultiStepPatchAction
  import cognotik.actions.agent.toFile
  import com.intellij.openapi.actionSystem.ActionUpdateThread
  import com.intellij.openapi.actionSystem.AnActionEvent
@@ -9,10 +8,8 @@ package cognotik.actions.chat
  import com.intellij.openapi.vfs.VirtualFile
  import com.simiacryptus.cognotik.CognotikAppServer
  import com.simiacryptus.cognotik.apps.general.renderMarkdown
- import com.simiacryptus.cognotik.chat.ChatClientInterface
  import com.simiacryptus.cognotik.chat.model.Chatter
  import com.simiacryptus.cognotik.config.AppSettingsState
- import com.simiacryptus.cognotik.config.instance
  import com.simiacryptus.cognotik.input.getReader
  import com.simiacryptus.cognotik.models.ApiModel
  import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -56,8 +53,8 @@ class MultiCodeChatAction : BaseAction() {
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
                 val pool = ApplicationServices.clientManager.getPool(session, null)
-                val model = AppSettingsState.instance.smartChatModel.instance(pool)
-                val parsingModel = AppSettingsState.instance.fastChatModel.instance(pool)
+                val model = AppSettingsState.instance.smartChatClient
+                val parsingModel = AppSettingsState.instance.fastChatClient
                 SessionProxyServer.agents[session] = CodeChatManager(
                     session = session,
                     model = model,
@@ -193,10 +190,6 @@ class MultiCodeChatAction : BaseAction() {
                 
                 "* $path - ${codex.estimateTokenCount(content)} tokens"
             }.joinToString("\n")).renderMarkdown())
-
-            val settings = MultiStepPatchAction.AutoDevApp.Settings()
-            api.budget = settings.budget ?: 2.00
-
             return super.respond( task, userMessage, currentChatMessages, transcriptStream)
         }
     }

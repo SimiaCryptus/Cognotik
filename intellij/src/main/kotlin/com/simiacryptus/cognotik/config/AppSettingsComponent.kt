@@ -15,15 +15,13 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.util.IdeaChatClient
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionEvent
-import java.io.FileOutputStream
 import javax.swing.*
 import javax.swing.event.ListSelectionEvent
 import javax.swing.event.ListSelectionListener
@@ -171,20 +169,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
                             )
                     }
                 }
-            }
-        }
-    })
-
-    @Suppress("unused")
-    val clearApiLog = JButton(object : AbstractAction("Clear API Log") {
-        override fun actionPerformed(e: ActionEvent) {
-            val openAIClient = IdeaChatClient.instance
-            openAIClient.logStreams.retainAll { it.close(); false }
-            AppSettingsState.auxiliaryLog?.let {
-                if (it.exists()) {
-                    it.delete()
-                }
-                openAIClient.logStreams.add(FileOutputStream(it, true).buffered())
             }
         }
     })

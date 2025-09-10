@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
@@ -41,8 +40,8 @@ class UnifiedPlanAction : BaseAction() {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
             e.project, PlanSettings(
-                defaultModel = AppSettingsState.instance.smartChatModel.instance(api.workPool),
-                parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                defaultModel = AppSettingsState.instance.smartChatClient,
+                parsingModel = AppSettingsState.instance.fastChatClient,
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
@@ -275,6 +274,9 @@ class UnifiedPlanAction : BaseAction() {
         describer: TypeDescriber
     ) {
         DataStorage.sessionPaths[session] = root
+        val fastChatModel = AppSettingsState.instance.fastChatClient.getChildClient().apply {
+            budget = apiBudget
+        }
         SessionProxyServer.chats[session] = UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
@@ -285,15 +287,14 @@ class UnifiedPlanAction : BaseAction() {
                 command = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                parsingModel = fastChatModel,
             ),
-            model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
-            parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
-            showMenubar = false,
-            api = api.getChildClient().apply {
+            model = AppSettingsState.instance.smartChatClient.getChildClient().apply {
                 budget = apiBudget
 
             },
+            parsingModel = fastChatModel,
+            showMenubar = false,
             cognitiveStrategy = cognitiveStrategy,
             describer = describer
         )

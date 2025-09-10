@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui
 
+import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.actors.ImageActor
 import com.simiacryptus.cognotik.actors.ParsedActor
@@ -9,6 +10,7 @@ import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import com.simiacryptus.cognotik.apps.parse.DocumentParsingModel
 import com.simiacryptus.cognotik.apps.parse.ParsingModel
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
+import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.groovy.GroovyInterpreter
 import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -16,14 +18,15 @@ import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.simiacryptus.cognotik.webui.test.*
-import com.simiacryptus.cognotik.OpenAIClient
-import com.simiacryptus.cognotik.chat.model.AnthropicModels
+import com.simiacryptus.cognotik.webui.test.CodingActorTestApp
+import com.simiacryptus.cognotik.webui.test.ImageActorTestApp
+import com.simiacryptus.cognotik.webui.test.ParsedActorTestApp
+import com.simiacryptus.cognotik.webui.test.SimpleActorTestApp
 import org.eclipse.jetty.webapp.WebAppContext
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -38,9 +41,16 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
     val model = AnthropicModels.Claude35Haiku
 
     override val childWebApps by lazy {
-        val parsingModel = model
+        val model = model.instance(
+            key = TODO(),
+            base = TODO(),
+            logLevel = TODO(),
+            logStreams = TODO(),
+            workPool = TODO(),
+            temperature = TODO()
+        )
         listOf(
-            ChildWebApp("/chat", BasicChatApp(File("."), model, parsingModel)),
+            ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),
             ChildWebApp(
                 "/test_simple",
                 SimpleActorTestApp(
@@ -90,21 +100,11 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     )
                 )
             ),
-            ChildWebApp(
-                "/test_file_patch", FilePatchTestApp(
-                    api = OpenAIClient(
-                        workPool = Executors.newCachedThreadPool(),
-                        key = emptyMap(),
-                        apiBase = emptyMap()
-                    )
-                )
-            ),
             ChildWebApp("/stressTest", StressTestApp()),
             ChildWebApp(
                 "/pdfExtractor", DocumentParserApp(
                     parsingModel = DocumentParsingModel(
                         model, 0.1,
-                        api = TODO()
                     ) as ParsingModel<DocumentData>
                 )
             ),

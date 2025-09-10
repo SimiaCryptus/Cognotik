@@ -11,7 +11,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -110,9 +109,8 @@ class DiffChatAction : BaseAction() {
             language = language,
             codeSelection = rawText,
             filename = filename,
-            api = api,
-            model = AppSettingsState.instance.smartChatModel.instance(pool),
-            parsingModel = AppSettingsState.instance.fastChatModel.instance(pool),
+            model = AppSettingsState.instance.smartChatClient,
+            parsingModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         ) {
 

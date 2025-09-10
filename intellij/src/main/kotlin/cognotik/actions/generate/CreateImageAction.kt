@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.actors.ImageActor
 import com.simiacryptus.cognotik.actors.ImageResponse
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.imageModel
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.util.*
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -128,7 +127,7 @@ class CreateImageAction : BaseAction() {
                     ${codeSummary()}
                     Special instructions: ${dialog.getInstructions()}
                     """.trimIndent(),
-                    textModel = AppSettingsState.instance.smartChatModel.instance(api.workPool),
+                    textModel = AppSettingsState.instance.smartChatClient,
                     imageModel = AppSettingsState.instance.mainImageModel.imageModel()
                 ).apply { setImageAPI(IdeaOpenAIClient.instance) }
                 log.debug("Sending request to image generation API")

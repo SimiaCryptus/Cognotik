@@ -10,14 +10,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.actors.ChatProxy
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.actors.ChatProxy
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.jsoup.Jsoup
@@ -203,9 +198,8 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> Chatter)
             }
         } ?: false
 
-        fun converter(chatClient: ChatClientInterface, chatModel: Chatter, temp: Double) = ChatProxy(
+        fun converter(chatModel: Chatter, temp: Double) = ChatProxy(
             clazz = VirtualAPI::class.java,
-            api = chatClient,
             model = chatModel,
             temperature = temp
         ).create()
@@ -222,7 +216,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> Chatter)
         val text = clipboardContent.toString().trim()
         if (text.isEmpty()) return ""
         progress?.text = "Converting code format..."
-        val converter = converter(api, model(AppSettingsState.instance), AppSettingsState.instance.temperature)
+        val converter = converter(model(AppSettingsState.instance), AppSettingsState.instance.temperature)
         val convert = converter.convert(text, state.language?.name ?: state.editor?.virtualFile?.extension ?: "")
         return convert.converted_text ?: ""
     }
@@ -246,12 +240,12 @@ private fun String.makeAbsolute(): String {
     }
 }
 
-class SmartPasteAction : PasteActionBase({ it.smartChatModel.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }!! })
+class SmartPasteAction : PasteActionBase({ it.smartChatClient })
 
 /**
  * Fast paste action using faster but simpler model
  */
-class FastPasteAction : PasteActionBase({ it.fastChatModel.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }!! }) {
+class FastPasteAction : PasteActionBase({ it.fastChatClient }) {
     companion object {
     }
 

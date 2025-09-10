@@ -3,9 +3,7 @@ package cognotik.actions.agent
 import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -14,18 +12,13 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
 class DocumentedMassPatchServer(
-    val config: DocumentedMassPatchAction.Settings, val api: ChatClientInterface, val autoApply: Boolean
-    /**
-     * Server for handling documented mass code patches
-     * @param config Settings containing project and file configurations
-     * @param api ChatClient for AI interactions
-     * @param autoApply Whether to automatically apply suggested patches */
+    val config: DocumentedMassPatchAction.Settings,
+    val autoApply: Boolean
 ) : ApplicationServer(
     applicationName = "Documented Code Patch",
     path = "/patchChat",
@@ -50,7 +43,7 @@ class DocumentedMassPatchServer(
          The diff format should use + for line additions, - for line deletions.
          The diff should include 2 lines of context before and after every change.
          """.trimIndent(),
-                model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
+                model = AppSettingsState.instance.smartChatClient,
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -67,7 +60,6 @@ class DocumentedMassPatchServer(
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
         _root = config.project?.basePath?.let { Path.of(it) } ?: Path.of(".")
         val task = ui.newTask(true)
-        val api = api.getChildClient(task)
         val tabs = TabbedDisplay(task)
         val userMessage = config.settings?.transformationMessage ?: "Review and update code according to documentation"
 
@@ -117,7 +109,7 @@ class DocumentedMassPatchServer(
                                     },
                                     ui = ui,
                                     shouldAutoApply = { autoApply },
-                                    model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                                    model = AppSettingsState.instance.fastChatClient,
                                     defaultFile = path.toString()
                                 ).renderMarkdown
                             )
@@ -146,7 +138,7 @@ class DocumentedMassPatchServer(
                                             },
                                             ui = ui,
                                             shouldAutoApply = { autoApply },
-                                            model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                                            model = AppSettingsState.instance.fastChatClient,
                                             defaultFile = path.toString()
                                         )
                                     }

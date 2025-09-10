@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
-import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.jsonCast
@@ -16,7 +16,6 @@ import java.util.concurrent.Future
 open class DocumentParsingModel(
     private val parsingModel: Chatter,
     private val temperature: Double,
-    override val api: ChatClientInterface,
 ) : ParsingModel<DocumentParsingModel.DocumentData> {
 
     override fun merge(

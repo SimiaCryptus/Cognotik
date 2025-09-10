@@ -10,8 +10,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import java.io.BufferedOutputStream
-import java.io.File
-import java.util.concurrent.Executors
+
 
 open class IdeaChatClient(
     key: Map<APIProvider, String> = AppSettingsState.instance.apiKeys?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
@@ -21,7 +20,7 @@ open class IdeaChatClient(
 ) : ProvidersChatClient(
     apiKeyMap = key,
     apiBaseMap = apiBase,
-    workPool = Executors.newCachedThreadPool(),
+    workPool = workPool,
 ) {
 
     override fun apiBase(provider: APIProvider): String {
@@ -47,27 +46,11 @@ open class IdeaChatClient(
     }
 
     companion object {
-
-        val instance by lazy {
-            val client = IdeaChatClient()
-            if (AppSettingsState.instance.apiLog) {
-                try {
-                    val file = File(AppSettingsState.instance.pluginHome, "openai.log")
-                    file.parentFile.mkdirs()
-                    AppSettingsState.auxiliaryLog = file
-                    client.logStreams.add(java.io.FileOutputStream(file, file.exists()).buffered())
-                } catch (e: Exception) {
-                    log.warn("Error initializing log file", e)
-                }
-            }
-            client
-        }
-
+        val instance by lazy { IdeaChatClient() }
         var lastEvent: AnActionEvent? = null
-
-        private val log = LoggerFactory.getLogger(IdeaChatClient::class.java)
         val currentSession = Session.newGlobalID()
         val localUser = User(id = "1", email = "user@localhost")
+        val workPool = ApplicationServices.clientManager.getPool(currentSession, localUser)
     }
 
 }

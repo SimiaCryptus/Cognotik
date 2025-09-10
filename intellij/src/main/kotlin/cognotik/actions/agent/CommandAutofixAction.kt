@@ -20,7 +20,6 @@ import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.CommandConfig
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -116,12 +115,13 @@ class CommandAutofixAction : BaseAction() {
                 val patchApp = CmdPatchApp(
                     root = root,
                     settings = settings,
-                    api = api.getChildClient().apply {
+                    files = files.map { it.toFile }.toTypedArray(),
+                    model = AppSettingsState.instance.smartChatClient.getChildClient().apply {
                         budget = settingsUI.apiBudgetField.value as Double
                     },
-                    files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
-                    parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool)
+                    parsingModel = AppSettingsState.instance.fastChatClient.getChildClient().apply {
+                        budget = settingsUI.apiBudgetField.value as Double
+                    }
                 )
                 val session = Session.newGlobalID()
                 SessionProxyServer.chats[session] = patchApp

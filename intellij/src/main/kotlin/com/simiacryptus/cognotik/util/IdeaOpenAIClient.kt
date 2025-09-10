@@ -1,13 +1,12 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.AIModel
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import org.apache.hc.core5.http.HttpRequest
-import java.io.File
 import java.util.concurrent.Executors
 
 class IdeaOpenAIClient : OpenAIClient(
@@ -46,19 +45,7 @@ class IdeaOpenAIClient : OpenAIClient(
     companion object {
 
         val instance by lazy {
-
-            val client = IdeaOpenAIClient()
-            if (AppSettingsState.instance.apiLog) {
-                try {
-                    val file = File(AppSettingsState.instance.pluginHome, "openai.log")
-                    file.parentFile.mkdirs()
-                    AppSettingsState.auxiliaryLog = file
-                    client.logStreams.add(java.io.FileOutputStream(file, file.exists()).buffered())
-                } catch (e: Exception) {
-                    log.warn("Error initializing log file", e)
-                }
-            }
-            client
+            IdeaOpenAIClient()
         }
         val log = LoggerFactory.getLogger(IdeaOpenAIClient::class.java)
     }

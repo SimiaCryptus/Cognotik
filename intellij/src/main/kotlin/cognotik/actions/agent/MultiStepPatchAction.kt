@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.models.ApiModel
@@ -24,7 +23,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
@@ -110,7 +108,7 @@ class MultiStepPatchAction : BaseAction() {
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
-                model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
+                model = AppSettingsState.instance.smartChatClient
             )
             api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
@@ -119,7 +117,7 @@ class MultiStepPatchAction : BaseAction() {
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                parsingModel = AppSettingsState.instance.fastChatClient,
                 event = event,
             ).start(
                 userMessage = userMessage,

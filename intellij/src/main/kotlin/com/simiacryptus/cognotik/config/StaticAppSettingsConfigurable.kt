@@ -3,15 +3,13 @@ package com.simiacryptus.cognotik.config
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.PluginStartupActivity.Companion.addUserSuppliedModels
 import com.simiacryptus.cognotik.config.AppSettingsState.UserSuppliedModel
-import com.simiacryptus.cognotik.util.EncryptionUtil
-import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.util.EncryptionUtil
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
 import java.awt.*
 import java.io.File
-import java.io.FileOutputStream
 import java.io.FileReader
 import java.io.FileWriter
 import javax.swing.*
@@ -24,17 +22,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         addUserSuppliedModels(
             settingsInstance.userSuppliedModels
                 ?.map { fromJson(it, UserSuppliedModel::class.java) } ?: emptyList())
-        if (settingsInstance.apiLog) {
-            val file = File(AppSettingsState.instance.pluginHome, "openai.log")
-            if (AppSettingsState.auxiliaryLog?.absolutePath?.lowercase() != file.absolutePath.lowercase()) {
-                file.deleteOnExit()
-                AppSettingsState.auxiliaryLog = file
-                IdeaChatClient.instance.logStreams.add(FileOutputStream(file, true).buffered())
-            }
-        } else {
-            AppSettingsState.auxiliaryLog = null
-            IdeaChatClient.instance.logStreams.retainAll { it.close(); false }
-        }
+        AppSettingsState.auxiliaryLog = null
     }
 
     private val password = JPasswordField()
@@ -126,12 +114,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Disable Auto-Open URLs:"))
                         add(component.disableAutoOpenUrls)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Enable API Log:"))
-                        add(component.apiLog)
-                        add(component.openApiLog)
-                        add(component.clearApiLog)
                     })
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Enable Diff Logging:"))
@@ -392,7 +374,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
             component.fastModel.selectedItem = settings.fastModel
             component.smartModel.selectedItem = settings.smartModel
-            component.apiLog.isSelected = settings.apiLog
             component.devActions.isSelected = settings.devActions
             component.mainImageModel.selectedItem = settings.mainImageModel
             component.temperature.text = settings.temperature.toString()
@@ -454,7 +435,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.suppressErrors = component.suppressErrors.isSelected
             settings.fastModel = component.fastModel.selectedItem as String
             settings.smartModel = component.smartModel.selectedItem as String
-            settings.apiLog = component.apiLog.isSelected
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.temperature = component.temperature.text.safeDouble()

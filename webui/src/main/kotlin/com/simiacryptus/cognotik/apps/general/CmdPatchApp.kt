@@ -1,15 +1,10 @@
 package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.set
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -20,11 +15,10 @@ fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMa
 class CmdPatchApp(
     root: Path,
     settings: Settings,
-    api: ChatClientInterface,
     val files: Array<out File>?,
     model: Chatter,
     parsingModel: Chatter,
-) : PatchApp(root.toFile(), settings, api, model, parsingModel = parsingModel) {
+) : PatchApp(root.toFile(), settings, model, parsingModel = parsingModel) {
 
     companion object {
         private val log = LoggerFactory.getLogger(CmdPatchApp::class.java)

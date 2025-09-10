@@ -17,7 +17,6 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.getSelectedFile
 import com.simiacryptus.cognotik.util.getSelectedFolder
@@ -269,7 +268,7 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
     }
 
     private fun transformContent(path: Path, fileContent: String, transformationMessage: String) = run {
-        AppSettingsState.instance.smartChatModel.instance(api.workPool).chat(
+        AppSettingsState.instance.smartChatClient.chat(
             listOf(
                 ApiModel.ChatMessage(
                     ApiModel.Role.system, """

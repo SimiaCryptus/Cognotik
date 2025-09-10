@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.actors
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.gson.reflect.TypeToken
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.DescriptorUtil
@@ -12,11 +11,7 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.toContentList
-import java.lang.reflect.Method
-import java.lang.reflect.Parameter
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Proxy
-import java.lang.reflect.Type
+import java.lang.reflect.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.pow
 import kotlin.reflect.KParameter
@@ -25,10 +20,8 @@ import kotlin.reflect.jvm.javaType
 
 open class ChatProxy<T : Any>(
     val clazz: Class<out T>,
-    val api: ChatClientInterface,
     private var model: Chatter,
     private var temperature: Double = 0.5,
-    private val moderated: Boolean = false,
     val validation: Boolean = true,
     private var maxRetries: Int = 5,
 ) {
@@ -203,11 +196,6 @@ open class ChatProxy<T : Any>(
         request = request.copy(temperature = temperature)
         val json = JsonUtil.toJson(request)
         log.debug("Request JSON: {}", json)
-        if (moderated) {
-            log.info("Moderating request")
-            api.moderate(json)
-        }
-
         val completion = model.chat(request.messages).choices.first().message?.content.orEmpty()
         log.info("Received completion: {}", completion)
         val trimPrefix = trimPrefix(completion)

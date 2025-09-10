@@ -19,10 +19,12 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -69,7 +71,6 @@ data class AppSettingsState(
     var apiThreads: Int = 4,
     var modalTasks: Boolean = false,
     var suppressErrors: Boolean = false,
-    var apiLog: Boolean = false,
     var devActions: Boolean = false,
     var disableAutoOpenUrls: Boolean = false,
     var pluginHome: File = run {
@@ -99,6 +100,8 @@ data class AppSettingsState(
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
 ) : PersistentStateComponent<SimpleEnvelope> {
 
+    val smartChatClient: Chatter get() = smartChatModel.instance(IdeaChatClient.workPool)
+    val fastChatClient: Chatter get() = fastChatModel.instance(IdeaChatClient.workPool)
     val smartChatModel: ChatModel get() = smartModel.chatModel()
     val fastChatModel: ChatModel get() = fastModel.chatModel()
 
@@ -224,7 +227,6 @@ data class AppSettingsState(
         if (apiKeys != other.apiKeys) return false
         if (modalTasks != other.modalTasks) return false
         if (suppressErrors != other.suppressErrors) return false
-        if (apiLog != other.apiLog) return false
         if (devActions != other.devActions) return false
         if (FileUtil.filesEqual(pluginHome, other.pluginHome)) return false
         if (recentCommandsJson != other.recentCommandsJson) return false
@@ -262,7 +264,6 @@ data class AppSettingsState(
         result = 31 * result + (apiKeys?.hashCode() ?: 0)
         result = 31 * result + modalTasks.hashCode()
         result = 31 * result + suppressErrors.hashCode()
-        result = 31 * result + apiLog.hashCode()
         result = 31 * result + devActions.hashCode()
         result = 31 * result + FileUtil.fileHashCode(pluginHome)
         result = 31 * result + recentCommandsJson.hashCode()

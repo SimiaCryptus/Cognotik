@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.cognotik.exceptions.*
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
@@ -13,7 +14,6 @@ import org.apache.hc.core5.http.HttpHeaders
 import org.apache.hc.core5.http.io.SocketConfig
 import org.apache.hc.core5.util.Timeout
 import org.slf4j.Logger
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
@@ -30,6 +30,7 @@ open class HttpClientManager(
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
 ) {
+    @Suppress("unused")
     val createdBy = Thread.currentThread().stackTrace
 
     companion object {

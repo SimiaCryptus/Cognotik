@@ -11,14 +11,15 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.RowLayout
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.SavedPlanConfig
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
@@ -225,7 +226,7 @@ class PlanConfigDialog(
                     val newSettings = CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         settings.getTaskSettings(taskType).enabled,
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
+                        chatter(getVisibleModels().find { it.modelName == modelComboBox.selectedItem }),
                         entries.filter { it.enabled }.map { it.command }.toMutableList())
                     settings.setTaskSettings(taskType, newSettings)
                 }
@@ -306,7 +307,7 @@ class PlanConfigDialog(
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
+                        chatter(getVisibleModels().find { it.modelName == modelComboBox.selectedItem }),
                         (0 until (commandList?.model?.rowCount ?: 0)).filter { row ->
                             (commandList?.model?.getValueAt(
                                 row,
@@ -316,7 +317,9 @@ class PlanConfigDialog(
                             .map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }
+                        this.model = chatter(
+                            getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
+                        )
                     }
                 }
                 settings.setTaskSettings(taskType, newSettings)
@@ -327,13 +330,15 @@ class PlanConfigDialog(
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
+                        chatter(getVisibleModels().find { it.modelName == modelComboBox.selectedItem }),
                         (0 until (commandList?.model?.rowCount ?: 0)).map { row ->
                             commandList?.model?.getValueAt(row, 1) as String
                         }.toMutableList())
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }
+                        this.model = chatter(
+                            getVisibleModels().find { it.modelName == modelComboBox.selectedItem }
+                        )
                     }
                 }
                 settings.setTaskSettings(taskType, newSettings)
@@ -345,13 +350,13 @@ class PlanConfigDialog(
                 TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
-                    model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) },
+                    model = chatter(getVisibleModels().find { it.modelName == modelComboBox.selectedItem }),
                     commandAutoFixCommands = (0 until (commandList?.model?.rowCount ?: 0)).filter { row ->
                         commandList?.model?.getValueAt(row, 0) as Boolean
                     }.map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
 
                 else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                    this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }.let { it?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null)) }
+                    this.model = chatter(getVisibleModels().find { it.modelName == modelComboBox.selectedItem })
                 }
             }
             if (validateModelSelection(taskType, newSettings.model?.modelType)) {
@@ -359,6 +364,9 @@ class PlanConfigDialog(
             }
         }
     }
+
+    private fun chatter(model1: ChatModel?): Chatter? =
+        model1?.instance(ApplicationServices.clientManager.getPool(Session.newGlobalID(), null))
 
     private data class CommandTableEntry(
         var enabled: Boolean, val command: String

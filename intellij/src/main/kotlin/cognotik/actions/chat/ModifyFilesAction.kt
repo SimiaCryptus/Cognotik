@@ -8,10 +8,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -65,8 +63,8 @@ open class ModifyFilesAction(
                 "${getActionName()} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
             )
             val pool = ApplicationServices.clientManager.getPool(session, null)
-            val model = AppSettingsState.instance.smartChatModel.instance(pool)
-            val parsingModel = AppSettingsState.instance.fastChatModel.instance(pool)
+            val model = AppSettingsState.instance.smartChatClient
+            val parsingModel = AppSettingsState.instance.fastChatClient
             SessionProxyServer.agents[session] = PatchChatManager(
                 session = session,
                 model = model,
@@ -200,7 +198,6 @@ open class ModifyFilesAction(
                 "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
             }).renderMarkdown())
             val settings = Settings()
-            api.budget = settings.budget ?: 2.00
             return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }

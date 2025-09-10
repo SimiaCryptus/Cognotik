@@ -6,21 +6,20 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
+import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
-import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -28,7 +27,6 @@ import java.util.regex.Pattern
 
 class EmbeddingSearchServer(
     val settings: EmbeddingSearchAction.SearchSettings,
-    val api: ChatClientInterface,
     val model: EmbeddingModel,
     val files: List<VirtualFile?>,
     root: File

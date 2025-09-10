@@ -74,7 +74,6 @@ class DocumentedMassPatchAction : BaseAction() {
         )
         SessionProxyServer.chats[session] = DocumentedMassPatchServer(
             config = config,
-            api = api,
             autoApply = config.settings?.autoApply ?: false
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

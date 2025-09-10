@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
@@ -233,8 +232,8 @@ class ReplicateCommitAction : BaseAction() {
                          1) predict the files that need to be fixed
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
-                    model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
-                    parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                    model = AppSettingsState.instance.smartChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient,
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
@@ -264,7 +263,7 @@ class ReplicateCommitAction : BaseAction() {
 
                   """.trimIndent() + codeSummary + "\n" + patchFormatPrompt +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
-                            model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
+                            model = AppSettingsState.instance.smartChatClient
                         ).answer(
                             listOf(
                                 """

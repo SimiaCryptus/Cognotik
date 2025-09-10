@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.util.UITools
@@ -157,7 +156,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
         val response =
-            AppSettingsState.instance.smartChatModel.instance(api.workPool).chat(
+            AppSettingsState.instance.smartChatClient.chat(
                 listOf(
                     ChatMessage(
                         Role.system, """

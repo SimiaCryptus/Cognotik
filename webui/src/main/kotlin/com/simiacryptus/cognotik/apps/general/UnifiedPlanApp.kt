@@ -37,7 +37,6 @@ open class UnifiedPlanApp(
     val model: Chatter,
     val parsingModel: Chatter,
     showMenubar: Boolean = true,
-    val api: ChatClientInterface? = null,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
     val useExpansionSyntax: Boolean = true,

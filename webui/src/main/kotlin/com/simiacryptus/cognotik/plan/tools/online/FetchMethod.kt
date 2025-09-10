@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.plan.tools.online
 
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.tools.online.FetchConfig.isSeleniumEnabled
+import com.simiacryptus.cognotik.util.EnabledStrategy
 import com.simiacryptus.cognotik.util.HtmlSimplifier
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Selenium2S3
 import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
-import com.simiacryptus.cognotik.util.EnabledStrategy
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.net.URI
 import java.net.http.HttpRequest
@@ -21,6 +21,7 @@ object FetchConfig {
     var isSeleniumEnabled: Boolean = false
 }
 
+@Suppress("unused")
 enum class FetchMethod {
     HttpClient {
         override fun createStrategy(task: CrawlerAgentTask): FetchStrategy = object : FetchStrategy {

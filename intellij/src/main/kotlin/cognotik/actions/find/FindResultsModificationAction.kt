@@ -16,7 +16,6 @@ import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -27,7 +26,6 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -124,7 +122,7 @@ class FindResultsModificationAction(
             val socketManager = super.newSession(user, session)
             val ui = (socketManager as ApplicationSocketManager).applicationInterface
             val task = ui.newTask()
-            val api = api.getChildClient(task)
+            //val api = api.getChildClient(task)
             val tabs = TabbedDisplay(task)
             usages.entries.map { (file, usages) ->
                 val task = ui.newTask(false)
@@ -144,10 +142,10 @@ class FindResultsModificationAction(
                             "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + patchFormatPrompt
                 }
                 ui.socketManager!!.pool.submit {
-                    val api = api.getChildClient(task)
+                    //val api = api.getChildClient(task)
                     val response = SimpleActor(
                         prompt = prompt,
-                        model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
+                        model = AppSettingsState.instance.smartChatClient
                     ).answer(
                         listOf(
                             fileListingMarkdown

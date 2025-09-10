@@ -21,9 +21,7 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -36,6 +34,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.text.SimpleDateFormat
+import java.util.concurrent.ExecutorService
 import javax.swing.JOptionPane
 
 class AnalyzeProblemAction : AnAction() {
@@ -153,12 +152,14 @@ class AnalyzeProblemAction : AnAction() {
             val task = ui.newTask()
             task.add("Analyzing problem and suggesting fixes...")
             Thread {
-                analyzeProblem(ui, task, api = IdeaChatClient.instance)
+                analyzeProblem(ui, task, IdeaChatClient.workPool)
             }.start()
             return socketManager
         }
 
-        private fun analyzeProblem(ui: ApplicationInterface, task: SessionTask, api: ChatClientInterface) {
+        private fun analyzeProblem(
+            ui: ApplicationInterface, task: SessionTask, pool: ExecutorService
+        ) {
             try {
                 Retryable(ui, task) {
                     val task = ui.newTask(false)
@@ -171,8 +172,8 @@ class AnalyzeProblemAction : AnAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
-                        parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                        model = AppSettingsState.instance.smartChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
                     ).answer(listOf(problemInfo),)
 
                     task.add(
@@ -201,7 +202,7 @@ class AnalyzeProblemAction : AnAction() {
                                     "# $filePath\nFile not found"
                                 }
                             }
-                            task.add(generateAndAddResponse(ui, task, error, summary, api))
+                            task.add(generateAndAddResponse(ui, task, error, summary, pool))
                             task.placeholder
                         }
                     }
@@ -217,7 +218,7 @@ class AnalyzeProblemAction : AnAction() {
             task: SessionTask,
             error: ParsedError,
             summary: String,
-            api: ChatClientInterface
+            pool: ExecutorService
         ): String {
             val response = SimpleActor(
                 prompt = """
@@ -233,7 +234,7 @@ class AnalyzeProblemAction : AnAction() {
             The diff format should use + for line additions, - for line deletions.
             The diff should include 2 lines of context before and after every change.
             """.trimIndent(),
-                model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
+                model = AppSettingsState.instance.smartChatClient
             ).answer(listOf(error.message ?: ""),)
 
             return "<div>${

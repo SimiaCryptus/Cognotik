@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
@@ -36,9 +35,8 @@ class CodeChatAction : BaseAction() {
             language = language,
             codeSelection = editor.caretModel.primaryCaret.selectedText ?: editor.document.text,
             filename = filename,
-            api = api,
-            model = AppSettingsState.instance.smartChatModel.instance(pool),
-            parsingModel = AppSettingsState.instance.fastChatModel.instance(pool),
+            model = AppSettingsState.instance.smartChatClient,
+            parsingModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

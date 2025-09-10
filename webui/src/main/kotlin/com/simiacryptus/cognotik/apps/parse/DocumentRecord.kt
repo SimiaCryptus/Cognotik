@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.apps.parse
 
+import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -176,13 +177,14 @@ data class DocumentRecord(
             parsingModel: ParsingModel<*>,
             model: EmbeddingModel,
             progressState: ProgressState,
+            api: ChatClientInterface,
             vararg inputPaths: String,
         ) = inputPaths.map { inputPath ->
             val infile = File(inputPath)
             val outputPath =
                 infile.parentFile.resolve(infile.name.split("\\.".toRegex(), 2).first() + ".index.data").absolutePath
             // Parse the text content using the parsing model
-            val parser = parsingModel.getFastParser()
+            val parser = parsingModel.getFastParser(api)
             val textContent = infile.readText()
             val parsedDocument = parser(textContent)
             val futureList = mutableListOf<Future<*>>()

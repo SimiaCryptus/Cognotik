@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -24,7 +23,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import org.jetbrains.annotations.NotNull
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -208,8 +206,8 @@ class TestResultAutofixAction : BaseAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
-                        parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
+                        model = AppSettingsState.instance.smartChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
                     ).answer(listOf(testInfo), )
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")
@@ -280,7 +278,7 @@ $projectStructure
                 The diff format should use + for line additions, - for line deletions.
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
-                model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
+                model = AppSettingsState.instance.smartChatClient
             ).answer(listOf(error.message ?: ""), )
             task.add("Processing suggested fixes...")
 

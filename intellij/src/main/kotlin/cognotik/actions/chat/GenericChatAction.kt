@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
@@ -41,8 +40,8 @@ class GenericChatAction : BaseAction() {
                 val pool = ApplicationServices.clientManager.getPool(session, null)
                 SessionProxyServer.agents[session] = ChatSocketManager(
                     session = session,
-                    model = AppSettingsState.instance.smartChatModel.instance(pool),
-                    parsingModel = AppSettingsState.instance.fastChatModel.instance(pool),
+                    model = AppSettingsState.instance.smartChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient,
                     systemPrompt = systemPrompt,
                     applicationClass = ApplicationServer::class.java,
                     storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),

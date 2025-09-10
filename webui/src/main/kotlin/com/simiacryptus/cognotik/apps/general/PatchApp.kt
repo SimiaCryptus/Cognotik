@@ -3,6 +3,8 @@ package com.simiacryptus.cognotik.apps.general
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -14,12 +16,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -30,7 +26,6 @@ import java.util.concurrent.TimeUnit
 abstract class PatchApp(
     override val root: File,
     protected val settings: Settings,
-    private val api: ChatClientInterface,
     val model: Chatter,
     val parsingModel: Chatter,
     private val promptPrefix: String = """The following command was run and produced an error:""",
@@ -273,10 +268,9 @@ abstract class PatchApp(
         val fixTask = ui.newTask(false).apply { tabs["Fix"] = placeholder }
         try {
             log.info("Creating child API client for fix task")
-            val api = api.getChildClient(fixTask)
             val plan = if (outputResult.errors == null) {
                 log.info("No pre-parsed errors, parsing errors from output")
-                parsedErrorsParsedResponse(settings = settings, output = outputResult, api = api)
+                parsedErrorsParsedResponse(settings = settings, output = outputResult)
             } else {
                 log.info("Using pre-parsed errors")
                 object : ParsedResponse<ParsedErrors>(
@@ -308,7 +302,6 @@ abstract class PatchApp(
                 ui = ui,
                 settings = settings,
                 changed = mutableSetOf(),
-                api = api,
                 progressHeader = progressHeader
             )
         } catch (e: Exception) {
@@ -332,7 +325,6 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         settings: Settings,
         changed: MutableSet<Path>,
-        api: ChatClientInterface,
         progressHeader: StringBuilder?
     ) {
         log.info("Starting fixAllErrors")
@@ -394,7 +386,6 @@ abstract class PatchApp(
                             ui,
                             settings.autoFix,
                             changed,
-                            api,
                             task
                         )
                     }
@@ -406,7 +397,7 @@ abstract class PatchApp(
     }
 
     private fun parsedErrorsParsedResponse(
-        settings: Settings, output: OutputResult, api: ChatClientInterface
+        settings: Settings, output: OutputResult
     ): ParsedResponse<ParsedErrors> {
         log.info("Parsing errors from command output")
         val plan = ParsedActor(
@@ -472,11 +463,9 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         autoFix: Boolean,
         changed: MutableSet<Path>,
-        api: ChatClientInterface,
         task: SessionTask,
     ) {
         log.info("Starting fix for error: ${error.message}")
-        val childApi = api.getChildClient(task)
         val paths = ((error.research?.fixFiles ?: emptyList()) +
                 (error.research?.relatedFiles ?: emptyList()) +
                 (error.locations?.map { it.file } ?: emptyList()) +

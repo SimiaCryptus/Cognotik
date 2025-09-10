@@ -8,16 +8,15 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Usage
-import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
+import com.simiacryptus.cognotik.models.ApiModel.Usage
 import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
-import kotlin.collections.toMutableMap
 
 @JsonDeserialize(using = ChatModelsDeserializer::class)
 @JsonSerialize(using = ChatModelsSerializer::class)
@@ -110,11 +109,4 @@ class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
 
 fun String.chatModel(): ChatModel = (values().entries.find {
     it.key.equals(this, true) || it.value.modelName.equals(this, true)
-}?.value ?: ChatModel(
-    name = this,
-    modelName = this,
-    maxTotalTokens = 4096,
-    provider = APIProvider.Companion.OpenAI,
-    inputTokenPricePerK = 0.0,
-    outputTokenPricePerK = 0.0
-))
+}?.value ?: throw IllegalArgumentException("Unknown model: $this"))

@@ -9,14 +9,12 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
-import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -77,9 +75,8 @@ class ChatWithCommitAction : AnAction() {
             language = "diff",
             codeSelection = diffInfo,
             filename = "commit_changes.diff",
-            api = IdeaChatClient.instance,
-            model = AppSettingsState.instance.smartChatModel.instance(pool),
-            parsingModel = AppSettingsState.instance.fastChatModel.instance(pool),
+            model = AppSettingsState.instance.smartChatClient,
+            parsingModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(

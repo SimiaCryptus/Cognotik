@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -195,7 +194,7 @@ class FindResultsChatAction(
                              You are a helpful AI that helps people understand code.
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
-                            model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
+                            model = AppSettingsState.instance.smartChatClient
                         ).answer(listOf(userMessage),)
                     ) + "</div>"
                 )

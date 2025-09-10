@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.apps.general.ValidationPatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -50,10 +49,9 @@ class ValidateCodeAction : BaseAction() {
                 val patchApp = ValidationPatchApp(
                     root = root.toFile(),
                     settings = settings,
-                    api = api,
                     files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
-                    parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool)
+                    model = AppSettingsState.instance.smartChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient
                 )
 
                 SessionProxyServer.chats[session] = patchApp
