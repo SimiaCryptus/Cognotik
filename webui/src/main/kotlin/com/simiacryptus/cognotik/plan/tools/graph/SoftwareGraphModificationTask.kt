@@ -99,7 +99,6 @@ class SoftwareGraphModificationTask(
                 "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
                 "Modification goal: ${taskConfig.modification_goal}"
             ),
-            api = api
         )
 
         val deltaGraph = response.obj

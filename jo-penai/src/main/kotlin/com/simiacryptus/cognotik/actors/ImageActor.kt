@@ -63,8 +63,8 @@ open class ImageActor(
         return ImageIO.read(URL(url))
     }
 
-    override fun respond(input: List<String>, api: ChatClientInterface, vararg messages: ChatMessage): ImageResponse {
-        var text = response(*messages, api = api).choices.first().message?.content
+    override fun respond(input: List<String>, vararg messages: ChatMessage): ImageResponse {
+        var text = response(*messages).choices.first().message?.content
             ?: throw RuntimeException("No response")
         while (imageModel.maxPrompt <= text.length && null != openAI) {
             text = response(
@@ -75,8 +75,7 @@ open class ImageActor(
                         "Please shorten the description".toChatMessage(),
                     ),
                 ).flatten().toTypedArray(),
-                model = imageModel,
-                api = api
+                model = imageModel
             ).choices.first().message?.content ?: throw RuntimeException("No response")
         }
         return ImageResponseImpl(text, api = this.openAI ?: throw RuntimeException("No API"))

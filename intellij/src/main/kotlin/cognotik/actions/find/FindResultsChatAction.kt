@@ -196,7 +196,7 @@ class FindResultsChatAction(
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
                             model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
-                        ).answer(listOf(userMessage), api = api)
+                        ).answer(listOf(userMessage),)
                     ) + "</div>"
                 )
                 task.placeholder

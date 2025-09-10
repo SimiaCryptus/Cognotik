@@ -44,7 +44,6 @@ class GenericChatAction : BaseAction() {
                     model = AppSettingsState.instance.smartChatModel.instance(pool),
                     parsingModel = AppSettingsState.instance.fastChatModel.instance(pool),
                     systemPrompt = systemPrompt,
-                    api = api,
                     applicationClass = ApplicationServer::class.java,
                     storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
                     budget = 2.0

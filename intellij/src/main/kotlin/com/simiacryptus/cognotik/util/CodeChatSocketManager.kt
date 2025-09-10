@@ -24,7 +24,6 @@ open class CodeChatSocketManager(
     parsingModel = parsingModel,
     userInterfacePrompt = "# `$filename`\n\n```$language\n$codeSelection\n```".renderMarkdown(),
     systemPrompt = "\nYou are a helpful AI that helps people with coding.\n\nYou will be answering questions about the following code located in `$filename`:\n\n```$language\n$codeSelection\n```\n\nResponses may use markdown formatting, including code blocks.",
-    api = api,
     applicationClass = ApplicationServer::class.java,
     storage = storage,
     budget = 2.0,

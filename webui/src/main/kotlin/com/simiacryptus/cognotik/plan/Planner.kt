@@ -102,7 +102,6 @@ open class Planner {
         return planningActor.respond(
             messages = planningActor.chatMessages(inStrings),
             input = inStrings,
-            api = api
         ).map(Map::class.java) {
             it.tasksByID ?: emptyMap<String, TaskConfigBase>()
         } as ParsedResponse<Map<String, TaskConfigBase>>

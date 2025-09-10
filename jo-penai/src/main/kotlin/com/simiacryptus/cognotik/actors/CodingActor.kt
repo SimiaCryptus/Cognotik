@@ -1,18 +1,16 @@
 package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.OutputInterceptor
-import com.simiacryptus.cognotik.interpreter.Interpreter
-import com.simiacryptus.cognotik.util.FailedToImplementException
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.FailedToImplementException
 import java.util.*
 import javax.script.ScriptException
 import kotlin.reflect.KClass
-import kotlin.text.iterator
 
 private const val TT = "`" + "`" + "`"
 typealias CodeInterceptor = (String) -> String
@@ -132,13 +130,11 @@ ${details ?: ""}
 
     override fun respond(
         input: CodeRequest,
-        api: ChatClientInterface,
         vararg messages: ChatMessage,
     ): CodeResult {
         var result = CodeResultImpl(
             *messages,
             input = input,
-            api = (api as ChatClientInterface)
         )
         if (!input.autoEvaluate) return result
         for (i in 0..input.fixIterations) try {
@@ -153,7 +149,7 @@ ${details ?: ""}
                 )
                 throw ex
             }
-            val respondWithCode = fixCommand(api, result.code, ex, model = model, messages)
+            val respondWithCode = fixCommand(result.code, ex, model = model, messages)
             val blocks = extractTextBlocks(respondWithCode)
             val renderedResponse = getRenderedResponse(blocks)
             val codedInstruction = codeInterceptor(getCode(language, blocks))
@@ -194,7 +190,6 @@ ${details ?: ""}
             result = CodeResultImpl(
                 *messages,
                 input = input,
-                api = api,
                 givenCode = codedInstruction,
                 givenResponse = renderedResponse
             )
@@ -240,7 +235,6 @@ ${details ?: ""}
     inner class CodeResultImpl(
         vararg val messages: ChatMessage,
         private val input: CodeRequest,
-        private val api: ChatClientInterface,
         private val givenCode: String? = null,
         private val givenResponse: String? = null,
     ) : CodeResult {
@@ -277,7 +271,7 @@ ${details ?: ""}
             val request = ChatRequest(messages = ArrayList(this.messages.toList()))
             for (codingAttempt in 0..input.fixRetries) {
                 try {
-                    val codeBlocks = extractTextBlocks(chat(api, request, model))
+                    val codeBlocks = extractTextBlocks(chat(request, model))
                     val renderedResponse = getRenderedResponse(codeBlocks)
                     val codedInstruction = codeInterceptor(getCode(language, codeBlocks))
                     log.debug(
@@ -341,7 +335,7 @@ ${TT}
                                 )
                             log.debug("Validation failed - ${ex.message}")
                             _status = CodeResult.Status.Correcting
-                            val respondWithCode = fixCommand(api, workingCode, ex, model = model, messages)
+                            val respondWithCode = fixCommand(workingCode, ex, model = model, messages)
                             val codeBlocks = extractTextBlocks(respondWithCode)
                             workingRenderedResponse = getRenderedResponse(codeBlocks)
                             workingCode = codeInterceptor(getCode(language, codeBlocks))
@@ -397,13 +391,11 @@ ${TT}
     }
 
     private fun fixCommand(
-        api: ChatClientInterface,
         previousCode: String,
         error: Throwable,
         model: Chatter,
         vararg promptMessages: Array<out ChatMessage>
     ): String = chat(
-        api = api,
         request = ChatRequest(
             messages = ArrayList(
                 promptMessages.toList() + listOf(
@@ -433,7 +425,7 @@ Correct the code and try again.
         model = model
     )
 
-    private fun chat(api: ChatClientInterface, request: ChatRequest, model: Chatter): String {
+    private fun chat(request: ChatRequest, model: Chatter): String {
         return model.chat(request.messages)
             .choices.first().message?.content.orEmpty().trim()
     }
@@ -526,43 +518,8 @@ Correct the code and try again.
                 .joinToString("\n") + "\n\n" + bodyWrapper(otherCode.joinToString("\n"))
         }
 
-        fun String.camelCase(locale: Locale = Locale.getDefault()): String {
-            val words = fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }
-            return words.first().lowercase(locale) + words.drop(1).joinToString("") {
-                it.replaceFirstChar { c ->
-                    when {
-                        c.isLowerCase() -> c.titlecase(locale)
-                        else -> c.toString()
-                    }
-                }
-            }
-        }
-
-        fun String.pascalCase(locale: Locale = Locale.getDefault()): String =
-            fromPascalCase().split(" ").map { it.trim() }.filter { it.isNotEmpty() }.joinToString("") {
-                it.replaceFirstChar { c ->
-                    when {
-                        c.isLowerCase() -> c.titlecase(locale)
-                        else -> c.toString()
-                    }
-                }
-            }
-
-        private fun String.fromPascalCase(): String = buildString {
-            var lastChar = ' '
-            for (c in this@fromPascalCase) {
-                if (c.isUpperCase() && lastChar.isLowerCase()) append(' ')
-                append(c)
-                lastChar = c
-            }
-        }
-
         fun String.imports(): List<String> {
             return this.split("\n").filter { it.trim().startsWith("import ") }.distinct().sorted()
-        }
-
-        fun String.stripImports(): String {
-            return this.split("\n").filter { !it.trim().startsWith("import ") }.joinToString("\n")
         }
 
         fun errorMessage(ex: ScriptException, code: String) = try {

@@ -444,55 +444,6 @@ open class OpenAIClient(
         return JsonUtil.objectMapper().readValue(result, ModelListResponse::class.java)
     }
 
-    open fun createEmbedding(
-        request: EmbeddingRequest
-    ): EmbeddingResponse {
-        return withReliability {
-            withPerformanceLogging {
-                if (request.input is String) {
-                    log(
-                        msg = String.format(
-                            "Embedding Creation Request\nModel:\n\t%s\nInput:\n\t%s\n",
-                            request.model,
-                            request.input.lineSequence()
-                                .map {
-                                    when {
-                                        it.isBlank() -> {
-                                            when {
-                                                it.length < "  ".length -> "  "
-                                                else -> it
-                                            }
-                                        }
-
-                                        else -> "  " + it
-                                    }
-                                }
-                                .joinToString("\n")
-                        )
-                    )
-                }
-                val result = post(
-                    "${apiBase[provider]}/embeddings", StringUtil.restrictCharacterSet(
-                        JsonUtil.objectMapper().writeValueAsString(request), allowedCharset
-                    ), provider
-                )
-                log.info("Embedding creation response received")
-                checkError(result)
-                val response = JsonUtil.objectMapper().readValue(
-                    result, EmbeddingResponse::class.java
-                )
-                if (response.usage != null) {
-                    val model = EmbeddingModel.values().values.find { it.modelName.equals(request.model, true) }
-                    onUsage(
-                        model,
-                        response.usage.copy(cost = model?.pricing(response.usage))
-                    )
-                }
-                response
-            }
-        }
-    }
-
     open fun createImage(request: ImageGenerationRequest): ImageGenerationResponse = withReliability {
         withPerformanceLogging {
             val url = "${apiBase[provider]}/images/generations"

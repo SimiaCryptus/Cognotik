@@ -191,7 +191,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         } ?: "",
                         getInputFileWithDiff(),
                         this.taskConfig?.task_description ?: "",
-                    )).filter { it.isNotBlank() }, api
+                    )).filter { it.isNotBlank() }
                 )
                 if (agent.planSettings.autoFix) {
                     val markdown = renderMarkdown(codeResult, ui = agent.ui) {
@@ -205,7 +205,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 }
                             },
                             ui = agent.ui,
-                            api = api,
                             shouldAutoApply = { agent.planSettings.autoFix },
                             model = taskSettings.model ?: planSettings.defaultModel,
                             defaultFile = defaultFile
@@ -225,7 +224,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 }
                             },
                             ui = agent.ui,
-                            api = api,
                             model = taskSettings.model ?: planSettings.defaultModel,
                             defaultFile = defaultFile,
                         ) + acceptButtonFooter(agent.ui) {

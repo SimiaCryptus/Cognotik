@@ -128,7 +128,6 @@ open class ModifyFilesAction(
         model = model,
         parsingModel = parsingModel,
         systemPrompt = "",
-        api = api,
         applicationClass = ApplicationServer::class.java,
         storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
         budget = 2.0,
@@ -184,7 +183,6 @@ open class ModifyFilesAction(
                     }
                 },
                 ui = ui,
-                api = api,
                 defaultFile = if (files.size == 1) files.first().let {
                     root.toPath().resolve(it).toFile().absolutePath
                 } else null,
@@ -192,7 +190,6 @@ open class ModifyFilesAction(
         }
 
         override fun respond(
-            api: ChatClientInterface,
             task: SessionTask,
             userMessage: String,
             currentChatMessages: List<ApiModel.ChatMessage>,
@@ -204,7 +201,7 @@ open class ModifyFilesAction(
             }).renderMarkdown())
             val settings = Settings()
             api.budget = settings.budget ?: 2.00
-            return super.respond(api, task, userMessage, currentChatMessages, transcriptStream)
+            return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 

@@ -257,32 +257,6 @@ open class RawTextParsingModel(
         }
     }
 
-    /**
-     * Clears the tag cache and resets cache statistics.
-     */
-    fun clearCache() {
-        synchronized(tagCache) {
-            tagCache.clear()
-        }
-        cacheHits.set(0)
-        cacheMisses.set(0)
-        log.debug("Tag cache cleared")
-    }
-
-    /**
-     * Gets current cache statistics.
-     *
-     * @return Map containing cache statistics
-     */
-    fun getCacheStats(): Map<String, Any> = mapOf(
-        "size" to tagCache.size,
-        "hits" to cacheHits.get(),
-        "misses" to cacheMisses.get(),
-        "hitRate" to if (cacheHits.get() + cacheMisses.get() > 0)
-            cacheHits.get().toDouble() / (cacheHits.get() + cacheMisses.get())
-        else 0.0
-    )
-
 
     override fun newDocument() = RawTextData()
 
@@ -308,14 +282,8 @@ open class RawTextParsingModel(
          */
         object SplitPatterns {
             const val DEFAULT = """(?<=[.!?])\s+|\n{2,}|\n(?=[A-Z])"""
-            const val SENTENCE = """(?<=[.!?])\s+"""
-            const val PARAGRAPH = """\n{2,}"""
-            const val SENTENCE_OR_PARAGRAPH = """(?<=[.!?])\s+|\n{2,}"""
             const val LINE = """\n"""
-            const val MARKDOWN_SECTION = """(?=^#{1,6}\s)"""
-            const val CODE_BLOCK = """```[\s\S]*?```"""
             const val WHITESPACE = """\s+"""
-            const val WORD = """\b"""
         }
     }
 }

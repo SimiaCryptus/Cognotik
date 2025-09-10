@@ -48,7 +48,6 @@ abstract class InterpreterTestBase {
     }
 
     class FooBar {
-        fun bar() = "Foo says Hello World"
     }
 
     @Test

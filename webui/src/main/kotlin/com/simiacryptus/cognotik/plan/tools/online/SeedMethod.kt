@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.plan.tools.online
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.util.EnabledStrategy
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.net.URI

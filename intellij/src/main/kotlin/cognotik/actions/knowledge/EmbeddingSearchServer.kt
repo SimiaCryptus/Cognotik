@@ -41,10 +41,7 @@ class EmbeddingSearchServer(
 
     companion object {
         private val log = LoggerFactory.getLogger(EmbeddingSearchServer::class.java)
-        private const val MAX_CONTEXT_LENGTH = 5000
-        private const val SEARCH_TIMEOUT_SECONDS = 30L
         private const val MAX_CONCURRENT_SEARCHES = 4
-        private const val EMBEDDING_CACHE_SIZE = 100
     }
 
     override val inputCnt = 0
@@ -288,18 +285,6 @@ class EmbeddingSearchServer(
         } catch (e: Exception) {
             log.warn("Error getting context summary for ${record.sourcePath}:${record.jsonPath}", e)
             "Context summary unavailable: ${e.message}"
-        }
-    }
-
-    private fun summarizeTextContext(sourceFile: File, jsonPath: String): String {
-        val linePattern = Regex("""content_list\[(\d+)]""")
-        val match = linePattern.matchEntire(jsonPath)
-        if (match != null) {
-            val chunkIndex = match.groupValues[1].toIntOrNull() ?: return "Invalid line index in path: $jsonPath"
-            // TODO: Parse document using parsing model to extract position and surrounding context
-            TODO()
-        } else {
-            return "Unrecognized text path format: $jsonPath"
         }
     }
 

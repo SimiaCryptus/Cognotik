@@ -136,7 +136,6 @@ class DataTableCompilationTask(
             listOf(
                 fileContentString
             ),
-            api = api
         )
         val columns = columnsResponse.obj
         val columnsList = columns.columns.map {
@@ -181,7 +180,6 @@ class DataTableCompilationTask(
                 fileContentString,
                 "Columns:\n" + columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }
             ),
-            api = api
         )
 
         task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows", ui = agent.ui))
@@ -227,7 +225,6 @@ class DataTableCompilationTask(
                         "### ${file.name}\n```\n${readFileContent(file).indent("  ")}\n```"
                     }
                 ),
-                api = api
             )
 
             val rowData = rowDataResponse.obj

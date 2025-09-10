@@ -8,9 +8,6 @@ interface TextBlock {
 
     fun rawString(): Array<out CharSequence>
 
-    val textBlock: CharSequence
-        get() = rawString().joinToString(DELIMITER)
-
     fun withIndent(indent: CharSequence): TextBlock
 
 }

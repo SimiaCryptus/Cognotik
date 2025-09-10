@@ -135,7 +135,7 @@ open class TaskChatMode(
                         "Please choose a single task to execute based on the current conversation."
                     )
 
-            val answer = parsedActor.answer(input, api)
+            val answer = parsedActor.answer(input)
             val chosenTasks = answer.obj.tasks?.firstOrNull()
                 ?: throw IllegalStateException("No task was selected")
 

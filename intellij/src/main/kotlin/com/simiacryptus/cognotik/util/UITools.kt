@@ -587,13 +587,6 @@ object UITools {
         showOptionDialog(panel, "OK", title = title, modal = true)
     }
 
-    fun showInfoMessage(message: String, title: String) {
-        val panel = panel {
-            row { label(message) }
-        }
-        showOptionDialog(panel, "OK", title = title, modal = true)
-    }
-
 }
 
 fun AnActionEvent.getSelectedFiles(): List<VirtualFile> {
@@ -749,26 +742,6 @@ fun AnActionEvent.futureCallback(
 
     override fun onFailure(t: Throwable) {
         UITools.error(UITools.log, "Error", t)
-    }
-}
-
-fun Document.insertSubString(startOffset: Int, newText: CharSequence): Runnable {
-    this.insertString(startOffset, newText)
-    UITools.log.debug(String.format("FWD insertString @ %s (%s): %s", startOffset, newText.length, newText))
-    return Runnable {
-        val verifyTxt = getText(TextRange(startOffset, startOffset + newText.length))
-        if (verifyTxt != newText) {
-            val message = String.format(
-                "The text range from %d to %d does not match the expected text \"%s\" and is instead \"%s\"",
-                startOffset,
-                startOffset + newText.length,
-                newText,
-                verifyTxt
-            )
-            throw AssertionError(message)
-        }
-        this.deleteString(startOffset, startOffset + newText.length)
-        UITools.log.debug(String.format("REV deleteString from %s to %s", startOffset, startOffset + newText.length))
     }
 }
 

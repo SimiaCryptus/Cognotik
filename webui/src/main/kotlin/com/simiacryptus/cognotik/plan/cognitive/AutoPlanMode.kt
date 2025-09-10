@@ -354,8 +354,7 @@ $fullTaskDataJson
         Please choose the next single task to execute based on the current status.
         If there are no tasks to execute, return {}.
         """.trimIndent()
-            ) + formatEvalRecords(), api
-
+            ) + formatEvalRecords(),
         )
 
 
@@ -420,7 +419,7 @@ $fullTaskDataJson
         val match = expansionExpressionPattern.find(currentText)
         if (match == null) {
             return try {
-                val chosenTasks = parsedActor.getParser(api).apply(currentText)
+                val chosenTasks = parsedActor.getParser().apply(currentText)
                 listOf(TaskData(chosenTasks, currentText))
             } catch (e: Exception) {
                 log.error("Error parsing task text: $currentText", e)
@@ -488,7 +487,7 @@ $fullTaskDataJson
             parsingModel = planSettings.parsingModel,
             temperature = planSettings.temperature,
             describer = describer
-        ).answer(listOf(userMessage) + contextData(), api).obj
+        ).answer(listOf(userMessage) + contextData()).obj
     }
 
     private fun updateThinking(
@@ -570,7 +569,6 @@ $fullTaskDataJson
                             ?: "")
                 } +
                 (currentUserMessage.get()?.let { listOf("User message: $it") } ?: listOf()),
-        api
     ).obj.apply {
         currentUserMessage.set(null)
         knowledge?.facts?.apply {

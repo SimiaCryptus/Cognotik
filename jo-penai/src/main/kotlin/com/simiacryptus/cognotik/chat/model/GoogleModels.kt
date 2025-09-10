@@ -2,9 +2,8 @@ package com.simiacryptus.cognotik.chat.model
 
 import com.simiacryptus.cognotik.models.APIProvider
 
+@Suppress("unused")
 object GoogleModels {
-    // Deprecated models
-
     val GeminiPro_15 = ChatModel(
         name = "GeminiPro_15",
         modelName = "gemini-1.5-pro",
@@ -83,7 +82,7 @@ object GoogleModels {
         inputTokenPricePerK = 0.0001,
         outputTokenPricePerK = 0.0004
     )
-    
+
     val GeminiPro_25 = ChatModel(
         name = "GeminiPro_25",
         modelName = "gemini-2.5-pro",
@@ -157,7 +156,7 @@ object GoogleModels {
         inputTokenPricePerK = 0.0015,
         outputTokenPricePerK = 0.006
     )
-    
+
     val values = mapOf(
         "GeminiPro_15" to GeminiPro_15,
         "GeminiFlash_15" to GeminiFlash_15,
@@ -166,14 +165,9 @@ object GoogleModels {
         "GeminiFlash_20" to GeminiFlash_20,
         "GeminiFlash_20_Lite" to GeminiFlash_20_Lite,
         "GeminiFlash_20_Live" to GeminiFlash_20_Live,
-//        "GeminiFlash_20_Preview_Image_Generation" to GeminiFlash_20_Preview_Image_Generation,
         "GeminiPro_25" to GeminiPro_25,
         "GeminiFlash_25" to GeminiFlash_25,
         "GeminiFlash_25_Lite" to GeminiFlash_25_Lite,
         "GeminiFlash_25_Live" to GeminiFlash_25_Live,
-//        "GeminiFlash_25_Preview_Native_Audio_Dialog" to GeminiFlash_25_Preview_Native_Audio_Dialog,
-//        "GeminiFlash_25_Exp_Native_Audio_Thinking_Dialog" to GeminiFlash_25_Exp_Native_Audio_Thinking_Dialog,
-//        "GeminiFlash_25_Preview_TTS" to GeminiFlash_25_Preview_TTS,
-//        "GeminiPro_25_Preview_TTS" to GeminiPro_25_Preview_TTS,
     )
 }

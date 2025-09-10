@@ -238,7 +238,7 @@ class ReplicateCommitAction : BaseAction() {
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
-                    ), api = api
+                    ),
                 )
                 task.add(
                     AgentPatterns.displayMapInTabs(
@@ -276,7 +276,7 @@ class ReplicateCommitAction : BaseAction() {
 
                               Focus on the task at hand:
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
-                            ), api = api
+                            ),
                         )
                         var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
                             ui.socketManager!!,
@@ -288,7 +288,6 @@ class ReplicateCommitAction : BaseAction() {
                                 }
                             },
                             ui = ui,
-                            api = api,
                         )
                         task.add(renderMarkdown(markdown))
                         task.placeholder

@@ -34,17 +34,6 @@ interface CognitiveMode {
     fun contextData(): List<String>
 }
 
-// Optionally, you can add a static registry for all available modes
-object CognitiveModes {
-    val allModes: Map<String, CognitiveModeStrategy> = mapOf(
-        "AutoPlan" to AutoPlanMode,
-        "PlanAhead" to PlanAheadMode,
-        "TaskChat" to TaskChatMode,
-        "GoalOriented" to GoalOrientedMode,
-        // Add others as needed
-    )
-}
-
 interface CognitiveModeStrategy {
     val inputCnt: Int
 

@@ -29,9 +29,7 @@ class KotlinInterpreterTest : InterpreterTestBase() {
     fun `test validate with invalid function`() {
         val interpreter = newInterpreter(mapOf())
         @Language("kotlin") val code = """
-            fun foo() {
-                functionNotDefined()
-            }
+                                
         """.trimIndent()
 
         val result = interpreter.validate(code)

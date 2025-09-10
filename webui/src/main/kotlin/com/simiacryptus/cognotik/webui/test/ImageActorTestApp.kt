@@ -39,7 +39,7 @@ open class ImageActorTestApp(
             val actor = getSettings<Settings>(session, user)?.actor ?: actor
             message.echo(userMessage.renderMarkdown)
             val response = actor.answer(
-                listOf(userMessage), api = api
+                listOf(userMessage)
             )
             message.verbose(response.text)
             message.image(response.image)

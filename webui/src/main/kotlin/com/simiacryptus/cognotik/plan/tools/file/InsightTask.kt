@@ -110,7 +110,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${this.taskConfig?.toJson()}"
             },
             heading = "",
-            initialResponse = { it: String -> insightActor.answer(toInput(it), api = api) },
+            initialResponse = { it: String -> insightActor.answer(toInput(it)) },
             outputFn = { design: String ->
                 MarkdownUtil.renderMarkdown(design, ui = agent.ui)
             },
@@ -124,7 +124,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 insightActor.respond(
                     messages = messages,
                     input = toInput(inStr),
-                    api = api
                 )
             },
             atomicRef = AtomicReference(),
@@ -137,7 +136,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     )
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
             ),
-            api = api
         ).apply {
             task.add(MarkdownUtil.renderMarkdown(this, ui = agent.ui))
         }

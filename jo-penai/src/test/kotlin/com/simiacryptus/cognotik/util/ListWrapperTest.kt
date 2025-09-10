@@ -9,19 +9,7 @@ import kotlin.reflect.typeOf
 @OptIn(ExperimentalStdlibApi::class)
 class ListWrapperTest {
 
-    data class Person(val name: String? = null, val age: Int? = null)
-
-    data class Team(val members: ListWrapper<Person>? = null)
-
     private val objectMapper = JsonUtil.objectMapper()
-
-    fun testSerializationOfComplexObject() {
-        val team = Team(ListWrapper(listOf(Person("Alice", 30), Person("Bob", 25))))
-        val mapper = objectMapper
-        val json = mapper.writeValueAsString(team)
-        val deserialized = mapper.readValue(json, Team::class.java)
-        assertEquals(team, deserialized)
-    }
 
     @Test
     fun testDeepClone() {

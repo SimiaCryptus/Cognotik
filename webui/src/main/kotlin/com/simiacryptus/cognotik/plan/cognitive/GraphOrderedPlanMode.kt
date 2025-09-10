@@ -135,7 +135,7 @@ open class GraphOrderedPlanMode(
                             "Current aggregated plan so far (if any):\n```json\n${JsonUtil.toJson(cumulativeTasks)}\n```",
                             "Complete Software Graph from file `$graphFile` is given below:\n```json\n$graphFileContent\n```",
                             "User Instruction/Query: $userMessage\nPlease evaluate the context and provide your suggested changes or instructions to improve the software plan."
-                        ), api = api
+                        ),
             ).obj.dependencies.forEach { (taskToEdit, newUpstreams) ->
 
                 val task = cumulativeTasks[taskToEdit]
@@ -282,7 +282,7 @@ open class GraphOrderedPlanMode(
                                 "Complete Software Graph from file `$graphFile` is given below:\n```json\n$graphTxt\n```",
                                 "Details of the focused node with ID `${node.id}`:\n```json\n${JsonUtil.toJson(node)}\n```",
                                 "User Instruction/Query: $userMessage\nPlease evaluate the context and provide your suggested changes or instructions to improve the software plan."
-                            ).filter { it.isNotBlank() }, api = api
+                            ).filter { it.isNotBlank() },
                 ).obj.tasksByID?.mapKeys { combine(node, it.key) }?.mapValues {
                     it.value.task_dependencies = it.value.task_dependencies?.map { combine(node, it) }?.toMutableList();
                     it.value

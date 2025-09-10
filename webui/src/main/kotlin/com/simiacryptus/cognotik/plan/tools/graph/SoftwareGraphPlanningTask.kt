@@ -48,7 +48,7 @@ class SoftwareGraphPlanningTask(
             (messages + listOf(
                 "Software Graph `${taskConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
                 "Instruction: ${taskConfig.instruction}"
-            )).filter { it.isNotBlank() }, api = api
+            )).filter { it.isNotBlank() },
         )
         val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { response.obj.tasksByID } ?: emptyMap()
         val planSummary = buildString {

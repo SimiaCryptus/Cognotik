@@ -33,16 +33,7 @@ cognotik-interpreter/
 The `Interpreter` interface defines the contract that all language-specific interpreters must implement:
 
 ```kotlin
-interface Interpreter {
-    fun getLanguage(): String
-    fun getSymbols(): Map<String, Any>
-    fun run(code: String): Any?
-    fun validate(code: String): Throwable?
 
-    // Optional overrides
-    fun wrapCode(code: String): String = code
-    fun <T : Any> wrapExecution(fn: java.util.function.Supplier<T?>): T? = fn.get()
-}
 ```
 
 #### Key Methods
@@ -91,14 +82,7 @@ if (error != null) {
 #### Configuration
 
 ```kotlin
-class KotlinInterpreter(
-    val defs: Map<String, Any> = mapOf(),
-) : Interpreter {
 
-    // Custom script engine configuration
-    open val scriptEngine: KotlinJsr223JvmScriptEngineBase
-        get() = // ... engine setup with classpath and evaluation config
-}
 ```
 
 ### Groovy Interpreter
@@ -183,43 +167,13 @@ println("Captured: $output")
 The interpreter subsystem integrates with `CodingAgent` for AI-powered code generation and execution:
 
 ```kotlin
-class CodingAgent<T : Interpreter>(
-    val interpreter: KClass<T>,
-    val symbols: Map<String, Any>,
-    // ... other parameters
-) {
 
-    val actor by lazy {
-        CodingActor(
-            interpreter,
-            symbols = symbols,
-            // ... configuration
-        )
-    }
-}
 ```
 
 ### Usage in Planning Tasks
 
 ```kotlin
-class RunCodeTask<T : Interpreter>(
-    val interpreter: KClass<T>,
-    // ... other parameters
-) : AbstractTask<RunCodeTaskConfigData> {
 
-    override fun run(/* ... */) {
-        val codingAgent = CodingAgent<T>(
-            interpreter = interpreter,
-            symbols = mapOf(
-                "env" to planSettings.env,
-                "workingDir" to workingDir,
-                "language" to "kotlin"
-            )
-        )
-
-        codingAgent.start(userMessage)
-    }
-}
 ```
 
 ## Error Handling
@@ -252,14 +206,7 @@ override fun validate(code: String): Throwable? {
 ### Error Message Formatting
 
 ```kotlin
-fun errorMessage(code: String, line: Int, column: Int, message: String) =
-    """
-    ```text
-    $message at line $line column $column
-      ${if (line < 0) "" else code.split("\n")[line - 1]}
-      ${if (column < 0) "" else " ".repeat(column - 1) + "^"}
-    ```
-    """.trim()
+
 ```
 
 ## Testing
@@ -269,42 +216,13 @@ fun errorMessage(code: String, line: Int, column: Int, message: String) =
 The framework provides `InterpreterTestBase` for consistent testing across implementations:
 
 ```kotlin
-abstract class InterpreterTestBase {
-    @Test
-    fun `test run with valid code`() {
-        val interpreter = newInterpreter(mapOf())
-        val result = interpreter.run("2 + 2")
-        Assertions.assertEquals(4, result)
-    }
 
-    @Test
-    fun `test run with variables`() {
-        val interpreter = newInterpreter(mapOf("x" to 2, "y" to 3))
-        val result = interpreter.run("x * y")
-        Assertions.assertEquals(6, result)
-    }
-
-    abstract fun newInterpreter(map: Map<String, Any>): Interpreter
-}
 ```
 
 ### Implementation-Specific Tests
 
 ```kotlin
-class KotlinInterpreterTest : InterpreterTestBase() {
-    override fun newInterpreter(map: Map<String, Any>) = KotlinInterpreter(map)
 
-    @Test
-    fun `test kotlin-specific features`() {
-        val interpreter = newInterpreter(mapOf())
-        val result = interpreter.run("""
-            fun factorial(n: Int): Int =
-                if (n <= 1) 1 else n * factorial(n - 1)
-            factorial(5)
-        """)
-        Assertions.assertEquals(120, result)
-    }
-}
 ```
 
 ## Best Practices
@@ -337,20 +255,13 @@ class KotlinInterpreterTest : InterpreterTestBase() {
 1. **Implement Interpreter Interface**:
 
 ```kotlin
-class PythonInterpreter(private val defs: Map<String, Any>) : Interpreter {
-    override fun getLanguage() = "python"
-    override fun getSymbols() = defs
-    override fun run(code: String): Any? { /* implementation */ }
-    override fun validate(code: String): Throwable? { /* implementation */ }
-}
+
 ```
 
 2. **Add Test Coverage**:
 
 ```kotlin
-class PythonInterpreterTest : InterpreterTestBase() {
-    override fun newInterpreter(map: Map<String, Any>) = PythonInterpreter(map)
-}
+
 ```
 
 3. **Register with Framework**:
@@ -367,17 +278,7 @@ val interpreterRegistry = mapOf(
 ### Custom Execution Wrappers
 
 ```kotlin
-class MonitoredKotlinInterpreter(defs: Map<String, Any>) : KotlinInterpreter(defs) {
-    override fun <T : Any> wrapExecution(fn: Supplier<T?>): T? {
-        val startTime = System.currentTimeMillis()
-        return try {
-            super.wrapExecution(fn)
-        } finally {
-            val duration = System.currentTimeMillis() - startTime
-            log.info("Execution took ${duration}ms")
-        }
-    }
-}
+
 ```
 
 ## Configuration Examples
@@ -409,12 +310,5 @@ val interpreter = ProcessInterpreter(mapOf(
 ### Multi-Language Support
 
 ```kotlin
-class MultiLanguageInterpreter(
-    private val interpreters: Map<String, Interpreter>
-) {
-    fun execute(language: String, code: String): Any? {
-        return interpreters[language]?.run(code)
-            ?: throw IllegalArgumentException("Unsupported language: $language")
-    }
-}
+
 ```

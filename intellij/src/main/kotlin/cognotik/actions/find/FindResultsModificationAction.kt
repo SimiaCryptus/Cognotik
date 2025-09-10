@@ -151,7 +151,7 @@ class FindResultsModificationAction(
                     ).answer(
                         listOf(
                             fileListingMarkdown
-                        ), api
+                        ),
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
                     AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -164,7 +164,6 @@ class FindResultsModificationAction(
                             }
                         },
                         ui = ui,
-                        api = api,
                         shouldAutoApply = { modificationParams.autoApply },
                         defaultFile = file?.toFile?.path
                     )?.apply {

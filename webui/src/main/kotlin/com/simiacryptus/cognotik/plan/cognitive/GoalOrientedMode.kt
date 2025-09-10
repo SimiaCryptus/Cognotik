@@ -394,7 +394,7 @@ open class GoalOrientedMode(
             temperature = planSettings.temperature,
             describer = describer
         )
-        val answer = parsedActor.answer(listOf(userMessage), api)
+        val answer = parsedActor.answer(listOf(userMessage),)
         val goals = answer.obj.goals ?: emptyList()
         if (goals.isEmpty()) {
             return listOf(
@@ -493,7 +493,7 @@ open class GoalOrientedMode(
         // Add context data including the focus goal
         inputMessages.addAll(contextData(goal.id, null))
 
-        val answer = parsedActor.answer(inputMessages, api)
+        val answer = parsedActor.answer(inputMessages, )
         val subgoals = answer.obj.subgoals?.map { sg ->
             sg.copy(
                 id = sg.id?.takeIf { it.isNotBlank() } ?: "G${goalIdCounter.getAndIncrement()}",
@@ -564,7 +564,6 @@ open class GoalOrientedMode(
                 taskDefinition.parentGoalId,
                 taskDefinition.id
             ), // Pass focused context
-            api
         )
         val result = StringBuilder()
 

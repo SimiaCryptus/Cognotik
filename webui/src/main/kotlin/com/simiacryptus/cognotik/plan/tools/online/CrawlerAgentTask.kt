@@ -327,7 +327,7 @@ class CrawlerAgentTask(
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
-            ), api
+            ),
         )
         return header + summary
     }
@@ -472,7 +472,7 @@ class CrawlerAgentTask(
             model = taskSettings.model ?: planSettings.parsingModel,
             describer = describer,
             parsingModel = planSettings.parsingModel,
-        ).answer(listOf(summaryPrompt), api)
+        ).answer(listOf(summaryPrompt))
     }
 
     private fun splitContentIntoChunks(content: String, maxChunkSize: Int): List<String> {

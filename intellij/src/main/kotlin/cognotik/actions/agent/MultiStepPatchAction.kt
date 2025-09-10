@@ -198,7 +198,7 @@ class MultiStepPatchAction : BaseAction() {
                 task = task,
                 userMessage = { userMessage },
                 heading = renderMarkdown(userMessage),
-                initialResponse = { it: String -> designActor.answer(toInput(it), api = api) },
+                initialResponse = { it: String -> designActor.answer(toInput(it)) },
                 outputFn = { design: ParsedResponse<TaskList> ->
 
                     AgentPatterns.displayMapInTabs(
@@ -214,7 +214,6 @@ class MultiStepPatchAction : BaseAction() {
                         messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
                             .toTypedArray<ApiModel.ChatMessage>()),
                         input = toInput(userMessage),
-                        api = api
                     )
                 },
                 atomicRef = AtomicReference(),
@@ -267,14 +266,13 @@ class MultiStepPatchAction : BaseAction() {
                                                 },
                                                 architectureResponse.text,
                                                 "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
-                                            ), api),
+                                            )),
                                         handle = { newCodeMap ->
                                             newCodeMap.forEach { (path, newCode) ->
                                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                             }
                                         },
                                         ui = ui,
-                                        api = api
                                     )
                                 )
                             } catch (e: Exception) {

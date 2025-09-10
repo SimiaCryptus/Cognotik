@@ -132,7 +132,7 @@ class CreateImageAction : BaseAction() {
                     imageModel = AppSettingsState.instance.mainImageModel.imageModel()
                 ).apply { setImageAPI(IdeaOpenAIClient.instance) }
                 log.debug("Sending request to image generation API")
-                val response = imageActor.answer(listOf(codeSummary(), dialog.getInstructions()), api)
+                val response = imageActor.answer(listOf(codeSummary(), dialog.getInstructions()),)
                 log.debug("Image generation completed successfully")
                 val imagePath = root.resolve(dialog.getFileName())
                 write(response, imagePath)

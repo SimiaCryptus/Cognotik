@@ -1,8 +1,5 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.util.MultiExeption
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -10,6 +7,7 @@ import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MultiExeption
 import java.util.function.Function
 
 open class ParsedActor<T : Any>(
@@ -51,16 +49,16 @@ open class ParsedActor<T : Any>(
         )
     }
 
-    private inner class ParsedResponseImpl(api: ChatClientInterface, vararg messages: ApiModel.ChatMessage) :
+    private inner class ParsedResponseImpl(vararg messages: ApiModel.ChatMessage) :
         ParsedResponse<T>(resultClass!!) {
         override val text =
-            response(*messages, api = api).choices.firstOrNull()?.message?.content
+            response(*messages).choices.firstOrNull()?.message?.content
                 ?: throw RuntimeException("No response")
-        private val _obj: T by lazy { getParser(api, parserPrompt).apply(text) }
+        private val _obj: T by lazy { getParser(parserPrompt).apply(text) }
         override val obj get() = _obj
     }
 
-    fun getParser(api: ChatClientInterface, promptSuffix: String? = null) = Function<String, T> { input ->
+    fun getParser(promptSuffix: String? = null) = Function<String, T> { input ->
         describer.coverMethods = false
         val describe = if (null == resultClass) "" else {
             describer.describe(resultClass!!)
@@ -142,9 +140,9 @@ open class ParsedActor<T : Any>(
         throw MultiExeption(exceptions)
     }
 
-    override fun respond(input: List<String>, api: ChatClientInterface, vararg messages: ApiModel.ChatMessage): ParsedResponse<T> =
+    override fun respond(input: List<String>, vararg messages: ApiModel.ChatMessage): ParsedResponse<T> =
         try {
-            ParsedResponseImpl(api, *messages)
+            ParsedResponseImpl(*messages)
         } catch (e: Exception) {
             log.info("Failed to parse response", e)
             throw e

@@ -28,7 +28,7 @@ open class CodingActorTestApp(
         val message = ui.newTask()
         try {
             message.echo(userMessage.renderMarkdown)
-            val response = actor.answer(CodingActor.CodeRequest(listOf(userMessage to ApiModel.Role.user)), api = api)
+            val response = actor.answer(CodingActor.CodeRequest(listOf(userMessage to ApiModel.Role.user)))
             val canPlay =
                 ApplicationServices.authorizationManager.isAuthorized(this::class.java, user, OperationType.Execute)
             val playLink = if (!canPlay) "" else {

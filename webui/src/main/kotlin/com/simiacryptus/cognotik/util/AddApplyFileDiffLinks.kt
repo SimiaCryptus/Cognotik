@@ -12,8 +12,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import java.io.File
 import java.nio.file.Path
@@ -80,7 +78,6 @@ open class AddApplyFileDiffLinks {
             response: String,
             handle: (Map<Path, String>) -> Unit = {},
             ui: ApplicationInterface,
-            api: ChatClientInterface,
             shouldAutoApply: (Path) -> Boolean = { false },
             model: Chatter? = null,
             defaultFile: String? = null,
@@ -92,7 +89,6 @@ open class AddApplyFileDiffLinks {
                 response = response,
                 handle = handle,
                 ui = ui,
-                api = api,
                 shouldAutoApply = shouldAutoApply,
                 model = model,
                 defaultFile = defaultFile
@@ -137,7 +133,6 @@ open class AddApplyFileDiffLinks {
         response: String,
         handle: (Map<Path, String>) -> Unit = {},
         ui: ApplicationInterface,
-        api: ChatClientInterface,
         shouldAutoApply: (Path) -> Boolean = { false },
         model: Chatter? = null,
         defaultFile: String? = null,
@@ -153,7 +148,6 @@ open class AddApplyFileDiffLinks {
                     response = response + "\n```\n",
                     handle = handle,
                     ui = ui,
-                    api = api,
                     model = model,
                     defaultFile = defaultFile,
                 )
@@ -179,8 +173,6 @@ open class AddApplyFileDiffLinks {
             val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
             val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
-            fun getFile(root: Path, header: String) =
-                fuzzyResolveToRelativePath(root, header)?.let { root.resolve(it) }?.toFile()
 
             val codeblocks = resolvedMatches.filter { (header, block) ->
                 try {
@@ -207,7 +199,7 @@ open class AddApplyFileDiffLinks {
                     headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
                 val filename = fuzzyResolveToRelativePath(root, normalizeFilename(header))
                 if (filename.isNullOrBlank()) return@foldIndexed markdown
-                val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, api, shouldAutoApply)
+                val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, shouldAutoApply)
                 markdown.replace(diffBlock.second.value, newValue)
             }
 
@@ -342,7 +334,6 @@ open class AddApplyFileDiffLinks {
         diffVal: String,
         handle: (Map<Path, String>) -> Unit,
         ui: ApplicationInterface,
-        api: ChatClientInterface,
         shouldAutoApply: (Path) -> Boolean,
         model: Chatter? = null,
     ): String {
@@ -495,9 +486,9 @@ open class AddApplyFileDiffLinks {
                                 "\nCode:\n```${
                                     filename.split('.').lastOrNull() ?: ""
                                 }\n$prevCode\n```\n\nPatch:\n```diff\n$diffVal\n```\n\nEffective Patch:\n```diff\n$echoDiff\n```\n\nPlease provide a fix for the diff above in the form of a diff patch.\n"
-                            ), api
+                            ),
                         )
-                        answer = instrument(ui.socketManager!!, root, answer, handle, ui, api, model = model)
+                        answer = instrument(ui.socketManager!!, root, answer, handle, ui, model = model)
                         header?.clear()
                         fixTask.complete(answer.renderMarkdown())
                     } catch (e: Throwable) {

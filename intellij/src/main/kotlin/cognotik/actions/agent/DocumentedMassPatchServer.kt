@@ -104,7 +104,7 @@ class DocumentedMassPatchServer(
                     val toInput = { it: String -> listOf(codeSummary, it) }
                     if (autoApply) {
                         val design =
-                            mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+                            mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
                         if (design.isNotBlank()) {
                             fileTask.add(
                                 AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -117,7 +117,6 @@ class DocumentedMassPatchServer(
                                         }
                                     },
                                     ui = ui,
-                                    api = api as ChatClientInterface,
                                     shouldAutoApply = { autoApply },
                                     model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                                     defaultFile = path.toString()
@@ -132,7 +131,7 @@ class DocumentedMassPatchServer(
                             userMessage = { userMessage },
                             heading = renderMarkdown(userMessage),
                             initialResponse = {
-                                mainActor.answer(toInput(it), api = api)
+                                mainActor.answer(toInput(it))
                             },
                             outputFn = { design: String ->
                                 """<div>${
@@ -147,7 +146,6 @@ class DocumentedMassPatchServer(
                                                 }
                                             },
                                             ui = ui,
-                                            api = api as ChatClientInterface,
                                             shouldAutoApply = { autoApply },
                                             model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                                             defaultFile = path.toString()
@@ -165,7 +163,6 @@ class DocumentedMassPatchServer(
                                         )
                                     }.toTypedArray(),
                                     input = toInput(userMessage),
-                                    api = api
                                 )
                             },
                             atomicRef = AtomicReference(),

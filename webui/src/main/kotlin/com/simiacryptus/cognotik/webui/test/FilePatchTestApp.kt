@@ -47,7 +47,6 @@ open class FilePatchTestApp(
             root = sourceFile.toPath().parent,
             response = patch,
             ui = ui,
-            api = api
         )
         task.complete(newPatch.renderMarkdown)
 

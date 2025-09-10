@@ -68,14 +68,7 @@ graph TD
 The most sophisticated mode that implements iterative thinking and adaptive planning.
 
 ```kotlin
-class AutoPlanMode(
-    override val ui: ApplicationInterface,
-    override val api: API,
-    override val planSettings: PlanSettings,
-    override val session: Session,
-    override val user: User?,
-    val describer: TypeDescriber
-) : CognitiveMode
+
 ```
 
 **Key Features:**
@@ -88,14 +81,7 @@ class AutoPlanMode(
 **Thinking Status Structure:**
 
 ```kotlin
-data class ThinkingStatus(
-    var initialPrompt: String? = null,
-    var confidence: Double? = null,
-    var iteration: Int = 0,
-    val goals: Goals? = null,
-    val knowledge: Knowledge? = null,
-    val executionContext: ExecutionContext? = null
-)
+
 ```
 
 **Usage Example:**
@@ -111,14 +97,7 @@ autoMode.handleUserMessage("Create a web application with user authentication", 
 Traditional planning approach that creates a complete plan before execution.
 
 ```kotlin
-class PlanAheadMode(
-    override val ui: ApplicationInterface,
-    override val api: API,
-    override val planSettings: PlanSettings,
-    override val session: Session,
-    override val user: User?,
-    val describer: TypeDescriber
-) : CognitiveMode
+
 ```
 
 **Key Features:**
@@ -133,14 +112,7 @@ class PlanAheadMode(
 Conversational mode that executes tasks based on ongoing dialogue.
 
 ```kotlin
-class TaskChatMode(
-    override val ui: ApplicationInterface,
-    override val api: API,
-    override val planSettings: PlanSettings,
-    override val session: Session,
-    override val user: User?,
-    val describer: TypeDescriber
-) : CognitiveMode
+
 ```
 
 **Key Features:**
@@ -155,14 +127,7 @@ class TaskChatMode(
 Hierarchical goal decomposition with dependency management.
 
 ```kotlin
-class GoalOrientedMode(
-    override val ui: ApplicationInterface,
-    override val api: API,
-    override val planSettings: PlanSettings,
-    override val session: Session,
-    override val user: User?,
-    val describer: TypeDescriber
-) : CognitiveMode
+
 ```
 
 **Key Features:**
@@ -179,20 +144,14 @@ class GoalOrientedMode(
 Configuration object that controls planning behavior:
 
 ```kotlin
-class PlanSettings(
-    var defaultModel: ChatModel,
-    var parsingModel: ChatModel,
-    val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
-    var temperature: Double = 0.2,
-    val budget: Double = 2.0,
-    val taskSettings: MutableMap<String, TaskSettingsBase> = ...,
-    var autoFix: Boolean = false,
-    val env: Map<String, String>? = mapOf(),
-    val workingDir: String? = ".",
-    val language: String? = if (isWindows) "powershell" else "bash",
-    var maxTaskHistoryChars: Int = 10000,
-    var maxTasksPerIteration: Int = 3,
-    var maxIterations: Int = 10
+,
+var autoFix: Boolean = false,
+val env: Map<String, String>? = mapOf(),
+val workingDir: String? = ".",
+val language: String? = if (isWindows) "powershell" else "bash",
+var maxTaskHistoryChars: Int = 10000,
+var maxTasksPerIteration: Int = 3,
+var maxIterations: Int = 10
 )
 ```
 
@@ -211,14 +170,7 @@ Available task implementations:
 Central orchestrator for plan execution:
 
 ```kotlin
-class PlanCoordinator(
-    val user: User?,
-    val session: Session,
-    val dataStorage: StorageInterface,
-    val ui: ApplicationInterface,
-    val planSettings: PlanSettings,
-    val root: Path
-)
+
 ```
 
 **Key Methods:**
@@ -242,23 +194,7 @@ class PlanCoordinator(
 The system automatically handles task dependencies:
 
 ```kotlin
-fun executionOrder(tasks: Map<String, TaskConfigBase>): List<String> {
-    val taskIds: MutableList<String> = mutableListOf()
-    val taskMap = tasks.toMutableMap()
-    while (taskMap.isNotEmpty()) {
-        val nextTasks = taskMap.filter { (_, task) ->
-            task.task_dependencies?.filter { entry ->
-                entry in tasks.keys
-            }?.all { taskIds.contains(it) } ?: true
-        }
-        if (nextTasks.isEmpty()) {
-            throw RuntimeException("Circular dependency detected")
-        }
-        taskIds.addAll(nextTasks.keys)
-        nextTasks.keys.forEach { taskMap.remove(it) }
-    }
-    return taskIds
-}
+
 ```
 
 ### Progress Monitoring
@@ -266,15 +202,7 @@ fun executionOrder(tasks: Map<String, TaskConfigBase>): List<String> {
 Real-time progress tracking with visual updates:
 
 ```kotlin
-data class PlanProcessingState(
-    val subTasks: Map<String, TaskConfigBase>,
-    val tasksByDescription: MutableMap<String?, TaskConfigBase>,
-    val taskIdProcessingQueue: MutableList<String>,
-    val taskResult: MutableMap<String, String>,
-    val completedTasks: MutableList<String>,
-    val taskFutures: MutableMap<String, Future<*>>,
-    val uitaskMap: MutableMap<String, SessionTask>
-)
+
 ```
 
 ## Implementation Guide
@@ -284,28 +212,7 @@ data class PlanProcessingState(
 1. **Implement the Interface**:
 
 ```kotlin
-class CustomMode(
-    override val ui: ApplicationInterface,
-    override val api: API,
-    override val planSettings: PlanSettings,
-    override val session: Session,
-    override val user: User?,
-    val describer: TypeDescriber
-) : CognitiveMode {
 
-    override fun initialize() {
-        // Initialize mode-specific state
-    }
-
-    override fun handleUserMessage(userMessage: String, task: SessionTask) {
-        // Process user input and execute tasks
-    }
-
-    override fun contextData(): List<String> {
-        // Return context information
-        return emptyList()
-    }
-}
 ```
 
 2. **Register the Mode**:
@@ -327,15 +234,7 @@ companion object : CognitiveModeStrategy {
 3. **Add to Registry**:
 
 ```kotlin
-object CognitiveModes {
-    val allModes: Map<String, CognitiveModeStrategy> = mapOf(
-        "AutoPlan" to AutoPlanMode,
-        "PlanAhead" to PlanAheadMode,
-        "TaskChat" to TaskChatMode,
-        "GoalOriented" to GoalOrientedMode,
-        "Custom" to CustomMode
-    )
-}
+
 ```
 
 ### Creating Custom Task Types
@@ -343,36 +242,13 @@ object CognitiveModes {
 1. **Define Task Configuration**:
 
 ```kotlin
-data class CustomTaskConfig(
-    override val task_type: String? = "CustomTask",
-    override val task_description: String? = null,
-    override val task_dependencies: MutableList<String>? = null,
-    val customParameter: String? = null
-) : TaskConfigBase()
+
 ```
 
 2. **Implement Task Logic**:
 
 ```kotlin
-class CustomTask : AbstractTask<CustomTaskConfig>() {
-    override fun promptSegment(): String = """
-        CustomTask - Performs custom operations
-        ** Specify custom parameters and requirements
-    """.trimIndent()
 
-    override fun run(
-        agent: PlanCoordinator,
-        messages: List<String>,
-        task: SessionTask,
-        api: API,
-        resultFn: (String) -> Unit,
-        planSettings: PlanSettings
-    ) {
-        // Implement task execution logic
-        val result = performCustomOperation()
-        resultFn(result)
-    }
-}
 ```
 
 ## Configuration

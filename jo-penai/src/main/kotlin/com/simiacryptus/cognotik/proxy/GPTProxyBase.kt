@@ -147,12 +147,6 @@ abstract class GPTProxyBase<T : Any>(
         val argList: Map<String, String> = mapOf(),
     )
 
-    data class ProxyRecord(
-        val methodName: String = "",
-        val argList: Map<String, String> = mapOf(),
-        val response: String = "",
-    )
-
     data class RequestResponse(
         val argList: Map<String, String> = mapOf(),
         val response: String,

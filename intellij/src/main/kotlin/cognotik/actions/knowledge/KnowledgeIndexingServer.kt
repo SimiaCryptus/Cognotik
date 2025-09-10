@@ -31,7 +31,6 @@ class KnowledgeIndexingServer(
 
     companion object {
         private val log = LoggerFactory.getLogger(KnowledgeIndexingServer::class.java)
-        private const val PROGRESS_UPDATE_INTERVAL_MS = 1000L
         private const val MAX_DISPLAY_FILES = 20
         private const val MAX_FILE_SIZE_MB = 100
         private const val CHUNK_SIZE_MB = 10

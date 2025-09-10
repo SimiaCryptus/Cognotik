@@ -740,7 +740,7 @@ class CustomFileSetPatchServer(
         session: Session,
         toInput: (String) -> List<String>
     ) {
-        val design = mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+        val design = mainActor.answer(toInput(userMessage),).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
             task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -753,7 +753,6 @@ class CustomFileSetPatchServer(
                         }
                     },
                     ui = ui,
-                    api = api as ChatClientInterface,
                     shouldAutoApply = { autoApply },
                     model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
@@ -773,7 +772,7 @@ class CustomFileSetPatchServer(
         toInput: (String) -> List<String>
     ) {
         val result = try {
-            mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+            mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
         } catch (e: Exception) {
             log.error("Error generating content for ${fileSet.name}", e)
             task.error(e)
@@ -813,7 +812,7 @@ class CustomFileSetPatchServer(
             userMessage = { userMessage },
             heading = renderMarkdown(userMessage),
             initialResponse = {
-                mainActor.answer(toInput(it), api = api)
+                mainActor.answer(toInput(it))
             },
             outputFn = { design: String ->
                 formatOutput(design, ui, session, fileSet, task, api)
@@ -825,7 +824,7 @@ class CustomFileSetPatchServer(
                         ApiModel.ChatMessage(
                             it.second, it.first.toContentList()
                         )
-                    }.toTypedArray(), input = toInput(userMessage), api = api
+                    }.toTypedArray(), input = toInput(userMessage)
                 )
             },
             atomicRef = AtomicReference(),
@@ -856,7 +855,6 @@ class CustomFileSetPatchServer(
                                 }
                             },
                             ui = ui,
-                            api = api as ChatClientInterface,
                             shouldAutoApply = { false },
                             model = AppSettingsState.instance.fastChatModel.instance(api.workPool),
                             defaultFile = fileSet.files.firstOrNull()

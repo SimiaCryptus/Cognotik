@@ -210,7 +210,7 @@ class TestResultAutofixAction : BaseAction() {
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
                         parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
-                    ).answer(listOf(testInfo), api = IdeaChatClient.instance)
+                    ).answer(listOf(testInfo), )
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")
                         return@Retryable task.placeholder
@@ -281,7 +281,7 @@ $projectStructure
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
                 model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
-            ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
+            ).answer(listOf(error.message ?: ""), )
             task.add("Processing suggested fixes...")
 
             var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -295,7 +295,6 @@ $projectStructure
                     }
                 },
                 ui = ui,
-                api = api,
             )
             task.add("<div>${renderMarkdown(markdown!!)}</div>")
         }

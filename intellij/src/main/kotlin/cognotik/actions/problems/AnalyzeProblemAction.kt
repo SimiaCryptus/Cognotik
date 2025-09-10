@@ -173,7 +173,7 @@ class AnalyzeProblemAction : AnAction() {
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatModel.instance(api.workPool),
                         parsingModel = AppSettingsState.instance.fastChatModel.instance(api.workPool),
-                    ).answer(listOf(problemInfo), api = IdeaChatClient.instance)
+                    ).answer(listOf(problemInfo),)
 
                     task.add(
                         AgentPatterns.displayMapInTabs(
@@ -234,7 +234,7 @@ class AnalyzeProblemAction : AnAction() {
             The diff should include 2 lines of context before and after every change.
             """.trimIndent(),
                 model = AppSettingsState.instance.smartChatModel.instance(api.workPool)
-            ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
+            ).answer(listOf(error.message ?: ""),)
 
             return "<div>${
                 renderMarkdown(
@@ -248,7 +248,6 @@ class AnalyzeProblemAction : AnAction() {
                             }
                         },
                         ui = ui,
-                        api = api,
                     )
                 )
             }</div>"

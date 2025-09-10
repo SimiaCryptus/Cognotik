@@ -9,7 +9,6 @@ interface AuthorizationInterface {
         Execute,
         Delete,
         Admin,
-        GlobalKey,
     }
 
     fun isAuthorized(

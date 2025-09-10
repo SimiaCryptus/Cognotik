@@ -561,29 +561,4 @@ object PythonPatchUtil {
     }
 
     private val log = LoggerFactory.getLogger(PythonPatchUtil::class.java)
-    val patchFormatPrompt = """
-      Response should use one or more code patches in diff format within ```diff code blocks.
-      Each diff should be preceded by a header that identifies the file being modified.
-      The diff format should use + for line additions, - for line deletions.
-      The diff should include 2 lines of context before and after every change.
-      Example:
-      ### src/app/example.py
-      ```diff
-       # Utility functions for example feature
-       a = 2
-       def example_function():
-      -    return a + 1
-      +    return a + 2
-      ```
-      ### config/example.yaml
-      ```diff
-       # Configuration for example feature
-       key: value
-       items:
-      -  - item1
-      +  - item1
-      +  - item2
-      ```
-      If needed, new files can be created by using code blocks labeled with the filename in the same manner.
-      """.trimIndent()
 }

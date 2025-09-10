@@ -121,7 +121,6 @@ class MultiCodeChatAction : BaseAction() {
         model = model,
         parsingModel = parsingModel,
         systemPrompt = "",
-        api = api,
         applicationClass = ApplicationServer::class.java,
         storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
         budget = 2.0,
@@ -167,13 +166,11 @@ class MultiCodeChatAction : BaseAction() {
                         }
                     },
                     ui = ui,
-                    api = api,
                 )
             }
         }</div>"""
 
         override fun respond(
-            api: ChatClientInterface,
             task: SessionTask,
             userMessage: String,
             currentChatMessages: List<ApiModel.ChatMessage>,
@@ -200,7 +197,7 @@ class MultiCodeChatAction : BaseAction() {
             val settings = MultiStepPatchAction.AutoDevApp.Settings()
             api.budget = settings.budget ?: 2.00
 
-            return super.respond(api, task, userMessage, currentChatMessages, transcriptStream)
+            return super.respond( task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 

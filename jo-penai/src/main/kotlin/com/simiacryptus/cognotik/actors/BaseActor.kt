@@ -14,14 +14,13 @@ abstract class BaseActor<I, R>(
 ) {
     abstract fun respond(
         input: I,
-        api: ChatClientInterface,
         vararg messages: ApiModel.ChatMessage = this.chatMessages(input),
     ): R
 
-    protected open fun response(vararg input: ApiModel.ChatMessage, model: AIModel = this.model.modelType, api: ChatClientInterface): ApiModel.ChatResponse =
+    protected open fun response(vararg input: ApiModel.ChatMessage, model: AIModel = this.model.modelType): ApiModel.ChatResponse =
         this.model.chat(input.toList())
 
-    open fun answer(input: I, api: ChatClientInterface): R = respond(input = input, api = api, *chatMessages(input))
+    open fun answer(input: I): R = respond(input = input, *chatMessages(input))
 
     abstract fun chatMessages(questions: I): Array<ApiModel.ChatMessage>
     abstract fun withModel(model: Chatter): BaseActor<I, R>

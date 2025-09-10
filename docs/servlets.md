@@ -269,14 +269,7 @@ GET /googleLogin?redirect=/myapp
 **Data Structure**:
 
 ```kotlin
-data class ApiKeyRecord(
-    val owner: String,
-    val apiKey: String,
-    val mappedKey: String,
-    val budget: Double,
-    val comment: String,
-    val welcomeMessage: String
-)
+
 ```
 
 ### ProxyHttpServlet

@@ -71,7 +71,6 @@ class PlanningTask(
         } else {
             val design = planSettings.planningActor(agent.describer).answer(
                 toInput("Expand ${taskConfig?.task_description ?: ""}"),
-                api = api
             )
             PlanUtil.render(
                 withPrompt = TaskBreakdownWithPrompt(
@@ -104,7 +103,7 @@ class PlanningTask(
         task = task,
         userMessage = { "Expand ${taskConfig?.task_description ?: ""}" },
         heading = "",
-        initialResponse = { it: String -> planSettings.planningActor(describer).answer(toInput(it), api = api) },
+        initialResponse = { it: String -> planSettings.planningActor(describer).answer(toInput(it)) },
         outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
             PlanUtil.render(
                 withPrompt = TaskBreakdownWithPrompt(
@@ -121,7 +120,6 @@ class PlanningTask(
                 messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
                     .toTypedArray<ApiModel.ChatMessage>(),
                 input = toInput("Expand ${taskConfig?.task_description ?: ""}\n${JsonUtil.toJson(this)}"),
-                api = api
             )
         },
     )

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.util.*
 import javax.imageio.ImageIO
 
@@ -379,36 +378,6 @@ interface ApiModel {
     )
 
     data class ImageGenerationResponse(
-        val created: Long,
-        val data: List<ImageObject>
-    )
-
-    data class ImageEditRequest(
-        val image: File,
-        val prompt: String,
-        val mask: File? = null,
-        val model: String? = null,
-        val n: Int? = null,
-        val size: String? = null,
-        val responseFormat: String? = null,
-        val user: String? = null
-    )
-
-    data class ImageEditResponse(
-        val created: Long,
-        val data: List<ImageObject>
-    )
-
-    data class ImageVariationRequest(
-        val image: File,
-
-        val n: Int? = null,
-        val responseFormat: String? = null,
-        val size: String? = null,
-        val user: String? = null
-    )
-
-    data class ImageVariationResponse(
         val created: Long,
         val data: List<ImageObject>
     )

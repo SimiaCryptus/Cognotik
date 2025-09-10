@@ -114,7 +114,6 @@ class SoftwareGraphGenerationTask(
         val response = graphGenerationActor.respond(
             messages = chatMessages,
             input = messages,
-            api = api
         )
 
         val outputFile = File(planSettings.absoluteWorkingDir ?: ".").resolve(taskConfig?.output_file.let {

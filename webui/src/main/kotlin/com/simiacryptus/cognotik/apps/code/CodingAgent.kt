@@ -119,11 +119,10 @@ open class CodingAgent<T : Interpreter>(
                 actor.CodeResultImpl(
                     messages = actor.chatMessages(codeRequest),
                     input = codeRequest,
-                    api = api as ChatClientInterface,
                     givenCode = lastUserMessage.removePrefix("```").removeSuffix("```")
                 )
             } else {
-                actor.answer(codeRequest, api = api)
+                actor.answer(codeRequest)
             }
             displayCodeAndFeedback(task, codeRequest, codeResponse)
         } catch (e: Throwable) {

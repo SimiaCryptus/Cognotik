@@ -38,29 +38,6 @@ class DiffMatchPatchTest {
         Assertions.assertEquals(4, DiffMatchPatch.diff_commonSuffix("1234", "xyz1234"))
     }
 
-    fun testPatchMakeAndApply() {
-        val text1 = "The quick brown fox jumps over the lazy dog."
-        val text2 = "The quick red fox jumps over the tired dog."
-        val patches: LinkedList<DiffMatchPatch.Patch> = DiffMatchPatch.patch_make(text1, text2)
-        val results: Array<Any> = DiffMatchPatch.patch_apply(patches, text1)
-
-        Assertions.assertEquals(text2, results[0])
-        val applied = results[1] as BooleanArray
-        for (b in applied) {
-            Assertions.assertTrue(b)
-        }
-    }
-
-    fun testPatchMakeWithDiffs() {
-        val text1 = "The quick brown fox jumps over the lazy dog."
-        val text2 = "That quick brown fox jumped over a lazy dog."
-        val diffs: LinkedList<Diff> = DiffMatchPatch.diff_main(text1, text2, false)
-        val patches: LinkedList<DiffMatchPatch.Patch> = DiffMatchPatch.patch_make(diffs)
-
-        Assertions.assertFalse(patches.isEmpty())
-        Assertions.assertEquals(diffs, patches.first().diffs)
-    }
-
     @Test
     fun testPatchToText() {
         val text1 = "The quick brown\n fox jumps over\n the lazy dog.\n"

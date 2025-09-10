@@ -57,7 +57,6 @@ open class ChatSocketManager(
     </div>
     """.trimIndent()),
     open val systemPrompt: String,
-    var api: ChatClientInterface,
     var temperature: Double = 0.3,
     applicationClass: Class<out ChatServer>,
     val storage: StorageInterface?,
@@ -90,7 +89,6 @@ open class ChatSocketManager(
         val expandedUserMessage = expandTopics(userMessage)
         markdownTranscript?.write("## User\n$expandedUserMessage\n\n".toByteArray())
         val task = newTask()
-        val api = api.getChildClient(task)
         task.echo(renderResponse(expandedUserMessage, task))
 
         synchronized(messagesLock) {
@@ -100,7 +98,7 @@ open class ChatSocketManager(
         try {
             if (!retriable) {
                 task.add("")
-                val responseString = respond(api, task, expandedUserMessage, chatMessages(), markdownTranscript)
+                val responseString = respond(task, expandedUserMessage, chatMessages(), markdownTranscript)
                 synchronized(messagesLock) {
                     if (chatMessages.lastOrNull()?.role == ApiModel.Role.assistant) {
                         chatMessages.removeAt(chatMessages.size - 1)
@@ -113,7 +111,7 @@ open class ChatSocketManager(
                     chatMessages.takeLastWhile { it.role == ApiModel.Role.assistant }
                         .forEach { chatMessages.remove(it) }
                     val currentChatMessages = chatMessages()
-                    innerRun(task, api, expandedUserMessage, currentChatMessages, markdownTranscript)
+                    innerRun(task, expandedUserMessage, currentChatMessages, markdownTranscript)
                 }
             }
         } catch (e: Exception) {
@@ -138,14 +136,13 @@ open class ChatSocketManager(
 
     private fun innerRun(
         task: SessionTask,
-        api: ChatClientInterface,
         expandedUserMessage: String,
         currentChatMessages: List<ApiModel.ChatMessage>,
         transcriptStream: OutputStream?
     ) {
         try {
             task.add("")
-            val responseString = respond(api, task, expandedUserMessage, currentChatMessages, transcriptStream)
+            val responseString = respond(task, expandedUserMessage, currentChatMessages, transcriptStream)
             synchronized(messagesLock) {
                 if (chatMessages.lastOrNull()?.role == ApiModel.Role.assistant) {
                     chatMessages.removeAt(chatMessages.size - 1)
@@ -173,13 +170,12 @@ open class ChatSocketManager(
         Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""") // Matches @(start..end:step) or @(start to end by step)
 
     protected open fun respond(
-        api: ChatClientInterface,
         task: SessionTask,
         userMessage: String,
         currentChatMessages: List<ApiModel.ChatMessage>,
         transcriptStream: OutputStream? = null
     ) = buildString {
-        val function1List = processMsgRecursive(api, userMessage, task, currentChatMessages, transcriptStream)
+        val function1List = processMsgRecursive(userMessage, task, currentChatMessages, transcriptStream)
         runAll(function1List, this)
     }.let { response ->
         // Write assistant response to transcript
@@ -187,7 +183,7 @@ open class ChatSocketManager(
         transcriptStream?.flush()
 
         try {
-            val answer = extractTopics(api, response)
+            val answer = extractTopics(response)
             val topicsText = try {
                 answer.topics.let { topics ->
                     if (topics?.isNotEmpty() == true) {
@@ -229,7 +225,7 @@ open class ChatSocketManager(
         }.forEach { it.get() }
     }
 
-    private fun extractTopics(api: ChatClientInterface, response: String): Topics {
+    private fun extractTopics(response: String): Topics {
         val topicsParsedActor = ParsedActor(
             resultClass = Topics::class.java,
             prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
@@ -239,9 +235,9 @@ open class ChatSocketManager(
             parsingModel = parsingModel,
         )
         return if (fastTopicParsing) {
-            topicsParsedActor.getParser(api).apply(response)
+            topicsParsedActor.getParser().apply(response)
         } else {
-            topicsParsedActor.answer(listOf(response), api).obj
+            topicsParsedActor.answer(listOf(response)).obj
         }
     }
 
@@ -275,7 +271,6 @@ open class ChatSocketManager(
     }
 
     private fun processMsgRecursive(
-        api: ChatClientInterface,
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
@@ -285,7 +280,7 @@ open class ChatSocketManager(
         if (useExpansionSyntax) {
             val rangeMatch = rangeExpansionPattern.find(currentMessage)
             if (rangeMatch != null) {
-                return expandRange(api, currentMessage, task, baseMessages, rangeMatch, transcriptStream)
+                return expandRange(currentMessage, task, baseMessages, rangeMatch, transcriptStream)
             }
 
             val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
@@ -297,7 +292,6 @@ open class ChatSocketManager(
                         sequenceMatch.groupValues[1].split(Regex("""\s*->\s*""")),
                         currentMessage,
                         sequenceMatch.value,
-                        api,
                         transcriptStream
                     )
                 }
@@ -306,14 +300,13 @@ open class ChatSocketManager(
             val match = expansionExpressionPattern.find(currentMessage)
             if (match != null && match.groupValues[1].split('|', ',').size > 1) {
                 return expandAlternatives(
-                    api,
                     currentMessage,
                     task,
                     baseMessages,
                     match,
                     transcriptStream
-                ) { apiClient, msg, tsk, msgs ->
-                    processMsgRecursive(apiClient, msg, tsk, msgs, transcriptStream)
+                ) {  msg, tsk, msgs ->
+                    processMsgRecursive( msg, tsk, msgs, transcriptStream)
                 }
             }
         }
@@ -349,7 +342,6 @@ open class ChatSocketManager(
      * Creates a sequence of numbers from start to end with the given step (default 1)
      */
     private fun expandRange(
-        api: ChatClientInterface,
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
@@ -368,7 +360,6 @@ open class ChatSocketManager(
                 .map { it.toString() },
             currentMessage,
             rangeMatch.value,
-            api,
             transcriptStream
         )
     }
@@ -378,18 +369,16 @@ open class ChatSocketManager(
      * Each option is processed in parallel
      */
     private fun expandAlternatives(
-        api: ChatClientInterface,
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
         match: MatchResult,
         transcriptStream: OutputStream? = null,
-        recursiveFn: (ChatClientInterface, String, SessionTask, List<ApiModel.ChatMessage>) -> List<(StringBuilder) -> Unit>
+        recursiveFn: (String, SessionTask, List<ApiModel.ChatMessage>) -> List<(StringBuilder) -> Unit>
     ): List<(StringBuilder) -> Unit> {
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
         return match.groupValues[1].split('|', ',').flatMap { option ->
             recursiveFn(
-                api,
                 currentMessage.replaceFirst(match.value, option),
                 ui.newTask(false).apply { tabs[option] = placeholder },
                 baseMessages.filter { it.content?.any { it.text?.contains(match.value) == true } != true }
@@ -405,7 +394,6 @@ open class ChatSocketManager(
         items: List<String>,
         currentMessage: String,
         expression: String,
-        api: ChatClientInterface,
         transcriptStream: OutputStream? = null
     ) {
         val aggregatedResponse = StringBuilder()
@@ -414,7 +402,6 @@ open class ChatSocketManager(
         for (item in items) {
             val newMessage = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
-                api = api,
                 currentMessage = newMessage,
                 task = ui.newTask(false).apply { tabs[item] = placeholder },
                 baseMessages = messages.filter { it.content?.any { it.text?.contains(expression) == true } != true },

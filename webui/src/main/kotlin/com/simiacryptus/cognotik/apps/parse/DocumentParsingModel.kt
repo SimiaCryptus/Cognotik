@@ -71,7 +71,7 @@ open class DocumentParsingModel(
             temperature = temperature,
             model = parsingModel,
         ).getParser(
-            api, promptSuffix = promptSuffix
+            promptSuffix = promptSuffix
         )
         return { text -> parser.apply(text) }
     }

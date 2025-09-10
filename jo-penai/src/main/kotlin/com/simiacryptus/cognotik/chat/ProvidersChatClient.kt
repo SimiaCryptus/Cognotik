@@ -45,10 +45,6 @@ open class ProvidersChatClient(
         val log = LoggerFactory.getLogger(ProvidersChatClient::class.java)
     }
 
-    enum class ReasoningEffort {
-        Low, Medium, High
-    }
-
     private fun validateChatRequest(chatRequest: ChatRequest) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain at least one message" }
         require(!chatRequest.model.isNullOrBlank()) { "Model must be specified" }

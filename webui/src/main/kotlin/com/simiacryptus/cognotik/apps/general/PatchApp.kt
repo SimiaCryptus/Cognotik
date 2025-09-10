@@ -460,7 +460,7 @@ abstract class PatchApp(
         ).answer(
             listOf(
                 "$promptPrefix\n\n${tripleTilde}\n${output.output}\n${tripleTilde}"
-            ), api = api
+            ),
         )
         log.info("Error parsing completed")
         return plan
@@ -524,7 +524,7 @@ abstract class PatchApp(
                         (if (error.details?.isNotBlank() == true) "Details:\n  ${error.details}\n" else "") +
                         (if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else "")
             ),
-            api = childApi
+
         ).lines().joinToString("\n") {
             it.replace(Regex("""/\* Error.*?\*/"""), "")
         }
@@ -533,7 +533,6 @@ abstract class PatchApp(
             root = root.toPath(),
             response = fixResponse,
             ui = ui,
-            api = childApi,
             shouldAutoApply = { path ->
                 if (autoFix && !changed.contains(path)) {
                     log.info("Auto-applying fix to: $path")

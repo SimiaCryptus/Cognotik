@@ -111,7 +111,7 @@ enum class FetchMethod {
                     isSeleniumEnabled = false
                     HttpClient.createStrategy(task).fetch(url, webSearchDir, index, pool, planSettings)
                 }
-            }
+    }
 
             override fun isEnabled(): Boolean {
                 return isSeleniumEnabled;

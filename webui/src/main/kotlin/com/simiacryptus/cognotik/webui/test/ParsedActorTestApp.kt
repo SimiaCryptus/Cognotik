@@ -29,7 +29,7 @@ open class ParsedActorTestApp<T : Any>(
         val message = ui.newTask()
         try {
             message.echo(userMessage.renderMarkdown)
-            val response = actor.answer(listOf(userMessage), api = api)
+            val response = actor.answer(listOf(userMessage))
             message.complete(
                 "${response.text}\n```\n${JsonUtil.toJson(response.obj)}\n```".trim().renderMarkdown
             )

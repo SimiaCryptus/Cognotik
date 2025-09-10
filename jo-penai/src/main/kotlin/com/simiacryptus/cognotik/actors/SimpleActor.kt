@@ -18,8 +18,8 @@ open class SimpleActor(
     temperature = temperature,
 ) {
 
-    override fun respond(input: List<String>, api: ChatClientInterface, vararg messages: ApiModel.ChatMessage): String =
-        response(*messages, api = api).choices.first().message?.content ?: throw RuntimeException("No response")
+    override fun respond(input: List<String>, vararg messages: ApiModel.ChatMessage): String =
+        response(*messages).choices.first().message?.content ?: throw RuntimeException("No response")
 
     override fun chatMessages(questions: List<String>) = arrayOf(
         ApiModel.ChatMessage(

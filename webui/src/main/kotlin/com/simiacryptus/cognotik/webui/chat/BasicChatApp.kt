@@ -53,7 +53,6 @@ class BasicChatApp(
             parsingModel = instance(settings.parsingModel)
                 ?: throw RuntimeException("No API key for model ${settings.parsingModel.name}"),
             systemPrompt = "",
-            api = ApplicationServices.clientManager.getChatClient(session, user),
             temperature = settings.temperature,
             applicationClass = this::class.java,
             storage = DataStorage(root),

@@ -40,8 +40,6 @@ open class Retryable(
 """
 
     companion object {
-        private const val serialVersionUID: Long = 1L
-        private val log = LoggerFactory.getLogger(Retryable::class.java)
         fun retryable(
             ui: ApplicationInterface,
             pool: ImmediateExecutorService = ui.socketManager?.pool

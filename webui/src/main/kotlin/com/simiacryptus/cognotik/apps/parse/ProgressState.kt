@@ -47,8 +47,5 @@ class ProgressState private constructor(
             return ProgressState(task)
         }
 
-        fun noOp(): ProgressState {
-            return ProgressState(null)
-        }
     }
 }

@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ModelsLabDataModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.runWithPermit
 import org.apache.hc.core5.http.HttpRequest
@@ -65,61 +64,6 @@ class ModelsLabChatClient(
             max_new_tokens = 1000,
             no_repeat_ngram_size = 5,
         )
-
-        fun fromModelsLab(rawResponse: String, client: ChatClientInterface): String {
-            val response = JsonUtil.objectMapper().readValue(rawResponse, ModelsLabDataModel.ChatResponse::class.java)
-            return when (response.status) {
-                "success" -> {
-                    JsonUtil.toJson(
-                        ApiModel.ChatResponse(
-                            id = response.chat_id, choices = listOf(
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(content = response.message), index = 0
-                                )
-                            ), usage = response.meta?.let {
-                                ApiModel.Usage(
-                                    prompt_tokens = it.max_new_tokens?.toLong() ?: 0,
-                                    completion_tokens = 0,
-
-                                    total_tokens = it.max_new_tokens?.toLong() ?: 0
-                                )
-                            })
-                    )
-                }
-
-                "processing" -> {
-                    val seconds = response?.eta ?: 1
-                    log.info("Chat response is still processing; waiting ${seconds}s and trying again.")
-                    Thread.sleep(seconds * 1000L)
-                    val key = "" /*client.apiKeyMap[APIProvider.ModelsLab]*/
-                    val url = "" /*"${client.apiBaseMap}/llm/get_queued_response"*/
-                    val postCheck = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
-                        mapOf(
-                            "chat_id" to (response.meta?.chat_id ?: response.chat_id),
-                            "key" to key
-                        )
-                    )
-                    fromModelsLab(
-                        (client as ChatClientBase).post(
-                            url,
-                            postCheck,
-                            APIProvider.ModelsLab,
-                        ),
-                        client
-                    )
-                }
-
-                "error" -> {
-                    throw RuntimeException("Error in chat request: ${response.message}\n$rawResponse")
-                }
-
-                "failed" -> {
-                    throw RuntimeException("Chat request failed: ${response.message}\n$rawResponse")
-                }
-
-                else -> throw RuntimeException("Unknown status: ${response.status}\n${response.message}\n$rawResponse")
-            }
-        }
 
         fun fromModelsLab(rawResponse: String, client: ModelsLabChatClient): String {
             val response = JsonUtil.objectMapper().readValue(rawResponse, ModelsLabDataModel.ChatResponse::class.java)
