@@ -13,7 +13,7 @@ import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.actors.ImageActor
 import com.simiacryptus.cognotik.actors.ImageResponse
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.imageModel
+import com.simiacryptus.cognotik.config.imageModel
 import com.simiacryptus.cognotik.util.*
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout

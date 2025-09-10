@@ -2,7 +2,7 @@
 
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.IdeaChatClient
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout

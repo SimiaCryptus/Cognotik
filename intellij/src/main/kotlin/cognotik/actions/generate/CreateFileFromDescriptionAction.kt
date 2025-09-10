@@ -6,6 +6,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.util.UITools
@@ -109,7 +110,7 @@ class CreateFileFromDescriptionAction :
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
         val chatRequest = ChatRequest(
-            model = AppSettingsState.instance.smartChatModel.modelName,
+            model = AppSettingsState.instance.smartModel.chatModel().modelName,
             temperature = AppSettingsState.instance.temperature,
             messages = listOf(
                 ChatMessage(

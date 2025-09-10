@@ -24,7 +24,8 @@ import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
-import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.IdeaChatClient
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -45,11 +46,12 @@ data class CommandConfig(
 
 @State(name = "com.simiacryptus.cognotik.config.AppSettingsState", storages = [Storage("SdkSettingsPlugin.xml")])
 data class AppSettingsState(
+
+    /* Audio Settings */
     var selectedMicLine: String? = null,
     var talkTime: Double = 1.0,
     var memorySeconds: Double = 10.0,
     var lookbackSeconds: Double = 5.0,
-    var diffLoggingEnabled: Boolean = false,
     var minRMS: Double = 0.5,
     var minIEC61672: Double = 0.5,
     var minSpectralEntropy: Double = 0.5,
@@ -60,12 +62,28 @@ data class AppSettingsState(
     var sampleRate: Int = 44100,
     var sampleSize: Int = 16,
     var channels: Int = 1,
+
+    /* API Settings */
+    val apiKeys: MutableMap<String, String>? = mapOf("OpenAI" to "").toMutableMap(),
+    val apiBase: MutableMap<String, String>? = mapOf("OpenAI" to "https://api.openai.com/v1").toMutableMap(),
     var temperature: Double = 0.1,
+
+    /* Model Settings */
     var smartModel: String = "",
     var fastModel: String = "",
-    var mainImageModel: String = "",
     var transcriptionModel: String? = null,
+    var mainImageModel: String = "",
+    val userSuppliedModels: MutableList<String>? = mutableListOf(),
+
+    /* AWS Settings */
+    var awsProfile: String? = null,
+    var awsRegion: String? = null,
+    var awsBucket: String? = null,
+
+    /* System Configuration */
+    val executables: MutableSet<String>? = mutableSetOf(),
     var analyticsEnabled: Boolean = false,
+    var diffLoggingEnabled: Boolean = false,
     var listeningPort: Int = 8081,
     var listeningEndpoint: String = "localhost",
     var apiThreads: Int = 4,
@@ -86,13 +104,8 @@ data class AppSettingsState(
     var showWelcomeScreen: Boolean = true,
     var greetedVersion: String = "",
     var shellCommand: String = getDefaultShell(),
-    var awsProfile: String? = null,
-    var awsRegion: String? = null,
-    var awsBucket: String? = null,
-    val apiKeys: MutableMap<String, String>? = mapOf("OpenAI" to "").toMutableMap(),
-    val apiBase: MutableMap<String, String>? = mapOf("OpenAI" to "https://api.openai.com/v1").toMutableMap(),
-    val userSuppliedModels: MutableList<String>? = mutableListOf(),
-    val executables: MutableSet<String>? = mutableSetOf(),
+
+    /* Recent Activity Helpers */
     val savedCommandConfigsJson: MutableMap<String, String>? = mutableMapOf(),
     val savedPlanConfigs: MutableMap<String, String>? = mutableMapOf(),
     val recentCommandsJson: MutableMap<String, String>? = mutableMapOf(),
@@ -100,25 +113,17 @@ data class AppSettingsState(
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
 ) : PersistentStateComponent<SimpleEnvelope> {
 
-    val smartChatClient: Chatter get() = smartChatModel.instance(IdeaChatClient.workPool)
-    val fastChatClient: Chatter get() = fastChatModel.instance(IdeaChatClient.workPool)
-    val smartChatModel: ChatModel get() = smartModel.chatModel()
-    val fastChatModel: ChatModel get() = fastModel.chatModel()
+    val smartChatClient: Chatter get() = smartModel.chatModel().instance(IdeaChatClient.workPool)
+    val fastChatClient: Chatter get() = fastModel.chatModel().instance(IdeaChatClient.workPool)
 
     @JsonIgnore
-    override fun getState(): SimpleEnvelope {
-        val value = toJson(this)
-
-        return SimpleEnvelope(value)
-    }
+    override fun getState() = SimpleEnvelope(toJson(this))
 
     @JsonIgnore
     private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
         val mapper = ObjectMapper()
         val appSettings = fromJson<AppSettingsState>(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
-
         if (jsonNode.has("apiKey") && !jsonNode.has("apiKeys")) {
-
             val apiKeyNode = jsonNode.get("apiKey")
             if (apiKeyNode.isObject) {
                 appSettings.apiKeys?.clear()
@@ -289,12 +294,6 @@ data class AppSettingsState(
             ApplicationManager.getApplication()?.getService(AppSettingsState::class.java) ?: AppSettingsState()
         }
 
-        fun String.imageModel(): ImageModels {
-            return ImageModels.values().firstOrNull {
-                it.modelName == this || it.name == this
-            } ?: ImageModels.DallE3
-        }
-
         fun getDefaultShell() = if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
 
         @JsonIgnore
@@ -333,4 +332,10 @@ fun ChatModel.instance(
     workPool = service
 )
 
+
+fun String.imageModel(): ImageModels {
+    return ImageModels.values().firstOrNull {
+        it.modelName == this || it.name == this
+    } ?: ImageModels.DallE3
+}
 

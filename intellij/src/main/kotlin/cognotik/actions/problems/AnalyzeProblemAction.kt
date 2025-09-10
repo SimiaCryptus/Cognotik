@@ -18,6 +18,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.IdeaChatClient
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown

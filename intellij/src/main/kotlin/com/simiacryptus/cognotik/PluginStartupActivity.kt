@@ -22,7 +22,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.IdeaChatClient
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson

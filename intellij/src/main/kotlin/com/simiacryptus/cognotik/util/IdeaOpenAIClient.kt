@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.IdeaChatClient
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.AIModel

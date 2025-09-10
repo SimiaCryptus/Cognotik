@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.IdeaChatClient
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
