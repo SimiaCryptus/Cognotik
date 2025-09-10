@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.proxy.ChatProxy
+import com.simiacryptus.cognotik.actors.ChatProxy
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.jsoup.Jsoup

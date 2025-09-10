@@ -1,20 +1,22 @@
-package com.simiacryptus.cognotik.models
+package com.simiacryptus.cognotik.embedding
 
-import com.simiacryptus.cognotik.models.ApiModel.Usage
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 
 open class EmbeddingModel(
     modelName: String,
     maxTokens: Int,
     private val tokenPricePerK: Double,
-    provider: APIProvider = APIProvider.OpenAI,
+    provider: APIProvider = APIProvider.Companion.OpenAI,
 ) : LLMModel(
     modelName = modelName,
     provider = provider,
     maxTotalTokens = maxTokens
 ) {
     private val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
-    override fun pricing(usage: Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
+    override fun pricing(usage: ApiModel.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
         .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }
 
     companion object {

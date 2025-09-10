@@ -1,6 +1,6 @@
 // src/test/kotlin/fulltextsearch/FullTextSearcherTest.kt
 
-package com.simiacryptus.text
+package com.simiacryptus.cognotik.text
 
 import com.simiacryptus.cognotik.text.FlyweightCharSequence
 import com.simiacryptus.cognotik.text.FullTextSearcher

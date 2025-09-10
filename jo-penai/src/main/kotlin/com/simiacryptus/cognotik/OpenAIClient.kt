@@ -3,12 +3,13 @@ package com.simiacryptus.cognotik
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.models.*
 import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.util.ClientUtil.allowedCharset
-import com.simiacryptus.cognotik.util.ClientUtil.checkError
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.StringUtil
 import org.apache.hc.client5.http.classic.methods.HttpGet

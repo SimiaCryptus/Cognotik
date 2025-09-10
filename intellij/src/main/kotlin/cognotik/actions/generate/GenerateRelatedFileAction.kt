@@ -13,10 +13,10 @@ import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.Role
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.util.getSelectedFiles
+import com.simiacryptus.cognotik.util.toContentList
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout

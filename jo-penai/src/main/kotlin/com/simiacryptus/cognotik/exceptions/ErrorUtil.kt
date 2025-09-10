@@ -1,13 +1,14 @@
-package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.exceptions
 
 import com.google.gson.Gson
-import com.simiacryptus.cognotik.exceptions.*
+import com.google.gson.JsonElement
+import com.google.gson.JsonSyntaxException
 import com.simiacryptus.cognotik.models.LLMModel
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.regex.Pattern
 
-object ClientUtil {
+object ErrorUtil {
     open class ErrorPattern(
         vararg val pattern: Pattern,
         val exceptionFactory: (String, Pattern) -> Exception?
@@ -101,7 +102,7 @@ object ClientUtil {
 
     fun checkError(result: String, model: LLMModel? = null) {
         try {
-            val jsonElement = Gson().fromJson(result, com.google.gson.JsonElement::class.java) ?: return
+            val jsonElement = Gson().fromJson(result, JsonElement::class.java) ?: return
             if (jsonElement.isJsonObject) {
                 val jsonObject = jsonElement.asJsonObject
                 if (jsonObject.has("error")) {
@@ -128,7 +129,7 @@ object ClientUtil {
                     }
                 }
             }
-        } catch (e: com.google.gson.JsonSyntaxException) {
+        } catch (e: JsonSyntaxException) {
             throw IOException(
                 "Invalid JSON response: $result" + (if (null == model) "" else "\nChat Model: ${model}"),
                 e
@@ -139,4 +140,3 @@ object ClientUtil {
     val allowedCharset: Charset = Charset.forName("ASCII")
 
 }
-

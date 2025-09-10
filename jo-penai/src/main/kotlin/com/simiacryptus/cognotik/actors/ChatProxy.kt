@@ -1,27 +1,38 @@
-package com.simiacryptus.cognotik.proxy
+package com.simiacryptus.cognotik.actors
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.gson.reflect.TypeToken
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.describe.DescriptorUtil.resolveMethodReturnType
+import com.simiacryptus.cognotik.describe.DescriptorUtil
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.util.JsonUtil.fromJson
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
-import org.slf4j.Logger
-import java.lang.reflect.*
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.toContentList
+import java.lang.reflect.Method
+import java.lang.reflect.Parameter
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Proxy
+import java.lang.reflect.Type
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.pow
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.functions
 import kotlin.reflect.jvm.javaType
 
-abstract class LLMProxyBase<T : Any>(
+open class ChatProxy<T : Any>(
     val clazz: Class<out T>,
-    var temperature: Double = 0.1,
-    private var validation: Boolean = true,
+    val api: ChatClientInterface,
+    private var model: Chatter,
+    private var temperature: Double = 0.5,
+    private val moderated: Boolean = false,
+    val validation: Boolean = true,
     private var maxRetries: Int = 5,
 ) {
+
     init {
         log.info("Created proxy for class: ${clazz.simpleName}")
     }
@@ -35,14 +46,12 @@ abstract class LLMProxyBase<T : Any>(
     private val attemptCounter = AtomicInteger(0)
     private val requestCounters = HashMap<String, AtomicInteger>()
 
-    abstract fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String
-
     fun create() = Proxy.newProxyInstance(clazz.classLoader, arrayOf(clazz)) { _, method, args ->
         if (method.name == "toString") return@newProxyInstance clazz.simpleName
         log.debug("Invoking method: ${method.name} with arguments: ${args?.joinToString()}")
         requestCounters.computeIfAbsent(method.name) { AtomicInteger(0) }.incrementAndGet()
         val type: Type = if (clazz.isKotlinClass()) {
-            val returnType = resolveMethodReturnType(clazz.kotlin, method.name)
+            val returnType = DescriptorUtil.resolveMethodReturnType(clazz.kotlin, method.name)
             returnType.javaType
         } else {
             method.genericReturnType
@@ -51,21 +60,21 @@ abstract class LLMProxyBase<T : Any>(
             val declaredMethod = clazz.kotlin.functions.find { it.name == method.name }
             if (null != declaredMethod) {
                 (args ?: arrayOf()).zip(declaredMethod.parameters.filter { it.kind == KParameter.Kind.VALUE })
-                    .filter<Pair<Any?, KParameter>> { (arg: Any?, _) -> arg != null }
+                    .filter { (arg: Any?, _) -> arg != null }
                     .withIndex()
                     .associate { (idx, p) ->
                         val (arg, param) = p
-                        (param.name ?: "arg$idx") to toJson(arg!!)
+                        (param.name ?: "arg$idx") to JsonUtil.toJson(arg!!)
                     }
             } else {
                 (args ?: arrayOf()).zip(method.parameters)
-                    .filter<Pair<Any?, Parameter>> { (arg: Any?, _) -> arg != null }
-                    .associate { (arg, param) -> param.name to toJson(arg!!) }
+                    .filter { (arg: Any?, _) -> arg != null }
+                    .associate { (arg, param) -> param.name to JsonUtil.toJson(arg!!) }
             }
         } else {
             (args ?: arrayOf()).zip(method.parameters)
-                .filter<Pair<Any?, Parameter>> { (arg: Any?, _) -> arg != null }
-                .associate { (arg, param) -> param.name to toJson(arg!!) }
+                .filter { (arg: Any?, _) -> arg != null }
+                .associate { (arg, param) -> param.name to JsonUtil.toJson(arg!!) }
         }
         val prompt = ProxyRequest(
             method.name,
@@ -88,7 +97,7 @@ abstract class LLMProxyBase<T : Any>(
                 val jsonResult0 = complete(prompt, *examples[method.name]?.toTypedArray() ?: arrayOf())
                 val jsonResult = fixup(jsonResult0, type)
                 try {
-                    val obj = fromJson<Any>(jsonResult, type)
+                    val obj = JsonUtil.fromJson<Any>(jsonResult, type)
                     if (validation) {
                         if (obj is ValidatedObject) {
                             val validate = obj.validate()
@@ -133,9 +142,9 @@ abstract class LLMProxyBase<T : Any>(
                 val argList = args.zip(method.parameters)
                     .filter<Pair<Any?, Parameter>> { (arg: Any?, _) -> arg != null }
                     .associate { (arg, param) ->
-                        param.name to toJson(arg!!)
+                        param.name to JsonUtil.toJson(arg!!)
                     }
-                val result = toJson(returnValue)
+                val result = JsonUtil.toJson(returnValue)
                 examples.getOrPut(method.name) { ArrayList() }.add(RequestResponse(argList, result))
                 return@newProxyInstance returnValue
             } as T)
@@ -152,20 +161,74 @@ abstract class LLMProxyBase<T : Any>(
         val response: String,
     )
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(LLMProxyBase::class.java)
+    fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String {
+        log.info("Starting completion with prompt: {}", prompt.toString())
+        var request = ApiModel.ChatRequest()
+        val exampleMessages = examples.flatMap {
+            listOf(
+                ApiModel.ChatMessage(
+                    ApiModel.Role.user,
+                    argsToString(it.argList).toContentList()
+                ),
+                ApiModel.ChatMessage(
+                    ApiModel.Role.assistant,
+                    it.response.toContentList()
+                )
+            )
+        }
+        request = request.copy(
+            messages = ArrayList(
+                listOf(
+                    ApiModel.ChatMessage(
+                        ApiModel.Role.system, ("""
+                          You are a JSON-RPC Service
+                          Responses are in JSON format
+                          Do not include explaining text outside the JSON
+                          All input arguments are optional
+                          Outputs are based on inputs, with any missing information filled randomly
+                          You will respond to the following method
+                          """.trimIndent() + prompt.apiYaml
+                                ).trim().toContentList()
+                    )
+                ) + exampleMessages +
+                        listOf(
+                            ApiModel.ChatMessage(
+                                ApiModel.Role.user,
+                                argsToString(prompt.argList).toContentList()
+                            )
+                        )
+            )
+        )
+        request = request.copy(model = model.modelType.modelName)
+        request = request.copy(temperature = temperature)
+        val json = JsonUtil.toJson(request)
+        log.debug("Request JSON: {}", json)
+        if (moderated) {
+            log.info("Moderating request")
+            api.moderate(json)
+        }
 
+        val completion = model.chat(request.messages).choices.first().message?.content.orEmpty()
+        log.info("Received completion: {}", completion)
+        val trimPrefix = trimPrefix(completion)
+        val trimSuffix = trimSuffix(trimPrefix)
+        log.info("Trimmed completion: {}", trimSuffix)
+        return trimSuffix
+    }
+
+    companion object {
         fun fixup(jsonResult: String, type: Type): String {
             var jsonResult1 = jsonResult
             if (type is ParameterizedType && List::class.java.isAssignableFrom(type.rawType as Class<*>) && !jsonResult1.startsWith(
                     "["
                 )
             ) {
-                val obj = fromJson<Map<String, Any>>(jsonResult1, object : TypeToken<Map<String, Any>>() {}.type)
+                val obj =
+                    JsonUtil.fromJson<Map<String, Any>>(jsonResult1, object : TypeToken<Map<String, Any>>() {}.type)
                 if (obj.size == 1) {
                     val key = obj.keys.firstOrNull()
                     if (key is String && obj[key] is List<*>) {
-                        jsonResult1 = obj[key]?.let { toJson(it) } ?: "[]"
+                        jsonResult1 = obj[key]?.let { JsonUtil.toJson(it) } ?: "[]"
                     }
                 }
             }
@@ -196,6 +259,43 @@ abstract class LLMProxyBase<T : Any>(
             )
 
         }
-    }
 
+        private val log = LoggerFactory.getLogger(ChatProxy::class.java)
+        private fun trimPrefix(completion: String): String {
+            val braceIndex = completion.indexOf('{')
+            val bracketIndex = completion.indexOf('[')
+            val start = when {
+                braceIndex == -1 && bracketIndex == -1 -> -1
+                braceIndex == -1 -> bracketIndex
+                bracketIndex == -1 -> braceIndex
+                else -> minOf(braceIndex, bracketIndex)
+            }
+            return if (start < 0) {
+                completion
+            } else {
+                completion.substring(start)
+            }
+        }
+
+        private fun trimSuffix(completion: String): String {
+            val braceIndex = completion.lastIndexOf('}')
+            val bracketIndex = completion.lastIndexOf(']')
+            val end = when {
+                braceIndex == -1 && bracketIndex == -1 -> -1
+                braceIndex == -1 -> bracketIndex
+                bracketIndex == -1 -> braceIndex
+                else -> maxOf(braceIndex, bracketIndex)
+            }
+            return if (end < 0) {
+                completion
+            } else {
+                completion.substring(0, end + 1)
+            }
+        }
+
+        private fun argsToString(argList: Map<String, String>) =
+            "{" + argList.entries.joinToString(",\n", transform = { (argName, argValue) ->
+                """"$argName": $argValue"""
+            }) + "}"
+    }
 }

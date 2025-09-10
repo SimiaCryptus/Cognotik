@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.proxy.ValidatedObject
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import java.awt.image.BufferedImage

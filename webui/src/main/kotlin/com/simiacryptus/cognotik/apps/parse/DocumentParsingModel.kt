@@ -2,12 +2,11 @@ package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.jsonCast

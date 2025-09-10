@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.models.*
 import com.simiacryptus.cognotik.models.ApiModel.*
-import com.simiacryptus.cognotik.util.ClientUtil.allowedCharset
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.StringUtil.restrictCharacterSet
 import org.apache.hc.core5.http.HttpRequest

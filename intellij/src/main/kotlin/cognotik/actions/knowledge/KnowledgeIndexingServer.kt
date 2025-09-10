@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
-import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors

@@ -9,8 +9,8 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel.*
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.UITools
+import com.simiacryptus.cognotik.util.toContentList
 import java.io.File
 
 class CreateFileFromDescriptionAction :

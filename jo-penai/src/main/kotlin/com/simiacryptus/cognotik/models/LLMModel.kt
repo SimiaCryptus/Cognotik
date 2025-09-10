@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.ApiModel.Usage
 
 @JsonDeserialize(using = LLMModelDeserializer::class)

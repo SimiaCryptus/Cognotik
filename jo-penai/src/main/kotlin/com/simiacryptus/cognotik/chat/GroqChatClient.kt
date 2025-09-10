@@ -3,8 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.util.ClientUtil.checkError
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level

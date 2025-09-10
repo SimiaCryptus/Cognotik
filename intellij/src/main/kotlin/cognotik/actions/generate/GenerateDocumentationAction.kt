@@ -19,9 +19,9 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.getSelectedFile
 import com.simiacryptus.cognotik.util.getSelectedFolder
+import com.simiacryptus.cognotik.util.toContentList
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
 import java.awt.Dimension

@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.audio.AudioPacket
 import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.audio.TranscriptionProcessor
-import com.simiacryptus.cognotik.models.AudioModels
+import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.util.EventDispatcher
 import javax.sound.sampled.AudioFormat
 

@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTas
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import java.io.File

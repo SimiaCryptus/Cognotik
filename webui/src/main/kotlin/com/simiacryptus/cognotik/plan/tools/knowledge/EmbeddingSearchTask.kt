@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.DistanceType
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory

@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.proxy.ValidatedObject
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.JsonUtil.toJson

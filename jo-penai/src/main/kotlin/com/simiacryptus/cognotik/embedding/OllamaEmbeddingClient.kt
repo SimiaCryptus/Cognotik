@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.embedding
 
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.EmbeddingModel
-import com.simiacryptus.cognotik.util.ClientUtil.checkError
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream

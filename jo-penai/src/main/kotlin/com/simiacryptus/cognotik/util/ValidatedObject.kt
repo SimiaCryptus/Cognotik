@@ -1,14 +1,12 @@
-package com.simiacryptus.cognotik.proxy
+package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
-import com.simiacryptus.cognotik.util.LoggerFactory
 import kotlin.reflect.full.memberProperties
 
 interface ValidatedObject {
     fun validate(): String? = validateFields(this)
 
     class ValidationError(message: String, val obj: Any) : RuntimeException(
-        " Error validating object: \n ```text\n${message}\n```\n\n```json\n${toJson(obj)}\n```"
+        " Error validating object: \n ```text\n${message}\n```\n\n```json\n${JsonUtil.toJson(obj)}\n```"
     )
 
     companion object {

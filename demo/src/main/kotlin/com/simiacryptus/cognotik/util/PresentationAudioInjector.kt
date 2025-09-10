@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.AudioModels
+import com.simiacryptus.cognotik.audio.AudioModels
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

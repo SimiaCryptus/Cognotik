@@ -1,7 +1,9 @@
 package com.simiacryptus.cognotik.audio
 
 import kotlin.math.absoluteValue
+import kotlin.math.ln
 import kotlin.math.log
+import kotlin.math.max
 
 class PercentileTool(
     val memorySize: Int = 10000
@@ -13,7 +15,7 @@ class PercentileTool(
          */
         fun computeKLDivergence(a: DoubleArray, b: DoubleArray): Double {
             var klDiv = 0.0
-            val maxValue = kotlin.math.max(a.lastOrNull() ?: 0.0, b.lastOrNull() ?: 0.0)
+            val maxValue = max(a.lastOrNull() ?: 0.0, b.lastOrNull() ?: 0.0)
             if (maxValue == 0.0) return 0.0
             val aList = a.map { it / maxValue }.toMutableList()
             val bList = b.map { it / maxValue }.toMutableList()
@@ -22,12 +24,12 @@ class PercentileTool(
                 val bV = bList.first()
                 when {
                     aV < bV -> {
-                        klDiv += if (aV > 0.0 && bV > 0.0) aV * kotlin.math.ln(aV / bV) else 0.0
+                        klDiv += if (aV > 0.0 && bV > 0.0) aV * ln(aV / bV) else 0.0
                         aList.removeAt(0)
                     }
 
                     else -> {
-                        klDiv += if (aV > 0.0 && bV > 0.0) bV * kotlin.math.ln(bV / aV) else 0.0
+                        klDiv += if (aV > 0.0 && bV > 0.0) bV * ln(bV / aV) else 0.0
                         bList.removeAt(0)
                     }
                 }

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
-import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.*

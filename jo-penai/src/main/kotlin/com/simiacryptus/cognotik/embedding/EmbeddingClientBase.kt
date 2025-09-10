@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.Usage
-import com.simiacryptus.cognotik.models.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils

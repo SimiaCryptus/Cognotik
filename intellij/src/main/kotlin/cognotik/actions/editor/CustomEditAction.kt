@@ -7,7 +7,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.proxy.ChatProxy
+import com.simiacryptus.cognotik.actors.ChatProxy
 import com.simiacryptus.cognotik.util.UITools
 import javax.swing.JOptionPane
 

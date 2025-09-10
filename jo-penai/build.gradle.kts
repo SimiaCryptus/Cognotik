@@ -40,7 +40,6 @@ dependencies {
     implementation(libs.jackson.kotlin)
     implementation(libs.guava)
     implementation(libs.gson)
-    implementation(libs.jtransforms)
     implementation(libs.commons.io)
     // Optional Android dependency
     compileOnly(libs.android)

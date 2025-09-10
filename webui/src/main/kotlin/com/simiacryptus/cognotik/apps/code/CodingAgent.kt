@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.proxy.ValidatedObject
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import java.util.*
