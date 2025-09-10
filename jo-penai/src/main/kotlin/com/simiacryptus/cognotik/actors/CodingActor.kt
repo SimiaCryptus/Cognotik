@@ -6,8 +6,8 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.models.ApiModel.*
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.FailedToImplementException
+import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
 import javax.script.ScriptException
 import kotlin.reflect.KClass

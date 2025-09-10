@@ -10,8 +10,8 @@ import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.toContentList
 
 class PlanningTask(
     planSettings: PlanSettings,

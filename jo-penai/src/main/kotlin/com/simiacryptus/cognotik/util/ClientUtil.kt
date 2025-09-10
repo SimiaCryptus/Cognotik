@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.util
 
 import com.google.gson.Gson
 import com.simiacryptus.cognotik.exceptions.*
-import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
 import java.io.IOException
 import java.nio.charset.Charset
@@ -137,10 +136,7 @@ object ClientUtil {
         }
     }
 
-    fun String.toContentList() = listOf(this).map { ApiModel.ContentPart(text = it, type = "text") }
-    fun String.toChatMessage(role: ApiModel.Role = ApiModel.Role.user) =
-        ApiModel.ChatMessage(role = role, content = toContentList())
-
     val allowedCharset: Charset = Charset.forName("ASCII")
 
 }
+

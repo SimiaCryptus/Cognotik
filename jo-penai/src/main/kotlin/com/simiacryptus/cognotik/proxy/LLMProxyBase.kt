@@ -16,7 +16,7 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.full.functions
 import kotlin.reflect.jvm.javaType
 
-abstract class GPTProxyBase<T : Any>(
+abstract class LLMProxyBase<T : Any>(
     val clazz: Class<out T>,
     var temperature: Double = 0.1,
     private var validation: Boolean = true,
@@ -153,7 +153,7 @@ abstract class GPTProxyBase<T : Any>(
     )
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(GPTProxyBase::class.java)
+        private val log: Logger = LoggerFactory.getLogger(LLMProxyBase::class.java)
 
         fun fixup(jsonResult: String, type: Type): String {
             var jsonResult1 = jsonResult

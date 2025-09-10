@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.opt
 
+import com.simiacryptus.cognotik.embedding.DistanceType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

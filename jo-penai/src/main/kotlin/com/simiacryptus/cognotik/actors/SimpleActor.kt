@@ -1,10 +1,8 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.toContentList
 
 open class SimpleActor(
     prompt: String,

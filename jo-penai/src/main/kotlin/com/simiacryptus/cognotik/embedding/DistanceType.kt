@@ -1,7 +1,6 @@
-package com.simiacryptus.cognotik.opt
+package com.simiacryptus.cognotik.embedding
 
 import com.simiacryptus.cognotik.util.LoggerFactory
-
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt

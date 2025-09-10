@@ -8,8 +8,8 @@ import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.ImageGenerationRequest
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.util.ClientUtil.toChatMessage
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.toChatMessage
+import com.simiacryptus.cognotik.util.toContentList
 import java.awt.image.BufferedImage
 import java.net.URL
 import javax.imageio.ImageIO

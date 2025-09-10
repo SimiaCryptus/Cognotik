@@ -5,9 +5,9 @@ import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.ChatRequest
 import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.util.ClientUtil.toContentList
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.toContentList
 
 open class ChatProxy<T : Any>(
     clazz: Class<out T>,
@@ -17,7 +17,7 @@ open class ChatProxy<T : Any>(
     private val moderated: Boolean = false,
     val deserializerRetries: Int = 2,
     validation: Boolean = true
-) : GPTProxyBase<T>(clazz, temperature, validation, deserializerRetries) {
+) : LLMProxyBase<T>(clazz, temperature, validation, deserializerRetries) {
 
     override fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String {
         log.info("Starting completion with prompt: {}", prompt.toString())
