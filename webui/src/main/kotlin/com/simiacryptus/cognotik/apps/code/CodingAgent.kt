@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 open class CodingAgent<T : Interpreter>(
-    val api: ChatClientInterface,
     val dataStorage: StorageInterface,
     val session: Session,
     val user: User?,

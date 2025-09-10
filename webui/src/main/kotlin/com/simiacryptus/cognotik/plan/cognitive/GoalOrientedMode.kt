@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanCoordinator
@@ -17,7 +16,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
@@ -28,7 +26,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 open class GoalOrientedMode(
     override val ui: ApplicationInterface,
-    override val api: ChatClientInterface,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -97,9 +94,6 @@ open class GoalOrientedMode(
 
         val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
         val processor = FixedConcurrencyProcessor(executor, maxConcurrency)
-        val apiClient = (api as? ChatClientInterface)?.getChildClient(task)
-            ?: throw IllegalStateException("API must be a ChatClient")
-        apiClient.budget = planSettings.budget
         val sessionLog = StringBuilder()
         val sessionLogTask = ui.newTask(false).apply { mainTab["Session Log"] = placeholder }
         fun logToSession(message: String) {
@@ -119,7 +113,7 @@ open class GoalOrientedMode(
         )
 
         try {
-            val initialGoals = parseInitialGoals(userMessage, apiClient)
+            val initialGoals = parseInitialGoals(userMessage)
             if (initialGoals.isEmpty()) {
                 logToSession("No initial goals parsed. Aborting.")
                 task.complete("Could not determine initial goals from your request.".renderMarkdown())
@@ -161,7 +155,7 @@ open class GoalOrientedMode(
                 goalTab.add("# Goal: ${goal.description}\n\nID: ${goal.id}".renderMarkdown())
 
                 try {
-                    val (subgoals, tasksForGoal) = decomposeGoal(goal, apiClient, coordinator)
+                    val (subgoals, tasksForGoal) = decomposeGoal(goal, coordinator)
                     goal.decompositionAttempted = true
                     if (subgoals.isEmpty() && tasksForGoal.isEmpty()) {
                         logToSession("Goal ID ${goal.id} (${goal.description}) decomposed into no subgoals or tasks.")
@@ -232,7 +226,7 @@ open class GoalOrientedMode(
                         try {
                             val executionUiTask = ui.newTask(false).apply { tasksTab["Task ID ${t.id}"] = placeholder }
                             val taskResult =
-                                executeTask(t, apiClient.getChildClient(executionUiTask), executionUiTask, coordinator)
+                                executeTask(t, executionUiTask, coordinator)
                             taskResult
                         } catch (e: Exception) {
                             log.error(
@@ -368,7 +362,7 @@ open class GoalOrientedMode(
         sessionLogTask.complete(sessionLog.toString().renderMarkdown())
     }
 
-    private fun parseInitialGoals(userMessage: String, api: ChatClientInterface): List<Goal> {
+    private fun parseInitialGoals(userMessage: String): List<Goal> {
         val parsedActor = ParsedActor(
             name = "InitialGoalParser",
             resultClass = GoalList::class.java,
@@ -431,7 +425,6 @@ open class GoalOrientedMode(
 
     private fun decomposeGoal(
         goal: Goal,
-        api: ChatClientInterface, // This should be the iteration-specific API client
         coordinator: PlanCoordinator
     ): Pair<List<Goal>, List<Task>> {
         val parsedActor = ParsedActor(
@@ -490,7 +483,6 @@ open class GoalOrientedMode(
             describer = describer
         )
         val inputMessages = mutableListOf(goal.description ?: "")
-        // Add context data including the focus goal
         inputMessages.addAll(contextData(goal.id, null))
 
         val answer = parsedActor.answer(inputMessages, )
@@ -526,11 +518,9 @@ open class GoalOrientedMode(
 
     private fun executeTask(
         taskDefinition: Task,
-        api: ChatClientInterface,
         uiTask: SessionTask,
         coordinator: PlanCoordinator
     ): String {
-        val api = api.getChildClient(uiTask)
         val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
         val parsedActor = ParsedActor(
             name = "TaskTypeChooser",
@@ -571,7 +561,6 @@ open class GoalOrientedMode(
             agent = coordinator,
             messages = listOf(taskDefinition.description ?: "") + contextData(),
             task = uiTask,
-            api = api,
             resultFn = { result.append(it) }, // Capture task output
             planSettings = planSettings,
         )
@@ -868,11 +857,10 @@ open class GoalOrientedMode(
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: ChatClientInterface,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = GoalOrientedMode(ui, api, planSettings, session, user, describer)
+        ) = GoalOrientedMode(ui, planSettings, session, user, describer)
     }
 }

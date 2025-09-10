@@ -66,7 +66,7 @@ open class DocumentParserApp(
         return socketManager
     }
 
-    override fun userMessage(session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: ChatClientInterface) {
+    override fun userMessage(session: Session, user: User?, userMessage: String, ui: ApplicationInterface) {
         val settings = getSettings(session, user, Settings::class.java) ?: Settings()
         ui.socketManager!!.pool.submit {
             run(

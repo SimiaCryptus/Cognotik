@@ -38,7 +38,6 @@ ForeachTask - Execute a task for each item in a list
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -71,7 +70,6 @@ ForeachTask - Execute a task for each item in a list
                 pool = agent.pool,
                 userMessage = "$userMessage\nProcessing item $index: $item",
                 plan = itemSubTasks,
-                api = api,
                 tabs = tabs
             )
         }

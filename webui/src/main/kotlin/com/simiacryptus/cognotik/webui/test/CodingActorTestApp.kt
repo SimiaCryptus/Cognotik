@@ -22,9 +22,8 @@ open class CodingActorTestApp(
     path = "/codingActorTest",
 ) {
     override fun userMessage(
-        session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: ChatClientInterface
+        session: Session, user: User?, userMessage: String, ui: ApplicationInterface
     ) {
-        (api as ChatClientInterface).budget = 2.00
         val message = ui.newTask()
         try {
             message.echo(userMessage.renderMarkdown)

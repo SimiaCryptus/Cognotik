@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
@@ -189,8 +188,7 @@ class ReplicateCommitAction : BaseAction() {
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: ChatClientInterface
+            ui: ApplicationInterface
         ) {
             val task = ui.newTask()
             task.echo(userMessage)

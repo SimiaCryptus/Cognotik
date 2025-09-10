@@ -54,7 +54,6 @@ abstract class AbstractTask<T : TaskConfigBase>(
         agent: PlanCoordinator,
         messages: List<String> = listOf(),
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings,
     )

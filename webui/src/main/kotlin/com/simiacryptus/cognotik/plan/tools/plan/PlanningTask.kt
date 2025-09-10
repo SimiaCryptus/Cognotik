@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
@@ -50,7 +49,6 @@ class PlanningTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -63,7 +61,6 @@ class PlanningTask(
                 newTask,
                 userMessage,
                 ::toInput,
-                api,
                 agent.ui,
                 planSettings,
                 agent.describer
@@ -87,7 +84,6 @@ class PlanningTask(
             userMessage,
             PlanUtil.filterPlan { subPlan?.tasksByID } ?: emptyMap(),
             task,
-            api,
         )
     }
 
@@ -95,7 +91,6 @@ class PlanningTask(
         task: SessionTask,
         userMessage: String,
         toInput: (String) -> List<String>,
-        api: ChatClientInterface,
         ui: ApplicationInterface,
         planSettings: PlanSettings,
         describer: TypeDescriber
@@ -129,7 +124,6 @@ class PlanningTask(
         userMessage: String,
         subPlan: Map<String, TaskConfigBase>,
         parentTask: SessionTask,
-        api: ChatClientInterface,
     ) {
         val subPlanTask = coordinator.ui.newTask(false)
         parentTask.add(subPlanTask.placeholder)
@@ -156,7 +150,6 @@ class PlanningTask(
             pool = coordinator.pool,
             userMessage = userMessage,
             plan = subPlan,
-            api = api,
             tabs = TabbedDisplay(subPlanTask),
         )
         subPlanTask.complete()

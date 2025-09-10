@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
  */
 interface CognitiveMode {
     val ui: ApplicationInterface
-    val api: ChatClientInterface
     val planSettings: PlanSettings
     val session: Session
     val user: User?
@@ -39,7 +38,6 @@ interface CognitiveModeStrategy {
 
     fun getCognitiveMode(
         ui: ApplicationInterface,
-        api: ChatClientInterface,
         planSettings: PlanSettings,
         session: Session,
         user: User?,

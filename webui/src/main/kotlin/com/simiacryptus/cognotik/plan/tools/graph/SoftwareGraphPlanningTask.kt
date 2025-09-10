@@ -33,7 +33,6 @@ class SoftwareGraphPlanningTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -60,7 +59,7 @@ class SoftwareGraphPlanningTask(
             appendLine("```")
         }
         val planProcessingState = agent.executePlan(
-            plan = plan, task = task, userMessage = taskConfig.instruction, api = api
+            plan = plan, task = task, userMessage = taskConfig.instruction
         )
         val executionSummary = buildString {
             appendLine("## Plan Execution Summary")

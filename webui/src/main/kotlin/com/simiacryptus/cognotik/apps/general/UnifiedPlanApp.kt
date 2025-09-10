@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
@@ -19,6 +18,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.text.SimpleDateFormat
@@ -118,8 +118,7 @@ open class UnifiedPlanApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface,
-        api: ChatClientInterface
+        ui: ApplicationInterface
     ) {
         try {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
@@ -129,7 +128,7 @@ open class UnifiedPlanApp(
             val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
             
             if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
-                processMessageWithExpansions(session, user, expandedMessage, ui, api)
+                processMessageWithExpansions(session, user, expandedMessage, ui)
                 return
             }
             
@@ -138,11 +137,8 @@ open class UnifiedPlanApp(
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)
                 }
-                if (api is ChatClientInterface) api.budget = settings.budget
-
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
-                    api = api,
                     planSettings = settings,
                     session = session,
                     user = user,
@@ -191,8 +187,7 @@ open class UnifiedPlanApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface,
-        api: ChatClientInterface
+        ui: ApplicationInterface
     ) {
         val task = ui.newTask()
         val processor = FixedConcurrencyProcessor(expansionPool, 4)
@@ -201,7 +196,6 @@ open class UnifiedPlanApp(
             user = user,
             currentMessage = userMessage,
             ui = ui,
-            api = api,
             task = task,
             processor = processor
         )
@@ -216,29 +210,28 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: ChatClientInterface,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor
     ) {
 
         // Check for range expansion first
         val rangeMatch = rangeExpansionPattern.find(currentMessage)
         if (rangeMatch != null) {
-            expandRange(session, user, currentMessage, ui, api, task, processor, rangeMatch)
+            expandRange(session, user, currentMessage, ui, task, processor, rangeMatch)
             return
         }
 
         // Check for sequence expansion
         val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
         if (sequenceMatch != null) {
-            expandSequence(session, user, currentMessage, ui, api, task, processor, sequenceMatch)
+            expandSequence(session, user, currentMessage, ui, task, processor, sequenceMatch)
             return
         }
 
         // Check for parallel expansion
         val parallelMatch = expansionExpressionPattern.find(currentMessage)
         if (parallelMatch != null && parallelMatch.groupValues[1].split('|', ',').size > 1) {
-            expandParallel(session, user, currentMessage, ui, api, task, processor, parallelMatch)
+            expandParallel(session, user, currentMessage, ui, task, processor, parallelMatch)
             return
         }
 
@@ -250,10 +243,8 @@ open class UnifiedPlanApp(
 
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-            if (api is ChatClientInterface) api.budget = settings.budget
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
-                api = api,
                 planSettings = settings,
                 session = session,
                 user = user,
@@ -272,8 +263,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: ChatClientInterface,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         rangeMatch: MatchResult
     ) {
@@ -286,7 +276,7 @@ open class UnifiedPlanApp(
             .toList()
             .map { it.toString() }
             
-        expandSequenceItems(session, user, currentMessage, ui, api, task, processor, rangeMatch.value, items)
+        expandSequenceItems(session, user, currentMessage, ui, task, processor, rangeMatch.value, items)
     }
 
     /**
@@ -297,13 +287,12 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: ChatClientInterface,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         sequenceMatch: MatchResult
     ) {
         val items = sequenceMatch.groupValues[1].split(Regex("""\s*->\s*"""))
-        expandSequenceItems(session, user, currentMessage, ui, api, task, processor, sequenceMatch.value, items)
+        expandSequenceItems(session, user, currentMessage, ui, task, processor, sequenceMatch.value, items)
     }
 
     /**
@@ -314,8 +303,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: ChatClientInterface,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         parallelMatch: MatchResult
     ) {
@@ -333,7 +321,6 @@ open class UnifiedPlanApp(
                     user = user,
                     currentMessage = nextMessage,
                     ui = subUi,
-                    api = api,
                     task = subTask,
                     processor = processor
                 )
@@ -351,8 +338,7 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: ChatClientInterface,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         expression: String,
         items: List<String>
@@ -369,7 +355,6 @@ open class UnifiedPlanApp(
                 user = user,
                 currentMessage = nextMessage,
                 ui = subUi,
-                api = api,
                 task = subTask,
                 processor = processor
             )

@@ -18,7 +18,6 @@ import java.io.File
  */
 open class PlanAheadMode(
     override val ui: ApplicationInterface,
-    override val api: ChatClientInterface,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -39,11 +38,6 @@ open class PlanAheadMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val chatApi = api as? ChatClientInterface
-                ?: throw IllegalStateException("PlanAheadMode requires a ChatClient API implementation.")
-            val apiClient = chatApi.getChildClient(task) // Create a task-specific child client
-            apiClient.budget = planSettings.budget ?: 2.0 // Set budget on the child client
-
             val coordinator = PlanCoordinator(
                 user = user,
                 session = session,
@@ -65,7 +59,6 @@ open class PlanAheadMode(
                 userMessage = userMessage,
                 ui = coordinator.ui,
                 planSettings = coordinator.planSettings,
-                api = apiClient, // Use the budgeted and task-specific client
                 contextFn = { contextData() },
                 describer = describer
             )
@@ -73,8 +66,8 @@ open class PlanAheadMode(
             coordinator.executePlan(
                 plan = plan.plan,
                 task = task,
-                userMessage = userMessage,
-                api = apiClient // Use the budgeted and task-specific client
+                userMessage = userMessage
+                // Use the budgeted and task-specific client
             )
         } catch (e: Throwable) {
             task.error(e) // Report error on the current task
@@ -86,11 +79,10 @@ open class PlanAheadMode(
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: ChatClientInterface,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = PlanAheadMode(ui, api, planSettings, session, user, describer)
+        ) = PlanAheadMode(ui, planSettings, session, user, describer)
     }
 }

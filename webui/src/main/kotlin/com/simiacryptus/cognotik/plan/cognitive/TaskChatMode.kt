@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 open class TaskChatMode(
     override val ui: ApplicationInterface,
-    override val api: ChatClientInterface,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -80,9 +79,6 @@ open class TaskChatMode(
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-        val api = (this@TaskChatMode.api as ChatClientInterface).getChildClient(task)
-        api.budget = planSettings.budget
-
         val coordinator = PlanCoordinator(
             user = user,
             session = session,
@@ -153,7 +149,6 @@ open class TaskChatMode(
                     agent = coordinator,
                     messages = listOf(userMessage),
                     task = this,
-                    api = api,
                     resultFn = {
                         result.append(it)
                     },
@@ -233,11 +228,10 @@ open class TaskChatMode(
         override val inputCnt = 0
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: ChatClientInterface,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = TaskChatMode(ui, api, planSettings, session, user, describer)
+        ) = TaskChatMode(ui, planSettings, session, user, describer)
     }
 }

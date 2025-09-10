@@ -60,7 +60,6 @@ class CommandAutoFixTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -68,7 +67,6 @@ class CommandAutoFixTask(
         Retryable(agent.ui, task = task) {
             val task = agent.ui.newTask(false)
             agent.pool.submit {
-                val api = api.getChildClient(task)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(

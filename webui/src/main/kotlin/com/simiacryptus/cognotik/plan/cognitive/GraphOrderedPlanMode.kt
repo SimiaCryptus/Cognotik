@@ -12,8 +12,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -26,7 +24,6 @@ import java.io.File
  */
 open class GraphOrderedPlanMode(
     override val ui: ApplicationInterface,
-    override val api: ChatClientInterface,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -51,9 +48,7 @@ open class GraphOrderedPlanMode(
     override fun contextData(): List<String> = emptyList()
 
     private fun execute(userMessage: String, task: SessionTask) {
-        val apiClient = (api as ChatClientInterface).getChildClient(task)
         try {
-            apiClient.budget = planSettings.budget
             task.add("Reading graph file: $graphFile")
             val graphFileContent = readGraphFile(planSettings)
             val softwareGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
@@ -63,8 +58,8 @@ open class GraphOrderedPlanMode(
             task.add("Successfully loaded graph with ${softwareGraph.nodes.size} nodes")
             val orderedNodes = orderGraphNodes(softwareGraph.nodes)
             task.add("Ordered ${orderedNodes.size} nodes by priority")
-            val cumulativeTasks = transformNodesToPlan(orderedNodes, planSettings, userMessage, graphFile, apiClient)
-            addDependencies(cumulativeTasks, graphFileContent, userMessage, apiClient)
+            val cumulativeTasks = transformNodesToPlan(orderedNodes, planSettings, userMessage, graphFile)
+            addDependencies(cumulativeTasks, graphFileContent, userMessage)
             val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { cumulativeTasks } ?: emptyMap()
             log.info("Ordered plan built successfully. Proceeding to execute DAG.")
             task.add("Plan generated successfully with ${plan.size} tasks")
@@ -86,8 +81,7 @@ open class GraphOrderedPlanMode(
                     ).executePlan(
                         plan = plan,
                         task = task,
-                        userMessage = userMessage,
-                        api = apiClient
+                        userMessage = userMessage
                     )).let(::renderMarkdown))
             task.add("Plan execution completed")
         } catch (e: Exception) {
@@ -100,8 +94,7 @@ open class GraphOrderedPlanMode(
     private fun addDependencies(
         cumulativeTasks: MutableMap<String, TaskConfigBase>,
         graphFileContent: String,
-        userMessage: String,
-        api: ChatClientInterface
+        userMessage: String
     ) {
         log.debug("Starting dependency analysis for ${cumulativeTasks.size} tasks")
 
@@ -236,8 +229,7 @@ open class GraphOrderedPlanMode(
         nodes: List<SoftwareNodeType.NodeBase<*>>,
         planSettings: PlanSettings,
         userMessage: String,
-        graphFile: String,
-        api: ChatClientInterface
+        graphFile: String
     ): MutableMap<String, TaskConfigBase> {
         val tasks = mutableMapOf<String, TaskConfigBase>()
         nodes.forEach {
@@ -248,8 +240,7 @@ open class GraphOrderedPlanMode(
                     graphFile = graphFile,
                     graphTxt = readGraphFile(planSettings),
                     node = it,
-                    userMessage = userMessage,
-                    api = api
+                    userMessage = userMessage
                 ) ?: emptyMap()
             )
         }
@@ -262,8 +253,7 @@ open class GraphOrderedPlanMode(
         graphFile: String,
         graphTxt: String,
         node: SoftwareNodeType.NodeBase<*>,
-        userMessage: String,
-        api: ChatClientInterface
+        userMessage: String
     ): Map<String, TaskConfigBase>? {
         val maxRetries = 3
         val retryDelayMillis = 1000L
@@ -332,13 +322,12 @@ open class GraphOrderedPlanMode(
 
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: ChatClientInterface,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
         ): CognitiveMode {
-            return GraphOrderedPlanMode(ui, api, planSettings, session, user, graphFile, describer)
+            return GraphOrderedPlanMode(ui, planSettings, session, user, graphFile, describer)
         }
     }
 }

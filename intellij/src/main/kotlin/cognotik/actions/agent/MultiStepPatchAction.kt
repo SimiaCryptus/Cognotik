@@ -103,16 +103,13 @@ class MultiStepPatchAction : BaseAction() {
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: ChatClientInterface
+            ui: ApplicationInterface
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
                 model = AppSettingsState.instance.smartChatClient
             )
-            api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
-                api = api,
                 session = session,
                 user = user,
                 ui = ui,
@@ -137,7 +134,6 @@ class MultiStepPatchAction : BaseAction() {
     }
 
     class AutoDevAgent(
-        val api: ChatClientInterface,
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
@@ -188,7 +184,6 @@ class MultiStepPatchAction : BaseAction() {
             }
 
             val task = ui.newTask()
-            val api = (api as ChatClientInterface).getChildClient(task)
 
             val toInput = { it: String -> listOf(codeSummary(), it) }
             val architectureResponse = Discussable(

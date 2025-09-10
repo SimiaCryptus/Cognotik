@@ -30,10 +30,8 @@ open class ImageActorTestApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface,
-        api: ChatClientInterface
+        ui: ApplicationInterface
     ) {
-        (api as ChatClientInterface).budget = 2.00
         val message = ui.newTask()
         try {
             val actor = getSettings<Settings>(session, user)?.actor ?: actor

@@ -109,7 +109,6 @@ class CrawlerAgentTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -184,7 +183,7 @@ class CrawlerAgentTask(
                                             else -> "Analyze the content and provide insights."
                                         }
                                         val analysis: ParsedResponse<ParsedPage> =
-                                            transformContent(content, analysisGoal, api, planSettings, agent.describer)
+                                            transformContent(content, analysisGoal, planSettings, agent.describer)
 
                                         if (analysis.obj.page_type == PageType.Error) {
                                             appendLine(
@@ -280,7 +279,7 @@ class CrawlerAgentTask(
         }.joinToString("\n")
         val finalOutput =
             if (create_final_summary != false && analysisResults.length > max_final_output_size) {
-                createFinalSummary(analysisResults, api)
+                createFinalSummary(analysisResults)
             } else {
                 analysisResults
             }
@@ -291,7 +290,7 @@ class CrawlerAgentTask(
         resultFn(finalOutput)
     }
 
-    private fun createFinalSummary(analysisResults: String, api: ChatClientInterface): String {
+    private fun createFinalSummary(analysisResults: String): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
         val maxSize = /*taskConfig?.max_final_output_size ?:*/ max_final_output_size
 
@@ -426,14 +425,13 @@ class CrawlerAgentTask(
     private fun transformContent(
         content: String,
         analysisGoal: String,
-        api: ChatClientInterface,
         planSettings: PlanSettings,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
 
         val maxChunkSize = 50000
         if (content.length <= maxChunkSize) {
-            return pageParsedResponse(planSettings, analysisGoal, content, api, describer)
+            return pageParsedResponse(planSettings, analysisGoal, content, describer)
         }
 
         log.info("Content size (${content.length}) exceeds limit, splitting into chunks")
@@ -442,20 +440,19 @@ class CrawlerAgentTask(
         val chunkResults = chunks.mapIndexed { index, chunk ->
             log.info("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
             val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
-            pageParsedResponse(planSettings, chunkGoal, chunk, api, describer)
+            pageParsedResponse(planSettings, chunkGoal, chunk, describer)
         }
         if (chunkResults.size == 1) {
             return chunkResults[0]
         }
         val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n") { it.text }
-        return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, api, describer)
+        return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, describer)
     }
 
     private fun pageParsedResponse(
         planSettings: PlanSettings,
         analysisGoal: String,
         content: String,
-        api: ChatClientInterface,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
         val summaryPrompt = listOf(

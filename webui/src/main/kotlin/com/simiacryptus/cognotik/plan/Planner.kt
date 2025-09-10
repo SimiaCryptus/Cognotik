@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
@@ -23,11 +22,9 @@ open class Planner {
         userMessage: String,
         ui: ApplicationInterface,
         planSettings: PlanSettings,
-        api: ChatClientInterface,
         contextFn: () -> List<String> = { emptyList() },
         describer: TypeDescriber
     ): TaskBreakdownWithPrompt {
-        val api = (api as ChatClientInterface).getChildClient(task)
         val toInput = inputFn(codeFiles, files, root)
         task.echo(userMessage.renderMarkdown())
         return if (!planSettings.autoFix)
@@ -37,7 +34,6 @@ open class Planner {
                 userMessage = { userMessage },
                 initialResponse = {
                     newPlan(
-                        api,
                         planSettings,
                         toInput(userMessage) + contextFn(),
                         describer
@@ -62,7 +58,6 @@ open class Planner {
                 ui = ui,
                 reviseResponse = { userMessages: List<Pair<String, ApiModel.Role>> ->
                     newPlan(
-                        api,
                         planSettings,
                         userMessages.map { it.first },
                         describer
@@ -77,7 +72,6 @@ open class Planner {
             }
         else {
             newPlan(
-                api,
                 planSettings,
                 toInput(userMessage) + contextFn(),
                 describer
@@ -92,7 +86,6 @@ open class Planner {
     }
 
     open fun newPlan(
-        api: ChatClientInterface,
         planSettings: PlanSettings,
         inStrings: List<String>,
         describer: TypeDescriber

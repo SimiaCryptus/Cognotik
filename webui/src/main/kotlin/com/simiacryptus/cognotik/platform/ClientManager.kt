@@ -67,12 +67,12 @@ open class ClientManager {
             null
         } else {
             val userSettings = userSettingsManager.getUserSettings(user)
-            if (userSettings.apiKeys.isEmpty()) {
+            if (userSettings.apis.isEmpty()) {
                 log.warn("No API key for user: $user in session: $session")
                 null
             } else {
                 object : ProvidersChatClient(
-                    apiKeyMap = userSettings.apiKeys,
+                    apiKeyMap = userSettings.apis.associate { it.provider!! to (it.key ?: "") },
                     apiBaseMap = userSettings.apiBase,
                     workPool = getPool(session, user)
                 ) {

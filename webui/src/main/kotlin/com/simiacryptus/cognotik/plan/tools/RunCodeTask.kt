@@ -45,14 +45,12 @@ class RunCodeTask<T : Interpreter>(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
         val codingAgent = object : CodingAgent<T>(
-            api = api,
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,

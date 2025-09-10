@@ -11,8 +11,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.models.APIProvider
-import org.slf4j.event.Level
-import java.io.BufferedOutputStream
 
 interface UserSettingsInterface {
 
@@ -43,29 +41,6 @@ interface UserSettingsInterface {
         val tools: MutableList<ToolData> = mutableListOf(),
         val etc: MutableMap<String, Any> = mutableMapOf(),
     ) {
-        @Deprecated("Use UserSettings constructor with MutableList parameters instead")
-        constructor(
-            apiKeys: Map<APIProvider, String>,
-            apiBase: Map<APIProvider, String> = emptyMap(),
-            localTools: List<String> = emptyList()
-        ) : this(apiKeys.map {
-            ApiData(
-                key = it.value,
-                baseUrl = apiBase[it.key] ?: it.key.base ?: "",
-                provider = it.key
-            )
-        }.toMutableList(), localTools.map {
-            ToolData(
-                name = it
-            )
-        }.toMutableList())
-
-        @get:JsonIgnore
-        @get:Deprecated("Use this.apis instead")
-        val apiKeys: Map<APIProvider, String>
-            get() = apis.associate {
-                it.provider!! to (it.key ?: "")
-            }
 
         @get:JsonIgnore
         @get:Deprecated("Use this.apis instead")
@@ -128,7 +103,7 @@ interface UserSettingsInterface {
             } else {
                 emptyList<String>()
             }
-            return UserSettings(apiKeys, apiBase, localTools)
+            return UserSettings(toApiList(apiKeys, apiBase), toTools(localTools))
         }
     }
 
@@ -136,3 +111,17 @@ interface UserSettingsInterface {
 
     fun updateUserSettings(user: User, settings: UserSettings)
 }
+
+fun toApiList(
+    apiKeys: Map<APIProvider, String>,
+    apiBase: Map<APIProvider, String>
+): MutableList<UserSettingsInterface.ApiData> = apiKeys.map {
+    UserSettingsInterface.ApiData(
+        key = it.value,
+        baseUrl = apiBase[it.key] ?: it.key.base ?: "",
+        provider = it.key
+    )
+}.toMutableList()
+
+fun toTools(localTools: List<String>): MutableList<UserSettingsInterface.ToolData> =
+    localTools.map { UserSettingsInterface.ToolData(it) }.toMutableList()

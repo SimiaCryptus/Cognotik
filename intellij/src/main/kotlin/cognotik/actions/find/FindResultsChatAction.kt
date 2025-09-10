@@ -172,19 +172,11 @@ class FindResultsChatAction(
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: ChatClientInterface
+            ui: ApplicationInterface
         ) {
-            val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
-            if (api is ChatClientInterface) api.budget = settings.budget ?: 2.00
-
             val task = ui.newTask()
-            val api = (api as ChatClientInterface).getChildClient(task)
-
             task.echo(renderMarkdown(userMessage))
-
             task.verbose((getCodeContext()).renderMarkdown())
-
             Retryable(ui = ui, task = task) { content ->
                 val task = ui.newTask(false)
                 task.add(

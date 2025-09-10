@@ -1,14 +1,16 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.platform.model.toApiList
+import com.simiacryptus.cognotik.platform.model.toTools
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -70,7 +72,7 @@ class ApiKeyServlet : HttpServlet() {
                     ApiKeyRecord(
                         user.email,
                         UUID.randomUUID().toString(),
-                        userSettings.apiKeys[APIProvider.valueOf(provider)] ?: "",
+                        userSettings.apis.firstOrNull { it.provider == APIProvider.valueOf(provider) }?.key ?: "",
                         0.0,
                         ""
                     )
@@ -113,12 +115,15 @@ class ApiKeyServlet : HttpServlet() {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
             } else {
                 val userSettings = userSettingsManager.getUserSettings(user)
-                userSettingsManager.updateUserSettings(
-                    user, UserSettings(
+                val settings = UserSettings(
+                    toApiList(
                         apiKeys = mapOf(APIProvider.OpenAI to apiKey),
                         apiBase = mapOf(APIProvider.OpenAI to "https://apps.simiacrypt.us/proxy"),
-                        localTools = userSettings.localTools
-                    )
+                    ),
+                    toTools(userSettings.localTools)
+                )
+                userSettingsManager.updateUserSettings(
+                    user, settings
                 )
                 resp.sendRedirect("/")
 

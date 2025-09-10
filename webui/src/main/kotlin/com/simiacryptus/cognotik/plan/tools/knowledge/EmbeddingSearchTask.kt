@@ -64,7 +64,6 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {

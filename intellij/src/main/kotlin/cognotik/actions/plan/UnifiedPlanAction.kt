@@ -8,7 +8,6 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -65,12 +64,11 @@ class UnifiedPlanAction : BaseAction() {
 
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : PlanAheadMode(ui, api, planSettings, session, user,  describer) {
+                        ) = object : PlanAheadMode(ui, planSettings, session, user,  describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -93,12 +91,11 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 0
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : TaskChatMode(ui, api, planSettings, session, user, describer) {
+                        ) = object : TaskChatMode(ui, planSettings, session, user, describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -121,18 +118,16 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
                         ) = object : GraphOrderedPlanMode(
                             ui,
-                            api,
                             planSettings,
                             session,
                             user,
-                            GraphOrderedPlanMode.graphFile,
+                            graphFile,
                             describer
                         ) {
                             override fun contextData(): List<String> {
@@ -157,7 +152,6 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: ChatClientInterface,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -165,7 +159,6 @@ class UnifiedPlanAction : BaseAction() {
                         ): CognitiveMode {
                             return object : AutoPlanMode(
                                 ui = ui,
-                                api = api,
                                 planSettings = planSettings,
                                 session = session,
                                 user = user,
@@ -177,7 +170,6 @@ class UnifiedPlanAction : BaseAction() {
                                 override fun contextData(): List<String> {
                                     return listOf(
                                         buildString {
-
                                             append("Selected Files:\n")
                                             append(filteredWalk(File(root)).joinToString("\n") {
                                                 "* ${
