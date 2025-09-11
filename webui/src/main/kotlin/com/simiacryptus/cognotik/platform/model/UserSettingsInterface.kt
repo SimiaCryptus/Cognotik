@@ -24,7 +24,6 @@ interface UserSettingsInterface {
             base = baseUrl ?: "",
             workPool = workPool
         ) ?: throw IllegalStateException("Provider not set or invalid")
-
     }
 
     data class ToolData(
