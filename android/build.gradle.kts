@@ -109,14 +109,37 @@ android {
 }
 
 dependencies {
-    implementation(project(":jo-penai"))
-    implementation(project(":core"))
-    implementation(project(":kotlin"))
-    implementation(project(":groovy"))
-    implementation(project(":webui")) {
-        exclude(group = "org.eclipse.jetty")
+    implementation(project(":jo-penai")) {
+        exclude(group = "org.apache.pdfbox")
+        exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")
+        exclude(group = "de.rototor.pdfbox", module = "graphics2d")
     }
-    implementation(project(":desktop"))
+    implementation(project(":core")) {
+        exclude(group = "org.apache.pdfbox")
+        exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")
+        exclude(group = "de.rototor.pdfbox", module = "graphics2d")
+    }
+    implementation(project(":kotlin")) {
+        exclude(group = "org.apache.pdfbox")
+        exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")
+        exclude(group = "de.rototor.pdfbox", module = "graphics2d")
+    }
+    implementation(project(":groovy")) {
+        exclude(group = "org.apache.pdfbox")
+        exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")
+        exclude(group = "de.rototor.pdfbox", module = "graphics2d")
+    }
+    implementation(project(":webui")) {
+        exclude(group = "org.apache.pdfbox")
+        exclude(group = "org.eclipse.jetty")
+        exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")
+        exclude(group = "de.rototor.pdfbox", module = "graphics2d")
+    }
+    implementation(project(":desktop")) {
+        exclude(group = "org.apache.pdfbox")
+        exclude(group = "com.vladsch.flexmark", module = "flexmark-pdf-converter")
+        exclude(group = "de.rototor.pdfbox", module = "graphics2d")
+    }
 
     // Android dependencies
     implementation(libs.androidx.core.ktx)

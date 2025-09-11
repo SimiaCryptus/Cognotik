@@ -26,7 +26,6 @@ dependencies {
         exclude(group = "org.slf4j")
     }
 
-    implementation(libs.pdfbox)
     implementation(libs.webdrivermanager)
     implementation(libs.jsoup)
     implementation(libs.zxing.core)
