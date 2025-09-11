@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.audio
 
-import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.EventDispatcher
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.*
 
 enum class AudioState {

@@ -65,11 +65,13 @@ enum class SeedMethod {
                     val firstUrl = result["FirstURL"] as? String
                     val text = result["Text"] as? String
                     if (!firstUrl.isNullOrBlank() && !text.isNullOrBlank()) {
-                        allItems.add(mapOf(
-                            "link" to firstUrl,
-                            "title" to text,
-                            "snippet" to text
-                        ))
+                        allItems.add(
+                            mapOf(
+                                "link" to firstUrl,
+                                "title" to text,
+                                "snippet" to text
+                            )
+                        )
                     }
                 }
                 // Add related topics
@@ -77,11 +79,13 @@ enum class SeedMethod {
                     val firstUrl = topic["FirstURL"] as? String
                     val text = topic["Text"] as? String
                     if (!firstUrl.isNullOrBlank() && !text.isNullOrBlank()) {
-                        allItems.add(mapOf(
-                            "link" to firstUrl,
-                            "title" to text.substringBefore(" - "),
-                            "snippet" to text
-                        ))
+                        allItems.add(
+                            mapOf(
+                                "link" to firstUrl,
+                                "title" to text.substringBefore(" - "),
+                                "snippet" to text
+                            )
+                        )
                     }
                 }
                 if (allItems.isEmpty()) {

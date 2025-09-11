@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.AbstractTask
@@ -8,7 +9,6 @@ import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskConfigBase
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.describe.Description
 import java.nio.file.FileSystems
 
 abstract class AbstractFileTask<T : FileTaskConfigBase>(

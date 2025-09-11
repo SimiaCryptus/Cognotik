@@ -1,14 +1,13 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -136,16 +135,16 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     )
                                     combinedBlocks.add(
                                         DisplayBlock(
-                                        file = relativePath,
-                                        contextLines = actualContext,
-                                        firstLineNumberInFile = currentBlockContextStartLineInFile,
-                                        matches = currentBlockAggregatedMatches.map { aggMatch ->
-                                            MatchInBlock(
-                                                originalLineNumber = aggMatch.lineNumber,
-                                                indexInDisplayBlockContext = aggMatch.lineNumber - currentBlockContextStartLineInFile
-                                            )
-                                        }
-                                    ))
+                                            file = relativePath,
+                                            contextLines = actualContext,
+                                            firstLineNumberInFile = currentBlockContextStartLineInFile,
+                                            matches = currentBlockAggregatedMatches.map { aggMatch ->
+                                                MatchInBlock(
+                                                    originalLineNumber = aggMatch.lineNumber,
+                                                    indexInDisplayBlockContext = aggMatch.lineNumber - currentBlockContextStartLineInFile
+                                                )
+                                            }
+                                        ))
                                 }
                                 // Start a new block
                                 currentBlockAggregatedMatches = mutableListOf(match)
@@ -167,16 +166,16 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             )
                             combinedBlocks.add(
                                 DisplayBlock(
-                                file = relativePath,
-                                contextLines = actualContext,
-                                firstLineNumberInFile = currentBlockContextStartLineInFile,
-                                matches = currentBlockAggregatedMatches.map { aggMatch ->
-                                    MatchInBlock(
-                                        originalLineNumber = aggMatch.lineNumber,
-                                        indexInDisplayBlockContext = aggMatch.lineNumber - currentBlockContextStartLineInFile
-                                    )
-                                }
-                            ))
+                                    file = relativePath,
+                                    contextLines = actualContext,
+                                    firstLineNumberInFile = currentBlockContextStartLineInFile,
+                                    matches = currentBlockAggregatedMatches.map { aggMatch ->
+                                        MatchInBlock(
+                                            originalLineNumber = aggMatch.lineNumber,
+                                            indexInDisplayBlockContext = aggMatch.lineNumber - currentBlockContextStartLineInFile
+                                        )
+                                    }
+                                ))
                         }
                         combinedBlocks // Return list of blocks for this file
                     } catch (e: Exception) {

@@ -74,17 +74,17 @@ object StringUtil {
         log.debug("getWhitespaceSuffix called with {} lines", lines.size)
         return reverse(
             Arrays.stream(lines)
-            .map { obj: CharSequence? -> reverse(obj!!) }
-            .map { l: CharSequence ->
-                toString(
-                    l.chars().takeWhile { codePoint: Int ->
-                        Character.isWhitespace(
-                            codePoint
-                        )
-                    }.toArray()
-                )
-            }
-            .max(Comparator.comparing { obj: CharSequence -> obj.length }).orElse("")
+                .map { obj: CharSequence? -> reverse(obj!!) }
+                .map { l: CharSequence ->
+                    toString(
+                        l.chars().takeWhile { codePoint: Int ->
+                            Character.isWhitespace(
+                                codePoint
+                            )
+                        }.toArray()
+                    )
+                }
+                .max(Comparator.comparing { obj: CharSequence -> obj.length }).orElse("")
         ).toString()
     }
 

@@ -21,7 +21,7 @@ class ChatSocket(
 
             val firstOrNull = session.upgradeRequest.parameterMap["lastMessageTime"]?.firstOrNull()
             val lastMessageTime =
-                when(firstOrNull) {
+                when (firstOrNull) {
                     "-Infinity" -> Long.MIN_VALUE
                     "Infinity" -> Long.MAX_VALUE
                     "null" -> 0L

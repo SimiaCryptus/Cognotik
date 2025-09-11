@@ -467,9 +467,10 @@ open class JsonDescriber(
 
     open fun getEnumValues(clazz: Class<*>): List<String> {
         return when {
-            clazz.isEnum -> clazz.enumConstants.filter { 
+            clazz.isEnum -> clazz.enumConstants.filter {
                 if (it is EnabledStrategy) it.isEnabled() else true
             }.map { it.toString() }
+
             DynamicEnum::class.java.isAssignableFrom(clazz) -> {
                 DynamicEnum.values(clazz as Class<out DynamicEnum<*>>).filter {
                     if (it is EnabledStrategy) it.isEnabled() else true

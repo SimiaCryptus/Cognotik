@@ -76,7 +76,7 @@ object IterativePatchUtil {
         if (newCode.isBlank() && oldCode.isNotBlank()) {
             return oldCode.lines().joinToString("\n") { "- $it" }
         }
-        
+
         val sourceLines = parseLines(oldCode)
         val newLines = parseLines(newCode)
         link(sourceLines, newLines, null)
@@ -322,7 +322,7 @@ object IterativePatchUtil {
         val usedPatchLines = mutableSetOf<LineRecord>()
         var sourceIndex = -1
         var lastMatchedPatchIndex = -1
-        
+
         while (sourceIndex < sourceLines.size - 1) {
             val codeLine = sourceLines[++sourceIndex]
             when {
@@ -657,7 +657,6 @@ object IterativePatchUtil {
     private fun parsePatchLines(text: String, sourceLines: List<LineRecord>): List<LineRecord> {
         log.debug("Starting to parse patch lines")
         val patchLines = setLinks(text.lines().mapIndexed { index, line ->
-
 
 
             // More robust detection of line types

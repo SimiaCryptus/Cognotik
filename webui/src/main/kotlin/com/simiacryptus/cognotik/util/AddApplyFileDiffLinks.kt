@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
@@ -12,7 +13,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.cognotik.chat.model.Chatter
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration

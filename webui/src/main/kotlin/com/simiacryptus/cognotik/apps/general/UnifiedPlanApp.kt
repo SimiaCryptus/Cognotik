@@ -48,14 +48,14 @@ open class UnifiedPlanApp(
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
-    
+
     // Updated expansion patterns to match ChatSocketManager
     private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+"""
     private val expansionExpressionPattern = Regex("""@\[($idSubPattern(?:[|,]$idSubPattern)+)]""")
     private val sequenceExpansionPattern = Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""")
     private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
     private val topicReferencePattern = Regex("""@([A-Z][a-zA-Z0-9_]*)""")
-    
+
     private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
@@ -94,7 +94,7 @@ open class UnifiedPlanApp(
                 """.trimIndent()
             )
         }
-        
+
         ui.newTask(true).expandable(
             "Session Info", """
                 Session ID: `${session}`
@@ -126,12 +126,12 @@ open class UnifiedPlanApp(
             log.debug("Received user message: $userMessage")
 
             val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
-            
+
             if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
                 processMessageWithExpansions(session, user, expandedMessage, ui)
                 return
             }
-            
+
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
@@ -153,6 +153,7 @@ open class UnifiedPlanApp(
             ui.newTask().error(e)
         }
     }
+
     /**
      * Expands topic references in the message using previously identified topics
      */
@@ -170,6 +171,7 @@ open class UnifiedPlanApp(
             }
         }
     }
+
     /**
      * Checks if the message contains any expansion syntax
      */
@@ -238,9 +240,6 @@ open class UnifiedPlanApp(
         // No expansion found, process normally
 
 
-
-
-
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
             cognitiveStrategy.getCognitiveMode(
@@ -270,12 +269,12 @@ open class UnifiedPlanApp(
         val start = rangeMatch.groupValues[1].toInt()
         val end = rangeMatch.groupValues[2].toInt()
         val step = rangeMatch.groupValues[3].takeIf { it.isNotEmpty() }?.toInt() ?: 1
-        
+
         val items = generateSequence(start) { it + step }
             .takeWhile { if (step > 0) it <= end else it >= end }
             .toList()
             .map { it.toString() }
-            
+
         expandSequenceItems(session, user, currentMessage, ui, task, processor, rangeMatch.value, items)
     }
 
@@ -309,13 +308,13 @@ open class UnifiedPlanApp(
     ) {
         val options = parallelMatch.groupValues[1].split('|', ',')
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
-        
+
         options.map { option ->
             processor.submit {
                 val subUi = ApplicationInterface(ui.socketManager)
                 val subTask = subUi.newTask(false).apply { tabs[option] = placeholder }
                 val nextMessage = currentMessage.replaceFirst(parallelMatch.value, option)
-                
+
                 processMessageRecursive(
                     session = session,
                     user = user,
@@ -326,7 +325,7 @@ open class UnifiedPlanApp(
                 )
             }
         }.forEach { it.get() }
-        
+
         tabs.update()
     }
 
@@ -344,12 +343,12 @@ open class UnifiedPlanApp(
         items: List<String>
     ) {
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
-        
+
         for (item in items) {
             val subUi = ApplicationInterface(ui.socketManager)
             val subTask = subUi.newTask(false).apply { tabs[item] = placeholder }
             val nextMessage = currentMessage.replaceFirst(expression, item)
-            
+
             processMessageRecursive(
                 session = session,
                 user = user,
@@ -359,7 +358,7 @@ open class UnifiedPlanApp(
                 processor = processor
             )
         }
-        
+
         tabs.update()
     }
 

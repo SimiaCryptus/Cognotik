@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.text
 
-import org.slf4j.Logger
 import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.Logger
 
 /**
  * Builds a suffix array from the provided text.

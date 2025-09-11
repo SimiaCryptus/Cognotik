@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.demotest
 
-import org.monte.media.av.codec.audio.AudioFormatKeys.*
+import org.monte.media.av.codec.audio.AudioFormatKeys.MIME_AVI
 import org.monte.media.av.codec.video.VideoFormatKeys
 import org.monte.media.math.Rational
 import java.awt.GraphicsEnvironment

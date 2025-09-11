@@ -7,13 +7,14 @@ import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
 import java.io.File
 import java.io.FileInputStream
-import java.util.Properties
 import java.io.InputStream
+import java.util.*
 import kotlin.io.path.createTempFile
 
 class EmlReader(private val file: File) : DocumentReader {
     private var message: MimeMessage? = null
     private val tempFiles = mutableListOf<File>()
+
     init {
         FileInputStream(file).use { inputStream ->
             val props = Properties()
@@ -21,6 +22,7 @@ class EmlReader(private val file: File) : DocumentReader {
             message = MimeMessage(session, inputStream)
         }
     }
+
     override fun getText(): String {
         val message = this.message ?: return ""
         val result = StringBuilder()
@@ -37,39 +39,47 @@ class EmlReader(private val file: File) : DocumentReader {
         processContent(message.content, result)
         return result.toString()
     }
+
     private fun processContent(content: Any?, result: StringBuilder) {
         when (content) {
             is String -> {
                 result.appendLine(content)
             }
+
             is MimeMultipart -> {
                 processMultipart(content, result)
             }
+
             is InputStream -> {
                 result.appendLine(content.bufferedReader().use { it.readText() })
             }
         }
     }
+
     private fun processMultipart(multipart: MimeMultipart, result: StringBuilder) {
         for (i in 0 until multipart.count) {
             val bodyPart = multipart.getBodyPart(i)
             processPart(bodyPart, result)
         }
     }
+
     private fun processPart(part: BodyPart, result: StringBuilder) {
         val disposition = part.disposition
         val contentType = part.contentType.lowercase()
         when {
             disposition?.lowercase()?.contains("attachment") == true ||
-            disposition?.lowercase()?.contains("inline") == true -> {
+                    disposition?.lowercase()?.contains("inline") == true -> {
                 processAttachment(part, result)
             }
+
             contentType.contains("text/plain") || contentType.contains("text/html") -> {
                 processContent(part.content, result)
             }
+
             contentType.contains("multipart") -> {
                 processContent(part.content, result)
             }
+
             else -> {
                 // Try to process as attachment if it has a filename
                 if (part.fileName != null) {
@@ -78,6 +88,7 @@ class EmlReader(private val file: File) : DocumentReader {
             }
         }
     }
+
     private fun processAttachment(part: BodyPart, result: StringBuilder) {
         val fileName = part.fileName ?: "attachment"
         result.appendLine()
@@ -107,6 +118,7 @@ class EmlReader(private val file: File) : DocumentReader {
         result.appendLine("--- End Attachment: $fileName ---")
         result.appendLine()
     }
+
     override fun close() {
         // Clean up temporary files
         tempFiles.forEach { file ->

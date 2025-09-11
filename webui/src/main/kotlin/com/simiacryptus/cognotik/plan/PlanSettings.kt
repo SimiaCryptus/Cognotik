@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getAvailableTaskTypes
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
@@ -17,8 +19,6 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTas
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import java.io.File
 
 class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {

@@ -27,7 +27,6 @@ class FullTextSearcher(
         val last = findLast(pattern)
 
 
-
         val result = suffixes.suffixArray.slice(first..last).sorted()
 //        log.debug("Found {} occurrences in {}ms", result.size, System.currentTimeMillis() - startTime)
 //        if (log.isTraceEnabled && result.isNotEmpty()) {

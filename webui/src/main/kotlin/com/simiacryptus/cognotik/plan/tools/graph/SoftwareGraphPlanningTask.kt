@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools.graph
 
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 
 class SoftwareGraphPlanningTask(

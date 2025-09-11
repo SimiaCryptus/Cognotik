@@ -2,12 +2,11 @@ package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
 
 class SoftwareGraphModificationTask(

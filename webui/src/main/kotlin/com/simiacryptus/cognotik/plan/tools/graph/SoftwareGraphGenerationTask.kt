@@ -2,18 +2,17 @@ package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
 
 class SoftwareGraphGenerationTask(

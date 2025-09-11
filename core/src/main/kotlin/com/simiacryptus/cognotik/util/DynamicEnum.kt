@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
-import kotlin.collections.get
 
 open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
     companion object {

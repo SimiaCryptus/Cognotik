@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.cognotik.OpenAIClient
 import java.io.IOException
 import java.util.*
 

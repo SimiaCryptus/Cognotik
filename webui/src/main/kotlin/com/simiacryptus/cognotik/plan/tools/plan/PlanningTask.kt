@@ -1,16 +1,16 @@
 package com.simiacryptus.cognotik.plan.tools.plan
 
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.toContentList
+import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.session.SessionTask
 
 class PlanningTask(
     planSettings: PlanSettings,

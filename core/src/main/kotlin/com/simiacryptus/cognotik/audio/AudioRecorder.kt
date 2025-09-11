@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.audio
 
-import org.apache.commons.io.input.buffer.CircularByteBuffer
 import com.simiacryptus.cognotik.util.LoggerFactory
+import org.apache.commons.io.input.buffer.CircularByteBuffer
 import java.util.*
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem

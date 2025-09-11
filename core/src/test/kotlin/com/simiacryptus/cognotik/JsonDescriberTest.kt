@@ -14,11 +14,6 @@ class JsonDescriberTest : TypeDescriberTestBase() {
     }
 
     @Test
-    override fun testDescribeOpenAIClient() {
-        super.testDescribeOpenAIClient()
-    }
-
-    @Test
     override fun testDescribeMethod() {
 
     }
@@ -29,7 +24,7 @@ class JsonDescriberTest : TypeDescriberTestBase() {
         get() =
             """{
                  "type": "object",
-                 "class": "com.simiacryptus.jopenai.TypeDescriberTestBase${"$"}DataClassExample",
+                 "class": "com.simiacryptus.cognotik.TypeDescriberTestBase${"$"}DataClassExample",
                  "allowed": false
                }"""
 
@@ -67,28 +62,12 @@ class JsonDescriberTest : TypeDescriberTestBase() {
 
             """{
                  "type": "object",
-                 "class": "com.simiacryptus.jopenai.TypeDescriberTestBase${"$"}RecursiveDataClass",
+                 "class": "com.simiacryptus.cognotik.TypeDescriberTestBase${"$"}RecursiveDataClass",
                  "allowed": false
                }"""
         val actualDescription = typeDescriber.describe(RecursiveDataClass::class.java)
         Assertions.assertEquals(expectedDescription, actualDescription)
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 }

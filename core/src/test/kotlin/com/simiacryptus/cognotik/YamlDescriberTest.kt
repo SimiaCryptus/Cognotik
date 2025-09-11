@@ -20,7 +20,7 @@ class YamlDescriberTest : TypeDescriberTestBase() {
 
             """
             type: object
-            class: com.simiacryptus.jopenai.TypeDescriberTestBase${'$'}DataClassExample
+            class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}DataClassExample
             properties:
                 a:
                 description: "This is an integer"
@@ -62,7 +62,7 @@ class YamlDescriberTest : TypeDescriberTestBase() {
 
             """
             type: object
-            class: com.simiacryptus.jopenai.TypeDescriberTestBase${'$'}RecursiveDataClass
+            class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}RecursiveDataClass
             properties:
                 name:
                   type: string

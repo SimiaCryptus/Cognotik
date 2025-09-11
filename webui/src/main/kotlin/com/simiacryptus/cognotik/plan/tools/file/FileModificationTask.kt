@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
@@ -8,12 +9,10 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit

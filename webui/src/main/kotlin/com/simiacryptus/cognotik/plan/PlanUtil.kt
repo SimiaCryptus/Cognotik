@@ -3,9 +3,9 @@ package com.simiacryptus.cognotik.plan
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.util.AgentPatterns
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 

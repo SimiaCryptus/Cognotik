@@ -172,8 +172,7 @@ open class TrainedSilenceDiscriminator(
         compare(packet.spectralEntropy, silence.spectralEntropyPercentileTool, speech.spectralEntropyPercentileTool),
 
 
-
-    ) + frequencyBands.mapIndexed { index, (low, high) ->
+        ) + frequencyBands.mapIndexed { index, (low, high) ->
         compare(
             packet.frequencyBandPower(low, high),
             silence.frequencyBandTools[index],

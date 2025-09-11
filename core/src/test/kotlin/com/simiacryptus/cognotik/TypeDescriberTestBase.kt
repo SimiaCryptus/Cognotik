@@ -38,7 +38,10 @@ abstract class TypeDescriberTestBase {
 
     @Test
     open fun testDescribeMethod() {
-        Assertions.assertEquals(methodDescription.trim(), typeDescriber.describe(this::methodExample.javaMethod!!).trim())
+        Assertions.assertEquals(
+            methodDescription.trim(),
+            typeDescriber.describe(this::methodExample.javaMethod!!).trim()
+        )
     }
 
     @Test
@@ -55,10 +58,6 @@ abstract class TypeDescriberTestBase {
         Assertions.assertEquals(expectedDescription, actualDescription)
     }
 
-    @Test
-    open fun testDescribeOpenAIClient() {
-        println(typeDescriber.describe(OpenAIClient::class.java))
-    }
 
     abstract val methodDescription: String
 }

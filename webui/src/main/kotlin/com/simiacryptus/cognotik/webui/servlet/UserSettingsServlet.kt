@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
-import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

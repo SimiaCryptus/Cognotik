@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.text
 
-import com.simiacryptus.cognotik.text.TextCompressor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

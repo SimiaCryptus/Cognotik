@@ -10,9 +10,9 @@ import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.simiacryptus.cognotik.demotest.DemoTestBase
 import com.simiacryptus.cognotik.demotest.SplashScreenConfig
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.event.KeyEvent
 import java.lang.Thread.sleep
 import java.time.Duration

@@ -514,7 +514,7 @@ abstract class PatchApp(
                         (if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else "")
             ),
 
-        ).lines().joinToString("\n") {
+            ).lines().joinToString("\n") {
             it.replace(Regex("""/\* Error.*?\*/"""), "")
         }
         log.info("Received fix response (${fixResponse.length} chars)")

@@ -303,8 +303,8 @@ open class ChatSocketManager(
                     baseMessages,
                     match,
                     transcriptStream
-                ) {  msg, tsk, msgs ->
-                    processMsgRecursive( msg, tsk, msgs, transcriptStream)
+                ) { msg, tsk, msgs ->
+                    processMsgRecursive(msg, tsk, msgs, transcriptStream)
                 }
             }
         }

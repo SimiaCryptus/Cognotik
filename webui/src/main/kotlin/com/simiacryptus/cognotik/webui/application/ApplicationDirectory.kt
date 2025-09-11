@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.application
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import jakarta.servlet.DispatcherType
@@ -20,7 +21,6 @@ import org.eclipse.jetty.util.resource.ResourceCollection
 import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.Desktop
 import java.net.URI
 import java.util.*
@@ -34,7 +34,7 @@ abstract class ApplicationDirectory(
     init {
         log.info("Creating ApplicationDirectory instance with localName='$localName', publicName='$publicName', port=$port")
     }
-    
+
     var domainName: String = ""
         private set
     abstract val childWebApps: List<ChildWebApp>
@@ -182,7 +182,7 @@ abstract class ApplicationDirectory(
                             it
                         }
                 ).filterNotNull().toTypedArray()
-        
+
         log.debug("Created context handler collection with ${contexts.handlers.size} handlers")
         val server = Server(port)
 
@@ -293,7 +293,7 @@ abstract class ApplicationDirectory(
         log.debug("Servlet WebAppContext configuration completed for path: $path")
         return context
     }
-    
+
     private fun isAndroid(): Boolean {
         val result = try {
             Class.forName("android.os.Build")

@@ -1,13 +1,12 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 // Register the new mode in the package
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.describe.TypeDescriber
 
 /**
  * The CognitiveMode interface defines the “cognitive” strategy

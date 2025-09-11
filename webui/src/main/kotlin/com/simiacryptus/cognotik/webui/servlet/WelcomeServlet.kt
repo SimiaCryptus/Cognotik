@@ -5,13 +5,13 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.http.MimeTypes
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.nio.file.NoSuchFileException
 
 open class WelcomeServlet(private val parent: ApplicationDirectory) :
@@ -24,14 +24,17 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
                 log.info("Serving static welcome page for path: $path")
                 serveStaticPage(resp)
             }
+
             path == "/user" -> {
                 log.info("Serving user info for path: $path")
                 serveUserInfo(req!!, resp!!)
             }
+
             path == "/apps" -> {
                 log.info("Serving app list for path: $path")
                 serveAppList(req!!, resp)
             }
+
             else -> {
                 log.info("Serving resource for path: $path")
                 serveResource(req, resp, path)
@@ -47,6 +50,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) :
                 log.info("Delegating POST request to userSettingsServlet for URI: $requestURI")
                 parent.userSettingsServlet.service(req!!, resp!!)
             }
+
             else -> {
                 log.warn("POST request not found, sending 404 for URI: $requestURI")
                 resp?.sendError(404)

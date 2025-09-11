@@ -595,14 +595,15 @@ ${it.name}:
     open fun getEnumValues(clazz: Class<*>): List<String> {
         return when {
             clazz.isEnum -> clazz.enumConstants
-                .filter { constant -> 
-                    if (constant is EnabledStrategy) constant.isEnabled() else true 
+                .filter { constant ->
+                    if (constant is EnabledStrategy) constant.isEnabled() else true
                 }
                 .map { it.toString() }
+
             DynamicEnum::class.java.isAssignableFrom(clazz) -> {
                 DynamicEnum.values(clazz as Class<out DynamicEnum<*>>)
-                    .filter { dynamicEnum -> 
-                        if (dynamicEnum is EnabledStrategy) dynamicEnum.isEnabled() else true 
+                    .filter { dynamicEnum ->
+                        if (dynamicEnum is EnabledStrategy) dynamicEnum.isEnabled() else true
                     }
                     .map { it.name }
             }

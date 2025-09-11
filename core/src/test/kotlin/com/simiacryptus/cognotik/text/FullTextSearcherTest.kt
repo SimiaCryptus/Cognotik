@@ -2,13 +2,10 @@
 
 package com.simiacryptus.cognotik.text
 
-import com.simiacryptus.cognotik.text.FlyweightCharSequence
-import com.simiacryptus.cognotik.text.FullTextSearcher
-import com.simiacryptus.cognotik.text.SuffixArray
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import com.simiacryptus.cognotik.util.LoggerFactory
 
 /**
  * Unit tests for the fulltextsearch package:

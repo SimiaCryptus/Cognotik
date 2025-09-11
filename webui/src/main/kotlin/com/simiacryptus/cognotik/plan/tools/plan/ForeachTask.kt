@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools.plan
 
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.describe.Description
 
 class ForeachTask(
     planSettings: PlanSettings,

@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.jackson.kotlin)
     implementation(libs.jackson.jaxrs.json)
     implementation(libs.jackson.datatype.jsr310)
+    testImplementation(project(":jo-penai"))
 
 
     compileOnly(libs.asm)

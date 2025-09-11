@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.platform.hsql
 
+import com.simiacryptus.cognotik.models.AIModel
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.sql.Connection
 import java.sql.DriverManager
