@@ -34,7 +34,7 @@ import kotlin.reflect.typeOf
  * A simple reverse proxy that supports the OpenAI API
  */
 open class ProxyHttpServlet(
-    private val targetUrl: String = "https://api.openai.com/v1/"
+    private val targetUrl: String = "https://api.openai.com/"
 ) : HttpServlet() {
 
     open val asyncClient: CloseableHttpAsyncClient by lazy {

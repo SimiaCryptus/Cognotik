@@ -54,7 +54,7 @@ class AnthropicChatClient(
                 val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
                     .writeValueAsString(anthropicChatRequest)
 
-                val rawResponse = post("${apiBase}/v1/messages", json, APIProvider.Anthropic)
+                val rawResponse = post("${apiBase}/messages", json, APIProvider.Anthropic)
                 checkError(rawResponse)
                 val responseJson = try {
                     fromAnthropicResponse(rawResponse)

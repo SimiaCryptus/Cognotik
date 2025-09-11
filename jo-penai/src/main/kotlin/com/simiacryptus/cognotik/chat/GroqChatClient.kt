@@ -47,7 +47,7 @@ class GroqChatClient(
                 val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
                     .writeValueAsString(groqRequest)
 
-                val result = post("$apiBase/openai/v1/chat/completions", json, APIProvider.Groq)
+                val result = post("$apiBase/openai/chat/completions", json, APIProvider.Groq)
                 checkError(result)
                 val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
 

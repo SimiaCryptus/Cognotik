@@ -45,7 +45,7 @@ class OpenAIChatClient(
                 val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
                     .writeValueAsString(chatRequest)
 
-                val rawResponse = post("${apiBase}/v1/chat/completions", json, APIProvider.OpenAI)
+                val rawResponse = post("${apiBase}/chat/completions", json, APIProvider.OpenAI)
                 checkError(rawResponse)
 
                 val response = JsonUtil.objectMapper().readValue(rawResponse, ApiModel.ChatResponse::class.java)

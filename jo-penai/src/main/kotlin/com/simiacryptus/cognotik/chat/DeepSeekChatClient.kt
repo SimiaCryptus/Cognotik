@@ -41,7 +41,7 @@ class DeepSeekChatClient(
         val deepSeekRequest = toDeepSeek(chatRequest)
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
             .writeValueAsString(deepSeekRequest)
-        val result = post("$apiBase/v1/chat/completions", json, APIProvider.DeepSeek)
+        val result = post("$apiBase/chat/completions", json, APIProvider.DeepSeek)
         checkError(result)
         val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
         if (response.usage != null && model is ChatModel) {

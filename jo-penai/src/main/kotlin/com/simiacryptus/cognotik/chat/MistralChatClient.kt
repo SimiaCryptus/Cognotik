@@ -65,7 +65,7 @@ class MistralChatClient(
                 val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
                     .writeValueAsString(mistralRequest)
 
-                val result = post("$apiBase/v1/chat/completions", json, APIProvider.Mistral)
+                val result = post("$apiBase/chat/completions", json, APIProvider.Mistral)
                 checkError(result)
                 val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
 
