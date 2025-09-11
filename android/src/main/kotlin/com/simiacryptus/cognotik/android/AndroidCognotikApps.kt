@@ -179,7 +179,14 @@ class AndroidCognotikApps private constructor(
     private val describer = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "com.simiacryptus"
     )
-    private val model = AnthropicModels.Claude35Haiku
+    private val model = AnthropicModels.Claude35Haiku.instance(
+        key = TODO(),
+        base = TODO(),
+        logLevel = TODO(),
+        logStreams = TODO(),
+        workPool = TODO(),
+        temperature = TODO()
+    )
 
     override val childWebApps: List<ChildWebApp> by lazy {
         try {
@@ -194,28 +201,27 @@ class AndroidCognotikApps private constructor(
     }
     
     private fun createChildWebApps(): List<ChildWebApp> {
-        val parsingModel = model
         val filesDir = androidContext.filesDir.absolutePath
         log.info("Using files directory: $filesDir")
-        log.debug("Parsing model: ${parsingModel.javaClass.simpleName}")
+        log.debug("Parsing model: ${model.javaClass.simpleName}")
         log.debug("Default model: ${model.javaClass.simpleName}")
         
         val planSettings = PlanSettings(
             defaultModel = model,
-            parsingModel = parsingModel,
+            parsingModel = model,
             workingDir = filesDir
         )
         log.debug("Created plan settings with working directory: ${planSettings.workingDir}")
         
         val webApps = listOf(
-            ChildWebApp("/chat", BasicChatApp(File(filesDir), model, parsingModel)),
+            ChildWebApp("/chat", BasicChatApp(File(filesDir), model.modelType, model.modelType)),
             ChildWebApp(
                 "/taskChat", UnifiedPlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
                 )
@@ -226,7 +232,7 @@ class AndroidCognotikApps private constructor(
                     applicationName = "Auto-Plan",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
                 )
@@ -237,7 +243,7 @@ class AndroidCognotikApps private constructor(
                     applicationName = "Plan-Ahead",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
                 )
@@ -248,7 +254,7 @@ class AndroidCognotikApps private constructor(
                     applicationName = "Goal-Oriented",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 )

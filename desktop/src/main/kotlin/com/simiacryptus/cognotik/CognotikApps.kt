@@ -246,23 +246,25 @@ open class CognotikApps(
     val describer = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "com.simiacryptus"
     )
-    val model = AnthropicModels.Claude35Haiku
+    val model = AnthropicModels.Claude35Haiku.instance(
+        key = TODO(),
+        workPool = TODO()
+    )
     override val childWebApps by lazy {
-        val parsingModel = model
         val planSettings = PlanSettings(
             defaultModel = model,
-            parsingModel = parsingModel,
+            parsingModel = model,
             workingDir = "."
         )
         listOf(
-            ChildWebApp("/chat", BasicChatApp(File("."), model, parsingModel)),
+            ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),
             ChildWebApp(
                 "/taskChat", UnifiedPlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
                 )
@@ -273,7 +275,7 @@ open class CognotikApps(
                     applicationName = "Auto-Plan",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
                 )
@@ -284,7 +286,7 @@ open class CognotikApps(
                     applicationName = "Plan-Ahead",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
                 )
@@ -295,7 +297,7 @@ open class CognotikApps(
                     applicationName = "Goal-Oriented",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 )
