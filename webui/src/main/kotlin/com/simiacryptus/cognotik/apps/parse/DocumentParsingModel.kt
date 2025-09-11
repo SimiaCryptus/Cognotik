@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
@@ -60,7 +59,7 @@ open class DocumentParsingModel(
 
     open val exampleInstance = DocumentData()
 
-    override fun getFastParser(api: ChatClientInterface): (String) -> DocumentData {
+    override fun getFastParser(): (String) -> DocumentData {
         val parser = ParsedActor(
             resultClass = DocumentData::class.java,
             exampleInstance = exampleInstance,

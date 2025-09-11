@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 
@@ -26,7 +25,7 @@ class LogPatternGenerator(
         Return only the regex patterns with descriptions, no matches or analysis.
     """.trimIndent()
 
-    fun generatePatterns(api: ChatClientInterface, text: String): List<LogDataParsingModel.PatternData> {
+    fun generatePatterns(text: String): List<LogDataParsingModel.PatternData> {
         val parser = ParsedActor(
             resultClass = PatternResponse::class.java,
             exampleInstance = PatternResponse(),

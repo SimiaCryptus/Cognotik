@@ -26,17 +26,7 @@ interface ChatClientInterface {
         chatRequest: ApiModel.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<BufferedOutputStream> = this.logStreams
-    ) = model.instance(
-            key = key(model.provider),
-            base = apiBase(model.provider),
-            logStreams = logStreams,
-            workPool = workPool,
-            temperature = chatRequest.temperature
-        ).chat(chatRequest.messages)
-
-    fun apiBase(provider: APIProvider): String
-
-    fun key(provider: APIProvider): String
+    ): ApiModel.ChatResponse
 
     /**
      * Moderates the given text for policy violations
@@ -44,12 +34,6 @@ interface ChatClientInterface {
      * @throws ModerationException if the text violates policies
      */
     fun moderate(text: String) {}
-
-    /**
-     * Creates a child client that inherits configuration from this client
-     * @return A new ChatClientInterface instance
-     */
-    fun getChildClient(): ChatClientInterface
 
     /**
      * Called when API usage occurs to track tokens and costs

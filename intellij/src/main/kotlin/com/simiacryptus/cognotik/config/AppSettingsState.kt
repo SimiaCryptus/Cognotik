@@ -139,9 +139,8 @@ data class AppSettingsState(
         }.toMap()
     }
 
-
-    val smartChatClient: Chatter get() = smartModel.chatModel().instance(workPool)
-    val fastChatClient: Chatter get() = fastModel.chatModel().instance(workPool)
+    val smartChatClient: Chatter get() = smartModel.chatModel().instance()
+    val fastChatClient: Chatter get() = fastModel.chatModel().instance()
 
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
@@ -407,7 +406,7 @@ data class AppSettingsState(
 }
 
 fun ChatModel.instance(
-    service: ExecutorService
+    service: ExecutorService = AppSettingsState.workPool
 ) = instance(
     key = AppSettingsState.instance.getApiKeys()[provider.name]
         ?: throw IllegalArgumentException("API key for ${provider.name} is not set"),

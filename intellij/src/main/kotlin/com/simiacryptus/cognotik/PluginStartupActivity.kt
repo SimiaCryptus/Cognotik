@@ -152,10 +152,6 @@ class PluginStartupActivity : ProjectActivity {
                 null
             }
         }
-        ApplicationServices.clientManager = object : ClientManager() {
-            override fun createChatClient(session: Session, user: User?) =
-                IdeaChatClient.instance
-        }
         AppSettingsState.instance.apply {
             ApplicationServices.cloud = when {
                 awsProfile.isNullOrBlank() -> null

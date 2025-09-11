@@ -3,10 +3,8 @@ package cognotik.actions.knowledge
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFiles
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.apps.parse.RawTextParsingModel
-import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -172,10 +170,6 @@ class KnowledgeIndexingServer(
                         parsingModel = RawTextParsingModel(settings.splitRegex),
                         model = model,
                         progressState = progressState,
-                        api = ApplicationServices.clientManager.getChatClient(
-                            session = ui.socketManager?.sessionId!!,
-                            user = AppSettingsState.defaultUser,
-                        ),
                         inputPaths = batch.map { it.absolutePath }.toTypedArray(),
                     )
                     smallResults.addAll(batchResults)
@@ -199,10 +193,6 @@ class KnowledgeIndexingServer(
                         parsingModel = RawTextParsingModel(settings.splitRegex),
                         model = model,
                         progressState = progressState,
-                        api = ApplicationServices.clientManager.getChatClient(
-                            session = ui.socketManager?.sessionId!!,
-                            user = AppSettingsState.Companion.defaultUser,
-                        ),
                         inputPaths = arrayOf(file.absolutePath)
                     ).firstOrNull()
                     if (result != null) {
