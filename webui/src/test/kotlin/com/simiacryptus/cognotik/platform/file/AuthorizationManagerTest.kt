@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 
-abstract open class AuthorizationInterfaceTest(
+abstract class AuthorizationInterfaceTest(
     private val authInterface: AuthorizationInterface
 ) {
 
@@ -18,7 +18,7 @@ abstract open class AuthorizationInterfaceTest(
 
     @Test
     fun `newUser has admin`() {
-        assertFalse(authInterface.isAuthorized(this.javaClass, user, AuthorizationInterface.OperationType.Admin))
+        assert(authInterface.isAuthorized(this.javaClass, user, AuthorizationInterface.OperationType.Admin))
     }
 
 }
