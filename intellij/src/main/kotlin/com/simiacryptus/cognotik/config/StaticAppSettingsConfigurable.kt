@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik.config
 
 import com.intellij.util.xmlb.XmlSerializerUtil
-import com.simiacryptus.cognotik.PluginStartupActivity.Companion.addUserSuppliedModels
-import com.simiacryptus.cognotik.config.AppSettingsState.UserSuppliedModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.EncryptionUtil
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
@@ -19,9 +18,6 @@ import javax.swing.table.DefaultTableModel
 class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun apply() {
         super.apply()
-        addUserSuppliedModels(
-            settingsInstance.userSuppliedModels
-                ?.map { fromJson(it, UserSuppliedModel::class.java) } ?: emptyList())
         AppSettingsState.auxiliaryLog = null
     }
 
@@ -150,39 +146,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             }
         })
 
-        tabbedPane.addTab("OpenAI", JPanel(BorderLayout()).apply {
-            try {
-                add(JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    add(JPanel(BorderLayout()).apply {
-                        add(JLabel("Store Metadata (JSON):"), BorderLayout.NORTH)
-                        val scrollPane = JScrollPane(component.storeMetadata)
-                        scrollPane.preferredSize = Dimension(300, 100)
-                        add(scrollPane, BorderLayout.CENTER)
-                    })
-                    add(JPanel(BorderLayout()).apply {
-                        add(JLabel("User-Supplied Models:"), BorderLayout.NORTH)
-                        add(JScrollPane(component.userSuppliedModels).apply {
-                            preferredSize = Dimension(500, 200)
-                        }, BorderLayout.CENTER)
-                        add(JPanel(GridBagLayout()).apply {
-                            val gbc = GridBagConstraints().apply {
-                                gridx = 0
-                                gridy = 0
-                                fill = GridBagConstraints.HORIZONTAL
-                                weightx = 1.0
-                            }
-                            add(component.addUserModelButton, gbc)
-                            gbc.gridx++
-                            add(component.removeUserModelButton, gbc)
-                        }, BorderLayout.SOUTH)
-                    })
-                }, BorderLayout.NORTH)
-            } catch (e: Exception) {
-                log.warn("Error building Developer Tools", e)
-            }
-        })
-
         return tabbedPane
     }
 
@@ -191,10 +154,23 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         dialog.layout = BorderLayout()
 
         val encryptedSettings = AppSettingsState.instance.copy()
-        encryptedSettings.apiKeys?.replaceAll { k, v -> EncryptionUtil.encrypt(v, password.text) ?: v }
+        // Export UserSettings with encrypted keys
+        val userSettings = AppSettingsState.instance.getUserSettings()
+        val encryptedUserSettings = userSettings.copy(
+            apis = userSettings.apis.map { api ->
+                api.copy(key = api.key?.let { EncryptionUtil.encrypt(it, password.text) } ?: api.key)
+            }.toMutableList()
+        )
         val configJson = JsonUtil.toJson(encryptedSettings)
+        val userSettingsJson = JsonUtil.toJson(encryptedUserSettings)
+        val fullConfig = """
+            {
+                "appSettings": $configJson,
+                "userSettings": $userSettingsJson
+            }
+        """.trimIndent()
 
-        val textArea = JTextArea(configJson).apply {
+        val textArea = JTextArea(fullConfig).apply {
             lineWrap = true
             wrapStyleWord = true
             font = Font(Font.MONOSPACED, Font.PLAIN, 12)
@@ -344,21 +320,34 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     }
 
     fun import(text: String) {
-        val importedSettings = fromJson<AppSettingsState>(text, AppSettingsState::class.java)
-        importedSettings.apiKeys?.replaceAll { k, v -> EncryptionUtil.decrypt(v, password.text) ?: v }
-        XmlSerializerUtil.copyBean(importedSettings, AppSettingsState.instance)
-        addUserSuppliedModels(importedSettings.userSuppliedModels?.map {
-            fromJson(
-                it,
-                UserSuppliedModel::class.java
-            )
-        } ?: emptyList())
+        try {
+            // Try to parse as new format with both appSettings and userSettings
+            val fullConfig: Map<String, Any> = fromJson(text, Map::class.java)
+            if (fullConfig.containsKey("appSettings") && fullConfig.containsKey("userSettings")) {
+                val appSettingsJson = JsonUtil.toJson(fullConfig["appSettings"])
+                val userSettingsJson = JsonUtil.toJson(fullConfig["userSettings"])
 
-        importedSettings.apiKeys?.forEach { (provider, key) ->
-            AppSettingsState.instance.apiKeys?.put(provider, key)
-        }
-        importedSettings.apiBase?.forEach { (provider, base) ->
-            AppSettingsState.instance.apiBase?.put(provider, base)
+                val importedSettings = fromJson<AppSettingsState>(appSettingsJson, AppSettingsState::class.java)
+                XmlSerializerUtil.copyBean(importedSettings, AppSettingsState.instance)
+
+                val importedUserSettings = fromJson<UserSettingsInterface.UserSettings>(
+                    userSettingsJson,
+                    UserSettingsInterface.UserSettings::class.java
+                )
+                val decryptedUserSettings = importedUserSettings.copy(
+                    apis = importedUserSettings.apis.map { api ->
+                        api.copy(key = api.key?.let { EncryptionUtil.decrypt(it, password.text) } ?: api.key)
+                    }.toMutableList()
+                )
+                AppSettingsState.instance.updateUserSettings(decryptedUserSettings)
+            } else {
+                // Fall back to old format
+                val importedSettings = fromJson<AppSettingsState>(text, AppSettingsState::class.java)
+                XmlSerializerUtil.copyBean(importedSettings, AppSettingsState.instance)
+            }
+        } catch (e: Exception) {
+            log.error("Error importing configuration", e)
+            throw e
         }
     }
 
@@ -381,41 +370,18 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.shellCommand.text = settings.shellCommand
             component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
             component.setExecutables(settings.executables ?: emptySet())
-            component.setUserSuppliedModels(settings.userSuppliedModels?.map {
-                fromJson(
-                    it,
-                    UserSuppliedModel::class.java
-                )
-            } ?: emptyList())
+
             val model = component.apis.model as DefaultTableModel
             model.rowCount = 0
 
-            model.rowCount = 0
-
-            val apiKeys = settings.apiKeys
-            if (null == apiKeys) {
-                log.warn("API keys are null")
-                return
-            }
-            val apiBase = settings.apiBase
-            if (null == apiBase) {
-                log.warn("API base is null")
-                return
-            }
-            APIProvider.values().forEach { value ->
-                val name = value.name
-                var key = apiKeys[name]
-                if (key == null) {
-                    log.debug("Key is null for provider: $name")
-                    key = ""
-                }
-                var url = apiBase[name]
-                if (url == null) {
-                    log.debug("URL is null for provider: $name")
-                    url = value.base
-                }
-                log.debug("Adding row to table model: $name, $key, $url")
-                model.addRow(arrayOf(name, key, url))
+            // Load from UserSettingsManager
+            val userSettings = settings.getUserSettings()
+            userSettings.apis.forEach { api ->
+                val providerName = api.provider?.name ?: ""
+                val key = api.key ?: ""
+                val url = api.baseUrl ?: api.provider?.base ?: ""
+                log.debug("Adding row to table model: $providerName, $key, $url")
+                model.addRow(arrayOf(providerName, key, url))
             }
         } catch (e: Exception) {
             log.warn("Error setting UI", e)
@@ -441,6 +407,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.mainImageModel = (component.mainImageModel.selectedItem as String)
             settings.pluginHome = File(component.pluginHome.text)
             settings.shellCommand = component.shellCommand.text
+            // Save to UserSettingsManager
+            val userSettings = settings.getUserSettings()
+            userSettings.apis.clear()
+
 
             val tableModel = component.apis.model as DefaultTableModel
             log.debug("Reading API keys from table model: $tableModel with row count: ${tableModel.rowCount}")
@@ -450,18 +420,23 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 val base = tableModel.getValueAt(row, 2) as String
                 log.info("Row $row: provider=$provider, key=$key, base=$base")
                 if (key.isNotBlank()) {
-                    settings.apiKeys?.set(provider, key) ?: log.warn("API keys are blank")
-                    settings.apiBase?.set(provider, base) ?: log.warn("API base is blank")
-                } else {
-                    log.info("Removing API key for provider: $provider")
-                    settings.apiKeys?.toMutableMap()?.apply { settings.apiKeys.remove(provider) }
-                    settings.apiBase?.toMutableMap()?.apply { settings.apiBase.remove(provider) }
+                    try {
+                        val apiProvider = APIProvider.valueOf(provider)
+                        userSettings.apis.add(
+                            UserSettingsInterface.ApiData(
+                                key = key,
+                                baseUrl = base,
+                                provider = apiProvider
+                            )
+                        )
+                    } catch (e: Exception) {
+                        log.warn("Unknown provider: $provider", e)
+                    }
                 }
             }
+            settings.updateUserSettings(userSettings)
+
             settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
-            settings.userSuppliedModels?.clear()
-            settings.userSuppliedModels?.plusAssign(component.getUserSuppliedModels().map { it.toJson() }
-                .toMutableList())
             log.info("Settings after reading: ${settings.toJson()}")
         } catch (e: Exception) {
             log.warn("Error reading UI", e)

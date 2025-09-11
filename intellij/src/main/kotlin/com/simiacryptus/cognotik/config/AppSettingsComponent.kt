@@ -16,7 +16,6 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import java.awt.BorderLayout
@@ -231,43 +230,8 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         }
     }
 
-    @Name("User-Supplied Models")
-    val userSuppliedModels = JBTable(DefaultTableModel(arrayOf("Display Name", "Model ID", "Provider"), 0)).apply {
-        columnModel.getColumn(0).preferredWidth = 150
-        columnModel.getColumn(1).preferredWidth = 200
-        columnModel.getColumn(2).preferredWidth = 100
-        columnModel.getColumn(2).cellEditor =
-            DefaultCellEditor(JComboBox(APIProvider.values().map { it.name }.toTypedArray()))
-    }
-    val addUserModelButton = JButton("Add Model").apply {
-        addActionListener {
-            (userSuppliedModels.model as DefaultTableModel).addRow(arrayOf("", "", APIProvider.OpenAI))
-        }
-    }
-    val removeUserModelButton = JButton("Remove Model").apply {
-        addActionListener {
-            if (userSuppliedModels.selectedRow != -1)
-                (userSuppliedModels.model as DefaultTableModel).removeRow(userSuppliedModels.selectedRow)
-        }
-    }
-
     @Name("Editor Actions")
     var usage = UsageTable(ApplicationServices.usageManager)
-    fun getUserSuppliedModels(): List<AppSettingsState.UserSuppliedModel> {
-        return (0 until userSuppliedModels.rowCount).map { row ->
-            AppSettingsState.UserSuppliedModel(
-                userSuppliedModels.getValueAt(row, 0) as String,
-                userSuppliedModels.getValueAt(row, 1) as String,
-                userSuppliedModels.getValueAt(row, 2) as APIProvider
-            )
-        }
-    }
-
-    fun setUserSuppliedModels(models: List<AppSettingsState.UserSuppliedModel>) {
-        val model = userSuppliedModels.model as DefaultTableModel
-        model.rowCount = 0
-        models.forEach { model.addRow(arrayOf(it.displayName, it.modelId, it.provider)) }
-    }
 
     init {
 
@@ -278,10 +242,12 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
 
         setExecutables(AppSettingsState.instance.executables ?: emptySet())
+        val userSettings = AppSettingsState.instance.getUserSettings()
         ChatModel.values()
             .filter {
-                AppSettingsState.instance.apiKeys?.filter { it.value.isNotBlank() }?.keys?.contains(it.value.provider.name)
-                    ?: false
+                userSettings.apis.any { api ->
+                    api.provider == it.value.provider && !api.key.isNullOrBlank()
+                }
             }
             .forEach {
                 this.smartModel.addItem(it.value.modelName)

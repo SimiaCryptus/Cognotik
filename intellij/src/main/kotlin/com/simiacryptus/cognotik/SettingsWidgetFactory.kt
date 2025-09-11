@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -11,42 +10,26 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import icons.MyIcons
-import java.awt.BorderLayout
-import java.awt.Component
-import java.awt.FlowLayout
-import java.awt.GridLayout
-import java.awt.Toolkit
+import java.awt.*
 import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
 import java.net.URI
-import java.util.ResourceBundle
+import java.util.*
 import javax.accessibility.AccessibleContext
-import javax.swing.DefaultListModel
-import javax.swing.JButton
-import javax.swing.JComboBox
-import javax.swing.JLabel
-import javax.swing.JList
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JSlider
-import javax.swing.JTabbedPane
-import javax.swing.JTree
-import javax.swing.KeyStroke
-import javax.swing.ListCellRenderer
-import javax.swing.SwingUtilities
+import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
-import kotlin.collections.iterator
 
 class SettingsWidgetFactory : StatusBarWidgetFactory {
 
@@ -81,7 +64,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val providers = models()
                 .filter { model ->
                     val providerName = model.second.provider.name
-                    AppSettingsState.Companion.instance.apiKeys?.get(providerName)?.isNotEmpty() == true
+                    AppSettingsState.Companion.instance.getApiKeys()[providerName]?.isNotEmpty() == true
                 }
                 .groupBy { it.second.provider }
 

@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.IdeaChatClient
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.AIModel
@@ -11,10 +10,10 @@ import org.apache.hc.core5.http.HttpRequest
 import java.util.concurrent.Executors
 
 class IdeaOpenAIClient : OpenAIClient(
-    key = AppSettingsState.instance.apiKeys?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
-        ?.associate { it.key to it.value } ?: mapOf(),
-    apiBase = AppSettingsState.instance.apiBase?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
-        ?.associate { it.key to it.value } ?: mapOf(),
+    key = AppSettingsState.instance.getApiKeys().mapKeys { APIProvider.valueOf(it.key) }.entries.toTypedArray()
+        .associate { it.key to it.value },
+    apiBase = AppSettingsState.instance.getApiBase().mapKeys { APIProvider.valueOf(it.key) }.entries.toTypedArray()
+        .associate { it.key to it.value },
     workPool = Executors.newCachedThreadPool(),
 ) {
 
@@ -28,8 +27,8 @@ class IdeaOpenAIClient : OpenAIClient(
     override fun onUsage(model: AIModel?, tokens: ApiModel.Usage) {
 
         ApplicationServices.usageManager.incrementUsage(
-            IdeaChatClient.currentSession,
-            IdeaChatClient.localUser, model!!, tokens
+            AppSettingsState.currentSession,
+            AppSettingsState.Companion.defaultUser, model!!, tokens
         )
     }
 

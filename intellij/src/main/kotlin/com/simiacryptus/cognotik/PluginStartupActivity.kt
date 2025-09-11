@@ -9,6 +9,7 @@ import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
@@ -22,13 +23,11 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.IdeaChatClient
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.LoggerFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.simiacryptus.cognotik.util.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean

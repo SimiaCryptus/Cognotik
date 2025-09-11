@@ -1,25 +1,25 @@
 package com.simiacryptus.cognotik
 
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.simiacryptus.cognotik.chat.ProvidersChatClient
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.defaultUser
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.User
 import java.io.BufferedOutputStream
 
 open class IdeaChatClient(
-    key: Map<APIProvider, String> = AppSettingsState.Companion.instance.apiKeys?.mapKeys { APIProvider.Companion.valueOf(it.key) }?.entries?.toTypedArray()
-        ?.associate { it.key to it.value } ?: mapOf(),
-    apiBase: Map<APIProvider, String> = AppSettingsState.Companion.instance.apiBase?.mapKeys { APIProvider.Companion.valueOf(it.key) }?.entries?.toTypedArray()
-        ?.associate { it.key to it.value } ?: mapOf(),
+    key: Map<APIProvider, String> = AppSettingsState.instance.getUserSettings().apis
+        .mapNotNull { api -> api.provider?.let { it to (api.key ?: "") } }
+        .toMap(),
+    apiBase: Map<APIProvider, String> = AppSettingsState.instance.getUserSettings().apis
+        .mapNotNull { api -> api.provider?.let { it to (api.baseUrl ?: it.base ?: "") } }
+        .toMap(),
 ) : ProvidersChatClient(
     apiKeyMap = key,
     apiBaseMap = apiBase,
-    workPool = workPool,
+    workPool = AppSettingsState.workPool,
 ) {
 
     override fun apiBase(provider: APIProvider): String {
@@ -31,8 +31,8 @@ open class IdeaChatClient(
     }
 
     init {
-        require(key.size == apiBase.size) {
-            "API Key not configured for all providers: ${key.keys} != ${APIProvider.Companion.values().toList()}"
+        require(key.isNotEmpty()) {
+            "No API Keys configured. Please configure API keys in settings."
         }
     }
 
@@ -40,16 +40,12 @@ open class IdeaChatClient(
         model: LLMModel, tokens: ApiModel.Usage,
         logStreams: MutableList<BufferedOutputStream>
     ) {
-        ApplicationServices.usageManager.incrementUsage(currentSession, localUser, model, tokens)
+        ApplicationServices.usageManager.incrementUsage(AppSettingsState.currentSession, defaultUser, model, tokens)
         super.onUsage(model, tokens, logStreams)
     }
 
     companion object {
         val instance by lazy { IdeaChatClient() }
-        var lastEvent: AnActionEvent? = null
-        val currentSession = Session.Companion.newGlobalID()
-        val localUser = User(id = "1", email = "user@localhost")
-        val workPool = ApplicationServices.clientManager.getPool(currentSession, localUser)
     }
 
 }

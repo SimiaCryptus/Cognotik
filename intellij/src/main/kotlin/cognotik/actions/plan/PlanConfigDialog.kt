@@ -86,7 +86,7 @@ class PlanConfigDialog(
         private const val DIVIDER_PROPORTION = 0.3f
 
         fun isVisible(it: ChatModel): Boolean {
-            return AppSettingsState.instance.apiKeys?.get(it.provider.name)?.isNotBlank() ?: false
+            return AppSettingsState.instance.getApiKeys()[it.provider.name]?.isNotBlank() ?: false
         }
     }
 

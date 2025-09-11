@@ -7,7 +7,7 @@ package cognotik.actions
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.IdeaChatClient
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.UITools
 import javax.swing.Icon
@@ -50,7 +50,7 @@ abstract class BaseAction(
         UITools.logAction(
             "Action: ${javaClass.simpleName}".trim()
         )
-        IdeaChatClient.lastEvent = e
+        AppSettingsState.lastEvent = e
         try {
             handle(e)
         } catch (e: IllegalStateException) {
