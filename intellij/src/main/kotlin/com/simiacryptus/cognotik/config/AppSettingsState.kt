@@ -69,12 +69,10 @@ data class AppSettingsState(
     var temperature: Double = 0.1,
 
     /* Model Settings */
-    var smartModel: String = "",
-    var fastModel: String = "",
+    var smartModel: UserSettingsInterface.ApiChatModel? = null,
+    var fastModel: UserSettingsInterface.ApiChatModel? = null,
     var transcriptionModel: String? = null,
     var mainImageModel: String = "",
-    @Deprecated("Use UserSettingsManager")
-    val userSuppliedModels: MutableList<String>? = null,
 
     /* AWS Settings */
     var awsProfile: String? = null,
@@ -123,24 +121,15 @@ data class AppSettingsState(
     fun updateUserSettings(settings: UserSettingsInterface.UserSettings) =
         userSettingsManager.updateUserSettings(defaultUser, settings)
 
-    @JsonIgnore
-    fun getApiKeys(): Map<String, String> {
-        val settings = getUserSettings()
-        return settings.apis.mapNotNull { api ->
-            api.provider?.name?.let { it to (api.key ?: "") }
-        }.toMap()
-    }
+    @get:JsonIgnore
+    val smartChatClient: Chatter get() = smartModel?.model?.let {
+        smartModel?.provider?.client(workPool)?.getModel(it.modelName)
+    } ?: throw IllegalStateException("Smart model not configured")
 
-    @JsonIgnore
-    fun getApiBase(): Map<String, String> {
-        val settings = getUserSettings()
-        return settings.apis.mapNotNull { api ->
-            api.provider?.name?.let { it to (api.baseUrl ?: api.provider?.base ?: "") }
-        }.toMap()
-    }
-
-    val smartChatClient: Chatter get() = smartModel.chatModel().instance()
-    val fastChatClient: Chatter get() = fastModel.chatModel().instance()
+    @get:JsonIgnore
+    val fastChatClient: Chatter get() = fastModel?.model?.let {
+        fastModel?.provider?.client(workPool)?.getModel(it.modelName)
+    } ?: throw IllegalStateException("Fast model not configured")
 
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
@@ -148,7 +137,12 @@ data class AppSettingsState(
     @JsonIgnore
     private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
         val mapper = ObjectMapper()
-        val appSettings = fromJson<AppSettingsState>(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
+        val appSettings = try {
+                fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
+            } catch (e: Exception) {
+                log.warn("Error parsing settings: ${jsonNode}", e)
+                AppSettingsState()
+            }
 
         // Migrate legacy API keys to UserSettingsManager
         val userSettings = getUserSettings()
@@ -240,26 +234,6 @@ data class AppSettingsState(
 
         XmlSerializerUtil.copyBean(fromJson, this)
 
-        /* Migrate userSuppliedModels to UserSettingsManager if present */
-        if (fromJson.userSuppliedModels != null && fromJson.userSuppliedModels.isNotEmpty()) {
-            val userSettings = getUserSettings()
-            fromJson.userSuppliedModels.map { fromJson<UserSuppliedModel>(it, UserSuppliedModel::class.java) }
-                .forEach { model ->
-                    if (model.provider != null && !userSettings.apis.any {
-                            it.provider == model.provider && it.key == model.modelId
-                        }) {
-                        userSettings.apis.add(
-                            UserSettingsInterface.ApiData(
-                                key = model.modelId,
-                                provider = model.provider,
-                                baseUrl = model.provider?.base
-                            )
-                        )
-                    }
-                }
-            updateUserSettings(userSettings)
-        }
-
         /* Copy executables */
         executables?.clear()
         fromJson.executables?.forEach { executable ->
@@ -307,9 +281,9 @@ data class AppSettingsState(
         if (sampleSize != other.sampleSize) return false
         if (channels != other.channels) return false
         if (temperature != other.temperature) return false
-        if (smartModel != other.smartModel) return false
-        if (fastModel != other.fastModel) return false
-        if (mainImageModel != other.mainImageModel) return false
+if (smartModel != other.smartModel) return false
+         if (fastModel != other.fastModel) return false
+         if (mainImageModel != other.mainImageModel) return false
         if (listeningPort != other.listeningPort) return false
         if (listeningEndpoint != other.listeningEndpoint) return false
         if (apiThreads != other.apiThreads) return false
@@ -322,8 +296,6 @@ data class AppSettingsState(
         if (greetedVersion != other.greetedVersion) return false
         if (mainImageModel != other.mainImageModel) return false
         if (executables != other.executables) return false
-
-        if (userSuppliedModels != other.userSuppliedModels) return false
         if (awsProfile != other.awsProfile) return false
         if (awsRegion != other.awsRegion) return false
         if (awsBucket != other.awsBucket) return false
@@ -357,7 +329,6 @@ data class AppSettingsState(
         result = 31 * result + greetedVersion.hashCode()
         result = 31 * result + mainImageModel.hashCode()
         result = 31 * result + executables.hashCode()
-        result = 31 * result + userSuppliedModels.hashCode()
         result = 31 * result + (awsProfile?.hashCode() ?: 0)
         result = 31 * result + (awsRegion?.hashCode() ?: 0)
         result = 31 * result + (awsBucket?.hashCode() ?: 0)
@@ -405,12 +376,12 @@ data class AppSettingsState(
     )
 }
 
-fun ChatModel.instance(
+private fun ChatModel.instance(
     service: ExecutorService = AppSettingsState.workPool
-) = instance(
-    key = AppSettingsState.instance.getApiKeys()[provider.name]
+ ) = instance(
+    key = AppSettingsState.instance.getUserSettings().apis.find { it.provider == provider }?.key
         ?: throw IllegalArgumentException("API key for ${provider.name} is not set"),
-    base = AppSettingsState.instance.getApiBase()[provider.name]
+    base = AppSettingsState.instance.getUserSettings().apis.find { it.provider == provider }?.baseUrl
         ?: provider.base
         ?: throw IllegalArgumentException("API base for ${provider.name} is not set"),
     logLevel = Level.INFO,

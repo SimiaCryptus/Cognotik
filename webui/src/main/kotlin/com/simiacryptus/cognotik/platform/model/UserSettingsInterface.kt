@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 
 interface UserSettingsInterface {
@@ -25,6 +26,11 @@ interface UserSettingsInterface {
             workPool = workPool
         ) ?: throw IllegalStateException("Provider not set or invalid")
     }
+
+    data class ApiChatModel(
+        val model: ChatModel? = null,
+        val provider: ApiData? = null,
+    )
 
     data class ToolData(
         val name: String? = null,

@@ -97,10 +97,8 @@ object UITools {
         thread(name = title ?: "runAsync") {
             try {
                 if (project == null) {
-                    AppSettingsState.instance.getApiKeys().values.firstOrNull() ?: ""
                     task(AbstractProgressIndicatorBase())
                 } else {
-                    AppSettingsState.instance.getApiKeys().values.firstOrNull() ?: ""
                     val t = if (AppSettingsState.instance.modalTasks)
                         ModalTask(project, title ?: "", canBeCancelled, task)
                     else
@@ -423,10 +421,8 @@ object UITools {
         task: (ProgressIndicator) -> T,
     ): T {
         return if (project == null) {
-            AppSettingsState.instance.getApiKeys().values.firstOrNull() ?: ""
             task(AbstractProgressIndicatorBase())
         } else {
-            AppSettingsState.instance.getApiKeys().values.firstOrNull() ?: ""
             val t = if (AppSettingsState.instance.modalTasks) ModalTask(project, title ?: "", canBeCancelled, task)
             else BgTask(project, title ?: "", canBeCancelled, task)
             ProgressManager.getInstance().run(t)
@@ -474,15 +470,6 @@ object UITools {
                         button("Test Key") {
                             val apiKey = apiKeyInput.password.joinToString("")
                             try {
-                                OpenAIClient(
-                                    key = mapOf(
-                                        APIProvider.OpenAI to apiKey
-                                    ),
-                                    workPool = Executors.newCachedThreadPool(),
-                                    apiBase = AppSettingsState.instance.getApiBase()
-                                        ?.mapKeys { APIProvider.valueOf(it.key) }
-                                        ?: throw IllegalStateException("API Base is not set")
-                                ).listModels()
                                 JOptionPane.showMessageDialog(
                                     null,
                                     "The API key was accepted by the server. The new value will be saved.",
@@ -522,7 +509,6 @@ object UITools {
                 Log Message: ${msg.trimIndent()}
                 Error Message: ${e.message?.trimIndent()}
                 Error Type: ${e.javaClass.name}
-                API Base: ${AppSettingsState.instance.getApiBase()}
 
                 OS: ${System.getProperty("os.name")} / ${System.getProperty("os.version")} / ${System.getProperty("os.arch")}
                 Locale: ${Locale.getDefault().country} / ${Locale.getDefault().language}

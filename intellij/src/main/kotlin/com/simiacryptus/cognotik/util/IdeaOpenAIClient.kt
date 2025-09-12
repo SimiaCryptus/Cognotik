@@ -10,10 +10,8 @@ import org.apache.hc.core5.http.HttpRequest
 import java.util.concurrent.Executors
 
 class IdeaOpenAIClient : OpenAIClient(
-    key = AppSettingsState.instance.getApiKeys().mapKeys { APIProvider.valueOf(it.key) }.entries.toTypedArray()
-        .associate { it.key to it.value },
-    apiBase = AppSettingsState.instance.getApiBase().mapKeys { APIProvider.valueOf(it.key) }.entries.toTypedArray()
-        .associate { it.key to it.value },
+    key = emptyMap(),
+    apiBase = emptyMap(),
     workPool = Executors.newCachedThreadPool(),
 ) {
 

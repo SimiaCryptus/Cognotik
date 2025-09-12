@@ -68,14 +68,6 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 currentThread.contextClassLoader = PluginStartupActivity::class.java.classLoader
                 init(project)
-
-                addUserSuppliedModels(AppSettingsState.instance.userSuppliedModels?.mapNotNull {
-                    try {
-                        fromJson(it, AppSettingsState.UserSuppliedModel::class.java)
-                    } catch (e: Exception) {
-                        null
-                    }
-                } ?: emptyList())
             } catch (e: Exception) {
                 log.error("Error during plugin startup", e)
             } finally {

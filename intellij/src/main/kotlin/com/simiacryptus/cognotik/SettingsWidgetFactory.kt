@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import icons.MyIcons
@@ -58,13 +59,15 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fastModelTree = null
         }
 
-        private fun createModelTree(title: String, selectedModel: String?): Tree {
+        private fun createModelTree(title: String, selectedModel: UserSettingsInterface.ApiChatModel?): Tree {
             val root = DefaultMutableTreeNode(title)
 
             val providers = models()
                 .filter { model ->
                     val providerName = model.second.provider.name
-                    AppSettingsState.Companion.instance.getApiKeys()[providerName]?.isNotEmpty() == true
+                    AppSettingsState.Companion.instance.getUserSettings().apis.any { api ->
+                        api.provider?.name == providerName && !api.key.isNullOrBlank()
+                    }
                 }
                 .groupBy { it.second.provider }
 
@@ -104,17 +107,24 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
+                    val chatModel = ChatModel.values().entries.find { it.value.modelName == modelName }?.value
+                    val userSettings = AppSettingsState.Companion.instance.getUserSettings()
+                    val apiData = userSettings.apis.find { it.provider == chatModel?.provider }
+
+                    
                     when (title) {
-                        "Smart Model" -> AppSettingsState.Companion.instance.smartModel = modelName
-                        "Fast Model" -> AppSettingsState.Companion.instance.fastModel = modelName
+                    "Smart Model" -> AppSettingsState.Companion.instance.smartModel = 
+                        UserSettingsInterface.ApiChatModel(chatModel, apiData)
+                    "Fast Model" -> AppSettingsState.Companion.instance.fastModel = 
+                        UserSettingsInterface.ApiChatModel(chatModel, apiData)
                     }
                     statusBar?.updateWidget(ID())
                 }
             }
 
-            if (selectedModel != null) {
+            if (selectedModel?.model != null) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(tree, selectedModel)
+                    setSelectedModel(tree, selectedModel.model!!.modelName)
                 }
             }
             return tree
@@ -272,23 +282,23 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 // Recreate model trees when settings are loaded
                 recreateModelTrees()
                SwingUtilities.invokeLater {
-                   if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
-                       setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
+                   AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
+                       setSelectedModel(getSmartModelTree(), model.modelName)
                    }
-                   if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
-                       setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
+                   AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
+                       setSelectedModel(getFastModelTree(), model.modelName)
                    }
                }
             }
 
-            if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
+            AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
+                    setSelectedModel(getSmartModelTree(), model.modelName)
                 }
             }
-            if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
+            AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
+                    setSelectedModel(getFastModelTree(), model.modelName)
                 }
             }
         }
@@ -391,7 +401,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getSelectedValue(): String {
-            return AppSettingsState.Companion.instance.smartModel
+            return AppSettingsState.Companion.instance.smartModel?.model?.modelName ?: ""
         }
 
         override fun getTooltipText(): String {
@@ -401,8 +411,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 "Server stopped"
             }
             return """
-        Smart Model: ${AppSettingsState.Companion.instance.smartModel}<br/>
-        Fast Model: ${AppSettingsState.Companion.instance.fastModel}<br/>
+        Smart Model: ${AppSettingsState.Companion.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
+        Fast Model: ${AppSettingsState.Companion.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
         Temperature: ${AppSettingsState.Companion.instance.temperature}<br/>
         $serverStatus
         """.trimIndent().trim()

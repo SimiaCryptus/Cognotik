@@ -12,19 +12,21 @@ import com.intellij.ui.dsl.builder.RowLayout
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.SavedPlanConfig
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
+import org.slf4j.event.Level
 import java.awt.CardLayout
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
+import java.util.concurrent.ExecutorService
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
@@ -83,7 +85,9 @@ class PlanConfigDialog(
         private const val DIVIDER_PROPORTION = 0.3f
 
         fun isVisible(it: ChatModel): Boolean {
-            return AppSettingsState.instance.getApiKeys()[it.provider.name]?.isNotBlank() ?: false
+            return AppSettingsState.instance.getUserSettings().apis.any { api ->
+                api.provider == it.provider && !api.key.isNullOrBlank()
+            }
         }
     }
 
@@ -674,4 +678,20 @@ class PlanConfigDialog(
         super.doOKAction()
     }
 
+}
+
+private fun ChatModel.instance(
+    service: ExecutorService = AppSettingsState.workPool
+): Chatter {
+    val apis = AppSettingsState.instance.getUserSettings().apis
+    return instance(
+        key = apis.find { it.provider == provider }?.key
+            ?: throw IllegalArgumentException("No API Key for ${provider.name}"),
+        base = apis.find { it.provider == provider }?.baseUrl ?: provider.base
+            ?: throw IllegalArgumentException("No API Base URL for ${provider.name}"),
+        logLevel = Level.INFO,
+        logStreams = mutableListOf(),
+        temperature = AppSettingsState.instance.temperature,
+        workPool = service
+    )
 }

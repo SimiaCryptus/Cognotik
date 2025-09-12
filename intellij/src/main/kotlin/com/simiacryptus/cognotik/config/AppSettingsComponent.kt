@@ -16,10 +16,10 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import java.awt.BorderLayout
-import java.awt.Dimension
+import java.awt.*
 import java.awt.event.ActionEvent
 import javax.swing.*
 import javax.swing.event.ListSelectionEvent
@@ -230,6 +230,115 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         }
     }
 
+    @Name("API Management")
+    val apiManagementPanel = JPanel(BorderLayout()).apply {
+        val scrollPane = JScrollPane(apis)
+        scrollPane.preferredSize = Dimension(600, 300)
+        add(scrollPane, BorderLayout.CENTER)
+
+        val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        val addButton = JButton("Add API")
+        val removeButton = JButton("Remove")
+        val editButton = JButton("Edit")
+
+        removeButton.isEnabled = false
+        editButton.isEnabled = false
+
+        addButton.addActionListener {
+            val model = apis.model as DefaultTableModel
+            // Show dialog to select provider
+            val providers = APIProvider.values().map { it.name }.toTypedArray()
+            val selectedProvider = JOptionPane.showInputDialog(
+                this,
+                "Select API Provider:",
+                "Add API Configuration",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                providers,
+                providers[0]
+            ) as String?
+
+            if (selectedProvider != null) {
+                val provider = APIProvider.valueOf(selectedProvider)
+                model.addRow(arrayOf(selectedProvider, "", provider.base ?: ""))
+            }
+        }
+
+        removeButton.addActionListener {
+            val selectedRows = apis.selectedRows
+            val model = apis.model as DefaultTableModel
+            for (i in selectedRows.reversed()) {
+                model.removeRow(i)
+            }
+        }
+
+        editButton.addActionListener {
+            val selectedRow = apis.selectedRow
+            if (selectedRow != -1) {
+                val model = apis.model as DefaultTableModel
+                val currentProvider = model.getValueAt(selectedRow, 0) as String
+                val currentKey = model.getValueAt(selectedRow, 1) as String
+                val currentUrl = model.getValueAt(selectedRow, 2) as String
+
+                // Create edit dialog
+                val dialog = JDialog(null as Frame?, "Edit API Configuration", true)
+                dialog.layout = GridBagLayout()
+                val gbc = GridBagConstraints()
+
+                gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
+                dialog.add(JLabel("Provider:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val providerCombo = ComboBox(APIProvider.values().map { it.name }.toTypedArray())
+                providerCombo.selectedItem = currentProvider
+                dialog.add(providerCombo, gbc)
+
+                gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+                dialog.add(JLabel("API Key:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val keyField = JBTextField(currentKey, 30)
+                dialog.add(keyField, gbc)
+
+                gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+                dialog.add(JLabel("Base URL:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val urlField = JBTextField(currentUrl, 30)
+                dialog.add(urlField, gbc)
+
+                gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE
+                val buttonPanel = JPanel(FlowLayout())
+                val okButton = JButton("OK")
+                val cancelButton = JButton("Cancel")
+
+                okButton.addActionListener {
+                    model.setValueAt(providerCombo.selectedItem, selectedRow, 0)
+                    model.setValueAt(keyField.text, selectedRow, 1)
+                    model.setValueAt(urlField.text, selectedRow, 2)
+                    dialog.dispose()
+                }
+                cancelButton.addActionListener { dialog.dispose() }
+
+                buttonPanel.add(okButton)
+                buttonPanel.add(cancelButton)
+                dialog.add(buttonPanel, gbc)
+
+                dialog.pack()
+                dialog.setLocationRelativeTo(this)
+                dialog.isVisible = true
+            }
+        }
+
+        apis.selectionModel.addListSelectionListener {
+            val hasSelection = apis.selectedRow != -1
+            removeButton.isEnabled = hasSelection
+            editButton.isEnabled = hasSelection
+        }
+
+        buttonPanel.add(addButton)
+        buttonPanel.add(removeButton)
+        buttonPanel.add(editButton)
+        add(buttonPanel, BorderLayout.SOUTH)
+    }
+
     @Name("Editor Actions")
     var usage = UsageTable(ApplicationServices.usageManager)
 
@@ -242,17 +351,24 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
 
         setExecutables(AppSettingsState.instance.executables ?: emptySet())
+        // Populate API table first
+        populateApiTable()
+        
         val userSettings = AppSettingsState.instance.getUserSettings()
-        ChatModel.values()
-            .filter {
-                userSettings.apis.any { api ->
-                    api.provider == it.value.provider && !api.key.isNullOrBlank()
-                }
+
+
+        // Get all available models from APIs with valid keys
+        val availableModels = ChatModel.values().filter { chatModel ->
+            userSettings.apis.any { api ->
+                api.provider == chatModel.value.provider && !api.key.isNullOrBlank()
             }
-            .forEach {
-                this.smartModel.addItem(it.value.modelName)
-                this.fastModel.addItem(it.value.modelName)
-            }
+        }
+
+        availableModels.forEach {
+            this.smartModel.addItem(it.value.modelName)
+            this.fastModel.addItem(it.value.modelName)
+        }
+        
         ImageModels.values().forEach {
             this.mainImageModel.addItem(it.name)
         }
@@ -289,9 +405,27 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         this.fastModel.renderer = getModelRenderer()
         this.mainImageModel.isEditable = true
         this.mainImageModel.renderer = getImageModelRenderer()
+        // Set current selections
+        AppSettingsState.instance.smartModel?.model?.let { model ->
+            this.smartModel.selectedItem = model.modelName
+        }
+        AppSettingsState.instance.fastModel?.model?.let { model ->
+            this.fastModel.selectedItem = model.modelName
+        }
     }
 
     override fun dispose() {
+    }
+    private fun populateApiTable() {
+        val model = apis.model as DefaultTableModel
+        model.rowCount = 0
+        val userSettings = AppSettingsState.instance.getUserSettings()
+        userSettings.apis.forEach { api ->
+            val providerName = api.provider?.name ?: ""
+            val key = api.key ?: ""
+            val url = api.baseUrl ?: api.provider?.base ?: ""
+            model.addRow(arrayOf(providerName, key, url))
+        }
     }
 
     private fun getModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {

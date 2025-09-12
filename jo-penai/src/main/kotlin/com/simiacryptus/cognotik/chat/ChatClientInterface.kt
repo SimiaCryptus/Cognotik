@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.chat
 
 import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
@@ -45,4 +46,8 @@ interface ChatClientInterface {
         tokens: ApiModel.Usage,
         logStreams: MutableList<BufferedOutputStream> = this.logStreams.toTypedArray().toMutableList(),
     )
+
+    fun getModel(modelName: String): Chatter? {
+        TODO()
+    }
 }

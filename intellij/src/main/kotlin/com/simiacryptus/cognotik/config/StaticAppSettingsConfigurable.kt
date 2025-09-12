@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.config
 
 import com.intellij.util.xmlb.XmlSerializerUtil
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.EncryptionUtil
@@ -76,7 +77,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     layout = BoxLayout(this, BoxLayout.Y_AXIS)
                     add(JPanel(BorderLayout()).apply {
                         add(JLabel("API Configurations:"), BorderLayout.NORTH)
-                        add(component.apis, BorderLayout.CENTER)
+                        add(component.apiManagementPanel, BorderLayout.CENTER)
                     })
                     add(JPanel(BorderLayout()).apply {
                         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -326,10 +327,8 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             if (fullConfig.containsKey("appSettings") && fullConfig.containsKey("userSettings")) {
                 val appSettingsJson = JsonUtil.toJson(fullConfig["appSettings"])
                 val userSettingsJson = JsonUtil.toJson(fullConfig["userSettings"])
-
                 val importedSettings = fromJson<AppSettingsState>(appSettingsJson, AppSettingsState::class.java)
                 XmlSerializerUtil.copyBean(importedSettings, AppSettingsState.instance)
-
                 val importedUserSettings = fromJson<UserSettingsInterface.UserSettings>(
                     userSettingsJson,
                     UserSettingsInterface.UserSettings::class.java
@@ -361,8 +360,8 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.listeningEndpoint.text = settings.listeningEndpoint
             component.suppressErrors.isSelected = settings.suppressErrors
             component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
-            component.fastModel.selectedItem = settings.fastModel
-            component.smartModel.selectedItem = settings.smartModel
+            settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelName }
+            settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelName }
             component.devActions.isSelected = settings.devActions
             component.mainImageModel.selectedItem = settings.mainImageModel
             component.temperature.text = settings.temperature.toString()
@@ -371,18 +370,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
             component.setExecutables(settings.executables ?: emptySet())
 
-            val model = component.apis.model as DefaultTableModel
-            model.rowCount = 0
 
-            // Load from UserSettingsManager
             val userSettings = settings.getUserSettings()
-            userSettings.apis.forEach { api ->
-                val providerName = api.provider?.name ?: ""
-                val key = api.key ?: ""
-                val url = api.baseUrl ?: api.provider?.base ?: ""
-                log.debug("Adding row to table model: $providerName, $key, $url")
-                model.addRow(arrayOf(providerName, key, url))
-            }
+            // API table is now populated in the component's init method
         } catch (e: Exception) {
             log.warn("Error setting UI", e)
         }
@@ -399,32 +389,42 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.listeningPort = component.listeningPort.text.safeInt()
             settings.listeningEndpoint = component.listeningEndpoint.text
             settings.suppressErrors = component.suppressErrors.isSelected
-            settings.fastModel = component.fastModel.selectedItem as String
-            settings.smartModel = component.smartModel.selectedItem as String
+            val userSettings = settings.getUserSettings()
+            val fastModelName = component.fastModel.selectedItem as String?
+            val smartModelName = component.smartModel.selectedItem as String?
+            
+            // Find the corresponding ChatModel and ApiData for fast model
+            val fastChatModel = ChatModel.values().entries.find { it.value.modelName == fastModelName }?.value
+            val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
+            settings.fastModel = UserSettingsInterface.ApiChatModel(fastChatModel, fastApiData)
+            
+            // Find the corresponding ChatModel and ApiData for smart model
+            val smartChatModel = ChatModel.values().entries.find { it.value.modelName == smartModelName }?.value
+            val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
+            settings.smartModel = UserSettingsInterface.ApiChatModel(smartChatModel, smartApiData)
+            
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.temperature = component.temperature.text.safeDouble()
             settings.mainImageModel = (component.mainImageModel.selectedItem as String)
             settings.pluginHome = File(component.pluginHome.text)
             settings.shellCommand = component.shellCommand.text
-            // Save to UserSettingsManager
-            val userSettings = settings.getUserSettings()
-            userSettings.apis.clear()
 
 
             val tableModel = component.apis.model as DefaultTableModel
             log.debug("Reading API keys from table model: $tableModel with row count: ${tableModel.rowCount}")
+            userSettings.apis.clear()
             for (row in 0 until tableModel.rowCount) {
                 val provider = tableModel.getValueAt(row, 0) as String
                 val key = tableModel.getValueAt(row, 1) as String
                 val base = tableModel.getValueAt(row, 2) as String
                 log.info("Row $row: provider=$provider, key=$key, base=$base")
-                if (key.isNotBlank()) {
+                if (provider.isNotBlank()) {
                     try {
                         val apiProvider = APIProvider.valueOf(provider)
                         userSettings.apis.add(
                             UserSettingsInterface.ApiData(
-                                key = key,
+                                key = key.takeIf { it.isNotBlank() },
                                 baseUrl = base,
                                 provider = apiProvider
                             )

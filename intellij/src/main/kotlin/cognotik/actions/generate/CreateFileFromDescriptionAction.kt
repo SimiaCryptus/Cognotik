@@ -110,7 +110,7 @@ class CreateFileFromDescriptionAction :
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
         val chatRequest = ChatRequest(
-            model = AppSettingsState.instance.smartModel.chatModel().modelName,
+            model = AppSettingsState.instance.smartModel?.model?.modelName,
             temperature = AppSettingsState.instance.temperature,
             messages = listOf(
                 ChatMessage(
