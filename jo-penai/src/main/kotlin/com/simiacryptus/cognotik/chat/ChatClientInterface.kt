@@ -48,6 +48,6 @@ interface ChatClientInterface {
     )
 
     fun getModel(modelName: String): Chatter? {
-        TODO()
+        throw NotImplementedError("getModel not implemented")
     }
 }

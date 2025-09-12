@@ -21,7 +21,6 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
@@ -122,14 +121,10 @@ data class AppSettingsState(
         userSettingsManager.updateUserSettings(defaultUser, settings)
 
     @get:JsonIgnore
-    val smartChatClient: Chatter get() = smartModel?.model?.let {
-        smartModel?.provider?.client(workPool)?.getModel(it.modelName)
-    } ?: throw IllegalStateException("Smart model not configured")
+    val smartChatClient: Chatter get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
 
     @get:JsonIgnore
-    val fastChatClient: Chatter get() = fastModel?.model?.let {
-        fastModel?.provider?.client(workPool)?.getModel(it.modelName)
-    } ?: throw IllegalStateException("Fast model not configured")
+    val fastChatClient: Chatter get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
 
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
@@ -344,6 +339,7 @@ if (smartModel != other.smartModel) return false
 
         @JvmStatic
         val instance: AppSettingsState by lazy {
+            require(APIProvider.values().isNotEmpty()) { "No API providers registered" }
             ApplicationManager.getApplication()?.getService(AppSettingsState::class.java) ?: AppSettingsState()
         }
 
@@ -376,23 +372,17 @@ if (smartModel != other.smartModel) return false
     )
 }
 
-private fun ChatModel.instance(
-    service: ExecutorService = AppSettingsState.workPool
- ) = instance(
-    key = AppSettingsState.instance.getUserSettings().apis.find { it.provider == provider }?.key
-        ?: throw IllegalArgumentException("API key for ${provider.name} is not set"),
-    base = AppSettingsState.instance.getUserSettings().apis.find { it.provider == provider }?.baseUrl
-        ?: provider.base
-        ?: throw IllegalArgumentException("API base for ${provider.name} is not set"),
-    logLevel = Level.INFO,
-    logStreams = mutableListOf(),
-    temperature = AppSettingsState.instance.temperature,
-    workPool = service
-)
-
-
 fun String.imageModel(): ImageModels {
     return ImageModels.values().firstOrNull {
         it.modelName == this || it.name == this
     } ?: ImageModels.DallE3
 }
+
+private fun UserSettingsInterface.ApiChatModel.instance(): Chatter? = model?.instance(
+    key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
+    base = provider?.provider?.base ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
+    logLevel = Level.INFO,
+    logStreams = mutableListOf(),
+    temperature = AppSettingsState.instance.temperature,
+    workPool = AppSettingsState.workPool
+)

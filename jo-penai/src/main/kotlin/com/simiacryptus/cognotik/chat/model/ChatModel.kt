@@ -37,7 +37,7 @@ open class ChatModel(
     override fun toString() = modelName
 
     override fun pricing(usage: Usage) =
-        ((usage.prompt_tokens ?: 0L) * inputTokenPricePerK + (usage.completion_tokens ?: 0L) * outputTokenPricePerK) / 1000.0
+        (usage.prompt_tokens * inputTokenPricePerK + usage.completion_tokens * outputTokenPricePerK) / 1000.0
 
     fun instance(
         key: String,
@@ -107,6 +107,3 @@ class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
     }
 }
 
-fun String.chatModel(): ChatModel = (values().entries.find {
-    it.key.equals(this, true) || it.value.modelName.equals(this, true)
-}?.value ?: throw IllegalArgumentException("Unknown model: $this"))

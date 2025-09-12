@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.chat.BasicChatApp.Settings
 import java.io.File
 
 class BasicChatApp(
@@ -44,7 +43,14 @@ class BasicChatApp(
     override fun newSession(user: User?, session: Session): ChatSocketManager {
         val settings = this.settings ?: getSettings(session, user)!!
         val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
-        fun instance(model: ChatModel) = model.instance(settings, session, user)
+        fun instance(model: ChatModel) = model.getApi(user)?.let { apiData ->
+            model.instance(
+                key = apiData.key ?: throw RuntimeException("No API key for model ${model.name}"),
+                base = apiData.baseUrl ?: model.provider.base ?: "",
+                temperature = settings.temperature,
+                workPool = ApplicationServices.clientManager.getPool(session, user),
+            )
+        }
         return ChatSocketManager(
             session = session,
             model = instance(settings.model)
@@ -61,19 +67,7 @@ class BasicChatApp(
     }
 }
 
-fun ChatModel.instance(
-    settings: Settings,
-    session: Session,
-    user: User
-) = getApi(user)?.let { apiData ->
-    instance(
-        key = apiData.key ?: throw RuntimeException("No API key for model ${name}"),
-        base = apiData.baseUrl ?: provider.base ?: "",
-        temperature = settings.temperature,
-        workPool = ApplicationServices.clientManager.getPool(session, user),
-    )
-}
-
+@Deprecated("Need to refactor to include api config")
 fun ChatModel.getApi(user: User): UserSettingsInterface.ApiData? =
     userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == provider }
 

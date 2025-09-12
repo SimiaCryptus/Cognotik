@@ -6,7 +6,6 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.chat.model.chatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.util.UITools
@@ -109,31 +108,27 @@ class CreateFileFromDescriptionAction :
         directive: String
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
-        val chatRequest = ChatRequest(
-            model = AppSettingsState.instance.smartModel?.model?.modelName,
-            temperature = AppSettingsState.instance.temperature,
-            messages = listOf(
-                ChatMessage(
-                    Role.system, """
+        try {
+            val response = run {
+                AppSettingsState.instance.smartChatClient.chat(listOf(
+                    ChatMessage(
+                        Role.system, """
                     You will interpret natural language requirements to create a new file.
                     Provide a new filename and the code to be written to the file.
                     Paths should be relative to the project root and should not exist.
                     Output the file path using the a line with the format "File: <path>".
                     Output the file code directly after the header line with no additional decoration.
                 """.trimIndent().toContentList(), null
-                ),
-                ChatMessage(
-                    Role.user, """
+                    ),
+                    ChatMessage(
+                        Role.user, """
                     Create a new file based on the following directive: $directive
 
                     The file location should be based on the selected path `$basePath`
                 """.trimIndent().toContentList(), null
+                    )
                 )
-            )
-        )
-        try {
-            val response = run {
-                AppSettingsState.instance.smartChatClient.chat(chatRequest.messages).choices.firstOrNull()?.message?.content?.trim()
+                ).choices.firstOrNull()?.message?.content?.trim()
             } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")

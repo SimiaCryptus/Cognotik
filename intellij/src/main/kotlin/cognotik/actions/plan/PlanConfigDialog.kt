@@ -680,6 +680,7 @@ class PlanConfigDialog(
 
 }
 
+@Deprecated("Need to refactor to include api config")
 private fun ChatModel.instance(
     service: ExecutorService = AppSettingsState.workPool
 ): Chatter {
