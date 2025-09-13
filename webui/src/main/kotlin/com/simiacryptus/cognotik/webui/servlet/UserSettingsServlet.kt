@@ -28,9 +28,9 @@ class UserSettingsServlet : HttpServlet() {
                                 null, "" -> ""
                                 else -> mask
                             },
-                            baseUrl = apiData.baseUrl ?: apiData.provider?.base,
+                            baseUrl = apiData.baseUrl ?: apiData.provider?.base ?: throw IllegalStateException(),
                             provider = apiData.provider
-                        )
+                        ).validate()
                     }.toMutableList(),
                     tools = settings.tools.toMutableList(),
                     etc = settings.etc.toMutableMap()
@@ -94,7 +94,7 @@ class UserSettingsServlet : HttpServlet() {
                     },
                     baseUrl = apiData.baseUrl,
                     provider = apiData.provider
-                )
+                ).validate()
             }.toMutableList()
 
             // Merge tools (preserve existing and add new ones)

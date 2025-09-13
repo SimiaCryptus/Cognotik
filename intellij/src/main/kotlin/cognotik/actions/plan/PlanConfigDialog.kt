@@ -73,16 +73,12 @@ class PlanConfigDialog(
         private const val CONFIG_COMBO_HEIGHT = 30
         private const val MIN_TEMP = 0
         private const val MAX_TEMP = 100
-        private const val MIN_BUDGET = 1
-        private const val MAX_BUDGET = 100
-        private const val DEFAULT_BUDGET = 10
         private const val DEFAULT_LIST_WIDTH = 150
         private const val DEFAULT_LIST_HEIGHT = 200
         private const val DEFAULT_PANEL_WIDTH = 350
         private const val DEFAULT_PANEL_HEIGHT = 200
         private const val TEMPERATURE_SCALE = 100.0
         private const val TEMPERATURE_LABEL = "%.2f"
-        private const val BUDGET_LABEL = "$%.2f"
         private const val FONT_SIZE_ENABLED = 14f
         private const val FONT_SIZE_DISABLED = 12f
         private const val DIVIDER_PROPORTION = 0.3f
@@ -643,7 +639,7 @@ class PlanConfigDialog(
             isEnabled && model == null
         }
         if (invalidTasks.isNotEmpty()) {
-            val taskNames = invalidTasks.map { it.taskType.name }.joinToString(", ")
+            val taskNames = invalidTasks.joinToString(", ") { it.taskType.name }
             JOptionPane.showMessageDialog(
                 null,
                 "Please select models for enabled tasks: $taskNames",
@@ -673,8 +669,7 @@ private fun ChatModel.instance(
     return instance(
         key = apis.find { it.provider == provider }?.key
             ?: throw IllegalArgumentException("No API Key for ${provider.name}"),
-        base = apis.find { it.provider == provider }?.baseUrl ?: provider.base
-            ?: throw IllegalArgumentException("No API Base URL for ${provider.name}"),
+        base = apis.find { it.provider == provider }?.baseUrl ?: provider.base,
         logLevel = Level.INFO,
         logStreams = mutableListOf(),
         temperature = AppSettingsState.instance.temperature,
@@ -684,12 +679,14 @@ private fun ChatModel.instance(
 
 
 private fun ChatModel.toApiChatModel(): UserSettingsInterface.ApiChatModel {
+    val apis = AppSettingsState.instance.getUserSettings().apis
     return UserSettingsInterface.ApiChatModel(
         model = this,
         provider = UserSettingsInterface.ApiData(
-            key = null,
-            baseUrl = null,
-            provider = this.provider
-        )
+            key = apis.find { it.provider == this.provider }?.key
+                ?: throw IllegalArgumentException("No API Key for ${this.provider.name}"),
+            baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider.base,
+            provider = this.provider,
+        ).validate()
     )
 }

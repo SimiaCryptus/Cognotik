@@ -424,10 +424,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         val apiProvider = APIProvider.valueOf(provider)
                         userSettings.apis.add(
                             UserSettingsInterface.ApiData(
-                                key = key.takeIf { it.isNotBlank() },
+                                key = key.takeIf { it.isNotBlank() } ?: "",
                                 baseUrl = base,
                                 provider = apiProvider
-                            )
+                            ).validate()
                         )
                     } catch (e: Exception) {
                         log.warn("Unknown provider: $provider", e)

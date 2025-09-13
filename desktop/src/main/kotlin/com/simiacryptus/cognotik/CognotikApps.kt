@@ -442,9 +442,7 @@ private fun ChatModel.toApiChatModel(): UserSettingsInterface.ApiChatModel {
     return UserSettingsInterface.ApiChatModel(
         model = this,
         provider = UserSettingsInterface.ApiData(
-            key = null,
-            baseUrl = null,
             provider = this.provider
-        )
+        ).validate()
     )
 }

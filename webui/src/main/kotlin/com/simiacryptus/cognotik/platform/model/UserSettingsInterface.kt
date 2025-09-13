@@ -16,15 +16,23 @@ import com.simiacryptus.cognotik.models.APIProvider
 interface UserSettingsInterface {
 
     data class ApiData(
-        val key: String? = null,
-        val baseUrl: String? = null,
+        val key: String = "",
+        val baseUrl: String = "",
         val provider: APIProvider? = null,
     ) {
         fun client(workPool: java.util.concurrent.ExecutorService) = provider?.getChatClient(
-            key = key ?: "",
-            base = baseUrl ?: "",
+            key = key,
+            base = baseUrl,
             workPool = workPool
         ) ?: throw IllegalStateException("Provider not set or invalid")
+
+        fun validate() : ApiData {
+            if(provider == null) throw IllegalStateException("Provider not set or invalid")
+            if(key.isBlank()) throw IllegalStateException("API key not set")
+            val model = ChatModel.values().values.firstOrNull { it.provider == provider }
+            if(model == null) throw IllegalStateException("No chat model available for provider $provider")
+            return this
+        }
     }
 
     data class ApiChatModel(
@@ -78,17 +86,17 @@ interface UserSettingsInterface {
                 val apis = if (node.has("apis")) {
                     p.codec.treeToValue(node.get("apis"), Array<ApiData>::class.java).toMutableList()
                 } else {
-                    mutableListOf<ApiData>()
+                    mutableListOf()
                 }
                 val tools = if (node.has("tools")) {
                     p.codec.treeToValue(node.get("tools"), Array<ToolData>::class.java).toMutableList()
                 } else {
-                    mutableListOf<ToolData>()
+                    mutableListOf()
                 }
                 val etc = if (node.has("etc")) {
                     p.codec.treeToValue(node.get("etc"), MutableMap::class.java) as MutableMap<String, Any>
                 } else {
-                    mutableMapOf<String, Any>()
+                    mutableMapOf()
                 }
                 return UserSettings(apis, tools, etc)
             }
@@ -96,17 +104,17 @@ interface UserSettingsInterface {
             val apiKeys = if (node.has("apiKeys")) {
                 p.codec.treeToValue(node.get("apiKeys"), Map::class.java) as Map<APIProvider, String>
             } else {
-                emptyMap<APIProvider, String>()
+                emptyMap()
             }
             val apiBase = if (node.has("apiBase")) {
                 p.codec.treeToValue(node.get("apiBase"), Map::class.java) as Map<APIProvider, String>
             } else {
-                emptyMap<APIProvider, String>()
+                emptyMap()
             }
             val localTools = if (node.has("localTools")) {
                 p.codec.treeToValue(node.get("localTools"), Array<String>::class.java).toList()
             } else {
-                emptyList<String>()
+                emptyList()
             }
             return UserSettings(toApiList(apiKeys, apiBase), toTools(localTools))
         }
@@ -125,7 +133,7 @@ fun toApiList(
         key = it.value,
         baseUrl = apiBase[it.key] ?: it.key.base ?: "",
         provider = it.key
-    )
+    ).validate()
 }.toMutableList()
 
 fun toTools(localTools: List<String>): MutableList<UserSettingsInterface.ToolData> =

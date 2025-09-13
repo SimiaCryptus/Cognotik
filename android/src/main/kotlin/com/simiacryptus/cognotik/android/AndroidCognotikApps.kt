@@ -185,10 +185,8 @@ class AndroidCognotikApps private constructor(
         UserSettingsInterface.ApiChatModel(
             model = it,
             provider = UserSettingsInterface.ApiData(
-                key = null,
-                baseUrl = null,
                 provider = it.provider
-            )
+            ).validate()
         )
     }
 

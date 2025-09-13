@@ -69,5 +69,5 @@ class BasicChatApp(
 
 @Deprecated("Need to refactor to include api config")
 fun ChatModel.getApi(user: User): UserSettingsInterface.ApiData? =
-    userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == provider }
+    userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == provider }?.validate()
 

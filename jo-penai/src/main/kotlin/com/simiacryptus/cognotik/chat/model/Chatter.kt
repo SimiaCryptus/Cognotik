@@ -19,6 +19,11 @@ open class Chatter(
     val modelType: ChatModel,
     val workPool: ExecutorService,
 ) {
+    init {
+        require(key.isNotBlank()) { "API key must be provided" }
+        require(base.isNotBlank()) { "Base URL must be provided" }
+        require(temperature in 0.0..2.0) { "Temperature must be in range [0.0, 2.0]" }
+    }
     open fun chat(
         messages: List<ChatMessage>
     ) = provider.getChatClient(

@@ -17,7 +17,7 @@ private val log: Logger = LoggerFactory.getLogger(APIProvider::class.java)
 
 @JsonDeserialize(using = APIProviderDeserializer::class)
 @JsonSerialize(using = APIProviderSerializer::class)
-abstract class APIProvider private constructor(name: String, val base: String? = null) : DynamicEnum<APIProvider>(name) {
+abstract class APIProvider private constructor(name: String, val base: String) : DynamicEnum<APIProvider>(name) {
 
     abstract fun getChatClient(
         key: String,

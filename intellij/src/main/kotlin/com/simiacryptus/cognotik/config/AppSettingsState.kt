@@ -157,7 +157,7 @@ data class AppSettingsState(
                                     key = keyValue.asText(),
                                     provider = provider,
                                     baseUrl = provider.base
-                                )
+                                ).validate()
                             )
                             needsUpdate = true
                         }
@@ -185,7 +185,7 @@ data class AppSettingsState(
                                     key = keyValue.asText(),
                                     provider = provider,
                                     baseUrl = baseUrl
-                                )
+                                ).validate()
                             )
                             needsUpdate = true
                         }
