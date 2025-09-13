@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.FailedToImplementException
@@ -10,7 +12,9 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import java.awt.image.BufferedImage
+import java.io.BufferedOutputStream
 import java.io.File
+import java.util.UUID
 import java.util.function.Consumer
 
 
@@ -328,3 +332,22 @@ val Throwable.stackTraceTxt: String
         return sw.toString()
     }
 
+
+fun Chatter.getChildClient(task: SessionTask): Chatter {
+    val childClient = this.getChildClient()
+    childClient.logStreams += task.newLogStream()
+    return childClient
+}
+
+fun SessionTask.newLogStream(): BufferedOutputStream {
+    val pair = createFile(".logs/api-${UUID.randomUUID()}.log")
+    val createFile = pair.second ?: throw IllegalStateException("Failed to create log file")
+    val buffered = createFile.outputStream().buffered()
+    buffered.write("API Logging Started\n".toByteArray())
+    buffered.write("Stack Trace:\n".toByteArray())
+    Thread.currentThread().stackTrace.forEach { element ->
+        buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
+    }
+    verbose("""API log: <a href='${pair.first}' target='_blank'><pre>${createFile.absolutePath}</pre></a>""")
+    return buffered
+}

@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -156,7 +157,8 @@ abstract class PatchApp(
             val newTask = ui.newTask(false)
             Thread {
                 log.info("Starting run thread")
-                val result = run(ui, newTask)
+                val model = model.getChildClient(task)
+                val result = run(ui, newTask, model)
                 log.info("Run completed with exit code: ${result.exitCode}")
                 if (result.exitCode != 0 && retries > 0) {
                     log.info("Triggering retry (${retries} remaining)")
@@ -252,6 +254,7 @@ abstract class PatchApp(
     fun run(
         ui: ApplicationInterface,
         task: SessionTask,
+        model: Chatter,
     ): OutputResult {
         log.info("Starting run with settings: ${JsonUtil.toJson(settings)}")
 
@@ -270,7 +273,7 @@ abstract class PatchApp(
             log.info("Creating child API client for fix task")
             val plan = if (outputResult.errors == null) {
                 log.info("No pre-parsed errors, parsing errors from output")
-                parsedErrorsParsedResponse(settings = settings, output = outputResult)
+                parsedErrorsParsedResponse(settings = settings, output = outputResult, model = model)
             } else {
                 log.info("Using pre-parsed errors")
                 object : ParsedResponse<ParsedErrors>(
@@ -302,7 +305,8 @@ abstract class PatchApp(
                 ui = ui,
                 settings = settings,
                 changed = mutableSetOf(),
-                progressHeader = progressHeader
+                progressHeader = progressHeader,
+                model = model
             )
         } catch (e: Exception) {
             log.error("Error during fix process", e)
@@ -325,7 +329,8 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         settings: Settings,
         changed: MutableSet<Path>,
-        progressHeader: StringBuilder?
+        progressHeader: StringBuilder?,
+        model: Chatter
     ) {
         log.info("Starting fixAllErrors")
         val tabs = TabbedDisplay(task)
@@ -386,7 +391,8 @@ abstract class PatchApp(
                             ui,
                             settings.autoFix,
                             changed,
-                            task
+                            task,
+                            model
                         )
                     }
                 }
@@ -397,7 +403,7 @@ abstract class PatchApp(
     }
 
     private fun parsedErrorsParsedResponse(
-        settings: Settings, output: OutputResult
+        settings: Settings, output: OutputResult, model: Chatter
     ): ParsedResponse<ParsedErrors> {
         log.info("Parsing errors from command output")
         val plan = ParsedActor(
@@ -464,6 +470,7 @@ abstract class PatchApp(
         autoFix: Boolean,
         changed: MutableSet<Path>,
         task: SessionTask,
+        model: Chatter,
     ) {
         log.info("Starting fix for error: ${error.message}")
         val paths = ((error.research?.fixFiles ?: emptyList()) +

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -83,6 +84,7 @@ class CmdPatchApp(
     ): OutputResult {
         log.info("Starting command execution with ${settings.commands.size} commands")
         run {
+            val model = model.getChildClient(task)
             var exitCode = 0
             for ((index, cmdSettings) in settings.commands.withIndex()) {
                 try {

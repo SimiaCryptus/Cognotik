@@ -15,6 +15,7 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.models.ApiModel
@@ -177,7 +178,12 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
                             try {
                                 val fileContent =
                                     IOUtils.toString(FileInputStream(path.toFile()), "UTF-8") ?: return@submit null
-                                val transformContent = transformContent(path, fileContent, transformationMessage)
+                                val transformContent = transformContent(
+                                    path,
+                                    fileContent,
+                                    transformationMessage,
+                                    AppSettingsState.instance.smartChatClient
+                                )
                                 processTransformedContent(
                                     path,
                                     transformContent,
@@ -267,8 +273,10 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
         }
     }
 
-    private fun transformContent(path: Path, fileContent: String, transformationMessage: String) = run {
-        AppSettingsState.instance.smartChatClient.chat(
+    private fun transformContent(
+        path: Path, fileContent: String, transformationMessage: String, model: Chatter
+    ) = run {
+        model.chat(
             listOf(
                 ApiModel.ChatMessage(
                     ApiModel.Role.system, """

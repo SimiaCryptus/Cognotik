@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
@@ -127,7 +128,8 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                     code = IOUtils.toString(FileInputStream(selectedFile), "UTF-8")
                 ),
                 directive = config?.settings?.directive ?: "",
-                progress = progress
+                progress = progress,
+                model = AppSettingsState.instance.smartChatClient
             )
             progress.text = "Generating output file..."
             progress.fraction = 0.6
@@ -152,11 +154,13 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         }
     }
 
-    private fun generateFile(baseFile: ProjectFile, directive: String, progress: ProgressIndicator): ProjectFile = try {
+    private fun generateFile(
+        baseFile: ProjectFile, directive: String, progress: ProgressIndicator, model: Chatter
+    ): ProjectFile = try {
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
         val response =
-            AppSettingsState.instance.smartChatClient.chat(
+            model.chat(
                 listOf(
                     ChatMessage(
                         Role.system, """

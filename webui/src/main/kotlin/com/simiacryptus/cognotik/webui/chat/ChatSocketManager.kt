@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
@@ -172,42 +173,52 @@ open class ChatSocketManager(
         userMessage: String,
         currentChatMessages: List<ApiModel.ChatMessage>,
         transcriptStream: OutputStream? = null
-    ) = buildString {
-        val function1List = processMsgRecursive(userMessage, task, currentChatMessages, transcriptStream)
-        runAll(function1List, this)
-    }.let { response ->
-        // Write assistant response to transcript
-        transcriptStream?.write("## Assistant\n$response\n\n".toByteArray())
-        transcriptStream?.flush()
+    ): String {
+        val model = model.getChildClient(task)
+        return buildString {
+            runAll(
+                processMsgRecursive(
+                    userMessage,
+                    task,
+                    currentChatMessages,
+                    transcriptStream,
+                    model
+                ), this
+            )
+        }.let { response ->
+            // Write assistant response to transcript
+            transcriptStream?.write("## Assistant\n$response\n\n".toByteArray())
+            transcriptStream?.flush()
 
-        try {
-            val answer = extractTopics(response)
-            val topicsText = try {
-                answer.topics.let { topics ->
-                    if (topics?.isNotEmpty() == true) {
-                        topics.forEach { (topicType, entities) ->
-                            val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
-                            synchronized(topicList) {
-                                topicList.addAll(entities)
+            try {
+                val answer = extractTopics(response, model)
+                val topicsText = try {
+                    answer.topics.let { topics ->
+                        if (topics?.isNotEmpty() == true) {
+                            topics.forEach { (topicType, entities) ->
+                                val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
+                                synchronized(topicList) {
+                                    topicList.addAll(entities)
+                                }
                             }
+                            val joinToString =
+                                topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
+                            task.complete(joinToString.renderMarkdown(), additionalClasses = "topics")
+                            "\n\n" + joinToString
+                        } else {
+                            ""
                         }
-                        val joinToString =
-                            topics.entries.joinToString("\n") { "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" }
-                        task.complete(joinToString.renderMarkdown(), additionalClasses = "topics")
-                        "\n\n" + joinToString
-                    } else {
-                        ""
                     }
+                } catch (e: Exception) {
+                    log.error("Error in topic extraction", e)
+                    ""
                 }
+                response + topicsText
             } catch (e: Exception) {
+                task.error(e)
                 log.error("Error in topic extraction", e)
-                ""
+                response
             }
-            response + topicsText
-        } catch (e: Exception) {
-            task.error(e)
-            log.error("Error in topic extraction", e)
-            response
         }
     }
 
@@ -223,7 +234,7 @@ open class ChatSocketManager(
         }.forEach { it.get() }
     }
 
-    private fun extractTopics(response: String): Topics {
+    private fun extractTopics(response: String, model: Chatter): Topics {
         val topicsParsedActor = ParsedActor(
             resultClass = Topics::class.java,
             prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
@@ -272,7 +283,8 @@ open class ChatSocketManager(
         currentMessage: String,
         task: SessionTask,
         baseMessages: List<ApiModel.ChatMessage>,
-        transcriptStream: OutputStream? = null
+        transcriptStream: OutputStream? = null,
+        model: Chatter
     ): List<(StringBuilder) -> Unit> {
 
         if (useExpansionSyntax) {
@@ -304,7 +316,7 @@ open class ChatSocketManager(
                     match,
                     transcriptStream
                 ) { msg, tsk, msgs ->
-                    processMsgRecursive(msg, tsk, msgs, transcriptStream)
+                    processMsgRecursive(msg, tsk, msgs, transcriptStream, this@ChatSocketManager.model)
                 }
             }
         }
@@ -403,7 +415,8 @@ open class ChatSocketManager(
                 currentMessage = newMessage,
                 task = ui.newTask(false).apply { tabs[item] = placeholder },
                 baseMessages = messages.filter { it.content?.any { it.text?.contains(expression) == true } != true },
-                transcriptStream = transcriptStream
+                transcriptStream = transcriptStream,
+                model = this@ChatSocketManager.model
             )
             val subAggregate = StringBuilder()
             runAll(subTaskFunctions, subAggregate)

@@ -103,7 +103,6 @@ class DiffChatAction : BaseAction() {
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
-        val pool = ApplicationServices.clientManager.getPool(session, null)
         SessionProxyServer.agents[session] = object : CodeChatSocketManager(
             session = session,
             language = language,

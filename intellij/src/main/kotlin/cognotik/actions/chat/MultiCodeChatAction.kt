@@ -52,13 +52,10 @@ class MultiCodeChatAction : BaseAction() {
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                val pool = ApplicationServices.clientManager.getPool(session, null)
-                val model = AppSettingsState.instance.smartChatClient
-                val parsingModel = AppSettingsState.instance.fastChatClient
                 SessionProxyServer.agents[session] = CodeChatManager(
                     session = session,
-                    model = model,
-                    parsingModel = parsingModel,
+                    model = AppSettingsState.instance.smartChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient,
                     root = root.toFile(),
                     codeFiles = codeFiles
                 )

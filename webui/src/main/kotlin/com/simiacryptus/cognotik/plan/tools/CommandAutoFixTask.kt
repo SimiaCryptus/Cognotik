@@ -65,6 +65,8 @@ class CommandAutoFixTask(
         Retryable(agent.ui, task = task) {
             val task = agent.ui.newTask(false)
             agent.pool.submit {
+                val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
+                    ?: agent.planSettings.defaultChatter)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
@@ -92,11 +94,10 @@ class CommandAutoFixTask(
                         includeLineNumbers = false,
                     ),
                     files = agent.files,
-                    model = taskSettings.model?.let { agent.planSettings.instance(it) }
-                        ?: agent.planSettings.defaultChatter,
+                    model = model,
                     parsingModel = agent.planSettings.parsingChatter,
                 ).run(
-                    ui = agent.ui, task = task
+                    ui = agent.ui, task = task, model = model
                 ).apply {
                     when {
                         this.exitCode == 0 -> {

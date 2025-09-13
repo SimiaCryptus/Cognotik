@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon
@@ -174,6 +175,7 @@ class FindResultsChatAction(
             val task = ui.newTask()
             task.echo(renderMarkdown(userMessage))
             task.verbose((getCodeContext()).renderMarkdown())
+            val model = AppSettingsState.instance.smartChatClient.getChildClient(task)
             Retryable(ui = ui, task = task) { content ->
                 val task = ui.newTask(false)
                 task.add(
@@ -183,7 +185,7 @@ class FindResultsChatAction(
                              You are a helpful AI that helps people understand code.
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
-                            model = AppSettingsState.instance.smartChatClient
+                            model = model
                         ).answer(listOf(userMessage),)
                     ) + "</div>"
                 )

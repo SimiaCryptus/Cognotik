@@ -6,6 +6,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.util.UITools
@@ -78,7 +79,11 @@ class CreateFileFromDescriptionAction :
         progress.text = "Generating file content..."
         progress.fraction = 0.3
 
-        val generatedFile = generateFile(filePath, config?.directive ?: DEFAULT_DIRECTIVE)
+        val generatedFile = generateFile(
+            filePath,
+            config?.directive ?: DEFAULT_DIRECTIVE,
+            AppSettingsState.instance.smartChatClient
+        )
 
         var path = generatedFile.path
         var outputPath = moduleRoot.resolve(path)
@@ -105,12 +110,13 @@ class CreateFileFromDescriptionAction :
 
     private fun generateFile(
         basePath: String,
-        directive: String
+        directive: String,
+        model: Chatter
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
         try {
             val response = run {
-                AppSettingsState.instance.smartChatClient.chat(listOf(
+                model.chat(listOf(
                     ChatMessage(
                         Role.system, """
                     You will interpret natural language requirements to create a new file.
