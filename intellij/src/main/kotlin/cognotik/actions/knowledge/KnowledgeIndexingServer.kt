@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFi
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.apps.parse.RawTextParsingModel
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -162,10 +161,6 @@ class KnowledgeIndexingServer(
 
                 try {
                     val batchResults = indexTextFiles(
-                        embeddingClient = OllamaEmbeddingClient(
-                            "",
-                            workPool = ui.socketManager!!.pool,
-                        ),
                         pool = threadPool,
                         parsingModel = RawTextParsingModel(settings.splitRegex),
                         model = model,
@@ -185,10 +180,6 @@ class KnowledgeIndexingServer(
                 try {
                     task.add(MarkdownUtil.renderMarkdown("Processing large file: ${file.name}...", ui = ui))
                     val result = indexTextFiles(
-                        embeddingClient = OllamaEmbeddingClient(
-                            "",
-                            workPool = ui.socketManager!!.pool,
-                        ),
                         pool = threadPool,
                         parsingModel = RawTextParsingModel(settings.splitRegex),
                         model = model,

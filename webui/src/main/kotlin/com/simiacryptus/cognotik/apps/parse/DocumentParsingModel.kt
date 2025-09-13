@@ -3,9 +3,7 @@ package com.simiacryptus.cognotik.apps.parse
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.jsonCast
@@ -99,7 +97,6 @@ fun EmbeddingModel.getRows(
     progressState: ProgressState,
     futureList: MutableList<Future<*>>,
     pool: ExecutorService,
-    embeddingClient: EmbeddingClientBase,
     fileData: Map<String, Any>?
 ): MutableList<DocumentRecord> {
     val records: MutableList<DocumentRecord> = mutableListOf()
@@ -122,7 +119,6 @@ fun EmbeddingModel.getRows(
                     semaphore.acquire()
                     processBatch(
                         batch = listOf(record),
-                        embeddingClient = embeddingClient,
                         model = this,
                         progressState = progressState
                     )
@@ -161,7 +157,6 @@ fun EmbeddingModel.getRows(
 
 private fun processBatch(
     batch: List<DocumentRecord>,
-    embeddingClient: EmbeddingClientBase,
     model: EmbeddingModel,
     progressState: ProgressState
 ) {
@@ -175,18 +170,13 @@ private fun processBatch(
     var retryCount = 0
     var lastException: Exception? = null
 
+    val embedder = model.instance()
     while (retryCount < 3) {
         try {
-            val embeddings = embeddingClient.createEmbedding(
-                ApiModel.EmbeddingRequest(
-                    model = model.modelName,
-                    input = texts.joinToString("\n")
-                ), model
-            ).data
-
+            val embeddings = embedder.embed(texts.joinToString("\n"))
             batch.forEachIndexed { index, record ->
                 if (record.text != null && index < embeddings.size) {
-                    record.vector = embeddings[index].embedding ?: DoubleArray(0)
+                    record.vector = embeddings ?: DoubleArray(0)
                 }
                 progressState.add(1.0, 0.0)
             }

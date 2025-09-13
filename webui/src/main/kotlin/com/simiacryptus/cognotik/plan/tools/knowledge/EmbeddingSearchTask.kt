@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.DistanceType
-import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
-import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
@@ -41,6 +38,7 @@ class EmbeddingSearchTask(
         val min_length: Int = 0,
         @Description("List of regex patterns that must be present in the content")
         val required_regexes: List<String> = emptyList(),
+        val model : EmbeddingModel = EmbeddingModel.OllamaNomadic,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -71,10 +69,6 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
         )
         try {
             val searchResults = performEmbeddingSearch(
-                OllamaEmbeddingClient(
-                    "",
-                    workPool = threadPool,
-                )
             )
             val formattedResults = formatSearchResults(searchResults)
             task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
@@ -85,15 +79,14 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
                 if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
                     threadPool.shutdownNow()
                 }
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
                 threadPool.shutdownNow()
                 Thread.currentThread().interrupt()
             }
         }
     }
 
-    private fun performEmbeddingSearch(api: EmbeddingClientBase): List<EmbeddingSearchResult> {
-        val model = EmbeddingModel.Large
+    private fun performEmbeddingSearch(): List<EmbeddingSearchResult> {
         // Validate queries first
         if (taskConfig?.positive_queries?.isEmpty() != false) {
             throw IllegalArgumentException("At least one positive query is required")
@@ -102,13 +95,7 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
         fun createEmbeddingWithRetry(query: String, maxRetries: Int = 3): DoubleArray? {
             repeat(maxRetries) { attempt ->
                 try {
-                    return api.createEmbedding(
-                        ApiModel.EmbeddingRequest(
-                            input = query,
-                            model = model.modelName
-                        ),
-                        model
-                    ).data[0].embedding
+                    return taskConfig.model.instance().embed(query)
                 } catch (e: Exception) {
                     if (attempt == maxRetries - 1) {
                         log.error("Failed to create embedding for query after $maxRetries attempts: $query", e)
@@ -120,24 +107,23 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             return null
         }
 
-        val positiveEmbeddings = taskConfig?.positive_queries?.map { query ->
+        val positiveEmbeddings = taskConfig.positive_queries.map { query ->
             createEmbeddingWithRetry(query)
-        } ?: emptyList()
+        }
 
-        val negativeEmbeddings = taskConfig?.negative_queries?.map { query ->
+        val negativeEmbeddings = taskConfig.negative_queries.map { query ->
             createEmbeddingWithRetry(query)
-        } ?: emptyList()
+        }
 
         if (positiveEmbeddings.filterNotNull().isEmpty()) {
             throw IllegalStateException("Failed to create any positive embeddings")
         }
-        val distanceType = taskConfig?.distance_type ?: DistanceType.Cosine
         val filtered = Files.walk(root).asSequence()
             .filter { path ->
                 path.toString().endsWith(".index.data")
             }.toList().toTypedArray()
-        val minLength = taskConfig?.min_length ?: 0
-        val requiredRegexes = taskConfig?.required_regexes?.map { Pattern.compile(it) } ?: emptyList()
+        val minLength = taskConfig.min_length
+        val requiredRegexes = taskConfig.required_regexes.map { Pattern.compile(it) }
         fun String.matchesAllRegexes(): Boolean {
             return requiredRegexes.all { regex -> regex.matcher(this).find() }
         }
@@ -149,10 +135,10 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
                     DocumentRecord.readBinaryStream(path.toString()) { record ->
                         record.vector?.let { vector ->
                             val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
-                                distanceType.distance(vector, embedding)
+                                taskConfig.distance_type.distance(vector, embedding)
                             }
                             val negativeDistances = negativeEmbeddings.filterNotNull().map { embedding ->
-                                distanceType.distance(vector, embedding)
+                                taskConfig.distance_type.distance(vector, embedding)
                             }
                             val overallDistance = if (negativeDistances.isEmpty()) {
                                 positiveDistances.minOrNull() ?: Double.MAX_VALUE
@@ -180,7 +166,7 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             .toList()
         return searchResults
             .sortedBy { it.distance }
-            .take(taskConfig?.count ?: 5)
+            .take(taskConfig.count)
     }
 
     private fun formatSearchResults(results: List<EmbeddingSearchResult>): String {

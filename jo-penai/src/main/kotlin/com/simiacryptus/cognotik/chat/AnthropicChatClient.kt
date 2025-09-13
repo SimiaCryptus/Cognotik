@@ -75,7 +75,7 @@ class AnthropicChatClient(
     }
     private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
+        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
     }
 
@@ -84,7 +84,7 @@ class AnthropicChatClient(
 
         fun mapToAnthropicChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel): AnthropicChatRequest {
             require(chatRequest.messages.isNotEmpty()) { "Messages cannot be empty" }
-            require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
+            require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
 
             return AnthropicChatRequest(
                 model = chatRequest.model ?: model.modelName,

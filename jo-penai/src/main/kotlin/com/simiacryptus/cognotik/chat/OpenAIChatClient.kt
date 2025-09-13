@@ -60,7 +60,7 @@ class OpenAIChatClient(
     }
     private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
+        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
     }
 

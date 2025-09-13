@@ -17,16 +17,12 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 
 interface EmbeddingClientInterface {
-    var budget: Number?
-    
+
     fun createEmbedding(
         request: ApiModel.EmbeddingRequest,
         model: EmbeddingModel
     ): ApiModel.EmbeddingResponse
-    
-    fun onUsage(model: EmbeddingModel, tokens: Usage)
-    
-    fun getChildClient(): EmbeddingClientInterface
+
 }
 
 abstract class SingleProviderEmbeddingClient(
@@ -52,7 +48,7 @@ abstract class EmbeddingClientBase(
 
     var session: Any? = null
     var user: Any? = null
-    override var budget: Number? = null
+    var budget: Number? = null
 
     @Throws(IOException::class, InterruptedException::class)
     fun post(
@@ -132,15 +128,8 @@ abstract class EmbeddingClientBase(
         }
     }
 
-    override fun onUsage(model: EmbeddingModel, tokens: Usage) {
+    fun onUsage(model: EmbeddingModel, tokens: Usage) {
         log.debug("Usage recorded for session: {}, user: {}, model: {}, tokens: {}", session, user, model, tokens)
-        budget?.let { currentBudget ->
-            val cost = tokens.cost ?: 0.0
-            budget = (currentBudget.toDouble() - cost).coerceAtLeast(0.0)
-            if (budget!!.toDouble() <= 0.0) {
-                log.warn("Budget exhausted for session: $session, user: $user")
-            }
-        }
     }
 
     inner class ChildClient() : EmbeddingClientBase(
@@ -171,13 +160,9 @@ abstract class EmbeddingClientBase(
             return this@EmbeddingClientBase.createEmbedding(request, model)
         }
 
-        override fun onUsage(model: EmbeddingModel, tokens: Usage) {
-            this@EmbeddingClientBase.onUsage(model, tokens)
-            super.onUsage(model, tokens)
-        }
     }
 
-    override fun getChildClient(): ChildClient = ChildClient()
+    fun getChildClient(): ChildClient = ChildClient()
 
     companion object {
         val log = LoggerFactory.getLogger(EmbeddingClientBase::class.java)

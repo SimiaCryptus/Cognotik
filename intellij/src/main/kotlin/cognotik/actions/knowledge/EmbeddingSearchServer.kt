@@ -6,10 +6,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
-import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
-import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -109,7 +107,7 @@ class EmbeddingSearchServer(
 
         try {
             val embeddingClient = OllamaEmbeddingClient("", workPool = threadPool)
-            val searchResults = performEmbeddingSearch(embeddingClient, indexFiles)
+            val searchResults = performEmbeddingSearch(indexFiles)
             val formattedResults = formatSearchResults(searchResults)
 
             task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = ui))
@@ -128,7 +126,6 @@ class EmbeddingSearchServer(
     }
 
     private fun performEmbeddingSearch(
-        api: EmbeddingClientBase,
         indexFiles: List<VirtualFile?>
     ): List<EmbeddingSearchResult> {
         if (settings.positiveQueries.isEmpty()) {
@@ -145,13 +142,7 @@ class EmbeddingSearchServer(
                 try {
                     processedQueries++
                     log.debug("Creating embedding ${processedQueries}/$totalQueries: $query")
-                    api.createEmbedding(
-                        ApiModel.EmbeddingRequest(
-                            input = query,
-                            model = model.modelName
-                        ),
-                        model
-                    ).data.firstOrNull()?.embedding ?: return null
+                    model.instance().embed(query)
                 } catch (e: Exception) {
                     log.error("Failed to create embedding for query: $query", e)
                     return null

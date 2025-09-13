@@ -13,8 +13,8 @@ import com.simiacryptus.cognotik.models.ApiModel.Usage
 @JsonDeserialize(using = LLMModelDeserializer::class)
 @JsonSerialize(using = LLMModelSerializer::class)
 open class LLMModel(
-    override val modelName: String,
-    val provider: APIProvider,
+    override val modelName: String?,
+    val provider: APIProvider?,
     val maxTotalTokens: Int = -1,
     val maxOutTokens: Int = maxTotalTokens,
 ) : AIModel {
@@ -24,8 +24,8 @@ open class LLMModel(
 class LLMModelSerializer : com.fasterxml.jackson.databind.ser.std.StdSerializer<LLMModel>(LLMModel::class.java) {
     override fun serialize(value: LLMModel, gen: JsonGenerator, provider: SerializerProvider) {
         ((listOf(
-            ChatModel.Companion.values(),
-            EmbeddingModel.Companion.values(),
+            ChatModel.values(),
+            EmbeddingModel.values(),
         ).flatMap { it.entries }.find { it.value == value }?.key) ?: value.modelName)
             .let { gen.writeString(it) }
     }
@@ -35,9 +35,9 @@ class LLMModelDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<LLM
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LLMModel {
         val modelName = p.readValueAs(String::class.java)
         listOf(
-            ChatModel.Companion.values(),
-            EmbeddingModel.Companion.values(),
-            EditModels.Companion.values(),
+            ChatModel.values(),
+            EmbeddingModel.values(),
+            EditModels.values(),
         ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
         return LLMModel(
             modelName,

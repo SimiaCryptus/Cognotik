@@ -10,8 +10,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
 import com.simiacryptus.cognotik.models.ApiModel.Usage
 import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
@@ -34,14 +32,14 @@ open class ChatModel(
     maxOutTokens = maxOutTokens,
     provider = provider,
 ) {
-    override fun toString() = modelName
+    override fun toString() = modelName ?: name
 
     override fun pricing(usage: Usage) =
         (usage.prompt_tokens * inputTokenPricePerK + usage.completion_tokens * outputTokenPricePerK) / 1000.0
 
     fun instance(
         key: String,
-        base: String = provider.base!!,
+        base: String = provider?.base!!,
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
         workPool: ExecutorService,
@@ -52,7 +50,7 @@ open class ChatModel(
         base = base,
         logLevel = logLevel,
         temperature = temperature,
-        provider = provider,
+        provider = provider!!,
         modelType = this,
         workPool = workPool,
     )

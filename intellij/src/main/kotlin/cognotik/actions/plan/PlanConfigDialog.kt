@@ -375,7 +375,7 @@ class PlanConfigDialog(
     }
 
     private fun getVisibleModels(): List<ChatModel> = ChatModel.values().map { it.value }.filter { isVisible(it) }.toList()
-        .sortedBy { "${it.provider.name} - ${it.modelName}" }
+        .sortedBy { "${it.provider?.name} - ${it.modelName}" }
 
     init {
         taskTypeList.cellRenderer = TaskTypeListCellRenderer()
@@ -667,8 +667,8 @@ private fun ChatModel.instance(
     val apis = AppSettingsState.instance.getUserSettings().apis
     return instance(
         key = apis.find { it.provider == provider }?.key
-            ?: throw IllegalArgumentException("No API Key for ${provider.name}"),
-        base = apis.find { it.provider == provider }?.baseUrl ?: provider.base,
+            ?: throw IllegalArgumentException("No API Key for ${provider?.name}"),
+        base = apis.find { it.provider == provider }?.baseUrl ?: provider?.base ?: "",
         logLevel = Level.INFO,
         logStreams = mutableListOf(),
         temperature = AppSettingsState.instance.temperature,
@@ -683,8 +683,8 @@ private fun ChatModel.toApiChatModel(): UserSettingsInterface.ApiChatModel {
         model = this,
         provider = UserSettingsInterface.ApiData(
             key = apis.find { it.provider == this.provider }?.key
-                ?: throw IllegalArgumentException("No API Key for ${this.provider.name}"),
-            baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider.base,
+                ?: throw IllegalArgumentException("No API Key for ${this.provider?.name}"),
+            baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider?.base ?: "",
             provider = this.provider,
         ).validate()
     )

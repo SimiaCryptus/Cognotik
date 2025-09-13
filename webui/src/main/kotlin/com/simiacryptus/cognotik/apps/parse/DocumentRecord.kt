@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.embedding.EmbeddingClientBase
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -131,7 +130,6 @@ data class DocumentRecord(
         }
 
         fun indexJsonFile(
-            embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
             progressState: ProgressState,
             model: EmbeddingModel,
@@ -155,7 +153,6 @@ data class DocumentRecord(
                     progressState = progressState,
                     futureList = futureList,
                     pool = pool,
-                    embeddingClient = embeddingClient,
                     fileData = fileData
                 )
                 val outputPath = infile.parentFile.resolve(
@@ -171,7 +168,6 @@ data class DocumentRecord(
         }
 
         fun indexTextFiles(
-            embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
             parsingModel: ParsingModel<*>,
             model: EmbeddingModel,
@@ -191,7 +187,6 @@ data class DocumentRecord(
                 progressState = progressState,
                 futureList = futureList,
                 pool = pool,
-                embeddingClient = embeddingClient,
                 fileData = mapOf("content_list" to parsedDocument.content_list) as Map<String, Any>?
             )
             awaitAll(futureList.toTypedArray(), TimeUnit.MINUTES.toMillis(30))

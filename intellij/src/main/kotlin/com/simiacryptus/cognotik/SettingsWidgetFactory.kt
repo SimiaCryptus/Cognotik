@@ -64,7 +64,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             val providers = models()
                 .filter { model ->
-                    val providerName = model.second.provider.name
+                    val providerName = model.second.provider?.name
                     AppSettingsState.Companion.instance.getUserSettings().apis.any { api ->
                         api.provider?.name == providerName && !api.key.isNullOrBlank()
                     }
@@ -72,7 +72,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 .groupBy { it.second.provider }
 
             for ((provider, models) in providers) {
-                val providerNode = DefaultMutableTreeNode(provider.name)
+                val providerNode = DefaultMutableTreeNode(provider?.name)
                 for (model in models) {
                     val modelNode = DefaultMutableTreeNode(model.second.modelName)
                     providerNode.add(modelNode)
@@ -124,7 +124,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             if (selectedModel?.model != null) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(tree, selectedModel.model!!.modelName)
+                    setSelectedModel(tree, selectedModel.model!!.modelName ?: "")
                 }
             }
             return tree
@@ -283,28 +283,28 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 recreateModelTrees()
                SwingUtilities.invokeLater {
                    AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
-                       setSelectedModel(getSmartModelTree(), model.modelName)
+                       setSelectedModel(getSmartModelTree(), model.modelName ?: "")
                    }
                    AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
-                       setSelectedModel(getFastModelTree(), model.modelName)
+                       setSelectedModel(getFastModelTree(), model.modelName ?: "")
                    }
                }
             }
 
             AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getSmartModelTree(), model.modelName)
+                    setSelectedModel(getSmartModelTree(), model.modelName ?: "")
                 }
             }
             AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getFastModelTree(), model.modelName)
+                    setSelectedModel(getFastModelTree(), model.modelName ?: "")
                 }
             }
         }
 
         fun models() = ChatModel.Companion.values().filter { isVisible(it.value) }.toList()
-            .sortedBy { "${it.second.provider.name} - ${it.second.modelName}" }
+            .sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
             return "AICodingAssistant.SettingsWidget"

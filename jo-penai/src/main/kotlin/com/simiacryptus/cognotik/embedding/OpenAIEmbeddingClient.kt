@@ -10,14 +10,14 @@ import java.lang.IllegalStateException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class OllamaEmbeddingClient(
+class OpenAIEmbeddingClient(
     apiKey: String = "",
-    apiBase: String = "http://localhost:11434",
+    apiBase: String = "https://api.openai.com/v1",
     workPool: ExecutorService = Executors.newCachedThreadPool(),
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf()
 ) : SingleProviderEmbeddingClient(
-    provider = APIProvider.valueOf("Ollama"),
+    provider = APIProvider.valueOf("OpenAI"),
     apiKey = apiKey,
     apiBase = apiBase,
     workPool = workPool,
@@ -31,9 +31,10 @@ class OllamaEmbeddingClient(
     ) {
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
-        // Ollama typically doesn't require authorization for local instances
         if (apiKey.isNotBlank()) {
             request.addHeader("Authorization", "Bearer $apiKey")
+        } else {
+            throw IllegalStateException("OpenAI API key is required")
         }
     }
 
@@ -45,43 +46,32 @@ class OllamaEmbeddingClient(
 
         return withReliability {
             withPerformanceLogging {
-                // Convert OpenAI-style request to Ollama format
-                val ollamaRequest = mapOf(
+                // OpenAI embedding request format
+                val openAIRequest = mapOf(
                     "model" to (request.model ?: model.modelName),
-                    "prompt" to when {
+                    "input" to when {
                         request.input is String -> request.input
-                        else -> request.input.toString()
-                    }
+                        request.input is List<*> -> request.input
+                        else -> listOf(request.input.toString())
+                    },
+                    "encoding_format" to "float"
                 )
 
                 val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(ollamaRequest)
+                    .writeValueAsString(openAIRequest)
 
-                val rawResponse = post("$apiBase/api/embeddings", json, provider)
+                val rawResponse = post("$apiBase/embeddings", json, provider)
                 checkError(rawResponse)
 
-                // Parse Ollama response and convert to OpenAI format
-                val ollamaResponse = JsonUtil.objectMapper().readValue(rawResponse, Map::class.java)
-                val embeddings = ollamaResponse["embedding"] as? List<Double>
-                    ?: throw IllegalStateException("No embeddings found in response")
+                // Parse OpenAI response
+                val response = JsonUtil.objectMapper().readValue(rawResponse, ApiModel.EmbeddingResponse::class.java)
 
-                val response = ApiModel.EmbeddingResponse(
-                    data = listOf(
-                        ApiModel.EmbeddingData(
-                            embedding = embeddings.toDoubleArray(),
-                            index = 0,
-                            `object` = "embedding"
-                        )
-                    ),
-                    model = request.model ?: model.modelName,
-                    `object` = "list",
-                    usage = ApiModel.Usage(
-                        prompt_tokens = estimateTokens(request.input.toString()).toLong(),
-                        total_tokens = estimateTokens(request.input.toString()).toLong(),
-                        completion_tokens = 0
-                    )
-                )
+                // Validate response
+                if (response.data.isEmpty()) {
+                    throw IllegalStateException("No embeddings found in response")
+                }
 
+                // Update usage with cost calculation
                 if (response.usage != null) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
                 }
@@ -94,10 +84,6 @@ class OllamaEmbeddingClient(
     private fun validateEmbeddingRequest(request: ApiModel.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
-    }
-
-    private fun estimateTokens(text: String): Int {
-        // Simple token estimation - roughly 4 characters per token
-        return (text.length / 4).coerceAtLeast(1)
+        require(apiKey.isNotBlank()) { "OpenAI API key is required" }
     }
 }

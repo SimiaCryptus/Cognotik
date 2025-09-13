@@ -450,7 +450,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             .sortedBy { modelItem ->
                 val model =
                     ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                "${model.provider.name} - ${model.modelName}"
+                "${model.provider?.name} - ${model.modelName}"
             }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }
             .filter { modelItem ->
@@ -461,7 +461,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             .sortedBy { modelItem ->
                 val model =
                     ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                "${model.provider.name} - ${model.modelName}"
+                "${model.provider?.name} - ${model.modelName}"
             }.toList()
         smartModel.removeAllItems()
         fastModel.removeAllItems()

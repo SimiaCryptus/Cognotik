@@ -82,7 +82,7 @@ class AwsChatClient(
                 log.debug("AWS Bedrock response: $responseBody")
 
                 val result = try {
-                    fromAWS(responseBody, model.modelName)
+                    fromAWS(responseBody, model.modelName ?: "")
                 } catch (e: Exception) {
                     log.error("Failed to parse AWS response for model: ${model.modelName}", e)
                     throw RuntimeException("Failed to parse AWS response", e)
@@ -101,7 +101,7 @@ class AwsChatClient(
     }
     private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-        require(model.modelName.isNotBlank()) { "Model name cannot be blank" }
+        require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(awsAuth.region.isNotBlank()) { "AWS region must be specified" }
     }
 
@@ -126,7 +126,7 @@ class AwsChatClient(
         fun awsBody(
             model: LLMModel, chatRequest: ApiModel.ChatRequest
         ): Map<String, Any> = when {
-            model.modelName.contains("llama") -> {
+            model.modelName?.contains("llama") == true -> {
                 mapOf(
                     "prompt" to toSimplePrompt(chatRequest),
                     "max_gen_len" to model.maxOutTokens,
@@ -135,7 +135,7 @@ class AwsChatClient(
                     )
             }
 
-            model.modelName.contains("mistral") -> {
+            model.modelName?.contains("mistral") == true -> {
                 mapOf(
                     "prompt" to toSimplePrompt(chatRequest),
                     "max_tokens" to model.maxOutTokens,
@@ -143,7 +143,7 @@ class AwsChatClient(
                 )
             }
 
-            model.modelName.contains("titan") -> {
+            model.modelName?.contains("titan") == true -> {
                 mapOf(
                     "inputText" to toSimplePrompt(chatRequest), "textGenerationConfig" to mapOf(
                         "maxTokenCount" to model.maxTotalTokens,
@@ -153,7 +153,7 @@ class AwsChatClient(
                 )
             }
 
-            model.modelName.contains("cohere") -> {
+            model.modelName?.contains("cohere") == true -> {
                 mapOf(
                     "prompt" to toSimplePrompt(chatRequest),
                     "max_tokens" to model.maxTotalTokens,
@@ -161,7 +161,7 @@ class AwsChatClient(
                 )
             }
 
-            model.modelName.contains("ai21") -> {
+            model.modelName?.contains("ai21") == true -> {
                 mapOf(
                     "prompt" to toSimplePrompt(chatRequest),
                     "maxTokens" to model.maxTotalTokens,
@@ -173,7 +173,7 @@ class AwsChatClient(
                 )
             }
 
-            model.modelName.contains("anthropic") -> {
+            model.modelName?.contains("anthropic") == true -> {
                 val alternatingMessages = alternateMessagesRoles(chatRequest.messages)
                 mapOf(
                     "anthropic_version" to anthropic_version(model),

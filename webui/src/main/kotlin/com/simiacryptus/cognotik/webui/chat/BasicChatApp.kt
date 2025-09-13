@@ -45,8 +45,8 @@ class BasicChatApp(
         val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
         fun instance(model: ChatModel) = model.getApi(user)?.let { apiData ->
             model.instance(
-                key = apiData.key ?: throw RuntimeException("No API key for model ${model.name}"),
-                base = apiData.baseUrl ?: model.provider.base ?: "",
+                key = apiData.key,
+                base = apiData.baseUrl,
                 temperature = settings.temperature,
                 workPool = ApplicationServices.clientManager.getPool(session, user),
             )
