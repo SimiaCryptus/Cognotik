@@ -375,10 +375,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.shellCommand.text = settings.shellCommand
             component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
             component.setExecutables(settings.executables ?: emptySet())
-
-
-            val userSettings = settings.getUserSettings()
-            // API table is now populated in the component's init method
         } catch (e: Exception) {
             log.warn("Error setting UI", e)
         }
@@ -386,6 +382,15 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
 
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         try {
+            val userSettings = settings.getUserSettings()
+            val fastModelName = component.fastModel.selectedItem as String?
+            val smartModelName = component.smartModel.selectedItem as String?
+            val fastChatModel = ChatModel.values().entries.find { it.value.modelName == fastModelName }?.value
+            val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
+            val smartChatModel = ChatModel.values().entries.find { it.value.modelName == smartModelName }?.value
+            val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
+
+            settings.fastModel = UserSettingsInterface.ApiChatModel(fastChatModel, fastApiData)
             settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
             settings.awsProfile = component.awsProfile.text.takeIf { it.isNotBlank() }
             settings.awsRegion = component.awsRegion.text.takeIf { it.isNotBlank() }
@@ -395,20 +400,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.listeningPort = component.listeningPort.text.safeInt()
             settings.listeningEndpoint = component.listeningEndpoint.text
             settings.suppressErrors = component.suppressErrors.isSelected
-            val userSettings = settings.getUserSettings()
-            val fastModelName = component.fastModel.selectedItem as String?
-            val smartModelName = component.smartModel.selectedItem as String?
-            
-            // Find the corresponding ChatModel and ApiData for fast model
-            val fastChatModel = ChatModel.values().entries.find { it.value.modelName == fastModelName }?.value
-            val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
-            settings.fastModel = UserSettingsInterface.ApiChatModel(fastChatModel, fastApiData)
-            
-            // Find the corresponding ChatModel and ApiData for smart model
-            val smartChatModel = ChatModel.values().entries.find { it.value.modelName == smartModelName }?.value
-            val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
             settings.smartModel = UserSettingsInterface.ApiChatModel(smartChatModel, smartApiData)
-            
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.temperature = component.temperature.text.safeDouble()
@@ -416,7 +408,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.embeddingModel = (component.embeddingModel.selectedItem as String?)?.embeddingModel()
             settings.pluginHome = File(component.pluginHome.text)
             settings.shellCommand = component.shellCommand.text
-
+            settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
 
             val tableModel = component.apis.model as DefaultTableModel
             log.debug("Reading API keys from table model: $tableModel with row count: ${tableModel.rowCount}")
@@ -444,8 +436,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 }
             }
             settings.updateUserSettings(userSettings)
-
-            settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
             log.info("Settings after reading: ${settings.toJson()}")
         } catch (e: Exception) {
             log.warn("Error reading UI", e)
