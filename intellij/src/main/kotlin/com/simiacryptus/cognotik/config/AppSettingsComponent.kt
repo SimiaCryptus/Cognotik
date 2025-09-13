@@ -16,6 +16,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -146,6 +147,10 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     @Suppress("unused")
     @Name("Main Image Model")
     val mainImageModel = ComboBox<String>()
+    @Suppress("unused")
+    @Name("Embedding Model")
+    val embeddingModel = ComboBox<String>()
+
 
     @Suppress("unused")
     @Name("Enable API Log")
@@ -440,6 +445,10 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         ImageModels.entries.forEach {
             this.mainImageModel.addItem(it.name)
         }
+        EmbeddingModel.values().keys.forEach {
+            this.embeddingModel.addItem(it)
+        }
+
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }
             .filter { modelItem ->
@@ -473,12 +482,17 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         this.fastModel.renderer = getModelRenderer()
         this.mainImageModel.isEditable = true
         this.mainImageModel.renderer = getImageModelRenderer()
+        this.embeddingModel.isEditable = true
+        this.embeddingModel.renderer = getEmbeddingModelRenderer()
         // Set current selections
         AppSettingsState.instance.smartModel?.model?.let { model ->
             this.smartModel.selectedItem = model.modelName
         }
         AppSettingsState.instance.fastModel?.model?.let { model ->
             this.fastModel.selectedItem = model.modelName
+        }
+        AppSettingsState.instance.embeddingModel?.let { model ->
+            this.embeddingModel.selectedItem = model
         }
     }
 
@@ -526,6 +540,22 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
 
         }
     }
+    private fun getEmbeddingModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
+        override fun customize(
+            list: JList<out String>,
+            value: String?,
+            index: Int,
+            selected: Boolean,
+            hasFocus: Boolean
+        ) {
+            text = value
+            if (value != null) {
+                val model = EmbeddingModel.values()[value]
+                text = "${model?.provider?.name} - $value"
+            }
+        }
+    }
+
 
     fun getExecutables(): Set<String> {
         val model =

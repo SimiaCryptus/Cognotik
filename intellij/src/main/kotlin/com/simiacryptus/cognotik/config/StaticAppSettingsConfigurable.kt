@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.config
 
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.EncryptionUtil
@@ -41,6 +42,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Image Model:"))
                         add(component.mainImageModel)
+                    })
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("Embedding Model:"))
+                        add(component.embeddingModel)
                     })
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Temperature:"))
@@ -365,6 +370,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.devActions.isSelected = settings.devActions
             component.mainImageModel.selectedItem = settings.mainImageModel
             component.temperature.text = settings.temperature.toString()
+            component.embeddingModel.selectedItem = settings.embeddingModel
             component.pluginHome.text = settings.pluginHome.absolutePath
             component.shellCommand.text = settings.shellCommand
             component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
@@ -407,6 +413,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.temperature = component.temperature.text.safeDouble()
             settings.mainImageModel = (component.mainImageModel.selectedItem as String)
+            settings.embeddingModel = (component.embeddingModel.selectedItem as String?)?.embeddingModel()
             settings.pluginHome = File(component.pluginHome.text)
             settings.shellCommand = component.shellCommand.text
 
@@ -450,6 +457,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     }
 }
 
+fun String.embeddingModel() = EmbeddingModel.values()[this]
 fun String?.safeInt() = if (null == this) 0 else when {
     isEmpty() -> 0
     else -> try {

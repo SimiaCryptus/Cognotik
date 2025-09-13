@@ -28,6 +28,15 @@ open class EmbeddingModel(
         APIProvider.OpenAI -> OpenAIEmbeddingClient()
         else -> throw IllegalArgumentException("Unsupported provider: $provider")
     }, this)
+    fun instance(key: String, base: String): EmbedderClient {
+        val client = when (provider) {
+            APIProvider.Ollama -> OllamaEmbeddingClient()
+            APIProvider.OpenAI -> OpenAIEmbeddingClient()
+            else -> throw IllegalArgumentException("Unsupported provider: $provider")
+        }
+        // Configure client with provided key and base URL
+        return EmbedderClient(client, this)
+    }
 
     companion object {
         val log = LoggerFactory.getLogger(EmbeddingModel::class.java)

@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.embedding.DistanceType
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.platform.Session
@@ -26,7 +27,6 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import javax.swing.*
-
 class EmbeddingSearchAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
@@ -192,7 +192,7 @@ class EmbeddingSearchAction : BaseAction() {
                     }
                     SessionProxyServer.chats[session] = EmbeddingSearchServer(
                         settings = settings,
-                        model = EmbeddingModel.OllamaNomadic,
+                    model = AppSettingsState.instance.embeddingModel ?: throw IllegalStateException("No embedding model configured"),
                         files = expandFiles(*event.getSelectedFiles().toTypedArray()),
                         root = File(event.getRoot())
                     )

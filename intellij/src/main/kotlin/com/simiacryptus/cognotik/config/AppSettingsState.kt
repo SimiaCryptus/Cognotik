@@ -21,6 +21,7 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
@@ -72,6 +73,9 @@ data class AppSettingsState(
     var fastModel: UserSettingsInterface.ApiChatModel? = null,
     var transcriptionModel: String? = null,
     var mainImageModel: String = "",
+    /* Embedding Model Settings */
+    var embeddingModel: EmbeddingModel? = null,
+
 
     /* AWS Settings */
     var awsProfile: String? = null,
@@ -125,6 +129,9 @@ data class AppSettingsState(
 
     @get:JsonIgnore
     val fastChatClient: Chatter get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
+
+    @get:JsonIgnore
+    val embeddingClient: com.simiacryptus.cognotik.embedding.Embedder? get() = embeddingModel?.instance()
 
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
@@ -291,6 +298,7 @@ if (smartModel != other.smartModel) return false
         if (greetedVersion != other.greetedVersion) return false
         if (mainImageModel != other.mainImageModel) return false
         if (executables != other.executables) return false
+        if (embeddingModel != other.embeddingModel) return false
         if (awsProfile != other.awsProfile) return false
         if (awsRegion != other.awsRegion) return false
         if (awsBucket != other.awsBucket) return false
@@ -324,6 +332,7 @@ if (smartModel != other.smartModel) return false
         result = 31 * result + greetedVersion.hashCode()
         result = 31 * result + mainImageModel.hashCode()
         result = 31 * result + executables.hashCode()
+        result = 31 * result + (embeddingModel?.hashCode() ?: 0)
         result = 31 * result + (awsProfile?.hashCode() ?: 0)
         result = 31 * result + (awsRegion?.hashCode() ?: 0)
         result = 31 * result + (awsBucket?.hashCode() ?: 0)
