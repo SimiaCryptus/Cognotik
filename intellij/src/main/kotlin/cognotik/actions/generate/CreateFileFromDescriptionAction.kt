@@ -116,24 +116,25 @@ class CreateFileFromDescriptionAction :
         require(directive.isNotBlank()) { "Directive cannot be empty" }
         try {
             val response = run {
-                model.chat(listOf(
-                    ChatMessage(
-                        Role.system, """
-                    You will interpret natural language requirements to create a new file.
-                    Provide a new filename and the code to be written to the file.
-                    Paths should be relative to the project root and should not exist.
-                    Output the file path using the a line with the format "File: <path>".
-                    Output the file code directly after the header line with no additional decoration.
-                """.trimIndent().toContentList(), null
-                    ),
-                    ChatMessage(
-                        Role.user, """
-                    Create a new file based on the following directive: $directive
-
-                    The file location should be based on the selected path `$basePath`
-                """.trimIndent().toContentList(), null
+                model.chat(
+                    listOf(
+                        ChatMessage(
+                            Role.system, """
+                        You will interpret natural language requirements to create a new file.
+                        Provide a new filename and the code to be written to the file.
+                        Paths should be relative to the project root and should not exist.
+                        Output the file path using the a line with the format "File: <path>".
+                        Output the file code directly after the header line with no additional decoration.
+                    """.trimIndent().toContentList(), null
+                        ),
+                        ChatMessage(
+                            Role.user, """
+                        Create a new file based on the following directive: $directive
+    
+                        The file location should be based on the selected path `$basePath`
+                    """.trimIndent().toContentList(), null
+                        )
                     )
-                )
                 ).choices.firstOrNull()?.message?.content?.trim()
             } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath

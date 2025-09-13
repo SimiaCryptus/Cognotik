@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.chat.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
@@ -25,13 +24,14 @@ open class Chatter(
         require(temperature in 0.0..2.0) { "Temperature must be in range [0.0, 2.0]" }
     }
     open fun chat(
-        messages: List<ChatMessage>
+        messages: List<ChatMessage>,
+        streams: MutableList<BufferedOutputStream> = logStreams
     ) = provider.getChatClient(
         key = key,
         base = base,
         workPool = workPool,
         logLevel = logLevel,
-        logStreams = logStreams
+        logStreams = streams
     ).chat(
         chatRequest = ApiModel.ChatRequest(
             model = modelType.modelName,
@@ -39,7 +39,7 @@ open class Chatter(
             temperature = temperature,
         ),
         model = modelType,
-        logStreams = this.logStreams
+        logStreams = streams
     )
 
     var budget: Number? // TODO: implement budget tracking
@@ -49,12 +49,10 @@ open class Chatter(
     @JsonIgnore
     fun getChildClient(): Chatter = ChildChatter(
         parent = this,
-        workPool = this.workPool,
     )
 
     class ChildChatter(
         val parent: Chatter,
-        workPool: ExecutorService,
         logStreams: MutableList<BufferedOutputStream> = parent.logStreams.toTypedArray().toMutableList(),
     ) : Chatter(
         logStreams = logStreams,
@@ -64,12 +62,6 @@ open class Chatter(
         temperature = parent.temperature,
         provider = parent.provider,
         modelType = parent.modelType,
-        workPool = workPool,
-    ) {
-        override fun chat(messages: List<ApiModel.ChatMessage>): ApiModel.ChatResponse =
-            this.modelType.instance(
-                key = "",
-                workPool = workPool,
-            ).chat(messages)
-    }
+        workPool = parent.workPool,
+    )
 }

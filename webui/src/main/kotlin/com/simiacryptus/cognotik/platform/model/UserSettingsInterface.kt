@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 interface UserSettingsInterface {
 
     data class ApiData(
+        val name: String? = null,
         val key: String = "",
         val baseUrl: String = "",
         val provider: APIProvider? = null,

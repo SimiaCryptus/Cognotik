@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.chat.ChatClientInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ApiModel

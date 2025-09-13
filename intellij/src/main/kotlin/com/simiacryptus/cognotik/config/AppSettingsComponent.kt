@@ -216,11 +216,12 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     val temperature = JBTextField()
 
     @Name("APIs")
-    val apis = JBTable(DefaultTableModel(arrayOf("Provider", "Key", "Base URL"), 0)).apply {
+    val apis = JBTable(DefaultTableModel(arrayOf("Provider", "Name", "Key", "Base URL"), 0)).apply {
         columnModel.getColumn(0).preferredWidth = 100
-        columnModel.getColumn(1).preferredWidth = 200
+        columnModel.getColumn(1).preferredWidth = 150
         columnModel.getColumn(2).preferredWidth = 200
-        val keyColumnIndex = 1
+        columnModel.getColumn(3).preferredWidth = 200
+        val keyColumnIndex = 2
         columnModel.getColumn(keyColumnIndex).cellRenderer = object : DefaultTableCellRenderer() {
             override fun setValue(value: Any?) {
                 text =
@@ -246,23 +247,76 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
 
         addButton.addActionListener {
             val model = apis.model as DefaultTableModel
-            // Show dialog to select provider
-            val providers = APIProvider.values().map { it.name }.toTypedArray()
-            val selectedProvider = JOptionPane.showInputDialog(
-                this,
-                "Select API Provider:",
-                "Add API Configuration",
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                providers,
-                providers[0]
-            ) as String?
 
-            if (selectedProvider != null) {
-                val provider = APIProvider.valueOf(selectedProvider)
-                model.addRow(arrayOf(selectedProvider, "", provider.base ?: ""))
+            // Create add dialog with all fields
+            val dialog = JDialog(null as Frame?, "Add API Configuration", true)
+            dialog.layout = GridBagLayout()
+            val gbc = GridBagConstraints()
+
+            gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
+            dialog.add(JLabel("Provider Type:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val providerCombo = ComboBox(APIProvider.values().map { it.name }.toTypedArray())
+            dialog.add(providerCombo, gbc)
+
+            gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+            dialog.add(JLabel("Name:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val nameField = JBTextField(30)
+            dialog.add(nameField, gbc)
+
+            gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+            dialog.add(JLabel("API Key:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val keyField = JBTextField(30)
+            dialog.add(keyField, gbc)
+
+            gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+            dialog.add(JLabel("Base URL:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val urlField = JBTextField(30)
+            dialog.add(urlField, gbc)
+
+            // Auto-populate name and base URL when provider changes
+            providerCombo.addActionListener {
+                val selectedProvider = APIProvider.valueOf(providerCombo.selectedItem as String)
+                urlField.text = selectedProvider.base ?: ""
+                nameField.text = selectedProvider.name
+                urlField.text = selectedProvider.base ?: ""
             }
+
+            // Initialize with first provider's defaults
+            val initialProvider = APIProvider.values().first()
+            nameField.text = initialProvider.name
+            urlField.text = initialProvider.base ?: ""
+
+            gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE
+            val buttonPanel = JPanel(FlowLayout())
+            val okButton = JButton("OK")
+            val cancelButton = JButton("Cancel")
+
+            okButton.addActionListener {
+                model.addRow(
+                    arrayOf(
+                        providerCombo.selectedItem,
+                        nameField.text,
+                        keyField.text,
+                        urlField.text
+                    )
+                )
+                dialog.dispose()
+            }
+            cancelButton.addActionListener { dialog.dispose() }
+
+            buttonPanel.add(okButton)
+            buttonPanel.add(cancelButton)
+            dialog.add(buttonPanel, gbc)
+
+            dialog.pack()
+            dialog.setLocationRelativeTo(this)
+            dialog.isVisible = true
         }
+
 
         removeButton.addActionListener {
             val selectedRows = apis.selectedRows
@@ -277,8 +331,9 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             if (selectedRow != -1) {
                 val model = apis.model as DefaultTableModel
                 val currentProvider = model.getValueAt(selectedRow, 0) as String
-                val currentKey = model.getValueAt(selectedRow, 1) as String
-                val currentUrl = model.getValueAt(selectedRow, 2) as String
+                val currentName = model.getValueAt(selectedRow, 1) as String
+                val currentKey = model.getValueAt(selectedRow, 2) as String
+                val currentUrl = model.getValueAt(selectedRow, 3) as String
 
                 // Create edit dialog
                 val dialog = JDialog(null as Frame?, "Edit API Configuration", true)
@@ -286,33 +341,46 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
                 val gbc = GridBagConstraints()
 
                 gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
-                dialog.add(JLabel("Provider:"), gbc)
+                dialog.add(JLabel("Provider Type:"), gbc)
                 gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
                 val providerCombo = ComboBox(APIProvider.values().map { it.name }.toTypedArray())
                 providerCombo.selectedItem = currentProvider
                 dialog.add(providerCombo, gbc)
 
                 gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+                dialog.add(JLabel("Name:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val nameField = JBTextField(currentName, 30)
+                dialog.add(nameField, gbc)
+                gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
                 dialog.add(JLabel("API Key:"), gbc)
                 gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
                 val keyField = JBTextField(currentKey, 30)
                 dialog.add(keyField, gbc)
 
-                gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+                gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
                 dialog.add(JLabel("Base URL:"), gbc)
                 gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
                 val urlField = JBTextField(currentUrl, 30)
                 dialog.add(urlField, gbc)
+                // Auto-populate base URL when provider changes
+                providerCombo.addActionListener {
+                    val selectedProvider = APIProvider.valueOf(providerCombo.selectedItem as String)
+                    if (urlField.text == currentUrl || urlField.text.isBlank()) {
+                        urlField.text = selectedProvider.base ?: ""
+                    }
+                }
 
-                gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE
+                gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE
                 val buttonPanel = JPanel(FlowLayout())
                 val okButton = JButton("OK")
                 val cancelButton = JButton("Cancel")
 
                 okButton.addActionListener {
                     model.setValueAt(providerCombo.selectedItem, selectedRow, 0)
-                    model.setValueAt(keyField.text, selectedRow, 1)
-                    model.setValueAt(urlField.text, selectedRow, 2)
+                    model.setValueAt(nameField.text, selectedRow, 1)
+                    model.setValueAt(keyField.text, selectedRow, 2)
+                    model.setValueAt(urlField.text, selectedRow, 3)
                     dialog.dispose()
                 }
                 cancelButton.addActionListener { dialog.dispose() }
@@ -369,7 +437,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             this.fastModel.addItem(it.value.modelName)
         }
         
-        ImageModels.values().forEach {
+        ImageModels.entries.forEach {
             this.mainImageModel.addItem(it.name)
         }
 
@@ -422,9 +490,10 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         val userSettings = AppSettingsState.instance.getUserSettings()
         userSettings.apis.forEach { api ->
             val providerName = api.provider?.name ?: ""
+            val name = api.name ?: api.provider?.name ?: ""
             val key = api.key ?: ""
             val url = api.baseUrl ?: api.provider?.base ?: ""
-            model.addRow(arrayOf(providerName, key, url))
+            model.addRow(arrayOf(providerName, name, key, url))
         }
     }
 

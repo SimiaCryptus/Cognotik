@@ -416,14 +416,16 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             userSettings.apis.clear()
             for (row in 0 until tableModel.rowCount) {
                 val provider = tableModel.getValueAt(row, 0) as String
-                val key = tableModel.getValueAt(row, 1) as String
-                val base = tableModel.getValueAt(row, 2) as String
-                log.info("Row $row: provider=$provider, key=$key, base=$base")
+                val name = tableModel.getValueAt(row, 1) as String
+                val key = tableModel.getValueAt(row, 2) as String
+                val base = tableModel.getValueAt(row, 3) as String
+                log.info("Row $row: provider=$provider, name=$name, key=$key, base=$base")
                 if (provider.isNotBlank()) {
                     try {
                         val apiProvider = APIProvider.valueOf(provider)
                         userSettings.apis.add(
                             UserSettingsInterface.ApiData(
+                                name = name.takeIf { it.isNotBlank() },
                                 key = key.takeIf { it.isNotBlank() } ?: "",
                                 baseUrl = base,
                                 provider = apiProvider
