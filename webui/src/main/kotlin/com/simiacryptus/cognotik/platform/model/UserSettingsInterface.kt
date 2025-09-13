@@ -26,11 +26,11 @@ interface UserSettingsInterface {
             workPool = workPool
         ) ?: throw IllegalStateException("Provider not set or invalid")
 
-        fun validate() : ApiData {
-            if(provider == null) throw IllegalStateException("Provider not set or invalid")
-            if(key.isBlank()) throw IllegalStateException("API key not set")
+        fun validate(): ApiData {
+            if (provider == null) throw IllegalStateException("Provider not set or invalid")
+            if (key.isBlank()) throw IllegalStateException("API key not set")
             val model = ChatModel.values().values.firstOrNull { it.provider == provider }
-            if(model == null) throw IllegalStateException("No chat model available for provider $provider")
+            if (model == null) throw IllegalStateException("No chat model available for provider $provider")
             return this
         }
     }

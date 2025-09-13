@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.copy
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
@@ -74,7 +73,8 @@ abstract class UnifiedPlanApp(
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
-        val settings = (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
+        val settings =
+            (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
         // Add expansion syntax guide if enabled
         if (useExpansionSyntax) {
             ui.newTask(true).expandable(
@@ -125,7 +125,8 @@ abstract class UnifiedPlanApp(
         ui: ApplicationInterface
     ) {
         try {
-            val settings = (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
+            val settings =
+                (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
             settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
@@ -245,7 +246,8 @@ abstract class UnifiedPlanApp(
 
 
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-            val settings = (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
+            val settings =
+                (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
                 planSettings = settings,

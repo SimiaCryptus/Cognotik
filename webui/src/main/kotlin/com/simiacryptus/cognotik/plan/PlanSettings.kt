@@ -97,7 +97,10 @@ open class PlanSettings(
     val defaultChatter get() = instance(defaultModel ?: throw IllegalStateException("Default model not set"))
 
     @get:JsonIgnore
-    val parsingChatter get() = instance(parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set"))
+    val parsingChatter
+        get() = instance(
+            parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set")
+        )
 
     @JsonIgnore
     open fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
@@ -138,7 +141,7 @@ open class PlanSettings(
         workingDir: String? = this.workingDir,
         language: String? = this.language,
         instanceFn: (UserSettingsInterface.ApiChatModel) -> Chatter = this::instance,
-    ) : PlanSettings = PlanSettingsCopy(
+    ): PlanSettings = PlanSettingsCopy(
         model,
         parsingModel,
         command,
@@ -197,7 +200,8 @@ open class PlanSettings(
             resultClass = TaskBreakdownResult::class.java,
             exampleInstance = exampleInstance,
             prompt = prompt,
-            model = (planTaskSettings.model ?: this.defaultModel)?.toinstance() ?: throw IllegalStateException("No model configured"),
+            model = (planTaskSettings.model ?: this.defaultModel)?.toinstance()
+                ?: throw IllegalStateException("No model configured"),
             parsingModel = this.parsingChatter,
             temperature = this.temperature,
             describer = describer,

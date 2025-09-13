@@ -652,7 +652,6 @@ class PlanConfigDialog(
             configPanel.saveSettings()
         }
         settings.autoFix = autoFixCheckbox.isSelected
-
         settings.maxTaskHistoryChars = maxTaskHistoryCharsField.text.toIntOrNull() ?: 20000
         settings.maxTasksPerIteration = maxTasksPerIterationField.text.toIntOrNull() ?: 3
         settings.maxIterations = maxIterationsField.text.toIntOrNull() ?: 100

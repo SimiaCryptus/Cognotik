@@ -50,7 +50,7 @@ open class AuthorizationManager : AuthorizationInterface {
             val lines = stream.bufferedReader().readLines()
             log.trace("Permission file contents: {}", lines)
             lines.any { line ->
-                if(matches(user, line)) {
+                if (matches(user, line)) {
                     true
                 } else {
                     false

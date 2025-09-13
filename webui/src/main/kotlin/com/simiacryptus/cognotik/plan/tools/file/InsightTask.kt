@@ -71,7 +71,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             }).
                 This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
-            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.defaultChatter,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
             temperature = planSettings.temperature,
         )
     }

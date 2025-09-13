@@ -68,7 +68,7 @@ class RunCodeTask<T : Interpreter>(
             details = """
                 Code a solution using Kotlin to the user's request.
             """.trimIndent(),
-            model = taskSettings.model?.let { agent.planSettings.instance(it)} ?: agent.planSettings.defaultChatter,
+            model = taskSettings.model?.let { agent.planSettings.instance(it) } ?: agent.planSettings.defaultChatter,
             mainTask = task,
             retryable = false,
         ) {

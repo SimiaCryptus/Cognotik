@@ -78,7 +78,7 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.defaultChatter,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
             parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,

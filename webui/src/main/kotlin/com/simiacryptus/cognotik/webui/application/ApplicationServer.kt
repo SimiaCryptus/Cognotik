@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.webui.application
 
-import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.dataStorageFactory
@@ -10,7 +9,6 @@ import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.chat.ChatServer

@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.platform.file
 
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 
 abstract class AuthorizationInterfaceTest(

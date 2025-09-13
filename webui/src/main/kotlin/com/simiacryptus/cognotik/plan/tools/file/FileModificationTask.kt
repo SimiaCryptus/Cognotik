@@ -136,7 +136,7 @@ function newFunction() {
 }
 $TRIPLE_TILDE
 """.trimIndent(),
-            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.defaultChatter,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
             temperature = planSettings.temperature,
         )
     }
@@ -204,7 +204,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             },
                             ui = agent.ui,
                             shouldAutoApply = { agent.planSettings.autoFix },
-                            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.defaultChatter,
+                            model = taskSettings.model?.let { planSettings.instance(it) }
+                                ?: planSettings.defaultChatter,
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"
                     }
@@ -222,7 +223,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 }
                             },
                             ui = agent.ui,
-                            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.defaultChatter,
+                            model = taskSettings.model?.let { planSettings.instance(it) }
+                                ?: planSettings.defaultChatter,
                             defaultFile = defaultFile,
                         ) + acceptButtonFooter(agent.ui) {
                             task.complete()

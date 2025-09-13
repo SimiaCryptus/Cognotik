@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.plan.tools
 
 import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
-import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
@@ -93,7 +92,8 @@ class CommandAutoFixTask(
                         includeLineNumbers = false,
                     ),
                     files = agent.files,
-                    model = taskSettings.model?.let { agent.planSettings.instance(it)} ?: agent.planSettings.defaultChatter,
+                    model = taskSettings.model?.let { agent.planSettings.instance(it) }
+                        ?: agent.planSettings.defaultChatter,
                     parsingModel = agent.planSettings.parsingChatter,
                 ).run(
                     ui = agent.ui, task = task

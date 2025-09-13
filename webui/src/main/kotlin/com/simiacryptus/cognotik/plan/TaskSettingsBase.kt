@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.DatabindContext
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
-import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 
 @JsonTypeIdResolver(TaskSettingsBase.PlanTaskTypeIdResolver::class)
