@@ -383,8 +383,8 @@ open class GoalOrientedMode(
                 Each goal should be a clear, actionable objective.
                 Return a list of goal objects with unique IDs and descriptions.
             """.trimIndent(),
-            model = planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = describer
         )
@@ -477,8 +477,8 @@ open class GoalOrientedMode(
                 }
                 promptStr
             },
-            model = coordinator.planSettings.defaultModel,
-            parsingModel = coordinator.planSettings.parsingModel,
+            model = coordinator.planSettings.defaultChatter,
+            parsingModel = coordinator.planSettings.parsingChatter,
             temperature = coordinator.planSettings.temperature,
             describer = describer
         )
@@ -538,8 +538,8 @@ open class GoalOrientedMode(
                 Available task types (and their schemas):
                 ${availableTaskTypes.joinToString("\n") { it.name }}
             """.trimIndent(),
-            model = coordinator.planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = coordinator.planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = describer,
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes

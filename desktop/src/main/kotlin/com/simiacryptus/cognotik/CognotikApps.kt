@@ -17,6 +17,9 @@ import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import org.eclipse.jetty.webapp.WebAppContext
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.Desktop
@@ -251,11 +254,18 @@ open class CognotikApps(
         workPool = TODO()
     )
     override val childWebApps by lazy {
-        val planSettings = PlanSettings(
-            defaultModel = model,
-            parsingModel = model,
+        val planSettings = object : PlanSettings(
+            defaultModel = model.modelType.toApiChatModel(),
+            parsingModel = model.modelType.toApiChatModel(),
             workingDir = "."
-        )
+        ) {
+            override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                return model.provider?.client(Executors.newCachedThreadPool())
+                        ?.let { model.model?.instance(it) }
+                        ?: throw IllegalStateException("Model or provider not set")
+            }
+
+        }
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),
             ChildWebApp(
@@ -426,4 +436,15 @@ fun String?.urlEncode(): String {
             .replace("+", "%20")
             .replace("%7E", "~")
     } ?: ""
+}
+
+private fun ChatModel.toApiChatModel(): UserSettingsInterface.ApiChatModel {
+    return UserSettingsInterface.ApiChatModel(
+        model = this,
+        provider = UserSettingsInterface.ApiData(
+            key = null,
+            baseUrl = null,
+            provider = this.provider
+        )
+    )
 }

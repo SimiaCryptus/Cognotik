@@ -78,8 +78,8 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = taskSettings.model ?: planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,
         )

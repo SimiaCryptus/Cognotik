@@ -46,28 +46,16 @@ open class ChatModel(
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
         workPool: ExecutorService,
         temperature: Double = 0.1,
-    ) : Chatter = object : Chatter {
-        override val modelType = this@ChatModel
-        override val workPool = workPool
-        override val logStreams: MutableList<BufferedOutputStream> get() = logStreams
-        override fun chat(
-            messages: List<ChatMessage>
-        ) = provider.getChatClient(
-                key = key,
-                base = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams
-        ).chat(
-            chatRequest = ApiModel.ChatRequest(
-                model = modelName,
-                messages = messages,
-                temperature = temperature,
-            ),
-            model = this@ChatModel,
-            logStreams = this.logStreams
-            )
-    }
+    ) : Chatter = Chatter(
+        logStreams = logStreams,
+        key = key,
+        base = base,
+        logLevel = logLevel,
+        temperature = temperature,
+        provider = provider,
+        modelType = this,
+        workPool = workPool,
+    )
 
     companion object {
 

@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTas
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import java.io.File
 
 class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {
@@ -68,8 +69,8 @@ class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSett
 
 
 open class PlanSettings(
-    var defaultModel: Chatter,
-    var parsingModel: Chatter,
+    var defaultModel: UserSettingsInterface.ApiChatModel? = null,
+    var parsingModel: UserSettingsInterface.ApiChatModel? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -93,6 +94,17 @@ open class PlanSettings(
     ) {
 
     @get:JsonIgnore
+    val defaultChatter get() = instance(defaultModel ?: throw IllegalStateException("Default model not set"))
+
+    @get:JsonIgnore
+    val parsingChatter get() = instance(parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set"))
+
+    @JsonIgnore
+    open fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+        throw NotImplementedError("Must be implemented in subclass")
+    }
+
+    @get:JsonIgnore
     val absoluteWorkingDir
         get() = when {
             this.workingDir == null -> null//throw IllegalStateException("Working directory not set")
@@ -113,9 +125,10 @@ open class PlanSettings(
         taskSettings[taskType.name] = settings
     }
 
+    @JsonIgnore
     fun copy(
-        model: Chatter = this.defaultModel,
-        parsingModel: Chatter = this.parsingModel,
+        model: UserSettingsInterface.ApiChatModel? = this.defaultModel,
+        parsingModel: UserSettingsInterface.ApiChatModel? = this.parsingModel,
         command: List<String> = this.shellCmd,
         temperature: Double = this.temperature,
         budget: Double = this.budget,
@@ -124,20 +137,22 @@ open class PlanSettings(
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-    ) = PlanSettings(
-        defaultModel = model,
-        parsingModel = parsingModel,
-        shellCmd = command,
-        temperature = temperature,
-        budget = budget,
-        taskSettings = taskSettings,
-        autoFix = autoFix,
-        env = env,
-        workingDir = workingDir,
-        language = language,
-        maxTaskHistoryChars = this.maxTaskHistoryChars,
-        maxTasksPerIteration = this.maxTasksPerIteration,
-        maxIterations = this.maxIterations,
+        instanceFn: (UserSettingsInterface.ApiChatModel) -> Chatter = this::instance,
+    ) : PlanSettings = PlanSettingsCopy(
+        model,
+        parsingModel,
+        command,
+        temperature,
+        budget,
+        taskSettings,
+        autoFix,
+        env,
+        workingDir,
+        language,
+        instanceFn,
+        maxTaskHistoryChars,
+        maxTasksPerIteration,
+        maxIterations,
     )
 
     fun planningActor(describer: TypeDescriber): ParsedActor<TaskBreakdownResult> {
@@ -182,13 +197,15 @@ open class PlanSettings(
             resultClass = TaskBreakdownResult::class.java,
             exampleInstance = exampleInstance,
             prompt = prompt,
-            model = planTaskSettings.model ?: this.defaultModel,
-            parsingModel = this.parsingModel,
+            model = (planTaskSettings.model ?: this.defaultModel)?.toinstance() ?: throw IllegalStateException("No model configured"),
+            parsingModel = this.parsingChatter,
             temperature = this.temperature,
             describer = describer,
             parserPrompt = parserPrompt
         )
     }
+
+    fun UserSettingsInterface.ApiChatModel.toinstance(): Chatter = this@PlanSettings.instance(this)
 
     companion object {
         var exampleInstance = TaskBreakdownResult(
@@ -211,4 +228,37 @@ open class PlanSettings(
             ),
         )
     }
+}
+
+private class PlanSettingsCopy(
+    model: UserSettingsInterface.ApiChatModel?,
+    parsingModel: UserSettingsInterface.ApiChatModel?,
+    command: List<String>,
+    temperature: Double,
+    budget: Double,
+    taskSettings: MutableMap<String, TaskSettingsBase>,
+    autoFix: Boolean,
+    env: Map<String, String>?,
+    workingDir: String?,
+    language: String?,
+    @JsonIgnore val instanceFn: (UserSettingsInterface.ApiChatModel) -> Chatter,
+    maxTaskHistoryChars: Int,
+    maxTasksPerIteration: Int,
+    maxIterations: Int,
+) : PlanSettings(
+    defaultModel = model,
+    parsingModel = parsingModel,
+    shellCmd = command,
+    temperature = temperature,
+    budget = budget,
+    taskSettings = taskSettings,
+    autoFix = autoFix,
+    env = env,
+    workingDir = workingDir,
+    language = language,
+    maxTaskHistoryChars = maxTaskHistoryChars,
+    maxTasksPerIteration = maxTasksPerIteration,
+    maxIterations = maxIterations,
+) {
+    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter = instanceFn(model)
 }

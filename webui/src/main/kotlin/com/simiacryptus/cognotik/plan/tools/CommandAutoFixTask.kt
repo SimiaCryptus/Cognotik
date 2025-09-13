@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -18,7 +19,7 @@ class CommandAutoFixTask(
     class CommandAutoFixTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
-        model: Chatter? = null,
+        model: UserSettingsInterface.ApiChatModel? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 
@@ -92,8 +93,8 @@ class CommandAutoFixTask(
                         includeLineNumbers = false,
                     ),
                     files = agent.files,
-                    model = taskSettings.model ?: agent.planSettings.defaultModel,
-                    parsingModel = agent.planSettings.parsingModel,
+                    model = taskSettings.model?.let { agent.planSettings.instance(it)} ?: agent.planSettings.defaultChatter,
+                    parsingModel = agent.planSettings.parsingChatter,
                 ).run(
                     ui = agent.ui, task = task
                 ).apply {

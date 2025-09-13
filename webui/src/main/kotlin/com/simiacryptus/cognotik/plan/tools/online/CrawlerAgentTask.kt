@@ -316,7 +316,7 @@ class CrawlerAgentTask(
                 "Include the most important links that should be followed up on.",
                 "Keep your response under ${maxSize / 1000}K characters."
             ).joinToString("\n\n"),
-            model = taskSettings.model ?: planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.parsingChatter,
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
@@ -460,9 +460,9 @@ class CrawlerAgentTask(
         return ParsedActor(
             prompt = summaryPrompt,
             resultClass = ParsedPage::class.java,
-            model = taskSettings.model ?: planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it)} ?: planSettings.parsingChatter,
             describer = describer,
-            parsingModel = planSettings.parsingModel,
+            parsingModel = planSettings.parsingChatter,
         ).answer(listOf(summaryPrompt))
     }
 

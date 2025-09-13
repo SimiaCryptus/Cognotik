@@ -108,8 +108,8 @@ open class TaskChatMode(
                     })
                     append("\nChoose the most suitable task type and provide details of how it should be executed.")
                 },
-                model = coordinator.planSettings.defaultModel,
-                parsingModel = coordinator.planSettings.parsingModel,
+                model = coordinator.planSettings.defaultChatter,
+                parsingModel = coordinator.planSettings.parsingChatter,
                 temperature = coordinator.planSettings.temperature,
                 describer = describer,
                 parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)

@@ -119,8 +119,8 @@ open class GraphOrderedPlanMode(
                     Only suggest new dependencies that are not already present.
                     Ensure all suggested task IDs exist in the current plan.
                 """.trimIndent(),
-                model = planSettings.defaultModel,
-                parsingModel = planSettings.parsingModel,
+                model = planSettings.defaultChatter,
+                parsingModel = planSettings.parsingChatter,
             ).answer(
                 contextData() +
                         listOf(

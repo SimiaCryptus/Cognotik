@@ -12,9 +12,11 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.copy
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
@@ -30,12 +32,12 @@ import java.util.concurrent.Executors
  * A unified application that can use different cognitive modes based on configuration.
  * This allows for switching between different planning and execution strategies.
  */
-open class UnifiedPlanApp(
+abstract class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     val planSettings: PlanSettings,
-    val model: Chatter,
-    val parsingModel: Chatter,
+    val model: UserSettingsInterface.ApiChatModel,
+    val parsingModel: UserSettingsInterface.ApiChatModel,
     showMenubar: Boolean = true,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
@@ -64,13 +66,15 @@ open class UnifiedPlanApp(
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
 
+    abstract fun instance(model: UserSettingsInterface.ApiChatModel): Chatter
+
     override fun newSession(
         user: User?,
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
-        val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+        val settings = (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
         // Add expansion syntax guide if enabled
         if (useExpansionSyntax) {
             ui.newTask(true).expandable(
@@ -121,7 +125,7 @@ open class UnifiedPlanApp(
         ui: ApplicationInterface
     ) {
         try {
-            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+            val settings = (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
             settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
@@ -241,7 +245,7 @@ open class UnifiedPlanApp(
 
 
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+            val settings = (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
                 planSettings = settings,

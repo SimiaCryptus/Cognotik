@@ -367,7 +367,6 @@ if (smartModel != other.smartModel) return false
         val name: String,
         val temperature: Double,
         val autoFix: Boolean,
-        val apiBudget: Double? = 10.0,
         val taskSettings: Map<String, TaskSettingsBase>
     )
 }
@@ -378,7 +377,7 @@ fun String.imageModel(): ImageModels {
     } ?: ImageModels.DallE3
 }
 
-private fun UserSettingsInterface.ApiChatModel.instance(): Chatter? = model?.instance(
+fun UserSettingsInterface.ApiChatModel.instance(): Chatter? = model?.instance(
     key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
     base = provider?.provider?.base ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
     logLevel = Level.INFO,

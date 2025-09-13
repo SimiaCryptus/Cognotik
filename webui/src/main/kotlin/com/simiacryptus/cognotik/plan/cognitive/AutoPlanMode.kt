@@ -317,8 +317,8 @@ $fullTaskDataJson
                 })
                 append("\nChoose the most suitable task types and provide details of how they should be executed.")
             },
-            model = coordinator.planSettings.defaultModel,
-            parsingModel = coordinator.planSettings.parsingModel,
+            model = coordinator.planSettings.defaultChatter,
+            parsingModel = coordinator.planSettings.parsingChatter,
             temperature = coordinator.planSettings.temperature,
             describer = describer,
             parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
@@ -461,8 +461,8 @@ $fullTaskDataJson
         * Maintain alignment between short-term actions and long-term goals
         * Ensure scalability and maintainability of the approach
       """.trimIndent(),
-            model = planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = describer
         ).answer(listOf(userMessage) + contextData()).obj
@@ -530,8 +530,8 @@ $fullTaskDataJson
       Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
       If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
-        model = planSettings.defaultModel,
-        parsingModel = planSettings.parsingModel,
+        model = planSettings.defaultChatter,
+        parsingModel = planSettings.parsingChatter,
         temperature = planSettings.temperature,
         describer = describer
     ).answer(

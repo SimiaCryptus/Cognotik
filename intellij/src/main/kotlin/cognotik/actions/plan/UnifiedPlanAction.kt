@@ -8,7 +8,9 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
@@ -19,6 +21,7 @@ import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
@@ -29,27 +32,28 @@ import java.io.File
 import java.text.SimpleDateFormat
 
 class UnifiedPlanAction : BaseAction() {
-    private companion object {
-        private const val DEFAULT_API_BUDGET = 10.0
-    }
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(e: AnActionEvent) {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
-            e.project, PlanSettings(
-                defaultModel = AppSettingsState.instance.smartChatClient,
-                parsingModel = AppSettingsState.instance.fastChatClient,
+            e.project, object : PlanSettings(
+                defaultModel = AppSettingsState.instance.smartModel
+                    ?: throw IllegalStateException("Smart model not configured"),
+                parsingModel = AppSettingsState.instance.fastModel
+                    ?: throw IllegalStateException("Fast model not configured"),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 env = mapOf(),
                 workingDir = root,
-            ),
+            ) {
+                override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                    ?: throw IllegalStateException("Model or Provider not set")
+            },
             singleTaskMode = false,
-            apiBudget = DEFAULT_API_BUDGET
         )
 
         if (dialog.showAndGet()) {
@@ -206,7 +210,7 @@ class UnifiedPlanAction : BaseAction() {
                 }
 
                 UITools.runAsync(e.project, "Initializing Unified Plan", true) { progress ->
-                    initializeChat(e, progress, planSettings, cognitiveMode, dialog.apiBudget)
+                    initializeChat(e, progress, planSettings, cognitiveMode)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize unified plan", ex)
@@ -219,8 +223,7 @@ class UnifiedPlanAction : BaseAction() {
         e: AnActionEvent,
         progress: ProgressIndicator,
         planSettings: PlanSettings,
-        cognitiveStrategy: CognitiveModeStrategy,
-        apiBudget: Double
+        cognitiveStrategy: CognitiveModeStrategy
     ) {
         progress.text = "Setting up session..."
         val session = Session.newGlobalID()
@@ -231,7 +234,6 @@ class UnifiedPlanAction : BaseAction() {
             root,
             planSettings,
             cognitiveStrategy,
-            apiBudget,
             object : AbbrevWhitelistYamlDescriber(
                 "com.simiacryptus", "cognotik.actions"
             ) {
@@ -262,14 +264,12 @@ class UnifiedPlanAction : BaseAction() {
         root: File,
         planSettings: PlanSettings,
         cognitiveStrategy: CognitiveModeStrategy,
-        apiBudget: Double,
         describer: TypeDescriber
     ) {
         DataStorage.sessionPaths[session] = root
-        val fastChatModel = AppSettingsState.instance.fastChatClient.getChildClient().apply {
-            budget = apiBudget
-        }
-        SessionProxyServer.chats[session] = UnifiedPlanApp(
+        val fastChatModel = (AppSettingsState.instance.fastModel
+            ?: throw IllegalStateException("Fast model not configured"))
+        SessionProxyServer.chats[session] = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
             planSettings = planSettings.copy(
@@ -281,15 +281,16 @@ class UnifiedPlanAction : BaseAction() {
                 ),
                 parsingModel = fastChatModel,
             ),
-            model = AppSettingsState.instance.smartChatClient.getChildClient().apply {
-                budget = apiBudget
-
-            },
+            model = AppSettingsState.instance.smartModel
+                ?: throw IllegalStateException("Smart model not configured"),
             parsingModel = fastChatModel,
             showMenubar = false,
             cognitiveStrategy = cognitiveStrategy,
             describer = describer
-        )
+        ) {
+            override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                ?: throw IllegalStateException("Model or Provider not set")
+        }
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Unified Planning",
             inputCnt = 1,
