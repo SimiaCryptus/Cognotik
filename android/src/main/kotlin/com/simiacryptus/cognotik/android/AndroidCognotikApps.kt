@@ -223,7 +223,7 @@ class AndroidCognotikApps private constructor(
         val webApps = listOf(
             ChildWebApp("/chat", BasicChatApp(File(filesDir), model.model!!, model.model!!)),
             ChildWebApp(
-                "/taskChat", UnifiedPlanApp(
+                "/taskChat", object : UnifiedPlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
                     planSettings = planSettings,
@@ -231,10 +231,14 @@ class AndroidCognotikApps private constructor(
                     parsingModel = model,
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             ),
             ChildWebApp(
-                "/autoPlan", UnifiedPlanApp(
+                "/autoPlan", object : UnifiedPlanApp(
                     path = "/autoPlan",
                     applicationName = "Auto-Plan",
                     planSettings = planSettings,
@@ -242,10 +246,14 @@ class AndroidCognotikApps private constructor(
                     parsingModel = model,
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             ),
             ChildWebApp(
-                "/planAhead", UnifiedPlanApp(
+                "/planAhead", object : UnifiedPlanApp(
                     path = "/planAhead",
                     applicationName = "Plan-Ahead",
                     planSettings = planSettings,
@@ -253,10 +261,14 @@ class AndroidCognotikApps private constructor(
                     parsingModel = model,
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             ),
             ChildWebApp(
-                "/goalOriented", UnifiedPlanApp(
+                "/goalOriented", object : UnifiedPlanApp(
                     path = "/goalOriented",
                     applicationName = "Goal-Oriented",
                     planSettings = planSettings,
@@ -264,7 +276,11 @@ class AndroidCognotikApps private constructor(
                     parsingModel = model,
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             )
         )
         log.info("Created ${webApps.size} child web apps:")

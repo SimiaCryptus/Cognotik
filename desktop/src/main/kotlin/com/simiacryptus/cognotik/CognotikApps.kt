@@ -2,26 +2,27 @@ package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
+import com.simiacryptus.cognotik.chat.model.AnthropicModels
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
 import com.simiacryptus.cognotik.plan.cognitive.GoalOrientedMode
 import com.simiacryptus.cognotik.plan.cognitive.PlanAheadMode
 import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.chat.model.AnthropicModels
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import org.eclipse.jetty.webapp.WebAppContext
-import com.simiacryptus.cognotik.util.LoggerFactory
+import org.slf4j.event.Level
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.BufferedWriter
@@ -30,9 +31,15 @@ import java.io.IOException
 import java.net.ServerSocket
 import java.net.URI
 import java.net.URLEncoder
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+
+val globalUser = User(id = "1", email = "user@localhost")
+val globalID = Session.newGlobalID()
+val model = AnthropicModels.Claude35Haiku
+val describer = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
 open class CognotikApps(
     localName: String, publicName: String, port: Int
@@ -79,9 +86,6 @@ open class CognotikApps(
         }
 
         private var server: CognotikApps? = null
-
-
-
 
         private fun handleServer(vararg args: String) {
             log.info("Parsing server options...")
@@ -246,71 +250,75 @@ open class CognotikApps(
         }
     }
 
-    val describer = AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "com.simiacryptus"
-    )
-    val model = AnthropicModels.Claude35Haiku.instance(
-        key = TODO(),
-        workPool = TODO()
-    )
+
+
     override val childWebApps by lazy {
         val planSettings = object : PlanSettings(
-            defaultModel = model.modelType.toApiChatModel(),
-            parsingModel = model.modelType.toApiChatModel(),
+            defaultModel = model.toApiChatModel(),
+            parsingModel = model.toApiChatModel(),
             workingDir = "."
         ) {
-            override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
-                return model.provider?.client(Executors.newCachedThreadPool())
-                        ?.let { model.model?.instance(it) }
-                        ?: throw IllegalStateException("Model or provider not set")
-            }
+            override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                ?: throw IllegalStateException("Model or provider not set")
 
         }
         listOf(
-            ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),
+            ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(
-                "/taskChat", UnifiedPlanApp(
+                "/taskChat", object : UnifiedPlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
+                    model = model.toApiChatModel(),
+                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                        ?: throw IllegalStateException("Model or provider not set")
+                }
             ),
             ChildWebApp(
-                "/autoPlan", UnifiedPlanApp(
+                "/autoPlan", object : UnifiedPlanApp(
                     path = "/autoPlan",
                     applicationName = "Auto-Plan",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
+                    model = model.toApiChatModel(),
+                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                        ?: throw IllegalStateException("Model or provider not set")
+                }
             ),
             ChildWebApp(
-                "/planAhead", UnifiedPlanApp(
+                "/planAhead", object : UnifiedPlanApp(
                     path = "/planAhead",
                     applicationName = "Plan-Ahead",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
+                    model = model.toApiChatModel(),
+                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                        ?: throw IllegalStateException("Model or provider not set")
+                }
             ),
             ChildWebApp(
-                "/goalOriented", UnifiedPlanApp(
+                "/goalOriented", object : UnifiedPlanApp(
                     path = "/goalOriented",
                     applicationName = "Goal-Oriented",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
+                    model = model.toApiChatModel(),
+                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                        ?: throw IllegalStateException("Model or provider not set")
+                }
             )
         )
     }
@@ -438,11 +446,36 @@ fun String?.urlEncode(): String {
     } ?: ""
 }
 
-private fun ChatModel.toApiChatModel(): UserSettingsInterface.ApiChatModel {
+fun UserSettingsInterface.ApiChatModel.instance(
+    user: User = globalUser,
+    session: Session = globalID,
+    service: ExecutorService = ApplicationServices.clientManager.getPool(session, user),
+    temperature: Double = 0.1
+) = model?.instance(
+    key = when(provider?.key){
+        null -> null
+        "NONE" -> ApplicationServices.userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == this.provider }?.key
+        else -> provider!!.key
+    } ?: throw IllegalStateException("No API key configured for model $model"),
+    base = provider?.provider?.base ?: model?.provider?.base
+    ?: throw IllegalStateException("No API base configured for model $model"),
+    logLevel = Level.INFO,
+    logStreams = mutableListOf(),
+    temperature = temperature,
+    workPool = service
+)
+
+private fun ChatModel.toApiChatModel(
+    user: User = globalUser
+): UserSettingsInterface.ApiChatModel {
+    val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user = user)
+    val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }
     return UserSettingsInterface.ApiChatModel(
         model = this,
         provider = UserSettingsInterface.ApiData(
-            provider = this.provider
+            provider = this.provider,
+            key = apiData?.key ?: "NONE",
+            baseUrl = apiData?.baseUrl ?: this.provider.base,
         ).validate()
     )
 }

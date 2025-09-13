@@ -102,12 +102,12 @@ interface UserSettingsInterface {
             }
             // Handle legacy format (apiKeys, apiBase, localTools)
             val apiKeys = if (node.has("apiKeys")) {
-                p.codec.treeToValue(node.get("apiKeys"), Map::class.java) as Map<APIProvider, String>
+                (p.codec.treeToValue(node.get("apiKeys"), Map::class.java) as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) }
             } else {
                 emptyMap()
             }
             val apiBase = if (node.has("apiBase")) {
-                p.codec.treeToValue(node.get("apiBase"), Map::class.java) as Map<APIProvider, String>
+                (p.codec.treeToValue(node.get("apiBase"), Map::class.java) as Map<String, String>).mapKeys { APIProvider.valueOf(it.key) }
             } else {
                 emptyMap()
             }
