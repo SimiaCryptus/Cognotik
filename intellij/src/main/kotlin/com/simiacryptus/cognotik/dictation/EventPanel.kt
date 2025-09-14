@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.dictation
 
-import com.simiacryptus.jopenai.audio.TranscriptionProcessor
+import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import java.awt.*
 import javax.swing.*
 

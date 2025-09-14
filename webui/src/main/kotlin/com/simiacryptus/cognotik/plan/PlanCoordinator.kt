@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
 import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
@@ -9,18 +11,9 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.set
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
@@ -75,9 +68,7 @@ class PlanCoordinator(
         plan: Map<String, TaskConfigBase>,
         task: SessionTask,
         userMessage: String,
-        api: API,
     ): PlanProcessingState {
-        val api = (api as ChatClientInterface).getChildClient(task)
         val tabs = TabbedDisplay(task)
         val planProcessingState = newState(plan)
         this.planProcessingState = planProcessingState
@@ -95,7 +86,6 @@ class PlanCoordinator(
                 pool = pool,
                 userMessage = userMessage,
                 plan = plan,
-                api = api,
                 tabs = tabs
             )
         } catch (e: Throwable) {
@@ -120,11 +110,9 @@ class PlanCoordinator(
         pool: ExecutorService,
         userMessage: String,
         plan: Map<String, TaskConfigBase>,
-        api: API,
         tabs: TabbedDisplay,
     ) {
         val sessionTask = ui.newTask(false).apply { tabs["Session"] = placeholder }
-        val api = (api as ChatClientInterface).getChildClient(sessionTask)
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
@@ -196,7 +184,6 @@ class PlanCoordinator(
                                 TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
                                 "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
                     )
-                    val api = api.getChildClient(sessionTask)
                     val impl = getImpl(planSettings, subTask)
                     val messages = listOf(
                         userMessage,
@@ -207,7 +194,6 @@ class PlanCoordinator(
                         agent = this,
                         messages = messages,
                         task = task1,
-                        api = api,
                         resultFn = { planProcessingState.taskResult[taskId] = it },
                         planSettings = planSettings
                     )

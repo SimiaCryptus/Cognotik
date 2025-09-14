@@ -3,25 +3,22 @@ package cognotik.actions.knowledge
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexTextFiles
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.apps.parse.RawTextParsingModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class KnowledgeIndexingServer(
     val settings: KnowledgeIndexingAction.IndexingSettings,
-    val api: ChatClientInterface,
     val model: EmbeddingModel
 ) : ApplicationServer(
     applicationName = "Knowledge Indexing",
@@ -31,7 +28,6 @@ class KnowledgeIndexingServer(
 
     companion object {
         private val log = LoggerFactory.getLogger(KnowledgeIndexingServer::class.java)
-        private const val PROGRESS_UPDATE_INTERVAL_MS = 1000L
         private const val MAX_DISPLAY_FILES = 20
         private const val MAX_FILE_SIZE_MB = 100
         private const val CHUNK_SIZE_MB = 10
@@ -165,15 +161,11 @@ class KnowledgeIndexingServer(
 
                 try {
                     val batchResults = indexTextFiles(
-                        embeddingClient = OllamaEmbeddingClient(
-                            "",
-                            workPool = ui.socketManager!!.pool,
-                        ),
                         pool = threadPool,
+                        parsingModel = RawTextParsingModel(settings.splitRegex),
+                        model = model,
                         progressState = progressState,
                         inputPaths = batch.map { it.absolutePath }.toTypedArray(),
-                        model = model,
-                        parsingModel = RawTextParsingModel(api, settings.splitRegex),
                     )
                     smallResults.addAll(batchResults)
                     batch.forEach { successfulFiles.add(it.name) }
@@ -188,15 +180,11 @@ class KnowledgeIndexingServer(
                 try {
                     task.add(MarkdownUtil.renderMarkdown("Processing large file: ${file.name}...", ui = ui))
                     val result = indexTextFiles(
-                        embeddingClient = OllamaEmbeddingClient(
-                            "",
-                            workPool = ui.socketManager!!.pool,
-                        ),
                         pool = threadPool,
-                        progressState = progressState,
-                        inputPaths = arrayOf(file.absolutePath),
+                        parsingModel = RawTextParsingModel(settings.splitRegex),
                         model = model,
-                        parsingModel = RawTextParsingModel(api, settings.splitRegex),
+                        progressState = progressState,
+                        inputPaths = arrayOf(file.absolutePath)
                     ).firstOrNull()
                     if (result != null) {
                         successfulFiles.add(file.name)

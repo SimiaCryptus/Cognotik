@@ -10,6 +10,7 @@ import com.intellij.remoterobot.launcher.IdeLauncher
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
+import com.simiacryptus.cognotik.util.LoggerFactory
 import io.github.bonigarcia.wdm.WebDriverManager
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.*
@@ -20,7 +21,6 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.slf4j.Logger
-import com.simiacryptus.util.LoggerFactory
 import java.awt.Robot
 import java.io.File
 import java.lang.Thread.sleep

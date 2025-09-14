@@ -11,12 +11,7 @@ different types of AI interactions.
 All actors inherit from `BaseActor<I, R>`, which defines the core interface:
 
 ```kotlin
-abstract class BaseActor<I, R>(
-    open val prompt: String,
-    val name: String? = null,
-    val model: TextModel,
-    val temperature: Double = 0.3,
-)
+
 ```
 
 - **I**: Input type

@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools.graph
 
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.JsonUtil
 import java.io.File
 
 class SoftwareGraphPlanningTask(
@@ -33,7 +32,6 @@ class SoftwareGraphPlanningTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -48,7 +46,7 @@ class SoftwareGraphPlanningTask(
             (messages + listOf(
                 "Software Graph `${taskConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
                 "Instruction: ${taskConfig.instruction}"
-            )).filter { it.isNotBlank() }, api = api
+            )).filter { it.isNotBlank() },
         )
         val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { response.obj.tasksByID } ?: emptyMap()
         val planSummary = buildString {
@@ -60,7 +58,7 @@ class SoftwareGraphPlanningTask(
             appendLine("```")
         }
         val planProcessingState = agent.executePlan(
-            plan = plan, task = task, userMessage = taskConfig.instruction, api = api
+            plan = plan, task = task, userMessage = taskConfig.instruction
         )
         val executionSummary = buildString {
             appendLine("## Plan Execution Summary")

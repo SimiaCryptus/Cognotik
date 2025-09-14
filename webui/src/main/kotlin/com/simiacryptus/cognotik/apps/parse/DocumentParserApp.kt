@@ -5,19 +5,16 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.apps.parse.ProgressState.Companion.progressBar
 import com.simiacryptus.cognotik.input.*
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.util.JsonUtil
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
@@ -59,14 +56,13 @@ open class DocumentParserApp(
                     settings = settings,
                     pagesPerBatch = settings.pagesPerBatch,
                     progressBar = progressBar,
-                    api = ApplicationServices.clientManager.getChatClient(session, user),
                 )
             }
         }
         return socketManager
     }
 
-    override fun userMessage(session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API) {
+    override fun userMessage(session: Session, user: User?, userMessage: String, ui: ApplicationInterface) {
         val settings = getSettings(session, user, Settings::class.java) ?: Settings()
         ui.socketManager!!.pool.submit {
             run(
@@ -77,7 +73,6 @@ open class DocumentParserApp(
                 maxPages = settings.maxPages.coerceAtMost(Int.MAX_VALUE),
                 settings = settings,
                 pagesPerBatch = settings.pagesPerBatch,
-                api = ApplicationServices.clientManager.getChatClient(session, user),
             )
         }
     }
@@ -89,7 +84,6 @@ open class DocumentParserApp(
         maxPages: Int,
         settings: Settings,
         pagesPerBatch: Int,
-        api: ChatClientInterface,
         progressBar: ProgressState? = null
     ) {
         try {
@@ -99,7 +93,6 @@ open class DocumentParserApp(
             }
 
             task.header("Knowledge Extractor", 2)
-            val api = api.getChildClient(task)
 
             val outputDir = root.resolve("output").apply<File> { mkdirs() }
             if (!outputDir.exists()) {
@@ -131,7 +124,6 @@ open class DocumentParserApp(
                         var runningDocument = parsingModel.newDocument()
                         val futures = pageSets.toList().mapNotNull { batchStart ->
                             val pageTask = ui.newTask(false)
-                            val api = api.getChildClient(pageTask)
                             try {
                                 val batchEnd = min(batchStart + pagesPerBatch, pageCount)
                                 val text = when (reader) {
@@ -198,7 +190,7 @@ open class DocumentParserApp(
                                 previousPageText = text
                                 if (fastMode) {
                                     ui.socketManager.pool.submit<DocumentData?> {
-                                        val jsonResult = parsingModel.getFastParser(api)(
+                                        val jsonResult = parsingModel.getFastParser()(
                                             promptList.toList<String>().joinToString<String>("\n\n")
                                         )
                                         handleParseResult(
@@ -215,7 +207,7 @@ open class DocumentParserApp(
                                         )
                                     }
                                 } else {
-                                    val jsonResult = parsingModel.getSmartParser(api)(
+                                    val jsonResult = parsingModel.getSmartParser()(
                                         runningDocument,
                                         promptList.toList<String>().joinToString<String>("\n\n")
                                     )
@@ -335,7 +327,7 @@ open class DocumentParserApp(
     override fun <T : Any> initSettings(session: Session): T = Settings() as T
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentParserApp::class.java)
+        private val log = LoggerFactory.getLogger(DocumentParserApp::class.java)
     }
 
 }

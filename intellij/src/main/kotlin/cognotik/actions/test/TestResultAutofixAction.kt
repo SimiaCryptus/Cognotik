@@ -1,7 +1,6 @@
 package cognotik.actions.test
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.execution.testframework.AbstractTestProxy
 import com.intellij.execution.testframework.sm.runner.SMTestProxy
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -24,10 +23,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.JsonUtil
-import org.jetbrains.annotations.NotNull
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -115,7 +110,7 @@ class TestResultAutofixAction : BaseAction() {
         }
     }
 
-    override fun isEnabled(@NotNull e: AnActionEvent): Boolean {
+    override fun isEnabled(e: AnActionEvent): Boolean {
         val testProxy = e.getData(AbstractTestProxy.DATA_KEY)
         return testProxy != null
     }
@@ -211,9 +206,9 @@ class TestResultAutofixAction : BaseAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartModel.chatModelType(),
-                        parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
-                    ).answer(listOf(testInfo), api = IdeaChatClient.instance)
+                        model = AppSettingsState.instance.smartChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
+                    ).answer(listOf(testInfo), )
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")
                         return@Retryable task.placeholder
@@ -283,8 +278,8 @@ $projectStructure
                 The diff format should use + for line additions, - for line deletions.
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModelType()
-            ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
+                model = AppSettingsState.instance.smartChatClient
+            ).answer(listOf(error.message ?: ""), )
             task.add("Processing suggested fixes...")
 
             var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -298,7 +293,6 @@ $projectStructure
                     }
                 },
                 ui = ui,
-                api = api,
             )
             task.add("<div>${renderMarkdown(markdown!!)}</div>")
         }

@@ -1,6 +1,6 @@
 package com.simiacryptus.util.stm
 
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 
 class PointerDB : PointerStore {
     private var currentRevision: Int = 0

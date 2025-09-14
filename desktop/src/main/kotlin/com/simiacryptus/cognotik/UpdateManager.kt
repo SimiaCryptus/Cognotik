@@ -4,12 +4,11 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.simiacryptus.cognotik.SystemTrayManager.Companion.confirm
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.BorderLayout.*
 import java.awt.Desktop
 import java.awt.Dimension
-import java.awt.MenuItem
 import java.io.File
 import java.io.IOException
 import java.net.URI

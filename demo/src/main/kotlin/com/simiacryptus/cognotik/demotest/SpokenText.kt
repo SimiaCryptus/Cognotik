@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.demotest
 
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.Logger
-import com.simiacryptus.util.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import javax.sound.sampled.AudioInputStream

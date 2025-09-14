@@ -191,11 +191,12 @@ external APIs were called differently).
 * If OS is 'unknown', sets the button to link directly to the GitHub releases page and exits.
 * Calls `fetchLatestRelease()` from `github-api.js`.
 * **On successful fetch:**
-  * Updates the "Latest Version" text.
-  * Calls `findDownloadAsset()` to get the appropriate download link for the OS.
-  * If an asset is found, updates the download button text, `href`, enables it, and sets the `download` attribute and a
-  descriptive `aria-label`.
-  * If no asset is found, sets the button to link to the GitHub releases page.
+    * Updates the "Latest Version" text.
+    * Calls `findDownloadAsset()` to get the appropriate download link for the OS.
+    * If an asset is found, updates the download button text, `href`, enables it, and sets the `download` attribute and
+      a
+      descriptive `aria-label`.
+    * If no asset is found, sets the button to link to the GitHub releases page.
 * **On fetch error:** Sets the button to link to GitHub releases and updates text/ARIA attributes to indicate an error.
 * Removes `aria-busy` attributes as states are resolved.
 * **Auto-initialization:** The `updateDownloadUI` function is called automatically on `DOMContentLoaded`.

@@ -1,22 +1,17 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.models.AIModel
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.AIModel
-import com.simiacryptus.jopenai.models.LLMModel
 import org.apache.hc.core5.http.HttpRequest
-import com.simiacryptus.util.LoggerFactory
-import java.io.File
 import java.util.concurrent.Executors
 
 class IdeaOpenAIClient : OpenAIClient(
-    key = AppSettingsState.instance.apiKeys?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
-        ?.associate { it.key to it.value } ?: mapOf(),
-    apiBase = AppSettingsState.instance.apiBase?.mapKeys { APIProvider.valueOf(it.key) }?.entries?.toTypedArray()
-        ?.associate { it.key to it.value } ?: mapOf(),
+    key = emptyMap(),
+    apiBase = emptyMap(),
     workPool = Executors.newCachedThreadPool(),
 ) {
 
@@ -30,8 +25,8 @@ class IdeaOpenAIClient : OpenAIClient(
     override fun onUsage(model: AIModel?, tokens: ApiModel.Usage) {
 
         ApplicationServices.usageManager.incrementUsage(
-            IdeaChatClient.currentSession,
-            IdeaChatClient.localUser, model!!, tokens
+            AppSettingsState.currentSession,
+            AppSettingsState.Companion.defaultUser, model!!, tokens
         )
     }
 
@@ -48,19 +43,7 @@ class IdeaOpenAIClient : OpenAIClient(
     companion object {
 
         val instance by lazy {
-
-            val client = IdeaOpenAIClient()
-            if (AppSettingsState.instance.apiLog) {
-                try {
-                    val file = File(AppSettingsState.instance.pluginHome, "openai.log")
-                    file.parentFile.mkdirs()
-                    AppSettingsState.auxiliaryLog = file
-                    client.logStreams.add(java.io.FileOutputStream(file, file.exists()).buffered())
-                } catch (e: Exception) {
-                    log.warn("Error initializing log file", e)
-                }
-            }
-            client
+            IdeaOpenAIClient()
         }
         val log = LoggerFactory.getLogger(IdeaOpenAIClient::class.java)
     }

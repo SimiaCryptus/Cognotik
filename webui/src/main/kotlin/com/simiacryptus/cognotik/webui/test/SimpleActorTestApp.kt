@@ -4,11 +4,9 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.util.LoggerFactory
 
 open class SimpleActorTestApp(
     private val actor: SimpleActor,
@@ -32,15 +30,13 @@ open class SimpleActorTestApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface,
-        api: API
+        ui: ApplicationInterface
     ) {
-        (api as ChatClientInterface).budget = 2.00
         val message = ui.newTask()
         try {
             val actor = getSettings<Settings>(session, user)?.actor ?: actor
             message.echo(userMessage.renderMarkdown)
-            val response = actor.answer(listOf(userMessage), api = api)
+            val response = actor.answer(listOf(userMessage))
             message.complete(response.renderMarkdown)
         } catch (e: Throwable) {
             log.warn("Error", e)

@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
@@ -12,9 +13,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.chat.model.ChatModelType
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -26,7 +24,7 @@ open class AddApplyFileDiffLinks {
     companion object {
         var loggingEnabled = { false }
         private val diffApplier = SimpleDiffApplier()
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
+        private val log = LoggerFactory.getLogger(AddApplyFileDiffLinks::class.java).apply {
             debug("Initializing AddApplyFileDiffLinks")
         }
 
@@ -80,9 +78,8 @@ open class AddApplyFileDiffLinks {
             response: String,
             handle: (Map<Path, String>) -> Unit = {},
             ui: ApplicationInterface,
-            api: API,
             shouldAutoApply: (Path) -> Boolean = { false },
-            model: ChatModelType? = null,
+            model: Chatter? = null,
             defaultFile: String? = null,
         ): String {
             log.debug("Instrumenting file diffs for root: {}", root)
@@ -92,7 +89,6 @@ open class AddApplyFileDiffLinks {
                 response = response,
                 handle = handle,
                 ui = ui,
-                api = api,
                 shouldAutoApply = shouldAutoApply,
                 model = model,
                 defaultFile = defaultFile
@@ -120,7 +116,7 @@ open class AddApplyFileDiffLinks {
         ""
     }
 
-    protected open fun createPatchFixerActor(chatModel: ChatModelType): SimpleActor {
+    protected open fun createPatchFixerActor(chatModel: Chatter): SimpleActor {
         return SimpleActor(
             prompt = """
         You are a helpful AI that helps people with coding.
@@ -137,9 +133,8 @@ open class AddApplyFileDiffLinks {
         response: String,
         handle: (Map<Path, String>) -> Unit = {},
         ui: ApplicationInterface,
-        api: API,
         shouldAutoApply: (Path) -> Boolean = { false },
-        model: ChatModelType? = null,
+        model: Chatter? = null,
         defaultFile: String? = null,
     ): String {
         self.apply {
@@ -153,7 +148,6 @@ open class AddApplyFileDiffLinks {
                     response = response + "\n```\n",
                     handle = handle,
                     ui = ui,
-                    api = api,
                     model = model,
                     defaultFile = defaultFile,
                 )
@@ -179,8 +173,6 @@ open class AddApplyFileDiffLinks {
             val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
             val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
-            fun getFile(root: Path, header: String) =
-                fuzzyResolveToRelativePath(root, header)?.let { root.resolve(it) }?.toFile()
 
             val codeblocks = resolvedMatches.filter { (header, block) ->
                 try {
@@ -207,7 +199,7 @@ open class AddApplyFileDiffLinks {
                     headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
                 val filename = fuzzyResolveToRelativePath(root, normalizeFilename(header))
                 if (filename.isNullOrBlank()) return@foldIndexed markdown
-                val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, api, shouldAutoApply)
+                val newValue = renderDiffBlock(root, filename, diffValue, handle, ui, shouldAutoApply)
                 markdown.replace(diffBlock.second.value, newValue)
             }
 
@@ -342,9 +334,8 @@ open class AddApplyFileDiffLinks {
         diffVal: String,
         handle: (Map<Path, String>) -> Unit,
         ui: ApplicationInterface,
-        api: API?,
         shouldAutoApply: (Path) -> Boolean,
-        model: ChatModelType? = null,
+        model: Chatter? = null,
     ): String {
 
         val filepath = root.resolve(filename)
@@ -495,9 +486,9 @@ open class AddApplyFileDiffLinks {
                                 "\nCode:\n```${
                                     filename.split('.').lastOrNull() ?: ""
                                 }\n$prevCode\n```\n\nPatch:\n```diff\n$diffVal\n```\n\nEffective Patch:\n```diff\n$echoDiff\n```\n\nPlease provide a fix for the diff above in the form of a diff patch.\n"
-                            ), api as OpenAIClient
+                            ),
                         )
-                        answer = instrument(ui.socketManager!!, root, answer, handle, ui, api, model = model)
+                        answer = instrument(ui.socketManager!!, root, answer, handle, ui, model = model)
                         header?.clear()
                         fixTask.complete(answer.renderMarkdown())
                     } catch (e: Throwable) {

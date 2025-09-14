@@ -96,23 +96,7 @@ val usageManager = ApplicationServices.usageManager
 The `StorageInterface` provides methods for managing session data:
 
 ```kotlin
-interface StorageInterface {
-    // Message management
-    fun getMessages(user: User?, session: Session): LinkedHashMap<String, String>
-    fun updateMessage(user: User?, session: Session, messageId: String, value: String)
 
-    // Directory management
-    fun getSessionDir(user: User?, session: Session): File
-    fun getDataDir(user: User?, session: Session): File
-    fun userRoot(user: User?): File
-
-    // Session management
-    fun listSessions(user: User?, path: String): List<Session>
-    fun deleteSession(user: User?, session: Session)
-
-    // JSON storage
-    fun <T : Any> setJson(user: User?, session: Session, filename: String, settings: T): T
-}
 ```
 
 ### File Storage Implementation
@@ -154,16 +138,7 @@ data/
 The `MetadataStorageInterface` handles session metadata:
 
 ```kotlin
-interface MetadataStorageInterface {
-    fun getSessionName(user: User?, session: Session): String
-    fun setSessionName(user: User?, session: Session, name: String)
-    fun getMessageIds(user: User?, session: Session): List<String>
-    fun setMessageIds(user: User?, session: Session, ids: List<String>)
-    fun getSessionTime(user: User?, session: Session): Date?
-    fun setSessionTime(user: User?, session: Session, time: Date)
-    fun listSessions(path: String): List<String>
-    fun deleteSession(user: User?, session: Session)
-}
+
 ```
 
 ### HSQL Implementation
@@ -187,27 +162,13 @@ val messageIds = metadataStorage.getMessageIds(user, session)
 ### Authentication Interface
 
 ```kotlin
-interface AuthenticationInterface {
-    fun getUser(accessToken: String?): User?
-    fun putUser(accessToken: String, user: User): User
-    fun logout(accessToken: String, user: User)
-}
+
 ```
 
 ### Authorization Interface
 
 ```kotlin
-interface AuthorizationInterface {
-    enum class OperationType {
-        Read, Write, Public, Share, Execute, Delete, Admin, GlobalKey
-    }
 
-    fun isAuthorized(
-        applicationClass: Class<*>?,
-        user: User?,
-        operationType: OperationType
-    ): Boolean
-}
 ```
 
 ### File-based Authorization
@@ -234,16 +195,7 @@ user@example.com          # Specific user
 ### User Settings Interface
 
 ```kotlin
-interface UserSettingsInterface {
-    data class UserSettings(
-        val apiKeys: Map<APIProvider, String> = mapOf(),
-        val apiBase: Map<APIProvider, String> = mapOf(),
-        val localTools: List<String> = emptyList()
-    )
 
-    fun getUserSettings(user: User): UserSettings
-    fun updateUserSettings(user: User, settings: UserSettings)
-}
 ```
 
 ### Usage Example
@@ -264,12 +216,7 @@ ApplicationServices.userSettingsManager.updateUserSettings(user, updatedSettings
 ### Usage Interface
 
 ```kotlin
-interface UsageInterface {
-    fun incrementUsage(session: Session, apiKey: String?, model: OpenAIModel, tokens: ApiModel.Usage)
-    fun getUserUsageSummary(apiKey: String): Map<OpenAIModel, ApiModel.Usage>
-    fun getSessionUsageSummary(session: Session): Map<OpenAIModel, ApiModel.Usage>
-    fun clear()
-}
+
 ```
 
 ### HSQL Usage Manager
@@ -321,14 +268,7 @@ ApplicationServices.clientManager = CustomClientManager()
 ### Cloud Platform Interface
 
 ```kotlin
-interface CloudPlatformInterface {
-    val shareBase: String
 
-    fun upload(path: String, contentType: String, bytes: ByteArray): String
-    fun upload(path: String, contentType: String, request: String): String
-    fun encrypt(fileBytes: ByteArray, keyId: String): String?
-    fun decrypt(encryptedData: ByteArray): String
-}
 ```
 
 ### AWS Platform Implementation
@@ -427,34 +367,7 @@ sessionDir.resolve("data.json").outputStream().use { output ->
 ### Unit Testing Example
 
 ```kotlin
-class DataStorageTest {
-    private lateinit var tempDir: File
-    private lateinit var dataStorage: DataStorage
 
-    @BeforeEach
-    fun setup() {
-        tempDir = Files.createTempDirectory("test").toFile()
-        dataStorage = DataStorage(tempDir)
-    }
-
-    @Test
-    fun testMessageStorage() {
-        val user = User("test@example.com")
-        val session = Session.newUserID()
-        val messageId = "test-message"
-        val content = "Hello, World!"
-
-        dataStorage.updateMessage(user, session, messageId, content)
-        val messages = dataStorage.getMessages(user, session)
-
-        assertEquals(content, messages[messageId])
-    }
-
-    @AfterEach
-    fun cleanup() {
-        tempDir.deleteRecursively()
-    }
-}
 ```
 
 ## Migration Guide
@@ -463,28 +376,12 @@ class DataStorageTest {
 
 ```kotlin
 // Handle legacy session IDs
-fun migrateSession(legacySessionId: String): Session {
-    return if (legacySessionId.matches("""\d{8}-[\w+.\-]{4}""".toRegex())) {
-        Session("G-$legacySessionId") // Convert to global session
-    } else {
-        Session.parseSessionID(legacySessionId)
-    }
-}
+
 ```
 
 ### Database Migration
 
 ```kotlin
 // Migrate from file-based to database storage
-class MigrationService {
-    fun migrateToDatabase(fileStorage: DataStorage, dbStorage: MetadataStorageInterface) {
-        // Migration logic
-        val sessions = fileStorage.listSessions(null, "/")
-        sessions.forEach { session ->
-            // Migrate session data
-            val messages = fileStorage.getMessages(null, session)
-            // Store in database
-        }
-    }
-}
+
 ```

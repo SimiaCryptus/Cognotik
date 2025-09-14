@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.apps.general
 
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
@@ -8,19 +10,18 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,14 +32,13 @@ import java.util.concurrent.Executors
  * A unified application that can use different cognitive modes based on configuration.
  * This allows for switching between different planning and execution strategies.
  */
-open class UnifiedPlanApp(
+abstract class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     val planSettings: PlanSettings,
-    val model: ChatModelType,
-    val parsingModel: ChatModelType,
+    val model: ApiChatModel,
+    val parsingModel: ApiChatModel,
     showMenubar: Boolean = true,
-    val api: API? = null,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
     val useExpansionSyntax: Boolean = true,
@@ -50,14 +50,14 @@ open class UnifiedPlanApp(
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
-    
+
     // Updated expansion patterns to match ChatSocketManager
     private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+"""
     private val expansionExpressionPattern = Regex("""@\[($idSubPattern(?:[|,]$idSubPattern)+)]""")
     private val sequenceExpansionPattern = Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""")
     private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
     private val topicReferencePattern = Regex("""@([A-Z][a-zA-Z0-9_]*)""")
-    
+
     private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
@@ -66,13 +66,16 @@ open class UnifiedPlanApp(
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
 
+    abstract fun instance(model: ApiChatModel): Chatter
+
     override fun newSession(
         user: User?,
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
-        val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+        val settings =
+            (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
         // Add expansion syntax guide if enabled
         if (useExpansionSyntax) {
             ui.newTask(true).expandable(
@@ -96,7 +99,7 @@ open class UnifiedPlanApp(
                 """.trimIndent()
             )
         }
-        
+
         ui.newTask(true).expandable(
             "Session Info", """
                 Session ID: `${session}`
@@ -120,31 +123,28 @@ open class UnifiedPlanApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface,
-        api: API
+        ui: ApplicationInterface
     ) {
         try {
-            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+            val settings =
+                (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
             settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
             val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
-            
+
             if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
-                processMessageWithExpansions(session, user, expandedMessage, ui, api)
+                processMessageWithExpansions(session, user, expandedMessage, ui)
                 return
             }
-            
+
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)
                 }
-                if (api is ProvidersChatClient) api.budget = settings.budget
-
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
-                    api = api,
                     planSettings = settings,
                     session = session,
                     user = user,
@@ -159,6 +159,7 @@ open class UnifiedPlanApp(
             ui.newTask().error(e)
         }
     }
+
     /**
      * Expands topic references in the message using previously identified topics
      */
@@ -176,6 +177,7 @@ open class UnifiedPlanApp(
             }
         }
     }
+
     /**
      * Checks if the message contains any expansion syntax
      */
@@ -193,8 +195,7 @@ open class UnifiedPlanApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface,
-        api: API
+        ui: ApplicationInterface
     ) {
         val task = ui.newTask()
         val processor = FixedConcurrencyProcessor(expansionPool, 4)
@@ -203,7 +204,6 @@ open class UnifiedPlanApp(
             user = user,
             currentMessage = userMessage,
             ui = ui,
-            api = api,
             task = task,
             processor = processor
         )
@@ -218,44 +218,39 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor
     ) {
 
         // Check for range expansion first
         val rangeMatch = rangeExpansionPattern.find(currentMessage)
         if (rangeMatch != null) {
-            expandRange(session, user, currentMessage, ui, api, task, processor, rangeMatch)
+            expandRange(session, user, currentMessage, ui, task, processor, rangeMatch)
             return
         }
 
         // Check for sequence expansion
         val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
         if (sequenceMatch != null) {
-            expandSequence(session, user, currentMessage, ui, api, task, processor, sequenceMatch)
+            expandSequence(session, user, currentMessage, ui, task, processor, sequenceMatch)
             return
         }
 
         // Check for parallel expansion
         val parallelMatch = expansionExpressionPattern.find(currentMessage)
         if (parallelMatch != null && parallelMatch.groupValues[1].split('|', ',').size > 1) {
-            expandParallel(session, user, currentMessage, ui, api, task, processor, parallelMatch)
+            expandParallel(session, user, currentMessage, ui, task, processor, parallelMatch)
             return
         }
 
         // No expansion found, process normally
 
 
-
-
-
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
-            if (api is ProvidersChatClient) api.budget = settings.budget
+            val settings =
+                (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
-                api = api,
                 planSettings = settings,
                 session = session,
                 user = user,
@@ -274,21 +269,20 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         rangeMatch: MatchResult
     ) {
         val start = rangeMatch.groupValues[1].toInt()
         val end = rangeMatch.groupValues[2].toInt()
         val step = rangeMatch.groupValues[3].takeIf { it.isNotEmpty() }?.toInt() ?: 1
-        
+
         val items = generateSequence(start) { it + step }
             .takeWhile { if (step > 0) it <= end else it >= end }
             .toList()
             .map { it.toString() }
-            
-        expandSequenceItems(session, user, currentMessage, ui, api, task, processor, rangeMatch.value, items)
+
+        expandSequenceItems(session, user, currentMessage, ui, task, processor, rangeMatch.value, items)
     }
 
     /**
@@ -299,13 +293,12 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         sequenceMatch: MatchResult
     ) {
         val items = sequenceMatch.groupValues[1].split(Regex("""\s*->\s*"""))
-        expandSequenceItems(session, user, currentMessage, ui, api, task, processor, sequenceMatch.value, items)
+        expandSequenceItems(session, user, currentMessage, ui, task, processor, sequenceMatch.value, items)
     }
 
     /**
@@ -316,32 +309,30 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         parallelMatch: MatchResult
     ) {
         val options = parallelMatch.groupValues[1].split('|', ',')
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
-        
+
         options.map { option ->
             processor.submit {
                 val subUi = ApplicationInterface(ui.socketManager)
                 val subTask = subUi.newTask(false).apply { tabs[option] = placeholder }
                 val nextMessage = currentMessage.replaceFirst(parallelMatch.value, option)
-                
+
                 processMessageRecursive(
                     session = session,
                     user = user,
                     currentMessage = nextMessage,
                     ui = subUi,
-                    api = api,
                     task = subTask,
                     processor = processor
                 )
             }
         }.forEach { it.get() }
-        
+
         tabs.update()
     }
 
@@ -353,30 +344,28 @@ open class UnifiedPlanApp(
         user: User?,
         currentMessage: String,
         ui: ApplicationInterface,
-        api: API,
-        task: com.simiacryptus.cognotik.webui.session.SessionTask,
+        task: SessionTask,
         processor: FixedConcurrencyProcessor,
         expression: String,
         items: List<String>
     ) {
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
-        
+
         for (item in items) {
             val subUi = ApplicationInterface(ui.socketManager)
             val subTask = subUi.newTask(false).apply { tabs[item] = placeholder }
             val nextMessage = currentMessage.replaceFirst(expression, item)
-            
+
             processMessageRecursive(
                 session = session,
                 user = user,
                 currentMessage = nextMessage,
                 ui = subUi,
-                api = api,
                 task = subTask,
                 processor = processor
             )
         }
-        
+
         tabs.update()
     }
 

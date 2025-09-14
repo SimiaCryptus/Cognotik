@@ -4,16 +4,17 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.jopenai.audio.AudioPacket
-import com.simiacryptus.jopenai.audio.DictationManager
-import com.simiacryptus.jopenai.audio.TranscriptionProcessor
-import com.simiacryptus.jopenai.models.AudioModels
-import com.simiacryptus.jopenai.util.EventDispatcher
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.audio.AudioPacket
+import com.simiacryptus.cognotik.audio.DictationManager
+import com.simiacryptus.cognotik.audio.TranscriptionProcessor
+import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.util.EventDispatcher
 import javax.sound.sampled.AudioFormat
 
 open class DictationState {
     companion object : DictationState() {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(DictationState::class.java)
+        val log = LoggerFactory.getLogger(DictationState::class.java)
     }
 
     val configuration = EventDispatcher()

@@ -15,13 +15,13 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.getSelectedFile
 import com.simiacryptus.cognotik.util.getSelectedFolder
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.toContentList
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -178,7 +178,12 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
                             try {
                                 val fileContent =
                                     IOUtils.toString(FileInputStream(path.toFile()), "UTF-8") ?: return@submit null
-                                val transformContent = transformContent(path, fileContent, transformationMessage)
+                                val transformContent = transformContent(
+                                    path,
+                                    fileContent,
+                                    transformationMessage,
+                                    AppSettingsState.instance.smartChatClient
+                                )
                                 processTransformedContent(
                                     path,
                                     transformContent,
@@ -268,11 +273,11 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
         }
     }
 
-    private fun transformContent(path: Path, fileContent: String, transformationMessage: String) = api.chat(
-        ApiModel.ChatRequest(
-            model = AppSettingsState.instance.smartModel,
-            temperature = AppSettingsState.instance.temperature,
-            messages = listOf(
+    private fun transformContent(
+        path: Path, fileContent: String, transformationMessage: String, model: Chatter
+    ) = run {
+        model.chat(
+            listOf(
                 ApiModel.ChatMessage(
                     ApiModel.Role.system, """
                         You will combine natural language instructions with a user provided code example to document code.
@@ -282,10 +287,9 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
                     ApiModel.Role.user,
                     "## Project:\n${findGitRoot(path)?.let { getProjectStructure(it) }}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
                 ),
-            ),
-        ),
-        AppSettingsState.instance.smartModel.chatModelType()
-    ).choices.first().message?.content?.trim() ?: fileContent
+            )
+        ).choices.first().message?.content?.trim()
+    } ?: fileContent
 
     fun findGitRoot(path: Path?): Path? {
         var current: Path? = path

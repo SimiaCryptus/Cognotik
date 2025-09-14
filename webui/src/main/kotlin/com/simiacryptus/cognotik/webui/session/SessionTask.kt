@@ -1,19 +1,20 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.FailedToImplementException
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.util.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.io.File
-import java.util.*
+import java.util.UUID
 import java.util.function.Consumer
 
 
@@ -226,7 +227,7 @@ abstract class SessionTask(
         ```
       """
 
-            e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n"
+            e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n"
 
             else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
 
@@ -331,7 +332,8 @@ val Throwable.stackTraceTxt: String
         return sw.toString()
     }
 
-fun ChatClientInterface.getChildClient(task: SessionTask): ChatClientInterface {
+
+fun Chatter.getChildClient(task: SessionTask): Chatter {
     val childClient = this.getChildClient()
     childClient.logStreams += task.newLogStream()
     return childClient

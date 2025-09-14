@@ -38,19 +38,7 @@ user interactions, and session management.
 The foundation class for creating chat-based applications.
 
 ```kotlin
-abstract class ChatServer(
-    private val resourceBase: String = "application",
-    val showMenubar: Boolean
-) {
-    abstract val applicationName: String
-    open val description: String = ""
-    open val inputCnt = 1
-    open val stickyInput = false
-    open val dataStorage: StorageInterface? = null
-    val sessions: ConcurrentHashMap<Session, SocketManager> = ConcurrentHashMap()
 
-    abstract fun newSession(user: User?, session: Session): SocketManager
-}
 ```
 
 **Key Responsibilities:**
@@ -63,17 +51,7 @@ abstract class ChatServer(
 **Implementation Example:**
 
 ```kotlin
-class MyChatApp : ChatServer("my-resources", showMenubar = true) {
-    override val applicationName = "My Chat App"
 
-    override fun newSession(user: User?, session: Session): SocketManager {
-        return ChatSocketManager(
-            session = session,
-            model = ChatModel.GPT4o,
-            // ... other configuration
-        )
-    }
-}
 ```
 
 ### 2. SocketManager Interface
@@ -81,13 +59,7 @@ class MyChatApp : ChatServer("my-resources", showMenubar = true) {
 Defines the contract for managing WebSocket connections and message handling.
 
 ```kotlin
-interface SocketManager {
-    fun removeSocket(socket: ChatSocket)
-    fun addSocket(socket: ChatSocket, session: Session)
-    fun getReplay(since: Long = 0): List<String>
-    fun onWebSocketText(socket: ChatSocket, message: String)
-    fun getActiveSockets(): List<ChatSocket>
-}
+
 ```
 
 ### 3. SocketManagerBase (Abstract Implementation)
@@ -202,9 +174,7 @@ Concrete implementation providing chat functionality with advanced features.
 Automatically identifies and categorizes named entities:
 
 ```kotlin
-data class Topics(
-    val topics: Map<String, List<String>>? = emptyMap()
-)
+
 ```
 
 #### Implementation Example:
@@ -312,12 +282,7 @@ ApplicationServices.authorizationManager.isAuthorized(
     operationType = OperationType.Read
 )
 
-// Check write access
-fun canWrite(user: User?) = ApplicationServices.authorizationManager.isAuthorized(
-    applicationClass = applicationClass,
-    user = user,
-    operationType = OperationType.Write
-)
+
 ```
 
 ### Input Validation
@@ -518,41 +483,5 @@ if (!canWrite(socket.user)) {
 ## Example Implementation
 
 ```kotlin
-class MyCustomChatApp : ChatServer("resources", showMenubar = true) {
-    override val applicationName = "Custom Chat"
 
-    override fun newSession(user: User?, session: Session): SocketManager {
-        return object : ChatSocketManager(
-            session = session,
-            model = ChatModel.GPT4o,
-            parsingModel = ChatModel.GPT4oMini,
-            systemPrompt = "You are a specialized assistant",
-            api = ApplicationServices.clientManager.getChatClient(session, user),
-            temperature = 0.7,
-            applicationClass = this@MyCustomChatApp::class.java,
-            storage = DataStorage(File("./sessions")),
-            budget = 5.0
-        ) {
-            override fun onRun(userMessage: String, socket: ChatSocket) {
-                val task = newTask()
-                task.echo(userMessage)
-
-                // Custom processing logic
-                when {
-                    userMessage.startsWith("/help") -> {
-                        task.add("Available commands: /help, /status")
-                    }
-                    userMessage.startsWith("/status") -> {
-                        task.add("System status: OK")
-                    }
-                    else -> {
-                        super.onRun(userMessage, socket)
-                    }
-                }
-
-                task.complete()
-            }
-        }
-    }
-}
 ```

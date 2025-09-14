@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 
 class AddApplyDiffLinks {
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(AddApplyDiffLinks::class.java)
+        val log = LoggerFactory.getLogger(AddApplyDiffLinks::class.java)
 
         private val diffApplier = SimpleDiffApplier()
 

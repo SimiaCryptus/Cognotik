@@ -5,10 +5,9 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.actors.ChatProxy
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.proxy.ChatProxy
 import javax.swing.JOptionPane
 
 /**
@@ -37,8 +36,7 @@ open class CustomEditAction : SelectionAction<String>(requiresSelection = true) 
         get() {
             val chatProxy = ChatProxy(
                 clazz = VirtualAPI::class.java,
-                api = api,
-                model = AppSettingsState.instance.smartModel.chatModelType(),
+                model = AppSettingsState.instance.smartChatClient,
                 temperature = AppSettingsState.instance.temperature,
             )
             chatProxy.addExample(

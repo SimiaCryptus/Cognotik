@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.application
 
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManagerBase
-import com.simiacryptus.jopenai.describe.Description
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 

@@ -3,11 +3,13 @@ package com.simiacryptus.cognotik
 import ch.qos.logback.classic.Level
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.LogLevel
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
@@ -21,13 +23,11 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.LoggerFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.simiacryptus.util.LoggerFactory
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -68,14 +68,6 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 currentThread.contextClassLoader = PluginStartupActivity::class.java.classLoader
                 init(project)
-
-                addUserSuppliedModels(AppSettingsState.instance.userSuppliedModels?.mapNotNull {
-                    try {
-                        fromJson(it, AppSettingsState.UserSuppliedModel::class.java)
-                    } catch (e: Exception) {
-                        null
-                    }
-                } ?: emptyList())
             } catch (e: Exception) {
                 log.error("Error during plugin startup", e)
             } finally {
@@ -152,10 +144,6 @@ class PluginStartupActivity : ProjectActivity {
                 null
             }
         }
-        ApplicationServices.clientManager = object : ClientManager() {
-            override fun createChatClient(session: Session, user: User?) =
-                IdeaChatClient.instance
-        }
         AppSettingsState.instance.apply {
             ApplicationServices.cloud = when {
                 awsProfile.isNullOrBlank() -> null
@@ -187,7 +175,7 @@ class PluginStartupActivity : ProjectActivity {
         val log = LoggerFactory.getLogger(PluginStartupActivity::class.java)
         fun addUserSuppliedModels(userModels: List<AppSettingsState.UserSuppliedModel>) {
             userModels.forEach { model ->
-                ChatModelType.values[model.displayName] = ChatModelType(
+                ChatModel.values[model.displayName] = ChatModel(
                     name = model.displayName,
                     modelName = model.modelId,
                     maxTotalTokens = 4096,
@@ -202,7 +190,7 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 LoggerFactory.getLogger(name).apply {
                     when (this) {
-                        is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.INFO)
+                        is Logger -> setLevel(LogLevel.INFO)
                         is ch.qos.logback.classic.Logger -> setLevel(Level.INFO)
                         else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
                     }
@@ -216,7 +204,7 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 LoggerFactory.getLogger(name).apply {
                     when (this) {
-                        is com.intellij.openapi.diagnostic.Logger -> setLevel(LogLevel.DEBUG)
+                        is Logger -> setLevel(LogLevel.DEBUG)
                         is ch.qos.logback.classic.Logger -> setLevel(Level.DEBUG)
                         else -> log.info("Failed to set log level for $name: Unsupported log type (${this::class.java})")
                     }

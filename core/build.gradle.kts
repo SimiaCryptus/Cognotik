@@ -20,9 +20,6 @@ repositories {
 dependencies {
 
     implementation(libs.hsqldb)
-    implementation(project(":jo-penai")) {
-        exclude(group = "org.jetbrains.kotlin")
-    }
     implementation(project(":antlr")) {
         exclude(group = "org.jetbrains.kotlin")
     }
@@ -41,10 +38,17 @@ dependencies {
     implementation(libs.poiscratchpad)
     implementation(libs.commons.csv)
     implementation(libs.odfdom.java)
+    implementation(libs.jtransforms)
+    implementation("jakarta.mail:jakarta.mail-api:2.1.2")
+    implementation("org.eclipse.angus:angus-mail:2.0.2")
 
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.kotlin)
+    implementation(libs.jackson.jaxrs.json)
+    implementation(libs.jackson.datatype.jsr310)
+    testImplementation(project(":jo-penai"))
+
 
     compileOnly(libs.asm)
     compileOnly(kotlin("stdlib"))
@@ -56,6 +60,9 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.kotlin.test.junit5)
+
+    // Optional Android dependency
+    compileOnly(libs.android)
 
     compileOnly(platform(libs.aws.bom))
     compileOnly(libs.aws.sdk)

@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
@@ -28,10 +29,6 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.JsonUtil
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -191,8 +188,7 @@ class ReplicateCommitAction : BaseAction() {
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: API
+            ui: ApplicationInterface
         ) {
             val task = ui.newTask()
             task.echo(userMessage)
@@ -234,12 +230,12 @@ class ReplicateCommitAction : BaseAction() {
                          1) predict the files that need to be fixed
                          2) predict related files that may be needed to debug the issue
                       """.trimIndent(),
-                    model = AppSettingsState.instance.smartModel.chatModelType(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                    model = AppSettingsState.instance.smartChatClient,
+                    parsingModel = AppSettingsState.instance.fastChatClient,
                 ).answer(
                     listOf(
                         "We want to create a change based on the following prior commit:\n\n$tripleTilde\n$diffInfo\n$tripleTilde\n\nThe change should implement the user's request:\n\n$tripleTilde\n$userMessage\n$tripleTilde"
-                    ), api = api
+                    ),
                 )
                 task.add(
                     AgentPatterns.displayMapInTabs(
@@ -265,7 +261,7 @@ class ReplicateCommitAction : BaseAction() {
 
                   """.trimIndent() + codeSummary + "\n" + patchFormatPrompt +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
-                            model = AppSettingsState.instance.smartModel.chatModelType()
+                            model = AppSettingsState.instance.smartChatClient
                         ).answer(
                             listOf(
                                 """
@@ -277,7 +273,7 @@ class ReplicateCommitAction : BaseAction() {
 
                               Focus on the task at hand:
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
-                            ), api = api
+                            ),
                         )
                         var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
                             ui.socketManager!!,
@@ -289,7 +285,6 @@ class ReplicateCommitAction : BaseAction() {
                                 }
                             },
                             ui = ui,
-                            api = api,
                         )
                         task.add(renderMarkdown(markdown))
                         task.placeholder

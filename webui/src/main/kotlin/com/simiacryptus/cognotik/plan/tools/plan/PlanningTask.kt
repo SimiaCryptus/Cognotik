@@ -1,18 +1,16 @@
 package com.simiacryptus.cognotik.plan.tools.plan
 
 import com.simiacryptus.cognotik.actors.ParsedResponse
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil
 
 class PlanningTask(
     planSettings: PlanSettings,
@@ -51,7 +49,6 @@ class PlanningTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -64,7 +61,6 @@ class PlanningTask(
                 newTask,
                 userMessage,
                 ::toInput,
-                api,
                 agent.ui,
                 planSettings,
                 agent.describer
@@ -72,7 +68,6 @@ class PlanningTask(
         } else {
             val design = planSettings.planningActor(agent.describer).answer(
                 toInput("Expand ${taskConfig?.task_description ?: ""}"),
-                api = api
             )
             PlanUtil.render(
                 withPrompt = TaskBreakdownWithPrompt(
@@ -89,7 +84,6 @@ class PlanningTask(
             userMessage,
             PlanUtil.filterPlan { subPlan?.tasksByID } ?: emptyMap(),
             task,
-            api,
         )
     }
 
@@ -97,7 +91,6 @@ class PlanningTask(
         task: SessionTask,
         userMessage: String,
         toInput: (String) -> List<String>,
-        api: API,
         ui: ApplicationInterface,
         planSettings: PlanSettings,
         describer: TypeDescriber
@@ -105,7 +98,7 @@ class PlanningTask(
         task = task,
         userMessage = { "Expand ${taskConfig?.task_description ?: ""}" },
         heading = "",
-        initialResponse = { it: String -> planSettings.planningActor(describer).answer(toInput(it), api = api) },
+        initialResponse = { it: String -> planSettings.planningActor(describer).answer(toInput(it)) },
         outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
             PlanUtil.render(
                 withPrompt = TaskBreakdownWithPrompt(
@@ -122,7 +115,6 @@ class PlanningTask(
                 messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
                     .toTypedArray<ApiModel.ChatMessage>(),
                 input = toInput("Expand ${taskConfig?.task_description ?: ""}\n${JsonUtil.toJson(this)}"),
-                api = api
             )
         },
     )
@@ -132,7 +124,6 @@ class PlanningTask(
         userMessage: String,
         subPlan: Map<String, TaskConfigBase>,
         parentTask: SessionTask,
-        api: API,
     ) {
         val subPlanTask = coordinator.ui.newTask(false)
         parentTask.add(subPlanTask.placeholder)
@@ -159,7 +150,6 @@ class PlanningTask(
             pool = coordinator.pool,
             userMessage = userMessage,
             plan = subPlan,
-            api = api,
             tabs = TabbedDisplay(subPlanTask),
         )
         subPlanTask.complete()

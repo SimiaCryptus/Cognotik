@@ -1,24 +1,22 @@
 package com.simiacryptus.cognotik.apps.general
 
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 
 class ValidationPatchApp(
     root: File,
     settings: Settings,
-    api: ChatClientInterface,
     val files: Array<out File>?,
-    model: ChatModelType,
-    parsingModel: ChatModelType,
-) : PatchApp(root, settings, api, model, parsingModel) {
+    model: Chatter,
+    parsingModel: Chatter,
+) : PatchApp(root, settings, model, parsingModel) {
 
     companion object {
         private val log = LoggerFactory.getLogger(ValidationPatchApp::class.java)

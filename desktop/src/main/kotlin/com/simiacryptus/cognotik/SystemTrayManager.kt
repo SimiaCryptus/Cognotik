@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.UpdateManager.latestVersion
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.ImageTranscoder
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent

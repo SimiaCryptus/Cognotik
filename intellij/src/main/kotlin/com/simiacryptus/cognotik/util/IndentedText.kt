@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.util.StringUtil
-
 /**
  * This class provides a way to store and manipulate indented text blocks.
  *

@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.models.ApiModel.Role
 import java.util.concurrent.Callable
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
@@ -226,7 +226,7 @@ ${e.message}
     }
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(Discussable::class.java)
+        private val log = LoggerFactory.getLogger(Discussable::class.java)
     }
 }
 

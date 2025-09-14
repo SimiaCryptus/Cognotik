@@ -3,24 +3,19 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.*
 import java.util.concurrent.Future
@@ -31,7 +26,6 @@ import java.util.concurrent.atomic.AtomicReference
  */
 open class AutoPlanMode(
     override val ui: ApplicationInterface,
-    override val api: API,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -68,22 +62,10 @@ open class AutoPlanMode(
     private fun startAutoPlanChat(userMessage: String) {
         log.debug("Starting auto plan chat with initial message: $userMessage")
         val task = ui.newTask(true)
-        val apiClient =
-            (api as? ProvidersChatClient)?.getChildClient(task)
-                ?: throw IllegalStateException("API must be a ChatClient")
         task.echo(renderMarkdown(userMessage))
 
-        var continueLoop = true
+        val continueLoop = true
         val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
-
-        lateinit var stopLink: StringBuilder
-        stopLink = task.add(ui.hrefLink("Stop") {
-            log.debug("Stop button clicked - terminating execution")
-            continueLoop = false
-
-            stopLink.set("Stopped")
-            task.complete()
-        })!!
 
         val tabbedDisplay = TabbedDisplay(task)
         executor.execute {
@@ -97,7 +79,6 @@ open class AutoPlanMode(
                 tabbedDisplay.update()
                 task.complete()
 
-                apiClient.budget = planSettings.budget
                 val coordinator = socketManager.dataStorage?.let {
                     PlanCoordinator(
                         user = user,
@@ -111,7 +92,7 @@ open class AutoPlanMode(
                 }
                 log.debug("Created plan coordinator")
 
-                val initialStatus = initThinking(planSettings, userMessage, apiClient)
+                val initialStatus = initThinking(planSettings, userMessage)
                 log.debug("Initialized thinking status")
                 initialStatus.initialPrompt = userMessage
                 thinkingStatus.set(initialStatus)
@@ -123,7 +104,6 @@ open class AutoPlanMode(
                     val currentThinkingStatus = thinkingStatus.get()
                         ?: throw IllegalStateException("ThinkingStatus is null at iteration $iteration")
                     val iterationTask = ui.newTask(false).apply { tabbedDisplay["Iteration $iteration"] = placeholder }
-                    val iterationApi = apiClient.getChildClient(iterationTask)
                     val iterationTabbedDisplay = TabbedDisplay(iterationTask, additionalClasses = "iteration")
 
                     ui.newTask(false).apply {
@@ -149,7 +129,7 @@ open class AutoPlanMode(
                     val nextTask = try {
                         log.debug("Getting next task")
                         if (coordinator != null) {
-                            getNextTask(iterationApi, coordinator, userMessage, currentThinkingStatus, iterationTask)
+                            getNextTask(coordinator, userMessage, currentThinkingStatus, iterationTask)
                         } else {
                             log.error("Coordinator is null, cannot get next task")
                             null
@@ -194,7 +174,6 @@ $fullTaskDataJson
                             try {
                                 if (coordinator != null) {
                                     runTask(
-                                        iterationApi,
                                         coordinator,
                                         currentTask.task.tasks?.get(index)!!,
                                         userMessage,
@@ -229,7 +208,7 @@ $fullTaskDataJson
                         ui.newTask(false).apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
                     try {
                         log.debug("Updating thinking status")
-                        val updatedStatus = updateThinking(iterationApi, currentThinkingStatus, completedTasks)
+                        val updatedStatus = updateThinking(currentThinkingStatus, completedTasks)
                         thinkingStatus.set(updatedStatus)
                         log.debug("Updated thinking status")
                         thinkingStatusTask.complete(
@@ -271,13 +250,11 @@ $fullTaskDataJson
     }
 
     private fun runTask(
-        api: ChatClientInterface,
         coordinator: PlanCoordinator,
         currentTask: TaskConfigBase,
         userMessage: String,
         task: SessionTask
     ): String {
-        val taskApi = api.getChildClient(task)
         val currentThinkingStatus =
             thinkingStatus.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
         val taskImpl = TaskType.getImpl(coordinator.planSettings, currentTask)
@@ -301,7 +278,6 @@ $fullTaskDataJson
                 "Current thinking status:\n${formatThinkingStatus(currentThinkingStatus)}"
             ) + formatEvalRecords(),
             task = task,
-            api = taskApi,
             resultFn = { result.append(it) },
             planSettings = planSettings,
         )
@@ -310,7 +286,6 @@ $fullTaskDataJson
     }
 
     private fun getNextTask(
-        api: ChatClientInterface,
         coordinator: PlanCoordinator,
         userMessage: String,
         thinkingStatus: ThinkingStatus,
@@ -342,8 +317,8 @@ $fullTaskDataJson
                 })
                 append("\nChoose the most suitable task types and provide details of how they should be executed.")
             },
-            model = coordinator.planSettings.defaultModel,
-            parsingModel = coordinator.planSettings.parsingModel,
+            model = coordinator.planSettings.defaultChatter,
+            parsingModel = coordinator.planSettings.parsingChatter,
             temperature = coordinator.planSettings.temperature,
             describer = describer,
             parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
@@ -360,8 +335,7 @@ $fullTaskDataJson
         Please choose the next single task to execute based on the current status.
         If there are no tasks to execute, return {}.
         """.trimIndent()
-            ) + formatEvalRecords(), api
-
+            ) + formatEvalRecords(),
         )
 
 
@@ -372,7 +346,6 @@ $fullTaskDataJson
         val expandedTasks = processTaskExpansionRecursive(
             currentText = answer.text,
             task = task,
-            api = api,
             parsedActor = parsedActor,
             processor = processor
         )
@@ -419,14 +392,13 @@ $fullTaskDataJson
     private fun processTaskExpansionRecursive(
         currentText: String,
         task: SessionTask,
-        api: ChatClientInterface,
         parsedActor: ParsedActor<Tasks>,
         processor: FixedConcurrencyProcessor
     ): List<TaskData> {
         val match = expansionExpressionPattern.find(currentText)
         if (match == null) {
             return try {
-                val chosenTasks = parsedActor.getParser(api).apply(currentText)
+                val chosenTasks = parsedActor.getParser().apply(currentText)
                 listOf(TaskData(chosenTasks, currentText))
             } catch (e: Exception) {
                 log.error("Error parsing task text: $currentText", e)
@@ -441,7 +413,7 @@ $fullTaskDataJson
                 processor.submit {
                     val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
                     val nextText = currentText.replaceFirst(match.value, option)
-                    processTaskExpansionRecursive(nextText, subTask, api, parsedActor, processor)
+                    processTaskExpansionRecursive(nextText, subTask, parsedActor, processor)
                 }
             }
             return futures.flatMap { it.get() }
@@ -451,7 +423,6 @@ $fullTaskDataJson
     private fun initThinking(
         planSettings: PlanSettings,
         userMessage: String,
-        api: ChatClientInterface,
     ): ThinkingStatus {
         return ParsedActor(
             name = "ThinkingStatusInitializer",
@@ -490,15 +461,14 @@ $fullTaskDataJson
         * Maintain alignment between short-term actions and long-term goals
         * Ensure scalability and maintainability of the approach
       """.trimIndent(),
-            model = planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = describer
-        ).answer(listOf(userMessage) + contextData(), api).obj
+        ).answer(listOf(userMessage) + contextData()).obj
     }
 
     private fun updateThinking(
-        api: ChatClientInterface,
         thinkingStatus: ThinkingStatus,
         completedTasks: List<ExecutionRecord>,
     ): ThinkingStatus = ParsedActor(
@@ -560,8 +530,8 @@ $fullTaskDataJson
       Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
       If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
-        model = planSettings.defaultModel,
-        parsingModel = planSettings.parsingModel,
+        model = planSettings.defaultChatter,
+        parsingModel = planSettings.parsingChatter,
         temperature = planSettings.temperature,
         describer = describer
     ).answer(
@@ -576,7 +546,6 @@ $fullTaskDataJson
                             ?: "")
                 } +
                 (currentUserMessage.get()?.let { listOf("User message: $it") } ?: listOf()),
-        api
     ).obj.apply {
         currentUserMessage.set(null)
         knowledge?.facts?.apply {
@@ -730,11 +699,10 @@ $fullTaskDataJson
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: API,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = AutoPlanMode(ui, api, planSettings, session, user, describer = describer)
+        ) = AutoPlanMode(ui, planSettings, session, user, describer = describer)
     }
 }

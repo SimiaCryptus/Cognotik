@@ -191,13 +191,13 @@ val cleanHtml = HtmlSimplifier.scrubHtml(
 
 ```kotlin
 val discussable = Discussable(
-  task = sessionTask,
-  userMessage = { "Initial user message" },
-  initialResponse = { msg -> generateResponse(msg) },
-  outputFn = { response -> formatResponse(response) },
-  ui = applicationInterface,
-  reviseResponse = { history -> generateRevisedResponse(history) },
-  heading = "Discussion Title"
+    task = sessionTask,
+    userMessage = { "Initial user message" },
+    initialResponse = { msg -> generateResponse(msg) },
+    outputFn = { response -> formatResponse(response) },
+    ui = applicationInterface,
+    reviseResponse = { history -> generateRevisedResponse(history) },
+    heading = "Discussion Title"
 )
 val result = discussable.call()
 ```
@@ -206,11 +206,11 @@ val result = discussable.call()
 
 ```kotlin
 val projector = TensorflowProjector(
-  api = openAIClient,
-  dataStorage = storageInterface,
-  sessionID = session,
-  session = applicationInterface,
-  userId = user
+    api = openAIClient,
+    dataStorage = storageInterface,
+    sessionID = session,
+    session = applicationInterface,
+    userId = user
 )
 val html = projector.writeTensorflowEmbeddingProjectorHtml("word1", "word2", "word3")
 ```

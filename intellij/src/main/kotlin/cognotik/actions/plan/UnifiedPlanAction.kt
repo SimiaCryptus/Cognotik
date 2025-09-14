@@ -8,7 +8,11 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
@@ -16,42 +20,41 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.jopenai.describe.TypeDescriber
 import java.io.File
 import java.text.SimpleDateFormat
 
 class UnifiedPlanAction : BaseAction() {
-    private companion object {
-        private const val DEFAULT_API_BUDGET = 10.0
-    }
 
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(e: AnActionEvent) {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
-            e.project, PlanSettings(
-                defaultModel = AppSettingsState.instance.smartModel.chatModelType(),
-                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+            e.project, object : PlanSettings(
+                defaultModel = AppSettingsState.instance.smartModel
+                    ?: throw IllegalStateException("Smart model not configured"),
+                parsingModel = AppSettingsState.instance.fastModel
+                    ?: throw IllegalStateException("Fast model not configured"),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 env = mapOf(),
                 workingDir = root,
-            ),
+            ) {
+                override fun instance(model: ApiChatModel) = model.instance()
+                    ?: throw IllegalStateException("Model or Provider not set")
+            },
             singleTaskMode = false,
-            apiBudget = DEFAULT_API_BUDGET
         )
 
         if (dialog.showAndGet()) {
@@ -66,12 +69,11 @@ class UnifiedPlanAction : BaseAction() {
 
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : PlanAheadMode(ui, api, planSettings, session, user,  describer) {
+                        ) = object : PlanAheadMode(ui, planSettings, session, user,  describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -94,12 +96,11 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 0
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
-                        ) = object : TaskChatMode(ui, api, planSettings, session, user, describer) {
+                        ) = object : TaskChatMode(ui, planSettings, session, user, describer) {
                             override fun contextData(): List<String> {
                                 return listOf(
                                     buildString {
@@ -122,18 +123,16 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
                             describer: TypeDescriber
                         ) = object : GraphOrderedPlanMode(
                             ui,
-                            api,
                             planSettings,
                             session,
                             user,
-                            GraphOrderedPlanMode.graphFile,
+                            graphFile,
                             describer
                         ) {
                             override fun contextData(): List<String> {
@@ -158,7 +157,6 @@ class UnifiedPlanAction : BaseAction() {
                         override val inputCnt = 1
                         override fun getCognitiveMode(
                             ui: ApplicationInterface,
-                            api: API,
                             planSettings: PlanSettings,
                             session: Session,
                             user: User?,
@@ -166,7 +164,6 @@ class UnifiedPlanAction : BaseAction() {
                         ): CognitiveMode {
                             return object : AutoPlanMode(
                                 ui = ui,
-                                api = api,
                                 planSettings = planSettings,
                                 session = session,
                                 user = user,
@@ -178,7 +175,6 @@ class UnifiedPlanAction : BaseAction() {
                                 override fun contextData(): List<String> {
                                     return listOf(
                                         buildString {
-
                                             append("Selected Files:\n")
                                             append(filteredWalk(File(root)).joinToString("\n") {
                                                 "* ${
@@ -215,7 +211,7 @@ class UnifiedPlanAction : BaseAction() {
                 }
 
                 UITools.runAsync(e.project, "Initializing Unified Plan", true) { progress ->
-                    initializeChat(e, progress, planSettings, cognitiveMode, dialog.apiBudget)
+                    initializeChat(e, progress, planSettings, cognitiveMode)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize unified plan", ex)
@@ -228,8 +224,7 @@ class UnifiedPlanAction : BaseAction() {
         e: AnActionEvent,
         progress: ProgressIndicator,
         planSettings: PlanSettings,
-        cognitiveStrategy: CognitiveModeStrategy,
-        apiBudget: Double
+        cognitiveStrategy: CognitiveModeStrategy
     ) {
         progress.text = "Setting up session..."
         val session = Session.newGlobalID()
@@ -240,7 +235,6 @@ class UnifiedPlanAction : BaseAction() {
             root,
             planSettings,
             cognitiveStrategy,
-            apiBudget,
             object : AbbrevWhitelistYamlDescriber(
                 "com.simiacryptus", "cognotik.actions"
             ) {
@@ -271,11 +265,12 @@ class UnifiedPlanAction : BaseAction() {
         root: File,
         planSettings: PlanSettings,
         cognitiveStrategy: CognitiveModeStrategy,
-        apiBudget: Double,
         describer: TypeDescriber
     ) {
         DataStorage.sessionPaths[session] = root
-        SessionProxyServer.chats[session] = UnifiedPlanApp(
+        val fastChatModel = (AppSettingsState.instance.fastModel
+            ?: throw IllegalStateException("Fast model not configured"))
+        SessionProxyServer.chats[session] = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
             planSettings = planSettings.copy(
@@ -285,18 +280,18 @@ class UnifiedPlanAction : BaseAction() {
                 command = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                parsingModel = fastChatModel,
             ),
-            model = AppSettingsState.instance.smartModel.chatModelType(),
-            parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+            model = AppSettingsState.instance.smartModel
+                ?: throw IllegalStateException("Smart model not configured"),
+            parsingModel = fastChatModel,
             showMenubar = false,
-            api = api.getChildClient().apply {
-                budget = apiBudget
-
-            },
             cognitiveStrategy = cognitiveStrategy,
             describer = describer
-        )
+        ) {
+            override fun instance(model: ApiChatModel) = model.instance()
+                ?: throw IllegalStateException("Model or Provider not set")
+        }
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Unified Planning",
             inputCnt = 1,

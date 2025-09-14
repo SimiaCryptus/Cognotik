@@ -14,7 +14,7 @@ data class DiffApplicationResult(
 
 class SimpleDiffApplier {
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(SimpleDiffApplier::class.java)
+        val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(SimpleDiffApplier::class.java)
 
         private const val MAX_DIFF_SIZE_CHARS = 100000
 
@@ -43,7 +43,7 @@ class SimpleDiffApplier {
         val matches = DIFF_PATTERN.findAll(response).distinct()
         var currentCode = originalCode
 
-        val validator = Companion.getValidator(filename)
+        val validator = getValidator(filename)
         val originalCodeErrors = validator.validateGrammar(originalCode)
         val newErrors = matches.flatMap { diffBlock ->
             val diffVal: String = diffBlock.groupValues[1]

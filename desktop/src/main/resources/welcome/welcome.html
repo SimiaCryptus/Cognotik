@@ -4,10 +4,18 @@
     <meta charset="utf-8"/>
     <link href="/favicon.svg" rel="icon"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <link rel="stylesheet" href="welcome.css">
+    <link href="welcome.css" rel="stylesheet">
     <title>Cognotik</title>
 </head>
 <body>
+
+<script src="modules/constants.js"></script>
+<script src="modules/utils.js"></script>
+<script src="modules/state.js"></script>
+<script src="modules/http.js"></script>
+<script src="modules/validation.js"></script>
+<script src="modules/ui.js"></script>
+<script src="modules/models.js"></script>
 
 <div class="menu-bar">
     <div class="logo-container">
@@ -40,16 +48,16 @@
                 <div class="form-group">
                     <label for="basic-chat-temperature">Temperature: <span class="tooltip">?<span
                             class="tooltiptext"><strong>Temperature Control</strong><br><br>Controls the randomness and creativity of AI responses:<br><br>• <strong>0.0-0.3:</strong> More deterministic and focused<br>• <strong>0.4-0.6:</strong> Balanced creativity<br>• <strong>0.7-1.0:</strong> More creative and varied</span></span></label>
-                    <input id="basic-chat-temperature" type="range" min="0" max="1" step="0.01" value="0.3">
+                    <input id="basic-chat-temperature" max="1" min="0" step="0.01" type="range" value="0.3">
                     <span id="basic-chat-temperature-value">0.3</span>
                 </div>
                 <div class="form-group">
                     <label for="basic-chat-budget">Budget ($):</label>
-                    <input id="basic-chat-budget" type="number" min="0" max="1000" step="0.01" value="2.0" required>
+                    <input id="basic-chat-budget" max="1000" min="0" required step="0.01" type="number" value="2.0">
                 </div>
                 <div class="button-group">
-                    <button type="button" class="button secondary" id="cancel-basic-chat-settings">Cancel</button>
-                    <button type="submit" class="button" id="submit-basic-chat-settings">Continue to Chat</button>
+                    <button class="button secondary" id="cancel-basic-chat-settings" type="button">Cancel</button>
+                    <button class="button" id="submit-basic-chat-settings" type="submit">Continue to Chat</button>
                 </div>
             </form>
         </div>
@@ -67,14 +75,14 @@
             <button class="tab-button" data-tab="local-tools">Local Tools</button>
         </div>
 
-        <div id="api-keys-tab" class="tab-content active">
+        <div class="tab-content active" id="api-keys-tab">
             <p>Configure your API keys for different AI providers:</p>
             <div id="api-keys-container">
                 <!-- API keys will be populated here -->
             </div>
         </div>
 
-        <div id="local-tools-tab" class="tab-content">
+        <div class="tab-content" id="local-tools-tab">
             <p>Configure local tools that can be used by the AI:</p>
             <div class="form-group">
                 <label for="local-tools-list">Local Tools:</label>
@@ -83,7 +91,7 @@
                         <!-- Local tools will be listed here -->
                     </div>
                     <div class="tool-actions">
-                        <input type="text" id="new-tool-path" placeholder="Enter tool path or command">
+                        <input id="new-tool-path" placeholder="Enter tool path or command" type="text">
                         <button class="button" id="add-local-tool">Add Tool</button>
                     </div>
                 </div>
@@ -226,7 +234,7 @@
     <div class="form-group">
         <label for="working-dir">Working Directory:</label>
         <div style="display: flex; gap: 10px;">
-            <input id="working-dir" type="text" value="." style="flex-grow: 1;">
+            <input id="working-dir" style="flex-grow: 1;" type="text" value=".">
             <button class="button secondary" id="generate-working-dir">New Directory</button>
         </div>
     </div>

@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.AudioModels
+import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.models.ApiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -10,7 +10,6 @@ import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.slf4j.Logger
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors

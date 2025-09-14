@@ -4,12 +4,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.LoggerFactory
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -67,7 +66,6 @@ class DataTableCompilationTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -128,15 +126,14 @@ class DataTableCompilationTask(
                 1. Assign a unique column ID - should be a short, descriptive string
                 2. Provide a detailed description of what the column represents
             """.trimIndent(),
-            model = taskSettings.model ?: planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,
         ).answer(
             listOf(
                 fileContentString
             ),
-            api = api
         )
         val columns = columnsResponse.obj
         val columnsList = columns.columns.map {
@@ -172,8 +169,8 @@ class DataTableCompilationTask(
                 1. Assign a unique row ID - should be a short, descriptive string
                 2. List the source files that contain data for this row
             """.trimIndent(),
-            model = taskSettings.model ?: planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,
         ).answer(
@@ -181,7 +178,6 @@ class DataTableCompilationTask(
                 fileContentString,
                 "Columns:\n" + columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }
             ),
-            api = api
         )
 
         task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows", ui = agent.ui))
@@ -215,8 +211,8 @@ class DataTableCompilationTask(
                         "Expected Columns:\n${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}\n\n" +
                         "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n" +
                         "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
-                model = taskSettings.model ?: planSettings.defaultModel,
-                parsingModel = planSettings.parsingModel,
+                model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
+                parsingModel = planSettings.parsingChatter,
                 temperature = planSettings.temperature,
                 describer = agent.describer,
             ).answer(
@@ -227,7 +223,6 @@ class DataTableCompilationTask(
                         "### ${file.name}\n```\n${readFileContent(file).indent("  ")}\n```"
                     }
                 ),
-                api = api
             )
 
             val rowData = rowDataResponse.obj

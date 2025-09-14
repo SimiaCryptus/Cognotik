@@ -8,11 +8,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType.*
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.DynamicEnum
-import com.simiacryptus.util.DynamicEnumDeserializer
-import com.simiacryptus.util.DynamicEnumSerializer
-import com.simiacryptus.util.copy
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
+import com.simiacryptus.cognotik.util.DynamicEnumSerializer
+import com.simiacryptus.cognotik.util.copy
 
 @JsonDeserialize(using = SoftwareNodeTypesDeserializer::class)
 @JsonSerialize(using = SoftwareNodeTypesSerializer::class)

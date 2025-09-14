@@ -2,12 +2,11 @@ package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.JsonUtil
 import java.io.File
 
 class SoftwareGraphModificationTask(
@@ -43,7 +42,6 @@ class SoftwareGraphModificationTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -80,8 +78,8 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = taskSettings.model ?: planSettings.defaultModel,
-            parsingModel = planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
+            parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,
         )
@@ -99,7 +97,6 @@ class SoftwareGraphModificationTask(
                 "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
                 "Modification goal: ${taskConfig.modification_goal}"
             ),
-            api = api
         )
 
         val deltaGraph = response.obj

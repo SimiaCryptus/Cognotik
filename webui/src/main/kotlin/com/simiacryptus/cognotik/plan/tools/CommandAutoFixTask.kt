@@ -2,14 +2,13 @@ package com.simiacryptus.cognotik.plan.tools
 
 import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
@@ -20,7 +19,7 @@ class CommandAutoFixTask(
     class CommandAutoFixTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
-        model: ChatModelType? = null,
+        model: ApiChatModel? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 
@@ -60,7 +59,6 @@ class CommandAutoFixTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -68,7 +66,8 @@ class CommandAutoFixTask(
         Retryable(agent.ui, task = task) {
             val task = agent.ui.newTask(false)
             agent.pool.submit {
-                val api = api.getChildClient(task)
+                val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
+                    ?: agent.planSettings.defaultChatter)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
@@ -95,12 +94,11 @@ class CommandAutoFixTask(
                         autoFix = agent.planSettings.autoFix,
                         includeLineNumbers = false,
                     ),
-                    api = api,
                     files = agent.files,
-                    model = taskSettings.model ?: agent.planSettings.defaultModel,
-                    parsingModel = agent.planSettings.parsingModel,
+                    model = model,
+                    parsingModel = agent.planSettings.parsingChatter,
                 ).run(
-                    ui = agent.ui, task = task
+                    ui = agent.ui, task = task, model = model
                 ).apply {
                     when {
                         this.exitCode == 0 -> {

@@ -1,14 +1,12 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
 
 open class LogDataParsingModel(
-    private val parsingModel: ChatModelType,
-    private val temperature: Double,
-    override val api: ChatClientInterface
+    private val parsingModel: Chatter,
+    private val temperature: Double
 ) : ParsingModel<LogDataParsingModel.LogData> {
     private val maxIterations = 10
 
@@ -24,26 +22,23 @@ open class LogDataParsingModel(
         )
     }
 
-    open val exampleInstance = LogData()
-
-    override fun getFastParser(api: API): (String) -> LogData {
+    override fun getFastParser(): (String) -> LogData {
         val patternGenerator = LogPatternGenerator(parsingModel, temperature)
         return { originalText ->
-            parseText(originalText, patternGenerator, api, emptyList())
+            parseText(originalText, patternGenerator, emptyList())
         }
     }
 
-    override fun getSmartParser(api: API): (LogData, String) -> LogData {
+    override fun getSmartParser(): (LogData, String) -> LogData {
         val patternGenerator = LogPatternGenerator(parsingModel, temperature)
         return { runningDocument, prompt ->
-            parseText(prompt, patternGenerator, api, runningDocument.patterns ?: emptyList())
+            parseText(prompt, patternGenerator, runningDocument.patterns ?: emptyList())
         }
     }
 
     private fun parseText(
         originalText: String,
         patternGenerator: LogPatternGenerator,
-        api: API,
         existingPatterns: List<PatternData>
     ): LogData {
         var remainingText = originalText
@@ -59,7 +54,7 @@ open class LogDataParsingModel(
             }
 
             while (remainingText.isNotBlank() && iterationCount++ < maxIterations) {
-                val newPatterns = patternGenerator.generatePatterns(api, remainingText)
+                val newPatterns = patternGenerator.generatePatterns(remainingText)
                 if (newPatterns.isEmpty()) break
                 currentPatterns = (currentPatterns + newPatterns).distinctBy { it.regex }
                 val applyPatterns = applyPatterns(remainingText, currentPatterns)
@@ -189,7 +184,7 @@ open class LogDataParsingModel(
     )
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(LogDataParsingModel::class.java)
+        private val log = LoggerFactory.getLogger(LogDataParsingModel::class.java)
     }
 }
 

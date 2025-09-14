@@ -1,22 +1,20 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType.ChatModel
 
 open class CodeChatSocketManager(
     session: Session,
     val language: String,
     val filename: String,
     val codeSelection: String,
-    api: ChatClientInterface,
-    model: ChatModel,
-    parsingModel: ChatModel,
+    model: Chatter,
+    parsingModel: Chatter,
     storage: StorageInterface?,
 ) : ChatSocketManager(
     session = session,
@@ -24,7 +22,6 @@ open class CodeChatSocketManager(
     parsingModel = parsingModel,
     userInterfacePrompt = "# `$filename`\n\n```$language\n$codeSelection\n```".renderMarkdown(),
     systemPrompt = "\nYou are a helpful AI that helps people with coding.\n\nYou will be answering questions about the following code located in `$filename`:\n\n```$language\n$codeSelection\n```\n\nResponses may use markdown formatting, including code blocks.",
-    api = api,
     applicationClass = ApplicationServer::class.java,
     storage = storage,
     budget = 2.0,

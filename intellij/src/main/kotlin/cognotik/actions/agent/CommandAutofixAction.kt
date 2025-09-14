@@ -23,12 +23,9 @@ import com.simiacryptus.cognotik.config.CommandConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.JsonUtil.fromJson
-import com.simiacryptus.util.toJson
-import com.simiacryptus.util.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
@@ -118,12 +115,13 @@ class CommandAutofixAction : BaseAction() {
                 val patchApp = CmdPatchApp(
                     root = root,
                     settings = settings,
-                    api = api.getChildClient().apply {
+                    files = files.map { it.toFile }.toTypedArray(),
+                    model = AppSettingsState.instance.smartChatClient.getChildClient().apply {
                         budget = settingsUI.apiBudgetField.value as Double
                     },
-                    files = files.map { it.toFile }.toTypedArray(),
-                    model = AppSettingsState.instance.smartModel.chatModelType(),
-                    parsingModel = AppSettingsState.instance.fastModel.chatModelType()
+                    parsingModel = AppSettingsState.instance.fastChatClient.getChildClient().apply {
+                        budget = settingsUI.apiBudgetField.value as Double
+                    }
                 )
                 val session = Session.newGlobalID()
                 SessionProxyServer.chats[session] = patchApp
@@ -482,7 +480,7 @@ class CommandAutofixAction : BaseAction() {
                 includeLineNumbersCheckBox.isSelected = config.includeLineNumbers ?: true
                 additionalInstructionsField.text = config.additionalInstructions
 
-                val budgetValue = if (config.apiBudget != null) config.apiBudget else 0.0
+                val budgetValue = config.apiBudget
                 apiBudgetField.value = budgetValue
                 if (budgetValue <= 10.0) {
                     apiBudgetSlider.value = (budgetValue * 10).toInt()

@@ -1,17 +1,14 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanCoordinator.Companion.initialPlan
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 
 /**
@@ -19,7 +16,6 @@ import java.io.File
  */
 open class PlanAheadMode(
     override val ui: ApplicationInterface,
-    override val api: API,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -40,11 +36,6 @@ open class PlanAheadMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val chatApi = api as? ProvidersChatClient
-                ?: throw IllegalStateException("PlanAheadMode requires a ChatClient API implementation.")
-            val apiClient = chatApi.getChildClient(task) // Create a task-specific child client
-            apiClient.budget = planSettings.budget ?: 2.0 // Set budget on the child client
-
             val coordinator = PlanCoordinator(
                 user = user,
                 session = session,
@@ -66,7 +57,6 @@ open class PlanAheadMode(
                 userMessage = userMessage,
                 ui = coordinator.ui,
                 planSettings = coordinator.planSettings,
-                api = apiClient, // Use the budgeted and task-specific client
                 contextFn = { contextData() },
                 describer = describer
             )
@@ -74,8 +64,8 @@ open class PlanAheadMode(
             coordinator.executePlan(
                 plan = plan.plan,
                 task = task,
-                userMessage = userMessage,
-                api = apiClient // Use the budgeted and task-specific client
+                userMessage = userMessage
+                // Use the budgeted and task-specific client
             )
         } catch (e: Throwable) {
             task.error(e) // Report error on the current task
@@ -87,11 +77,10 @@ open class PlanAheadMode(
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: API,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = PlanAheadMode(ui, api, planSettings, session, user, describer)
+        ) = PlanAheadMode(ui, planSettings, session, user, describer)
     }
 }

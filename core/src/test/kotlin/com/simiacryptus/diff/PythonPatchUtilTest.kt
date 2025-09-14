@@ -1,6 +1,6 @@
 package com.simiacryptus.diff
 
-import com.simiacryptus.cognotik.util.PythonPatchUtil
+import com.simiacryptus.cognotik.diff.PythonPatchUtil
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -63,49 +63,6 @@ class PythonPatchUtilTest {
         val expected = """
             line1
             modifiedLine2
-            line3
-        """.trimIndent()
-        val result = PythonPatchUtil.applyPatch(source, patch)
-        Assertions.assertEquals(normalize(expected), normalize(result))
-    }
-
-    fun testPatchRemoveLine() {
-        val source = """
-            line1
-            line2
-            line3
-        """.trimIndent()
-        val patch = """
-            line1
-          - line2
-            line3
-        """.trimIndent()
-        val expected = """
-            line1
-            line3
-        """.trimIndent()
-        val result = PythonPatchUtil.applyPatch(source, patch)
-        Assertions.assertEquals(normalize(expected), normalize(result))
-    }
-
-    fun testPatchAdd2Lines() {
-        val source = """
-            line1
-            line2
-            line3
-        """.trimIndent()
-        val patch = """
-            line1
-          + lineA
-          + lineB
-            line2
-            line3
-        """.trimIndent()
-        val expected = """
-           line1
-            lineA
-            lineB
-            line2
             line3
         """.trimIndent()
         val result = PythonPatchUtil.applyPatch(source, patch)

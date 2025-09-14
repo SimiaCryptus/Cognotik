@@ -1,22 +1,18 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.jsonCast
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.jsonCast
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
 open class DocumentParsingModel(
-    private val parsingModel: ChatModelType,
+    private val parsingModel: Chatter,
     private val temperature: Double,
-    override val api: ChatClientInterface,
 ) : ParsingModel<DocumentParsingModel.DocumentData> {
 
     override fun merge(
@@ -61,7 +57,7 @@ open class DocumentParsingModel(
 
     open val exampleInstance = DocumentData()
 
-    override fun getFastParser(api: API): (String) -> DocumentData {
+    override fun getFastParser(): (String) -> DocumentData {
         val parser = ParsedActor(
             resultClass = DocumentData::class.java,
             exampleInstance = exampleInstance,
@@ -70,7 +66,7 @@ open class DocumentParsingModel(
             temperature = temperature,
             model = parsingModel,
         ).getParser(
-            api, promptSuffix = promptSuffix
+            promptSuffix = promptSuffix
         )
         return { text -> parser.apply(text) }
     }
@@ -90,7 +86,7 @@ open class DocumentParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentParsingModel::class.java)
+        val log = LoggerFactory.getLogger(DocumentParsingModel::class.java)
 
     }
 
@@ -101,7 +97,6 @@ fun EmbeddingModel.getRows(
     progressState: ProgressState,
     futureList: MutableList<Future<*>>,
     pool: ExecutorService,
-    embeddingClient: EmbeddingClientBase,
     fileData: Map<String, Any>?
 ): MutableList<DocumentRecord> {
     val records: MutableList<DocumentRecord> = mutableListOf()
@@ -124,7 +119,6 @@ fun EmbeddingModel.getRows(
                     semaphore.acquire()
                     processBatch(
                         batch = listOf(record),
-                        embeddingClient = embeddingClient,
                         model = this,
                         progressState = progressState
                     )
@@ -163,7 +157,6 @@ fun EmbeddingModel.getRows(
 
 private fun processBatch(
     batch: List<DocumentRecord>,
-    embeddingClient: EmbeddingClientBase,
     model: EmbeddingModel,
     progressState: ProgressState
 ) {
@@ -177,18 +170,13 @@ private fun processBatch(
     var retryCount = 0
     var lastException: Exception? = null
 
+    val embedder = model.instance()
     while (retryCount < 3) {
         try {
-            val embeddings = embeddingClient.createEmbedding(
-                ApiModel.EmbeddingRequest(
-                    model = model.modelName,
-                    input = texts.joinToString("\n")
-                ), model
-            ).data
-
+            val embeddings = embedder.embed(texts.joinToString("\n"))
             batch.forEachIndexed { index, record ->
                 if (record.text != null && index < embeddings.size) {
-                    record.vector = embeddings[index].embedding ?: DoubleArray(0)
+                    record.vector = embeddings ?: DoubleArray(0)
                 }
                 progressState.add(1.0, 0.0)
             }

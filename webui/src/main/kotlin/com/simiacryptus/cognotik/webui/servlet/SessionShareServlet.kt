@@ -11,11 +11,12 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Selenium
 import com.simiacryptus.cognotik.util.Selenium2S3
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -190,7 +191,7 @@ class SessionShareServlet(
     }
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(SessionShareServlet::class.java)
+        private val log = LoggerFactory.getLogger(SessionShareServlet::class.java)
         private val currentlyProcessing = mutableSetOf<String>()
         fun validateUrl(previousShare: String): Boolean = when {
             currentlyProcessing.contains(previousShare) -> true

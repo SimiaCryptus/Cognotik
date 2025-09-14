@@ -21,13 +21,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.dsl.builder.*
 import com.intellij.util.ui.FormBuilder
+import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
+import com.simiacryptus.cognotik.exceptions.ModerationException
+import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.exceptions.ModerationException
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.util.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -98,10 +97,8 @@ object UITools {
         thread(name = title ?: "runAsync") {
             try {
                 if (project == null) {
-                    AppSettingsState.instance.apiKeys?.values?.firstOrNull() ?: ""
                     task(AbstractProgressIndicatorBase())
                 } else {
-                    AppSettingsState.instance.apiKeys?.values?.firstOrNull() ?: ""
                     val t = if (AppSettingsState.instance.modalTasks)
                         ModalTask(project, title ?: "", canBeCancelled, task)
                     else
@@ -424,10 +421,8 @@ object UITools {
         task: (ProgressIndicator) -> T,
     ): T {
         return if (project == null) {
-            AppSettingsState.instance.apiKeys?.values?.firstOrNull() ?: ""
             task(AbstractProgressIndicatorBase())
         } else {
-            AppSettingsState.instance.apiKeys?.values?.firstOrNull() ?: ""
             val t = if (AppSettingsState.instance.modalTasks) ModalTask(project, title ?: "", canBeCancelled, task)
             else BgTask(project, title ?: "", canBeCancelled, task)
             ProgressManager.getInstance().run(t)
@@ -475,22 +470,14 @@ object UITools {
                         button("Test Key") {
                             val apiKey = apiKeyInput.password.joinToString("")
                             try {
-                                OpenAIClient(
-                                    key = mapOf(
-                                        APIProvider.OpenAI to apiKey
-                                    ),
-                                    workPool = Executors.newCachedThreadPool(),
-                                    apiBase = AppSettingsState.instance.apiBase
-                                        ?.mapKeys { APIProvider.valueOf(it.key) }
-                                        ?: throw IllegalStateException("API Base is not set")
-                                ).listModels()
                                 JOptionPane.showMessageDialog(
                                     null,
                                     "The API key was accepted by the server. The new value will be saved.",
                                     "Success",
                                     JOptionPane.INFORMATION_MESSAGE
                                 )
-                                AppSettingsState.instance.apiKeys?.set(APIProvider.OpenAI.name, apiKey)
+                                // TODO: Fix saving of API key
+                                //AppSettingsState.instance.getApiKeys().set(APIProvider.OpenAI.name, apiKey)
                             } catch (e: Exception) {
                                 JOptionPane.showMessageDialog(
                                     null,
@@ -522,7 +509,6 @@ object UITools {
                 Log Message: ${msg.trimIndent()}
                 Error Message: ${e.message?.trimIndent()}
                 Error Type: ${e.javaClass.name}
-                API Base: ${AppSettingsState.instance.apiBase}
 
                 OS: ${System.getProperty("os.name")} / ${System.getProperty("os.version")} / ${System.getProperty("os.arch")}
                 Locale: ${Locale.getDefault().country} / ${Locale.getDefault().language}
@@ -584,13 +570,6 @@ object UITools {
     fun showErrorDialog(errorMessage: String, title: String) {
         val panel = panel {
             row { label(errorMessage) }
-        }
-        showOptionDialog(panel, "OK", title = title, modal = true)
-    }
-
-    fun showInfoMessage(message: String, title: String) {
-        val panel = panel {
-            row { label(message) }
         }
         showOptionDialog(panel, "OK", title = title, modal = true)
     }
@@ -750,26 +729,6 @@ fun AnActionEvent.futureCallback(
 
     override fun onFailure(t: Throwable) {
         UITools.error(UITools.log, "Error", t)
-    }
-}
-
-fun Document.insertSubString(startOffset: Int, newText: CharSequence): Runnable {
-    this.insertString(startOffset, newText)
-    UITools.log.debug(String.format("FWD insertString @ %s (%s): %s", startOffset, newText.length, newText))
-    return Runnable {
-        val verifyTxt = getText(TextRange(startOffset, startOffset + newText.length))
-        if (verifyTxt != newText) {
-            val message = String.format(
-                "The text range from %d to %d does not match the expected text \"%s\" and is instead \"%s\"",
-                startOffset,
-                startOffset + newText.length,
-                newText,
-                verifyTxt
-            )
-            throw AssertionError(message)
-        }
-        this.deleteString(startOffset, startOffset + newText.length)
-        UITools.log.debug(String.format("REV deleteString from %s to %s", startOffset, startOffset + newText.length))
     }
 }
 

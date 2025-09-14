@@ -3,29 +3,22 @@ package com.simiacryptus.cognotik.apps.code
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.actors.CodingActor.CodeResult
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.interpreter.Interpreter
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.LLMModel
-import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.util.LoggerFactory
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 open class CodingAgent<T : Interpreter>(
-    val api: API,
     val dataStorage: StorageInterface,
     val session: Session,
     val user: User?,
@@ -34,7 +27,7 @@ open class CodingAgent<T : Interpreter>(
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
-    val model: LLMModel,
+    val model: Chatter,
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
 ) {
@@ -46,7 +39,7 @@ open class CodingAgent<T : Interpreter>(
             temperature = temperature,
             details = details,
             model = model,
-            fallbackModel = model as ChatModelType
+            fallbackModel = model
         )
     }
 
@@ -119,11 +112,10 @@ open class CodingAgent<T : Interpreter>(
                 actor.CodeResultImpl(
                     messages = actor.chatMessages(codeRequest),
                     input = codeRequest,
-                    api = api as ChatClientInterface,
                     givenCode = lastUserMessage.removePrefix("```").removeSuffix("```")
                 )
             } else {
-                actor.answer(codeRequest, api = api)
+                actor.answer(codeRequest)
             }
             displayCodeAndFeedback(task, codeRequest, codeResponse)
         } catch (e: Throwable) {
@@ -257,7 +249,7 @@ open class CodingAgent<T : Interpreter>(
     ) {
         val message = when {
             e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
-            e is CodingActor.FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
+            e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\n".renderMarkdown
             else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n".renderMarkdown
         }
         task.add(message, true, "div", "error")

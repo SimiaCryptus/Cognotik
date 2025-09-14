@@ -83,7 +83,6 @@ allprojects {
     // Only apply Java plugin to non-Android projects
     when (name) {
         "android" -> { /* Skip Java plugin for Android project */ }
-//        "webui" -> {}
         else -> {
             apply(plugin = "java")
             java {
@@ -99,13 +98,11 @@ allprojects {
         options.encoding = "UTF-8"
     }
     configurations.all {
-        // Apply resolution strategy to all configurations in all projects
         resolutionStrategy {
             force(
                 "org.jetbrains.kotlin:kotlin-stdlib:${rootProject.libs.versions.kotlin.get()}",
                 "org.jetbrains.kotlin:kotlin-reflect:${rootProject.libs.versions.kotlin.get()}"
             )
-            // Only force SLF4J version for non-Android projects
             if (project.name != "android") {
                 force("org.slf4j:slf4j-api:${rootProject.libs.versions.slf4j.get()}")
             } else {

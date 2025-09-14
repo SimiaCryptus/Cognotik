@@ -8,16 +8,15 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
+import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
+import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.util.getSelectedFiles
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ApiModel.ChatMessage
-import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.toContentList
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import java.awt.BorderLayout
@@ -129,7 +128,8 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                     code = IOUtils.toString(FileInputStream(selectedFile), "UTF-8")
                 ),
                 directive = config?.settings?.directive ?: "",
-                progress = progress
+                progress = progress,
+                model = AppSettingsState.instance.smartChatClient
             )
             progress.text = "Generating output file..."
             progress.fraction = 0.6
@@ -154,25 +154,25 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
         }
     }
 
-    private fun generateFile(baseFile: ProjectFile, directive: String, progress: ProgressIndicator): ProjectFile = try {
+    private fun generateFile(
+        baseFile: ProjectFile, directive: String, progress: ProgressIndicator, model: Chatter
+    ): ProjectFile = try {
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4
-        val model = AppSettingsState.instance.smartModel.chatModelType()
-        val chatRequest = ApiModel.ChatRequest(
-            model = model.modelName,
-            temperature = AppSettingsState.instance.temperature,
-            messages = listOf(
-                ChatMessage(
-                    Role.system, """
+        val response =
+            model.chat(
+                listOf(
+                    ChatMessage(
+                        Role.system, """
             You will combine natural language instructions with a user provided code example to create a new file.
             Provide a new filename and the code to be written to the file.
             Paths should be relative to the project root and should not exist.
             Output the file path using the a line with the format "File: <path>".
             Output the file code directly after the header line with no additional decoration.
             """.trimIndent().toContentList(), null
-                ),
-                ChatMessage(
-                    Role.user, ("""
+                    ),
+                    ChatMessage(
+                        Role.user, ("""
                               Create a new file based on the following directive: """.trimIndent() + directive + """
 
                               The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
@@ -181,11 +181,9 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                               """.trimIndent() + baseFile.code + """
                               ```
                               """.trimIndent()).toContentList(), null
+                    )
                 )
-            )
-        )
-        val response =
-            api.chat(chatRequest, model).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
+            ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException(
                 "No response from API"
             )
         var outputPath = baseFile.path

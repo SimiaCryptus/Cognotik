@@ -10,6 +10,8 @@ var transcriptionModel: String = AudioModels.Whisper.modelName
  */
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
@@ -17,16 +19,26 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.models.ImageModels
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.chat.model.ChatModelType.Companion.values
-import com.simiacryptus.util.JsonUtil.fromJson
-import com.simiacryptus.util.JsonUtil.toJson
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
+import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.File
+import java.util.concurrent.ExecutorService
 
 data class CommandConfig(
     val commands: List<PatchApp.CommandSettings>,
@@ -41,11 +53,12 @@ data class CommandConfig(
 
 @State(name = "com.simiacryptus.cognotik.config.AppSettingsState", storages = [Storage("SdkSettingsPlugin.xml")])
 data class AppSettingsState(
+
+    /* Audio Settings */
     var selectedMicLine: String? = null,
     var talkTime: Double = 1.0,
     var memorySeconds: Double = 10.0,
     var lookbackSeconds: Double = 5.0,
-    var diffLoggingEnabled: Boolean = false,
     var minRMS: Double = 0.5,
     var minIEC61672: Double = 0.5,
     var minSpectralEntropy: Double = 0.5,
@@ -57,21 +70,32 @@ data class AppSettingsState(
     var sampleSize: Int = 16,
     var channels: Int = 1,
     var temperature: Double = 0.1,
-    var reasoningEffort: String = "Low",
-    var smartModel: String = "",
-    var fastModel: String = "",
+
+    /* Model Settings */
+    var smartModel: ApiChatModel? = null,
+    var fastModel: ApiChatModel? = null,
+    var transcriptionModel: String? = null,
     var mainImageModel: String = "",
+    /* Embedding Model Settings */
+    var embeddingModel: EmbeddingModel? = null,
+
+
+    /* AWS Settings */
+    var awsProfile: String? = null,
+    var awsRegion: String? = null,
+    var awsBucket: String? = null,
+
+    /* System Configuration */
+    val executables: MutableSet<String>? = mutableSetOf(),
     var analyticsEnabled: Boolean = false,
+    var diffLoggingEnabled: Boolean = false,
     var listeningPort: Int = 8081,
     var listeningEndpoint: String = "localhost",
     var apiThreads: Int = 4,
     var modalTasks: Boolean = false,
     var suppressErrors: Boolean = false,
-    var apiLog: Boolean = false,
     var devActions: Boolean = false,
     var disableAutoOpenUrls: Boolean = false,
-    var storeMetadata: String? = null,
-    var transcriptionModel: String? = null,
     var pluginHome: File = run {
         var logPath = System.getProperty("idea.plugins.path")
         if (logPath == null) {
@@ -85,40 +109,106 @@ data class AppSettingsState(
     var showWelcomeScreen: Boolean = true,
     var greetedVersion: String = "",
     var shellCommand: String = getDefaultShell(),
-    var awsProfile: String? = null,
-    var awsRegion: String? = null,
-    var awsBucket: String? = null,
-    val apiKeys: MutableMap<String, String>? = mapOf("OpenAI" to "").toMutableMap(),
-    val apiBase: MutableMap<String, String>? = mapOf("OpenAI" to "https://api.openai.com/v1").toMutableMap(),
-    val userSuppliedModels: MutableList<String>? = mutableListOf(),
-    val executables: MutableSet<String>? = mutableSetOf(),
+
+    /* Recent Activity Helpers */
     val savedCommandConfigsJson: MutableMap<String, String>? = mutableMapOf(),
     val savedPlanConfigs: MutableMap<String, String>? = mutableMapOf(),
     val recentCommandsJson: MutableMap<String, String>? = mutableMapOf(),
     val recentArguments: MutableList<String>? = mutableListOf(),
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
 ) : PersistentStateComponent<SimpleEnvelope> {
+    @JsonIgnore
+    private val userSettingsManager = UserSettingsManager()
 
     @JsonIgnore
-    override fun getState(): SimpleEnvelope {
-        val value = toJson(this)
+    fun getUserSettings(): UserSettings = userSettingsManager.getUserSettings(defaultUser)
 
-        return SimpleEnvelope(value)
-    }
+    @JsonIgnore
+    fun updateUserSettings(settings: UserSettings) =
+        userSettingsManager.updateUserSettings(defaultUser, settings)
+
+    @get:JsonIgnore
+    val smartChatClient: Chatter get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
+
+    @get:JsonIgnore
+    val fastChatClient: Chatter get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
+
+    @get:JsonIgnore
+    val embeddingClient: com.simiacryptus.cognotik.embedding.Embedder? get() = embeddingModel?.instance()
+
+    @JsonIgnore
+    override fun getState() = SimpleEnvelope(toJson(this))
 
     @JsonIgnore
     private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
-        val mapper = com.fasterxml.jackson.databind.ObjectMapper()
-        val appSettings = fromJson<AppSettingsState>(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
+        val mapper = ObjectMapper()
+        val appSettings = try {
+                fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
+            } catch (e: Exception) {
+                log.warn("Error parsing settings: ${jsonNode}", e)
+                AppSettingsState()
+            }
 
-        if (jsonNode.has("apiKey") && !jsonNode.has("apiKeys")) {
+        // Migrate legacy API keys to UserSettingsManager
+        val userSettings = getUserSettings()
+        var needsUpdate = false
 
+        // Handle old apiKey field
+        if (jsonNode.has("apiKey")) {
             val apiKeyNode = jsonNode.get("apiKey")
             if (apiKeyNode.isObject) {
-                appSettings.apiKeys?.clear()
-                apiKeyNode.fields().forEach { (key, value) -> appSettings.apiKeys?.set(key, value.asText()) }
+                apiKeyNode.fields().forEach { (providerName, keyValue) ->
+                    try {
+                        val provider = APIProvider.valueOf(providerName)
+                        val existingApi = userSettings.apis.find { it.provider == provider }
+                        if (existingApi == null) {
+                            userSettings.apis.add(
+                                ApiData(
+                                    key = keyValue.asText(),
+                                    provider = provider,
+                                    baseUrl = provider.base
+                                ).validate()
+                            )
+                            needsUpdate = true
+                        }
+                    } catch (e: Exception) {
+                        log.warn("Unknown provider in legacy config: $providerName", e)
+                    }
+                }
             }
         }
+
+        // Handle apiKeys and apiBase fields
+        if (jsonNode.has("apiKeys") || jsonNode.has("apiBase")) {
+            val apiKeysNode = jsonNode.get("apiKeys")
+            val apiBaseNode = jsonNode.get("apiBase")
+
+            if (apiKeysNode != null && apiKeysNode.isObject) {
+                apiKeysNode.fields().forEach { (providerName, keyValue) ->
+                    try {
+                        val provider = APIProvider.valueOf(providerName)
+                        val baseUrl = apiBaseNode?.get(providerName)?.asText() ?: provider.base
+                        val existingApi = userSettings.apis.find { it.provider == provider }
+                        if (existingApi == null) {
+                            userSettings.apis.add(
+                                ApiData(
+                                    key = keyValue.asText(),
+                                    provider = provider,
+                                    baseUrl = baseUrl
+                                ).validate()
+                            )
+                            needsUpdate = true
+                        }
+                    } catch (e: Exception) {
+                        log.warn("Unknown provider in legacy config: $providerName", e)
+                    }
+                }
+            }
+        }
+        if (needsUpdate) {
+            updateUserSettings(userSettings)
+        }
+
         return appSettings
     }
 
@@ -137,7 +227,7 @@ data class AppSettingsState(
         state.value ?: return
         val fromJson = try {
 
-            val mapper = com.fasterxml.jackson.databind.ObjectMapper()
+            val mapper = ObjectMapper()
             val jsonNode = mapper.readTree(state.value)
 
             handleLegacyApiKeys(jsonNode)
@@ -148,12 +238,7 @@ data class AppSettingsState(
         }
 
         XmlSerializerUtil.copyBean(fromJson, this)
-        /* Copy userSuppliedModels */
-        userSuppliedModels?.clear()
-        fromJson.userSuppliedModels?.map { fromJson<UserSuppliedModel>(it, UserSuppliedModel::class.java) }
-            ?.forEach { model ->
-                userSuppliedModels?.add(toJson(model))
-            }
+
         /* Copy executables */
         executables?.clear()
         fromJson.executables?.forEach { executable ->
@@ -184,16 +269,6 @@ data class AppSettingsState(
         fromJson.recentWorkingDirs?.forEach { workingDir ->
             recentWorkingDirs?.add(workingDir)
         }
-        /* Copy apiBase */
-        apiBase?.clear()
-        fromJson.apiBase?.forEach { (key, value) ->
-            apiBase?.set(key, value)
-        }
-        /* Copy apiKeys */
-        apiKeys?.clear()
-        fromJson.apiKeys?.forEach { (key, value) ->
-            apiKeys?.set(key, value)
-        }
         notifySettingsLoaded()
     }
 
@@ -211,32 +286,26 @@ data class AppSettingsState(
         if (sampleSize != other.sampleSize) return false
         if (channels != other.channels) return false
         if (temperature != other.temperature) return false
-        if (smartModel != other.smartModel) return false
-        if (fastModel != other.fastModel) return false
-        if (mainImageModel != other.mainImageModel) return false
+if (smartModel != other.smartModel) return false
+         if (fastModel != other.fastModel) return false
+         if (mainImageModel != other.mainImageModel) return false
         if (listeningPort != other.listeningPort) return false
         if (listeningEndpoint != other.listeningEndpoint) return false
         if (apiThreads != other.apiThreads) return false
-        if (apiBase != other.apiBase) return false
-        if (apiKeys != other.apiKeys) return false
         if (modalTasks != other.modalTasks) return false
         if (suppressErrors != other.suppressErrors) return false
-        if (apiLog != other.apiLog) return false
         if (devActions != other.devActions) return false
-        if (storeMetadata != other.storeMetadata) return false
         if (FileUtil.filesEqual(pluginHome, other.pluginHome)) return false
         if (recentCommandsJson != other.recentCommandsJson) return false
         if (showWelcomeScreen != other.showWelcomeScreen) return false
         if (greetedVersion != other.greetedVersion) return false
         if (mainImageModel != other.mainImageModel) return false
         if (executables != other.executables) return false
-
-        if (userSuppliedModels != other.userSuppliedModels) return false
+        if (embeddingModel != other.embeddingModel) return false
         if (awsProfile != other.awsProfile) return false
         if (awsRegion != other.awsRegion) return false
         if (awsBucket != other.awsBucket) return false
         if (selectedMicLine != other.selectedMicLine) return false
-        if (reasoningEffort != other.reasoningEffort) return false
         return true
     }
 
@@ -257,42 +326,33 @@ data class AppSettingsState(
         result = 31 * result + listeningPort
         result = 31 * result + listeningEndpoint.hashCode()
         result = 31 * result + apiThreads
-        result = 31 * result + (apiBase?.hashCode() ?: 0)
-        result = 31 * result + (apiKeys?.hashCode() ?: 0)
         result = 31 * result + modalTasks.hashCode()
         result = 31 * result + suppressErrors.hashCode()
-        result = 31 * result + apiLog.hashCode()
         result = 31 * result + devActions.hashCode()
-        result = 31 * result + (storeMetadata?.hashCode() ?: 0)
         result = 31 * result + FileUtil.fileHashCode(pluginHome)
         result = 31 * result + recentCommandsJson.hashCode()
         result = 31 * result + showWelcomeScreen.hashCode()
         result = 31 * result + greetedVersion.hashCode()
         result = 31 * result + mainImageModel.hashCode()
         result = 31 * result + executables.hashCode()
-        result = 31 * result + userSuppliedModels.hashCode()
+        result = 31 * result + (embeddingModel?.hashCode() ?: 0)
         result = 31 * result + (awsProfile?.hashCode() ?: 0)
         result = 31 * result + (awsRegion?.hashCode() ?: 0)
         result = 31 * result + (awsBucket?.hashCode() ?: 0)
         result = 31 * result + (selectedMicLine?.hashCode() ?: 0)
-        result = 31 * result + reasoningEffort.hashCode()
         return result
     }
 
     companion object {
+        var lastEvent: AnActionEvent? = null
         val log = LoggerFactory.getLogger(AppSettingsState::class.java)
         var auxiliaryLog: File? = null
         const val WELCOME_VERSION: String = "1.5.0"
 
         @JvmStatic
         val instance: AppSettingsState by lazy {
+            require(APIProvider.values().isNotEmpty()) { "No API providers registered" }
             ApplicationManager.getApplication()?.getService(AppSettingsState::class.java) ?: AppSettingsState()
-        }
-
-        fun String.imageModel(): ImageModels {
-            return ImageModels.values().firstOrNull {
-                it.modelName == this || it.name == this
-            } ?: ImageModels.DallE3
         }
 
         fun getDefaultShell() = if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
@@ -302,6 +362,11 @@ data class AppSettingsState(
         fun notifySettingsLoaded() {
             onSettingsLoadedListeners.forEach { it() }
         }
+
+        @JsonIgnore
+        val defaultUser = User(id = "1", email = "user@localhost")
+        val currentSession = Session.Companion.newGlobalID()
+        val workPool = ApplicationServices.clientManager.getPool(currentSession, defaultUser)
     }
 
     data class UserSuppliedModel(
@@ -314,29 +379,21 @@ data class AppSettingsState(
         val name: String,
         val temperature: Double,
         val autoFix: Boolean,
-        val apiBudget: Double? = 10.0,
         val taskSettings: Map<String, TaskSettingsBase>
     )
-
 }
 
-
-fun String.chatModel() = (values().entries.find {
-    it.key.equals(this, true) || it.value.modelName.equals(this, true)
-}?.value ?: ChatModelType(
-    name = this,
-    modelName = this,
-    maxTotalTokens = 4096,
-    provider = APIProvider.Companion.OpenAI,
-    inputTokenPricePerK = 0.0,
-    outputTokenPricePerK = 0.0
-)).let { chatModel ->
-    chatModel.instance(
-        key = AppSettingsState.instance.apiKeys?.get(chatModel.provider.name)
-            ?: throw IllegalArgumentException("API key for ${chatModel.provider.name} is not set"),
-        base = AppSettingsState.instance.apiBase?.get(chatModel.provider.name) ?: chatModel.provider.base
-            ?: throw IllegalArgumentException("API base for ${chatModel.provider.name} is not set"),
-        logLevel = Level.INFO,
-        logStreams = mutableListOf()
-    )
+fun String.imageModel(): ImageModels {
+    return ImageModels.values().firstOrNull {
+        it.modelName == this || it.name == this
+    } ?: ImageModels.DallE3
 }
+
+fun ApiChatModel.instance(): Chatter? = model?.instance(
+    key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
+    base = provider?.provider?.base ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
+    logLevel = Level.INFO,
+    logStreams = mutableListOf(),
+    temperature = AppSettingsState.instance.temperature,
+    workPool = AppSettingsState.workPool
+)

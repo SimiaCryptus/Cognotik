@@ -1,15 +1,11 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
-import com.simiacryptus.cognotik.platform.ApplicationServices.cloud
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.jopenai.OpenAIClient
-import com.simiacryptus.jopenai.models.ApiModel.EmbeddingRequest
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.JsonUtil
 import java.io.IOException
 import java.util.*
 
@@ -30,19 +26,6 @@ class TensorflowProjector(
     }
 
     @Throws(IOException::class)
-    private fun toVectorMap(vararg words: String): Map<String, DoubleArray> {
-        val vectors = words.map { word ->
-            word to api.createEmbedding(
-                EmbeddingRequest(
-                    model = EmbeddingModel.AdaEmbedding.modelName,
-                    input = word.trim(),
-                )
-            ).data.first().embedding!!
-        }
-        return vectors.toMap()
-    }
-
-    @Throws(IOException::class)
 
     fun writeTensorflowEmbeddingProjectorHtmlFromRecords(records: List<DocumentRecord>): String {
         val vectorMap = records
@@ -51,15 +34,6 @@ class TensorflowProjector(
                 record.text!!.trim() to record.vector!!
             }
         require(vectorMap.isNotEmpty()) { "No valid records found with both text and vector" }
-        return writeTensorflowEmbeddingProjectorHtmlFromVectorMap(vectorMap)
-    }
-
-    @Throws(IOException::class)
-
-    fun writeTensorflowEmbeddingProjectorHtml(vararg words: String): String {
-        val filteredWords = words.filter { it.isNotBlank() }.distinct()
-        require(filteredWords.isNotEmpty()) { "No valid words provided" }
-        val vectorMap = toVectorMap(*filteredWords.toTypedArray())
         return writeTensorflowEmbeddingProjectorHtmlFromVectorMap(vectorMap)
     }
 
@@ -120,14 +94,6 @@ class TensorflowProjector(
                 ></iframe>
             </div>
             """.trimIndent()
-    }
-
-    private fun cloudWriter(
-        uuid: UUID = UUID.randomUUID()
-    ): (String, String) -> String? {
-        return { filename: String, data: String ->
-            cloud?.upload("projector/$sessionID/$uuid/$filename", "text/plain", data)
-        }
     }
 
     private fun sessionWriter(

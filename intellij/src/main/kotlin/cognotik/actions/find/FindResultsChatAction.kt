@@ -1,7 +1,6 @@
 package cognotik.actions.find
 
 import cognotik.actions.BaseAction
-import cognotik.actions.agent.MultiStepPatchAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -25,10 +24,6 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.chat.model.chatModelType
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon
@@ -175,19 +170,12 @@ class FindResultsChatAction(
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: API
+            ui: ApplicationInterface
         ) {
-            val settings = getSettings(session, user) ?: MultiStepPatchAction.AutoDevApp.Settings()
-            if (api is ProvidersChatClient) api.budget = settings.budget ?: 2.00
-
             val task = ui.newTask()
-            val api = (api as ChatClientInterface).getChildClient(task)
-
             task.echo(renderMarkdown(userMessage))
-
             task.verbose((getCodeContext()).renderMarkdown())
-
+            val model = AppSettingsState.instance.smartChatClient.getChildClient(task)
             Retryable(ui = ui, task = task) { content ->
                 val task = ui.newTask(false)
                 task.add(
@@ -197,8 +185,8 @@ class FindResultsChatAction(
                              You are a helpful AI that helps people understand code.
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
-                            model = AppSettingsState.instance.smartModel.chatModelType()
-                        ).answer(listOf(userMessage), api = api)
+                            model = model
+                        ).answer(listOf(userMessage),)
                     ) + "</div>"
                 )
                 task.placeholder

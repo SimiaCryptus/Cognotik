@@ -1,12 +1,11 @@
 package com.simiacryptus.cognotik.apps.parse
 
 import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.Description
 
 class LogPatternGenerator(
-    private val parsingModel: ChatModelType,
+    private val parsingModel: Chatter,
     private val temperature: Double
 ) {
     data class PatternResponse(
@@ -26,7 +25,7 @@ class LogPatternGenerator(
         Return only the regex patterns with descriptions, no matches or analysis.
     """.trimIndent()
 
-    fun generatePatterns(api: API, text: String): List<LogDataParsingModel.PatternData> {
+    fun generatePatterns(text: String): List<LogDataParsingModel.PatternData> {
         val parser = ParsedActor(
             resultClass = PatternResponse::class.java,
             exampleInstance = PatternResponse(),
@@ -34,7 +33,7 @@ class LogPatternGenerator(
             parsingModel = parsingModel,
             temperature = temperature,
             model = parsingModel,
-        ).getParser(api, promptSuffix = promptSuffix)
+        ).getParser(promptSuffix = promptSuffix)
 
         return parser.apply(text).patterns ?: emptyList()
     }

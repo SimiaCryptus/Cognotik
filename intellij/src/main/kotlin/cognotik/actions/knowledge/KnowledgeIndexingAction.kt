@@ -14,13 +14,14 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.parse.RawTextParsingModel.Companion.SplitPatterns
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.EmbeddingModel
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.io.File
@@ -38,7 +39,7 @@ class KnowledgeIndexingAction : BaseAction() {
     data class IndexingSettings(
         var filePaths: List<String> = emptyList(),
         var splitRegex: String = SplitPatterns.DEFAULT,
-        var embeddingModel: EmbeddingModel = EmbeddingModel.OllamaNomadic
+        var embeddingModel: EmbeddingModel? = AppSettingsState.instance.embeddingModel
     )
 
     class SettingsUI {
@@ -276,8 +277,7 @@ class KnowledgeIndexingAction : BaseAction() {
                             indicator.text = "Creating indexing server..."
                             SessionProxyServer.chats[session] = KnowledgeIndexingServer(
                                 settings = settings,
-                                api = api,
-                                model = settings.embeddingModel
+                                model = settings.embeddingModel ?: throw IllegalStateException("No embedding model selected")
                             )
 
                             ApplicationServer.appInfoMap[session] = AppInfoData(

@@ -2,14 +2,13 @@ package com.simiacryptus.cognotik.plan.tools.knowledge
 
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFile
 import com.simiacryptus.cognotik.apps.parse.ProgressState
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -43,7 +42,6 @@ class KnowledgeIndexingTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -75,13 +73,11 @@ class KnowledgeIndexingTask(
         )
         try {
             val progressState = ProgressState.progressBar(task)
-            val embeddingClient = OllamaEmbeddingClient(workPool = threadPool)
             indexJsonFile(
-                embeddingClient = embeddingClient,
                 pool = threadPool,
                 progressState = progressState,
                 inputPaths = files.map { it.absolutePath }.toTypedArray(),
-                model = EmbeddingModel.Large
+                model = EmbeddingModel.OllamaNomadic
             )
 
             val result = buildString {

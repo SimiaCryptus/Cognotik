@@ -2,16 +2,14 @@ package com.simiacryptus.cognotik.webui.test
 
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.util.LoggerFactory
 import java.util.*
 
 open class CodingActorTestApp(
@@ -23,13 +21,12 @@ open class CodingActorTestApp(
     path = "/codingActorTest",
 ) {
     override fun userMessage(
-        session: Session, user: User?, userMessage: String, ui: ApplicationInterface, api: API
+        session: Session, user: User?, userMessage: String, ui: ApplicationInterface
     ) {
-        (api as ChatClientInterface).budget = 2.00
         val message = ui.newTask()
         try {
             message.echo(userMessage.renderMarkdown)
-            val response = actor.answer(CodingActor.CodeRequest(listOf(userMessage to ApiModel.Role.user)), api = api)
+            val response = actor.answer(CodingActor.CodeRequest(listOf(userMessage to ApiModel.Role.user)))
             val canPlay =
                 ApplicationServices.authorizationManager.isAuthorized(this::class.java, user, OperationType.Execute)
             val playLink = if (!canPlay) "" else {

@@ -3,6 +3,8 @@ package com.simiacryptus.cognotik.apps.general
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -15,11 +17,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -30,9 +27,8 @@ import java.util.concurrent.TimeUnit
 abstract class PatchApp(
     override val root: File,
     protected val settings: Settings,
-    private val api: ChatClientInterface,
-    val model: ChatModelType,
-    val parsingModel: ChatModelType,
+    val model: Chatter,
+    val parsingModel: Chatter,
     private val promptPrefix: String = """The following command was run and produced an error:""",
 ) : ApplicationServer(
     applicationName = "Magic Code Fixer",
@@ -161,7 +157,8 @@ abstract class PatchApp(
             val newTask = ui.newTask(false)
             Thread {
                 log.info("Starting run thread")
-                val result = run(ui, newTask)
+                val model = model.getChildClient(task)
+                val result = run(ui, newTask, model)
                 log.info("Run completed with exit code: ${result.exitCode}")
                 if (result.exitCode != 0 && retries > 0) {
                     log.info("Triggering retry (${retries} remaining)")
@@ -257,6 +254,7 @@ abstract class PatchApp(
     fun run(
         ui: ApplicationInterface,
         task: SessionTask,
+        model: Chatter,
     ): OutputResult {
         log.info("Starting run with settings: ${JsonUtil.toJson(settings)}")
 
@@ -273,10 +271,9 @@ abstract class PatchApp(
         val fixTask = ui.newTask(false).apply { tabs["Fix"] = placeholder }
         try {
             log.info("Creating child API client for fix task")
-            val api = api.getChildClient(fixTask)
             val plan = if (outputResult.errors == null) {
                 log.info("No pre-parsed errors, parsing errors from output")
-                parsedErrorsParsedResponse(settings = settings, output = outputResult, api = api)
+                parsedErrorsParsedResponse(settings = settings, output = outputResult, model = model)
             } else {
                 log.info("Using pre-parsed errors")
                 object : ParsedResponse<ParsedErrors>(
@@ -308,8 +305,8 @@ abstract class PatchApp(
                 ui = ui,
                 settings = settings,
                 changed = mutableSetOf(),
-                api = api,
-                progressHeader = progressHeader
+                progressHeader = progressHeader,
+                model = model
             )
         } catch (e: Exception) {
             log.error("Error during fix process", e)
@@ -332,8 +329,8 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         settings: Settings,
         changed: MutableSet<Path>,
-        api: ChatClientInterface,
-        progressHeader: StringBuilder?
+        progressHeader: StringBuilder?,
+        model: Chatter
     ) {
         log.info("Starting fixAllErrors")
         val tabs = TabbedDisplay(task)
@@ -394,8 +391,8 @@ abstract class PatchApp(
                             ui,
                             settings.autoFix,
                             changed,
-                            api,
-                            task
+                            task,
+                            model
                         )
                     }
                 }
@@ -406,7 +403,7 @@ abstract class PatchApp(
     }
 
     private fun parsedErrorsParsedResponse(
-        settings: Settings, output: OutputResult, api: ChatClientInterface
+        settings: Settings, output: OutputResult, model: Chatter
     ): ParsedResponse<ParsedErrors> {
         log.info("Parsing errors from command output")
         val plan = ParsedActor(
@@ -460,7 +457,7 @@ abstract class PatchApp(
         ).answer(
             listOf(
                 "$promptPrefix\n\n${tripleTilde}\n${output.output}\n${tripleTilde}"
-            ), api = api
+            ),
         )
         log.info("Error parsing completed")
         return plan
@@ -472,11 +469,10 @@ abstract class PatchApp(
         ui: ApplicationInterface,
         autoFix: Boolean,
         changed: MutableSet<Path>,
-        api: ChatClientInterface,
         task: SessionTask,
+        model: Chatter,
     ) {
         log.info("Starting fix for error: ${error.message}")
-        val childApi = api.getChildClient(task)
         val paths = ((error.research?.fixFiles ?: emptyList()) +
                 (error.research?.relatedFiles ?: emptyList()) +
                 (error.locations?.map { it.file } ?: emptyList()) +
@@ -524,8 +520,8 @@ abstract class PatchApp(
                         (if (error.details?.isNotBlank() == true) "Details:\n  ${error.details}\n" else "") +
                         (if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else "")
             ),
-            api = childApi
-        ).lines().joinToString("\n") {
+
+            ).lines().joinToString("\n") {
             it.replace(Regex("""/\* Error.*?\*/"""), "")
         }
         log.info("Received fix response (${fixResponse.length} chars)")
@@ -533,7 +529,6 @@ abstract class PatchApp(
             root = root.toPath(),
             response = fixResponse,
             ui = ui,
-            api = childApi,
             shouldAutoApply = { path ->
                 if (autoFix && !changed.contains(path)) {
                     log.info("Auto-applying fix to: $path")

@@ -23,29 +23,6 @@ data class License(
     val url: String? = null
 )
 
-data class PathItem(
-    val get: Operation? = null,
-    val put: Operation? = null,
-    val post: Operation? = null,
-    val delete: Operation? = null,
-    val options: Operation? = null,
-    val head: Operation? = null,
-    val patch: Operation? = null
-)
-
-data class Operation(
-    val summary: String? = null,
-    val description: String? = null,
-    val responses: Map<String, Response>? = emptyMap(),
-    val parameters: List<Parameter>? = emptyList(),
-    val operationId: String? = null,
-    val requestBody: RequestBody? = null,
-    val security: List<Map<String, List<String>>>? = emptyList(),
-    val tags: List<String>? = emptyList(),
-    val callbacks: Map<String, Callback>? = emptyMap(),
-    val deprecated: Boolean? = null,
-)
-
 data class Response(
     val description: String? = null,
     @JsonInclude(JsonInclude.Include.NON_NULL)

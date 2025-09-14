@@ -6,18 +6,11 @@ import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.Selenium
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.toJson
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -43,8 +36,8 @@ class CrawlerAgentTask(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
-        @Description("Method to seed the crawler (GoogleSearch or DirectUrls)") val seed_method: SeedMethod = SeedMethod.GoogleSearch,
-        @Description("Method used to fetch content from  URLs (HttpClient or Selenium)") val fetch_method: FetchMethod = FetchMethod.HttpClient,
+        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.DuckDuckGoSearch,
+        @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
 
 
@@ -110,14 +103,13 @@ class CrawlerAgentTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
         val webSearchDir = File(agent.root.toFile(), ".websearch")
         if (!webSearchDir.exists()) webSearchDir.mkdirs()
 
-        val seedMethod = taskConfig?.seed_method ?: SeedMethod.GoogleSearch
+        val seedMethod = taskConfig?.seed_method ?: SeedMethod.DuckDuckGoSearch
         val seedItems = seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
 
         val pageQueue = mutableListOf<LinkData>().apply {
@@ -185,7 +177,7 @@ class CrawlerAgentTask(
                                             else -> "Analyze the content and provide insights."
                                         }
                                         val analysis: ParsedResponse<ParsedPage> =
-                                            transformContent(content, analysisGoal, api, planSettings, agent.describer)
+                                            transformContent(content, analysisGoal, planSettings, agent.describer)
 
                                         if (analysis.obj.page_type == PageType.Error) {
                                             appendLine(
@@ -281,7 +273,7 @@ class CrawlerAgentTask(
         }.joinToString("\n")
         val finalOutput =
             if (create_final_summary != false && analysisResults.length > max_final_output_size) {
-                createFinalSummary(analysisResults, api)
+                createFinalSummary(analysisResults)
             } else {
                 analysisResults
             }
@@ -292,7 +284,7 @@ class CrawlerAgentTask(
         resultFn(finalOutput)
     }
 
-    private fun createFinalSummary(analysisResults: String, api: API): String {
+    private fun createFinalSummary(analysisResults: String): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
         val maxSize = /*taskConfig?.max_final_output_size ?:*/ max_final_output_size
 
@@ -324,11 +316,11 @@ class CrawlerAgentTask(
                 "Include the most important links that should be followed up on.",
                 "Keep your response under ${maxSize / 1000}K characters."
             ).joinToString("\n\n"),
-            model = taskSettings.model ?: planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter,
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
-            ), api
+            ),
         )
         return header + summary
     }
@@ -427,14 +419,13 @@ class CrawlerAgentTask(
     private fun transformContent(
         content: String,
         analysisGoal: String,
-        api: API,
         planSettings: PlanSettings,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
 
         val maxChunkSize = 50000
         if (content.length <= maxChunkSize) {
-            return pageParsedResponse(planSettings, analysisGoal, content, api, describer)
+            return pageParsedResponse(planSettings, analysisGoal, content, describer)
         }
 
         log.info("Content size (${content.length}) exceeds limit, splitting into chunks")
@@ -443,20 +434,19 @@ class CrawlerAgentTask(
         val chunkResults = chunks.mapIndexed { index, chunk ->
             log.info("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
             val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
-            pageParsedResponse(planSettings, chunkGoal, chunk, api, describer)
+            pageParsedResponse(planSettings, chunkGoal, chunk, describer)
         }
         if (chunkResults.size == 1) {
             return chunkResults[0]
         }
         val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n") { it.text }
-        return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, api, describer)
+        return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, describer)
     }
 
     private fun pageParsedResponse(
         planSettings: PlanSettings,
         analysisGoal: String,
         content: String,
-        api: API,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
         val summaryPrompt = listOf(
@@ -470,10 +460,10 @@ class CrawlerAgentTask(
         return ParsedActor(
             prompt = summaryPrompt,
             resultClass = ParsedPage::class.java,
-            model = taskSettings.model ?: planSettings.parsingModel,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter,
             describer = describer,
-            parsingModel = planSettings.parsingModel,
-        ).answer(listOf(summaryPrompt), api)
+            parsingModel = planSettings.parsingChatter,
+        ).answer(listOf(summaryPrompt))
     }
 
     private fun splitContentIntoChunks(content: String, maxChunkSize: Int): List<String> {

@@ -12,7 +12,7 @@ open class TabbedDisplay(
     var selectedTab: Int = 0
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(TabbedDisplay::class.java)
+        val log = LoggerFactory.getLogger(TabbedDisplay::class.java)
     }
 
     val size: Int get() = tabs.size

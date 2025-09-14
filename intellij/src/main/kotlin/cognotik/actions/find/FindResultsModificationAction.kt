@@ -27,7 +27,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.chat.model.chatModelType
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -124,7 +123,7 @@ class FindResultsModificationAction(
             val socketManager = super.newSession(user, session)
             val ui = (socketManager as ApplicationSocketManager).applicationInterface
             val task = ui.newTask()
-            val api = api.getChildClient(task)
+            //val api = api.getChildClient(task)
             val tabs = TabbedDisplay(task)
             usages.entries.map { (file, usages) ->
                 val task = ui.newTask(false)
@@ -144,14 +143,14 @@ class FindResultsModificationAction(
                             "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + patchFormatPrompt
                 }
                 ui.socketManager!!.pool.submit {
-                    val api = api.getChildClient(task)
+                    //val api = api.getChildClient(task)
                     val response = SimpleActor(
                         prompt = prompt,
-                        model = AppSettingsState.instance.smartModel.chatModelType()
+                        model = AppSettingsState.instance.smartChatClient.getChildClient(task)
                     ).answer(
                         listOf(
                             fileListingMarkdown
-                        ), api
+                        ),
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
                     AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -164,7 +163,6 @@ class FindResultsModificationAction(
                             }
                         },
                         ui = ui,
-                        api = api,
                         shouldAutoApply = { modificationParams.autoApply },
                         defaultFile = file?.toFile?.path
                     )?.apply {

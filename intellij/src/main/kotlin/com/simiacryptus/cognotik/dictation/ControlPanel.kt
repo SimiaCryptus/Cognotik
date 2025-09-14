@@ -6,8 +6,8 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.SpeechToTextWidget.Companion.toggleRecording
-import com.simiacryptus.jopenai.audio.DictationManager
-import com.simiacryptus.jopenai.models.AudioModels
+import com.simiacryptus.cognotik.audio.DictationManager
+import com.simiacryptus.cognotik.audio.AudioModels
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.MouseAdapter

@@ -8,9 +8,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.chatModel
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
@@ -21,11 +22,6 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.ChatModelType.ChatModel
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.util.GPT4Tokenizer
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Path
@@ -66,12 +62,10 @@ open class ModifyFilesAction(
                 session,
                 "${getActionName()} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
             )
-            val model = AppSettingsState.instance.smartModel.chatModel()
-            val parsingModel = AppSettingsState.instance.fastModel.chatModel()
             SessionProxyServer.agents[session] = PatchChatManager(
                 session = session,
-                model = model,
-                parsingModel = parsingModel,
+                model = AppSettingsState.instance.smartChatClient,
+                parsingModel = AppSettingsState.instance.fastChatClient,
                 root = root.toFile(),
                 files = initialFiles,
                 showLineNumbers = showLineNumbers
@@ -119,8 +113,8 @@ open class ModifyFilesAction(
 
     inner class PatchChatManager(
         session: Session,
-        model: ChatModel,
-        parsingModel: ChatModel,
+        model: Chatter,
+        parsingModel: Chatter,
         val root: File,
         private val files: Set<Path>,
         private val showLineNumbers: Boolean = false
@@ -129,7 +123,6 @@ open class ModifyFilesAction(
         model = model,
         parsingModel = parsingModel,
         systemPrompt = "",
-        api = api,
         applicationClass = ApplicationServer::class.java,
         storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
         budget = 2.0,
@@ -185,7 +178,6 @@ open class ModifyFilesAction(
                     }
                 },
                 ui = ui,
-                api = api,
                 defaultFile = if (files.size == 1) files.first().let {
                     root.toPath().resolve(it).toFile().absolutePath
                 } else null,
@@ -193,7 +185,6 @@ open class ModifyFilesAction(
         }
 
         override fun respond(
-            api: ChatClientInterface,
             task: SessionTask,
             userMessage: String,
             currentChatMessages: List<ApiModel.ChatMessage>,
@@ -204,16 +195,11 @@ open class ModifyFilesAction(
                 "* $path - ${codex.estimateTokenCount(root.resolve(path.toFile()).readText())} tokens"
             }).renderMarkdown())
             val settings = Settings()
-            api.budget = settings.budget ?: 2.00
-            return super.respond(api, task, userMessage, currentChatMessages, transcriptStream)
+            return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(ModifyFilesAction::class.java)
     }
-}
-
-class ModifyFilesWithLineNumbersAction : ModifyFilesAction(showLineNumbers = true) {
-    override fun getActionName(): String = "MultiDiffChatWithLineNumbers"
 }

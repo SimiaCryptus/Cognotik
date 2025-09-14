@@ -1,23 +1,16 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.toJson
-import com.simiacryptus.util.LoggerFactory
 import java.nio.file.FileSystems
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
@@ -78,7 +71,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             }).
                 This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
-            model = taskSettings.model ?: planSettings.defaultModel,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
             temperature = planSettings.temperature,
         )
     }
@@ -87,7 +80,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
@@ -110,7 +102,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${this.taskConfig?.toJson()}"
             },
             heading = "",
-            initialResponse = { it: String -> insightActor.answer(toInput(it), api = api) },
+            initialResponse = { it: String -> insightActor.answer(toInput(it)) },
             outputFn = { design: String ->
                 MarkdownUtil.renderMarkdown(design, ui = agent.ui)
             },
@@ -124,7 +116,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 insightActor.respond(
                     messages = messages,
                     input = toInput(inStr),
-                    api = api
                 )
             },
             atomicRef = AtomicReference(),
@@ -137,7 +128,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     )
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
             ),
-            api = api
         ).apply {
             task.add(MarkdownUtil.renderMarkdown(this, ui = agent.ui))
         }

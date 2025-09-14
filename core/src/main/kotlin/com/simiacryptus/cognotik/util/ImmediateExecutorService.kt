@@ -1,7 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.User
 import java.util.concurrent.*
 
 /**
@@ -14,10 +12,23 @@ import java.util.concurrent.*
  * @param user The user associated with this executor service, if any.
  */
 class ImmediateExecutorService(
-    private val session: Session,
-    private val user: User?
+    val threadFactory: ThreadFactoryTrackerInterface = ThreadFactoryTracker()
 ) : ExecutorService {
-    val threadFactory = RecordingThreadFactory(session, user)
+
+    abstract class ThreadFactoryTrackerInterface : ThreadFactory {
+        val threads = mutableListOf<Thread>()
+    }
+
+    class ThreadFactoryTracker : ThreadFactoryTrackerInterface() {
+        private val defaultFactory = Executors.defaultThreadFactory()
+        override fun newThread(runnable: Runnable): Thread {
+            val thread = defaultFactory.newThread(runnable)
+            threads.add(thread)
+            thread.isDaemon = true
+            return thread
+        }
+    }
+
     private val executor = ThreadPoolExecutor(
         0,
 

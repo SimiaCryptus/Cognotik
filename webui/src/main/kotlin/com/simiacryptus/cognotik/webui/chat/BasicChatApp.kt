@@ -1,18 +1,21 @@
 package com.simiacryptus.cognotik.webui.chat
 
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.instance
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.chat.model.ChatModelType
 import java.io.File
 
 class BasicChatApp(
     root: File,
-    val model: ChatModelType,
-    val parsingModel: ChatModelType,
+    val model: ChatModel,
+    val parsingModel: ChatModel,
     applicationName: String = "Chat",
     val settings: Settings? = null,
 ) : ApplicationServer(
@@ -25,8 +28,8 @@ class BasicChatApp(
     override val inputCnt get() = 0
 
     data class Settings(
-        val model: ChatModelType,
-        val parsingModel: ChatModelType,
+        val model: ChatModel,
+        val parsingModel: ChatModel,
         val temperature: Double = 0.3,
         val budget: Double = 2.0,
     )
@@ -40,16 +43,26 @@ class BasicChatApp(
     ) as T
 
     override fun newSession(user: User?, session: Session): ChatSocketManager {
+        val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
         val settings = this.settings ?: getSettings(session, user)!!
-
+        fun instance(model: ChatModel): Chatter? {
+            val api = model.getApi(user)
+            return api?.let { apiData ->
+                model.instance(
+                    key = apiData.key,
+                    base = apiData.baseUrl,
+                    temperature = settings.temperature,
+                    workPool = ApplicationServices.clientManager.getPool(session, user),
+                )
+            }
+        }
         return ChatSocketManager(
             session = session,
-            model = settings.model.instance(
-                user ?: throw IllegalArgumentException("User must be provided for chat session")
-            ),
-            parsingModel = settings.parsingModel.instance(user),
+            model = instance(settings.model)
+                ?: throw RuntimeException("No API key for model ${settings.model.name}"),
+            parsingModel = instance(settings.parsingModel)
+                ?: throw RuntimeException("No API key for model ${settings.parsingModel.name}"),
             systemPrompt = "",
-            api = ApplicationServices.clientManager.getChatClient(session, user),
             temperature = settings.temperature,
             applicationClass = this::class.java,
             storage = DataStorage(root),
@@ -58,4 +71,8 @@ class BasicChatApp(
         )
     }
 }
+
+@Deprecated("Need to refactor to include api config")
+fun ChatModel.getApi(user: User): ApiData? =
+    userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == provider }?.validate()
 

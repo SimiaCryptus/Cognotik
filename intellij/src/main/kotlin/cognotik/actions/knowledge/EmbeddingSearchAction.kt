@@ -9,6 +9,9 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.embedding.DistanceType
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -16,8 +19,6 @@ import com.simiacryptus.cognotik.util.getRoot
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.jopenai.opt.DistanceType
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -26,7 +27,6 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import javax.swing.*
-
 class EmbeddingSearchAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
@@ -192,8 +192,7 @@ class EmbeddingSearchAction : BaseAction() {
                     }
                     SessionProxyServer.chats[session] = EmbeddingSearchServer(
                         settings = settings,
-                        api = api,
-                        model = EmbeddingModel.OllamaNomadic,
+                    model = AppSettingsState.instance.embeddingModel ?: throw IllegalStateException("No embedding model configured"),
                         files = expandFiles(*event.getSelectedFiles().toTypedArray()),
                         root = File(event.getRoot())
                     )

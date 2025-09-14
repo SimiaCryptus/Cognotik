@@ -11,8 +11,12 @@ import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -20,23 +24,11 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.ProvidersChatClient
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.ApiModel.Role
-import com.simiacryptus.jopenai.proxy.ValidatedObject
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil.toJson
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -109,21 +101,18 @@ class MultiStepPatchAction : BaseAction() {
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface,
-            api: API
+            ui: ApplicationInterface
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
-                model = AppSettingsState.instance.smartModel.chatModelType()
+                model = AppSettingsState.instance.smartChatClient
             )
-            if (api is ProvidersChatClient) api.budget = settings.budget ?: DEFAULT_BUDGET
             AutoDevAgent(
-                api = api,
                 session = session,
                 user = user,
                 ui = ui,
                 model = settings.model!!,
-                parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
+                parsingModel = AppSettingsState.instance.fastChatClient,
                 event = event,
             ).start(
                 userMessage = userMessage,
@@ -133,7 +122,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: ChatModelType? = AppSettingsState.instance.smartModel.chatModelType(),
+            val model: Chatter? = null,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -143,12 +132,11 @@ class MultiStepPatchAction : BaseAction() {
     }
 
     class AutoDevAgent(
-        val api: API,
         val session: Session,
         val user: User?,
         val ui: ApplicationInterface,
-        val model: ChatModelType,
-        val parsingModel: ChatModelType,
+        val model: Chatter,
+        val parsingModel: Chatter,
         val event: AnActionEvent,
     ) {
         val actors = mapOf(
@@ -194,14 +182,13 @@ class MultiStepPatchAction : BaseAction() {
             }
 
             val task = ui.newTask()
-            val api = (api as ChatClientInterface).getChildClient(task)
 
             val toInput = { it: String -> listOf(codeSummary(), it) }
             val architectureResponse = Discussable(
                 task = task,
                 userMessage = { userMessage },
                 heading = renderMarkdown(userMessage),
-                initialResponse = { it: String -> designActor.answer(toInput(it), api = api) },
+                initialResponse = { it: String -> designActor.answer(toInput(it)) },
                 outputFn = { design: ParsedResponse<TaskList> ->
 
                     AgentPatterns.displayMapInTabs(
@@ -217,7 +204,6 @@ class MultiStepPatchAction : BaseAction() {
                         messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
                             .toTypedArray<ApiModel.ChatMessage>()),
                         input = toInput(userMessage),
-                        api = api
                     )
                 },
                 atomicRef = AtomicReference(),
@@ -270,14 +256,13 @@ class MultiStepPatchAction : BaseAction() {
                                                 },
                                                 architectureResponse.text,
                                                 "Provide a change for ${paths?.joinToString(",") { it } ?: ""} ($description)"
-                                            ), api),
+                                            )),
                                         handle = { newCodeMap ->
                                             newCodeMap.forEach { (path, newCode) ->
                                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                             }
                                         },
                                         ui = ui,
-                                        api = api
                                     )
                                 )
                             } catch (e: Exception) {

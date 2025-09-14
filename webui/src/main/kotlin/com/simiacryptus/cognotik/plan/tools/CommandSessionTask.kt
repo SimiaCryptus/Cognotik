@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools
 
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.util.LoggerFactory
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
@@ -49,8 +48,6 @@ class CommandSessionTask(
         val sessionId: String? = null,
         @Description("Timeout in milliseconds for commands")
         val timeout: Long = TIMEOUT_MS,
-        @Description("Process execution timeout in minutes (default: 15)")
-        val processTimeoutMinutes: Long = 15,
         @Description("Whether to close the session after execution")
         val closeSession: Boolean = false,
         task_description: String? = null,
@@ -82,7 +79,6 @@ class CommandSessionTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {

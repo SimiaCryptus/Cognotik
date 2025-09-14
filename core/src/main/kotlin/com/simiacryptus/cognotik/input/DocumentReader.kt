@@ -30,5 +30,6 @@ fun File.getReader(): DocumentReader = when {
     this.name.endsWith(".rtf", ignoreCase = true) -> RtfReader(this)
     this.name.endsWith(".html", ignoreCase = true) -> HTMLReader(this)
     this.name.endsWith(".htm", ignoreCase = true) -> HTMLReader(this)
+    this.name.endsWith(".eml", ignoreCase = true) -> EmlReader(this)
     else -> TextReader(this)
 }

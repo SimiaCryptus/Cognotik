@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.kotlin
 
-import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.interpreter.Interpreter
+import com.simiacryptus.cognotik.util.FailedToImplementException
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineBase
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineFactoryBase
 import org.jetbrains.kotlin.cli.common.repl.ScriptArgsWithTypes
@@ -64,7 +64,7 @@ open class KotlinInterpreter(
         } catch (ex: ScriptException) {
             wrapException(ex, wrappedCode, code)
         } catch (ex: Throwable) {
-            CodingActor.FailedToImplementException(
+            FailedToImplementException(
                 cause = ex,
                 language = "Kotlin",
                 code = code,
@@ -103,7 +103,7 @@ open class KotlinInterpreter(
         } catch (ex: ScriptException) {
             throw wrapException(ex, wrappedCode, code)
         } catch (ex: Throwable) {
-            throw CodingActor.FailedToImplementException(
+            throw FailedToImplementException(
                 cause = ex,
                 language = "Kotlin",
                 code = code,
@@ -115,7 +115,7 @@ open class KotlinInterpreter(
         cause: ScriptException,
         wrappedCode: String,
         code: String
-    ): CodingActor.FailedToImplementException {
+    ): FailedToImplementException {
         var lineNumber = cause.lineNumber
         var column = cause.columnNumber
         if (lineNumber == -1 && column == -1) {
@@ -125,7 +125,7 @@ open class KotlinInterpreter(
                 column = match.groupValues[2].toInt()
             }
         }
-        return CodingActor.FailedToImplementException(
+        return FailedToImplementException(
             cause = cause,
             message = errorMessage(
                 code = wrappedCode,

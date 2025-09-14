@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -11,42 +10,28 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.BrowseUtil
-import com.simiacryptus.jopenai.chat.model.ChatModelType
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import icons.MyIcons
-import java.awt.BorderLayout
-import java.awt.Component
-import java.awt.FlowLayout
-import java.awt.GridLayout
-import java.awt.Toolkit
+import java.awt.*
 import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
 import java.net.URI
-import java.util.ResourceBundle
+import java.util.*
 import javax.accessibility.AccessibleContext
-import javax.swing.DefaultListModel
-import javax.swing.JButton
-import javax.swing.JComboBox
-import javax.swing.JLabel
-import javax.swing.JList
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JSlider
-import javax.swing.JTabbedPane
-import javax.swing.JTree
-import javax.swing.KeyStroke
-import javax.swing.ListCellRenderer
-import javax.swing.SwingUtilities
+import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
-import kotlin.collections.iterator
 
 class SettingsWidgetFactory : StatusBarWidgetFactory {
 
@@ -75,18 +60,20 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fastModelTree = null
         }
 
-        private fun createModelTree(title: String, selectedModel: String?): Tree {
+        private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
             val root = DefaultMutableTreeNode(title)
 
             val providers = models()
                 .filter { model ->
-                    val providerName = model.second.provider.name
-                    AppSettingsState.Companion.instance.apiKeys?.get(providerName)?.isNotEmpty() == true
+                    val providerName = model.second.provider?.name
+                    AppSettingsState.Companion.instance.getUserSettings().apis.any { api ->
+                        api.provider?.name == providerName && !api.key.isNullOrBlank()
+                    }
                 }
                 .groupBy { it.second.provider }
 
             for ((provider, models) in providers) {
-                val providerNode = DefaultMutableTreeNode(provider.name)
+                val providerNode = DefaultMutableTreeNode(provider?.name)
                 for (model in models) {
                     val modelNode = DefaultMutableTreeNode(model.second.modelName)
                     providerNode.add(modelNode)
@@ -121,17 +108,24 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
+                    val chatModel = ChatModel.values().entries.find { it.value.modelName == modelName }?.value
+                    val userSettings = AppSettingsState.Companion.instance.getUserSettings()
+                    val apiData = userSettings.apis.find { it.provider == chatModel?.provider }
+
+                    
                     when (title) {
-                        "Smart Model" -> AppSettingsState.Companion.instance.smartModel = modelName
-                        "Fast Model" -> AppSettingsState.Companion.instance.fastModel = modelName
+                    "Smart Model" -> AppSettingsState.Companion.instance.smartModel = 
+                        ApiChatModel(chatModel, apiData)
+                    "Fast Model" -> AppSettingsState.Companion.instance.fastModel = 
+                        ApiChatModel(chatModel, apiData)
                     }
                     statusBar?.updateWidget(ID())
                 }
             }
 
-            if (selectedModel != null) {
+            if (selectedModel?.model != null) {
                 SwingUtilities.invokeLater {
-                    setSelectedModel(tree, selectedModel)
+                    setSelectedModel(tree, selectedModel.model!!.modelName ?: "")
                 }
             }
             return tree
@@ -144,15 +138,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             slider.minorTickSpacing = 1
             slider.snapToTicks = true
             val panel = JPanel(BorderLayout(5, 5))
-            val reasoningPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-            val reasoningLabel = JLabel(getMessage("label.reasoningEffort"))
-            val reasoningCombo = JComboBox(arrayOf("Low", "Medium", "High"))
-            reasoningCombo.selectedItem = AppSettingsState.Companion.instance.reasoningEffort
-            reasoningCombo.addActionListener {
-                AppSettingsState.Companion.instance.reasoningEffort = reasoningCombo.selectedItem as String
-            }
-            reasoningPanel.add(reasoningLabel)
-            reasoningPanel.add(reasoningCombo)
 
             val label = JLabel(String.format("%.2f", AppSettingsState.Companion.instance.temperature))
             label.accessibleContext.accessibleDescription = getMessage("label.temperature")
@@ -167,7 +152,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
 
             panel.add(slider, BorderLayout.CENTER)
-            panel.add(reasoningPanel, BorderLayout.SOUTH)
             panel.add(label, BorderLayout.EAST)
             panel
         }
@@ -299,29 +283,29 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 // Recreate model trees when settings are loaded
                 recreateModelTrees()
                SwingUtilities.invokeLater {
-                   if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
-                       setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
+                   AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
+                       setSelectedModel(getSmartModelTree(), model.modelName ?: "")
                    }
-                   if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
-                       setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
+                   AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
+                       setSelectedModel(getFastModelTree(), model.modelName ?: "")
                    }
                }
             }
 
-            if (AppSettingsState.Companion.instance.smartModel.isNotEmpty()) {
+            AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getSmartModelTree(), AppSettingsState.Companion.instance.smartModel)
+                    setSelectedModel(getSmartModelTree(), model.modelName ?: "")
                 }
             }
-            if (AppSettingsState.Companion.instance.fastModel.isNotEmpty()) {
+            AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
                 SwingUtilities.invokeLater {
-                    setSelectedModel(getFastModelTree(), AppSettingsState.Companion.instance.fastModel)
+                    setSelectedModel(getFastModelTree(), model.modelName ?: "")
                 }
             }
         }
 
-        fun models() = ChatModelType.Companion.values().filter { it.value != null && isVisible(it.value!!) }.toList()
-            .sortedBy { "${it.second.provider.name} - ${it.second.modelName}" }
+        fun models() = ChatModel.Companion.values().filter { isVisible(it.value) }.toList()
+            .sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
             return "AICodingAssistant.SettingsWidget"
@@ -418,7 +402,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getSelectedValue(): String {
-            return AppSettingsState.Companion.instance.smartModel
+            return AppSettingsState.Companion.instance.smartModel?.model?.modelName ?: ""
         }
 
         override fun getTooltipText(): String {
@@ -428,14 +412,14 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 "Server stopped"
             }
             return """
-        Smart Model: ${AppSettingsState.Companion.instance.smartModel}<br/>
-        Fast Model: ${AppSettingsState.Companion.instance.fastModel}<br/>
+        Smart Model: ${AppSettingsState.Companion.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
+        Fast Model: ${AppSettingsState.Companion.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
         Temperature: ${AppSettingsState.Companion.instance.temperature}<br/>
         $serverStatus
         """.trimIndent().trim()
         }
 
-        private fun isVisible(it: ChatModelType): Boolean {
+        private fun isVisible(it: ChatModel): Boolean {
             return true
         }
 

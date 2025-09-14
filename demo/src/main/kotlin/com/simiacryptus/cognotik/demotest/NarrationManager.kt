@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.demotest
 
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.InputStream
 
 data class NarrationEntry(

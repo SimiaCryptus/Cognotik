@@ -113,8 +113,8 @@ class ApplyPatchAction : BaseAction(
         if (!super.isEnabled(event)) return false
         val selectedFiles = event.getSelectedFiles()
         when {
-            null == selectedFiles -> return false
-            selectedFiles.size == 0 -> return false
+            false -> return false
+            selectedFiles.isEmpty() -> return false
             selectedFiles.size > 1 -> return false
             selectedFiles.first().isDirectory -> return false
             else -> return true

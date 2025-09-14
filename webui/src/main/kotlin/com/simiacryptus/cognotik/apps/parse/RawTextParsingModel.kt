@@ -1,22 +1,19 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A parsing model for raw text documents that splits text into segments
  * and manages their merging and tagging.
  *
- * @property api The chat client interface for AI operations
  * @property splitRegex Regular expression pattern for splitting text into segments
  * @property maxSegmentLength Maximum length for a single text segment (optional)
  * @property minSegmentLength Minimum length for a single text segment
  * @property maxCacheSize Maximum number of entries in the tag cache
  */
 open class RawTextParsingModel(
-    override val api: ChatClientInterface,
     private val splitRegex: String = SplitPatterns.DEFAULT,
     private val maxSegmentLength: Int? = null,
     private val minSegmentLength: Int = 10,
@@ -91,7 +88,7 @@ open class RawTextParsingModel(
         )
     }
 
-    override fun getFastParser(api: API): (String) -> RawTextData {
+    override fun getFastParser(): (String) -> RawTextData {
         return { text -> parseRawText(text) }
     }
 
@@ -257,32 +254,6 @@ open class RawTextParsingModel(
         }
     }
 
-    /**
-     * Clears the tag cache and resets cache statistics.
-     */
-    fun clearCache() {
-        synchronized(tagCache) {
-            tagCache.clear()
-        }
-        cacheHits.set(0)
-        cacheMisses.set(0)
-        log.debug("Tag cache cleared")
-    }
-
-    /**
-     * Gets current cache statistics.
-     *
-     * @return Map containing cache statistics
-     */
-    fun getCacheStats(): Map<String, Any> = mapOf(
-        "size" to tagCache.size,
-        "hits" to cacheHits.get(),
-        "misses" to cacheMisses.get(),
-        "hitRate" to if (cacheHits.get() + cacheMisses.get() > 0)
-            cacheHits.get().toDouble() / (cacheHits.get() + cacheMisses.get())
-        else 0.0
-    )
-
 
     override fun newDocument() = RawTextData()
 
@@ -301,21 +272,15 @@ open class RawTextParsingModel(
     ) : ParsingModel.ContentData
 
     companion object {
-        private val log = com.simiacryptus.util.LoggerFactory.getLogger(RawTextParsingModel::class.java)
+        private val log = LoggerFactory.getLogger(RawTextParsingModel::class.java)
 
         /**
          * Common regex patterns for text splitting
          */
         object SplitPatterns {
             const val DEFAULT = """(?<=[.!?])\s+|\n{2,}|\n(?=[A-Z])"""
-            const val SENTENCE = """(?<=[.!?])\s+"""
-            const val PARAGRAPH = """\n{2,}"""
-            const val SENTENCE_OR_PARAGRAPH = """(?<=[.!?])\s+|\n{2,}"""
             const val LINE = """\n"""
-            const val MARKDOWN_SECTION = """(?=^#{1,6}\s)"""
-            const val CODE_BLOCK = """```[\s\S]*?```"""
             const val WHITESPACE = """\s+"""
-            const val WORD = """\b"""
         }
     }
 }

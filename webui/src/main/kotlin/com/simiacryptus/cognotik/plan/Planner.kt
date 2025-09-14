@@ -2,15 +2,12 @@ package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.Discussable
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 
@@ -24,11 +21,9 @@ open class Planner {
         userMessage: String,
         ui: ApplicationInterface,
         planSettings: PlanSettings,
-        api: API,
         contextFn: () -> List<String> = { emptyList() },
         describer: TypeDescriber
     ): TaskBreakdownWithPrompt {
-        val api = (api as ChatClientInterface).getChildClient(task)
         val toInput = inputFn(codeFiles, files, root)
         task.echo(userMessage.renderMarkdown())
         return if (!planSettings.autoFix)
@@ -38,7 +33,6 @@ open class Planner {
                 userMessage = { userMessage },
                 initialResponse = {
                     newPlan(
-                        api,
                         planSettings,
                         toInput(userMessage) + contextFn(),
                         describer
@@ -63,7 +57,6 @@ open class Planner {
                 ui = ui,
                 reviseResponse = { userMessages: List<Pair<String, ApiModel.Role>> ->
                     newPlan(
-                        api,
                         planSettings,
                         userMessages.map { it.first },
                         describer
@@ -78,7 +71,6 @@ open class Planner {
             }
         else {
             newPlan(
-                api,
                 planSettings,
                 toInput(userMessage) + contextFn(),
                 describer
@@ -93,7 +85,6 @@ open class Planner {
     }
 
     open fun newPlan(
-        api: API,
         planSettings: PlanSettings,
         inStrings: List<String>,
         describer: TypeDescriber
@@ -103,7 +94,6 @@ open class Planner {
         return planningActor.respond(
             messages = planningActor.chatMessages(inStrings),
             input = inStrings,
-            api = api
         ).map(Map::class.java) {
             it.tasksByID ?: emptyMap<String, TaskConfigBase>()
         } as ParsedResponse<Map<String, TaskConfigBase>>

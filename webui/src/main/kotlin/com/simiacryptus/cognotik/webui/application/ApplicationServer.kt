@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.application
 
+import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.dataStorageFactory
@@ -9,18 +10,17 @@ import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.webapp.WebAppContext
 import org.slf4j.Logger
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 
 abstract class ApplicationServer(
@@ -85,14 +85,12 @@ abstract class ApplicationServer(
                 session: Session,
                 user: User?,
                 userMessage: String,
-                socketManager: ApplicationSocketManager,
-                api: API
+                socketManager: ApplicationSocketManager
             ) = this@ApplicationServer.userMessage(
                 session = session,
                 user = user,
                 userMessage = userMessage,
-                ui = socketManager.applicationInterface,
-                api = api
+                ui = socketManager.applicationInterface
             )
         }
         logger.info("New session created successfully: {}", session)
@@ -102,8 +100,7 @@ abstract class ApplicationServer(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface,
-        api: API
+        ui: ApplicationInterface
     ) {
         logger.warn(
             "userMessage not implemented for application: {} - session: {} user: {}",
@@ -129,7 +126,9 @@ abstract class ApplicationServer(
         )
         val settingsFile = getSettingsFile(session, userId)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
-        var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(settingsFile.readText(), clazz) else null
+        val text = settingsFile.readText()
+        logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
+        var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
 
         if (null == settings) {
             logger.debug("No existing settings found, initializing default settings")
@@ -139,7 +138,7 @@ abstract class ApplicationServer(
                 settingsFile.writeText(JsonUtil.toJson(initSettings))
             }
             if (settingsFile.exists()) {
-                settings = JsonUtil.fromJson(settingsFile.readText(), clazz)
+                settings = JsonUtil.fromJson(text, clazz)
                 logger.debug("Loaded initial settings from file")
             }
         } else {

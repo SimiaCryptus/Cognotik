@@ -26,7 +26,6 @@ dependencies {
         exclude(group = "org.slf4j")
     }
 
-    implementation(libs.pdfbox)
     implementation(libs.webdrivermanager)
     implementation(libs.jsoup)
     implementation(libs.zxing.core)
@@ -127,7 +126,7 @@ tasks.register<Copy>("copyWebappStatic") {
 // Clean webapp build artifacts
 tasks.register<Delete>("cleanWebapp") {
     delete("../webapp/build")
-    delete("src/main/resources/application")
+    delete("src/main/resources/application/static")
     delete("src/main/resources/welcome/static")
 }
 tasks.clean {
@@ -143,11 +142,13 @@ tasks.register<com.github.gradle.node.npm.task.NpxTask>("compileSass") {
     dependsOn("installSass")
     command.set("sass")
     workingDir.set(file("${project.projectDir}"))
-    args.set(listOf(
-        "src/main/resources/shared:build/resources/main/css",
-        "--style=expanded",
-        "--source-map"
-    ))
+    args.set(
+        listOf(
+            "src/main/resources/shared:build/resources/main/css",
+            "--style=expanded",
+            "--source-map"
+        )
+    )
 }
 
 tasks.named("processResources") {

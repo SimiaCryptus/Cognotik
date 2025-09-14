@@ -15,15 +15,13 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.util.IdeaChatClient
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.jopenai.models.APIProvider
-import com.simiacryptus.jopenai.chat.model.ChatModelType
-import com.simiacryptus.jopenai.models.ImageModels
-import java.awt.BorderLayout
-import java.awt.Dimension
+import java.awt.*
 import java.awt.event.ActionEvent
-import java.io.FileOutputStream
 import javax.swing.*
 import javax.swing.event.ListSelectionEvent
 import javax.swing.event.ListSelectionListener
@@ -149,6 +147,10 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     @Suppress("unused")
     @Name("Main Image Model")
     val mainImageModel = ComboBox<String>()
+    @Suppress("unused")
+    @Name("Embedding Model")
+    val embeddingModel = ComboBox<String>()
+
 
     @Suppress("unused")
     @Name("Enable API Log")
@@ -176,20 +178,6 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     })
 
     @Suppress("unused")
-    val clearApiLog = JButton(object : AbstractAction("Clear API Log") {
-        override fun actionPerformed(e: ActionEvent) {
-            val openAIClient = IdeaChatClient.instance
-            openAIClient.logStreams.retainAll { it.close(); false }
-            AppSettingsState.auxiliaryLog?.let {
-                if (it.exists()) {
-                    it.delete()
-                }
-                openAIClient.logStreams.add(FileOutputStream(it, true).buffered())
-            }
-        }
-    })
-
-    @Suppress("unused")
     @Name("Developer Tools")
     val devActions = JBCheckBox()
 
@@ -209,7 +197,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     val choosePluginHome = com.intellij.openapi.ui.TextFieldWithBrowseButton(pluginHome).apply {
         val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
         val browserDescriptor =
-            com.intellij.openapi.ui.ComponentWithBrowseButton.BrowseFolderActionListener<JTextField>(
+            com.intellij.openapi.ui.ComponentWithBrowseButton.BrowseFolderActionListener(
                 "Select Plugin Home Directory",
                 null,
                 this,
@@ -233,11 +221,12 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     val temperature = JBTextField()
 
     @Name("APIs")
-    val apis = JBTable(DefaultTableModel(arrayOf("Provider", "Key", "Base URL"), 0)).apply {
+    val apis = JBTable(DefaultTableModel(arrayOf("Provider", "Name", "Key", "Base URL"), 0)).apply {
         columnModel.getColumn(0).preferredWidth = 100
-        columnModel.getColumn(1).preferredWidth = 200
+        columnModel.getColumn(1).preferredWidth = 150
         columnModel.getColumn(2).preferredWidth = 200
-        val keyColumnIndex = 1
+        columnModel.getColumn(3).preferredWidth = 200
+        val keyColumnIndex = 2
         columnModel.getColumn(keyColumnIndex).cellRenderer = object : DefaultTableCellRenderer() {
             override fun setValue(value: Any?) {
                 text =
@@ -247,43 +236,184 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         }
     }
 
-    @Name("User-Supplied Models")
-    val userSuppliedModels = JBTable(DefaultTableModel(arrayOf("Display Name", "Model ID", "Provider"), 0)).apply {
-        columnModel.getColumn(0).preferredWidth = 150
-        columnModel.getColumn(1).preferredWidth = 200
-        columnModel.getColumn(2).preferredWidth = 100
-        columnModel.getColumn(2).cellEditor =
-            DefaultCellEditor(JComboBox(APIProvider.values().map { it.name }.toTypedArray()))
-    }
-    val addUserModelButton = JButton("Add Model").apply {
-        addActionListener {
-            (userSuppliedModels.model as DefaultTableModel).addRow(arrayOf("", "", APIProvider.OpenAI))
+    @Name("API Management")
+    val apiManagementPanel = JPanel(BorderLayout()).apply {
+        val scrollPane = JScrollPane(apis)
+        scrollPane.preferredSize = Dimension(600, 300)
+        add(scrollPane, BorderLayout.CENTER)
+
+        val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        val addButton = JButton("Add API")
+        val removeButton = JButton("Remove")
+        val editButton = JButton("Edit")
+
+        removeButton.isEnabled = false
+        editButton.isEnabled = false
+
+        addButton.addActionListener {
+            val model = apis.model as DefaultTableModel
+
+            // Create add dialog with all fields
+            val dialog = JDialog(null as Frame?, "Add API Configuration", true)
+            dialog.layout = GridBagLayout()
+            val gbc = GridBagConstraints()
+
+            gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
+            dialog.add(JLabel("Provider Type:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val providerCombo = ComboBox(APIProvider.values().map { it.name }.toTypedArray())
+            dialog.add(providerCombo, gbc)
+
+            gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+            dialog.add(JLabel("Name:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val nameField = JBTextField(30)
+            dialog.add(nameField, gbc)
+
+            gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+            dialog.add(JLabel("API Key:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val keyField = JBTextField(30)
+            dialog.add(keyField, gbc)
+
+            gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+            dialog.add(JLabel("Base URL:"), gbc)
+            gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+            val urlField = JBTextField(30)
+            dialog.add(urlField, gbc)
+
+            // Auto-populate name and base URL when provider changes
+            providerCombo.addActionListener {
+                val selectedProvider = APIProvider.valueOf(providerCombo.selectedItem as String)
+                urlField.text = selectedProvider.base ?: ""
+                nameField.text = selectedProvider.name
+                urlField.text = selectedProvider.base ?: ""
+            }
+
+            // Initialize with first provider's defaults
+            val initialProvider = APIProvider.values().first()
+            nameField.text = initialProvider.name
+            urlField.text = initialProvider.base ?: ""
+
+            gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE
+            val buttonPanel = JPanel(FlowLayout())
+            val okButton = JButton("OK")
+            val cancelButton = JButton("Cancel")
+
+            okButton.addActionListener {
+                model.addRow(
+                    arrayOf(
+                        providerCombo.selectedItem,
+                        nameField.text,
+                        keyField.text,
+                        urlField.text
+                    )
+                )
+                dialog.dispose()
+            }
+            cancelButton.addActionListener { dialog.dispose() }
+
+            buttonPanel.add(okButton)
+            buttonPanel.add(cancelButton)
+            dialog.add(buttonPanel, gbc)
+
+            dialog.pack()
+            dialog.setLocationRelativeTo(this)
+            dialog.isVisible = true
         }
-    }
-    val removeUserModelButton = JButton("Remove Model").apply {
-        addActionListener {
-            if (userSuppliedModels.selectedRow != -1)
-                (userSuppliedModels.model as DefaultTableModel).removeRow(userSuppliedModels.selectedRow)
+
+
+        removeButton.addActionListener {
+            val selectedRows = apis.selectedRows
+            val model = apis.model as DefaultTableModel
+            for (i in selectedRows.reversed()) {
+                model.removeRow(i)
+            }
         }
+
+        editButton.addActionListener {
+            val selectedRow = apis.selectedRow
+            if (selectedRow != -1) {
+                val model = apis.model as DefaultTableModel
+                val currentProvider = model.getValueAt(selectedRow, 0) as String
+                val currentName = model.getValueAt(selectedRow, 1) as String
+                val currentKey = model.getValueAt(selectedRow, 2) as String
+                val currentUrl = model.getValueAt(selectedRow, 3) as String
+
+                // Create edit dialog
+                val dialog = JDialog(null as Frame?, "Edit API Configuration", true)
+                dialog.layout = GridBagLayout()
+                val gbc = GridBagConstraints()
+
+                gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
+                dialog.add(JLabel("Provider Type:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val providerCombo = ComboBox(APIProvider.values().map { it.name }.toTypedArray())
+                providerCombo.selectedItem = currentProvider
+                dialog.add(providerCombo, gbc)
+
+                gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+                dialog.add(JLabel("Name:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val nameField = JBTextField(currentName, 30)
+                dialog.add(nameField, gbc)
+                gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+                dialog.add(JLabel("API Key:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val keyField = JBTextField(currentKey, 30)
+                dialog.add(keyField, gbc)
+
+                gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+                dialog.add(JLabel("Base URL:"), gbc)
+                gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+                val urlField = JBTextField(currentUrl, 30)
+                dialog.add(urlField, gbc)
+                // Auto-populate base URL when provider changes
+                providerCombo.addActionListener {
+                    val selectedProvider = APIProvider.valueOf(providerCombo.selectedItem as String)
+                    if (urlField.text == currentUrl || urlField.text.isBlank()) {
+                        urlField.text = selectedProvider.base ?: ""
+                    }
+                }
+
+                gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE
+                val buttonPanel = JPanel(FlowLayout())
+                val okButton = JButton("OK")
+                val cancelButton = JButton("Cancel")
+
+                okButton.addActionListener {
+                    model.setValueAt(providerCombo.selectedItem, selectedRow, 0)
+                    model.setValueAt(nameField.text, selectedRow, 1)
+                    model.setValueAt(keyField.text, selectedRow, 2)
+                    model.setValueAt(urlField.text, selectedRow, 3)
+                    dialog.dispose()
+                }
+                cancelButton.addActionListener { dialog.dispose() }
+
+                buttonPanel.add(okButton)
+                buttonPanel.add(cancelButton)
+                dialog.add(buttonPanel, gbc)
+
+                dialog.pack()
+                dialog.setLocationRelativeTo(this)
+                dialog.isVisible = true
+            }
+        }
+
+        apis.selectionModel.addListSelectionListener {
+            val hasSelection = apis.selectedRow != -1
+            removeButton.isEnabled = hasSelection
+            editButton.isEnabled = hasSelection
+        }
+
+        buttonPanel.add(addButton)
+        buttonPanel.add(removeButton)
+        buttonPanel.add(editButton)
+        add(buttonPanel, BorderLayout.SOUTH)
     }
 
     @Name("Editor Actions")
     var usage = UsageTable(ApplicationServices.usageManager)
-    fun getUserSuppliedModels(): List<AppSettingsState.UserSuppliedModel> {
-        return (0 until userSuppliedModels.rowCount).map { row ->
-            AppSettingsState.UserSuppliedModel(
-                userSuppliedModels.getValueAt(row, 0) as String,
-                userSuppliedModels.getValueAt(row, 1) as String,
-                userSuppliedModels.getValueAt(row, 2) as APIProvider
-            )
-        }
-    }
-
-    fun setUserSuppliedModels(models: List<AppSettingsState.UserSuppliedModel>) {
-        val model = userSuppliedModels.model as DefaultTableModel
-        model.rowCount = 0
-        models.forEach { model.addRow(arrayOf(it.displayName, it.modelId, it.provider)) }
-    }
 
     init {
 
@@ -294,40 +424,53 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
 
         setExecutables(AppSettingsState.instance.executables ?: emptySet())
-        ChatModelType.values()
-            .filter {
-                AppSettingsState.instance.apiKeys?.filter { it.value.isNotBlank() }?.keys?.contains(it.value.provider.name)
-                    ?: false
+        // Populate API table first
+        populateApiTable()
+        
+        val userSettings = AppSettingsState.instance.getUserSettings()
+
+
+        // Get all available models from APIs with valid keys
+        val availableModels = ChatModel.values().filter { chatModel ->
+            userSettings.apis.any { api ->
+                api.provider == chatModel.value.provider && !api.key.isNullOrBlank()
             }
-            .forEach {
-                this.smartModel.addItem(it.value.modelName)
-                this.fastModel.addItem(it.value.modelName)
-            }
-        ImageModels.values().forEach {
+        }
+
+        availableModels.forEach {
+            this.smartModel.addItem(it.value.modelName)
+            this.fastModel.addItem(it.value.modelName)
+        }
+        
+        ImageModels.entries.forEach {
             this.mainImageModel.addItem(it.name)
         }
+        EmbeddingModel.values().keys.forEach {
+            this.embeddingModel.addItem(it)
+        }
+
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }
             .filter { modelItem ->
                 isVisible(
-                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
+                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
                 )
             }
             .sortedBy { modelItem ->
                 val model =
-                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                "${model.provider.name} - ${model.modelName}"
+                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                "${model.provider?.name} - ${model.modelName}"
             }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }
             .filter { modelItem ->
                 isVisible(
-                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
+                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
                 )
             }
             .sortedBy { modelItem ->
                 val model =
-                    ChatModelType.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                "${model.provider.name} - ${model.modelName}"
+                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                "${model.provider?.name} - ${model.modelName}"
             }.toList()
         smartModel.removeAllItems()
         fastModel.removeAllItems()
@@ -339,9 +482,33 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         this.fastModel.renderer = getModelRenderer()
         this.mainImageModel.isEditable = true
         this.mainImageModel.renderer = getImageModelRenderer()
+        this.embeddingModel.isEditable = true
+        this.embeddingModel.renderer = getEmbeddingModelRenderer()
+        // Set current selections
+        AppSettingsState.instance.smartModel?.model?.let { model ->
+            this.smartModel.selectedItem = model.modelName
+        }
+        AppSettingsState.instance.fastModel?.model?.let { model ->
+            this.fastModel.selectedItem = model.modelName
+        }
+        AppSettingsState.instance.embeddingModel?.let { model ->
+            this.embeddingModel.selectedItem = model
+        }
     }
 
     override fun dispose() {
+    }
+    private fun populateApiTable() {
+        val model = apis.model as DefaultTableModel
+        model.rowCount = 0
+        val userSettings = AppSettingsState.instance.getUserSettings()
+        userSettings.apis.forEach { api ->
+            val providerName = api.provider?.name ?: ""
+            val name = api.name ?: api.provider?.name ?: ""
+            val key = api.key ?: ""
+            val url = api.baseUrl ?: api.provider?.base ?: ""
+            model.addRow(arrayOf(providerName, name, key, url))
+        }
     }
 
     private fun getModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
@@ -355,7 +522,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             text = value
 
             if (value != null) {
-                val model = ChatModelType.values().entries.find { it.value.modelName == value }?.value
+                val model = ChatModel.values().entries.find { it.value.modelName == value }?.value
                 text = "${model?.provider?.name} - $value"
             }
         }
@@ -373,16 +540,32 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
 
         }
     }
+    private fun getEmbeddingModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
+        override fun customize(
+            list: JList<out String>,
+            value: String?,
+            index: Int,
+            selected: Boolean,
+            hasFocus: Boolean
+        ) {
+            text = value
+            if (value != null) {
+                val model = EmbeddingModel.values()[value]
+                text = "${model?.provider?.name} - $value"
+            }
+        }
+    }
+
 
     fun getExecutables(): Set<String> {
         val model =
-            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<String>)?.model as? DefaultListModel<String>
+            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
         return model?.elements()?.toList()?.toSet() ?: emptySet()
     }
 
     fun setExecutables(executables: Set<String>) {
         val model =
-            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<String>)?.model as? DefaultListModel<String>
+            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
         model?.clear()
         executables.forEach { model?.addElement(it) }
     }

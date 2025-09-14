@@ -1,8 +1,8 @@
 ﻿package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.util.StringUtil.getWhitespacePrefix
-import com.simiacryptus.util.StringUtil.stripPrefix
-import com.simiacryptus.util.StringUtil.trimPrefix
+import com.simiacryptus.cognotik.util.StringUtil.getWhitespacePrefix
+import com.simiacryptus.cognotik.util.StringUtil.stripPrefix
+import com.simiacryptus.cognotik.util.StringUtil.trimPrefix
 import java.util.*
 import java.util.stream.Collectors
 

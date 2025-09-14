@@ -2,13 +2,12 @@ package com.simiacryptus.cognotik.plan.tools
 
 import com.simiacryptus.cognotik.actors.CodingActor
 import com.simiacryptus.cognotik.apps.code.CodingAgent
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.Description
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
@@ -54,11 +53,9 @@ class RunShellCommandTask(
                 "command" to (planSettings.shellCmd),
                 "timeoutMinutes" to (planTask?.timeoutMinutes ?: 15L),
             ),
-            model = planTask?.task_type?.let { planSettings.getTaskSettings(TaskType.valueOf(it)).model }
-                ?: planSettings.defaultModel,
+            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
             temperature = planSettings.temperature,
-            fallbackModel = planTask?.task_type?.let { planSettings.getTaskSettings(TaskType.valueOf(it)).model }
-                ?: planSettings.defaultModel
+            fallbackModel = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter
         )
     }
 
@@ -73,14 +70,12 @@ class RunShellCommandTask(
         agent: PlanCoordinator,
         messages: List<String>,
         task: SessionTask,
-        api: ChatClientInterface,
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
         val codingAgent = object : CodingAgent<ProcessInterpreter>(
-            api = api,
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,

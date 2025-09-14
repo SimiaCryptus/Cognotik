@@ -2,7 +2,6 @@
 
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.util.JsonUtil
 import java.awt.image.BufferedImage
 import java.io.Closeable
 import java.io.File
@@ -167,6 +166,6 @@ class JsonFunctionRecorder(baseDir: File) : FunctionInterceptor, Closeable {
     }
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(JsonFunctionRecorder::class.java)
+        val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(JsonFunctionRecorder::class.java)
     }
 }

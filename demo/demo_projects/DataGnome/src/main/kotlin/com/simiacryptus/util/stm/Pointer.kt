@@ -2,7 +2,7 @@ package com.simiacryptus.util.stm
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.type.TypeReference
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.lang.IllegalStateException
 
 class Pointer<T : Any>(

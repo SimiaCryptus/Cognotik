@@ -3,24 +3,17 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.describe.TypeDescriber
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -29,7 +22,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 open class TaskChatMode(
     override val ui: ApplicationInterface,
-    override val api: API,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -81,9 +73,6 @@ open class TaskChatMode(
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-        val api = (this@TaskChatMode.api as ChatClientInterface).getChildClient(task)
-        api.budget = planSettings.budget
-
         val coordinator = PlanCoordinator(
             user = user,
             session = session,
@@ -119,8 +108,8 @@ open class TaskChatMode(
                     })
                     append("\nChoose the most suitable task type and provide details of how it should be executed.")
                 },
-                model = coordinator.planSettings.defaultModel,
-                parsingModel = coordinator.planSettings.parsingModel,
+                model = coordinator.planSettings.defaultChatter,
+                parsingModel = coordinator.planSettings.parsingChatter,
                 temperature = coordinator.planSettings.temperature,
                 describer = describer,
                 parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
@@ -136,7 +125,7 @@ open class TaskChatMode(
                         "Please choose a single task to execute based on the current conversation."
                     )
 
-            val answer = parsedActor.answer(input, api)
+            val answer = parsedActor.answer(input)
             val chosenTasks = answer.obj.tasks?.firstOrNull()
                 ?: throw IllegalStateException("No task was selected")
 
@@ -154,7 +143,6 @@ open class TaskChatMode(
                     agent = coordinator,
                     messages = listOf(userMessage),
                     task = this,
-                    api = api,
                     resultFn = {
                         result.append(it)
                     },
@@ -234,11 +222,10 @@ open class TaskChatMode(
         override val inputCnt = 0
         override fun getCognitiveMode(
             ui: ApplicationInterface,
-            api: API,
             planSettings: PlanSettings,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = TaskChatMode(ui, api, planSettings, session, user, describer)
+        ) = TaskChatMode(ui, planSettings, session, user, describer)
     }
 }

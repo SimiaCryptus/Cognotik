@@ -2,8 +2,9 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
-import com.simiacryptus.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -33,7 +34,7 @@ import kotlin.reflect.typeOf
  * A simple reverse proxy that supports the OpenAI API
  */
 open class ProxyHttpServlet(
-    private val targetUrl: String = "https://api.openai.com/v1/"
+    private val targetUrl: String = "https://api.openai.com/"
 ) : HttpServlet() {
 
     open val asyncClient: CloseableHttpAsyncClient by lazy {
@@ -269,7 +270,7 @@ open class ProxyHttpServlet(
     }
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(ProxyHttpServlet::class.java)
+        val log = LoggerFactory.getLogger(ProxyHttpServlet::class.java)
 
         @JvmStatic
         fun main(args: Array<String>) {

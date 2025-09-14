@@ -20,10 +20,7 @@ The package includes several key components:
 `DiffUtil` is the central class for generating and formatting differences between text files.
 
 ```kotlin
-object DiffUtil {
-    fun generateDiff(original: List<String>, modified: List<String>): List<PatchLine>
-    fun formatDiff(patchLines: List<PatchLine>, contextLines: Int = 3): String
-}
+
 ```
 
 #### Key Features:
@@ -48,16 +45,9 @@ println(formattedDiff)
 These data structures represent individual lines in a diff:
 
 ```kotlin
-enum class PatchLineType {
-    Added, Deleted, Unchanged
-}
 
-data class PatchLine(
-    val type: PatchLineType,
-    val lineNumber: Int,
-    val line: String,
-    val compareText: String = line.trim()
-)
+
+
 ```
 
 ### PatchResult
@@ -65,11 +55,7 @@ data class PatchLine(
 `PatchResult` encapsulates the outcome of applying a patch:
 
 ```kotlin
-data class PatchResult(
-    val newCode: String,
-    val isValid: Boolean,
-    val error: String? = null
-)
+
 ```
 
 ### ApxPatchUtil
@@ -77,9 +63,7 @@ data class PatchResult(
 `ApxPatchUtil` provides approximate patching capabilities, useful when exact matches aren't possible:
 
 ```kotlin
-object ApxPatchUtil {
-    fun patch(source: String, patch: String): String
-}
+
 ```
 
 #### Key Features:
@@ -93,11 +77,7 @@ object ApxPatchUtil {
 `DiffMatchPatch` is a port of Google's diff-match-patch library, offering character-level diff operations:
 
 ```kotlin
-class DiffMatchPatch {
-    fun diff_main(text1: String?, text2: String?, checklines: Boolean = true): LinkedList<Diff>
-    fun patch_make(text1: String?, text2: String?): LinkedList<Patch>
-    fun patch_apply(patches: LinkedList<Patch>, text: String): Array<Any>
-}
+
 ```
 
 #### Key Features:
@@ -114,17 +94,7 @@ class DiffMatchPatch {
 `AddApplyDiffLinks` enhances markdown content by adding interactive UI elements for applying diffs:
 
 ```kotlin
-class AddApplyDiffLinks {
-    fun apply(
-        socketManagerBase: SocketManagerBase,
-        code: () -> String,
-        response: String,
-        handle: (String) -> Unit,
-        task: SessionTask,
-        ui: ApplicationInterface,
-        shouldAutoApply: Boolean = false
-    ): String
-}
+
 ```
 
 #### Key Features:
@@ -139,19 +109,7 @@ class AddApplyDiffLinks {
 `AddApplyFileDiffLinks` extends the functionality to work with file systems:
 
 ```kotlin
-class AddApplyFileDiffLinks {
-    fun instrument(
-        self: SocketManagerBase,
-        root: Path,
-        response: String,
-        handle: (Map<Path, String>) -> Unit = {},
-        ui: ApplicationInterface,
-        api: API,
-        shouldAutoApply: (Path) -> Boolean = { false },
-        model: ChatModel? = null,
-        defaultFile: String? = null
-    ): String
-}
+
 ```
 
 #### Key Features:

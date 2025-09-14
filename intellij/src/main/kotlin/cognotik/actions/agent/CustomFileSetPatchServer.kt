@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -13,13 +14,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -35,7 +29,6 @@ import kotlin.concurrent.write
 
 class CustomFileSetPatchServer(
     val config: CustomFileSetPatchAction.Settings,
-    val api: ChatClientInterface,
     val autoApply: Boolean,
     val outputMode: CustomFileSetPatchAction.OutputMode
 ) : ApplicationServer(
@@ -109,7 +102,7 @@ class CustomFileSetPatchServer(
 
             return SimpleActor(
                 prompt = prompt,
-                model = AppSettingsState.instance.smartModel.chatModelType(),
+                model = AppSettingsState.instance.smartChatClient,
                 temperature = AppSettingsState.instance.temperature,
             )
         }
@@ -239,7 +232,6 @@ class CustomFileSetPatchServer(
 
 
         val task = ui.newTask(true)
-        val api = api.getChildClient(task)
         val tabs: TabbedDisplay? = null //TabbedDisplay(task)
         val userMessage = config.settings.transformationMessage
         // Validate user message
@@ -328,7 +320,6 @@ class CustomFileSetPatchServer(
                                 contextSummary = contextSummary,
                                 userMessage = userMessage,
                                 ui = ui,
-                                api = api,
                                 tabs = null, // No tabs in big data mode
                                 task = subTask,
                                 session = session,
@@ -422,7 +413,6 @@ class CustomFileSetPatchServer(
                         contextSummary = contextSummary,
                         userMessage = userMessage,
                         ui = ui,
-                        api = api,
                         tabs = tabs,
                         task = task,
                         session = session,
@@ -570,7 +560,6 @@ class CustomFileSetPatchServer(
         contextSummary: String,
         userMessage: String,
         ui: ApplicationInterface,
-        api: ChatClientInterface,
         tabs: TabbedDisplay?,
         task: SessionTask,
         session: Session,
@@ -611,13 +600,13 @@ class CustomFileSetPatchServer(
                 val toInput = { it: String -> listOf(fullContent, it) }
                 when {
                     outputMode == CustomFileSetPatchAction.OutputMode.EDIT_FILES -> if (autoApply) {
-                        handleAutoApplyMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
+                        handleAutoApplyMode(fileSet, userMessage, fileTask, ui, session, toInput)
                     } else {
-                        handleInteractiveMode(fileSet, userMessage, api, fileTask, ui, session, toInput)
+                        handleInteractiveMode(fileSet, userMessage, fileTask, ui, session, toInput)
                     }
 
                     else -> {
-                        handleGenerationMode(fileSet, userMessage, api, fileTask, session, singleOutputFile, toInput)
+                        handleGenerationMode(fileSet, userMessage, fileTask, session, singleOutputFile, toInput)
                     }
                 }
 
@@ -736,13 +725,12 @@ class CustomFileSetPatchServer(
     private fun handleAutoApplyMode(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
-        api: ChatClientInterface,
         task: SessionTask,
         ui: ApplicationInterface,
         session: Session,
         toInput: (String) -> List<String>
     ) {
-        val design = mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+        val design = mainActor.answer(toInput(userMessage),).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
             task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -755,9 +743,8 @@ class CustomFileSetPatchServer(
                         }
                     },
                     ui = ui,
-                    api = api as API,
                     shouldAutoApply = { autoApply },
-                    model = AppSettingsState.instance.fastModel.chatModelType(),
+                    model = AppSettingsState.instance.fastChatClient,
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
                         ?: "").renderMarkdown)
         } else {
@@ -768,14 +755,13 @@ class CustomFileSetPatchServer(
     private fun handleGenerationMode(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
-        api: ChatClientInterface,
         task: SessionTask,
         session: Session,
         singleOutputFile: Path?,
         toInput: (String) -> List<String>
     ) {
         val result = try {
-            mainActor.answer(toInput(userMessage), api = api).toContentList().firstOrNull()?.text ?: ""
+            mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
         } catch (e: Exception) {
             log.error("Error generating content for ${fileSet.name}", e)
             task.error(e)
@@ -804,7 +790,6 @@ class CustomFileSetPatchServer(
     private fun handleInteractiveMode(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
-        api: ChatClientInterface,
         task: SessionTask,
         ui: ApplicationInterface,
         session: Session,
@@ -815,10 +800,10 @@ class CustomFileSetPatchServer(
             userMessage = { userMessage },
             heading = renderMarkdown(userMessage),
             initialResponse = {
-                mainActor.answer(toInput(it), api = api)
+                mainActor.answer(toInput(it))
             },
             outputFn = { design: String ->
-                formatOutput(design, ui, session, fileSet, task, api)
+                formatOutput(design, ui, session, fileSet, task)
             },
             ui = ui,
             reviseResponse = { userMessages ->
@@ -827,7 +812,7 @@ class CustomFileSetPatchServer(
                         ApiModel.ChatMessage(
                             it.second, it.first.toContentList()
                         )
-                    }.toTypedArray(), input = toInput(userMessage), api = api
+                    }.toTypedArray(), input = toInput(userMessage)
                 )
             },
             atomicRef = AtomicReference(),
@@ -841,8 +826,7 @@ class CustomFileSetPatchServer(
         ui: ApplicationInterface,
         session: Session,
         fileSet: CustomFileSetPatchAction.FileSet,
-        fileTask: SessionTask,
-        api: ChatClientInterface
+        fileTask: SessionTask
     ): String {
         return when (outputMode) {
             CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
@@ -858,9 +842,8 @@ class CustomFileSetPatchServer(
                                 }
                             },
                             ui = ui,
-                            api = api as API,
                             shouldAutoApply = { false },
-                            model = AppSettingsState.instance.fastModel.chatModelType(),
+                            model = AppSettingsState.instance.fastChatClient,
                             defaultFile = fileSet.files.firstOrNull()
                                 ?.let { (_root?.relativize(it) ?: it).toString() } ?: "")
                     }

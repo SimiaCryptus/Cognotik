@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.JsonUtil
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
@@ -97,7 +97,7 @@ data class DocumentRecord(
     }
 
     companion object {
-        val log = com.simiacryptus.util.LoggerFactory.getLogger(DocumentRecord::class.java)
+        val log = LoggerFactory.getLogger(DocumentRecord::class.java)
         private const val RECORD_VERSION = 2
 
         fun readBinaryStream(inputPath: String, processor: (DocumentRecord) -> Unit) {
@@ -130,7 +130,6 @@ data class DocumentRecord(
         }
 
         fun indexJsonFile(
-            embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
             progressState: ProgressState,
             model: EmbeddingModel,
@@ -154,7 +153,6 @@ data class DocumentRecord(
                     progressState = progressState,
                     futureList = futureList,
                     pool = pool,
-                    embeddingClient = embeddingClient,
                     fileData = fileData
                 )
                 val outputPath = infile.parentFile.resolve(
@@ -170,7 +168,6 @@ data class DocumentRecord(
         }
 
         fun indexTextFiles(
-            embeddingClient: EmbeddingClientBase,
             pool: ExecutorService,
             parsingModel: ParsingModel<*>,
             model: EmbeddingModel,
@@ -190,7 +187,6 @@ data class DocumentRecord(
                 progressState = progressState,
                 futureList = futureList,
                 pool = pool,
-                embeddingClient = embeddingClient,
                 fileData = mapOf("content_list" to parsedDocument.content_list) as Map<String, Any>?
             )
             awaitAll(futureList.toTypedArray(), TimeUnit.MINUTES.toMillis(30))

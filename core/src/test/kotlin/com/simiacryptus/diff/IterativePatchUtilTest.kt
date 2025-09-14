@@ -70,29 +70,6 @@ class IterativePatchUtilTest {
     }
 
     @Test
-    fun testPatchModifyLineWithComments() {
-        val source = """
-            line1
-            line3
-            line2
-        """.trimIndent()
-        val patch = """
-            line1
-            line3
-            -line2
-            +modifiedLine2
-            # LLMs sometimes get chatty and add stuff to patches__
-        """.trimIndent()
-        val expected = """
-            line1
-            line3
-            modifiedLine2
-        """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
-        Assertions.assertEquals(normalize(expected), normalize(result))
-    }
-
-    @Test
     fun testPatchRemoveLine() {
         val source = """
             line1

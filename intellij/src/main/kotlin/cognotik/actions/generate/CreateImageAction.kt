@@ -13,10 +13,8 @@ import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.actors.ImageActor
 import com.simiacryptus.cognotik.actors.ImageResponse
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.imageModel
+import com.simiacryptus.cognotik.config.imageModel
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.LoggerFactory
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.io.ByteArrayOutputStream
@@ -129,11 +127,11 @@ class CreateImageAction : BaseAction() {
                     ${codeSummary()}
                     Special instructions: ${dialog.getInstructions()}
                     """.trimIndent(),
-                    textModel = AppSettingsState.instance.smartModel.chatModelType(),
+                    textModel = AppSettingsState.instance.smartChatClient,
                     imageModel = AppSettingsState.instance.mainImageModel.imageModel()
                 ).apply { setImageAPI(IdeaOpenAIClient.instance) }
                 log.debug("Sending request to image generation API")
-                val response = imageActor.answer(listOf(codeSummary(), dialog.getInstructions()), api)
+                val response = imageActor.answer(listOf(codeSummary(), dialog.getInstructions()),)
                 log.debug("Image generation completed successfully")
                 val imagePath = root.resolve(dialog.getFileName())
                 write(response, imagePath)

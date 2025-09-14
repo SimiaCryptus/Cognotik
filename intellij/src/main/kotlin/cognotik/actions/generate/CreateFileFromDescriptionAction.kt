@@ -6,11 +6,11 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.models.ApiModel.*
 import com.simiacryptus.cognotik.util.UITools
-import com.simiacryptus.jopenai.models.ApiModel.*
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.jopenai.util.ClientUtil.toContentList
+import com.simiacryptus.cognotik.util.toContentList
 import java.io.File
 
 class CreateFileFromDescriptionAction :
@@ -79,7 +79,11 @@ class CreateFileFromDescriptionAction :
         progress.text = "Generating file content..."
         progress.fraction = 0.3
 
-        val generatedFile = generateFile(filePath, config?.directive ?: DEFAULT_DIRECTIVE)
+        val generatedFile = generateFile(
+            filePath,
+            config?.directive ?: DEFAULT_DIRECTIVE,
+            AppSettingsState.instance.smartChatClient
+        )
 
         var path = generatedFile.path
         var outputPath = moduleRoot.resolve(path)
@@ -106,37 +110,33 @@ class CreateFileFromDescriptionAction :
 
     private fun generateFile(
         basePath: String,
-        directive: String
+        directive: String,
+        model: Chatter
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
-        val model = AppSettingsState.instance.smartModel.chatModelType()
-        val chatRequest = ChatRequest(
-            model = model.modelName,
-            temperature = AppSettingsState.instance.temperature,
-            messages = listOf(
-                ChatMessage(
-                    Role.system, """
-                    You will interpret natural language requirements to create a new file.
-                    Provide a new filename and the code to be written to the file.
-                    Paths should be relative to the project root and should not exist.
-                    Output the file path using the a line with the format "File: <path>".
-                    Output the file code directly after the header line with no additional decoration.
-                """.trimIndent().toContentList(), null
-                ),
-                ChatMessage(
-                    Role.user, """
-                    Create a new file based on the following directive: $directive
-
-                    The file location should be based on the selected path `$basePath`
-                """.trimIndent().toContentList(), null
-                )
-            )
-        )
         try {
-            val response = api.chat(
-                chatRequest,
-                AppSettingsState.instance.smartModel.chatModelType()
-            ).choices.firstOrNull()?.message?.content?.trim() ?: throw IllegalStateException("Empty response from AI")
+            val response = run {
+                model.chat(
+                    listOf(
+                        ChatMessage(
+                            Role.system, """
+                        You will interpret natural language requirements to create a new file.
+                        Provide a new filename and the code to be written to the file.
+                        Paths should be relative to the project root and should not exist.
+                        Output the file path using the a line with the format "File: <path>".
+                        Output the file code directly after the header line with no additional decoration.
+                    """.trimIndent().toContentList(), null
+                        ),
+                        ChatMessage(
+                            Role.user, """
+                        Create a new file based on the following directive: $directive
+    
+                        The file location should be based on the selected path `$basePath`
+                    """.trimIndent().toContentList(), null
+                        )
+                    )
+                ).choices.firstOrNull()?.message?.content?.trim()
+            } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")
             var body = response.lines().drop(1).joinToString("\n").trim().lines()

@@ -6,21 +6,18 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.chat.ChatClientInterface
-import com.simiacryptus.jopenai.embedding.EmbeddingClientBase
-import com.simiacryptus.jopenai.embedding.OllamaEmbeddingClient
-import com.simiacryptus.jopenai.models.ApiModel
-import com.simiacryptus.jopenai.models.EmbeddingModel
-import com.simiacryptus.util.JsonUtil
-import com.simiacryptus.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -28,7 +25,6 @@ import java.util.regex.Pattern
 
 class EmbeddingSearchServer(
     val settings: EmbeddingSearchAction.SearchSettings,
-    val api: ChatClientInterface,
     val model: EmbeddingModel,
     val files: List<VirtualFile?>,
     root: File
@@ -41,10 +37,7 @@ class EmbeddingSearchServer(
 
     companion object {
         private val log = LoggerFactory.getLogger(EmbeddingSearchServer::class.java)
-        private const val MAX_CONTEXT_LENGTH = 5000
-        private const val SEARCH_TIMEOUT_SECONDS = 30L
         private const val MAX_CONCURRENT_SEARCHES = 4
-        private const val EMBEDDING_CACHE_SIZE = 100
     }
 
     override val inputCnt = 0
@@ -114,7 +107,7 @@ class EmbeddingSearchServer(
 
         try {
             val embeddingClient = OllamaEmbeddingClient("", workPool = threadPool)
-            val searchResults = performEmbeddingSearch(embeddingClient, indexFiles)
+            val searchResults = performEmbeddingSearch(indexFiles)
             val formattedResults = formatSearchResults(searchResults)
 
             task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = ui))
@@ -133,7 +126,6 @@ class EmbeddingSearchServer(
     }
 
     private fun performEmbeddingSearch(
-        api: EmbeddingClientBase,
         indexFiles: List<VirtualFile?>
     ): List<EmbeddingSearchResult> {
         if (settings.positiveQueries.isEmpty()) {
@@ -150,13 +142,7 @@ class EmbeddingSearchServer(
                 try {
                     processedQueries++
                     log.debug("Creating embedding ${processedQueries}/$totalQueries: $query")
-                    api.createEmbedding(
-                        ApiModel.EmbeddingRequest(
-                            input = query,
-                            model = model.modelName
-                        ),
-                        model
-                    ).data.firstOrNull()?.embedding ?: return null
+                    model.instance().embed(query)
                 } catch (e: Exception) {
                     log.error("Failed to create embedding for query: $query", e)
                     return null
@@ -288,18 +274,6 @@ class EmbeddingSearchServer(
         } catch (e: Exception) {
             log.warn("Error getting context summary for ${record.sourcePath}:${record.jsonPath}", e)
             "Context summary unavailable: ${e.message}"
-        }
-    }
-
-    private fun summarizeTextContext(sourceFile: File, jsonPath: String): String {
-        val linePattern = Regex("""content_list\[(\d+)]""")
-        val match = linePattern.matchEntire(jsonPath)
-        if (match != null) {
-            val chunkIndex = match.groupValues[1].toIntOrNull() ?: return "Invalid line index in path: $jsonPath"
-            // TODO: Parse document using parsing model to extract position and surrounding context
-            TODO()
-        } else {
-            return "Unrecognized text path format: $jsonPath"
         }
     }
 

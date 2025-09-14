@@ -1,6 +1,5 @@
 package cognotik.actions.problems
 
-import com.simiacryptus.cognotik.util.SessionProxyServer
 import cognotik.actions.agent.toFile
 import cognotik.actions.test.TestResultAutofixAction.Companion.findGitRoot
 import cognotik.actions.test.TestResultAutofixAction.Companion.getProjectStructure
@@ -19,28 +18,23 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.IdeaChatClient
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.AgentPatterns
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.jopenai.API
-import com.simiacryptus.jopenai.chat.model.chatModelType
-import com.simiacryptus.util.JsonUtil
 import java.text.SimpleDateFormat
+import java.util.concurrent.ExecutorService
 import javax.swing.JOptionPane
 
 class AnalyzeProblemAction : AnAction() {
@@ -158,12 +152,14 @@ class AnalyzeProblemAction : AnAction() {
             val task = ui.newTask()
             task.add("Analyzing problem and suggesting fixes...")
             Thread {
-                analyzeProblem(ui, task, api = IdeaChatClient.instance)
+                analyzeProblem(ui, task, AppSettingsState.workPool)
             }.start()
             return socketManager
         }
 
-        private fun analyzeProblem(ui: ApplicationInterface, task: SessionTask, api: API) {
+        private fun analyzeProblem(
+            ui: ApplicationInterface, task: SessionTask, pool: ExecutorService
+        ) {
             try {
                 Retryable(ui, task) {
                     val task = ui.newTask(false)
@@ -176,9 +172,9 @@ class AnalyzeProblemAction : AnAction() {
                            1) predict the files that need to be fixed
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
-                        model = AppSettingsState.instance.smartModel.chatModelType(),
-                        parsingModel = AppSettingsState.instance.fastModel.chatModelType(),
-                    ).answer(listOf(problemInfo), api = IdeaChatClient.instance)
+                        model = AppSettingsState.instance.smartChatClient,
+                        parsingModel = AppSettingsState.instance.fastChatClient,
+                    ).answer(listOf(problemInfo),)
 
                     task.add(
                         AgentPatterns.displayMapInTabs(
@@ -206,7 +202,7 @@ class AnalyzeProblemAction : AnAction() {
                                     "# $filePath\nFile not found"
                                 }
                             }
-                            task.add(generateAndAddResponse(ui, task, error, summary, api))
+                            task.add(generateAndAddResponse(ui, task, error, summary, pool))
                             task.placeholder
                         }
                     }
@@ -222,7 +218,7 @@ class AnalyzeProblemAction : AnAction() {
             task: SessionTask,
             error: ParsedError,
             summary: String,
-            api: API
+            pool: ExecutorService
         ): String {
             val response = SimpleActor(
                 prompt = """
@@ -238,8 +234,8 @@ class AnalyzeProblemAction : AnAction() {
             The diff format should use + for line additions, - for line deletions.
             The diff should include 2 lines of context before and after every change.
             """.trimIndent(),
-                model = AppSettingsState.instance.smartModel.chatModelType()
-            ).answer(listOf(error.message ?: ""), api = IdeaChatClient.instance)
+                model = AppSettingsState.instance.smartChatClient
+            ).answer(listOf(error.message ?: ""),)
 
             return "<div>${
                 renderMarkdown(
@@ -253,7 +249,6 @@ class AnalyzeProblemAction : AnAction() {
                             }
                         },
                         ui = ui,
-                        api = api,
                     )
                 )
             }</div>"

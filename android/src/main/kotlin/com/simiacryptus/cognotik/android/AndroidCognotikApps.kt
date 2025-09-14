@@ -16,16 +16,19 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
-import com.simiacryptus.jopenai.chat.model.AnthropicModels
-import com.simiacryptus.jopenai.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.chat.model.AnthropicModels
+import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.resource.PathResource
-import com.simiacryptus.util.LoggerFactory
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
-import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -180,7 +183,14 @@ class AndroidCognotikApps private constructor(
     private val describer = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "com.simiacryptus"
     )
-    private val model = AnthropicModels.Claude35Haiku
+    private val model : ApiChatModel = AnthropicModels.Claude35Haiku.let {
+        ApiChatModel(
+            model = it,
+            provider = ApiData(
+                provider = it.provider
+            ).validate()
+        )
+    }
 
     override val childWebApps: List<ChildWebApp> by lazy {
         try {
@@ -195,64 +205,84 @@ class AndroidCognotikApps private constructor(
     }
     
     private fun createChildWebApps(): List<ChildWebApp> {
-        val parsingModel = model
         val filesDir = androidContext.filesDir.absolutePath
         log.info("Using files directory: $filesDir")
-        log.debug("Parsing model: ${parsingModel.javaClass.simpleName}")
+        log.debug("Parsing model: ${model.javaClass.simpleName}")
         log.debug("Default model: ${model.javaClass.simpleName}")
         
-        val planSettings = PlanSettings(
+        val planSettings = object : PlanSettings(
             defaultModel = model,
-            parsingModel = parsingModel,
+            parsingModel = model,
             workingDir = filesDir
-        )
+        ) {
+            override fun instance(model: ApiChatModel): Chatter {
+                TODO()
+            }
+
+        }
         log.debug("Created plan settings with working directory: ${planSettings.workingDir}")
         
         val webApps = listOf(
-            ChildWebApp("/chat", BasicChatApp(File(filesDir), model, parsingModel)),
+            ChildWebApp("/chat", BasicChatApp(File(filesDir), model.model!!, model.model!!)),
             ChildWebApp(
-                "/taskChat", UnifiedPlanApp(
+                "/taskChat", object : UnifiedPlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             ),
             ChildWebApp(
-                "/autoPlan", UnifiedPlanApp(
+                "/autoPlan", object : UnifiedPlanApp(
                     path = "/autoPlan",
                     applicationName = "Auto-Plan",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             ),
             ChildWebApp(
-                "/planAhead", UnifiedPlanApp(
+                "/planAhead", object : UnifiedPlanApp(
                     path = "/planAhead",
                     applicationName = "Plan-Ahead",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             ),
             ChildWebApp(
-                "/goalOriented", UnifiedPlanApp(
+                "/goalOriented", object : UnifiedPlanApp(
                     path = "/goalOriented",
                     applicationName = "Goal-Oriented",
                     planSettings = planSettings,
                     model = model,
-                    parsingModel = parsingModel,
+                    parsingModel = model,
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
-                )
+                ) {
+                    override fun instance(model: ApiChatModel): Chatter {
+                        TODO("Not yet implemented")
+                    }
+                }
             )
         )
         log.info("Created ${webApps.size} child web apps:")
@@ -338,3 +368,4 @@ class AndroidCognotikApps private constructor(
         // Android will handle browsing through the WebView in MainActivity
     }
 }
+
