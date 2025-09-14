@@ -4,7 +4,9 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.EncryptionUtil
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
@@ -340,7 +342,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 )
                 val decryptedUserSettings = importedUserSettings.copy(
                     apis = importedUserSettings.apis.map { api ->
-                        api.copy(key = api.key?.let { EncryptionUtil.decrypt(it, password.text) } ?: api.key)
+                        api.copy(key = api.key.let { EncryptionUtil.decrypt(it, password.text) } ?: api.key)
                     }.toMutableList()
                 )
                 AppSettingsState.instance.updateUserSettings(decryptedUserSettings)

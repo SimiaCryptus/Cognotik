@@ -19,6 +19,8 @@ import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.util.resource.Resource
