@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTas
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import java.io.File
 
@@ -69,8 +70,8 @@ class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSett
 
 
 open class PlanSettings(
-    var defaultModel: UserSettingsInterface.ApiChatModel? = null,
-    var parsingModel: UserSettingsInterface.ApiChatModel? = null,
+    var defaultModel: ApiChatModel? = null,
+    var parsingModel: ApiChatModel? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -103,7 +104,7 @@ open class PlanSettings(
         )
 
     @JsonIgnore
-    open fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+    open fun instance(model: ApiChatModel): Chatter {
         throw NotImplementedError("Must be implemented in subclass")
     }
 
@@ -130,8 +131,8 @@ open class PlanSettings(
 
     @JsonIgnore
     fun copy(
-        model: UserSettingsInterface.ApiChatModel? = this.defaultModel,
-        parsingModel: UserSettingsInterface.ApiChatModel? = this.parsingModel,
+        model: ApiChatModel? = this.defaultModel,
+        parsingModel: ApiChatModel? = this.parsingModel,
         command: List<String> = this.shellCmd,
         temperature: Double = this.temperature,
         budget: Double = this.budget,
@@ -140,7 +141,7 @@ open class PlanSettings(
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-        instanceFn: (UserSettingsInterface.ApiChatModel) -> Chatter = this::instance,
+        instanceFn: (ApiChatModel) -> Chatter = this::instance,
     ): PlanSettings = PlanSettingsCopy(
         model,
         parsingModel,
@@ -209,7 +210,7 @@ open class PlanSettings(
         )
     }
 
-    fun UserSettingsInterface.ApiChatModel.toinstance(): Chatter = this@PlanSettings.instance(this)
+    fun ApiChatModel.toinstance(): Chatter = this@PlanSettings.instance(this)
 
     companion object {
         var exampleInstance = TaskBreakdownResult(
@@ -235,8 +236,8 @@ open class PlanSettings(
 }
 
 private class PlanSettingsCopy(
-    model: UserSettingsInterface.ApiChatModel?,
-    parsingModel: UserSettingsInterface.ApiChatModel?,
+    model: ApiChatModel?,
+    parsingModel: ApiChatModel?,
     command: List<String>,
     temperature: Double,
     budget: Double,
@@ -245,7 +246,7 @@ private class PlanSettingsCopy(
     env: Map<String, String>?,
     workingDir: String?,
     language: String?,
-    @JsonIgnore val instanceFn: (UserSettingsInterface.ApiChatModel) -> Chatter,
+    @JsonIgnore val instanceFn: (ApiChatModel) -> Chatter,
     maxTaskHistoryChars: Int,
     maxTasksPerIteration: Int,
     maxIterations: Int,
@@ -264,5 +265,5 @@ private class PlanSettingsCopy(
     maxTasksPerIteration = maxTasksPerIteration,
     maxIterations = maxIterations,
 ) {
-    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter = instanceFn(model)
+    override fun instance(model: ApiChatModel): Chatter = instanceFn(model)
 }

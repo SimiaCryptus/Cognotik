@@ -181,10 +181,10 @@ class AndroidCognotikApps private constructor(
     private val describer = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "com.simiacryptus"
     )
-    private val model : UserSettingsInterface.ApiChatModel = AnthropicModels.Claude35Haiku.let {
-        UserSettingsInterface.ApiChatModel(
+    private val model : ApiChatModel = AnthropicModels.Claude35Haiku.let {
+        ApiChatModel(
             model = it,
-            provider = UserSettingsInterface.ApiData(
+            provider = ApiData(
                 provider = it.provider
             ).validate()
         )
@@ -213,7 +213,7 @@ class AndroidCognotikApps private constructor(
             parsingModel = model,
             workingDir = filesDir
         ) {
-            override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+            override fun instance(model: ApiChatModel): Chatter {
                 TODO()
             }
 
@@ -232,7 +232,7 @@ class AndroidCognotikApps private constructor(
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                    override fun instance(model: ApiChatModel): Chatter {
                         TODO("Not yet implemented")
                     }
                 }
@@ -247,7 +247,7 @@ class AndroidCognotikApps private constructor(
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                    override fun instance(model: ApiChatModel): Chatter {
                         TODO("Not yet implemented")
                     }
                 }
@@ -262,7 +262,7 @@ class AndroidCognotikApps private constructor(
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                    override fun instance(model: ApiChatModel): Chatter {
                         TODO("Not yet implemented")
                     }
                 }
@@ -277,7 +277,7 @@ class AndroidCognotikApps private constructor(
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel): Chatter {
+                    override fun instance(model: ApiChatModel): Chatter {
                         TODO("Not yet implemented")
                     }
                 }

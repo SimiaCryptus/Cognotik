@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
@@ -18,7 +19,7 @@ class CommandAutoFixTask(
     class CommandAutoFixTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
-        model: UserSettingsInterface.ApiChatModel? = null,
+        model: ApiChatModel? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 

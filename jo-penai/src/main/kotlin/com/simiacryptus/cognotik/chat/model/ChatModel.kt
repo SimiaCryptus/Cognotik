@@ -81,15 +81,22 @@ class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
 
 class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
-        val modelName = p.readValueAs(String::class.java)
-        return values()[modelName] ?: ChatModel(
-            name = modelName,
-            modelName = modelName,
-            maxTotalTokens = 4096,
-            provider = APIProvider.Companion.OpenAI,
-            inputTokenPricePerK = 0.0,
-            outputTokenPricePerK = 0.0
-        )
+        return when (p.currentToken) {
+            com.fasterxml.jackson.core.JsonToken.VALUE_STRING -> {
+                // Handle string format
+                val modelName = p.readValueAs(String::class.java)
+                values().entries.find { it.key == modelName || it.value.name == modelName || it.value.modelName == modelName }?.value
+                    ?: throw IllegalArgumentException("Unknown model: $modelName")
+            }
+            com.fasterxml.jackson.core.JsonToken.START_OBJECT -> {
+                // Handle object format - delegate to default deserialization
+                val node = p.readValueAsTree<com.fasterxml.jackson.databind.JsonNode>()
+                val modelName = node.get("modelName")?.asText() ?: node.get("name")?.asText()
+                    ?: throw IllegalArgumentException("Object format must contain 'modelName' or 'name' field")
+                values().entries.find { it.key == modelName || it.value.name == modelName || it.value.modelName == modelName }?.value
+                    ?: throw IllegalArgumentException("Unknown model: $modelName")
+            }
+            else -> throw IllegalArgumentException("ChatModel must be deserialized from either a string or an object")
+        }
     }
 }
-

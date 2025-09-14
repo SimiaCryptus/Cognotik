@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
@@ -35,8 +36,8 @@ abstract class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     val planSettings: PlanSettings,
-    val model: UserSettingsInterface.ApiChatModel,
-    val parsingModel: UserSettingsInterface.ApiChatModel,
+    val model: ApiChatModel,
+    val parsingModel: ApiChatModel,
     showMenubar: Boolean = true,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
@@ -65,7 +66,7 @@ abstract class UnifiedPlanApp(
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
 
-    abstract fun instance(model: UserSettingsInterface.ApiChatModel): Chatter
+    abstract fun instance(model: ApiChatModel): Chatter
 
     override fun newSession(
         user: User?,

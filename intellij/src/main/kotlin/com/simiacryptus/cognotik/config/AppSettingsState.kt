@@ -69,8 +69,8 @@ data class AppSettingsState(
     var temperature: Double = 0.1,
 
     /* Model Settings */
-    var smartModel: UserSettingsInterface.ApiChatModel? = null,
-    var fastModel: UserSettingsInterface.ApiChatModel? = null,
+    var smartModel: ApiChatModel? = null,
+    var fastModel: ApiChatModel? = null,
     var transcriptionModel: String? = null,
     var mainImageModel: String = "",
     /* Embedding Model Settings */
@@ -118,10 +118,10 @@ data class AppSettingsState(
     private val userSettingsManager = UserSettingsManager()
 
     @JsonIgnore
-    fun getUserSettings(): UserSettingsInterface.UserSettings = userSettingsManager.getUserSettings(defaultUser)
+    fun getUserSettings(): UserSettings = userSettingsManager.getUserSettings(defaultUser)
 
     @JsonIgnore
-    fun updateUserSettings(settings: UserSettingsInterface.UserSettings) =
+    fun updateUserSettings(settings: UserSettings) =
         userSettingsManager.updateUserSettings(defaultUser, settings)
 
     @get:JsonIgnore
@@ -160,7 +160,7 @@ data class AppSettingsState(
                         val existingApi = userSettings.apis.find { it.provider == provider }
                         if (existingApi == null) {
                             userSettings.apis.add(
-                                UserSettingsInterface.ApiData(
+                                ApiData(
                                     key = keyValue.asText(),
                                     provider = provider,
                                     baseUrl = provider.base
@@ -188,7 +188,7 @@ data class AppSettingsState(
                         val existingApi = userSettings.apis.find { it.provider == provider }
                         if (existingApi == null) {
                             userSettings.apis.add(
-                                UserSettingsInterface.ApiData(
+                                ApiData(
                                     key = keyValue.asText(),
                                     provider = provider,
                                     baseUrl = baseUrl
@@ -386,7 +386,7 @@ fun String.imageModel(): ImageModels {
     } ?: ImageModels.DallE3
 }
 
-fun UserSettingsInterface.ApiChatModel.instance(): Chatter? = model?.instance(
+fun ApiChatModel.instance(): Chatter? = model?.instance(
     key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
     base = provider?.provider?.base ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
     logLevel = Level.INFO,

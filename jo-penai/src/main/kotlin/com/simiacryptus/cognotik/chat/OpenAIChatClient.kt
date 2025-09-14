@@ -7,16 +7,12 @@ import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
-import org.slf4j.event.Level
-import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class OpenAIChatClient(
     apiKey: String,
     apiBase: String,
-    workPool: ExecutorService,
-    logLevel: Level,
-    logStreams: MutableList<BufferedOutputStream>
+    workPool: ExecutorService
 ) : SingleProviderChatClient(
     APIProvider.OpenAI,
     apiKey = apiKey,

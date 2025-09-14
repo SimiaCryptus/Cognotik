@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.platform.file
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface.UserSettings
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
 

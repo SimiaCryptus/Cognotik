@@ -677,11 +677,11 @@ private fun ChatModel.instance(
 }
 
 
-private fun ChatModel.toApiChatModel(): UserSettingsInterface.ApiChatModel {
+private fun ChatModel.toApiChatModel(): ApiChatModel {
     val apis = AppSettingsState.instance.getUserSettings().apis
-    return UserSettingsInterface.ApiChatModel(
+    return ApiChatModel(
         model = this,
-        provider = UserSettingsInterface.ApiData(
+        provider = ApiData(
             key = apis.find { it.provider == this.provider }?.key
                 ?: throw IllegalArgumentException("No API Key for ${this.provider?.name}"),
             baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider?.base ?: "",

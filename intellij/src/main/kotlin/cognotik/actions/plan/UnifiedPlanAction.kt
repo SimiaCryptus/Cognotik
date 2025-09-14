@@ -50,7 +50,7 @@ class UnifiedPlanAction : BaseAction() {
                 env = mapOf(),
                 workingDir = root,
             ) {
-                override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                override fun instance(model: ApiChatModel) = model.instance()
                     ?: throw IllegalStateException("Model or Provider not set")
             },
             singleTaskMode = false,
@@ -288,7 +288,7 @@ class UnifiedPlanAction : BaseAction() {
             cognitiveStrategy = cognitiveStrategy,
             describer = describer
         ) {
-            override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+            override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")
         }
         ApplicationServer.appInfoMap[session] = AppInfoData(

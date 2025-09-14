@@ -145,9 +145,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             ) = OpenAIChatClient(
                 apiKey = key,
                 apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams
+                workPool = workPool
             )
         }
         val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {

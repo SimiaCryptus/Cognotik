@@ -334,9 +334,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 val userSettingsJson = JsonUtil.toJson(fullConfig["userSettings"])
                 val importedSettings = fromJson<AppSettingsState>(appSettingsJson, AppSettingsState::class.java)
                 XmlSerializerUtil.copyBean(importedSettings, AppSettingsState.instance)
-                val importedUserSettings = fromJson<UserSettingsInterface.UserSettings>(
+                val importedUserSettings = fromJson<UserSettings>(
                     userSettingsJson,
-                    UserSettingsInterface.UserSettings::class.java
+                    UserSettings::class.java
                 )
                 val decryptedUserSettings = importedUserSettings.copy(
                     apis = importedUserSettings.apis.map { api ->
@@ -390,7 +390,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val smartChatModel = ChatModel.values().entries.find { it.value.modelName == smartModelName }?.value
             val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
 
-            settings.fastModel = UserSettingsInterface.ApiChatModel(fastChatModel, fastApiData)
+            settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
             settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
             settings.awsProfile = component.awsProfile.text.takeIf { it.isNotBlank() }
             settings.awsRegion = component.awsRegion.text.takeIf { it.isNotBlank() }
@@ -400,7 +400,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.listeningPort = component.listeningPort.text.safeInt()
             settings.listeningEndpoint = component.listeningEndpoint.text
             settings.suppressErrors = component.suppressErrors.isSelected
-            settings.smartModel = UserSettingsInterface.ApiChatModel(smartChatModel, smartApiData)
+            settings.smartModel = ApiChatModel(smartChatModel, smartApiData)
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.temperature = component.temperature.text.safeDouble()
@@ -423,7 +423,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     try {
                         val apiProvider = APIProvider.valueOf(provider)
                         userSettings.apis.add(
-                            UserSettingsInterface.ApiData(
+                            ApiData(
                                 name = name.takeIf { it.isNotBlank() },
                                 key = key.takeIf { it.isNotBlank() } ?: "",
                                 baseUrl = base,

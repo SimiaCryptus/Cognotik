@@ -41,7 +41,7 @@ class LLMModelDeserializer : com.fasterxml.jackson.databind.JsonDeserializer<LLM
         ).flatMap { it.entries }.find { it.key == modelName }?.value?.let { return it }
         return LLMModel(
             modelName,
-            provider = APIProvider.OpenAI,
+            provider = null,
         )
     }
 }

@@ -59,7 +59,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fastModelTree = null
         }
 
-        private fun createModelTree(title: String, selectedModel: UserSettingsInterface.ApiChatModel?): Tree {
+        private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
             val root = DefaultMutableTreeNode(title)
 
             val providers = models()
@@ -114,9 +114,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     
                     when (title) {
                     "Smart Model" -> AppSettingsState.Companion.instance.smartModel = 
-                        UserSettingsInterface.ApiChatModel(chatModel, apiData)
+                        ApiChatModel(chatModel, apiData)
                     "Fast Model" -> AppSettingsState.Companion.instance.fastModel = 
-                        UserSettingsInterface.ApiChatModel(chatModel, apiData)
+                        ApiChatModel(chatModel, apiData)
                     }
                     statusBar?.updateWidget(ID())
                 }

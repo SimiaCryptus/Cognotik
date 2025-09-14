@@ -1,10 +1,12 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -41,15 +43,18 @@ class BasicChatApp(
     ) as T
 
     override fun newSession(user: User?, session: Session): ChatSocketManager {
-        val settings = this.settings ?: getSettings(session, user)!!
         val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
-        fun instance(model: ChatModel) = model.getApi(user)?.let { apiData ->
-            model.instance(
-                key = apiData.key,
-                base = apiData.baseUrl,
-                temperature = settings.temperature,
-                workPool = ApplicationServices.clientManager.getPool(session, user),
-            )
+        val settings = this.settings ?: getSettings(session, user)!!
+        fun instance(model: ChatModel): Chatter? {
+            val api = model.getApi(user)
+            return api?.let { apiData ->
+                model.instance(
+                    key = apiData.key,
+                    base = apiData.baseUrl,
+                    temperature = settings.temperature,
+                    workPool = ApplicationServices.clientManager.getPool(session, user),
+                )
+            }
         }
         return ChatSocketManager(
             session = session,
@@ -68,6 +73,6 @@ class BasicChatApp(
 }
 
 @Deprecated("Need to refactor to include api config")
-fun ChatModel.getApi(user: User): UserSettingsInterface.ApiData? =
+fun ChatModel.getApi(user: User): ApiData? =
     userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == provider }?.validate()
 

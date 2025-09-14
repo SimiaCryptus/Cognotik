@@ -13,6 +13,8 @@ import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -229,14 +231,8 @@ open class CognotikApps(
 
     override fun setupPlatform() {
         super.setupPlatform()
-        val mockUser = User(
-            "1",
-            "user@mock.test",
-            "Test User",
-            ""
-        )
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = mockUser
+            override fun getUser(accessToken: String?) = globalUser
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
             override fun logout(accessToken: String, user: User) {}
         }
@@ -258,7 +254,7 @@ open class CognotikApps(
             parsingModel = model.toApiChatModel(),
             workingDir = "."
         ) {
-            override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+            override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or provider not set")
 
         }
@@ -274,7 +270,7 @@ open class CognotikApps(
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                    override fun instance(model: ApiChatModel) = model.instance()
                         ?: throw IllegalStateException("Model or provider not set")
                 }
             ),
@@ -288,7 +284,7 @@ open class CognotikApps(
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                    override fun instance(model: ApiChatModel) = model.instance()
                         ?: throw IllegalStateException("Model or provider not set")
                 }
             ),
@@ -302,7 +298,7 @@ open class CognotikApps(
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                    override fun instance(model: ApiChatModel) = model.instance()
                         ?: throw IllegalStateException("Model or provider not set")
                 }
             ),
@@ -316,7 +312,7 @@ open class CognotikApps(
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 ) {
-                    override fun instance(model: UserSettingsInterface.ApiChatModel) = model.instance()
+                    override fun instance(model: ApiChatModel) = model.instance()
                         ?: throw IllegalStateException("Model or provider not set")
                 }
             )
@@ -435,9 +431,6 @@ open class CognotikApps(
 
 }
 
-
-
-
 fun String?.urlEncode(): String {
     return this?.let {
         URLEncoder.encode(it, Charsets.UTF_8.name())
@@ -446,7 +439,7 @@ fun String?.urlEncode(): String {
     } ?: ""
 }
 
-fun UserSettingsInterface.ApiChatModel.instance(
+fun ApiChatModel.instance(
     user: User = globalUser,
     session: Session = globalID,
     service: ExecutorService = ApplicationServices.clientManager.getPool(session, user),
@@ -454,9 +447,13 @@ fun UserSettingsInterface.ApiChatModel.instance(
 ) = model?.instance(
     key = when(provider?.key){
         null -> null
-        "NONE" -> ApplicationServices.userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == this.provider }?.key
+        "NONE" -> null
         else -> provider!!.key
-    } ?: throw IllegalStateException("No API key configured for model $model"),
+    } ?: ApplicationServices.userSettingsManager.getUserSettings(user).apis.let {
+        it.firstOrNull { it.provider == this.provider }?.key
+            ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
+            ?: throw IllegalStateException("No API key configured for model $model")
+    },
     base = provider?.provider?.base ?: model?.provider?.base
     ?: throw IllegalStateException("No API base configured for model $model"),
     logLevel = Level.INFO,
@@ -467,15 +464,16 @@ fun UserSettingsInterface.ApiChatModel.instance(
 
 private fun ChatModel.toApiChatModel(
     user: User = globalUser
-): UserSettingsInterface.ApiChatModel {
+): ApiChatModel {
     val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user = user)
     val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }
-    return UserSettingsInterface.ApiChatModel(
+    return ApiChatModel(
         model = this,
-        provider = UserSettingsInterface.ApiData(
+        provider = ApiData(
             provider = this.provider,
             key = apiData?.key ?: "NONE",
-            baseUrl = apiData?.baseUrl ?: this.provider.base,
+            baseUrl = apiData?.baseUrl ?: this.provider?.base
+            ?: throw IllegalStateException("No API base configured for model $model"),
         ).validate()
     )
 }
