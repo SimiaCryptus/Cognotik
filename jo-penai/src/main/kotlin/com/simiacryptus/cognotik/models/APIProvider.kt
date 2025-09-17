@@ -30,6 +30,19 @@ abstract class APIProvider private constructor(name: String, val base: String) :
     abstract fun getChatModels(): List<ChatModel>
 
     companion object {
+        val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
+
+            override fun getChatModels(): List<ChatModel> = emptyList()
+
+            override fun getChatClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>
+            ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
+        }
+
         val Google: APIProvider = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
 
             override fun getChatModels(): List<ChatModel> = GoogleModels.values.values.toList()
@@ -247,6 +260,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             register(APIProvider::class.java, GoogleSearch)
             register(APIProvider::class.java, Github)
             register(APIProvider::class.java, Ollama)
+            register(APIProvider::class.java, SearchAPI)
         }
 
         @JvmStatic

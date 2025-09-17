@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -231,7 +232,7 @@ open class CognotikApps(
     override fun setupPlatform() {
         super.setupPlatform()
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = UserSettingsManager.Companion.defaultUser
+            override fun getUser(accessToken: String?) = defaultUser
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
             override fun logout(accessToken: String, user: User) {}
         }
@@ -431,7 +432,7 @@ fun String?.urlEncode(): String {
 }
 
 fun ApiChatModel.instance(
-    user: User = UserSettingsManager.Companion.defaultUser,
+    user: User = defaultUser,
     session: Session = globalID,
     service: ExecutorService = ApplicationServices.clientManager.getPool(session, user),
     temperature: Double = 0.1
@@ -454,7 +455,7 @@ fun ApiChatModel.instance(
 )
 
 private fun ChatModel.toApiChatModel(
-    user: User = UserSettingsManager.Companion.defaultUser
+    user: User = defaultUser
 ): ApiChatModel {
     val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user = user)
     val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }

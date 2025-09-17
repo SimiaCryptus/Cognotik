@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.tools.online.SeedMethod.Companion.log
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
@@ -21,91 +22,11 @@ interface SeedStrategy : EnabledStrategy {
         planSettings: PlanSettings
     ): List<Map<String, Any>>?
 }
-
+interface SeedMethodFactory {
+    fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy
+}
 @Suppress("unused")
-enum class SeedMethod {
-    DuckDuckGoSearch {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
-            override fun getSeedItems(
-                taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
-                planSettings: PlanSettings
-            ): List<Map<String, Any>>? {
-                log.info("Starting DuckDuckGo Search seed method with query: ${taskConfig?.search_query}")
-                if (taskConfig?.search_query.isNullOrBlank()) {
-                    log.error("Search query is missing for DuckDuckGo Search seed method")
-                    throw IllegalArgumentException("Search query is required when using DuckDuckGo Search seed method")
-                }
-                val client = HttpClient.newBuilder().build()
-                val query = taskConfig?.search_query?.trim()
-                log.debug("Using search query: $query")
-                val encodedQuery = URLEncoder.encode(query, "UTF-8")
-                val searchLimit = 20
-                log.debug("Preparing DuckDuckGo Search API request")
-                // DuckDuckGo Instant Answer API
-                val uriBuilder = "https://api.duckduckgo.com/?q=$encodedQuery&format=json&no_html=1&skip_disambig=1"
-                val request = HttpRequest.newBuilder()
-                    .uri(URI.create(uriBuilder))
-                    .header("User-Agent", "CognoTik-Crawler/1.0")
-                    .GET()
-                    .build()
-                log.info("Sending request to DuckDuckGo Search API")
-                val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-                val statusCode = response.statusCode()
-               if (statusCode != 200 && statusCode != 202) {
-                    log.error("DuckDuckGo API request failed with status $statusCode: ${response.body()}")
-                    throw RuntimeException("DuckDuckGo API request failed with status $statusCode: ${response.body()}")
-                }
-                log.debug("Parsing DuckDuckGo Search API response")
-                val searchData: Map<String, Any> = ObjectMapper().readValue(response.body())
-                val relatedTopics = searchData["RelatedTopics"] as? List<Map<String, Any>> ?: emptyList()
-                val results = searchData["Results"] as? List<Map<String, Any>> ?: emptyList()
-                // Combine results and related topics
-                val allItems = mutableListOf<Map<String, Any>>()
-                // Add main results first
-                results.forEach { result ->
-                    val firstUrl = result["FirstURL"] as? String
-                    val text = result["Text"] as? String
-                    if (!firstUrl.isNullOrBlank() && !text.isNullOrBlank()) {
-                        allItems.add(
-                            mapOf(
-                                "link" to firstUrl,
-                                "title" to text,
-                                "snippet" to text
-                            )
-                        )
-                    }
-                }
-                // Add related topics
-                relatedTopics.forEach { topic ->
-                    val firstUrl = topic["FirstURL"] as? String
-                    val text = topic["Text"] as? String
-                    if (!firstUrl.isNullOrBlank() && !text.isNullOrBlank()) {
-                        allItems.add(
-                            mapOf(
-                                "link" to firstUrl,
-                                "title" to text.substringBefore(" - "),
-                                "snippet" to text
-                            )
-                        )
-                    }
-                }
-                if (allItems.isEmpty()) {
-                    throw RuntimeException("No search results found for query: $query")
-                }
-                log.info(
-                    "Successfully retrieved ${allItems.size} search results, returning ${
-                        Math.min(allItems.size, searchLimit)
-                    } items"
-                )
-                return allItems.take(searchLimit)
-            }
-
-            override fun isEnabled(): Boolean {
-                return false // DuckDuckGo Instant Answer API turns out to be quite limited
-            }
-        }
-
-    },
+enum class SeedMethod : SeedMethodFactory {
     GoogleSearch {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
             override fun getSeedItems(
@@ -171,7 +92,27 @@ enum class SeedMethod {
                 } ?: false
             }
         }
-
+    },
+    SearchIO_Google_Search {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google").createStrategy(task, user)
+    },
+    SearchIO_Google_Maps {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_maps").createStrategy(task, user)
+    },
+    SearchIO_Google_Trends {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_trends").createStrategy(task, user)
+    },
+    SearchIO_Google_Scholar {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_scholar").createStrategy(task, user)
+    },
+    SearchIO_Google_Patents {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_patents").createStrategy(task, user)
+    },
+    SearchIO_Google_Finance {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_finance").createStrategy(task, user)
+    },
+    SearchIO_Google_News {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_news").createStrategy(task, user)
     },
     DirectUrls {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
@@ -199,9 +140,78 @@ enum class SeedMethod {
         }
     };
 
-    abstract fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy
-
     companion object {
         val log = LoggerFactory.getLogger(SeedMethod::class.java)
+    }
+}
+
+class SearchAPISearch(
+    val engine: String
+) : SeedMethodFactory {
+    override fun createStrategy(
+        task: CrawlerAgentTask,
+        user: User?,
+    ): SeedStrategy = object : SeedStrategy {
+        override fun getSeedItems(
+            taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
+            planSettings: PlanSettings,
+        ): List<Map<String, Any>>? {
+            log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
+            if (taskConfig?.search_query.isNullOrBlank()) {
+                log.error("Search query is missing for SearchAPI.io seed method")
+                throw IllegalArgumentException("Search query is required when using SearchAPI.io seed method")
+            }
+            val client = HttpClient.newBuilder().build()
+            val query = taskConfig?.search_query?.trim()
+            log.debug("Using search query: $query")
+            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            val resultCount = 10
+            val searchLimit = 20
+            log.debug("Fetching user settings for SearchAPI.io")
+            val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user ?: defaultUser)
+            val apiKey = userSettings
+                .apis.firstOrNull { it.provider == APIProvider.SearchAPI }?.key?.trim()
+                ?: throw RuntimeException("SearchAPI.io API key is required")
+            log.debug("Preparing SearchAPI.io request")
+            val uriBuilder =
+                "https://www.searchapi.io/api/v1/search?engine=$engine&q=$encodedQuery&num=$resultCount&api_key=$apiKey"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(uriBuilder))
+                .header("User-Agent", "CognoTik-Crawler/1.0")
+                .GET()
+                .build()
+            log.info("Sending request to SearchAPI.io")
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            val statusCode = response.statusCode()
+            if (statusCode != 200) {
+                log.error("SearchAPI.io request failed with status $statusCode: ${response.body()}")
+                throw RuntimeException("SearchAPI.io request failed with status $statusCode: ${response.body()}")
+            }
+            log.debug("Parsing SearchAPI.io response")
+            val searchData: Map<String, Any> = ObjectMapper().readValue(response.body())
+            val organicResults = searchData["organic_results"] as? List<Map<String, Any>>
+            if (organicResults.isNullOrEmpty()) {
+                log.warn("No search results found for query: $query")
+                throw RuntimeException("No search results found for query: $query")
+            }
+            val results = organicResults.map { result ->
+                mapOf(
+                    "link" to (result["link"] as? String ?: ""),
+                    "title" to (result["title"] as? String ?: ""),
+                    "snippet" to (result["snippet"] as? String ?: "")
+                )
+            }.filter { it["link"] != "" }
+            log.info(
+                "Successfully retrieved ${results.size} search results, returning ${
+                    Math.min(results.size, searchLimit)
+                } items"
+            )
+            return results.take(searchLimit)
+        }
+
+        override fun isEnabled() = user?.let {
+            ApplicationServices.userSettingsManager.getUserSettings(it)
+                .apis.any { api -> api.provider == APIProvider.SearchAPI && api.key.isNotBlank() }
+        } ?: false
     }
 }
