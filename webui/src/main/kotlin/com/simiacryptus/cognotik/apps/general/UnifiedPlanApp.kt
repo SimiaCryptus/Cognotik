@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -36,8 +35,6 @@ abstract class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
     val planSettings: PlanSettings,
-    val model: ApiChatModel,
-    val parsingModel: ApiChatModel,
     showMenubar: Boolean = true,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
@@ -76,7 +73,6 @@ abstract class UnifiedPlanApp(
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
         val settings =
             (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
-        // Add expansion syntax guide if enabled
         if (useExpansionSyntax) {
             ui.newTask(true).expandable(
                 "Query Expansion Syntax Guide", """
@@ -103,15 +99,10 @@ abstract class UnifiedPlanApp(
         ui.newTask(true).expandable(
             "Session Info", """
                 Session ID: `${session}`
-                
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-                
                 Enabled Tasks: `${settings.taskSettings.filter { it.value.enabled }.keys.joinToString(", ")}`
-                
                 Root: `${settings.absoluteWorkingDir}`
-                
                 Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
-                
                 Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
                 Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
             """.trimIndent().renderMarkdown()

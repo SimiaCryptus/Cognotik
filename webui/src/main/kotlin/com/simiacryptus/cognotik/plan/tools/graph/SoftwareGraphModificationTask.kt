@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 
 class SoftwareGraphModificationTask(
@@ -78,7 +79,7 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
+            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task),
             parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,

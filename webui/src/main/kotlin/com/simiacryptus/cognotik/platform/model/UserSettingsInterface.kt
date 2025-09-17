@@ -13,9 +13,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ChatModelsDeserializer
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 
 interface UserSettingsInterface {
-    fun getUserSettings(user: User): UserSettings
+    fun getUserSettings(user: User = UserSettingsManager.defaultUser): UserSettings
     fun updateUserSettings(user: User, settings: UserSettings)
 }
 data class ToolData(

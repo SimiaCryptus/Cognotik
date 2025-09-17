@@ -19,7 +19,7 @@ abstract class AbstractTask<T : TaskConfigBase>(
             ?: throw IllegalStateException("Working directory not set")
 
     open val taskSettings: TaskSettingsBase
-        get() = planSettings.taskSettings.get(taskConfig?.task_type!!)!!
+        get() = planSettings.taskSettings[taskConfig?.task_type!!]!!
 
     enum class TaskState {
         Pending,

@@ -20,7 +20,6 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModifi
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import java.io.File
 
 class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {
@@ -201,7 +200,7 @@ open class PlanSettings(
             resultClass = TaskBreakdownResult::class.java,
             exampleInstance = exampleInstance,
             prompt = prompt,
-            model = (planTaskSettings.model ?: this.defaultModel)?.toinstance()
+            model = (planTaskSettings.model ?: defaultModel)?.let { instance(it) }
                 ?: throw IllegalStateException("No model configured"),
             parsingModel = this.parsingChatter,
             temperature = this.temperature,
@@ -209,8 +208,6 @@ open class PlanSettings(
             parserPrompt = parserPrompt
         )
     }
-
-    fun ApiChatModel.toinstance(): Chatter = this@PlanSettings.instance(this)
 
     companion object {
         var exampleInstance = TaskBreakdownResult(

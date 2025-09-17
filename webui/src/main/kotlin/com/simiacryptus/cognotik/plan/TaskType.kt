@@ -266,7 +266,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
         val WebSearchTask = TaskType(
             "CrawlerAgentTask",
             com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
+            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskSettings::class.java,
             "Search Google, fetch top results, and analyze content",
             """
           Searches Google for specified queries and analyzes the top results.

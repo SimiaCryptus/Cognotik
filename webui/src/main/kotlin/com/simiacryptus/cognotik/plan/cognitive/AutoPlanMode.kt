@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.*
 import java.util.concurrent.Future
@@ -317,7 +318,7 @@ $fullTaskDataJson
                 })
                 append("\nChoose the most suitable task types and provide details of how they should be executed.")
             },
-            model = coordinator.planSettings.defaultChatter,
+            model = coordinator.planSettings.defaultChatter.getChildClient(task),
             parsingModel = coordinator.planSettings.parsingChatter,
             temperature = coordinator.planSettings.temperature,
             describer = describer,

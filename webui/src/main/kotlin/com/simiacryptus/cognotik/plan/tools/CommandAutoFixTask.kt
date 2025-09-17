@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
@@ -67,7 +68,7 @@ class CommandAutoFixTask(
             val task = agent.ui.newTask(false)
             agent.pool.submit {
                 val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
-                    ?: agent.planSettings.defaultChatter)
+                    ?: agent.planSettings.defaultChatter).getChildClient(task)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(

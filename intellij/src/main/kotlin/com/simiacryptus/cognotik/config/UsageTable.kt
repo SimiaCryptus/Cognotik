@@ -2,6 +2,7 @@
 
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
@@ -23,7 +24,7 @@ class UsageTable(
     val columnNames = arrayOf("Model", "Prompt", "Completion", "Cost")
 
     val rowData by lazy {
-        val usageData = usage.getUserUsageSummary(AppSettingsState.Companion.defaultUser).map { entry ->
+        val usageData = usage.getUserUsageSummary(UserSettingsManager.defaultUser).map { entry ->
             listOf(
                 entry.key,
                 entry.value.prompt_tokens.toString(),

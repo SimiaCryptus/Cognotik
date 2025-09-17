@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import org.apache.hc.core5.http.HttpRequest
 import java.util.concurrent.Executors
 
@@ -26,7 +27,7 @@ class IdeaOpenAIClient : OpenAIClient(
 
         ApplicationServices.usageManager.incrementUsage(
             AppSettingsState.currentSession,
-            AppSettingsState.Companion.defaultUser, model!!, tokens
+            UserSettingsManager.defaultUser, model!!, tokens
         )
     }
 

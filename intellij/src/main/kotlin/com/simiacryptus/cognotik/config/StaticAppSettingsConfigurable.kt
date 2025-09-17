@@ -4,6 +4,8 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
@@ -163,7 +165,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
 
         val encryptedSettings = AppSettingsState.instance.copy()
         // Export UserSettings with encrypted keys
-        val userSettings = AppSettingsState.instance.getUserSettings()
+        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
         val encryptedUserSettings = userSettings.copy(
             apis = userSettings.apis.map { api ->
                 api.copy(key = api.key?.let { EncryptionUtil.encrypt(it, password.text) } ?: api.key)
@@ -345,7 +347,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         api.copy(key = api.key.let { EncryptionUtil.decrypt(it, password.text) } ?: api.key)
                     }.toMutableList()
                 )
-                AppSettingsState.instance.updateUserSettings(decryptedUserSettings)
+                ApplicationServices.userSettingsManager.updateUserSettings(
+                    UserSettingsManager.defaultUser,
+                    decryptedUserSettings
+                )
             } else {
                 // Fall back to old format
                 val importedSettings = fromJson<AppSettingsState>(text, AppSettingsState::class.java)
@@ -384,7 +389,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
 
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         try {
-            val userSettings = settings.getUserSettings()
+            val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
             val fastModelName = component.fastModel.selectedItem as String?
             val smartModelName = component.smartModel.selectedItem as String?
             val fastChatModel = ChatModel.values().entries.find { it.value.modelName == fastModelName }?.value
@@ -437,7 +442,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     }
                 }
             }
-            settings.updateUserSettings(userSettings)
+            ApplicationServices.userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
             log.info("Settings after reading: ${settings.toJson()}")
         } catch (e: Exception) {
             log.warn("Error reading UI", e)

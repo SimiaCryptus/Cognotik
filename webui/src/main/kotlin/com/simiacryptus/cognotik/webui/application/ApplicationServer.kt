@@ -126,25 +126,29 @@ abstract class ApplicationServer(
         )
         val settingsFile = getSettingsFile(session, userId)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
-        val text = settingsFile.readText()
-        logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
-        var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
-
-        if (null == settings) {
-            logger.debug("No existing settings found, initializing default settings")
-            val initSettings = initSettings<T>(session)
-            if (null != initSettings) {
-                logger.debug("Writing initial settings to file")
-                settingsFile.writeText(JsonUtil.toJson(initSettings))
+        try {
+            val text = settingsFile.readText()
+            logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
+            var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
+            if (null == settings) {
+                logger.debug("No existing settings found, initializing default settings")
+                val initSettings = initSettings<T>(session)
+                if (null != initSettings) {
+                    logger.debug("Writing initial settings to file")
+                    settingsFile.writeText(JsonUtil.toJson(initSettings))
+                }
+                if (settingsFile.exists()) {
+                    settings = JsonUtil.fromJson(text, clazz)
+                    logger.debug("Loaded initial settings from file")
+                }
+            } else {
+                logger.debug("Loaded existing settings from file")
             }
-            if (settingsFile.exists()) {
-                settings = JsonUtil.fromJson(text, clazz)
-                logger.debug("Loaded initial settings from file")
-            }
-        } else {
-            logger.debug("Loaded existing settings from file")
+            return settings
+        } catch (e: Exception) {
+            logger.error("Error reading settings file: ${settingsFile.absolutePath}", e)
+            return null
         }
-        return settings
     }
 
     fun getSettingsFile(

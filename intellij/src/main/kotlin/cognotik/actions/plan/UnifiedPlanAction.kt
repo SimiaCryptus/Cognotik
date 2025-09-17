@@ -8,7 +8,6 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
-import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
@@ -22,7 +21,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
@@ -282,9 +280,6 @@ class UnifiedPlanAction : BaseAction() {
                 ),
                 parsingModel = fastChatModel,
             ),
-            model = AppSettingsState.instance.smartModel
-                ?: throw IllegalStateException("Smart model not configured"),
-            parsingModel = fastChatModel,
             showMenubar = false,
             cognitiveStrategy = cognitiveStrategy,
             describer = describer

@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
@@ -49,6 +50,7 @@ class RunCodeTask<T : Interpreter>(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
+        val model = (taskSettings.model?.let { agent.planSettings.instance(it) } ?: agent.planSettings.defaultChatter).getChildClient(task)
         val codingAgent = object : CodingAgent<T>(
             dataStorage = agent.dataStorage,
             session = agent.session,
@@ -68,7 +70,7 @@ class RunCodeTask<T : Interpreter>(
             details = """
                 Code a solution using Kotlin to the user's request.
             """.trimIndent(),
-            model = taskSettings.model?.let { agent.planSettings.instance(it) } ?: agent.planSettings.defaultChatter,
+            model = model,
             mainTask = task,
             retryable = false,
         ) {

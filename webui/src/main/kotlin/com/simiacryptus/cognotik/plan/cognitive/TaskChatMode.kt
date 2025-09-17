@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -108,7 +109,7 @@ open class TaskChatMode(
                     })
                     append("\nChoose the most suitable task type and provide details of how it should be executed.")
                 },
-                model = coordinator.planSettings.defaultChatter,
+                model = coordinator.planSettings.defaultChatter.getChildClient(task),
                 parsingModel = coordinator.planSettings.parsingChatter,
                 temperature = coordinator.planSettings.temperature,
                 describer = describer,

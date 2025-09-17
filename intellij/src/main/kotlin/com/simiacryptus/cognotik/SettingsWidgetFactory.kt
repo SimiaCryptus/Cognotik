@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import icons.MyIcons
@@ -66,7 +65,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val providers = models()
                 .filter { model ->
                     val providerName = model.second.provider?.name
-                    AppSettingsState.Companion.instance.getUserSettings().apis.any { api ->
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.any { api ->
                         api.provider?.name == providerName && !api.key.isNullOrBlank()
                     }
                 }
@@ -109,7 +108,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
                     val chatModel = ChatModel.values().entries.find { it.value.modelName == modelName }?.value
-                    val userSettings = AppSettingsState.Companion.instance.getUserSettings()
+                    val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
                     val apiData = userSettings.apis.find { it.provider == chatModel?.provider }
 
                     

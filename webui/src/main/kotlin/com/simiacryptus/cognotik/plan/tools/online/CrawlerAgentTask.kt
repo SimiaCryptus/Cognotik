@@ -9,6 +9,8 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskSettings
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
@@ -32,15 +34,22 @@ class CrawlerAgentTask(
     val create_final_summary: Boolean? = true,
 ) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
 
+    class SearchAndAnalyzeTaskSettings(
+        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
+        @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
+        task_type: String = "CrawlerAgentTask",
+        enabled: Boolean = false,
+        model: ApiChatModel? = null,
+    ) : TaskSettingsBase(task_type, enabled, model)
+
+    override val taskSettings: SearchAndAnalyzeTaskSettings
+        get() = super.taskSettings.jsonCast<SearchAndAnalyzeTaskSettings>()
+
     class SearchAndAnalyzeTaskConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
-        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.DuckDuckGoSearch,
-        @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
-
-
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -109,7 +118,7 @@ class CrawlerAgentTask(
         val webSearchDir = File(agent.root.toFile(), ".websearch")
         if (!webSearchDir.exists()) webSearchDir.mkdirs()
 
-        val seedMethod = taskConfig?.seed_method ?: SeedMethod.DuckDuckGoSearch
+        val seedMethod = taskSettings?.seed_method ?: SeedMethod.GoogleSearch
         val seedItems = seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
 
         val pageQueue = mutableListOf<LinkData>().apply {
@@ -316,7 +325,7 @@ class CrawlerAgentTask(
                 "Include the most important links that should be followed up on.",
                 "Keep your response under ${maxSize / 1000}K characters."
             ).joinToString("\n\n"),
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter,
+            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter),
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
@@ -355,7 +364,7 @@ class CrawlerAgentTask(
             log.info("Using cached content for URL: $url")
             return urlContentCache[url]!!
         }
-        return (taskConfig?.fetch_method ?: FetchMethod.HttpClient).createStrategy(this)
+        return (taskSettings?.fetch_method ?: FetchMethod.HttpClient).createStrategy(this)
             .fetch(url, webSearchDir, index, pool, planSettings)
     }
 
@@ -460,7 +469,7 @@ class CrawlerAgentTask(
         return ParsedActor(
             prompt = summaryPrompt,
             resultClass = ParsedPage::class.java,
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter,
+            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter),
             describer = describer,
             parsingModel = planSettings.parsingChatter,
         ).answer(listOf(summaryPrompt))

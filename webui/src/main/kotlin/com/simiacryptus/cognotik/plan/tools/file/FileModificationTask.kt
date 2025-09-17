@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -204,8 +205,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             },
                             ui = agent.ui,
                             shouldAutoApply = { agent.planSettings.autoFix },
-                            model = taskSettings.model?.let { planSettings.instance(it) }
-                                ?: planSettings.defaultChatter,
+                            model = (taskSettings.model?.let { planSettings.instance(it) }
+                                ?: planSettings.defaultChatter).getChildClient(task),
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"
                     }
@@ -223,8 +224,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 }
                             },
                             ui = agent.ui,
-                            model = taskSettings.model?.let { planSettings.instance(it) }
-                                ?: planSettings.defaultChatter,
+                            model = (taskSettings.model?.let { planSettings.instance(it) }
+                                ?: planSettings.defaultChatter).getChildClient(task),
                             defaultFile = defaultFile,
                         ) + acceptButtonFooter(agent.ui) {
                             task.complete()

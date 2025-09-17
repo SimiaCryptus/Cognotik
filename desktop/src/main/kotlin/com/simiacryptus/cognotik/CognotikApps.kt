@@ -13,12 +13,12 @@ import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
@@ -38,7 +38,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-val globalUser = User(id = "1", email = "user@localhost")
 val globalID = Session.newGlobalID()
 val model = AnthropicModels.Claude35Haiku
 val describer = AbbrevWhitelistYamlDescriber("com.simiacryptus")
@@ -232,7 +231,7 @@ open class CognotikApps(
     override fun setupPlatform() {
         super.setupPlatform()
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = globalUser
+            override fun getUser(accessToken: String?) = UserSettingsManager.Companion.defaultUser
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
             override fun logout(accessToken: String, user: User) {}
         }
@@ -265,8 +264,6 @@ open class CognotikApps(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
                     planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
                 ) {
@@ -279,8 +276,6 @@ open class CognotikApps(
                     path = "/autoPlan",
                     applicationName = "Auto-Plan",
                     planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
                 ) {
@@ -293,8 +288,6 @@ open class CognotikApps(
                     path = "/planAhead",
                     applicationName = "Plan-Ahead",
                     planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
                 ) {
@@ -307,8 +300,6 @@ open class CognotikApps(
                     path = "/goalOriented",
                     applicationName = "Goal-Oriented",
                     planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 ) {
@@ -440,7 +431,7 @@ fun String?.urlEncode(): String {
 }
 
 fun ApiChatModel.instance(
-    user: User = globalUser,
+    user: User = UserSettingsManager.Companion.defaultUser,
     session: Session = globalID,
     service: ExecutorService = ApplicationServices.clientManager.getPool(session, user),
     temperature: Double = 0.1
@@ -463,7 +454,7 @@ fun ApiChatModel.instance(
 )
 
 private fun ChatModel.toApiChatModel(
-    user: User = globalUser
+    user: User = UserSettingsManager.Companion.defaultUser
 ): ApiChatModel {
     val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user = user)
     val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }

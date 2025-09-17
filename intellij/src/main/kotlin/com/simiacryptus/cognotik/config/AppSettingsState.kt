@@ -19,7 +19,6 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
@@ -30,15 +29,11 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.File
-import java.util.concurrent.ExecutorService
 
 data class CommandConfig(
     val commands: List<PatchApp.CommandSettings>,
@@ -117,21 +112,14 @@ data class AppSettingsState(
     val recentArguments: MutableList<String>? = mutableListOf(),
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
 ) : PersistentStateComponent<SimpleEnvelope> {
-    @JsonIgnore
-    private val userSettingsManager = UserSettingsManager()
-
-    @JsonIgnore
-    fun getUserSettings(): UserSettings = userSettingsManager.getUserSettings(defaultUser)
-
-    @JsonIgnore
-    fun updateUserSettings(settings: UserSettings) =
-        userSettingsManager.updateUserSettings(defaultUser, settings)
 
     @get:JsonIgnore
-    val smartChatClient: Chatter get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
+    val smartChatClient: Chatter
+        get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
 
     @get:JsonIgnore
-    val fastChatClient: Chatter get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
+    val fastChatClient: Chatter
+        get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
 
     @get:JsonIgnore
     val embeddingClient: com.simiacryptus.cognotik.embedding.Embedder? get() = embeddingModel?.instance()
@@ -143,14 +131,14 @@ data class AppSettingsState(
     private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
         val mapper = ObjectMapper()
         val appSettings = try {
-                fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
-            } catch (e: Exception) {
-                log.warn("Error parsing settings: ${jsonNode}", e)
-                AppSettingsState()
-            }
+            fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
+        } catch (e: Exception) {
+            log.warn("Error parsing settings: ${jsonNode}", e)
+            AppSettingsState()
+        }
 
         // Migrate legacy API keys to UserSettingsManager
-        val userSettings = getUserSettings()
+        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
         var needsUpdate = false
 
         // Handle old apiKey field
@@ -206,7 +194,7 @@ data class AppSettingsState(
             }
         }
         if (needsUpdate) {
-            updateUserSettings(userSettings)
+            ApplicationServices.userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
         }
 
         return appSettings
@@ -286,9 +274,9 @@ data class AppSettingsState(
         if (sampleSize != other.sampleSize) return false
         if (channels != other.channels) return false
         if (temperature != other.temperature) return false
-if (smartModel != other.smartModel) return false
-         if (fastModel != other.fastModel) return false
-         if (mainImageModel != other.mainImageModel) return false
+        if (smartModel != other.smartModel) return false
+        if (fastModel != other.fastModel) return false
+        if (mainImageModel != other.mainImageModel) return false
         if (listeningPort != other.listeningPort) return false
         if (listeningEndpoint != other.listeningEndpoint) return false
         if (apiThreads != other.apiThreads) return false
@@ -363,10 +351,8 @@ if (smartModel != other.smartModel) return false
             onSettingsLoadedListeners.forEach { it() }
         }
 
-        @JsonIgnore
-        val defaultUser = User(id = "1", email = "user@localhost")
         val currentSession = Session.Companion.newGlobalID()
-        val workPool = ApplicationServices.clientManager.getPool(currentSession, defaultUser)
+        val workPool = ApplicationServices.clientManager.getPool(currentSession, UserSettingsManager.defaultUser)
     }
 
     data class UserSuppliedModel(
@@ -391,7 +377,8 @@ fun String.imageModel(): ImageModels {
 
 fun ApiChatModel.instance(): Chatter? = model?.instance(
     key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
-    base = provider?.provider?.base ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
+    base = provider?.provider?.base
+        ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
     logLevel = Level.INFO,
     logStreams = mutableListOf(),
     temperature = AppSettingsState.instance.temperature,

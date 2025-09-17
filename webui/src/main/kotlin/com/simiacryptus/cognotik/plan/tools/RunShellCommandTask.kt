@@ -53,7 +53,7 @@ class RunShellCommandTask(
                 "command" to (planSettings.shellCmd),
                 "timeoutMinutes" to (planTask?.timeoutMinutes ?: 15L),
             ),
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
+            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter),
             temperature = planSettings.temperature,
             fallbackModel = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter
         )

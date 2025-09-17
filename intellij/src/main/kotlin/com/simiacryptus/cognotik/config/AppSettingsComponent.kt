@@ -426,8 +426,8 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
         setExecutables(AppSettingsState.instance.executables ?: emptySet())
         // Populate API table first
         populateApiTable()
-        
-        val userSettings = AppSettingsState.instance.getUserSettings()
+
+        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
 
 
         // Get all available models from APIs with valid keys
@@ -501,7 +501,7 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     private fun populateApiTable() {
         val model = apis.model as DefaultTableModel
         model.rowCount = 0
-        val userSettings = AppSettingsState.instance.getUserSettings()
+        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
         userSettings.apis.forEach { api ->
             val providerName = api.provider?.name ?: ""
             val name = api.name ?: api.provider?.name ?: ""

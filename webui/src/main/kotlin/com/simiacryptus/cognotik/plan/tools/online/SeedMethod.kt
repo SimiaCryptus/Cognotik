@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.EnabledStrategy
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -50,7 +51,7 @@ enum class SeedMethod {
                 log.info("Sending request to DuckDuckGo Search API")
                 val response = client.send(request, HttpResponse.BodyHandlers.ofString())
                 val statusCode = response.statusCode()
-                if (statusCode != 200) {
+               if (statusCode != 200 && statusCode != 202) {
                     log.error("DuckDuckGo API request failed with status $statusCode: ${response.body()}")
                     throw RuntimeException("DuckDuckGo API request failed with status $statusCode: ${response.body()}")
                 }
@@ -89,7 +90,6 @@ enum class SeedMethod {
                     }
                 }
                 if (allItems.isEmpty()) {
-                    log.warn("No search results found for query: $query")
                     throw RuntimeException("No search results found for query: $query")
                 }
                 log.info(
@@ -121,11 +121,9 @@ enum class SeedMethod {
                 val resultCount = 10
                 val searchLimit = 20
                 log.debug("Fetching user settings for Google Search API")
-                val userSettings = user?.let {
-                    ApplicationServices.userSettingsManager.getUserSettings(it)
-                }
+                val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user ?: defaultUser)
                 val key = userSettings
-                    ?.apis?.firstOrNull { it.provider == APIProvider.GoogleSearch }?.key?.trim()
+                    .apis.firstOrNull { it.provider == APIProvider.GoogleSearch }?.key?.trim()
                     ?: throw RuntimeException("Google API token is required")
                 val engineId = userSettings.apiBase[APIProvider.GoogleSearch]?.trim()
                     ?: throw RuntimeException("Search engine id is required")

@@ -20,9 +20,9 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import org.slf4j.event.Level
@@ -86,7 +86,7 @@ class PlanConfigDialog(
         private const val DIVIDER_PROPORTION = 0.3f
 
         fun isVisible(it: ChatModel): Boolean {
-            return AppSettingsState.instance.getUserSettings().apis.any { api ->
+            return ApplicationServices.userSettingsManager.getUserSettings().apis.any { api ->
                 api.provider == it.provider && !api.key.isNullOrBlank()
             }
         }
@@ -666,7 +666,7 @@ class PlanConfigDialog(
 private fun ChatModel.instance(
     service: ExecutorService = AppSettingsState.workPool
 ): Chatter {
-    val apis = AppSettingsState.instance.getUserSettings().apis
+    val apis = ApplicationServices.userSettingsManager.getUserSettings().apis
     return instance(
         key = apis.find { it.provider == provider }?.key
             ?: throw IllegalArgumentException("No API Key for ${provider?.name}"),
@@ -680,7 +680,7 @@ private fun ChatModel.instance(
 
 
 private fun ChatModel.toApiChatModel(): ApiChatModel {
-    val apis = AppSettingsState.instance.getUserSettings().apis
+    val apis = ApplicationServices.userSettingsManager.getUserSettings().apis
     return ApiChatModel(
         model = this,
         provider = ApiData(
