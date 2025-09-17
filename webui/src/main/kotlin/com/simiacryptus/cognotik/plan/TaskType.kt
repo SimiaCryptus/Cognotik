@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
-import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
@@ -168,7 +167,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
         )
         val CommandAutoFixTask = TaskType(
             "CommandAutoFixTask",
-            CommandAutoFixTaskConfigData::class.java,
+            com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData::class.java,
             com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
             "Run a command and automatically fix any issues that arise",
             """
@@ -263,7 +262,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
         )
-        val WebSearchTask = TaskType(
+        val CrawlerAgentTask = TaskType(
             "CrawlerAgentTask",
             com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
             com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskSettings::class.java,
@@ -322,7 +321,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                     task
                 )
             }
-            registerConstructor(WebSearchTask) { settings, task ->
+            registerConstructor(CrawlerAgentTask) { settings, task ->
                 com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask(
                     settings,
                     task

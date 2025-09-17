@@ -411,8 +411,19 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.temperature = component.temperature.text.safeDouble()
-            settings.mainImageModel = (component.mainImageModel.selectedItem as String)
-            settings.embeddingModel = (component.embeddingModel.selectedItem as String?)?.embeddingModel()
+            settings.embeddingModel = component.embeddingModel.selectedItem?.let {
+                when (it) {
+                    is String -> it.embeddingModel()
+                    is EmbeddingModel -> it
+                    else -> null
+                }
+            }
+            settings.mainImageModel = component.mainImageModel.selectedItem.let {
+                when (it) {
+                    is String -> it
+                    else -> ""
+                }
+            }
             settings.pluginHome = File(component.pluginHome.text)
             settings.shellCommand = component.shellCommand.text
             settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
@@ -435,7 +446,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                                 key = key.takeIf { it.isNotBlank() } ?: "",
                                 baseUrl = base,
                                 provider = apiProvider
-                            ).validate()
+                            )
                         )
                     } catch (e: Exception) {
                         log.warn("Unknown provider: $provider", e)

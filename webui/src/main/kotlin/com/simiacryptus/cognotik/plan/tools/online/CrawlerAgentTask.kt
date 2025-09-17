@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskSettings
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -54,7 +53,7 @@ class CrawlerAgentTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskConfigBase(
-        task_type = TaskType.WebSearchTask.name,
+        task_type = TaskType.CrawlerAgentTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state

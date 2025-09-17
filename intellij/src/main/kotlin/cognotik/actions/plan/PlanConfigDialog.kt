@@ -20,6 +20,9 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
+import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -178,6 +181,24 @@ class PlanConfigDialog(
                     }
                 }
             }
+        // Crawler-specific UI components
+        private val seedMethodCombo = if (taskType == TaskType.CrawlerAgentTask) {
+            ComboBox(SeedMethod.values()).apply {
+                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
+                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
+                val currentSettings = settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
+                selectedItem = currentSettings?.seed_method ?: SeedMethod.GoogleSearch
+            }
+        } else null
+        private val fetchMethodCombo = if (taskType == TaskType.CrawlerAgentTask) {
+            ComboBox(FetchMethod.values()).apply {
+                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
+                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
+                val currentSettings = settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
+                selectedItem = currentSettings?.fetch_method ?: FetchMethod.HttpClient
+            }
+        } else null
+        
         private val commandList = if (taskType == TaskType.CommandAutoFixTask) {
             JBTable(object : DefaultTableModel(
                 arrayOf("Enabled", "Command"), 0
@@ -217,12 +238,14 @@ class PlanConfigDialog(
                 }
 
                 private fun updateCommandSettings() {
-                    val newSettings = CommandAutoFixTask.CommandAutoFixTaskSettings(
-                        taskType.name,
-                        settings.getTaskSettings(taskType).enabled,
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
-                        entries.filter { it.enabled }.map { it.command }.toMutableList())
-                    settings.setTaskSettings(taskType, newSettings)
+                    settings.setTaskSettings(
+                        taskType, CommandAutoFixTask.CommandAutoFixTaskSettings(
+                            taskType.name,
+                            settings.getTaskSettings(taskType).enabled,
+                            getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
+                            entries.filter { it.enabled }.map { it.command }.toMutableList()
+                        )
+                    )
                 }
             }).apply {
                 preferredScrollableViewportSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
@@ -247,6 +270,18 @@ class PlanConfigDialog(
             add(JLabel("Model:").apply { alignmentX = LEFT_ALIGNMENT })
             add(Box.createVerticalStrut(2))
             add(modelComboBox.apply { alignmentX = LEFT_ALIGNMENT })
+            // Add crawler-specific configuration
+            if (seedMethodCombo != null && fetchMethodCombo != null) {
+                add(Box.createVerticalStrut(10))
+                add(JLabel("Seed Method:").apply { alignmentX = LEFT_ALIGNMENT })
+                add(Box.createVerticalStrut(2))
+                add(seedMethodCombo.apply { alignmentX = LEFT_ALIGNMENT })
+                add(Box.createVerticalStrut(5))
+                add(JLabel("Fetch Method:").apply { alignmentX = LEFT_ALIGNMENT })
+                add(Box.createVerticalStrut(2))
+                add(fetchMethodCombo.apply { alignmentX = LEFT_ALIGNMENT })
+            }
+            
             if (commandList != null) {
                 add(Box.createVerticalStrut(10))
                 add(JLabel("Available Commands:").apply { alignmentX = LEFT_ALIGNMENT })
@@ -298,6 +333,13 @@ class PlanConfigDialog(
             modelComboBox.selectedItem = currentModel?.model?.modelName ?: AppSettingsState.instance.smartModel
             enabledCheckbox.addItemListener {
                 val newSettings = when (taskType) {
+                    TaskType.CrawlerAgentTask -> CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                        seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
+                        fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
+                        task_type = taskType.name,
+                        enabled = enabledCheckbox.isSelected,
+                        model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                    )
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
@@ -308,10 +350,12 @@ class PlanConfigDialog(
                                 0
                             ) as? Boolean) ?: false
                         }
-                            .map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
+                            .map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList()
+                    )
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                        this.model =
+                            getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     }
                 }
                 settings.setTaskSettings(taskType, newSettings)
@@ -319,34 +363,73 @@ class PlanConfigDialog(
             }
             modelComboBox.addActionListener {
                 val newSettings = when (taskType) {
+                    TaskType.CrawlerAgentTask -> CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                        seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
+                        fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
+                        task_type = taskType.name,
+                        enabled = enabledCheckbox.isSelected,
+                        model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                    )
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
                         getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
                         (0 until (commandList?.model?.rowCount ?: 0)).map { row ->
                             commandList?.model?.getValueAt(row, 1) as String
-                        }.toMutableList())
+                        }.toMutableList()
+                    )
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                        this.model =
+                            getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     }
                 }
                 settings.setTaskSettings(taskType, newSettings)
             }
+            // Add listeners for crawler-specific components
+            seedMethodCombo?.addActionListener {
+                updateCrawlerSettings()
+            }
+            fetchMethodCombo?.addActionListener {
+                updateCrawlerSettings()
+            }
         }
+        private fun updateCrawlerSettings() {
+            if (taskType == TaskType.CrawlerAgentTask && seedMethodCombo != null && fetchMethodCombo != null) {
+                val newSettings = CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                    seed_method = seedMethodCombo.selectedItem as? SeedMethod,
+                    fetch_method = fetchMethodCombo.selectedItem as? FetchMethod,
+                    task_type = taskType.name,
+                    enabled = enabledCheckbox.isSelected,
+                    model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                )
+                settings.setTaskSettings(taskType, newSettings)
+                taskTypeList.repaint()
+            }
+        }
+
 
         fun saveSettings() {
             val newSettings = when (taskType) {
+                TaskType.CrawlerAgentTask -> CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                    seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
+                    fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
+                    task_type = taskType.name,
+                    enabled = enabledCheckbox.isSelected,
+                    model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                )
                 TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
                     model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
                     commandAutoFixCommands = (0 until (commandList?.model?.rowCount ?: 0)).filter { row ->
                         commandList?.model?.getValueAt(row, 0) as Boolean
-                    }.map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList())
+                    }.map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList()
+                )
 
                 else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                    this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                    this.model =
+                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                 }
             }
             if (validateModelSelection(taskType, newSettings.model?.model)) {
@@ -376,8 +459,9 @@ class PlanConfigDialog(
         AppSettingsState.instance.savedPlanConfigs?.keys?.sorted()?.forEach { addItem(it) }
     }
 
-    private fun getVisibleModels(): List<ChatModel> = ChatModel.values().map { it.value }.filter { isVisible(it) }.toList()
-        .sortedBy { "${it.provider?.name} - ${it.modelName}" }
+    private fun getVisibleModels(): List<ChatModel> =
+        ChatModel.values().map { it.value }.filter { isVisible(it) }.toList()
+            .sortedBy { "${it.provider?.name} - ${it.modelName}" }
 
     init {
         taskTypeList.cellRenderer = TaskTypeListCellRenderer()

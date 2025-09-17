@@ -99,7 +99,12 @@ enum class SeedMethod {
                 )
                 return allItems.take(searchLimit)
             }
+
+            override fun isEnabled(): Boolean {
+                return false // DuckDuckGo Instant Answer API turns out to be quite limited
+            }
         }
+
     },
     GoogleSearch {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {

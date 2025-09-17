@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -130,6 +131,7 @@ abstract class UnifiedPlanApp(
             }
 
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
+                // Per-type custom initialization
                 user?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }?.apply {
                     (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
                         ?.commandAutoFixCommands?.addAll(this.localTools)
