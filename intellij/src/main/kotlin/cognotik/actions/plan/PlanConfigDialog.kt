@@ -173,20 +173,16 @@ class PlanConfigDialog(
             ComboBox(getVisibleModels().distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                if (itemCount > 0) {
-                    val currentModel = settings.getTaskSettings(taskType).model
-                    selectedItem = when {
-                        currentModel != null -> settings.instance(currentModel).modelType.modelName
-                        else -> AppSettingsState.instance.smartModel
-                    }
-                }
+                selectedItem = AppSettingsState.instance.smartModel?.model?.modelName
             }
+
         // Crawler-specific UI components
         private val seedMethodCombo = if (taskType == TaskType.CrawlerAgentTask) {
             ComboBox(SeedMethod.values()).apply {
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                val currentSettings = settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
+                val currentSettings =
+                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
                 selectedItem = currentSettings?.seed_method ?: SeedMethod.GoogleSearch
             }
         } else null
@@ -194,11 +190,12 @@ class PlanConfigDialog(
             ComboBox(FetchMethod.values()).apply {
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                val currentSettings = settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
+                val currentSettings =
+                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
                 selectedItem = currentSettings?.fetch_method ?: FetchMethod.HttpClient
             }
         } else null
-        
+
         private val commandList = if (taskType == TaskType.CommandAutoFixTask) {
             JBTable(object : DefaultTableModel(
                 arrayOf("Enabled", "Command"), 0
@@ -261,7 +258,9 @@ class PlanConfigDialog(
             }
         } else null
 
+
         init {
+            modelComboBox.selectedItem = AppSettingsState.instance.smartModel?.model?.modelName
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             alignmentX = LEFT_ALIGNMENT
             border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -281,7 +280,7 @@ class PlanConfigDialog(
                 add(Box.createVerticalStrut(2))
                 add(fetchMethodCombo.apply { alignmentX = LEFT_ALIGNMENT })
             }
-            
+
             if (commandList != null) {
                 add(Box.createVerticalStrut(10))
                 add(JLabel("Available Commands:").apply { alignmentX = LEFT_ALIGNMENT })
@@ -329,8 +328,6 @@ class PlanConfigDialog(
                 })
             }
 
-            val currentModel = settings.getTaskSettings(taskType).model
-            modelComboBox.selectedItem = currentModel?.model?.modelName ?: AppSettingsState.instance.smartModel
             enabledCheckbox.addItemListener {
                 val newSettings = when (taskType) {
                     TaskType.CrawlerAgentTask -> CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
@@ -340,6 +337,7 @@ class PlanConfigDialog(
                         enabled = enabledCheckbox.isSelected,
                         model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     )
+
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
@@ -354,8 +352,7 @@ class PlanConfigDialog(
                     )
 
                     else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                        this.model =
-                            getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                        this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     }
                 }
                 settings.setTaskSettings(taskType, newSettings)
@@ -370,6 +367,7 @@ class PlanConfigDialog(
                         enabled = enabledCheckbox.isSelected,
                         model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     )
+
                     TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
@@ -394,6 +392,7 @@ class PlanConfigDialog(
                 updateCrawlerSettings()
             }
         }
+
         private fun updateCrawlerSettings() {
             if (taskType == TaskType.CrawlerAgentTask && seedMethodCombo != null && fetchMethodCombo != null) {
                 val newSettings = CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
@@ -418,6 +417,7 @@ class PlanConfigDialog(
                     enabled = enabledCheckbox.isSelected,
                     model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                 )
+
                 TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
@@ -606,23 +606,13 @@ class PlanConfigDialog(
             temperatureLabel.text = TEMPERATURE_LABEL.format(validatedTemp)
             settings.autoFix = config.autoFix
             autoFixCheckbox.isSelected = config.autoFix
-
             config.taskSettings.forEach { (taskTypeName: String, serializedSettings: TaskSettingsBase) ->
                 val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
-                val availableModels = getVisibleModels()
-                val selectedModel = availableModels.find { it.modelName == serializedSettings.model?.model?.modelName }
-                    ?: availableModels.firstOrNull()
                 settings.setTaskSettings(taskType, serializedSettings)
                 taskConfigs[taskType.name]?.apply {
                     enabledCheckbox.isSelected = serializedSettings.enabled
-                    if (modelComboBox.itemCount > 0 && selectedModel != null) {
-                        modelComboBox.selectedItem = selectedModel.modelName
-                    } else {
-                        modelComboBox.selectedItem = AppSettingsState.instance.smartModel
-                    }
                 }
             }
-
             taskTypeList.repaint()
         } catch (e: Exception) {
             JOptionPane.showMessageDialog(

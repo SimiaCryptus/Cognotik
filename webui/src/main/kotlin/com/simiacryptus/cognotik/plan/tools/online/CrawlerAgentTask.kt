@@ -8,11 +8,13 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import java.io.File
+ import com.simiacryptus.cognotik.plan.*
+ import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.input.DocumentReader
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+ import com.simiacryptus.cognotik.util.*
+ import com.simiacryptus.cognotik.webui.session.SessionTask
+ import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
@@ -394,7 +396,12 @@ class CrawlerAgentTask(
         try {
             val urlSafe = url.replace(Regex("[^a-zA-Z0-9]"), "_").take(50)
             webSearchDir.mkdirs()
-            val rawFile = File(webSearchDir, urlSafe + ".html")
+            val extension = when {
+                webSearchDir.name.contains("document") -> ".txt"
+                webSearchDir.name.contains("text") -> ".txt"
+                else -> ".html"
+            }
+            val rawFile = File(webSearchDir, urlSafe + extension)
             rawFile.writeText(content)
         } catch (e: Exception) {
             log.error("Failed to save raw content for URL: $url", e)
