@@ -3,17 +3,19 @@ import com.simiacryptus.cognotik.input.getReader
 
  import com.simiacryptus.cognotik.plan.PlanSettings
  import com.simiacryptus.cognotik.plan.tools.online.FetchConfig.isSeleniumEnabled
- import com.simiacryptus.cognotik.util.EnabledStrategy
+import com.simiacryptus.cognotik.util.EnabledStrategy
  import com.simiacryptus.cognotik.util.HtmlSimplifier
  import com.simiacryptus.cognotik.util.LoggerFactory
  import com.simiacryptus.cognotik.util.Selenium2S3
  import com.simiacryptus.cognotik.util.Selenium2S3.Companion.chromeDriver
  import java.io.File
-import java.io.FileOutputStream
+ import java.io.FileOutputStream
  import java.net.URI
  import java.net.http.HttpRequest
  import java.net.http.HttpResponse
+import java.time.Duration
  import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 
 interface FetchStrategy : EnabledStrategy {
     fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String
@@ -35,26 +37,62 @@ enum class FetchMethod {
                 planSettings: PlanSettings
             ): String {
                 log.info("HttpClient fetching URL: $url (index: $index)")
-                val client = java.net.http.HttpClient.newBuilder().build()
+                val client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(30))
+                    .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
+                    .build()
                 val request = HttpRequest.newBuilder().uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(60))
                     .header(
                         "User-Agent",
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-                    ).GET()
+                    )
+                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                    .header("Accept-Language", "en-US,en;q=0.5")
+                    .header("Accept-Encoding", "gzip, deflate")
+                    .GET()
                     .build()
                 log.debug("Sending HTTP request to: $url")
-                val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+                val response = try {
+                    client.send(request, HttpResponse.BodyHandlers.ofString())
+                } catch (e: Exception) {
+                    log.error("HTTP request failed for URL: $url", e)
+                    throw RuntimeException("Failed to fetch URL: $url - ${e.message}", e)
+                }
+                
                 val contentType = response.headers().firstValue("Content-Type").orElse("")
                 log.debug("Received response from $url with status: ${response.statusCode()}, Content-Type: $contentType")
+                if (response.statusCode() !in 200..299) {
+                    throw RuntimeException("HTTP ${response.statusCode()} error for URL: $url")
+                }
 
                 val content = when {
                     // Handle HTML content
                     contentType.startsWith("text/html") || contentType.isEmpty() -> {
                         val body = response.body()
-                        if (body.isBlank()) {
+                        if (body.isNullOrBlank()) {
                             log.warn("Received empty body from URL: $url")
                             return ""
                         }
+                        // Check for reasonable content length
+                        if (body.length > 5_000_000) { // 5MB limit
+                            log.warn("Content too large (${body.length} chars) for URL: $url, truncating")
+                            val truncated = body.substring(0, 1_000_000) // Keep first 1MB
+                            task.saveRawContent(webSearchDir.resolve("raw_pages"), url, truncated)
+                            return HtmlSimplifier.scrubHtml(
+                                str = truncated,
+                                baseUrl = url,
+                                includeCssData = false,
+                                simplifyStructure = true,
+                                keepObjectIds = false,
+                                preserveWhitespace = false,
+                                keepScriptElements = false,
+                                keepInteractiveElements = false,
+                                keepMediaElements = false,
+                                keepEventHandlers = false
+                            )
+                        }
+                        
                         log.debug("Saving raw HTML content for URL: $url")
                         task.saveRawContent(webSearchDir.resolve("raw_pages"), url, body)
                         log.debug("Simplifying HTML content for URL: $url")
@@ -84,9 +122,24 @@ enum class FetchMethod {
                         log.info("Detected document content type: $contentType for URL: $url")
                         val binaryResponse = client.send(request, HttpResponse.BodyHandlers.ofByteArray())
                         val bytes = binaryResponse.body()
+                        // Check file size limit (10MB)
+                        if (bytes.size > 10_000_000) {
+                            log.warn("Document too large (${bytes.size} bytes) for URL: $url, skipping")
+                            return "Document too large to process (${bytes.size} bytes)"
+                        }
                         
-                        // Save the document to a temporary file
+                        
                         val extension = getExtensionFromContentType(contentType, url)
+                        
+                        // Save the original document file
+                        val urlSafe = url.replace(Regex("[^a-zA-Z0-9]"), "_").take(50)
+                        val documentsDir = webSearchDir.resolve("documents")
+                        documentsDir.mkdirs()
+                        val documentFile = File(documentsDir, "${urlSafe}_${index}.$extension")
+                        FileOutputStream(documentFile).use { it.write(bytes) }
+                        log.debug("Saved original document to: ${documentFile.absolutePath}")
+                        
+                        // Also create a temporary file for text extraction
                         val tempFile = File.createTempFile("webcrawl_", ".$extension")
                         tempFile.deleteOnExit()
                         
@@ -107,7 +160,7 @@ enum class FetchMethod {
                         
                         if (extractedText.isNotBlank()) {
                             log.debug("Extracted ${extractedText.length} characters from document")
-                            task.saveRawContent(webSearchDir.resolve("documents"), url, extractedText)
+                            task.saveRawContent(webSearchDir.resolve("extracted_text"), url, extractedText)
                         }
                         extractedText
                     }

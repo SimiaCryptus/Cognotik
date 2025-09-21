@@ -3,7 +3,7 @@
 android = "4.1.1.4"
 jetty = "11.0.25"
 junit4 = "4.13.2"
-slf4j = "2.0.16"
+slf4j = "2.0.17"
 logback = "1.5.18"
 jackson = "2.19.0"
 aws = "2.31.35"
@@ -30,8 +30,6 @@ webdrivermanager = "6.1.0"
 remoterobot = "0.11.24.506"
 okhttp = "4.12.0"
 batik = "1.18"
-openjfx = "25-ea+14"
-awsSso = "2.31.35"
 commonsLang3 = "3.17.0"
 diffutils = "1.3.0"
 swaggerAnnotations = "1.6.15"
@@ -52,18 +50,18 @@ googleHttpClientGson = "1.47.0"
 commonsCodec = "1.18.0"
 commonsCsv = "1.10.0"
 odftoolkit = "0.12.0"
-androidx-core = "1.15.0"
-androidx-lifecycle = "2.8.7"
-androidx-activity = "1.9.3"
-androidx-appcompat = "1.7.0"
-material = "1.12.0"
-androidx-constraintlayout = "2.1.4"
+androidx-core = "1.17.0"
+androidx-lifecycle = "2.9.4"
+androidx-activity = "1.11.0"
+androidx-appcompat = "1.7.1"
+material = "1.13.0"
+androidx-constraintlayout = "2.2.1"
 androidx-swiperefreshlayout = "1.1.0"
-androidx-webkit = "1.12.1"
-androidx-emoji2 = "1.4.0"
+androidx-webkit = "1.14.0"
+androidx-emoji2 = "1.6.0"
 slf4jandroid = "1.7.36"
-androidx-test-ext = "1.2.1"
-androidx-test-espresso = "3.6.1"
+androidx-test-ext = "1.3.0"
+androidx-test-espresso = "3.7.0"
 
 # plugins
 changelog = "2.2.1"
@@ -71,8 +69,7 @@ intelliJPlatform = "2.5.0"
 kover = "0.9.1"
 qodana = "2025.1.0"
 shadow = "8.1.1"
-junitJupiter = "5.12.2"
-android-gradle-plugin = "8.9.3"
+junitJupiter = "5.13.2"
 
 [libraries]
 android = { module = "com.google.android:android", version.ref = "android" }
@@ -127,11 +124,7 @@ remoterobot-robot = { group = "com.intellij.remoterobot", name = "remote-robot",
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 batik-transcoder = { group = "org.apache.xmlgraphics", name = "batik-transcoder", version.ref = "batik" }
 batik-codec = { group = "org.apache.xmlgraphics", name = "batik-codec", version.ref = "batik" }
-openjfx-swing = { group = "org.openjfx", name = "javafx-swing", version.ref = "openjfx" }
-openjfx-graphics = { group = "org.openjfx", name = "javafx-graphics", version.ref = "openjfx" }
-openjfx-base = { group = "org.openjfx", name = "javafx-base", version.ref = "openjfx" }
 httpclient5-fluent = { group = "org.apache.httpcomponents.client5", name = "httpclient5-fluent", version.ref = "httpclient5" }
-aws-sso = { group = "software.amazon.awssdk", name = "sso", version.ref = "awsSso" }
 commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commonsLang3" }
 diffutils = { group = "com.googlecode.java-diff-utils", name = "diffutils", version.ref = "diffutils" }
 swagger-annotations = { group = "io.swagger", name = "swagger-annotations", version.ref = "swaggerAnnotations" }
@@ -184,4 +177,3 @@ intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "inte
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
-android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }

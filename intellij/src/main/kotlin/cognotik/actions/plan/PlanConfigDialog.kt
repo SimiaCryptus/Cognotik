@@ -144,7 +144,6 @@ class PlanConfigDialog(
                 toolTipText = getTaskTooltip(value)
                 val isEnabled = settings.getTaskSettings(value).enabled
                 font = when (isEnabled) {
-
                     true -> font.deriveFont(Font.BOLD + Font.PLAIN, FONT_SIZE_ENABLED)
                     false -> font.deriveFont(Font.ITALIC + Font.PLAIN, FONT_SIZE_DISABLED)
                 }
@@ -317,7 +316,6 @@ class PlanConfigDialog(
                                     (commandList.model as DefaultTableModel).getValueAt(selectedRow, 1) as String
                                 (commandList.model as DefaultTableModel).removeRow(selectedRow)
                                 AppSettingsState.instance.executables?.remove(command)
-
                             } else {
                                 JOptionPane.showMessageDialog(
                                     null, "Please select a command to remove."

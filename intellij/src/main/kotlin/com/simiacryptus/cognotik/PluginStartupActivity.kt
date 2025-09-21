@@ -16,15 +16,12 @@ import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
-import com.simiacryptus.cognotik.platform.ClientManager
-import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -39,6 +36,7 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
+        setLogDebug("com.simiacryptus.cognotik.plan")
         setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
