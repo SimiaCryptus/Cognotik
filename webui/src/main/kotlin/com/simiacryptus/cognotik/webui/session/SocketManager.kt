@@ -9,5 +9,8 @@ interface SocketManager {
     fun getReplay(since: Long): List<String>
     fun onWebSocketText(socket: ChatSocket, message: String)
     fun getActiveSockets(): List<ChatSocket>
-    fun newTask(cancelable: Boolean = false, root: Boolean = true): SessionTask
+    fun newTask(
+        root: Boolean = true,
+        cancelable: Boolean = false
+    ): SessionTask
 }

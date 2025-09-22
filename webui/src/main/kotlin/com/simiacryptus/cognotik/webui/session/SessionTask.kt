@@ -288,7 +288,7 @@ open class SessionTask(
         renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
     ): SessionTask = newSession().apply {
         add(renderFn("""<a href="#${sessionId}" target="_blank" class="linked-task-link">${label}</a>"""))!!
-    }.newTask(root = false)
+    }.newTask()
 
     companion object {
         val log = LoggerFactory.getLogger(SessionTask::class.java)

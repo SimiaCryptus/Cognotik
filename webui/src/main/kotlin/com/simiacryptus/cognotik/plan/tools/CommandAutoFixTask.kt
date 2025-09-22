@@ -65,7 +65,7 @@ class CommandAutoFixTask(
     ) {
         val semaphore = Semaphore(0)
         Retryable(agent.ui, task = task) {
-            val task = task.manager.newTask(false)
+            val task = task.manager.newTask()
             agent.pool.submit {
                 val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
                     ?: agent.planSettings.defaultChatter).getChildClient(task)

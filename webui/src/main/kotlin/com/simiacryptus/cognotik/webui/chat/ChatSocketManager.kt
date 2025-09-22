@@ -69,8 +69,7 @@ open class ChatSocketManager(
 
     init {
         if (userInterfacePrompt.isNotBlank()) {
-            val task = newTask()
-            task.complete(userInterfacePrompt)
+            newTask().complete(userInterfacePrompt)
         }
     }
 
