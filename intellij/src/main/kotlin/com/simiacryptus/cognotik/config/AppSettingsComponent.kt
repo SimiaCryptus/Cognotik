@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.config
 
 import cognotik.actions.plan.PlanConfigDialog.Companion.isVisible
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -9,6 +10,9 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.ComponentWithBrowseButton
+import com.intellij.openapi.ui.TextComponentAccessor
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBCheckBox
@@ -28,7 +32,7 @@ import javax.swing.event.ListSelectionListener
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 
-class AppSettingsComponent : com.intellij.openapi.Disposable {
+class AppSettingsComponent : Disposable {
     @Suppress("unused")
     @Name("Enable Diff Logging")
     val diffLoggingEnabled = JBCheckBox()
@@ -194,16 +198,16 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
     val pluginHome = JBTextField()
 
     @Suppress("unused")
-    val choosePluginHome = com.intellij.openapi.ui.TextFieldWithBrowseButton(pluginHome).apply {
+    val choosePluginHome = TextFieldWithBrowseButton(pluginHome).apply {
         val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
         val browserDescriptor =
-            com.intellij.openapi.ui.ComponentWithBrowseButton.BrowseFolderActionListener(
+            ComponentWithBrowseButton.BrowseFolderActionListener(
                 "Select Plugin Home Directory",
                 null,
                 this,
                 null,
                 descriptor,
-                com.intellij.openapi.ui.TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
+                TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
             )
         addActionListener(browserDescriptor)
     }
@@ -431,17 +435,20 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
 
 
         // Get all available models from APIs with valid keys
-        val availableModels = ChatModel.values().filter { chatModel ->
-            userSettings.apis.any { api ->
-                api.provider == chatModel.value.provider && !api.key.isNullOrBlank()
-            }
-        }
+        val availableModels = ApplicationServices.userSettingsManager.getUserSettings().apis.filter { api ->
+            api.key.isNotBlank()
+            }.flatMap { api ->
+                //ChatModel.values().entries.filter { it.value.provider == api.provider && api.key.isNotBlank() }
+                api.provider?.getChatModels()?.filter { model ->
+                    isVisible(model)
+                }?.map { it.name to it } ?: emptyList()
+            }.toMap().toSortedMap(compareBy { it })
 
         availableModels.forEach {
             this.smartModel.addItem(it.value.modelName)
             this.fastModel.addItem(it.value.modelName)
         }
-        
+
         ImageModels.entries.forEach {
             this.mainImageModel.addItem(it.name)
         }
@@ -452,25 +459,84 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }
             .filter { modelItem ->
-                isVisible(
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
-                )
+                val value = //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
+                        val any = //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api.provider }
+                            ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
+                                api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
+                                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { api3 ->
+                                            api3.provider?.getChatModels()?.any { it.modelName == modelItem } == true && api3.key.isNotBlank()
+                                        } != null
+                            }?.let { api2 ->
+                                //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api2.provider }
+                                api2.provider?.getChatModels()?.find { it.modelName == modelItem }
+                            }
+                        any != null && api.key.isNotBlank()
+                    }?.let { api ->
+                        //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api.provider }?.value
+                        api.provider?.getChatModels()?.find { it.modelName == modelItem }
+                    }
+                isVisible(value ?: return@filter false)
             }
             .sortedBy { modelItem ->
-                val model =
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                val model = //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
+                        api.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api.provider }
+                                ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
+                                    api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
+                                        api2.provider?.getChatModels()?.any { it.modelName == modelItem } == true
+                                } != null
+                    }?.let { api ->
+                        //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api.provider }?.value
+                        api.provider?.getChatModels()?.find { it.modelName == modelItem }
+                    }!!
                 "${model.provider?.name} - ${model.modelName}"
             }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }
             .filter { modelItem ->
-                isVisible(
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@filter false
-                )
+                val value: ChatModel? = //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
+                        val find = //ChatModel.values().entries.find { it.value.modelName == modelItem }
+                            ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
+                                api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
+                                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { api3 ->
+                                            api3.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api3.provider }
+                                               api3.provider?.getChatModels()?.any { it.modelName == modelItem } == true
+                                        } != null
+                            }?.let { api2 ->
+                                //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api2.provider }
+                                api2.provider?.getChatModels()?.find { it.modelName == modelItem }
+                            }
+                        api.provider == find?.provider && api.key.isNotBlank()
+                    }?.let { api ->
+                        //ChatModel.values().entries.find { it.value.provider == api.provider }?.value
+                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
+                            api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
+                                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api3 ->
+                                        api3.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api3.provider }
+                                            api3.provider?.getChatModels()?.any { it.modelName == modelItem } == true
+                                    } != null
+                        }?.let { api2 ->
+                            //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api2.provider }?.value
+                            api2.provider?.getChatModels()?.find { it.modelName == modelItem }
+                        }
+                    }
+                isVisible(value ?: return@filter false)
             }
             .sortedBy { modelItem ->
                 val model =
-                    ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                "${model.provider?.name} - ${model.modelName}"
+                    //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
+                        api.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api.provider }
+                                ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
+                                    //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider } && api2.key.isNotBlank()
+                                    api2.provider?.getChatModels()?.any { it.modelName == modelItem } == true && api2.key.isNotBlank()
+                                } != null
+                    }?.let { api ->
+                        //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api.provider }?.value
+                        api.provider?.getChatModels()?.find { it.modelName == modelItem }
+                    }
+                "${model?.provider?.name} - ${model?.modelName}"
             }.toList()
         smartModel.removeAllItems()
         fastModel.removeAllItems()
@@ -522,7 +588,13 @@ class AppSettingsComponent : com.intellij.openapi.Disposable {
             text = value
 
             if (value != null) {
-                val model = ChatModel.values().entries.find { it.value.modelName == value }?.value
+                val model = ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
+                    api.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName ==  value && it.value.provider == api.provider }
+                       api.provider?.getChatModels()?.any { it.modelName == value } == true
+                }?.let { api ->
+                    //ChatModel.values().entries.find { it.value.modelName == value && it.value.provider == api.provider }?.value
+                    api.provider?.getChatModels()?.find { it.modelName == value }
+                }
                 text = "${model?.provider?.name} - $value"
             }
         }

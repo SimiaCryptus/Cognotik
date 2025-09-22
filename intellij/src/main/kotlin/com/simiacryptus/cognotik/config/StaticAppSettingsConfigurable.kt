@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.config
 
 import com.intellij.util.xmlb.XmlSerializerUtil
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -392,9 +391,27 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
             val fastModelName = component.fastModel.selectedItem as String?
             val smartModelName = component.smartModel.selectedItem as String?
-            val fastChatModel = ChatModel.values().entries.find { it.value.modelName == fastModelName }?.value
+            val fastChatModel = //ChatModel.values().entries.find { it.value.modelName == fastModelName }?.value
+                userSettings.apis.find { it.provider == APIProvider.Groq }?.let {
+                    //ChatModel.values().entries.find { entry -> entry.value.modelName == fastModelName && entry.value.provider == APIProvider.Groq }?.value
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { entry -> entry.provider == APIProvider.Groq }
+                        ?.let { groqApi ->
+                            //ChatModel.values().entries.find { entry -> entry.value.modelName == fastModelName && entry.value.provider == APIProvider.Groq }?.value
+                            groqApi.provider?.getChatModels()?.find { model -> model.modelName == fastModelName }
+                        }
+                }
             val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
-            val smartChatModel = ChatModel.values().entries.find { it.value.modelName == smartModelName }?.value
+            val smartChatModel = //ChatModel.values().entries.find { it.value.modelName == smartModelName }?.value
+                userSettings.apis.find { it.provider == APIProvider.OpenAI }?.let {
+                    //ChatModel.values().entries.find { entry -> entry.value.modelName == smartModelName && entry.value.provider == APIProvider.OpenAI }?.value
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { entry -> entry.provider == APIProvider.OpenAI }
+                        ?.let { openAiApi ->
+                            //ChatModel.values().entries.find { entry -> entry.value.modelName == smartModelName && entry.value.provider == APIProvider.OpenAI }?.value
+                            openAiApi.provider?.getChatModels()?.find { model ->
+                                model.modelName == smartModelName
+                            }
+                        }
+                }
             val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
 
             settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
@@ -455,6 +472,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             }
             ApplicationServices.userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
             log.info("Settings after reading: ${settings.toJson()}")
+
         } catch (e: Exception) {
             log.warn("Error reading UI", e)
         }
@@ -482,5 +500,4 @@ fun String?.safeDouble() = if (null == this) 0.0 else when {
     } catch (e: NumberFormatException) {
         0.0
     }
-
 }

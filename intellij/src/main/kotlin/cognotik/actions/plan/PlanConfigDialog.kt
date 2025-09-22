@@ -464,8 +464,21 @@ class PlanConfigDialog(
     }
 
     private fun getVisibleModels(): List<ChatModel> =
-        ChatModel.values().map { it.value }.filter { isVisible(it) }.toList()
-            .sortedBy { "${it.provider?.name} - ${it.modelName}" }
+        ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap {
+            api ->
+            //ChatModel.values().mapNotNull { it.value }.filter { model -> model.provider == api.provider && !api.key.isNullOrBlank() && model.modelName?.isNotBlank() == true }.map { it to api }
+            ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+                //ChatModel.values().mapNotNull { it.value }.filter { model -> model.provider == apiData.provider && !apiData.key.isNullOrBlank() && model.modelName?.isNotBlank() == true }
+                ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+                    //ChatModel.values().mapNotNull { it.value }.filter { model -> model.provider == apiData.provider && !apiData.key.isNullOrBlank() && model.modelName?.isNotBlank() == true && isVisible(model) }
+                    ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+                        apiData.provider?.getChatModels()?.filter { model -> model.provider == apiData.provider && !apiData.key.isNullOrBlank() && model.modelName?.isNotBlank() == true && isVisible(model) } ?: listOf()
+                    }
+                }.map { it to apiData }
+            }
+        }.distinctBy { it.first.modelName }.map { it.first }
+            .sortedBy { "${it.provider?.name} - ${it.modelName}"
+        }
 
     init {
         taskTypeList.cellRenderer = TaskTypeListCellRenderer()

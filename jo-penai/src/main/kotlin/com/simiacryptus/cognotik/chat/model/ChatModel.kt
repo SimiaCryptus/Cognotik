@@ -2,8 +2,10 @@ package com.simiacryptus.cognotik.chat.model
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
@@ -57,18 +59,18 @@ open class ChatModel(
 
     companion object {
 
-        fun values() = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
-        val values: MutableMap<String, ChatModel?> by lazy { defaultValues().toMutableMap() }
+        fun values(): Map<String, ChatModel> = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
+        private val values: MutableMap<String, ChatModel?> by lazy {
+            (OpenAIModels.values +
+                    PerplexityModels.values +
+                    MistralModels.values +
+                    GroqModels.values +
+                    ModelsLabModels.values +
+                    AWSModels.values +
+                    AnthropicModels.values +
+                    DeepSeekModels.values +
+                    GoogleModels.values).toMutableMap() }
 
-        private fun defaultValues() = OpenAIModels.values +
-                PerplexityModels.values +
-                MistralModels.values +
-                GroqModels.values +
-                ModelsLabModels.values +
-                AWSModels.values +
-                AnthropicModels.values +
-                DeepSeekModels.values +
-                GoogleModels.values
     }
 }
 
@@ -82,15 +84,15 @@ class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
 class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
         return when (p.currentToken) {
-            com.fasterxml.jackson.core.JsonToken.VALUE_STRING -> {
+            JsonToken.VALUE_STRING -> {
                 // Handle string format
                 val modelName = p.readValueAs(String::class.java)
                 values().entries.find { it.key == modelName || it.value.name == modelName || it.value.modelName == modelName }?.value
                     ?: throw IllegalArgumentException("Unknown model: $modelName")
             }
-            com.fasterxml.jackson.core.JsonToken.START_OBJECT -> {
+            JsonToken.START_OBJECT -> {
                 // Handle object format - delegate to default deserialization
-                val node = p.readValueAsTree<com.fasterxml.jackson.databind.JsonNode>()
+                val node = p.readValueAsTree<JsonNode>()
                 val modelName = node.get("modelName")?.asText() ?: node.get("name")?.asText()
                     ?: throw IllegalArgumentException("Object format must contain 'modelName' or 'name' field")
                 values().entries.find { it.key == modelName || it.value.name == modelName || it.value.modelName == modelName }?.value

@@ -107,7 +107,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
-                    val chatModel = ChatModel.values().entries.find { it.value.modelName == modelName }?.value
+                    val chatModel = //ChatModel.values().entries.find { it.value.modelName == modelName }?.value
+                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { it.provider?.getChatModels()?.find { modelName == it.modelName } != null }
+                            ?.provider?.getChatModels()?.find { it.modelName == modelName }
                     val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
                     val apiData = userSettings.apis.find { it.provider == chatModel?.provider }
 
@@ -303,8 +305,15 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-        fun models() = ChatModel.Companion.values().filter { isVisible(it.value) }.toList()
-            .sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
+        fun models(): List<Pair<String, ChatModel>> =
+            //ChatModel.Companion.values().filter { isVisible(it.value) }.toList().sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
+            ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+                apiData.provider?.getChatModels()?.filter { isVisible(it) }?.map { model ->
+                    apiData.provider?.name to model
+                }?.map {
+                    it.first!! to it.second
+                } ?: listOf()
+            }.sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
             return "AICodingAssistant.SettingsWidget"

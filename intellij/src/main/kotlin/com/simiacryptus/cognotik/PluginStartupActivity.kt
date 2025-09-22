@@ -171,18 +171,6 @@ class PluginStartupActivity : ProjectActivity {
 
     companion object {
         val log = LoggerFactory.getLogger(PluginStartupActivity::class.java)
-        fun addUserSuppliedModels(userModels: List<AppSettingsState.UserSuppliedModel>) {
-            userModels.forEach { model ->
-                ChatModel.values[model.displayName] = ChatModel(
-                    name = model.displayName,
-                    modelName = model.modelId,
-                    maxTotalTokens = 4096,
-                    provider = model.provider!!,
-                    inputTokenPricePerK = 0.0,
-                    outputTokenPricePerK = 0.0,
-                )
-            }
-        }
 
         private fun setLogInfo(name: String) {
             try {
