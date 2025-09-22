@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
-import java.io.File
 import java.net.URLDecoder
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -22,7 +21,7 @@ import java.util.function.Consumer
 abstract class SocketManagerBase(
     val sessionId: Session,
     val dataStorage: StorageInterface? = null,
-    protected val owner: User? = null,
+    val owner: User? = null,
     private val applicationClass: Class<*>,
 ) : SocketManager {
     private val messageStates = Collections.synchronizedMap(
@@ -114,94 +113,18 @@ abstract class SocketManagerBase(
             )
             trafficLog.debug("Creating new task with operationID: {}", operationID)
             send(responseContents)
-            return SessionTaskImpl(operationID, responseContents, SessionTask.spinner).apply {
+            return SessionTask(
+                messageID = operationID,
+                buffer = mutableListOf(StringBuilder(responseContents)),
+                spinner = SessionTask.spinner,
+                manager = this,
+            ).apply {
                 add("")
             }
         } catch (e: Exception) {
             log.error("Failed to create new task", e)
             trafficLog.error("Failed to create new task: {}", e.message)
             throw e
-        }
-    }
-
-    private inner class SessionTaskImpl(
-        operationID: String,
-        responseContents: String,
-        spinner: String = SessionTask.spinner,
-        buffer: MutableList<StringBuilder> = mutableListOf(StringBuilder(responseContents))
-    ) : SessionTask(
-        messageID = operationID,
-        buffer = buffer,
-        spinner = spinner,
-        manager = this@SocketManagerBase
-    ) {
-
-        override fun hrefLink(
-            linkText: String,
-            classname: String,
-            id: String?,
-            handler: Consumer<Unit>
-        ): String {
-            log.debug("Creating href link with text: {}", linkText)
-            trafficLog.trace("Creating href link with text: {}", linkText)
-            val operationID = randomID()
-            linkTriggers[operationID] = handler
-            return """<a class="$classname" data-id="$operationID"${
-                when {
-                    id != null -> """ id="$id""""
-                    else -> ""
-                }
-            }>$linkText</a>"""
-        }
-
-        override fun send(html: String) = this@SocketManagerBase.send(html)
-        override fun saveFile(relativePath: String, data: ByteArray): String {
-            require(relativePath.isNotBlank()) { "File path cannot be blank" }
-            require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-
-            if (data.isEmpty()) {
-                log.warn("Saving empty file at path: {}", relativePath)
-            }
-
-            log.debug("Saving file at path: {}", relativePath)
-            trafficLog.debug("Saving file at path: {}", relativePath)
-
-            dataStorage?.getSessionDir(owner, sessionId)?.let { dir ->
-                if (!dir.exists() && !dir.mkdirs()) {
-                    throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
-                }
-                val resolve = dir.resolve(relativePath)
-                resolve.parentFile?.let { parent ->
-                    if (!parent.exists() && !parent.mkdirs()) {
-                        throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
-                    }
-                }
-                resolve.writeBytes(data)
-                log.info("Successfully saved file: {} ({} bytes)", relativePath, data.size)
-            }
-            return "fileIndex/$sessionId/$relativePath"
-        }
-
-        override fun createFile(relativePath: String): Pair<String, File?> {
-            require(relativePath.isNotBlank()) { "File path cannot be blank" }
-            require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-
-            log.debug("Creating file at path: {}", relativePath)
-            trafficLog.debug("Creating file at path: {}", relativePath)
-
-            return Pair("fileIndex/$sessionId/$relativePath", dataStorage?.getSessionDir(owner, sessionId)?.let { dir ->
-                if (!dir.exists() && !dir.mkdirs()) {
-                    throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
-                }
-                val resolve = dir.resolve(relativePath)
-                resolve.parentFile?.let { parent ->
-                    if (!parent.exists() && !parent.mkdirs()) {
-                        throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
-                    }
-                }
-                log.debug("Successfully created file path: {}", resolve.absolutePath)
-                resolve
-            })
         }
     }
 
@@ -510,7 +433,7 @@ abstract class SocketManagerBase(
         operationType = OperationType.Write
     )
 
-    private val linkTriggers = mutableMapOf<String, Consumer<Unit>>()
+    val linkTriggers = mutableMapOf<String, Consumer<Unit>>()
     private val txtTriggers = mutableMapOf<String, Consumer<String>>()
 
     private fun onCmd(id: String, code: String) {
@@ -657,3 +580,4 @@ abstract class SocketManagerBase(
         }
     }
 }
+

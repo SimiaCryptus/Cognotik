@@ -79,23 +79,21 @@ open class GoalOrientedMode(
         })
         stopLinkRef.set(stopLink!!)
 
-        val mainTab = TabbedDisplay(task)
-
-        val goalTreeTask = ui.newTask(false).apply { mainTab["Goal Tree"] = placeholder }
+        val goalTreeTask = task.linkedTask("Goal Tree")
         val goalTreeElement = goalTreeTask.add("Loading...".renderMarkdown())
         fun updateGoalTreeUI() {
             goalTreeElement?.set(renderGoalTreeText(goalTree.values.toList()).renderMarkdown())
             goalTreeTask.update()
         }
 
-        val goalsTab = TabbedDisplay(ui.newTask(false).apply { mainTab["Goals"] = placeholder })
-        val tasksTab = TabbedDisplay(ui.newTask(false).apply { mainTab["Tasks"] = placeholder })
+        val goalsTask = task.linkedTask("Goals")
+        val tasksTask = task.linkedTask("Tasks")
 
 
         val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
         val processor = FixedConcurrencyProcessor(executor, maxConcurrency)
         val sessionLog = StringBuilder()
-        val sessionLogTask = ui.newTask(false).apply { mainTab["Session Log"] = placeholder }
+        val sessionLogTask = task.linkedTask("Session Log")
         fun logToSession(message: String) {
             log.info(message)
             sessionLog.append(message).append("\n")
@@ -151,7 +149,7 @@ open class GoalOrientedMode(
                 if (stopRequested.get()) break
                 logToSession("Decomposing goal: ${goal.description} (ID: ${goal.id})")
                 // Create a goal tab for this goal
-                val goalTab = ui.newTask(false).apply { goalsTab["Goal ID ${goal.id}"] = placeholder }
+                val goalTab = goalsTask.linkedTask("Goal ID ${goal.id}")
                 goalTab.add("# Goal: ${goal.description}\n\nID: ${goal.id}".renderMarkdown())
 
                 try {
@@ -224,7 +222,7 @@ open class GoalOrientedMode(
 
                     val future = processor.submit<String?> {
                         try {
-                            val executionUiTask = ui.newTask(false).apply { tasksTab["Task ID ${t.id}"] = placeholder }
+                            val executionUiTask = tasksTask.linkedTask("Task ID ${t.id}")
                             val taskResult =
                                 executeTask(t, executionUiTask, coordinator)
                             taskResult
@@ -310,7 +308,7 @@ open class GoalOrientedMode(
 
         updateGoalTreeUI()
         // Update the Goals tab with final status of all goals
-        val goalsSummaryTask = ui.newTask(false).apply { goalsTab["Summary"] = placeholder }
+        val goalsSummaryTask = goalsTask.linkedTask("Summary")
         goalsSummaryTask.add("# Goals Summary\n\n".renderMarkdown())
         val goalsSummary = StringBuilder()
         goalTree.values.sortedBy { it.id }.forEach { goal ->
@@ -327,7 +325,7 @@ open class GoalOrientedMode(
         }
         goalsSummaryTask.add(goalsSummary.toString().renderMarkdown())
         // Update the Tasks tab with final status of all tasks
-        val tasksSummaryTask = ui.newTask(false).apply { tasksTab["Summary"] = placeholder }
+        val tasksSummaryTask = tasksTask.linkedTask("Summary")
         tasksSummaryTask.add("# Tasks Summary\n\n".renderMarkdown())
         val tasksSummary = StringBuilder()
         taskMap.values.sortedBy { it.id }.forEach { task ->

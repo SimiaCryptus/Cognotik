@@ -65,7 +65,7 @@ class CommandAutoFixTask(
     ) {
         val semaphore = Semaphore(0)
         Retryable(agent.ui, task = task) {
-            val task = agent.ui.newTask(false)
+            val task = task.manager.newTask(false)
             agent.pool.submit {
                 val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
                     ?: agent.planSettings.defaultChatter).getChildClient(task)
@@ -109,7 +109,7 @@ class CommandAutoFixTask(
 
                         else -> {
                             task.add(
-                                agent.ui.hrefLink("Ignore Error", "href-link cmd-button") {
+                                task.manager.hrefLink("Ignore Error", "href-link cmd-button") {
                                     resultFn("Error: ${this.exitCode}")
                                     semaphore.release()
                                 }

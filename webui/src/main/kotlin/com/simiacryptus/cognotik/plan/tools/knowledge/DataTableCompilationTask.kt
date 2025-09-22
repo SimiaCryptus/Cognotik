@@ -71,7 +71,7 @@ class DataTableCompilationTask(
         planSettings: PlanSettings
     ) {
 
-        task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns", ui = agent.ui))
+        task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns"))
         val result = mutableListOf<Path>()
         val basePath = Paths.get(planSettings.absoluteWorkingDir ?: ".")
         taskConfig?.file_patterns?.forEach { pattern ->
@@ -90,7 +90,7 @@ class DataTableCompilationTask(
             resultFn(errorMsg)
             return
         }
-        task.add(MarkdownUtil.renderMarkdown("Found ${matchedFiles.size} files matching the patterns", ui = agent.ui))
+        task.add(MarkdownUtil.renderMarkdown("Found ${matchedFiles.size} files matching the patterns"))
 
         val fileContentString = matchedFiles.joinToString("\n\n") { file ->
             val content = readFileContent(file)
@@ -181,10 +181,10 @@ class DataTableCompilationTask(
             ),
         )
 
-        task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows", ui = agent.ui))
-        task.add(MarkdownUtil.renderMarkdown("Identified ${columnsList.size} columns", ui = agent.ui))
+        task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows"))
+        task.add(MarkdownUtil.renderMarkdown("Identified ${columnsList.size} columns"))
 
-        task.add(MarkdownUtil.renderMarkdown("## Step 4: Extracting cell data for each row", ui = agent.ui))
+        task.add(MarkdownUtil.renderMarkdown("## Step 4: Extracting cell data for each row"))
         val tableData = mutableListOf<Map<String, Any>>()
         val progressTotal = rowsList.obj.rows.size
         var progressCurrent = 0
@@ -234,7 +234,7 @@ class DataTableCompilationTask(
             tableData.add(rowMap)
         }
 
-        task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table", ui = agent.ui))
+        task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table"))
 
         val outputPath = taskConfig?.output_file ?: "compiled_data.json"
         val outputFile = if (planSettings.absoluteWorkingDir != null) {

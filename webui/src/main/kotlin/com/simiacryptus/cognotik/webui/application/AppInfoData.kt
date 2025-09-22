@@ -4,7 +4,7 @@ data class AppInfoData(
     val applicationName: String,
     val inputCnt: Int,
     val stickyInput: Boolean,
-    val loadImages: Boolean,
+    val loadImages: Boolean = true,
     val showMenubar: Boolean
 ) {
 

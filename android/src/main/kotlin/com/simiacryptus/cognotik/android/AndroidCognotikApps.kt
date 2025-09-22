@@ -19,14 +19,15 @@ import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.instance
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.resource.PathResource
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
@@ -206,8 +207,8 @@ class AndroidCognotikApps private constructor(
         log.debug("Default model: ${model.javaClass.simpleName}")
         
         val planSettings = object : PlanSettings(
-            defaultModel = model,
-            parsingModel = model,
+            defaultModel = model.instance()!!,
+            parsingModel = model.instance()!!,
             workingDir = filesDir
         ) {
             override fun instance(model: ApiChatModel): Chatter {

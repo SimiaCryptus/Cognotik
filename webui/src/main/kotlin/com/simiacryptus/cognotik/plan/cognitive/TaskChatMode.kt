@@ -220,7 +220,7 @@ open class TaskChatMode(
 
     companion object : CognitiveModeStrategy {
 
-        override val inputCnt = 0
+        override val inputCnt = 1
         override fun getCognitiveMode(
             ui: ApplicationInterface,
             planSettings: PlanSettings,

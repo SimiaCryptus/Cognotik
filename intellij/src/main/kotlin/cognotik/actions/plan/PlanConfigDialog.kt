@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.SavedPlanConfig
+import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
@@ -95,7 +96,13 @@ class PlanConfigDialog(
         }
     }
 
-    val cognitiveModeCombo = ComboBox(arrayOf("Single Task", "Plan Ahead", "Auto Plan", "Graph")).apply {
+    val cognitiveModeCombo = ComboBox(arrayOf(
+        "Single Task",
+        "Task Planning",
+        "Iterative Loop",
+//        "Graph",
+        "Goal Oriented"
+    )).apply {
         preferredSize = Dimension(200, 30)
         selectedIndex = 0
 
@@ -426,8 +433,7 @@ class PlanConfigDialog(
                 )
 
                 else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
-                    this.model =
-                        getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
+                    this.model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                 }
             }
             if (validateModelSelection(taskType, newSettings.model?.model)) {

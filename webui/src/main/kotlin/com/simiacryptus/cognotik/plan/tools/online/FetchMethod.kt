@@ -49,12 +49,13 @@ enum class FetchMethod {
                     )
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                     .header("Accept-Language", "en-US,en;q=0.5")
-                    .header("Accept-Encoding", "gzip, deflate")
+                    //.header("Accept-Encoding", "gzip, deflate, br")
+                    .header("Accept-Charset", "utf-8, iso-8859-1;q=0.5")
                     .GET()
                     .build()
                 log.debug("Sending HTTP request to: $url")
                 val response = try {
-                    client.send(request, HttpResponse.BodyHandlers.ofString())
+                    client.send(request, HttpResponse.BodyHandlers.ofString(java.nio.charset.StandardCharsets.UTF_8))
                 } catch (e: Exception) {
                     log.error("HTTP request failed for URL: $url", e)
                     throw RuntimeException("Failed to fetch URL: $url - ${e.message}", e)
@@ -74,29 +75,11 @@ enum class FetchMethod {
                             log.warn("Received empty body from URL: $url")
                             return ""
                         }
-                        // Check for reasonable content length
-                        if (body.length > 5_000_000) { // 5MB limit
-                            log.warn("Content too large (${body.length} chars) for URL: $url, truncating")
-                            val truncated = body.substring(0, 1_000_000) // Keep first 1MB
-                            task.saveRawContent(webSearchDir.resolve("raw_pages"), url, truncated)
-                            return HtmlSimplifier.scrubHtml(
-                                str = truncated,
-                                baseUrl = url,
-                                includeCssData = false,
-                                simplifyStructure = true,
-                                keepObjectIds = false,
-                                preserveWhitespace = false,
-                                keepScriptElements = false,
-                                keepInteractiveElements = false,
-                                keepMediaElements = false,
-                                keepEventHandlers = false
-                            )
-                        }
-                        
+
                         log.debug("Saving raw HTML content for URL: $url")
                         task.saveRawContent(webSearchDir.resolve("raw_pages"), url, body)
                         log.debug("Simplifying HTML content for URL: $url")
-                        val simplified = HtmlSimplifier.scrubHtml(
+                        var simplified = HtmlSimplifier.scrubHtml(
                             str = body,
                             baseUrl = url,
                             includeCssData = false,
@@ -108,9 +91,16 @@ enum class FetchMethod {
                             keepMediaElements = false,
                             keepEventHandlers = false
                         )
+
+                        // Check for reasonable content length
+                        if (simplified.length > 5_000_000) { // 5MB limit
+                            log.info("Content too large (${simplified.length} chars) for URL: $url, truncating")
+                            simplified = simplified.substring(0, 1_000_000)
+                        }
+
                         log.debug("Saving simplified content for URL: $url")
                         task.saveRawContent(webSearchDir.resolve("reduced_pages"), url, simplified)
-                        simplified
+                        processHtmlContent(body, url, webSearchDir, task)
                     }
                     
                     // Handle document formats (PDF, DOCX, etc.)
@@ -184,6 +174,60 @@ enum class FetchMethod {
                 log.info("Successfully processed URL: $url, content length: ${content.length}")
                 return content
             }
+            private fun detectCharset(bytes: ByteArray, contentType: String): java.nio.charset.Charset {
+                // First try to extract charset from Content-Type header
+                val charsetRegex = Regex("charset=([^;\\s]+)", RegexOption.IGNORE_CASE)
+                val charsetMatch = charsetRegex.find(contentType)
+                if (charsetMatch != null) {
+                    try {
+                        return java.nio.charset.Charset.forName(charsetMatch.groupValues[1])
+                    } catch (e: Exception) {
+                        log.warn("Invalid charset in Content-Type: ${charsetMatch.groupValues[1]}")
+                    }
+                }
+                // Try to detect charset from HTML meta tags
+                val htmlStart = String(bytes.take(2048).toByteArray(), java.nio.charset.StandardCharsets.ISO_8859_1)
+                val metaCharsetRegex = Regex("<meta[^>]+charset[\\s]*=[\\s]*[\"']?([^\"'\\s>]+)", RegexOption.IGNORE_CASE)
+                val metaMatch = metaCharsetRegex.find(htmlStart)
+                if (metaMatch != null) {
+                    try {
+                        return java.nio.charset.Charset.forName(metaMatch.groupValues[1])
+                    } catch (e: Exception) {
+                        log.warn("Invalid charset in meta tag: ${metaMatch.groupValues[1]}")
+                    }
+                }
+                // Fallback to UTF-8
+                return java.nio.charset.StandardCharsets.UTF_8
+            }
+            private fun processHtmlContent(body: String, url: String, webSearchDir: File, task: CrawlerAgentTask): String {
+                log.debug("Saving raw HTML content for URL: $url")
+                task.saveRawContent(webSearchDir.resolve("raw_pages"), url, body)
+                log.debug("Simplifying HTML content for URL: $url")
+                val simplified = try {
+                    HtmlSimplifier.scrubHtml(
+                        str = body,
+                        baseUrl = url,
+                        includeCssData = false,
+                        simplifyStructure = true,
+                        keepObjectIds = false,
+                        preserveWhitespace = false,
+                        keepScriptElements = false,
+                        keepInteractiveElements = false,
+                        keepMediaElements = false,
+                        keepEventHandlers = false
+                    )
+                } catch (e: Exception) {
+                    log.error("HTML simplification failed for URL: $url, using raw content", e)
+                    // Fallback to basic text extraction if HTML simplification fails
+                    body.replace(Regex("<[^>]+>"), " ")
+                        .replace(Regex("\\s+"), " ")
+                        .trim()
+                }
+                log.debug("Saving simplified content for URL: $url")
+                task.saveRawContent(webSearchDir.resolve("reduced_pages"), url, simplified)
+                return simplified
+            }
+            
             private fun getExtensionFromContentType(contentType: String, url: String): String {
                 return when {
                     contentType.contains("pdf") -> "pdf"

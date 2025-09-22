@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -59,7 +58,7 @@ abstract class UnifiedPlanApp(
     private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
-    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it else it + 1 }
+    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it + 2 else it + 3 }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = planSettings as T
@@ -72,8 +71,7 @@ abstract class UnifiedPlanApp(
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         val ui = (socketManager as ApplicationSocketManager).applicationInterface
-        val settings =
-            (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
+        val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
         if (useExpansionSyntax) {
             ui.newTask(true).expandable(
                 "Query Expansion Syntax Guide", """
@@ -118,8 +116,7 @@ abstract class UnifiedPlanApp(
         ui: ApplicationInterface
     ) {
         try {
-            val settings =
-                (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
+            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
             settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
@@ -235,22 +232,15 @@ abstract class UnifiedPlanApp(
             expandParallel(session, user, currentMessage, ui, task, processor, parallelMatch)
             return
         }
-
-        // No expansion found, process normally
-
-
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-            val settings =
-                (getSettings(session, user, PlanSettings::class.java) ?: planSettings).copy(instanceFn = this::instance)
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
-                planSettings = settings,
+                planSettings = getSettings(session, user, PlanSettings::class.java) ?: planSettings,
                 session = session,
                 user = user,
                 describer = describer
             ).apply { initialize() }
         }
-
         cognitiveMode.handleUserMessage(currentMessage, task)
     }
 

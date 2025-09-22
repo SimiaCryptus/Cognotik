@@ -171,8 +171,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         val onComplete = { semaphore.release() }
         val completionNotes = mutableListOf<String>()
         Retryable(agent.ui, task = task) {
-            val task = agent.ui.newTask(false)
-            agent.ui.socketManager?.pool?.submit {
+            val task = task.manager.newTask(false)
+            task.manager.pool.submit {
                 val codeResult = fileModificationActor.answer(
                     (messages + listOf(
                         agent.planProcessingState?.tasksByDescription?.filter {
@@ -195,7 +195,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 if (agent.planSettings.autoFix) {
                     val markdown = renderMarkdown(codeResult, ui = agent.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            agent.ui.socketManager,
+                            task.manager,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->
@@ -215,7 +215,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 } else {
                     task.complete(renderMarkdown(codeResult, ui = agent.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            agent.ui.socketManager,
+                            task.manager,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->

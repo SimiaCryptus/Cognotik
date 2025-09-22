@@ -8,13 +8,11 @@ import com.simiacryptus.cognotik.actors.SimpleActor
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
- import com.simiacryptus.cognotik.plan.*
- import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.input.DocumentReader
-import com.simiacryptus.cognotik.input.PaginatedDocumentReader
- import com.simiacryptus.cognotik.util.*
- import com.simiacryptus.cognotik.webui.session.SessionTask
- import java.io.File
+import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import java.io.File
 import java.io.FileOutputStream
 import java.net.URI
 import java.time.LocalDateTime
@@ -23,11 +21,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicInteger
- import java.util.regex.Pattern
- import kotlin.math.min
-import kotlin.math.max
+import java.util.regex.Pattern
+import kotlin.math.min
 
- class CrawlerAgentTask(
+class CrawlerAgentTask(
     planSettings: PlanSettings,
     planTask: SearchAndAnalyzeTaskConfigData?,
     val follow_links: Boolean = true,
@@ -39,7 +36,7 @@ import kotlin.math.max
     val max_link_depth: Int = 2,
     val min_content_length: Int = 100,
     val request_timeout_seconds: Int = 30,
- ) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
 
     class SearchAndAnalyzeTaskSettings(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
@@ -83,10 +80,10 @@ import kotlin.math.max
     fun cleanup() {
         try {
             selenium?.let {
-               log.info("Cleaning up Selenium WebDriver instance")
+                log.info("Cleaning up Selenium WebDriver instance")
                 it.quit()
                 selenium = null
-               log.debug("Selenium WebDriver cleanup completed")
+                log.debug("Selenium WebDriver cleanup completed")
             }
         } catch (e: Exception) {
             log.error("Error cleaning up Selenium resources", e)
@@ -127,12 +124,12 @@ import kotlin.math.max
         planSettings: PlanSettings
     ) {
         val startTime = System.currentTimeMillis()
-       log.info("Starting CrawlerAgentTask with config: search_query='${taskConfig?.search_query}', direct_urls='${taskConfig?.direct_urls}', max_pages=${taskConfig?.max_pages_per_task ?: max_pages_per_task}")
+        log.info("Starting CrawlerAgentTask with config: search_query='${taskConfig?.search_query}', direct_urls='${taskConfig?.direct_urls}', max_pages=${taskConfig?.max_pages_per_task ?: max_pages_per_task}")
         val webSearchDir = File(agent.root.toFile(), ".websearch")
         if (!webSearchDir.exists()) webSearchDir.mkdirs()
 
         val seedMethod = taskSettings?.seed_method ?: SeedMethod.GoogleSearch
-       log.info("Using seed method: $seedMethod")
+        log.info("Using seed method: $seedMethod")
         val seedItems = try {
             seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
         } catch (e: Exception) {
@@ -153,7 +150,7 @@ import kotlin.math.max
                 )
             }
         }
-       log.info("Initialized page queue with ${pageQueue.size} seed items")
+        log.info("Initialized page queue with ${pageQueue.size} seed items")
         if (pageQueue.isEmpty()) {
             log.warn("No seed items found, cannot proceed with crawling")
             resultFn("Warning: No seed items found to start crawling")
@@ -163,7 +160,7 @@ import kotlin.math.max
         val analysisResultsMap = ConcurrentHashMap<Int, String>()
         val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
         val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
-       log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing, maxLinkDepth=$max_link_depth")
+        log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing, maxLinkDepth=$max_link_depth")
 
         val tabs = TabbedDisplay(task)
         val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
@@ -171,16 +168,17 @@ import kotlin.math.max
         val processedCount = AtomicInteger(0)
         val errorCount = AtomicInteger(0)
         val maxErrors = maxPages / 2 // Stop if too many errors
-       log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
-        
+        log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
+
         try {
             while (
                 pageQueue.count { !it.completed } > 0 &&
                 pageQueue.count { it.completed } < maxPages &&
                 errorCount.get() < maxErrors
             ) {
-               val queueStats = "completed=${pageQueue.count { it.completed }}, pending=${pageQueue.count { !it.completed }}, started=${pageQueue.count { it.started }}"
-               log.debug("Queue status: $queueStats")
+                val queueStats =
+                    "completed=${pageQueue.count { it.completed }}, pending=${pageQueue.count { !it.completed }}, started=${pageQueue.count { it.started }}"
+                log.debug("Queue status: $queueStats")
                 while (
                     pageQueue.count { it.started } < maxPages &&
 
@@ -191,14 +189,14 @@ import kotlin.math.max
                         pageQueue.filter { !it.started && it.depth <= max_link_depth }
                             .maxByOrNull { it.relevance_score }?.apply { started = true }
                     } ?: break
-                   log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
+                    log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
                     futureMap[page.link] = exeManager.submit {
                         val pageStartTime = System.currentTimeMillis()
-                       log.info("Starting to process page ${processedCount.get() + 1}: url='${page.link}', title='${page.title}'")
-                        val task = agent.ui.newTask(false).apply { tabs[page.link] = placeholder }
+                        log.info("Starting to process page ${processedCount.get() + 1}: url='${page.link}', title='${page.title}'")
+                        val task = task.manager.newTask(false).apply { tabs[page.link] = placeholder }
                         val currentIndex = processedCount.incrementAndGet()
                         if (currentIndex > maxPages) {
-                           log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${page.link}")
+                            log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${page.link}")
                             return@submit
                         }
                         try {
@@ -208,14 +206,12 @@ import kotlin.math.max
                                 buildString {
                                     appendLine("## ${currentIndex}. [${title}]($url)")
                                     appendLine()
-
                                     try {
-
                                         val content = fetchAndProcessUrl(url, webSearchDir, currentIndex, agent.pool)
-                                       log.debug("Fetched content for '$url': ${content.length} characters")
-                                if (content.length < min_content_length) {
-                                           log.info("Content too short for '$url': ${content.length} < $min_content_length chars, skipping")
-                                    appendLine("*Content too short (${content.length} chars), skipping this result*")
+                                        log.debug("Fetched content for '$url': ${content.length} characters")
+                                        if (content.length < min_content_length) {
+                                            log.info("Content too short for '$url': ${content.length} < $min_content_length chars, skipping")
+                                            appendLine("*Content too short (${content.length} chars), skipping this result*")
                                             appendLine()
                                             return@buildString
                                         }
@@ -225,12 +221,12 @@ import kotlin.math.max
                                             taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
                                             else -> "Analyze the content and provide insights."
                                         }
-                                       log.debug("Analyzing content for '$url' with goal: $analysisGoal")
+                                        log.debug("Analyzing content for '$url' with goal: $analysisGoal")
                                         val analysis: ParsedResponse<ParsedPage> =
                                             transformContent(content, analysisGoal, planSettings, agent.describer)
 
                                         if (analysis.obj.page_type == PageType.Error) {
-                                           log.warn("Analysis returned error for '$url': ${analysis.obj.page_information}")
+                                            log.warn("Analysis returned error for '$url': ${analysis.obj.page_information}")
                                             appendLine(
                                                 "*Error processing this result: ${
                                                     analysis.obj.page_information?.let {
@@ -248,7 +244,7 @@ import kotlin.math.max
                                         }
 
                                         if (analysis.obj.page_type == PageType.Irrelevant) {
-                                           log.info("Content marked as irrelevant for '$url', skipping")
+                                            log.info("Content marked as irrelevant for '$url', skipping")
                                             appendLine("*Irrelevant content, skipping this result*")
                                             appendLine()
                                             saveAnalysis(webSearchDir.resolve("irrelevant").apply {
@@ -256,7 +252,7 @@ import kotlin.math.max
                                             }, url, analysis, currentIndex)
                                             return@buildString
                                         }
-                                       log.debug("Successfully analyzed content for '$url', saving results")
+                                        log.debug("Successfully analyzed content for '$url', saving results")
 
                                         saveAnalysis(webSearchDir, url, analysis, currentIndex)
 
@@ -269,27 +265,27 @@ import kotlin.math.max
                                             val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/allow_revisit_pages
                                             if (linkData.isNullOrEmpty()) {
                                                 linkData = extractLinksFromMarkdown(analysis.text)
-                                               log.debug("Extracted ${linkData.size} links from markdown for '$url'")
+                                                log.debug("Extracted ${linkData.size} links from markdown for '$url'")
                                             } else {
-                                               log.debug("Using ${linkData.size} structured links from analysis for '$url'")
+                                                log.debug("Using ${linkData.size} structured links from analysis for '$url'")
                                             }
-                                           val filteredLinks = linkData
-                                               .take(10) // Limit links per page to prevent explosion
-                                               .filter { link ->
-                                                   VALID_URL_PATTERN.matcher(link.link).matches() &&
-                                                       !isBlacklistedDomain(link.link) &&
-                                                           (allowRevisit || pageQueue.none { it.link == link.link })
-                                               }
-                                           log.info("Adding ${filteredLinks.size} new links to queue from '$url' (filtered from ${linkData.size} total)")
+                                            val filteredLinks = linkData
+                                                .take(10) // Limit links per page to prevent explosion
+                                                .filter { link ->
+                                                    VALID_URL_PATTERN.matcher(link.link).matches() &&
+                                                            !isBlacklistedDomain(link.link) &&
+                                                            (allowRevisit || pageQueue.none { it.link == link.link })
+                                                }
+                                            log.info("Adding ${filteredLinks.size} new links to queue from '$url' (filtered from ${linkData.size} total)")
                                             linkData
                                                 .take(10) // Limit links per page to prevent explosion
                                                 .filter { link ->
                                                     VALID_URL_PATTERN.matcher(link.link).matches() &&
-                                                        !isBlacklistedDomain(link.link) &&
+                                                            !isBlacklistedDomain(link.link) &&
                                                             (allowRevisit || pageQueue.none { it.link == link.link })
                                                 }
                                                 .forEach { link ->
-                                                   log.debug("Adding link to queue: url='${link.link}', title='${link.title}', relevance=${link.relevance_score}")
+                                                    log.debug("Adding link to queue: url='${link.link}', title='${link.title}', relevance=${link.relevance_score}")
                                                     pageQueue.add(
                                                         link.apply { depth = page.depth + 1 }
                                                     )
@@ -305,7 +301,7 @@ import kotlin.math.max
                                 }
                             task.add(processPageResult.renderMarkdown)
                             analysisResultsMap[currentIndex] = processPageResult
-                           log.info("Successfully processed page ${currentIndex}: url='${page.link}', processing_time=${System.currentTimeMillis() - pageStartTime}ms")
+                            log.info("Successfully processed page ${currentIndex}: url='${page.link}', processing_time=${System.currentTimeMillis() - pageStartTime}ms")
                         } catch (e: Exception) {
                             task.error(e)
                             log.error("Error processing page: ${page.link}", e)
@@ -316,19 +312,19 @@ import kotlin.math.max
                         } finally {
                             page.processingTimeMs = System.currentTimeMillis() - pageStartTime
                             page.completed = true
-                           log.debug("Page processing completed: url='${page.link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
+                            log.debug("Page processing completed: url='${page.link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
                         }
                     }
                 }
-               val completedCount = pageQueue.count { it.completed }
-               val queuedCount = pageQueue.count { !it.completed }
-               log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, queued=$queuedCount, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
+                val completedCount = pageQueue.count { it.completed }
+                val queuedCount = pageQueue.count { !it.completed }
+                log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, queued=$queuedCount, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
                 Thread.sleep(2000) // Slightly longer wait to reduce CPU usage
                 futureMap.values.forEach {
                     try {
                         it.get()
                     } catch (e: Exception) {
-                       log.debug("Task completed with exception: ${e.message}")
+                        log.debug("Task completed with exception: ${e.message}")
                     }
                 }
             }
@@ -336,12 +332,12 @@ import kotlin.math.max
             log.error("Error during processing", e)
             task.error(e)
         } finally {
-           log.info("Crawling phase completed, cleaning up resources")
+            log.info("Crawling phase completed, cleaning up resources")
             cleanup()
         }
         val totalTime = System.currentTimeMillis() - startTime
-       log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if(processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
-        
+        log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
+
         val analysisResults = (1..processedCount.get()).asSequence().mapNotNull {
             analysisResultsMap[it]
         }.joinToString("\n")
@@ -351,20 +347,20 @@ import kotlin.math.max
             resultFn(errorMessage)
             return
         }
-        
+
         val finalOutput =
             if (create_final_summary != false && analysisResults.length > max_final_output_size) {
-               log.info("Creating final summary: original_size=${analysisResults.length}, max_size=$max_final_output_size")
+                log.info("Creating final summary: original_size=${analysisResults.length}, max_size=$max_final_output_size")
                 createFinalSummary(analysisResults)
             } else {
-               log.info("Using analysis results directly: size=${analysisResults.length}")
+                log.info("Using analysis results directly: size=${analysisResults.length}")
                 analysisResults
             }
-        agent.ui.newTask(false).apply {
+        task.manager.newTask(false).apply {
             tabs["Final Summary"] = placeholder
             add(finalOutput.renderMarkdown())
         }
-       log.info("CrawlerAgentTask finished successfully, final output size: ${finalOutput.length}")
+        log.info("CrawlerAgentTask finished successfully, final output size: ${finalOutput.length}")
         resultFn(finalOutput)
     }
 
@@ -451,21 +447,21 @@ import kotlin.math.max
 
         val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/ allow_revisit_pages
         if (!allowRevisit && urlContentCache.containsKey(url)) {
-           log.debug("Using cached content for URL: $url (cache size: ${urlContentCache.size})")
+            log.debug("Using cached content for URL: $url (cache size: ${urlContentCache.size})")
             return urlContentCache[url]!!
         }
-       log.debug("Fetching content for URL: $url using method: ${taskSettings?.fetch_method ?: FetchMethod.HttpClient}")
-        
+        log.debug("Fetching content for URL: $url using method: ${taskSettings?.fetch_method ?: FetchMethod.HttpClient}")
+
         return try {
             val content = (taskSettings?.fetch_method ?: FetchMethod.HttpClient).createStrategy(this)
                 .fetch(url, webSearchDir, index, pool, planSettings)
-            
+
             // Cache successful fetches
             if (content.isNotBlank()) {
                 urlContentCache[url] = content
-               log.debug("Cached content for URL: $url (content length: ${content.length}, cache size: ${urlContentCache.size})")
-           } else {
-               log.warn("Fetched empty content for URL: $url")
+                log.debug("Cached content for URL: $url (content length: ${content.length}, cache size: ${urlContentCache.size})")
+            } else {
+                log.warn("Fetched empty content for URL: $url")
             }
             content
         } catch (e: Exception) {
@@ -508,8 +504,9 @@ import kotlin.math.max
                 else -> ".html"
             }
             val rawFile = File(webSearchDir, urlSafe + extension)
-            rawFile.writeText(content)
-           log.debug("Saved raw content to: ${rawFile.absolutePath} (size: ${content.length} chars)")
+            // Ensure content is saved with proper encoding
+            rawFile.writeText(content, java.nio.charset.StandardCharsets.UTF_8)
+            log.debug("Saved raw content to: ${rawFile.absolutePath} (size: ${content.length} chars)")
         } catch (e: Exception) {
             log.error("Failed to save raw content for URL: $url", e)
         }
@@ -533,7 +530,7 @@ import kotlin.math.max
             val contentWithHeader =
                 "<!-- ${metadataJson}${analysis.obj.let { JsonUtil.toJson(it) }} -->\n\n${analysis.text}"
             analysisFile.writeText(contentWithHeader)
-           log.debug("Saved analysis to file: ${analysisFile.absolutePath} (size: ${contentWithHeader.length} chars)")
+            log.debug("Saved analysis to file: ${analysisFile.absolutePath} (size: ${contentWithHeader.length} chars)")
         } catch (e: Exception) {
             log.error("Failed to save analysis for URL: $url", e)
         }
@@ -548,7 +545,7 @@ import kotlin.math.max
 
         val maxChunkSize = 50000
         if (content.length <= maxChunkSize) {
-           log.debug("Content size (${content.length}) within limit, processing as single chunk")
+            log.debug("Content size (${content.length}) within limit, processing as single chunk")
             return pageParsedResponse(planSettings, analysisGoal, content, describer)
         }
 
@@ -556,15 +553,15 @@ import kotlin.math.max
         val chunks = splitContentIntoChunks(content, maxChunkSize)
         log.info("Split content into ${chunks.size} chunks")
         val chunkResults = chunks.mapIndexed { index, chunk ->
-           log.debug("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
+            log.debug("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
             val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
             pageParsedResponse(planSettings, chunkGoal, chunk, describer)
         }
         if (chunkResults.size == 1) {
-           log.debug("Only one chunk result, returning directly")
+            log.debug("Only one chunk result, returning directly")
             return chunkResults[0]
         }
-       log.debug("Combining ${chunkResults.size} chunk results into final analysis")
+        log.debug("Combining ${chunkResults.size} chunk results into final analysis")
         val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n") { it.text }
         return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, describer)
     }

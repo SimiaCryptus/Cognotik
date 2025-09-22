@@ -589,9 +589,7 @@ class CustomFileSetPatchServer(
 
                 else -> {
                     val newSession = task.newSession()
-                    val link =
-                        """<a href="#${newSession.sessionId}" target="_blank" class="${"linked-task-link"}">${fileSet.name}</a>"""
-                    status = task.add("Processing ${link}...<br/>")!!
+                    status = task.add("""Processing <a href="#${newSession.sessionId}" target="_blank" class="linked-task-link">${fileSet.name}</a>...<br/>""")!!
                     newSession.newTask()
                 }
             }

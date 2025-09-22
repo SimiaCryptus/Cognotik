@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -133,7 +134,7 @@ class SoftwareGraphModificationTask(
             }
         }
 
-        task.add(MarkdownUtil.renderMarkdown(summary, ui = agent.ui))
+        task.add((summary.renderMarkdown))
         resultFn(summary)
     }
 

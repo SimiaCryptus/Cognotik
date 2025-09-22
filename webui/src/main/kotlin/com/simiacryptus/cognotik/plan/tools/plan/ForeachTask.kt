@@ -44,7 +44,7 @@ ForeachTask - Execute a task for each item in a list
         val items =
             taskConfig?.foreach_items ?: throw RuntimeException("No items specified for ForeachTask")
         val subTasks = taskConfig.foreach_subplan ?: throw RuntimeException("No subTasks specified for ForeachTask")
-        val subPlanTask = agent.ui.newTask(false)
+        val subPlanTask = task.manager.newTask(false)
         task.add(subPlanTask.placeholder)
 
         items.forEachIndexed { index, item ->
@@ -56,7 +56,7 @@ ForeachTask - Execute a task for each item in a list
             val tabs = TabbedDisplay(task)
             agent.executePlan(
                 diagramBuffer = subPlanTask.add(
-                    com.simiacryptus.cognotik.plan.PlanUtil.diagram(
+                    PlanUtil.diagram(
                         agent.ui,
                         itemPlanProcessingState.subTasks
                     )
@@ -64,7 +64,7 @@ ForeachTask - Execute a task for each item in a list
                 subTasks = itemSubTasks,
                 task = subPlanTask,
                 planProcessingState = itemPlanProcessingState,
-                taskIdProcessingQueue = com.simiacryptus.cognotik.plan.PlanUtil.executionOrder(itemSubTasks)
+                taskIdProcessingQueue = PlanUtil.executionOrder(itemSubTasks)
                     .toMutableList(),
                 pool = agent.pool,
                 userMessage = "$userMessage\nProcessing item $index: $item",

@@ -53,7 +53,7 @@ class PlanningTask(
         planSettings: PlanSettings
     ) {
         val userMessage = messages.joinToString("\n")
-        val newTask = agent.ui.newTask(false).apply { add(placeholder) }
+        val newTask = task.manager.newTask(false).apply { add(placeholder) }
         fun toInput(s: String) = (messages + listOf(s)).filter { it.isNotBlank() }
 
         val subPlan = if (!planSettings.autoFix) {
@@ -125,7 +125,7 @@ class PlanningTask(
         subPlan: Map<String, TaskConfigBase>,
         parentTask: SessionTask,
     ) {
-        val subPlanTask = coordinator.ui.newTask(false)
+        val subPlanTask = parentTask.manager.newTask(false)
         parentTask.add(subPlanTask.placeholder)
         val planProcessingState = PlanProcessingState(subPlan.toMutableMap())
         coordinator.copy(

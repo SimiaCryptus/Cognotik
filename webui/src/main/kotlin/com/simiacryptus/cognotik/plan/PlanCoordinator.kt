@@ -73,7 +73,7 @@ class PlanCoordinator(
         val planProcessingState = newState(plan)
         this.planProcessingState = planProcessingState
         try {
-            val diagramTask = ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
+            val diagramTask = task.manager.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
                 diagramBuffer = diagramTask.add(
                     "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
@@ -112,7 +112,7 @@ class PlanCoordinator(
         plan: Map<String, TaskConfigBase>,
         tabs: TabbedDisplay,
     ) {
-        val sessionTask = ui.newTask(false).apply { tabs["Session"] = placeholder }
+        val sessionTask = task.manager.newTask(false).apply { tabs["Session"] = placeholder }
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
@@ -141,7 +141,7 @@ class PlanCoordinator(
             }
         }
         taskIdProcessingQueue.forEach { taskId ->
-            val newTask = ui.newTask(false)
+            val newTask = task.manager.newTask(false)
             planProcessingState.uitaskMap[taskId] = newTask
             val subtask: TaskConfigBase? = planProcessingState.subTasks[taskId]
             val description = subtask?.task_description
@@ -167,7 +167,7 @@ class PlanCoordinator(
                 subTask.state = AbstractTask.TaskState.InProgress
                 taskTabs.update()
                 log.debug("Running task: ${System.identityHashCode(subTask)} ${subTask.task_description}")
-                val task1 = planProcessingState.uitaskMap.get(taskId) ?: ui.newTask(false).apply {
+                val task1 = planProcessingState.uitaskMap.get(taskId) ?: task.manager.newTask(false).apply {
                     taskTabs[taskId] = placeholder
                 }
                 try {

@@ -60,12 +60,8 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
                 ?.apis?.firstOrNull { it.provider == APIProvider.Github }?.key?.trim()
                 ?: throw RuntimeException("GitHub API token is required")
         )
-        // formattedResults is the "actor answer text" that will be passed to the task chooser (PlanCoordinator)
         val actorAnswerText = formatSearchResults(searchResults)
-        // Output the actor answer text to the task execution's SessionTask (UI tab)
-        val displayText = MarkdownUtil.renderMarkdown(actorAnswerText, ui = agent.ui)
-        task.add(displayText)
-        // Pass the actor answer text to the result function for the PlanCoordinator
+        task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = agent.ui))
         resultFn(actorAnswerText)
     }
 

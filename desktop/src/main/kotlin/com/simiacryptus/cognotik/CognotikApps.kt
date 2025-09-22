@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -250,8 +249,8 @@ open class CognotikApps(
 
     override val childWebApps by lazy {
         val planSettings = object : PlanSettings(
-            defaultModel = model.toApiChatModel(),
-            parsingModel = model.toApiChatModel(),
+            defaultModel = model.toApiChatModel().instance()!!,
+            parsingModel = model.toApiChatModel().instance()!!,
             workingDir = "."
         ) {
             override fun instance(model: ApiChatModel) = model.instance()

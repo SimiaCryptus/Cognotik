@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
@@ -10,15 +9,14 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.cognotik.webui.chat.ChatSocket
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.io.File
-import java.util.UUID
+import java.util.*
 import java.util.function.Consumer
 
 
-abstract class SessionTask(
+open class SessionTask(
     val messageID: String,
     private var buffer: MutableList<StringBuilder> = mutableListOf(),
     private val spinner: String = SessionTask.spinner,
@@ -45,17 +43,41 @@ abstract class SessionTask(
         return stringBuilder
     }
 
-    protected abstract fun send(
+    protected open fun send(
         html: String = currentText
-    )
+    ) = manager.send(html)
 
     @Description("Saves the given data to a file and returns the url of the file.")
-    abstract fun saveFile(
+    open fun saveFile(
         @Description("The name of the file to save")
         relativePath: String,
         @Description("The data to save")
         data: ByteArray
-    ): String
+    ): String {
+        require(relativePath.isNotBlank()) { "File path cannot be blank" }
+        require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+
+        if (data.isEmpty()) {
+            log.warn("Saving empty file at path: {}", relativePath)
+        }
+
+        log.debug("Saving file at path: {}", relativePath)
+
+        manager.dataStorage?.getSessionDir(manager.owner, manager.sessionId)?.let { dir ->
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
+            }
+            val resolve = dir.resolve(relativePath)
+            resolve.parentFile?.let { parent ->
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+                }
+            }
+            resolve.writeBytes(data)
+            log.info("Successfully saved file: {} ({} bytes)", relativePath, data.size)
+        }
+        return "fileIndex/${manager.sessionId}/$relativePath"
+    }
 
     @Description("Adds a message to the task output.")
     fun add(
@@ -254,13 +276,19 @@ abstract class SessionTask(
         image: BufferedImage
     ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
 
-    fun newSession(
-    ): SocketManagerBase {
+    fun newSession(): SocketManagerBase {
         val newSession = Session.newGlobalID()
         val linkedManager = manager.createLinkedManager(newSession)
         SessionProxyServer.agents[newSession] = linkedManager
         return linkedManager
     }
+
+    fun linkedTask(
+        label: String,
+        renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
+    ): SessionTask = newSession().apply {
+        add(renderFn("""<a href="#${sessionId}" target="_blank" class="linked-task-link">${label}</a>"""))!!
+    }.newTask(root = false)
 
     companion object {
         val log = LoggerFactory.getLogger(SessionTask::class.java)
@@ -274,54 +302,48 @@ abstract class SessionTask(
                 return os.toByteArray()
             }
         }
-
-        fun noop(): SessionTask {
-            return object : SessionTask(
-                messageID = "noop",
-                manager = object : SocketManagerBase(Session.newGlobalID(), applicationClass = SessionTask.javaClass) {
-                    override fun onRun(
-                        userMessage: String,
-                        socket: ChatSocket
-                    ) {
-                        TODO("Not yet implemented")
-                    }
-                }
-            ) {
-                override fun createFile(relativePath: String): Pair<String, File?> {
-                    throw IllegalStateException("Noop")
-                }
-
-                override fun send(html: String) {
-                    // Do nothing
-                }
-
-                override fun saveFile(relativePath: String, data: ByteArray): String {
-                    throw IllegalStateException("Noop")
-                }
-
-                override fun hrefLink(
-                    linkText: String,
-                    classname: String,
-                    id: String?,
-                    handler: Consumer<Unit>
-                ): String {
-                    throw IllegalStateException("Noop")
-                }
-            }
-        }
-
     }
 
-    abstract fun createFile(relativePath: String): Pair<String, File?>
+    open fun createFile(relativePath: String): Pair<String, File?> {
+        require(relativePath.isNotBlank()) { "File path cannot be blank" }
+        require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+        log.debug("Creating file at path: {}", relativePath)
+        return Pair("fileIndex/${manager.sessionId}/$relativePath", manager.dataStorage?.getSessionDir(
+            manager.owner,
+            manager.sessionId
+        )?.let { dir ->
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
+            }
+            val resolve = dir.resolve(relativePath)
+            resolve.parentFile?.let { parent ->
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+                }
+            }
+            log.debug("Successfully created file path: {}", resolve.absolutePath)
+            resolve
+        })
+    }
 
     fun update() = send()
 
-    abstract fun hrefLink(
+    open fun hrefLink(
         linkText: String,
         classname: String = "href-link",
         id: String? = null,
         handler: Consumer<Unit>
-    ): String
+    ): String {
+        log.debug("Creating href link with text: {}", linkText)
+        val operationID = SocketManagerBase.Companion.randomID()
+        manager.linkTriggers[operationID] = handler
+        return """<a class="$classname" data-id="$operationID"${
+            when {
+                id != null -> """ id="$id""""
+                else -> ""
+            }
+        }>$linkText</a>"""
+    }
 }
 
 val Throwable.stackTraceTxt: String
@@ -331,7 +353,6 @@ val Throwable.stackTraceTxt: String
         printStackTrace(pw)
         return sw.toString()
     }
-
 
 fun Chatter.getChildClient(task: SessionTask): Chatter {
     val childClient = this.getChildClient()
