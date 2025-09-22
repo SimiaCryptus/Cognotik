@@ -181,7 +181,6 @@ class CrawlerAgentTask(
                 log.debug("Queue status: $queueStats")
                 while (
                     pageQueue.count { it.started } < maxPages &&
-
                     pageQueue.count { !it.started } > 0 &&
                     errorCount.get() < maxErrors
                 ) {
@@ -190,10 +189,10 @@ class CrawlerAgentTask(
                             .maxByOrNull { it.relevance_score }?.apply { started = true }
                     } ?: break
                     log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
+                    val task = task.manager.newTask(false).apply { tabs[page.link] = placeholder }
                     futureMap[page.link] = exeManager.submit {
                         val pageStartTime = System.currentTimeMillis()
                         log.info("Starting to process page ${processedCount.get() + 1}: url='${page.link}', title='${page.title}'")
-                        val task = task.manager.newTask(false).apply { tabs[page.link] = placeholder }
                         val currentIndex = processedCount.incrementAndGet()
                         if (currentIndex > maxPages) {
                             log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${page.link}")
