@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -41,6 +40,9 @@ open class GoalOrientedMode(
 
     private val goalTree = ConcurrentHashMap<String, Goal>()
     private val taskMap = ConcurrentHashMap<String, Task>()
+
+    private val goalTasks = ConcurrentHashMap<String, SessionTask>()
+    private val taskTasks = ConcurrentHashMap<String, SessionTask>()
 
     override fun initialize() {
         log.debug("Initializing GoalOrientedMode")
@@ -150,6 +152,7 @@ open class GoalOrientedMode(
                 logToSession("Decomposing goal: ${goal.description} (ID: ${goal.id})")
                 // Create a goal tab for this goal
                 val goalTab = goalsTask.linkedTask("Goal ID ${goal.id}")
+                goalTasks[goal.id!!] = goalTab
                 goalTab.add("# Goal: ${goal.description}\n\nID: ${goal.id}".renderMarkdown())
 
                 try {
@@ -164,11 +167,10 @@ open class GoalOrientedMode(
                         val tasksList = StringBuilder("## Tasks:\n")
 
                         subgoals.forEach { subgoal ->
-
                             if (!goalTree.containsKey(subgoal.id)) {
                                 goalTree[subgoal.id!!] = subgoal
                                 logToSession("  New subgoal: ${subgoal.description} (ID: ${subgoal.id}) for Goal ${goal.id}")
-                                subgoalsList.append("- ${subgoal.description} (ID: ${subgoal.id})\n")
+                                subgoalsList.append("- ${subgoal.description} (ID: ${subgoal.id.let { goalTasks[subgoal.id]?.manager?.linkToSession(it) ?: it }}})\n")
                             } else {
                                 logToSession("  Subgoal ID ${subgoal.id} already exists. Skipping addition.")
                             }
@@ -178,7 +180,7 @@ open class GoalOrientedMode(
                             if (!taskMap.containsKey(t.id)) {
                                 taskMap[t.id!!] = t
                                 logToSession("  New task: ${t.description} (ID: ${t.id}) for Goal ${goal.id}")
-                                tasksList.append("- ${t.description} (ID: ${t.id})\n")
+                                tasksList.append("- ${t.description} (ID: ${t.id.let { goalTasks[t.id]?.manager?.linkToSession(it) ?: it }})\n")
                             } else {
                                 logToSession("  Task ID ${t.id} already exists. Skipping addition.")
                             }
@@ -223,6 +225,7 @@ open class GoalOrientedMode(
                     val future = processor.submit<String?> {
                         try {
                             val executionUiTask = tasksTask.linkedTask("Task ID ${t.id}")
+                            taskTasks[t.id!!] = executionUiTask
                             val taskResult =
                                 executeTask(t, executionUiTask, coordinator)
                             taskResult
@@ -318,7 +321,31 @@ open class GoalOrientedMode(
                 GoalStatus.COMPLETED -> "✅"
                 GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳"
             }
-            goalsSummary.append("$statusEmoji **${goal.id}**: ${goal.description}\n")
+            val goalLink = goalsTask.manager.linkToSession(goal.id!!)
+            goalsSummary.append("$statusEmoji **$goalLink**: ${goal.description}\n")
+            if (goal.parentGoalId != null) {
+                val parentGoal = goalTree[goal.parentGoalId]
+                val parentLink = goalsTask.manager.linkToSession(goal.parentGoalId)
+                goalsSummary.append("  - Parent: $parentLink - ${parentGoal?.description ?: "Unknown"}\n")
+            }
+            if (!goal.subgoals.isNullOrEmpty()) {
+                val subgoalLinks = goal.subgoals.joinToString(", ") { subgoalId ->
+                    goalsTask.manager.linkToSession(subgoalId)
+                }
+                goalsSummary.append("  - Subgoals: $subgoalLinks\n")
+            }
+            if (!goal.tasks.isNullOrEmpty()) {
+                val taskLinks = goal.tasks.joinToString(", ") { taskId ->
+                    tasksTask.manager.linkToSession(taskId)
+                }
+                goalsSummary.append("  - Tasks: $taskLinks\n")
+            }
+            if (!goal.dependencies.isNullOrEmpty()) {
+                val depLinks = goal.dependencies.joinToString(", ") { depId ->
+                    goalsTask.manager.linkToSession(depId)
+                }
+                goalsSummary.append("  - Dependencies: $depLinks\n")
+            }
             if (goal.result != null) {
                 goalsSummary.append("  - Result: ${goal.result?.take(100)?.replace("\n", " ")}...\n")
             }
@@ -336,7 +363,25 @@ open class GoalOrientedMode(
                 TaskStatus.FAILED -> "❌"
                 TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳"
             }
-            tasksSummary.append("$statusEmoji **${task.id}**: ${task.description}\n")
+            val taskLink = tasksTask.manager.linkToSession(task.id!!)
+            tasksSummary.append("$statusEmoji **$taskLink**: ${task.description}\n")
+            if (task.parentGoalId != null) {
+                val parentGoal = goalTree[task.parentGoalId]
+                val parentLink = goalsTask.manager.linkToSession(task.parentGoalId)
+                tasksSummary.append("  - Parent Goal: $parentLink - ${parentGoal?.description ?: "Unknown"}\n")
+            }
+            if (!task.dependencies.isNullOrEmpty()) {
+                val depLinks = task.dependencies.joinToString(", ") { depId ->
+                    val depGoal = goalTree[depId]
+                    val depTask = taskMap[depId]
+                    when {
+                        depGoal != null -> goalsTask.manager.linkToSession(depId)
+                        depTask != null -> tasksTask.manager.linkToSession(depId)
+                        else -> "Unknown ${depId}"
+                    }
+                }
+                tasksSummary.append("  - Dependencies: $depLinks\n")
+            }
             if (task.result != null) {
                 tasksSummary.append("  - Result: ${task.result?.take(100)?.replace("\n", " ")}...\n")
             }
@@ -680,8 +725,9 @@ open class GoalOrientedMode(
                 GoalStatus.COMPLETED -> "✅ Completed"
                 GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
             }
-            val depsString = goal.dependencies!!.joinToString(",") { it.take(4) }
-            sb.append("$indentStr- $statusEmoji **${goal.description ?: "N/A"}** (ID: ${goal.id!!}, Deps: $depsString)\n")
+            val depsString =
+                if (goal.dependencies!!.isEmpty()) "none" else goal.dependencies.joinToString(", ") { "Goal ${it}" }
+            sb.append(("""$indentStr- $statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let { it -> goalTasks[goal.id]?.manager?.linkToSession(it) ?: it }+"   Deps: " + depsString + "\n")
             if (goal.result != null) {
                 sb.append("$indentStr  Result: ${goal.result?.replace("\n", "\n$indentStr  ")?.take(200)}...\n")
             }
@@ -693,8 +739,12 @@ open class GoalOrientedMode(
                     TaskStatus.FAILED -> "❌ Failed"
                     TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
                 }
-                val taskDepsString = t.dependencies!!.joinToString(",") { it.take(4) }
-                sb.append("$indentStr  - Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id!!}, Deps: $taskDepsString)\n")
+                val taskDepsString =
+                    if (t.dependencies!!.isEmpty()) "none" else t.dependencies.joinToString(", ") { dep ->
+                        if (goalTree.containsKey(dep)) "Goal ${goalTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
+                        else "Task ${taskTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
+                    }
+                sb.append(("$indentStr  - Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id!!})").let { it -> taskTasks[t.id]?.manager?.linkToSession(it) ?: it }+"    Deps: " + taskDepsString + "\n")
                 if (t.result != null) {
                     sb.append("$indentStr    Result: ${t.result?.replace("\n", "\n$indentStr    ")?.take(200)}...\n")
                 }
@@ -735,7 +785,6 @@ open class GoalOrientedMode(
                 llmContextSb.append("${"  ".repeat(indent + 1)}- T(${t.id!!}): ${t.description ?: "N/A"} [${t.status!!}] (Deps: $taskDeps)\n")
             }
             goal.subgoals!!.mapNotNull { goalTree[it] }.forEach { subGoal ->
-
                 if (visited.add(subGoal.id!!)) { // Prevent infinite loops in case of cycles (though cycles aren't explicitly handled)
                     renderNodeForLlm(subGoal, indent + 1, visited)
                 } else {
@@ -783,6 +832,7 @@ open class GoalOrientedMode(
         contextLines.add(llmContextSb.toString())
         return contextLines
     }
+
 
     @Description("A goal in the goal-oriented planning system.")
     data class Goal(

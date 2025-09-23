@@ -547,6 +547,9 @@ abstract class SocketManagerBase(
     }
 
 
+    fun linkToSession(label: String): String =
+        """<a href="#${sessionId}" target="_blank" class="linked-task-link">${label}</a>"""
+
     companion object {
         private val log = LoggerFactory.getLogger(SocketManagerBase::class.java)
         private val trafficLog = LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.session")
@@ -580,4 +583,3 @@ abstract class SocketManagerBase(
         }
     }
 }
-

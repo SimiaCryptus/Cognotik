@@ -286,9 +286,11 @@ open class SessionTask(
     fun linkedTask(
         label: String,
         renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
-    ): SessionTask = newSession().apply {
-        add(renderFn("""<a href="#${sessionId}" target="_blank" class="linked-task-link">${label}</a>"""))!!
-    }.newTask()
+    ): SessionTask {
+        val task = newSession().newTask()
+        add(renderFn(task.manager.linkToSession(label)))!!
+        return task
+    }
 
     companion object {
         val log = LoggerFactory.getLogger(SessionTask::class.java)

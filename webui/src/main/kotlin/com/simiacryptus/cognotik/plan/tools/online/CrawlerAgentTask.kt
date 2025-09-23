@@ -33,9 +33,7 @@ class CrawlerAgentTask(
     val concurrent_page_processing: Int = 3,
     val allow_revisit_pages: Boolean = false,
     val create_final_summary: Boolean? = true,
-    val max_link_depth: Int = 2,
     val min_content_length: Int = 100,
-    val request_timeout_seconds: Int = 30,
 ) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
 
     class SearchAndAnalyzeTaskSettings(
@@ -160,7 +158,7 @@ class CrawlerAgentTask(
         val analysisResultsMap = ConcurrentHashMap<Int, String>()
         val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
         val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
-        log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing, maxLinkDepth=$max_link_depth")
+        log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
 
         val tabs = TabbedDisplay(task)
         val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
@@ -169,6 +167,10 @@ class CrawlerAgentTask(
         val errorCount = AtomicInteger(0)
         val maxErrors = maxPages / 2 // Stop if too many errors
         log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
+        val fetchStrategy = (this@CrawlerAgentTask.taskSettings.fetch_method
+            ?: FetchMethod.HttpClient).createStrategy(
+            this@CrawlerAgentTask
+        )
 
         try {
             while (
@@ -177,16 +179,17 @@ class CrawlerAgentTask(
                 errorCount.get() < maxErrors
             ) {
                 val queueStats =
-                    "completed=${pageQueue.count { it.completed }}, pending=${pageQueue.count { !it.completed }}, started=${pageQueue.count { it.started }}"
-                log.debug("Queue status: $queueStats")
+                    "total=${pageQueue.size} , completed=${pageQueue.count { it.completed }}, started=${pageQueue.count { it.started }}"
                 while (
-                    pageQueue.count { it.started } < maxPages &&
-                    pageQueue.count { !it.started } > 0 &&
-                    errorCount.get() < maxErrors
+                    pageQueue.count { it.started } < maxPages && // Do not start more than maxPages
+                    pageQueue.count { !it.started } > 0 && // There are still unstarted pages
+                    errorCount.get() < maxErrors // Not too many errors
                 ) {
+                    log.info("Status before queuing next page: $queueStats, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
                     val page = synchronized(pageQueue) {
-                        pageQueue.filter { !it.started && it.depth <= max_link_depth }
-                            .maxByOrNull { it.relevance_score }?.apply { started = true }
+                        pageQueue.filter { !it.started }
+                            .maxByOrNull { it.relevance_score }
+                            ?.apply { started = true }
                     } ?: break
                     log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
                     val task = task.manager.newTask(false).apply { tabs[page.link] = placeholder }
@@ -206,7 +209,13 @@ class CrawlerAgentTask(
                                     appendLine("## ${currentIndex}. [${title}]($url)")
                                     appendLine()
                                     try {
-                                        val content = fetchAndProcessUrl(url, webSearchDir, currentIndex, agent.pool)
+                                        val content = fetchAndProcessUrl(
+                                            url,
+                                            webSearchDir,
+                                            currentIndex,
+                                            agent.pool,
+                                            fetchStrategy
+                                        )
                                         log.debug("Fetched content for '$url': ${content.length} characters")
                                         if (content.length < min_content_length) {
                                             log.info("Content too short for '$url': ${content.length} < $min_content_length chars, skipping")
@@ -317,14 +326,13 @@ class CrawlerAgentTask(
                 }
                 val completedCount = pageQueue.count { it.completed }
                 val queuedCount = pageQueue.count { !it.completed }
-                log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, queued=$queuedCount, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
-                Thread.sleep(2000) // Slightly longer wait to reduce CPU usage
-                futureMap.values.forEach {
-                    try {
-                        it.get()
-                    } catch (e: Exception) {
-                        log.debug("Task completed with exception: ${e.message}")
+                while(futureMap.values.any { !it.isDone }) {
+                    Thread.sleep(5000)
+                    futureMap.filter { it.value.isDone }.forEach {
+                        log.debug("Cleaning up completed task for URL: ${it.key}")
+                        futureMap.remove(it.key)
                     }
+                    log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, queued=$queuedCount, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
                 }
             }
         } catch (e: Exception) {
@@ -442,19 +450,18 @@ class CrawlerAgentTask(
         return sentences.joinToString(". ") + (if (sentences.size >= 3) "..." else "")
     }
 
-    private fun fetchAndProcessUrl(url: String, webSearchDir: File, index: Int, pool: ExecutorService): String {
+    private fun fetchAndProcessUrl(
+        url: String, webSearchDir: File, index: Int, pool: ExecutorService, fetchStrategy: FetchStrategy
+    ): String {
 
-        val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/ allow_revisit_pages
-        if (!allowRevisit && urlContentCache.containsKey(url)) {
+        if (!allow_revisit_pages && urlContentCache.containsKey(url)) {
             log.debug("Using cached content for URL: $url (cache size: ${urlContentCache.size})")
             return urlContentCache[url]!!
         }
         log.debug("Fetching content for URL: $url using method: ${taskSettings?.fetch_method ?: FetchMethod.HttpClient}")
 
         return try {
-            val content = (taskSettings?.fetch_method ?: FetchMethod.HttpClient).createStrategy(this)
-                .fetch(url, webSearchDir, index, pool, planSettings)
-
+            val content = fetchStrategy.fetch(url, webSearchDir, index, pool, planSettings)
             // Cache successful fetches
             if (content.isNotBlank()) {
                 urlContentCache[url] = content
