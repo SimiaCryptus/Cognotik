@@ -71,7 +71,7 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             val searchResults = performEmbeddingSearch(
             )
             val formattedResults = formatSearchResults(searchResults)
-            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
+            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
             resultFn(formattedResults)
         } finally {
             threadPool.shutdown()

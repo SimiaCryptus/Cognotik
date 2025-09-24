@@ -176,7 +176,7 @@ class FindResultsChatAction(
             task.echo(renderMarkdown(userMessage))
             task.verbose((getCodeContext()).renderMarkdown())
             val model = AppSettingsState.instance.smartChatClient.getChildClient(task)
-            Retryable(ui = ui, task = task) { content ->
+            Retryable(task = task) { content ->
                 val task = ui.newTask(false)
                 task.add(
                     "<div>" + renderMarkdown(

@@ -177,7 +177,6 @@ open class ModifyFilesAction(
                         task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                     }
                 },
-                ui = ui,
                 defaultFile = if (files.size == 1) files.first().let {
                     root.toPath().resolve(it).toFile().absolutePath
                 } else null,

@@ -46,7 +46,6 @@ open class FilePatchTestApp(
             socketManager,
             root = sourceFile.toPath().parent,
             response = patch,
-            ui = ui,
         )
         task.complete(newPatch.renderMarkdown)
 

@@ -63,7 +63,7 @@ class KnowledgeIndexingTask(
                     appendLine("* $path")
                 }
             }
-            task.add(MarkdownUtil.renderMarkdown(result, ui = agent.ui))
+            task.add(MarkdownUtil.renderMarkdown(result, ui = task.manager))
             resultFn(result)
             return
         }
@@ -88,7 +88,7 @@ class KnowledgeIndexingTask(
                     appendLine("* ${file.name}")
                 }
             }
-            task.add(MarkdownUtil.renderMarkdown(result, ui = agent.ui))
+            task.add(MarkdownUtil.renderMarkdown(result, ui = task.manager))
             resultFn(result)
         } finally {
             threadPool.shutdown()

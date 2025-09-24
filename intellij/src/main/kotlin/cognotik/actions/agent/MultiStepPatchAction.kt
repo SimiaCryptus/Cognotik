@@ -198,7 +198,6 @@ class MultiStepPatchAction : BaseAction() {
                         )
                     )
                 },
-                ui = ui,
                 reviseResponse = { userMessages: List<Pair<String, Role>> ->
                     designActor.respond(
                         messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
@@ -218,11 +217,11 @@ class MultiStepPatchAction : BaseAction() {
                     while (description.startsWith("#")) {
                         description = description.substring(1)
                     }
-                    description = renderMarkdown(description, ui = ui, tabs = false)
+                    description = renderMarkdown(description, ui = task.manager, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
                     ApplicationServices.clientManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)
-                        Retryable(ui, task) {
+                        Retryable(task) {
                             try {
                                 val filter = codeFiles.filter { path ->
                                     paths?.find { path.toString().contains(it) }?.isNotEmpty() == true
@@ -262,7 +261,6 @@ class MultiStepPatchAction : BaseAction() {
                                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                             }
                                         },
-                                        ui = ui,
                                     )
                                 )
                             } catch (e: Exception) {

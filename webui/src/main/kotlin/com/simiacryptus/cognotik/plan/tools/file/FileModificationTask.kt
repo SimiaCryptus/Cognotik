@@ -170,7 +170,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         val semaphore = Semaphore(0)
         val onComplete = { semaphore.release() }
         val completionNotes = mutableListOf<String>()
-        Retryable(agent.ui, task = task) {
+        Retryable(task = task) {
             val task = task.manager.newTask(false)
             task.manager.pool.submit {
                 val codeResult = fileModificationActor.answer(
@@ -193,7 +193,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     )).filter { it.isNotBlank() }
                 )
                 if (agent.planSettings.autoFix) {
-                    val markdown = renderMarkdown(codeResult, ui = agent.ui) {
+                    onComplete()
+                    val markdown = renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
                             task.manager,
                             root = agent.root,
@@ -203,17 +204,15 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = agent.ui,
                             shouldAutoApply = { agent.planSettings.autoFix },
                             model = (taskSettings.model?.let { planSettings.instance(it) }
                                 ?: planSettings.defaultChatter).getChildClient(task),
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"
                     }
-                    onComplete()
                     task.complete(markdown)
                 } else {
-                    task.complete(renderMarkdown(codeResult, ui = agent.ui) {
+                    task.complete(renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
                             task.manager,
                             root = agent.root,
@@ -223,11 +222,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = agent.ui,
                             model = (taskSettings.model?.let { planSettings.instance(it) }
                                 ?: planSettings.defaultChatter).getChildClient(task),
                             defaultFile = defaultFile,
-                        ) + acceptButtonFooter(agent.ui) {
+                        ) + acceptButtonFooter(task.manager) {
                             task.complete()
                             onComplete()
                         }

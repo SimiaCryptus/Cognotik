@@ -159,7 +159,6 @@ class MultiCodeChatAction : BaseAction() {
                             task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                         }
                     },
-                    ui = ui,
                 )
             }
         }</div>"""

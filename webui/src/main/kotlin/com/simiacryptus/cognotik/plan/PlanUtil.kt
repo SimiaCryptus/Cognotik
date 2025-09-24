@@ -5,14 +5,12 @@ import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 object PlanUtil {
 
     fun diagram(
-        ui: ApplicationInterface,
         taskMap: Map<String, TaskConfigBase>
     ) = "## Sub-Plan Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${
         buildMermaidGraph(
@@ -21,8 +19,7 @@ object PlanUtil {
     }\n${TRIPLE_TILDE}".renderMarkdown
 
     fun render(
-        withPrompt: TaskBreakdownWithPrompt,
-        ui: ApplicationInterface
+        withPrompt: TaskBreakdownWithPrompt
     ) = AgentPatterns.displayMapInTabs(
         mapOf(
             "Text" to withPrompt.planText.renderMarkdown(),

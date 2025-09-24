@@ -19,7 +19,6 @@ open class Planner {
         root: Path,
         task: SessionTask,
         userMessage: String,
-        ui: ApplicationInterface,
         planSettings: PlanSettings,
         contextFn: () -> List<String> = { emptyList() },
         describer: TypeDescriber
@@ -45,8 +44,7 @@ open class Planner {
                                 prompt = userMessage,
                                 plan = it.obj,
                                 planText = it.text
-                            ),
-                            ui = ui
+                            )
                         )
                     } catch (e: Throwable) {
                         log.warn("Error rendering task breakdown", e)
@@ -54,7 +52,6 @@ open class Planner {
                         e.message ?: e.javaClass.simpleName
                     }
                 },
-                ui = ui,
                 reviseResponse = { userMessages: List<Pair<String, ApiModel.Role>> ->
                     newPlan(
                         planSettings,

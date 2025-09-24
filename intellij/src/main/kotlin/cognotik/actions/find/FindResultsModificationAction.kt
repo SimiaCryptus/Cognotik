@@ -162,7 +162,6 @@ class FindResultsModificationAction(
                                 task.complete("Updated $path")
                             }
                         },
-                        ui = ui,
                         shouldAutoApply = { modificationParams.autoApply },
                         defaultFile = file?.toFile?.path
                     )?.apply {

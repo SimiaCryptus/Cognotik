@@ -189,7 +189,7 @@ class TestResultAutofixAction : BaseAction() {
         }
 
         private fun runAutofix(ui: ApplicationInterface, task: SessionTask) {
-            Retryable(ui, task) {
+            Retryable(task) {
                 try {
                     val task = ui.newTask(false)
                     val plan = ParsedActor(
@@ -224,7 +224,7 @@ class TestResultAutofixAction : BaseAction() {
                     )
 
                     plan.obj.errors?.forEach { error ->
-                        Retryable(ui, task) {
+                        Retryable(task) {
                             val task = ui.newTask(false)
                             val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
                             val summary = filesToFix.joinToString("\n\n") { filePath ->
@@ -292,7 +292,6 @@ $projectStructure
                         task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                     }
                 },
-                ui = ui,
             )
             task.add("<div>${renderMarkdown(markdown!!)}</div>")
         }

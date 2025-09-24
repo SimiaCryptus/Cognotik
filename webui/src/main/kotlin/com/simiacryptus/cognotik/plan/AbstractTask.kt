@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import java.io.File
 import java.nio.file.Path
 
@@ -32,7 +33,7 @@ abstract class AbstractTask<T : TaskConfigBase>(
             "# $dependency\n\n${planProcessingState.taskResult[dependency] ?: ""}"
         } ?: ""
 
-    protected fun acceptButtonFooter(ui: ApplicationInterface, fn: () -> Unit): String {
+    protected fun acceptButtonFooter(ui: SocketManagerBase, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder
         textHandle = footerTask.complete(ui.hrefLink("Accept", classname = "href-link cmd-button") {

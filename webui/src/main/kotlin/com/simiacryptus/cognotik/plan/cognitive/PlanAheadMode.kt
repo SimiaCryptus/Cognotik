@@ -40,7 +40,6 @@ open class PlanAheadMode(
                 user = user,
                 session = session,
                 dataStorage = ui.socketManager?.dataStorage!!,
-                ui = ui,
                 root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
                     ?: ui.socketManager!!.dataStorage?.getSessionDir(
                         user,
@@ -55,7 +54,6 @@ open class PlanAheadMode(
                 root = coordinator.root,
                 task = task,
                 userMessage = userMessage,
-                ui = coordinator.ui,
                 planSettings = coordinator.planSettings,
                 contextFn = { contextData() },
                 describer = describer

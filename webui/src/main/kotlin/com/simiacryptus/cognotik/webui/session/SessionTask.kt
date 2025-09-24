@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.util.FailedToImplementException
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -276,10 +277,16 @@ open class SessionTask(
         image: BufferedImage
     ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
 
-    fun newSession(): SocketManagerBase {
-        val newSession = Session.newGlobalID()
-        val linkedManager = manager.createLinkedManager(newSession)
-        SessionProxyServer.agents[newSession] = linkedManager
+    fun newSession(session: Session = Session.newGlobalID(), appname: String = session.toString()): SocketManagerBase {
+        val linkedManager = manager.createLinkedManager(session)
+        SessionProxyServer.agents[session] = linkedManager
+        SessionProxyServer.appInfos[session] = AppInfoData(
+            applicationName = appname,
+            inputCnt = 1,
+            stickyInput = false,
+            loadImages = true,
+            showMenubar = false,
+        )
         return linkedManager
     }
 
@@ -287,7 +294,7 @@ open class SessionTask(
         label: String,
         renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
     ): SessionTask {
-        val task = newSession().newTask()
+        val task = newSession(appname = label).newTask()
         add(renderFn(task.manager.linkToSession(label)))!!
         return task
     }

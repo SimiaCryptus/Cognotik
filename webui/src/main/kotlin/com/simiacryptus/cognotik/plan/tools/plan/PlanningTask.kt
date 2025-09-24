@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.toContentList
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 
 class PlanningTask(
@@ -61,7 +60,6 @@ class PlanningTask(
                 newTask,
                 userMessage,
                 ::toInput,
-                agent.ui,
                 planSettings,
                 agent.describer
             ).call()?.obj
@@ -74,8 +72,7 @@ class PlanningTask(
                     plan = PlanUtil.filterPlan { design.obj.tasksByID } ?: emptyMap(),
                     planText = design.text,
                     prompt = userMessage
-                ),
-                ui = agent.ui
+                )
             )
             design.obj
         }
@@ -91,7 +88,6 @@ class PlanningTask(
         task: SessionTask,
         userMessage: String,
         toInput: (String) -> List<String>,
-        ui: ApplicationInterface,
         planSettings: PlanSettings,
         describer: TypeDescriber
     ) = Discussable(
@@ -105,11 +101,9 @@ class PlanningTask(
                     plan = PlanUtil.filterPlan { design.obj.tasksByID } ?: emptyMap(),
                     planText = design.text,
                     prompt = userMessage
-                ),
-                ui = ui
+                )
             )
         },
-        ui = ui,
         reviseResponse = { usermessages: List<Pair<String, ApiModel.Role>> ->
             planSettings.planningActor(describer).respond(
                 messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
@@ -139,7 +133,6 @@ class PlanningTask(
         ).executePlan(
             diagramBuffer = subPlanTask.add(
                 PlanUtil.diagram(
-                    coordinator.ui,
                     planProcessingState.subTasks
                 )
             ),

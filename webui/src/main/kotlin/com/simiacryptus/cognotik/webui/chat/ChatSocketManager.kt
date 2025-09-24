@@ -105,7 +105,7 @@ open class ChatSocketManager(
                 }
                 task.complete()
             } else {
-                retryable(ui, pool, task) { task ->
+                retryable(task.manager, pool, task) { task ->
                     chatMessages.takeLastWhile { it.role == ApiModel.Role.assistant }
                         .forEach { chatMessages.remove(it) }
                     val currentChatMessages = chatMessages()

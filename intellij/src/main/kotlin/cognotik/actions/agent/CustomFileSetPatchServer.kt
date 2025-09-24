@@ -740,7 +740,6 @@ class CustomFileSetPatchServer(
                             task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                         }
                     },
-                    ui = ui,
                     shouldAutoApply = { autoApply },
                     model = AppSettingsState.instance.fastChatClient,
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
@@ -803,7 +802,6 @@ class CustomFileSetPatchServer(
             outputFn = { design: String ->
                 formatOutput(design, ui, session, fileSet, task)
             },
-            ui = ui,
             reviseResponse = { userMessages ->
                 mainActor.respond(
                     messages = userMessages.map {
@@ -839,7 +837,6 @@ class CustomFileSetPatchServer(
                                     fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = ui,
                             shouldAutoApply = { false },
                             model = AppSettingsState.instance.fastChatClient,
                             defaultFile = fileSet.files.firstOrNull()

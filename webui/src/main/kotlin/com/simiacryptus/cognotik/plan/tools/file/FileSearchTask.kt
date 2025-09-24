@@ -61,7 +61,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     ) {
         val searchResults = performSearch()
         val formattedResults = formatSearchResults(searchResults)
-        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
+        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
         resultFn(formattedResults)
     }
 

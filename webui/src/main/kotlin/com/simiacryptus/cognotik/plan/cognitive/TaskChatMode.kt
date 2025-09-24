@@ -64,7 +64,7 @@ open class TaskChatMode(
         }
 
         task.echo(renderMarkdown(userMessage))
-        Retryable(ui, task) {
+        Retryable(task) {
             val subtask = ui.newTask(false)
             ui.socketManager?.pool?.submit {
                 execute(subtask, userMessage)
@@ -78,7 +78,6 @@ open class TaskChatMode(
             user = user,
             session = session,
             dataStorage = ui.socketManager?.dataStorage!!,
-            ui = ui,
             root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
                 ?: ui.socketManager?.dataStorage?.getSessionDir(
                     user,

@@ -161,7 +161,7 @@ class AnalyzeProblemAction : AnAction() {
             ui: ApplicationInterface, task: SessionTask, pool: ExecutorService
         ) {
             try {
-                Retryable(ui, task) {
+                Retryable(task) {
                     val task = ui.newTask(false)
                     val plan = ParsedActor(
                         resultClass = ParsedErrors::class.java,
@@ -186,7 +186,7 @@ class AnalyzeProblemAction : AnAction() {
                     )
 
                     plan.obj.errors?.forEach { error ->
-                        Retryable(ui, task) {
+                        Retryable(task) {
                             val task = ui.newTask(false)
                             val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
                             val summary = filesToFix.joinToString("\n\n") { filePath ->
@@ -248,7 +248,6 @@ class AnalyzeProblemAction : AnAction() {
                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                             }
                         },
-                        ui = ui,
                     )
                 )
             }</div>"

@@ -121,254 +121,263 @@ class CrawlerAgentTask(
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
-        val startTime = System.currentTimeMillis()
-        log.info("Starting CrawlerAgentTask with config: search_query='${taskConfig?.search_query}', direct_urls='${taskConfig?.direct_urls}', max_pages=${taskConfig?.max_pages_per_task ?: max_pages_per_task}")
-        val webSearchDir = File(agent.root.toFile(), ".websearch")
-        if (!webSearchDir.exists()) webSearchDir.mkdirs()
-
-        val seedMethod = taskSettings?.seed_method ?: SeedMethod.GoogleSearch
-        log.info("Using seed method: $seedMethod")
-        val seedItems = try {
-            seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
-        } catch (e: Exception) {
-            log.error("Failed to get seed items using method: $seedMethod", e)
-            task.error(e)
-            resultFn("Error: Failed to get seed items - ${e.message}")
-            return
-        }
-
-        val pageQueue = mutableListOf<LinkData>().apply {
-            seedItems?.forEach { item ->
-                add(
-                    LinkData(
-                        link = item["link"] as String,
-                        title = (item["title"] as? String) ?: "Untitled",
-                        relevance_score = 100.0
-                    )
-                )
-            }
-        }
-        log.info("Initialized page queue with ${pageQueue.size} seed items")
-        if (pageQueue.isEmpty()) {
-            log.warn("No seed items found, cannot proceed with crawling")
-            resultFn("Warning: No seed items found to start crawling")
-            return
-        }
-
-        val analysisResultsMap = ConcurrentHashMap<Int, String>()
-        val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
-        val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
-        log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
-
-        val tabs = TabbedDisplay(task)
-        val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
-        val futureMap = mutableMapOf<String, Future<*>>()
-        val processedCount = AtomicInteger(0)
-        val errorCount = AtomicInteger(0)
-        val maxErrors = maxPages / 2 // Stop if too many errors
-        log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
-        val fetchStrategy = (this@CrawlerAgentTask.taskSettings.fetch_method
-            ?: FetchMethod.HttpClient).createStrategy(
-            this@CrawlerAgentTask
-        )
-
         try {
-            while (
-                pageQueue.count { !it.completed } > 0 &&
-                pageQueue.count { it.completed } < maxPages &&
-                errorCount.get() < maxErrors
-            ) {
-                val queueStats =
-                    "total=${pageQueue.size} , completed=${pageQueue.count { it.completed }}, started=${pageQueue.count { it.started }}"
+            val startTime = System.currentTimeMillis()
+            log.info("Starting CrawlerAgentTask with config: search_query='${taskConfig?.search_query}', direct_urls='${taskConfig?.direct_urls}', max_pages=${taskConfig?.max_pages_per_task ?: max_pages_per_task}")
+            val webSearchDir = File(agent.root.toFile(), ".websearch")
+            if (!webSearchDir.exists()) webSearchDir.mkdirs()
+
+            val seedMethod = taskSettings?.seed_method ?: SeedMethod.GoogleSearch
+            log.info("Using seed method: $seedMethod")
+            val seedItems = try {
+                seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
+            } catch (e: Exception) {
+                log.error("Failed to get seed items using method: $seedMethod", e)
+                task.error(e)
+                resultFn("Error: Failed to get seed items - ${e.message}")
+                return
+            }
+
+            val pageQueue = mutableListOf<LinkData>().apply {
+                seedItems?.forEach { item ->
+                    add(
+                        LinkData(
+                            link = item["link"] as String,
+                            title = (item["title"] as? String) ?: "Untitled",
+                            relevance_score = 100.0
+                        )
+                    )
+                }
+            }
+            log.info("Initialized page queue with ${pageQueue.size} seed items")
+            if (pageQueue.isEmpty()) {
+                log.warn("No seed items found, cannot proceed with crawling")
+                resultFn("Warning: No seed items found to start crawling")
+                return
+            }
+
+            val analysisResultsMap = ConcurrentHashMap<Int, String>()
+            val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
+            val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
+            log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
+
+            val tabs = TabbedDisplay(task)
+            val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
+            val futureMap = mutableMapOf<String, Future<*>>()
+            val processedCount = AtomicInteger(0)
+            val errorCount = AtomicInteger(0)
+            val maxErrors = maxPages / 2 // Stop if too many errors
+            log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
+            val fetchStrategy = (this@CrawlerAgentTask.taskSettings.fetch_method
+                ?: FetchMethod.HttpClient).createStrategy(
+                this@CrawlerAgentTask
+            )
+
+            try {
                 while (
-                    pageQueue.count { it.started } < maxPages && // Do not start more than maxPages
-                    pageQueue.count { !it.started } > 0 && // There are still unstarted pages
-                    errorCount.get() < maxErrors // Not too many errors
+                    pageQueue.count { !it.completed } > 0 &&
+                    pageQueue.count { it.completed } < maxPages &&
+                    errorCount.get() < maxErrors
                 ) {
-                    log.info("Status before queuing next page: $queueStats, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
-                    val page = synchronized(pageQueue) {
-                        pageQueue.filter { !it.started }
-                            .maxByOrNull { it.relevance_score }
-                            ?.apply { started = true }
-                    } ?: break
-                    log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
-                    val task = task.manager.newTask(false).apply { tabs[page.link] = placeholder }
-                    futureMap[page.link] = exeManager.submit {
-                        val pageStartTime = System.currentTimeMillis()
-                        log.info("Starting to process page ${processedCount.get() + 1}: url='${page.link}', title='${page.title}'")
-                        val currentIndex = processedCount.incrementAndGet()
-                        if (currentIndex > maxPages) {
-                            log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${page.link}")
-                            return@submit
-                        }
-                        try {
-                            val url = page.link
-                            val title = page.title
-                            val processPageResult =
-                                buildString {
-                                    appendLine("## ${currentIndex}. [${title}]($url)")
-                                    appendLine()
-                                    try {
-                                        val content = fetchAndProcessUrl(
-                                            url,
-                                            webSearchDir,
-                                            currentIndex,
-                                            agent.pool,
-                                            fetchStrategy
-                                        )
-                                        log.debug("Fetched content for '$url': ${content.length} characters")
-                                        if (content.length < min_content_length) {
-                                            log.info("Content too short for '$url': ${content.length} < $min_content_length chars, skipping")
-                                            appendLine("*Content too short (${content.length} chars), skipping this result*")
+                    val queueStats =
+                        "total=${pageQueue.size} , completed=${pageQueue.count { it.completed }}, started=${pageQueue.count { it.started }}"
+                    while (
+                        pageQueue.count { it.started } < maxPages && // Do not start more than maxPages
+                        pageQueue.count { !it.started } > 0 && // There are still unstarted pages
+                        errorCount.get() < maxErrors // Not too many errors
+                    ) {
+                        log.info("Status before queuing next page: $queueStats, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
+                        val page = synchronized(pageQueue) {
+                            pageQueue.filter { !it.started }
+                                .maxByOrNull { it.relevance_score }
+                                ?.apply { started = true }
+                        } ?: break
+                        log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
+                        val task = task.manager.newTask(false).apply { tabs[page.link] = placeholder; task.update() }
+                        futureMap[page.link] = exeManager.submit {
+                            val pageStartTime = System.currentTimeMillis()
+                            log.info("Starting to process page ${processedCount.get() + 1}: url='${page.link}', title='${page.title}'")
+                            val currentIndex = processedCount.incrementAndGet()
+                            if (currentIndex > maxPages) {
+                                log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${page.link}")
+                                return@submit
+                            }
+                            try {
+                                val url = page.link
+                                val title = page.title
+                                val processPageResult =
+                                    buildString {
+                                        appendLine("## ${currentIndex}. [${title}]($url)")
+                                        appendLine()
+                                        try {
+                                            val content = fetchAndProcessUrl(
+                                                url,
+                                                webSearchDir,
+                                                currentIndex,
+                                                agent.pool,
+                                                fetchStrategy
+                                            )
+                                            log.debug("Fetched content for '$url': ${content.length} characters")
+                                            if (content.length < min_content_length) {
+                                                log.info("Content too short for '$url': ${content.length} < $min_content_length chars, skipping")
+                                                appendLine("*Content too short (${content.length} chars), skipping this result*")
+                                                appendLine()
+                                                return@buildString
+                                            }
+
+                                            val analysisGoal = when {
+                                                taskConfig?.content_queries != null -> taskConfig.content_queries.toJson()
+                                                taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
+                                                else -> "Analyze the content and provide insights."
+                                            }
+                                            log.debug("Analyzing content for '$url' with goal: $analysisGoal")
+                                            val analysis: ParsedResponse<ParsedPage> =
+                                                transformContent(content, analysisGoal, planSettings, agent.describer)
+
+                                            if (analysis.obj.page_type == PageType.Error) {
+                                                log.warn("Analysis returned error for '$url': ${analysis.obj.page_information}")
+                                                appendLine(
+                                                    "*Error processing this result: ${
+                                                        analysis.obj.page_information?.let {
+                                                            JsonUtil.toJson(
+                                                                it
+                                                            )
+                                                        }
+                                                    }*"
+                                                )
+                                                appendLine()
+                                                saveAnalysis(webSearchDir.resolve("error").apply {
+                                                    mkdirs()
+                                                }, url, analysis, currentIndex)
+                                                return@buildString
+                                            }
+
+                                            if (analysis.obj.page_type == PageType.Irrelevant) {
+                                                log.info("Content marked as irrelevant for '$url', skipping")
+                                                appendLine("*Irrelevant content, skipping this result*")
+                                                appendLine()
+                                                saveAnalysis(webSearchDir.resolve("irrelevant").apply {
+                                                    mkdirs()
+                                                }, url, analysis, currentIndex)
+                                                return@buildString
+                                            }
+                                            log.debug("Successfully analyzed content for '$url', saving results")
+
+                                            saveAnalysis(webSearchDir, url, analysis, currentIndex)
+
+                                            appendLine(analysis.text)
                                             appendLine()
-                                            return@buildString
-                                        }
 
-                                        val analysisGoal = when {
-                                            taskConfig?.content_queries != null -> taskConfig.content_queries.toJson()
-                                            taskConfig?.task_description?.isNotBlank() == true -> taskConfig.task_description!!
-                                            else -> "Analyze the content and provide insights."
-                                        }
-                                        log.debug("Analyzing content for '$url' with goal: $analysisGoal")
-                                        val analysis: ParsedResponse<ParsedPage> =
-                                            transformContent(content, analysisGoal, planSettings, agent.describer)
+                                            if (/*taskConfig?.follow_links ?:*/ follow_links) {
 
-                                        if (analysis.obj.page_type == PageType.Error) {
-                                            log.warn("Analysis returned error for '$url': ${analysis.obj.page_information}")
-                                            appendLine(
-                                                "*Error processing this result: ${
-                                                    analysis.obj.page_information?.let {
-                                                        JsonUtil.toJson(
-                                                            it
+                                                var linkData = analysis.obj.link_data
+                                                val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/
+                                                    allow_revisit_pages
+                                                if (linkData.isNullOrEmpty()) {
+                                                    linkData = extractLinksFromMarkdown(analysis.text)
+                                                    log.debug("Extracted ${linkData.size} links from markdown for '$url'")
+                                                } else {
+                                                    log.debug("Using ${linkData.size} structured links from analysis for '$url'")
+                                                }
+                                                val filteredLinks = linkData
+                                                    .take(10) // Limit links per page to prevent explosion
+                                                    .filter { link ->
+                                                        VALID_URL_PATTERN.matcher(link.link).matches() &&
+                                                                !isBlacklistedDomain(link.link) &&
+                                                                (allowRevisit || pageQueue.none { it.link == link.link })
+                                                    }
+                                                log.info("Adding ${filteredLinks.size} new links to queue from '$url' (filtered from ${linkData.size} total)")
+                                                linkData
+                                                    .take(10) // Limit links per page to prevent explosion
+                                                    .filter { link ->
+                                                        VALID_URL_PATTERN.matcher(link.link).matches() &&
+                                                                !isBlacklistedDomain(link.link) &&
+                                                                (allowRevisit || pageQueue.none { it.link == link.link })
+                                                    }
+                                                    .forEach { link ->
+                                                        log.debug("Adding link to queue: url='${link.link}', title='${link.title}', relevance=${link.relevance_score}")
+                                                        pageQueue.add(
+                                                            link.apply { depth = page.depth + 1 }
                                                         )
                                                     }
-                                                }*"
-                                            )
-                                            appendLine()
-                                            saveAnalysis(webSearchDir.resolve("error").apply {
-                                                mkdirs()
-                                            }, url, analysis, currentIndex)
-                                            return@buildString
-                                        }
-
-                                        if (analysis.obj.page_type == PageType.Irrelevant) {
-                                            log.info("Content marked as irrelevant for '$url', skipping")
-                                            appendLine("*Irrelevant content, skipping this result*")
-                                            appendLine()
-                                            saveAnalysis(webSearchDir.resolve("irrelevant").apply {
-                                                mkdirs()
-                                            }, url, analysis, currentIndex)
-                                            return@buildString
-                                        }
-                                        log.debug("Successfully analyzed content for '$url', saving results")
-
-                                        saveAnalysis(webSearchDir, url, analysis, currentIndex)
-
-                                        appendLine(analysis.text)
-                                        appendLine()
-
-                                        if (/*taskConfig?.follow_links ?:*/ follow_links) {
-
-                                            var linkData = analysis.obj.link_data
-                                            val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/allow_revisit_pages
-                                            if (linkData.isNullOrEmpty()) {
-                                                linkData = extractLinksFromMarkdown(analysis.text)
-                                                log.debug("Extracted ${linkData.size} links from markdown for '$url'")
-                                            } else {
-                                                log.debug("Using ${linkData.size} structured links from analysis for '$url'")
                                             }
-                                            val filteredLinks = linkData
-                                                .take(10) // Limit links per page to prevent explosion
-                                                .filter { link ->
-                                                    VALID_URL_PATTERN.matcher(link.link).matches() &&
-                                                            !isBlacklistedDomain(link.link) &&
-                                                            (allowRevisit || pageQueue.none { it.link == link.link })
-                                                }
-                                            log.info("Adding ${filteredLinks.size} new links to queue from '$url' (filtered from ${linkData.size} total)")
-                                            linkData
-                                                .take(10) // Limit links per page to prevent explosion
-                                                .filter { link ->
-                                                    VALID_URL_PATTERN.matcher(link.link).matches() &&
-                                                            !isBlacklistedDomain(link.link) &&
-                                                            (allowRevisit || pageQueue.none { it.link == link.link })
-                                                }
-                                                .forEach { link ->
-                                                    log.debug("Adding link to queue: url='${link.link}', title='${link.title}', relevance=${link.relevance_score}")
-                                                    pageQueue.add(
-                                                        link.apply { depth = page.depth + 1 }
-                                                    )
-                                                }
+                                        } catch (e: Exception) {
+                                            log.error("Error processing URL: $url", e)
+                                            errorCount.incrementAndGet()
+                                            page.error = e.message
+                                            appendLine("*Error processing this result: ${e.message}*")
+                                            appendLine()
                                         }
-                                    } catch (e: Exception) {
-                                        log.error("Error processing URL: $url", e)
-                                        errorCount.incrementAndGet()
-                                        page.error = e.message
-                                        appendLine("*Error processing this result: ${e.message}*")
-                                        appendLine()
                                     }
-                                }
-                            task.add(processPageResult.renderMarkdown)
-                            analysisResultsMap[currentIndex] = processPageResult
-                            log.info("Successfully processed page ${currentIndex}: url='${page.link}', processing_time=${System.currentTimeMillis() - pageStartTime}ms")
-                        } catch (e: Exception) {
-                            task.error(e)
-                            log.error("Error processing page: ${page.link}", e)
-                            errorCount.incrementAndGet()
-                            page.error = e.message
-                            analysisResultsMap[currentIndex] =
-                                "## ${currentIndex}. [${page.title}](${page.link})\n\n*Error processing this result: ${e.message}*\n\n"
-                        } finally {
-                            page.processingTimeMs = System.currentTimeMillis() - pageStartTime
-                            page.completed = true
-                            log.debug("Page processing completed: url='${page.link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
+                                task.add(processPageResult.renderMarkdown)
+                                analysisResultsMap[currentIndex] = processPageResult
+                                log.info("Successfully processed page ${currentIndex}: url='${page.link}', processing_time=${System.currentTimeMillis() - pageStartTime}ms")
+                            } catch (e: Exception) {
+                                task.error(e)
+                                log.error("Error processing page: ${page.link}", e)
+                                errorCount.incrementAndGet()
+                                page.error = e.message
+                                analysisResultsMap[currentIndex] =
+                                    "## ${currentIndex}. [${page.title}](${page.link})\n\n*Error processing this result: ${e.message}*\n\n"
+                            } finally {
+                                page.processingTimeMs = System.currentTimeMillis() - pageStartTime
+                                page.completed = true
+                                log.debug("Page processing completed: url='${page.link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
+                            }
                         }
                     }
-                }
-                val completedCount = pageQueue.count { it.completed }
-                val queuedCount = pageQueue.count { !it.completed }
-                while(futureMap.values.any { !it.isDone }) {
-                    Thread.sleep(5000)
-                    futureMap.filter { it.value.isDone }.forEach {
-                        log.debug("Cleaning up completed task for URL: ${it.key}")
-                        futureMap.remove(it.key)
+                    val completedCount = pageQueue.count { it.completed }
+                    val queuedCount = pageQueue.count { !it.completed }
+                    while (futureMap.values.any { !it.isDone }) {
+                        Thread.sleep(5000)
+                        futureMap.filter { it.value.isDone }.forEach {
+                            log.debug("Cleaning up completed task for URL: ${it.key}")
+                            futureMap.remove(it.key)
+                        }
+                        log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, queued=$queuedCount, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
                     }
-                    log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, queued=$queuedCount, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
                 }
+            } catch (e: Exception) {
+                log.error("Error during processing", e)
+                task.error(e)
+            } finally {
+                log.info("Crawling phase completed, cleaning up resources")
             }
+            val totalTime = System.currentTimeMillis() - startTime
+            log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
+
+            val analysisResults = (1..processedCount.get()).asSequence().mapNotNull {
+                analysisResultsMap[it]
+            }.joinToString("\n")
+            if (analysisResults.isBlank()) {
+                val errorMessage = "No content was successfully processed. Check logs for errors."
+                log.error(errorMessage)
+                resultFn(errorMessage)
+                return
+            }
+
+            val finalOutput =
+                if (create_final_summary != false && analysisResults.length > max_final_output_size) {
+                    log.info("Creating final summary: original_size=${analysisResults.length}, max_size=$max_final_output_size")
+                    createFinalSummary(analysisResults)
+                } else {
+                    log.info("Using analysis results directly: size=${analysisResults.length}")
+                    analysisResults
+                }
+            task.manager.newTask(false).apply {
+                tabs["Final Summary"] = placeholder
+                add(finalOutput.renderMarkdown())
+                task.update()
+            }
+            log.info("CrawlerAgentTask finished successfully, final output size: ${finalOutput.length}")
+            resultFn(finalOutput)
         } catch (e: Exception) {
-            log.error("Error during processing", e)
+            log.error("Unhandled exception in CrawlerAgentTask", e)
             task.error(e)
+            resultFn("Error: ${e.message}")
         } finally {
-            log.info("Crawling phase completed, cleaning up resources")
             cleanup()
         }
-        val totalTime = System.currentTimeMillis() - startTime
-        log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
-
-        val analysisResults = (1..processedCount.get()).asSequence().mapNotNull {
-            analysisResultsMap[it]
-        }.joinToString("\n")
-        if (analysisResults.isBlank()) {
-            val errorMessage = "No content was successfully processed. Check logs for errors."
-            log.error(errorMessage)
-            resultFn(errorMessage)
-            return
-        }
-
-        val finalOutput =
-            if (create_final_summary != false && analysisResults.length > max_final_output_size) {
-                log.info("Creating final summary: original_size=${analysisResults.length}, max_size=$max_final_output_size")
-                createFinalSummary(analysisResults)
-            } else {
-                log.info("Using analysis results directly: size=${analysisResults.length}")
-                analysisResults
-            }
-        task.manager.newTask(false).apply {
-            tabs["Final Summary"] = placeholder
-            add(finalOutput.renderMarkdown())
-        }
-        log.info("CrawlerAgentTask finished successfully, final output size: ${finalOutput.length}")
-        resultFn(finalOutput)
     }
 
     private fun isBlacklistedDomain(url: String): Boolean {

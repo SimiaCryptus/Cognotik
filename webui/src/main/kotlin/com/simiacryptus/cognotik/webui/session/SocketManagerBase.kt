@@ -142,7 +142,6 @@ abstract class SocketManagerBase(
                 out.take(100) + (if (out.length > 100) "..." else "")
             )
 
-
             val split = out.split(',', ignoreCase = false, limit = 2)
             if (split.size < 2) {
                 log.warn(
@@ -288,21 +287,20 @@ abstract class SocketManagerBase(
     }
 
     private fun setMessage(key: String, value: String) = synchronized(stateLock) {
-        val existingValue = messageStates[key]
+        val existingValue = messageStates[key] ?: ""
         if (existingValue == value) {
             log.debug("Skipping update for key: {}, content is identical ({} bytes)", key, value.length)
             return@synchronized -1 // Message content is identical, do not update version or timestamp
         }
+        if (existingValue.length == value.length) {
+            log.debug("Odd update for key: {}, content length unchanged ({} bytes)", key, value.length)
+        }
         try {
-            // Persist first, then update in-memory state
             log.debug("Updating message - Key: {}, Content size: {} bytes", key, value.length)
             dataStorage?.updateMessage(owner, sessionId, key, value)
             messageStates[key] = value // Using [] syntax for put
             messageTimestamps[key] = System.currentTimeMillis()
-            // getOrPut on ConcurrentHashMap is atomic. AtomicInteger operations are atomic.
-            // This ensures the version is incremented for new or changed messages.
-            val newVersion = messageVersions.getOrPut(key) { AtomicInteger(0) }.incrementAndGet()
-            newVersion
+            messageVersions.getOrPut(key) { AtomicInteger(0) }.incrementAndGet()
         } catch (e: Exception) {
             log.error("Error updating message state for key: $key", e)
             trafficLog.error("Error updating message state for key: {}, error: {}", key, e.message)

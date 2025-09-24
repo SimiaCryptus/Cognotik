@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -63,7 +62,7 @@ class KnowledgeIndexingServer(
         socketManager.pool.submit {
             val task = ui.newTask(true)
             try {
-                executeIndexing(task, ui)
+                executeIndexing(task)
             } catch (e: Exception) {
                 log.error("Error during indexing", e)
                 task.error(e)
@@ -72,7 +71,7 @@ class KnowledgeIndexingServer(
         return socketManager
     }
 
-    private fun executeIndexing(task: SessionTask, ui: ApplicationInterface) {
+    private fun executeIndexing(task: SessionTask) {
         val files = settings.filePaths.map { path ->
             File(path).also { file ->
                 if (!file.exists()) {
@@ -90,7 +89,7 @@ class KnowledgeIndexingServer(
                     appendLine("* $path")
                 }
             }
-            task.add(MarkdownUtil.renderMarkdown(result, ui = ui))
+            task.add(MarkdownUtil.renderMarkdown(result, ui = task.manager))
             task.complete(result)
             return
         }
@@ -107,14 +106,14 @@ class KnowledgeIndexingServer(
                 }
                 appendLine()
                 appendLine("Large files will be processed in chunks to avoid memory issues.")
-            }, ui = ui))
+            }, ui = task.manager))
         }
 
         val totalSizeKB = files.sumOf { it.length() } / 1024
         val totalSizeMB = totalSizeKB / 1024
         val sizeDisplay = if (totalSizeMB > 1) "${totalSizeMB} MB" else "${totalSizeKB} KB"
 
-        task.add(MarkdownUtil.renderMarkdown("# Knowledge Indexing", ui = ui))
+        task.add(MarkdownUtil.renderMarkdown("# Knowledge Indexing", ui = task.manager))
         task.add(MarkdownUtil.renderMarkdown(buildString {
             this.appendLine("## Indexing Overview")
             this.appendLine("- **Files to process:** ${files.size}")
@@ -143,7 +142,7 @@ class KnowledgeIndexingServer(
             }
             this.appendLine()
             this.appendLine("---")
-        }, ui = ui))
+        }, ui = task.manager))
 
         try {
             val progressState = ProgressState.progressBar(task)
@@ -155,7 +154,7 @@ class KnowledgeIndexingServer(
             val smallResults = mutableListOf<String?>()
             smallFiles.chunked(BATCH_SIZE).forEach { batch ->
                 if (isCancelled) {
-                    task.add(MarkdownUtil.renderMarkdown("⚠️ Indexing cancelled by user", ui = ui))
+                    task.add(MarkdownUtil.renderMarkdown("⚠️ Indexing cancelled by user", ui = task.manager))
                     return
                 }
 
@@ -178,7 +177,7 @@ class KnowledgeIndexingServer(
             // Process large files one by one with chunking
             val largeResults = largeFiles.mapNotNull { file ->
                 try {
-                    task.add(MarkdownUtil.renderMarkdown("Processing large file: ${file.name}...", ui = ui))
+                    task.add(MarkdownUtil.renderMarkdown("Processing large file: ${file.name}...", ui = task.manager))
                     val result = indexTextFiles(
                         pool = threadPool,
                         parsingModel = RawTextParsingModel(settings.splitRegex),
@@ -236,7 +235,7 @@ class KnowledgeIndexingServer(
                 appendLine("The indexed knowledge base is now available for use in other Cognotik features.")
             }
 
-            task.add(MarkdownUtil.renderMarkdown(completionResult, ui = ui))
+            task.add(MarkdownUtil.renderMarkdown(completionResult, ui = task.manager))
 
         } catch (e: Exception) {
             log.error("Error during indexing process", e)
@@ -250,7 +249,7 @@ class KnowledgeIndexingServer(
                 appendLine()
                 appendLine("Please check the logs for more details and try again.")
             }
-            task.add(MarkdownUtil.renderMarkdown(errorResult, ui = ui))
+            task.add(MarkdownUtil.renderMarkdown(errorResult, ui = task.manager))
             task.error(e)
         }
     }

@@ -104,9 +104,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             heading = "",
             initialResponse = { it: String -> insightActor.answer(toInput(it)) },
             outputFn = { design: String ->
-                MarkdownUtil.renderMarkdown(design, ui = agent.ui)
+                MarkdownUtil.renderMarkdown(design, ui = task.manager)
             },
-            ui = agent.ui,
             reviseResponse = { usermessages: List<Pair<String, Role>> ->
                 val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                     taskConfig?.inquiry_questions?.joinToString("\n")
@@ -129,7 +128,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
             ),
         ).apply {
-            task.add(MarkdownUtil.renderMarkdown(this, ui = agent.ui))
+            task.add(MarkdownUtil.renderMarkdown(this, ui = task.manager))
         }
         resultFn(inquiryResult ?: "(no response)")
     }

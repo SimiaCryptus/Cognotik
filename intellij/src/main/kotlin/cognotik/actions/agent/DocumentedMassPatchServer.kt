@@ -107,7 +107,6 @@ class DocumentedMassPatchServer(
                                             fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                         }
                                     },
-                                    ui = ui,
                                     shouldAutoApply = { autoApply },
                                     model = AppSettingsState.instance.fastChatClient,
                                     defaultFile = path.toString()
@@ -136,7 +135,6 @@ class DocumentedMassPatchServer(
                                                     fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                                 }
                                             },
-                                            ui = ui,
                                             shouldAutoApply = { autoApply },
                                             model = AppSettingsState.instance.fastChatClient,
                                             defaultFile = path.toString()
@@ -144,7 +142,6 @@ class DocumentedMassPatchServer(
                                     }
                                 }</div>"""
                             },
-                            ui = ui,
                             reviseResponse = { userMessages ->
                                 mainActor.respond(
                                     messages = userMessages.map {

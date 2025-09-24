@@ -38,6 +38,7 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("com.simiacryptus")
         setLogDebug("com.simiacryptus.cognotik.plan")
         setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
+        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
         System.getProperty("cognotik.config")?.let { configFile ->

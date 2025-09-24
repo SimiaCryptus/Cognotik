@@ -7,6 +7,8 @@ import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.application.ApplicationInterface.Companion.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -55,7 +57,7 @@ class RunCodeTask<T : Interpreter>(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
-            ui = agent.ui,
+            ui = task.manager,
             interpreter = interpreter,
             symbols = mapOf<String, Any>(
                 "env" to (planSettings.env ?: emptyMap()),
@@ -92,11 +94,11 @@ class RunCodeTask<T : Interpreter>(
                             semaphore.release()
                         }
                     }\n</div>\n${
-                        super.ui.textInput { feedback ->
-                            super.responseAction(task, "Revising...", formHandle!!, formText) {
-                                super.feedback(task, feedback, request, response)
-                            }
-                        }
+                        super.ui.textInput(oneAtATime { feedback: String ->
+                                                    super.responseAction(task, "Revising...", formHandle!!, formText) {
+                                                        super.feedback(task, feedback, request, response)
+                                                    }
+                                                })
                     }", additionalClasses = "reply-message"
                 ) else if (autoRunCounter.incrementAndGet() <= 1) {
                     responseAction(task, "Running...", formHandle, formText) {

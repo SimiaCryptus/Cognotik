@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
@@ -22,7 +23,7 @@ open class CodingAgent<T : Interpreter>(
     val dataStorage: StorageInterface,
     val session: Session,
     val user: User?,
-    val ui: ApplicationInterface,
+    val ui: SocketManagerBase,
     val interpreter: KClass<T>,
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
@@ -68,10 +69,10 @@ open class CodingAgent<T : Interpreter>(
     ) {
         val task = ui.newTask(root = false).apply { task.complete(placeholder) }
         if (retryable) {
-            Retryable(ui, task) {
+            Retryable(task) {
                 val task = ui.newTask(root = false)
-                ui.socketManager?.scheduledThreadPoolExecutor!!.schedule({
-                    ui.socketManager.pool.submit {
+                ui.scheduledThreadPoolExecutor.schedule({
+                    ui.pool.submit {
                         try {
                             val statusSB = task.add("Running...")
                             displayCode(task, codeRequest)

@@ -24,7 +24,6 @@ class PlanCoordinator(
     val user: User?,
     val session: Session,
     val dataStorage: StorageInterface,
-    val ui: ApplicationInterface,
     val planSettings: PlanSettings,
     val root: Path
 ) {
@@ -224,14 +223,12 @@ class PlanCoordinator(
         user: User? = this.user,
         session: Session = this.session,
         dataStorage: StorageInterface = this.dataStorage,
-        ui: ApplicationInterface = this.ui,
         planSettings: PlanSettings = this.planSettings,
         root: Path = this.root
     ) = PlanCoordinator(
         user = user,
         session = session,
         dataStorage = dataStorage,
-        ui = ui,
         planSettings = planSettings,
         root = root
     )

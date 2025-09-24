@@ -71,7 +71,6 @@ open class GraphOrderedPlanMode(
                         user = user,
                         session = session,
                         dataStorage = ui.socketManager?.dataStorage!!,
-                        ui = ui,
                         root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
                             ?: ui.socketManager!!.dataStorage?.getSessionDir(
                                 user,

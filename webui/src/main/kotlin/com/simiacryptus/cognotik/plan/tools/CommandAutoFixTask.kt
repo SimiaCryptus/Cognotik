@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -64,7 +63,7 @@ class CommandAutoFixTask(
         planSettings: PlanSettings
     ) {
         val semaphore = Semaphore(0)
-        Retryable(agent.ui, task = task) {
+        Retryable(task = task) {
             val task = task.manager.newTask()
             agent.pool.submit {
                 val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
@@ -99,7 +98,7 @@ class CommandAutoFixTask(
                     model = model,
                     parsingModel = agent.planSettings.parsingChatter,
                 ).run(
-                    ui = agent.ui, task = task, model = model
+                    task = task, model = model
                 ).apply {
                     when {
                         this.exitCode == 0 -> {

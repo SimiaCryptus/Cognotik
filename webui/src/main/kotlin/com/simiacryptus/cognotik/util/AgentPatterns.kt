@@ -1,19 +1,20 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import java.util.*
 
 object AgentPatterns {
 
     fun displayMapInTabs(
         map: Map<String, String>,
-        ui: ApplicationInterface? = null,
+        ui: SocketManagerBase? = null,
         split: Boolean = map.entries.map { it.value.length + it.key.length }.sum() > 10000
     ): String = if (split && ui != null) {
         val tasks = map.entries.map { (key, value) ->
             key to ui.newTask(root = false)
         }.toMap()
-        ui.socketManager?.scheduledThreadPoolExecutor?.schedule({
+        ui.scheduledThreadPoolExecutor?.schedule({
             tasks.forEach { (key, task) ->
                 task.complete(map[key]!!)
             }

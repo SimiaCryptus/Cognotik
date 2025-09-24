@@ -56,10 +56,7 @@ ForeachTask - Execute a task for each item in a list
             val tabs = TabbedDisplay(task)
             agent.executePlan(
                 diagramBuffer = subPlanTask.add(
-                    PlanUtil.diagram(
-                        agent.ui,
-                        itemPlanProcessingState.subTasks
-                    )
+                    PlanUtil.diagram(itemPlanProcessingState.subTasks)
                 ),
                 subTasks = itemSubTasks,
                 task = subPlanTask,
@@ -75,6 +72,4 @@ ForeachTask - Execute a task for each item in a list
         subPlanTask.complete("Completed ForeachTask for ${items.size} items")
     }
 
-    companion object {
-    }
 }

@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import java.io.File
 import java.nio.file.Path
 
@@ -26,14 +27,13 @@ class ValidationPatchApp(
     override fun output(
         task: SessionTask,
         settings: Settings,
-        ui: ApplicationInterface,
         tabs: TabbedDisplay
     ): OutputResult {
         val validationErrors = mutableListOf<ValidationError>()
 
         val filePaths = getFiles(files)
         filePaths.forEach { file ->
-            val fileTask = ui.newTask(false).apply { tabs[file.toString()] = placeholder }
+            val fileTask = task.manager.newTask(false).apply { tabs[file.toString()] = placeholder }
             try {
                 val validator = SimpleDiffApplier.getValidator(file.toFile().toString()) ?: return@forEach
                 val content = file.toFile().readText()

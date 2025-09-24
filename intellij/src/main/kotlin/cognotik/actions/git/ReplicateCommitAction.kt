@@ -211,7 +211,7 @@ class ReplicateCommitAction : BaseAction() {
         try {
             val planTxt = projectSummary()
             task.add(renderMarkdown(planTxt))
-            Retryable(ui, task) {
+            Retryable(task) {
                 val task = ui.newTask(false)
                 val plan = ParsedActor(
                     resultClass = ParsedTasks::class.java,
@@ -240,13 +240,13 @@ class ReplicateCommitAction : BaseAction() {
                 task.add(
                     AgentPatterns.displayMapInTabs(
                         mapOf(
-                          "Text" to plan.text.renderMarkdown,
-                          "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
+                            "Text" to plan.text.renderMarkdown,
+                            "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
                         )
                     )
                 )
                 plan.obj.errors?.map { planTask ->
-                    Retryable(ui, task) {
+                    Retryable(task) {
                         val task = ui.newTask(false)
                         val paths =
                             ((planTask.fixFiles ?: emptyList()) + (planTask.relatedFiles ?: emptyList())).flatMap {
@@ -284,7 +284,6 @@ class ReplicateCommitAction : BaseAction() {
                                     task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = ui,
                         )
                         task.add(renderMarkdown(markdown))
                         task.placeholder

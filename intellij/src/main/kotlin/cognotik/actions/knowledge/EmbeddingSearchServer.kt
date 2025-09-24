@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -66,7 +65,7 @@ class EmbeddingSearchServer(
         socketManager.pool.submit {
             val task = ui.newTask(true)
             try {
-                executeSearch(task, ui)
+                executeSearch(task)
             } catch (e: Exception) {
                 log.error("Error during search", e)
                 task.error(e)
@@ -75,9 +74,9 @@ class EmbeddingSearchServer(
         return socketManager
     }
 
-    private fun executeSearch(task: SessionTask, ui: ApplicationInterface) {
-        task.add(MarkdownUtil.renderMarkdown("# Embedding Search", ui = ui))
-        task.add(MarkdownUtil.renderMarkdown("## Search Parameters", ui = ui))
+    private fun executeSearch(task: SessionTask) {
+        task.add(MarkdownUtil.renderMarkdown("# Embedding Search", ui = task.manager))
+        task.add(MarkdownUtil.renderMarkdown("## Search Parameters", ui = task.manager))
         task.add(MarkdownUtil.renderMarkdown("""
             - **Positive queries:** ${settings.positiveQueries.joinToString(", ")}
             - **Negative queries:** ${settings.negativeQueries.joinToString(", ")}
@@ -85,7 +84,7 @@ class EmbeddingSearchServer(
             - **Results count:** ${settings.count}
             - **Min length:** ${settings.minLength}
             - **Required patterns:** ${settings.requiredRegexes.joinToString(", ")}
-        """.trimIndent(), ui = ui))
+        """.trimIndent(), ui = task.manager))
         
         val indexFiles = files.filter { it?.name?.endsWith(".index.data") == true }
         if (indexFiles.isEmpty()) {
@@ -94,7 +93,7 @@ class EmbeddingSearchServer(
                 
                 No `.index.data` files were found in the selected location.
                 Please run Knowledge Indexing first to create searchable embeddings.
-            """.trimIndent(), ui = ui))
+            """.trimIndent(), ui = task.manager))
             task.complete("No index files found")
             return
         }
@@ -103,14 +102,12 @@ class EmbeddingSearchServer(
             ## Searching ${indexFiles.size} index files...
             
             Creating query embeddings and searching for similar content...
-        """.trimIndent(), ui = ui))
+        """.trimIndent(), ui = task.manager))
 
         try {
-            val embeddingClient = OllamaEmbeddingClient("", workPool = threadPool)
             val searchResults = performEmbeddingSearch(indexFiles)
             val formattedResults = formatSearchResults(searchResults)
-
-            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = ui))
+            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
             task.complete("Search completed successfully")
         } catch (e: Exception) {
             log.error("Error during search process", e)
@@ -120,7 +117,7 @@ class EmbeddingSearchServer(
                 ```
                 ${e.message}
                 ```
-            """.trimIndent(), ui = ui))
+            """.trimIndent(), ui = task.manager))
             task.error(e)
         }
     }
