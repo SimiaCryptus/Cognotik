@@ -90,7 +90,7 @@ abstract class ApplicationServer(
                 session = session,
                 user = user,
                 userMessage = userMessage,
-                ui = socketManager.applicationInterface
+                ui = socketManager
             )
         }
         logger.info("New session created successfully: {}", session)
@@ -100,7 +100,7 @@ abstract class ApplicationServer(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         logger.warn(
             "userMessage not implemented for application: {} - session: {} user: {}",

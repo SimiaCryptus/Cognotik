@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -113,7 +112,7 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         try {
             val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
@@ -185,7 +184,7 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         val task = ui.newTask()
         val processor = FixedConcurrencyProcessor(expansionPool, 4)
@@ -207,7 +206,7 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         currentMessage: String,
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         processor: FixedConcurrencyProcessor
     ) {
@@ -251,7 +250,7 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         currentMessage: String,
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         processor: FixedConcurrencyProcessor,
         rangeMatch: MatchResult
@@ -275,7 +274,7 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         currentMessage: String,
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         processor: FixedConcurrencyProcessor,
         sequenceMatch: MatchResult
@@ -291,7 +290,7 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         currentMessage: String,
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         processor: FixedConcurrencyProcessor,
         parallelMatch: MatchResult
@@ -301,15 +300,14 @@ abstract class UnifiedPlanApp(
 
         options.map { option ->
             processor.submit {
-                val subUi = ApplicationInterface(ui.socketManager)
-                val subTask = subUi.newTask(false).apply { tabs[option] = placeholder }
+                val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
                 val nextMessage = currentMessage.replaceFirst(parallelMatch.value, option)
 
                 processMessageRecursive(
                     session = session,
                     user = user,
                     currentMessage = nextMessage,
-                    ui = subUi,
+                    ui = ui,
                     task = subTask,
                     processor = processor
                 )
@@ -326,7 +324,7 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         currentMessage: String,
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         processor: FixedConcurrencyProcessor,
         expression: String,
@@ -335,15 +333,14 @@ abstract class UnifiedPlanApp(
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
 
         for (item in items) {
-            val subUi = ApplicationInterface(ui.socketManager)
-            val subTask = subUi.newTask(false).apply { tabs[item] = placeholder }
+            val subTask = ui.newTask(false).apply { tabs[item] = placeholder }
             val nextMessage = currentMessage.replaceFirst(expression, item)
 
             processMessageRecursive(
                 session = session,
                 user = user,
                 currentMessage = nextMessage,
-                ui = subUi,
+                ui = ui,
                 task = subTask,
                 processor = processor
             )

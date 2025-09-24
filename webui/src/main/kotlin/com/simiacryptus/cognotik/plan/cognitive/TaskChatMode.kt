@@ -12,8 +12,8 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
  */
 open class TaskChatMode(
-    override val ui: ApplicationInterface,
+    override val ui: SocketManager,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -66,7 +66,7 @@ open class TaskChatMode(
         task.echo(renderMarkdown(userMessage))
         Retryable(task) {
             val subtask = ui.newTask(false)
-            ui.socketManager?.pool?.submit {
+            ui.pool?.submit {
                 execute(subtask, userMessage)
             }
             subtask.placeholder
@@ -77,9 +77,9 @@ open class TaskChatMode(
         val coordinator = PlanCoordinator(
             user = user,
             session = session,
-            dataStorage = ui.socketManager?.dataStorage!!,
+            dataStorage = ui.dataStorage!!,
             root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: ui.socketManager?.dataStorage?.getSessionDir(
+                ?: ui.dataStorage?.getSessionDir(
                     user,
                     session
                 )?.toPath() ?: File(".").toPath(),
@@ -187,7 +187,7 @@ open class TaskChatMode(
                 isProcessing = false
 
                 val newTask = ui.newTask(false)
-                ui.socketManager?.pool?.submit {
+                ui?.pool?.submit {
                     handleUserMessage(combinedMessage, newTask)
                 }
             } else {
@@ -221,7 +221,7 @@ open class TaskChatMode(
 
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: ApplicationInterface,
+            ui: SocketManager,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

@@ -10,12 +10,10 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.IdeaOpenAIClient
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.util.LoggerFactory
 import java.text.SimpleDateFormat
 
 class CreateProjectorFromQueryIndexAction : BaseAction() {

@@ -10,12 +10,9 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.set
-import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -24,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 
 open class GoalOrientedMode(
-    override val ui: ApplicationInterface,
+    override val ui: SocketManager,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -50,6 +47,8 @@ open class GoalOrientedMode(
         sessionLog.append(message).append("\n")
         sessionLogTask?.complete(message.renderMarkdown())
     }
+    val executor: ImmediateExecutorService = ui.pool ?: throw IllegalStateException("SocketManager or its pool is null")
+    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(executor, maxConcurrency)
 
     override fun initialize() {
         log.debug("Initializing GoalOrientedMode")
@@ -105,16 +104,14 @@ open class GoalOrientedMode(
         val goalsTask = task.linkedTask("Goals")
         val tasksTask = task.linkedTask("Tasks")
 
-        val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
-        val processor = FixedConcurrencyProcessor(executor, maxConcurrency)
         sessionLogTask = task.linkedTask("Session Log")
         logToSession("Starting Goal-Oriented session for: $userMessage")
         val coordinator = PlanCoordinator(
             user = user,
             session = session,
-            dataStorage = ui.socketManager?.dataStorage!!,
+            dataStorage = ui.dataStorage!!,
             root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: ui.socketManager!!.dataStorage?.getSessionDir(user, session)?.toPath() ?: File(".").toPath(),
+                ?: ui.dataStorage?.getSessionDir(user, session)?.toPath() ?: File(".").toPath(),
             planSettings = planSettings
         )
 
@@ -247,22 +244,24 @@ open class GoalOrientedMode(
                     logToSession("Executing Task ID ${t.id} (${t.description})")
                     debouncedUpdateGoalTreeUI() // Update UI when task starts running
 
+                    log.info("Submitting Task ID ${t.id} (${t.description}) to processor.")
                     val future = processor.submit<String?> {
                         try {
+                            log.info("Started execution of Task ID ${t.id} (${t.description}) in processor.")
                             val executionUiTask = tasksTask.linkedTask("Task ID ${t.id}")
                             taskTasks[t.id!!] = executionUiTask
-                            executeTask(t, executionUiTask, coordinator)
+                            val result = executeTask(t, executionUiTask, coordinator)
+                            log.info("Completed execution of Task ID ${t.id} (${t.description}) in processor.")
+                            result
                         } catch (e: Exception) {
                             log.error(
                                 "Task ID ${t.id} (${t.description}) execution failed in processor.submit lambda",
                                 e
                             )
-
                             taskMap[t.id]?.apply {
                                 status = TaskStatus.FAILED
                                 result = "Execution Error: ${e.message}"
                             }
-                            //throw e
                             "Task execution failed: ${e.message}"
                         }
                     }
@@ -410,6 +409,10 @@ open class GoalOrientedMode(
                             taskInstance.result = "Task was cancelled."
                             debouncedUpdateGoalTreeUI()
                             break
+                        }
+                        if (processor.getActiveTaskCount() == 0) {
+                            log.warn("No active tasks in processor but future not done for Task ID ${taskInstance.id}. Possible deadlock.")
+                            break;
                         }
                         log.info("Waiting for Task ID ${taskInstance.id} (${taskInstance.description}) to complete...")
                         Thread.sleep(10000)
@@ -1008,7 +1011,7 @@ open class GoalOrientedMode(
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: ApplicationInterface,
+            ui: SocketManager,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

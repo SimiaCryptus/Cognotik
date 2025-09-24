@@ -1,14 +1,13 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.util.*
 
 object AgentPatterns {
 
     fun displayMapInTabs(
         map: Map<String, String>,
-        ui: SocketManagerBase? = null,
+        ui: SocketManager? = null,
         split: Boolean = map.entries.map { it.value.length + it.key.length }.sum() > 10000
     ): String = if (split && ui != null) {
         val tasks = map.entries.map { (key, value) ->

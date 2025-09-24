@@ -75,7 +75,6 @@ open class ProxyHttpServlet(
         }
         asyncClient.execute(proxyRequest, object : FutureCallback<SimpleHttpResponse> {
             override fun completed(proxyResponse: SimpleHttpResponse?) {
-                require(null != proxyRequest)
                 resp.status = proxyResponse?.code ?: 500
                 proxyResponse?.headers?.forEach { header ->
                     resp.addHeader(header.name, header.value)

@@ -14,8 +14,8 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.*
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
 open class AutoPlanMode(
-    override val ui: ApplicationInterface,
+    override val ui: SocketManager,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -66,11 +66,11 @@ open class AutoPlanMode(
         task.echo(renderMarkdown(userMessage))
 
         val continueLoop = true
-        val executor = ui.socketManager?.pool ?: throw IllegalStateException("SocketManager or its pool is null")
+        val executor = ui.pool ?: throw IllegalStateException("SocketManager or its pool is null")
 
         val tabbedDisplay = TabbedDisplay(task)
         executor.execute {
-            val socketManager = ui.socketManager ?: run {
+            val socketManager = ui ?: run {
                 log.error("SocketManager is null, cannot proceed.")
                 task.error(IllegalStateException("SocketManager is null"))
                 return@execute
@@ -339,7 +339,7 @@ $fullTaskDataJson
         )
 
 
-        val executor = ui.socketManager?.pool
+        val executor = ui.pool
             ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
         val processor = FixedConcurrencyProcessor(executor, 4)
 
@@ -698,7 +698,7 @@ $fullTaskDataJson
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: ApplicationInterface,
+            ui: SocketManager,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

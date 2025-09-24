@@ -1,8 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
@@ -16,14 +15,14 @@ object MarkdownUtil {
         rawMarkdown: String,
         options: MutableDataSet = defaultOptions(),
         tabs: Boolean = true,
-        ui: SocketManagerBase? = null,
+        ui: SocketManager? = null,
     ) = renderMarkdown(rawMarkdown, options, tabs, ui) { it }
 
     fun renderMarkdown(
         rawMarkdown: String,
         options: MutableDataSet = defaultOptions(),
         tabs: Boolean = true,
-        ui: SocketManagerBase? = null,
+        ui: SocketManager? = null,
         markdownEditor: (String) -> String,
     ): String {
         if (rawMarkdown.isBlank()) return ""
@@ -49,7 +48,7 @@ object MarkdownUtil {
         }
     }
 
-    private fun renderMermaid(html: String, ui: SocketManagerBase?, tabs: Boolean): String {
+    private fun renderMermaid(html: String, ui: SocketManager?, tabs: Boolean): String {
         val mermaidRegex =
             Regex("<pre[^>]*><code class=\"language-mermaid\">(.*?)</code></pre>", RegexOption.DOT_MATCHES_ALL)
         val matches = mermaidRegex.findAll(html)

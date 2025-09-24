@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.chat
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
@@ -41,7 +41,6 @@ class AnthropicChatClient(
         logStreams: MutableList<java.io.BufferedOutputStream>
     ): ApiModel.ChatResponse {
         validateChatRequest(chatRequest, model)
-
         return withReliability {
             withPerformanceLogging {
                 val anthropicChatRequest = try {
@@ -50,10 +49,8 @@ class AnthropicChatClient(
                     log.error("Failed to map chat request to Anthropic format", e)
                     throw RuntimeException("Failed to map chat request to Anthropic format: ${e.message}", e)
                 }
-
                 val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
                     .writeValueAsString(anthropicChatRequest)
-
                 val rawResponse = post("${apiBase}/messages", json, APIProvider.Anthropic)
                 checkError(rawResponse)
                 val responseJson = try {
@@ -62,13 +59,10 @@ class AnthropicChatClient(
                     log.error("Failed to parse Anthropic response: $rawResponse", e)
                     throw RuntimeException("Failed to parse Anthropic response: ${e.message}", e)
                 }
-
                 val response = JsonUtil.objectMapper().readValue(responseJson, ApiModel.ChatResponse::class.java)
-
                 if (response.usage != null && model is ChatModel) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
                 }
-
                 response
             }
         }

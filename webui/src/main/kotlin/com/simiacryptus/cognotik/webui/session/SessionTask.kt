@@ -21,7 +21,7 @@ open class SessionTask(
     val messageID: String,
     private var buffer: MutableList<StringBuilder> = mutableListOf(),
     private val spinner: String = SessionTask.spinner,
-    val manager: SocketManagerBase
+    val manager: SocketManager
 ) {
 
     val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
@@ -106,11 +106,11 @@ open class SessionTask(
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
         additionalClasses: String = "",
-        socketManagerBase: SocketManagerBase
+        socketManager: SocketManager
     ): StringBuilder? {
         var windowBuffer: StringBuilder? = null
         val closeButton = """<span class="close">${
-            socketManagerBase.hrefLink(
+            socketManager.hrefLink(
                 "&times;",
                 "close-button href-link",
                 null,
@@ -277,7 +277,7 @@ open class SessionTask(
         image: BufferedImage
     ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
 
-    fun newSession(session: Session = Session.newGlobalID(), appname: String = session.toString()): SocketManagerBase {
+    fun newSession(session: Session = Session.newGlobalID(), appname: String = session.toString()): SocketManager {
         val linkedManager = manager.createLinkedManager(session)
         SessionProxyServer.agents[session] = linkedManager
         SessionProxyServer.appInfos[session] = AppInfoData(
@@ -344,7 +344,7 @@ open class SessionTask(
         handler: Consumer<Unit>
     ): String {
         log.debug("Creating href link with text: {}", linkText)
-        val operationID = SocketManagerBase.Companion.randomID()
+        val operationID = SocketManager.Companion.randomID()
         manager.linkTriggers[operationID] = handler
         return """<a class="$classname" data-id="$operationID"${
             when {

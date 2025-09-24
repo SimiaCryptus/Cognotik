@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -62,7 +62,7 @@ open class ChatSocketManager(
     open val fastTopicParsing: Boolean = true,
     val retriable: Boolean = true,
     val budget: Double,
-) : SocketManagerBase(session, storage, owner = null, applicationClass = applicationClass) {
+) : SocketManager(session, storage, owner = null, applicationClass = applicationClass) {
 
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     private val messagesLock = Any()

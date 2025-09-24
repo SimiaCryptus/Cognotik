@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
 import org.eclipse.jetty.websocket.api.Session
 import org.eclipse.jetty.websocket.api.WebSocketAdapter
 
@@ -10,12 +9,12 @@ class ChatSocket(
     private val sessionState: SocketManager,
 ) : WebSocketAdapter() {
 
-    val user get() = SocketManagerBase.getUser(session)
+    val user get() = SocketManager.getUser(session)
 
     override fun onWebSocketConnect(session: Session) {
         super.onWebSocketConnect(session)
         try {
-            trafficLog.info("WebSocket connected: ${session.remoteAddress}, user: ${SocketManagerBase.getUser(session)?.name ?: "anonymous"}")
+            trafficLog.info("WebSocket connected: ${session.remoteAddress}, user: ${SocketManager.getUser(session)?.name ?: "anonymous"}")
             sessionState.addSocket(this, session)
             trafficLog.debug("Socket added to session manager, active connections: ${sessionState.getActiveSockets().size}")
 

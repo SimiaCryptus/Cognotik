@@ -564,9 +564,9 @@ class CrawlerAgentTask(
             return pageParsedResponse(planSettings, analysisGoal, content, describer)
         }
 
-        log.info("Content size (${content.length}) exceeds limit, splitting into chunks")
+        log.debug("Content size (${content.length}) exceeds limit, splitting into chunks")
         val chunks = splitContentIntoChunks(content, maxChunkSize)
-        log.info("Split content into ${chunks.size} chunks")
+        log.debug("Split content into ${chunks.size} chunks")
         val chunkResults = chunks.mapIndexed { index, chunk ->
             log.debug("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
             val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
@@ -595,13 +595,28 @@ class CrawlerAgentTask(
             "Identify the most important links that should be followed up on according to the goal."
         ).joinToString("\n\n")
 
-        return ParsedActor(
-            prompt = summaryPrompt,
-            resultClass = ParsedPage::class.java,
-            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter),
-            describer = describer,
-            parsingModel = planSettings.parsingChatter,
-        ).answer(listOf(summaryPrompt))
+        return try {
+            ParsedActor(
+                prompt = summaryPrompt,
+                resultClass = ParsedPage::class.java,
+                model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter),
+                describer = describer,
+                parsingModel = planSettings.parsingChatter,
+            ).answer(listOf(summaryPrompt))
+        } catch (e: Exception) {
+            log.error("Error during content transformation", e)
+            object : ParsedResponse<ParsedPage>(
+                clazz = ParsedPage::class.java
+            ) {
+                override val obj: ParsedPage
+                    get() = ParsedPage(
+                        page_type = PageType.Error,
+                        page_information = "Error during analysis: ${e.message}"
+                    )
+                override val text: String
+                    get() = "Error during analysis: ${e.message}"
+            }
+        }
     }
 
     private fun splitContentIntoChunks(content: String, maxChunkSize: Int): List<String> {

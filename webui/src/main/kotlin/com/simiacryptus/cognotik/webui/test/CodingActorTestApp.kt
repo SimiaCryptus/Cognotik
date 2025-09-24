@@ -8,8 +8,8 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.util.*
 
 open class CodingActorTestApp(
@@ -21,7 +21,7 @@ open class CodingActorTestApp(
     path = "/codingActorTest",
 ) {
     override fun userMessage(
-        session: Session, user: User?, userMessage: String, ui: ApplicationInterface
+        session: Session, user: User?, userMessage: String, ui: SocketManager
     ) {
         val message = ui.newTask()
         try {

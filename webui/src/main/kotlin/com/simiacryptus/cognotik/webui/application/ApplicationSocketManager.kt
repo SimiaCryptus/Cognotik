@@ -4,14 +4,14 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 abstract class ApplicationSocketManager(
     session: Session,
     owner: User?,
     dataStorage: StorageInterface?,
     applicationClass: Class<*>,
-) : SocketManagerBase(
+) : SocketManager(
     sessionId = session,
     dataStorage = dataStorage,
     owner = owner,

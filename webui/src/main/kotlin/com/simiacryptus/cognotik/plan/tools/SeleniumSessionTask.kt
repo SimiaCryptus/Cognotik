@@ -202,19 +202,17 @@ class SeleniumSessionTask(
             addArguments("--disable-dev-shm-usage")
         })
 
-        if (driver is HasDevTools) {
-            val devTools = driver.devTools
-            devTools.createSession()
+        val devTools = driver.devTools
+        devTools.createSession()
 
-            devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()))
-            devTools.addListener(Network.requestWillBeSent()) { request ->
-                println("Request URL: " + request.request.url)
-            }
+        devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()))
+        devTools.addListener(Network.requestWillBeSent()) { request ->
+            println("Request URL: " + request.request.url)
+        }
 
-            devTools.send(Log.enable())
-            devTools.addListener(Log.entryAdded()) { logEntry ->
-                println("Console: " + logEntry.text)
-            }
+        devTools.send(Log.enable())
+        devTools.addListener(Log.entryAdded()) { logEntry ->
+            println("Console: " + logEntry.text)
         }
         return driver
     }

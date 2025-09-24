@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil

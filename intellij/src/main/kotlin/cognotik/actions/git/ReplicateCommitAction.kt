@@ -26,9 +26,9 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -188,7 +188,7 @@ class ReplicateCommitAction : BaseAction() {
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface
+            ui: SocketManager
         ) {
             val task = ui.newTask()
             task.echo(userMessage)
@@ -201,7 +201,7 @@ class ReplicateCommitAction : BaseAction() {
     }
 
     private fun PatchApp.run(
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         session: Session,
         settings: Settings,
@@ -275,8 +275,8 @@ class ReplicateCommitAction : BaseAction() {
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
                             ),
                         )
-                        var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-                            ui.socketManager!!,
+                        val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
+                            ui,
                             root = root.toPath(),
                             response = response,
                             handle = { newCodeMap ->

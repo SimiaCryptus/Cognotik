@@ -101,7 +101,7 @@ object HtmlSimplifier {
             document.fn()
             val endTime = System.currentTimeMillis()
             val newLength = document.html().length
-            log.info("Simplified HTML in ${stepName} from ${prevDocSize} to $newLength in ${endTime - startTime}ms")
+            log.debug("Simplified HTML in ${stepName} from ${prevDocSize} to $newLength in ${endTime - startTime}ms")
         } catch (e: Exception) {
             log.warn("Failed to simplify HTML in ${stepName}: ${e.message}", e)
         }

@@ -3,9 +3,9 @@ package com.simiacryptus.cognotik.apps.general
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import kotlin.random.Random
 
 class StressTestApp(
@@ -21,7 +21,7 @@ class StressTestApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         if (wasRun) {
             return
@@ -32,24 +32,14 @@ class StressTestApp(
         createNestedTabs(task, ui, 3)
     }
 
-    private fun createNestedTabs(task: SessionTask, ui: ApplicationInterface, depth: Int) {
+    private fun createNestedTabs(task: SessionTask, ui: SocketManager, depth: Int) {
         if (depth <= 0) {
-            createComplexDiagram(task, ui)
+            createComplexDiagram(task)
             createAndUpdatePlaceholders(task, ui)
             return
         }
 
-        val tabDisplay = /*object :*/ TabbedDisplay(task) /*{
-            override fun renderTabButtons(): String {
-                return buildString {
-                    append("<div class='tabs'>\n")
-                    (1..2).forEach { i ->
-                        append("<label class='tab-button' data-for-tab='$i'>Tab $i</label>\n")
-                    }
-                    append("</div>")
-                }
-            }
-        }*/
+        val tabDisplay = TabbedDisplay(task)
 
         (1..2).forEach { i ->
             val subTask = ui.newTask(false)
@@ -59,7 +49,7 @@ class StressTestApp(
         tabDisplay.update()
     }
 
-    private fun createComplexDiagram(task: SessionTask, ui: ApplicationInterface) {
+    private fun createComplexDiagram(task: SessionTask) {
         val mermaidDiagram = """
             ```mermaid
             graph TD
@@ -73,7 +63,7 @@ class StressTestApp(
         task.add("## Complex Diagram\n$mermaidDiagram".renderMarkdown)
     }
 
-    private fun createAndUpdatePlaceholders(task: SessionTask, ui: ApplicationInterface) {
+    private fun createAndUpdatePlaceholders(task: SessionTask, ui: SocketManager) {
         val placeholders = (1..5).map { ui.newTask(false) }
 
         placeholders.forEach { placeholder ->

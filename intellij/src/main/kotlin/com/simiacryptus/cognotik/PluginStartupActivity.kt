@@ -9,7 +9,6 @@ import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
@@ -37,6 +36,7 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
         setLogDebug("com.simiacryptus.cognotik.plan")
+        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask")
         setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
         setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
@@ -60,7 +60,8 @@ class PluginStartupActivity : ProjectActivity {
         }
         try {
 
-            com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled = { AppSettingsState.instance.diffLoggingEnabled }
+            com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled =
+                { AppSettingsState.instance.diffLoggingEnabled }
 
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader

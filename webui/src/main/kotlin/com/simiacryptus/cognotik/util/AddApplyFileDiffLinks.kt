@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils.fuzzyResolveToRelativePath
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -72,7 +72,7 @@ open class AddApplyFileDiffLinks {
         }
 
         fun instrumentFileDiffs(
-            self: SocketManagerBase,
+            self: SocketManager,
             root: Path,
             response: String,
             handle: (Map<Path, String>) -> Unit = {},
@@ -125,7 +125,7 @@ open class AddApplyFileDiffLinks {
     private fun String.reverseLines(): String = lines().reversed().joinToString("\n")
 
     fun instrument(
-        self: SocketManagerBase,
+        self: SocketManager,
         root: Path,
         response: String,
         handle: (Map<Path, String>) -> Unit = {},
@@ -281,12 +281,12 @@ open class AddApplyFileDiffLinks {
     }
 
 
-    private fun SocketManagerBase.renderNewFile(
+    private fun SocketManager.renderNewFile(
         root: Path,
         filename: String,
         codeValue: String,
         handle: (Map<Path, String>) -> Unit,
-        ui: SocketManagerBase,
+        ui: SocketManager,
         codeLang: String,
         shouldAutoApply: (Path) -> Boolean
     ): String {
@@ -323,12 +323,12 @@ open class AddApplyFileDiffLinks {
         }
     }
 
-    private fun SocketManagerBase.renderDiffBlock(
+    private fun SocketManager.renderDiffBlock(
         root: Path,
         filename: String,
         diffVal: String,
         handle: (Map<Path, String>) -> Unit,
-        ui: SocketManagerBase,
+        ui: SocketManager,
         shouldAutoApply: (Path) -> Boolean,
         model: Chatter? = null,
     ): String {

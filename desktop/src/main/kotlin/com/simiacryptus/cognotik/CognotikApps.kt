@@ -14,11 +14,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
@@ -249,8 +245,8 @@ open class CognotikApps(
 
     override val childWebApps by lazy {
         val planSettings = object : PlanSettings(
-            defaultModel = model.toApiChatModel().instance()!!,
-            parsingModel = model.toApiChatModel().instance()!!,
+            defaultModel = model.toApiChatModel(),
+            parsingModel = model.toApiChatModel(),
             workingDir = "."
         ) {
             override fun instance(model: ApiChatModel) = model.instance()

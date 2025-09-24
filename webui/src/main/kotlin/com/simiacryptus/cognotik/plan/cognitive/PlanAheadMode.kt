@@ -7,15 +7,15 @@ import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 
 /**
  * A cognitive mode that implements the traditional plan-ahead strategy.
  */
 open class PlanAheadMode(
-    override val ui: ApplicationInterface,
+    override val ui: SocketManager,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -39,9 +39,9 @@ open class PlanAheadMode(
             val coordinator = PlanCoordinator(
                 user = user,
                 session = session,
-                dataStorage = ui.socketManager?.dataStorage!!,
+                dataStorage = ui.dataStorage!!,
                 root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-                    ?: ui.socketManager!!.dataStorage?.getSessionDir(
+                    ?: ui.dataStorage?.getSessionDir(
                         user,
                         session
                     )?.toPath() ?: File(".").toPath(),
@@ -74,7 +74,7 @@ open class PlanAheadMode(
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: ApplicationInterface,
+            ui: SocketManager,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

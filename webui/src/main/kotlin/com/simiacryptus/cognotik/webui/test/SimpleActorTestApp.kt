@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class SimpleActorTestApp(
     private val actor: SimpleActor,
@@ -30,7 +30,7 @@ open class SimpleActorTestApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         val message = ui.newTask()
         try {

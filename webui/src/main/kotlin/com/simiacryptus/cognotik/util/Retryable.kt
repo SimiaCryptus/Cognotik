@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class Retryable(
     task: SessionTask,
-    val socketManager: SocketManagerBase = task.manager,
+    val socketManager: SocketManager = task.manager,
     val process: (StringBuilder) -> String
 ) : TabbedDisplay(task) {
 
@@ -46,7 +46,7 @@ open class Retryable(
 
     companion object {
         fun retryable(
-            socketManager: SocketManagerBase,
+            socketManager: SocketManager,
             pool: ImmediateExecutorService = socketManager.pool,
             task: SessionTask = socketManager.newTask(true),
             fn: (SessionTask) -> Unit

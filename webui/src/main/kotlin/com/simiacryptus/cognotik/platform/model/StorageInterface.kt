@@ -72,22 +72,22 @@ interface StorageInterface {
 
     companion object {
         @Deprecated("Use Session.long64() instead", ReplaceWith("Session.long64()"))
-        inline fun long64() = Session.long64()
+        fun long64() = Session.long64()
 
         @Deprecated("Use Session.validateSessionId(session) instead", ReplaceWith("Session.validateSessionId(session)"))
-        inline fun validateSessionId(session: Session) = Session.validateSessionId(session)
+        fun validateSessionId(session: Session) = Session.validateSessionId(session)
 
         @Deprecated("Use Session.newGlobalID() instead", ReplaceWith("Session.newGlobalID()"))
-        inline fun newGlobalID(): Session = Session.newGlobalID()
+        fun newGlobalID(): Session = Session.newGlobalID()
 
         @Deprecated("Use Session.newUserID() instead", ReplaceWith("Session.newUserID()"))
-        inline fun newUserID(): Session = Session.newUserID()
+        fun newUserID(): Session = Session.newUserID()
 
         @Deprecated("Use Session.parseSessionID(sessionID) instead", ReplaceWith("Session.parseSessionID(sessionID)"))
-        inline fun parseSessionID(sessionID: String): Session = Session.parseSessionID(sessionID)
+        fun parseSessionID(sessionID: String): Session = Session.parseSessionID(sessionID)
 
         @Deprecated("Use Session.id2() instead")
-        private inline fun id2() = Session.long64().filter {
+        private fun id2() = Session.long64().filter {
             it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9'
         }.take(4)
 

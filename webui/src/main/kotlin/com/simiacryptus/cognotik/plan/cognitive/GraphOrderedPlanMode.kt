@@ -13,8 +13,8 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 
 /**
@@ -23,7 +23,7 @@ import java.io.File
  * a plan task, and executes the resulting plan.
  */
 open class GraphOrderedPlanMode(
-    override val ui: ApplicationInterface,
+    override val ui: SocketManager,
     override val planSettings: PlanSettings,
     override val session: Session,
     override val user: User?,
@@ -70,9 +70,9 @@ open class GraphOrderedPlanMode(
                     PlanCoordinator(
                         user = user,
                         session = session,
-                        dataStorage = ui.socketManager?.dataStorage!!,
+                        dataStorage = ui.dataStorage!!,
                         root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: ui.socketManager!!.dataStorage?.getSessionDir(
+                            ?: ui.dataStorage?.getSessionDir(
                                 user,
                                 session
                             )?.toPath() ?: File(".").toPath(),
@@ -320,7 +320,7 @@ open class GraphOrderedPlanMode(
         var graphFile: String = "software_graph.json"
 
         override fun getCognitiveMode(
-            ui: ApplicationInterface,
+            ui: SocketManager,
             planSettings: PlanSettings,
             session: Session,
             user: User?,

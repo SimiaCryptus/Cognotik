@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
-open class ApplicationInterface(val socketManager: SocketManagerBase?) {
+open class ApplicationInterface(val socketManager: SocketManager?) {
 
     @Description("Returns html for a link that will trigger the given handler when clicked.")
     open fun hrefLink(

@@ -21,8 +21,8 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.text.SimpleDateFormat
@@ -170,7 +170,7 @@ class FindResultsChatAction(
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface
+            ui: SocketManager
         ) {
             val task = ui.newTask()
             task.echo(renderMarkdown(userMessage))

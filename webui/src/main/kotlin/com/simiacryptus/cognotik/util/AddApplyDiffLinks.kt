@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 class AddApplyDiffLinks {
     companion object {
@@ -17,7 +17,7 @@ class AddApplyDiffLinks {
         private val diffApplier = SimpleDiffApplier()
 
         fun addApplyDiffLinks(
-            self: SocketManagerBase,
+            self: SocketManager,
             code: () -> String,
             response: String,
             handle: (String) -> Unit,
@@ -29,7 +29,7 @@ class AddApplyDiffLinks {
     }
 
     fun apply(
-        socketManagerBase: SocketManagerBase,
+        socketManager: SocketManager,
         code: () -> String,
         response: String,
         handle: (String) -> Unit,
@@ -83,7 +83,7 @@ class AddApplyDiffLinks {
             val buttons = ui.newTask(false)
             lateinit var hrefLink: StringBuilder
             var reverseHrefLink: StringBuilder? = null
-            hrefLink = buttons.complete(socketManagerBase.hrefLink("Apply Diff", classname = "href-link cmd-button") {
+            hrefLink = buttons.complete(socketManager.hrefLink("Apply Diff", classname = "href-link cmd-button") {
                 try {
                     val newCode = patch(code(), diffVal)
                     handle(newCode.newCode)
@@ -111,7 +111,7 @@ class AddApplyDiffLinks {
                 ) + "\n" + buttons.placeholder
             } else {
                 reverseHrefLink =
-                    buttons.complete(socketManagerBase.hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
+                    buttons.complete(socketManager.hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
                         try {
                             val reversedCode = code().lines().reversed().joinToString("\n")
                             val reversedDiff = diffVal.lines().reversed().joinToString("\n")
