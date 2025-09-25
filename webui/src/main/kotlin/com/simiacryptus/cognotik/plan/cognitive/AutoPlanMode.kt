@@ -92,7 +92,7 @@ open class AutoPlanMode(
                 }
                 log.debug("Created plan coordinator")
 
-                val initialStatus = initThinking(planSettings, userMessage)
+                val initialStatus = initThinking(planSettings, userMessage, task)
                 log.debug("Initialized thinking status")
                 initialStatus.initialPrompt = userMessage
                 thinkingStatus.set(initialStatus)
@@ -208,7 +208,7 @@ $fullTaskDataJson
                         ui.newTask(false).apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
                     try {
                         log.debug("Updating thinking status")
-                        val updatedStatus = updateThinking(currentThinkingStatus, completedTasks)
+                        val updatedStatus = updateThinking(currentThinkingStatus, completedTasks, task)
                         thinkingStatus.set(updatedStatus)
                         log.debug("Updated thinking status")
                         thinkingStatusTask.complete(
@@ -423,6 +423,7 @@ $fullTaskDataJson
     private fun initThinking(
         planSettings: PlanSettings,
         userMessage: String,
+        task: SessionTask,
     ): ThinkingStatus {
         return ParsedActor(
             name = "ThinkingStatusInitializer",
@@ -461,8 +462,8 @@ $fullTaskDataJson
         * Maintain alignment between short-term actions and long-term goals
         * Ensure scalability and maintainability of the approach
       """.trimIndent(),
-            model = planSettings.defaultChatter,
-            parsingModel = planSettings.parsingChatter,
+            model = planSettings.defaultChatter.getChildClient(task),
+            parsingModel = planSettings.parsingChatter.getChildClient(task),
             temperature = planSettings.temperature,
             describer = describer
         ).answer(listOf(userMessage) + contextData()).obj
@@ -471,6 +472,7 @@ $fullTaskDataJson
     private fun updateThinking(
         thinkingStatus: ThinkingStatus,
         completedTasks: List<ExecutionRecord>,
+        task: SessionTask,
     ): ThinkingStatus = ParsedActor(
         name = "UpdateQuestionsActor",
         resultClass = ThinkingStatus::class.java,
@@ -530,7 +532,7 @@ $fullTaskDataJson
       Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
       If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
-        model = planSettings.defaultChatter,
+        model = planSettings.defaultChatter.getChildClient(task),
         parsingModel = planSettings.parsingChatter,
         temperature = planSettings.temperature,
         describer = describer

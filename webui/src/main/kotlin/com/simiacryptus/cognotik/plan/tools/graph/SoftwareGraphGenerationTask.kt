@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.simiacryptus.cognotik.actors.ParsedActor
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -10,9 +11,11 @@ import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 
 class SoftwareGraphGenerationTask(
@@ -42,35 +45,6 @@ class SoftwareGraphGenerationTask(
     ) {
         override val includeMethods: Boolean get() = false
     }
-    private val graphGenerationActor by lazy {
-        ParsedActor(
-            name = "SoftwareGraphGenerator",
-            resultClass = SoftwareNodeType.SoftwareGraph::class.java,
-            prompt = "Analyze the provided code files and generate a SoftwareGraph representation.\nThe graph should accurately represent the software architecture including:\n\nAvailable Node Types:\n" +
-                    SoftwareNodeType.values().joinToString("\n") {
-                        "* ${it.name}: ${it.description?.replace("\n", "\n  ")}\n    ${
-                            describer.describe(rawType = it.nodeClass).lineSequence()
-                                .map {
-                                    when {
-                                        it.isBlank() -> {
-                                            when {
-                                                it.length < "  ".length -> "  "
-                                                else -> it
-                                            }
-                                        }
-
-                                        else -> "  " + it
-                                    }
-                                }
-                                .joinToString("\n")
-                        }"
-                    } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
-            describer = describer,
-        )
-    }
 
     override fun promptSegment() = """
     SoftwareGraphGenerationTask - Generate a SoftwareGraph representation of the codebase
@@ -98,7 +72,33 @@ class SoftwareGraphGenerationTask(
         resultFn: (String) -> Unit,
         planSettings: PlanSettings
     ) {
+        val graphGenerationActor = ParsedActor<SoftwareNodeType.SoftwareGraph>(
+            name = "SoftwareGraphGenerator",
+            resultClass = SoftwareNodeType.SoftwareGraph::class.java,
+            prompt = "Analyze the provided code files and generate a SoftwareGraph representation.\nThe graph should accurately represent the software architecture including:\n\nAvailable Node Types:\n" +
+                    SoftwareNodeType.values().joinToString<SoftwareNodeType<out SoftwareNodeType.NodeBase<*>>>("\n") {
+                        "* ${it.name}: ${it.description?.replace("\n", "\n  ")}\n    ${
+                            describer.describe(rawType = it.nodeClass).lineSequence()
+                                .map<String, String> {
+                                    when {
+                                        it.isBlank() -> {
+                                            when {
+                                                it.length < "  ".length -> "  "
+                                                else -> it
+                                            }
+                                        }
 
+                                        else -> "  " + it
+                                    }
+                                }
+                                .joinToString<String>("\n")
+                        }"
+                    } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
+            model = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) } ?: this.planSettings.defaultChatter).getChildClient(task),
+            parsingModel = this.planSettings.parsingChatter,
+            temperature = this.planSettings.temperature,
+            describer = describer,
+        )
         val chatMessages = graphGenerationActor.chatMessages(
             messages + listOf(
                 getInputFileCode(),

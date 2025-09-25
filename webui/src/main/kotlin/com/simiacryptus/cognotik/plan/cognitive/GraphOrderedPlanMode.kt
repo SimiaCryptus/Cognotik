@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 
 /**
@@ -59,7 +60,7 @@ open class GraphOrderedPlanMode(
             val orderedNodes = orderGraphNodes(softwareGraph.nodes)
             task.add("Ordered ${orderedNodes.size} nodes by priority")
             val cumulativeTasks = transformNodesToPlan(orderedNodes, planSettings, userMessage, graphFile)
-            addDependencies(cumulativeTasks, graphFileContent, userMessage)
+            addDependencies(cumulativeTasks, graphFileContent, userMessage, task)
             val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { cumulativeTasks } ?: emptyMap()
             log.info("Ordered plan built successfully. Proceeding to execute DAG.")
             task.add("Plan generated successfully with ${plan.size} tasks")
@@ -93,7 +94,8 @@ open class GraphOrderedPlanMode(
     private fun addDependencies(
         cumulativeTasks: MutableMap<String, TaskConfigBase>,
         graphFileContent: String,
-        userMessage: String
+        userMessage: String,
+        task: SessionTask
     ) {
         log.debug("Starting dependency analysis for ${cumulativeTasks.size} tasks")
 
@@ -118,7 +120,7 @@ open class GraphOrderedPlanMode(
                     Only suggest new dependencies that are not already present.
                     Ensure all suggested task IDs exist in the current plan.
                 """.trimIndent(),
-                model = planSettings.defaultChatter,
+                model = planSettings.defaultChatter.getChildClient(task),
                 parsingModel = planSettings.parsingChatter,
             ).answer(
                 contextData() +

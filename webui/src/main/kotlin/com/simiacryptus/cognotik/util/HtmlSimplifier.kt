@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.util
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Entities
+import kotlin.collections.remove
 
 object HtmlSimplifier {
     private val log = LoggerFactory.getLogger(HtmlSimplifier::class.java)
@@ -130,15 +131,27 @@ object HtmlSimplifier {
         }
 
         simplifyDocument(stepName = "RemoveDataAttributes") {
-            select("[data-*]").forEach { it.attributes().removeAll { attr -> attr.key.startsWith("data-") } }
+            select("[data-*]").forEach { element ->
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (attr.key.startsWith("data-")) {
+                        iterator.remove()
+                    }
+                }
+            }
         }
 
         simplifyDocument(stepName = "RemoveEventHandlers") {
             if (!keepEventHandlers) {
                 select("*").forEach { element ->
-                    element.attributes().removeAll { attr ->
 
-                        attr.key.lowercase().startsWith("on") && attr.key !in SCRIPT_ATTRIBUTES
+                    val iterator = element.attributes().iterator()
+                    while (iterator.hasNext()) {
+                        val attr = iterator.next()
+                        if (attr.key.lowercase().startsWith("on") && attr.key !in SCRIPT_ATTRIBUTES) {
+                            iterator.remove()
+                        }
                     }
                 }
             }
@@ -168,7 +181,13 @@ object HtmlSimplifier {
                 }
             }.toSet()
             select("*").forEach { element ->
-                element.attributes().removeAll { attr -> attr.key !in importantAttributes }
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (attr.key !in importantAttributes) {
+                        iterator.remove()
+                    }
+                }
             }
         }
 
@@ -224,10 +243,13 @@ object HtmlSimplifier {
 
         simplifyDocument(stepName = "RemoveInvalidAttributes") {
             select("*").forEach { element ->
-                element.attributes().removeAll { attr ->
-                    attr.value.isBlank() || attr.value == "null" || attr.value.contains("javascript:") || attr.value.contains(
-                        "data:"
-                    )
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (attr.value.isBlank() || attr.value == "null" ||
+                        attr.value.contains("javascript:") || attr.value.contains("data:")) {
+                        iterator.remove()
+                    }
                 }
             }
         }

@@ -8,11 +8,14 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode.Tasks
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -116,7 +119,7 @@ open class GoalOrientedMode(
         )
 
         try {
-            val initialGoals = parseInitialGoals(userMessage)
+            val initialGoals = parseInitialGoals(userMessage, task)
             if (initialGoals.isEmpty()) {
                 logToSession("No initial goals parsed. Aborting.")
                 task.complete("Could not determine initial goals from your request.".renderMarkdown())
@@ -159,7 +162,7 @@ open class GoalOrientedMode(
                 goalTask.add("# Goal: ${goal.description}\n\nID: ${goal.id}".renderMarkdown())
 
                 try {
-                    val (subgoals, tasksForGoal) = decomposeGoal(goal, coordinator)
+                    val (subgoals, tasksForGoal) = decomposeGoal(goal, coordinator, task)
                     goal.decompositionAttempted = true
                     if (subgoals.isEmpty() && tasksForGoal.isEmpty()) {
                         logToSession("Goal ID ${goal.id} (${goal.description}) decomposed into no subgoals or tasks.")
@@ -245,25 +248,10 @@ open class GoalOrientedMode(
                     debouncedUpdateGoalTreeUI() // Update UI when task starts running
 
                     log.info("Submitting Task ID ${t.id} (${t.description}) to processor.")
+                    val executionUiTask = tasksTask.linkedTask("Task ID ${t.id}")
+                    taskTasks[t.id!!] = executionUiTask
                     val future = processor.submit<String?> {
-                        try {
-                            log.info("Started execution of Task ID ${t.id} (${t.description}) in processor.")
-                            val executionUiTask = tasksTask.linkedTask("Task ID ${t.id}")
-                            taskTasks[t.id!!] = executionUiTask
-                            val result = executeTask(t, executionUiTask, coordinator)
-                            log.info("Completed execution of Task ID ${t.id} (${t.description}) in processor.")
-                            result
-                        } catch (e: Exception) {
-                            log.error(
-                                "Task ID ${t.id} (${t.description}) execution failed in processor.submit lambda",
-                                e
-                            )
-                            taskMap[t.id]?.apply {
-                                status = TaskStatus.FAILED
-                                result = "Execution Error: ${e.message}"
-                            }
-                            "Task execution failed: ${e.message}"
-                        }
+                        executeTask(t.id, t, executionUiTask, coordinator)
                     }
                     taskExecutionJobs.add(Pair(t, future))
                 }
@@ -393,6 +381,83 @@ open class GoalOrientedMode(
         sessionLogTask?.complete(sessionLog.toString().renderMarkdown())
     }
 
+    private fun executeTask(
+        id: String,
+        t: Task,
+        task: SessionTask,
+        coordinator: PlanCoordinator
+    ): String = try {
+        log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
+        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
+        val parsedActor = ParsedActor(
+            name = "TaskTypeChooser",
+            resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
+            exampleInstance = Tasks(
+                mutableListOf(
+                    TaskType.getAvailableTaskTypes(planSettings).firstOrNull()?.let {
+                        TaskType.getImpl(planSettings, it).taskConfig
+                    }
+                ).filterNotNull().toMutableList()
+            ),
+            prompt = """
+                Given the following task description and context, choose the single most appropriate task type and provide all required details.
+                Task Description: ${t.description}
+                Available task types (and their schemas):
+                ${availableTaskTypes.joinToString("\n") { it.name }}
+            """.trimIndent(),
+            model = coordinator.planSettings.defaultChatter.getChildClient(task),
+            parsingModel = planSettings.parsingChatter,
+            temperature = planSettings.temperature,
+            describer = describer,
+            parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes
+                .joinToString("\n\n") { taskType ->
+                    "${taskType.name}:\n  ${
+                        describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                    }".trim()
+                })
+        )
+        val answer = parsedActor.answer(
+            listOf(t.description ?: "") + contextData(
+                t.parentGoalId,
+                t.id
+            ), // Pass focused context
+        ).obj
+        val result1 = StringBuilder()
+        val planTask = answer.tasks?.firstOrNull()
+        logToSession("Resolved task for Task ID ${t.id}\n```json\n${planTask?.toJson() ?: "None"}\n```\n")
+        val semaphore = java.util.concurrent.Semaphore(0)
+        val taskImpl = TaskType.getImpl(planSettings, planTask = planTask)
+        taskImpl.run(
+            agent = coordinator,
+            messages = listOf(t.description ?: "") + contextData(),
+            task = task,
+            resultFn = {
+                logToSession("Completed task for Task ID ${t.id}")
+                result1.append(it)
+                t.result = result1.toString()
+                t.status = TaskStatus.COMPLETED
+                semaphore.release()
+            }, // Capture task output
+            planSettings = planSettings,
+        )
+        logToSession("Waiting for task completion for Task ID ${t.id}...")
+        semaphore.acquire()
+        logToSession("Task ID ${t.id} complete")
+        val result = t.result!!
+        log.info("Completed execution of Task ID ${id} (${t.description}) in processor.")
+        result
+    } catch (e: Exception) {
+        log.error(
+            "Task ID ${id} (${t.description}) execution failed in processor.submit lambda",
+            e
+        )
+        taskMap[id]?.apply {
+            status = TaskStatus.FAILED
+            result = "Execution Error: ${e.message}"
+        }
+        "Task execution failed: ${e.message}"
+    }
+
     private fun awaitAll(taskExecutionJobs: MutableList<Pair<Task, Future<String?>>>) {
         for ((taskInstance, future) in taskExecutionJobs) {
             if (stopRequested.get()) {
@@ -414,8 +479,8 @@ open class GoalOrientedMode(
                             log.warn("No active tasks in processor but future not done for Task ID ${taskInstance.id}. Possible deadlock.")
                             break;
                         }
-                        log.info("Waiting for Task ID ${taskInstance.id} (${taskInstance.description}) to complete...")
-                        Thread.sleep(10000)
+                        log.info("Waiting for Task ID ${taskInstance.id} (${taskInstance.description}) to complete. Currently ${processor.getActiveTaskCount()} active tasks.")
+                        Thread.sleep(60000)
                     }
                     if (taskInstance.status != TaskStatus.FAILED) {
                         taskInstance.status = TaskStatus.COMPLETED
@@ -449,7 +514,7 @@ open class GoalOrientedMode(
         }
     }
 
-    private fun parseInitialGoals(userMessage: String): List<Goal> {
+    private fun parseInitialGoals(userMessage: String, task: SessionTask): List<Goal> {
         val parsedActor = ParsedActor(
             name = "InitialGoalParser",
             resultClass = GoalList::class.java,
@@ -470,7 +535,7 @@ open class GoalOrientedMode(
                 Each goal should be a clear, actionable objective.
                 Return a list of goal objects with unique IDs and descriptions.
             """.trimIndent(),
-            model = planSettings.defaultChatter,
+            model = planSettings.defaultChatter.getChildClient(task),
             parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = describer
@@ -512,7 +577,8 @@ open class GoalOrientedMode(
 
     private fun decomposeGoal(
         goal: Goal,
-        coordinator: PlanCoordinator
+        coordinator: PlanCoordinator,
+        task: SessionTask
     ): Pair<List<Goal>, List<Task>> {
         val parsedActor = ParsedActor(
             name = "GoalDecomposer",
@@ -562,7 +628,7 @@ open class GoalOrientedMode(
                 }
                 promptStr
             },
-            model = coordinator.planSettings.defaultChatter,
+            model = coordinator.planSettings.defaultChatter.getChildClient(task),
             parsingModel = coordinator.planSettings.parsingChatter,
             temperature = coordinator.planSettings.temperature,
             describer = describer
@@ -600,61 +666,6 @@ open class GoalOrientedMode(
     }
 
 
-    private fun executeTask(
-        taskDefinition: Task,
-        uiTask: SessionTask,
-        coordinator: PlanCoordinator
-    ): String {
-        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
-        val parsedActor = ParsedActor(
-            name = "TaskTypeChooser",
-            resultClass = AutoPlanMode.Tasks::class.java, // Parse directly into TaskConfigBase
-            exampleInstance = AutoPlanMode.Tasks(
-                mutableListOf(
-                    TaskType.getAvailableTaskTypes(planSettings).firstOrNull()?.let {
-                        TaskType.getImpl(planSettings, it).taskConfig
-                    }
-                ).filterNotNull().toMutableList()
-            ),
-            prompt = """
-                Given the following task description and context, choose the single most appropriate task type and provide all required details.
-                Task Description: ${taskDefinition.description}
-                Available task types (and their schemas):
-                ${availableTaskTypes.joinToString("\n") { it.name }}
-            """.trimIndent(),
-            model = coordinator.planSettings.defaultChatter,
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
-            describer = describer,
-            parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes
-                .joinToString("\n\n") { taskType ->
-                    "${taskType.name}:\n  ${
-                        describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
-                    }".trim()
-                })
-        )
-        val answer = parsedActor.answer(
-            listOf(taskDefinition.description ?: "") + contextData(
-                taskDefinition.parentGoalId,
-                taskDefinition.id
-            ), // Pass focused context
-        ).obj
-        val result = StringBuilder()
-        val planTask = answer.tasks?.firstOrNull()
-        logToSession("Resolved task for Task ID ${taskDefinition.id}\n```json\n${planTask?.toJson() ?: "None"}\n```\n")
-        TaskType.getImpl(planSettings, planTask = planTask).run(
-            agent = coordinator,
-            messages = listOf(taskDefinition.description ?: "") + contextData(),
-            task = uiTask,
-            resultFn = { result.append(it) }, // Capture task output
-            planSettings = planSettings,
-        )
-        logToSession("Completed task for Task ID ${taskDefinition.id}")
-        taskDefinition.result = result.toString()
-        return result.toString()
-    }
-
-
     private fun updateAllStatuses() {
         var changed: Boolean
         do {
@@ -662,18 +673,17 @@ open class GoalOrientedMode(
             val initialGoalStatuses = goalTree.mapValues { it.value.status }
             changed = false
             taskMap.values.forEach { task ->
-                if (task.status!! != TaskStatus.COMPLETED && task.status!! != TaskStatus.FAILED && task.status!! != TaskStatus.RUNNING) {
+                val status = task.status!!
+                if (status != TaskStatus.COMPLETED && status != TaskStatus.FAILED && status != TaskStatus.RUNNING) {
                     val newStatus = if (areDependenciesMet(task)) {
                         TaskStatus.PENDING // Dependencies met, ready to run
                     } else {
-
                         TaskStatus.ACTIVE_DEPENDENCY_WAIT // Waiting for dependencies
                     }
-                    if (task.status!! != newStatus) {
+                    if (status != newStatus) {
                         task.status = newStatus
                         debouncedUpdateGoalTreeUI()
                         changed = true
-
                     }
                 }
             }
@@ -774,10 +784,6 @@ open class GoalOrientedMode(
                 it
             ) ?: it
         } + "   " + depsString)
-//        if (goal.result != null) {
-//            nodeSb.append("  Result: ${goal.result?.replace("\n", "\n  ")?.take(200)}...\n")
-//        } else {
-//        }
         nodeSb.append("\n")
         goal.tasks!!.mapNotNull { taskMap[it] }.forEach { t ->
             val taskStatusEmoji = when (t.status!!) {
@@ -803,10 +809,6 @@ open class GoalOrientedMode(
                     it
                 ) ?: it
             } + "    " + taskDepsString)
-//            if (t.result != null) {
-//                nodeSb.append("    Result: ${t.result?.replace("\n", "\n    ")?.take(200)}...\n")
-//            } else {
-//            }
             nodeSb.append("\n")
         }
         goal.subgoals!!.mapNotNull { goalTree[it] }.joinToString("\n") { subGoal ->

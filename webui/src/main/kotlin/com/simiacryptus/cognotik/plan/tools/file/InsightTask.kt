@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
@@ -9,8 +10,11 @@ import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
+import java.io.File
 import java.nio.file.FileSystems
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
@@ -54,8 +58,23 @@ Available files:
 ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 """
 
-    private val insightActor by lazy {
-        SimpleActor(
+    override fun run(
+        agent: PlanCoordinator,
+        messages: List<String>,
+        task: SessionTask,
+        resultFn: (String) -> Unit,
+        planSettings: PlanSettings
+    ) {
+
+        val toInput = { it: String ->
+            messages + listOf(
+                getInputFileCode(),
+                it,
+            ).filter { it.isNotBlank() }
+        }
+
+        val taskConfig: InsightTaskConfigData? = this.taskConfig
+        val insightActor = SimpleActor(
             name = "Insight",
             prompt = """
                 Create code for a new file that fulfills the specified requirements and context.
@@ -67,31 +86,13 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
                 When generating insights, consider the existing project context and focus on information that is directly relevant and applicable.
                 Focus on generating insights and information that support the task types available in the system (${
-                planSettings.taskSettings.filter { it.value.enabled }.keys.joinToString(", ")
+                this.planSettings.taskSettings.filter<String, TaskSettingsBase> { it.value.enabled }.keys.joinToString<String>(", ")
             }).
                 This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
-            temperature = planSettings.temperature,
+            model = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) } ?: this.planSettings.defaultChatter).getChildClient(task),
+            temperature = this.planSettings.temperature,
         )
-    }
-
-    override fun run(
-        agent: PlanCoordinator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        planSettings: PlanSettings
-    ) {
-
-        val toInput = { it: String ->
-            messages + listOf<String>(
-                getInputFileCode(),
-                it,
-            ).filter { it.isNotBlank() }
-        }
-
-        val taskConfig: InsightTaskConfigData? = this.taskConfig
         val inquiryResult = if (!planSettings.autoFix) Discussable(
             task = task,
             userMessage = {
@@ -163,7 +164,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 }
             }
 
-    private fun isTextFile(file: java.io.File): Boolean {
+    private fun isTextFile(file: File): Boolean {
         val textExtensions = setOf(
             "txt",
             "md",
@@ -192,7 +193,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         return textExtensions.contains(file.extension.lowercase())
     }
 
-    private fun extractDocumentContent(file: java.io.File) = try {
+    private fun extractDocumentContent(file: File) = try {
         file.getReader().use { reader ->
             when (reader) {
                 is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())

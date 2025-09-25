@@ -97,6 +97,7 @@ class DataTableCompilationTask(
             "### ${file.name}\n```\n${content.take(1000)}${if (content.length > 1000) "..." else ""}\n```"
         }
 
+        val chatter = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task)
         val columnsResponse = ParsedActor(
             name = "ColumnIdentifier",
             resultClass = Columns::class.java,
@@ -127,7 +128,7 @@ class DataTableCompilationTask(
                 1. Assign a unique column ID - should be a short, descriptive string
                 2. Provide a detailed description of what the column represents
             """.trimIndent(),
-            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task),
+            model = chatter,
             parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,
@@ -170,7 +171,7 @@ class DataTableCompilationTask(
                 1. Assign a unique row ID - should be a short, descriptive string
                 2. List the source files that contain data for this row
             """.trimIndent(),
-            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task),
+            model = chatter,
             parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = agent.describer,
@@ -212,7 +213,7 @@ class DataTableCompilationTask(
                         "Expected Columns:\n${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}\n\n" +
                         "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n" +
                         "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
-                model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task),
+                model = chatter,
                 parsingModel = planSettings.parsingChatter,
                 temperature = planSettings.temperature,
                 describer = agent.describer,

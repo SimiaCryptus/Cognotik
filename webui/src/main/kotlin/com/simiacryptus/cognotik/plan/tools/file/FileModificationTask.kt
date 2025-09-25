@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
@@ -8,6 +9,7 @@ import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -83,65 +85,6 @@ class FileModificationTask(
         }
     }
 
-    val fileModificationActor by lazy {
-        SimpleActor(
-            name = "FileModification",
-            prompt = """
-Generate precise code modifications and new files based on requirements:
-For modifying existing files:
-- Write efficient, readable, and maintainable code changes
-- Ensure modifications integrate smoothly with existing code
-- Follow project coding standards and patterns
-- Consider dependencies and potential side effects
-- Provide clear context and rationale for changes
-
-For creating new files:
-- Choose appropriate file locations and names
-- Structure code according to project conventions
-- Include necessary imports and dependencies
-- Add comprehensive documentation
-- Ensure no duplication of existing functionality
-
-Provide a clear summary explaining:
-- What changes were made and why
-- Any important implementation details
-- Potential impacts on other code
-- Required follow-up actions
-
-Response format:
-For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
-For new files: Use $TRIPLE_TILDE code blocks with a header specifying the new file path.
-The diff format should use + for line additions, - for line deletions.
-Include 2 lines of context before and after every change in diffs.
-Separate code blocks with a single blank line.
-For new files, specify the language for syntax highlighting after the opening triple backticks.
-
-Example:
-
-Here are the modifications:
-
-### src/utils/existingFile.js
-${TRIPLE_TILDE}diff
-
-function existingFunction() {
-return 'old result';
-return 'new result';
-}
-$TRIPLE_TILDE
-
-### src/utils/newFile.js
-${TRIPLE_TILDE}js
-
-function newFunction() {
- return 'new functionality';
-}
-$TRIPLE_TILDE
-""".trimIndent(),
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
-            temperature = planSettings.temperature,
-        )
-    }
-
     override fun promptSegment() = """
 FileModificationTask - Modify existing files or create new files
   * For each file, specify the relative file path and the goal of the modification or creation
@@ -173,25 +116,83 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         Retryable(task = task) {
             val task = task.manager.newTask(false)
             task.manager.pool.submit {
-                val codeResult = fileModificationActor.answer(
-                    (messages + listOf(
-                        agent.planProcessingState?.tasksByDescription?.filter {
-                            this.taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
-                        }?.entries?.joinToString("\n\n") {
-                            (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
-                                val file = root.resolve(it).toFile()
-                                if (file.exists()) {
-                                    val relativePath = root.relativize(file.toPath())
-                                    "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
-                                } else {
-                                    "File not found: $it"
-                                }
-                            } ?: ""
-                        } ?: "",
-                        getInputFileWithDiff(),
-                        this.taskConfig?.task_description ?: "",
-                    )).filter { it.isNotBlank() }
+                val chatter = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) }
+                    ?: this.planSettings.defaultChatter).getChildClient(task)
+                val simpleActor = SimpleActor(
+                    name = "FileModification",
+                    prompt = """
+        Generate precise code modifications and new files based on requirements:
+        For modifying existing files:
+        - Write efficient, readable, and maintainable code changes
+        - Ensure modifications integrate smoothly with existing code
+        - Follow project coding standards and patterns
+        - Consider dependencies and potential side effects
+        - Provide clear context and rationale for changes
+        
+        For creating new files:
+        - Choose appropriate file locations and names
+        - Structure code according to project conventions
+        - Include necessary imports and dependencies
+        - Add comprehensive documentation
+        - Ensure no duplication of existing functionality
+        
+        Provide a clear summary explaining:
+        - What changes were made and why
+        - Any important implementation details
+        - Potential impacts on other code
+        - Required follow-up actions
+        
+        Response format:
+        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
+        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
+        The diff format should use + for line additions, - for line deletions.
+        Include 2 lines of context before and after every change in diffs.
+        Separate code blocks with a single blank line.
+        For new files, specify the language for syntax highlighting after the opening triple backticks.
+        
+        Example:
+        
+        Here are the modifications:
+        
+        ### src/utils/existingFile.js
+        ${TRIPLE_TILDE}diff
+        
+        function existingFunction() {
+        return 'old result';
+        return 'new result';
+        }
+        ${TRIPLE_TILDE}
+        
+        ### src/utils/newFile.js
+        ${TRIPLE_TILDE}js
+        
+        function newFunction() {
+         return 'new functionality';
+        }
+        ${TRIPLE_TILDE}
+        """.trimIndent(),
+                    model = chatter,
+                    temperature = this.planSettings.temperature,
                 )
+                val codeResult = simpleActor.answer(
+     (messages + listOf(
+         agent.planProcessingState?.tasksByDescription?.filter {
+             taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
+         }?.entries?.joinToString("\n\n") {
+             (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
+                 val file = root.resolve(it).toFile()
+                 if (file.exists()) {
+                     val relativePath = root.relativize(file.toPath())
+                     "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
+                 } else {
+                     "File not found: $it"
+                 }
+             } ?: ""
+         } ?: "",
+         getInputFileWithDiff(),
+         taskConfig?.task_description ?: "",
+     )).filter { it.isNotBlank() }
+ )
                 if (agent.planSettings.autoFix) {
                     onComplete()
                     val markdown = renderMarkdown(codeResult, ui = task.manager) {
@@ -205,8 +206,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                 }
                             },
                             shouldAutoApply = { agent.planSettings.autoFix },
-                            model = (taskSettings.model?.let { planSettings.instance(it) }
-                                ?: planSettings.defaultChatter).getChildClient(task),
+                            model = chatter,
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"
                     }
@@ -222,8 +222,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            model = (taskSettings.model?.let { planSettings.instance(it) }
-                                ?: planSettings.defaultChatter).getChildClient(task),
+                            model = chatter,
                             defaultFile = defaultFile,
                         ) + acceptButtonFooter(task.manager) {
                             task.complete()
