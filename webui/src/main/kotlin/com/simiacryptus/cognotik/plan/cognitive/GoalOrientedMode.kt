@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
-
 open class GoalOrientedMode(
     override val ui: SocketManager,
     override val planSettings: PlanSettings,
@@ -50,6 +49,7 @@ open class GoalOrientedMode(
         sessionLog.append(message).append("\n")
         sessionLogTask?.complete(message.renderMarkdown())
     }
+
     val executor: ImmediateExecutorService = ui.pool ?: throw IllegalStateException("SocketManager or its pool is null")
     val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(executor, maxConcurrency)
 
@@ -97,7 +97,8 @@ open class GoalOrientedMode(
             goalTreeTask.update()
         }
         // Create debounced wrapper for UI updates
-        debouncedUpdateGoalTreeUI = createDebouncedUpdate(scheduledExecutorService, updateGoalTreeUI, 500) // 500ms debounce
+        debouncedUpdateGoalTreeUI =
+            createDebouncedUpdate(scheduledExecutorService, updateGoalTreeUI, 500) // 500ms debounce
         periodicUpdateFuture = scheduledExecutorService.scheduleWithFixedDelay({
             if (!stopRequested.get() && isRunning.get()) {
                 debouncedUpdateGoalTreeUI()
@@ -113,10 +114,11 @@ open class GoalOrientedMode(
             user = user,
             session = session,
             dataStorage = ui.dataStorage ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
-            root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: ui.dataStorage?.getSessionDir(user, session)?.toPath() ?: File(".").toPath(),
-            planSettings = planSettings
-        )
+            root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage?.getSessionDir(
+                user,
+                session
+            )?.toPath() ?: File(".").toPath(),
+            planSettings = planSettings)
         val planningChatter = coordinator.planSettings.defaultChatter.getChildClient(task)
 
         try {
@@ -166,9 +168,9 @@ open class GoalOrientedMode(
                     if (subgoals.isEmpty() && tasksForGoal.isEmpty()) {
                         logToSession("Goal ID ${goal.id} (${goal.description}) decomposed into no subgoals or tasks.")
                         goalTask.add("No subgoals or tasks were generated for this goal.".renderMarkdown())
-                    // Mark the goal as complete if it was decomposed but produced no new work
-                    goal.status = GoalStatus.COMPLETED
-                    goal.result = "Goal decomposition complete - no further actions needed."
+                        // Mark the goal as complete if it was decomposed but produced no new work
+                        goal.status = GoalStatus.COMPLETED
+                        goal.result = "Goal decomposition complete - no further actions needed."
                         updateGoalTreeUI()
 
                     } else {
@@ -181,26 +183,24 @@ open class GoalOrientedMode(
                                 logToSession("  New subgoal: ${subgoal.description} (ID: ${subgoal.id}) for Goal ${goal.id}")
                                 subgoalsList.append(
                                     "- ${subgoal.description} (ID: ${
-                                        subgoal.id.let {
-                                            goalTasks[subgoal.id]?.manager?.linkToSession(
-                                                it
-                                            ) ?: it
-                                        }
-                                    }})\n"
-                                )
+                                    subgoal.id.let {
+                                        goalTasks[subgoal.id]?.manager?.linkToSession(
+                                            it
+                                        ) ?: it
+                                    }
+                                }})\n")
                                 debouncedUpdateGoalTreeUI()
                             } else {
                                 logToSession("  Subgoal ID ${subgoal.id} already exists. Skipping addition.")
                                 // Still add the existing subgoal to the parent's subgoal list
                                 subgoalsList.append(
                                     "- ${subgoal.description} (ID: ${
-                                        subgoal.id.let {
-                                            goalTasks[subgoal.id]?.manager?.linkToSession(
-                                                it
-                                            ) ?: it
-                                        }
-                                    }}) [Already exists]\n"
-                                )
+                                    subgoal.id.let {
+                                        goalTasks[subgoal.id]?.manager?.linkToSession(
+                                            it
+                                        ) ?: it
+                                    }
+                                }}) [Already exists]\n")
                             }
                             if (goal.subgoals?.any { subgoal.id == it.id } != true) {
                                 goal.subgoals?.add(subgoal)
@@ -212,13 +212,12 @@ open class GoalOrientedMode(
                                 logToSession("  New task: ${t.description} (ID: ${t.id}) for Goal ${goal.id}")
                                 tasksList.append(
                                     "- ${t.description} (ID: ${
-                                        t.id.let {
-                                            goalTasks[t.id]?.manager?.linkToSession(
-                                                it
-                                            ) ?: it
-                                        }
-                                    })\n"
-                                )
+                                    t.id.let {
+                                        goalTasks[t.id]?.manager?.linkToSession(
+                                            it
+                                        ) ?: it
+                                    }
+                                })\n")
                                 debouncedUpdateGoalTreeUI()
                             } else {
                                 logToSession("  Task ID ${t.id} already exists. Skipping addition.")
@@ -232,7 +231,7 @@ open class GoalOrientedMode(
                                 targetGoal.tasks?.add(t)
                             }
                         }
-                        
+
                         if (subgoals.isNotEmpty()) {
                             goalTask.add(subgoalsList.toString().renderMarkdown())
                         }
@@ -274,14 +273,8 @@ open class GoalOrientedMode(
                     taskTasks[t.id] = executionUiTask
                     val future = processor.submit {
                         executeTask(
-                            t.id,
-                            t,
-                            executionUiTask,
-                            coordinator,
-                            this@GoalOrientedMode.getParsedActor(
-                                t,
-                                coordinator,
-                                planningChatter
+                            t.id, t, executionUiTask, coordinator, this@GoalOrientedMode.getParsedActor(
+                                t, coordinator, planningChatter
                             )
                         )
                     }
@@ -301,8 +294,7 @@ open class GoalOrientedMode(
 
             if (activeGoalsCount == 0 && pendingOrRunningTasksCount == 0) {
                 val allDoneOrBlocked =
-                    goalTree.values.all { it.status == GoalStatus.COMPLETED || it.status == GoalStatus.BLOCKED } &&
-                            taskMap.values.all { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.FAILED }
+                    goalTree.values.all { it.status == GoalStatus.COMPLETED || it.status == GoalStatus.BLOCKED } && taskMap.values.all { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.FAILED }
                 if (allDoneOrBlocked) {
                     logToSession("All goals are completed or blocked. No pending/running tasks.")
                     break
@@ -416,71 +408,77 @@ open class GoalOrientedMode(
     }
 
     private fun executeTask(
-        id: String,
-        t: Task,
-        task: SessionTask,
-        coordinator: PlanCoordinator,
-        actor: ParsedActor<Tasks>
-    ): String? = try {
-        log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
-        val answer = actor.answer(
-            listOf(t.description ?: "") + contextData(
-                t.parentGoalId,
-                t.id
-            ), // Pass focused context
-        ).obj
-        val result1 = StringBuilder()
-        val planTask = answer.tasks?.firstOrNull()
-        logToSession("Resolved task for Task ID ${t.id}\n```json\n${planTask?.toJson() ?: "None"}\n```\n")
-        val semaphore = java.util.concurrent.Semaphore(0)
-        val taskImpl = TaskType.getImpl(planSettings, planTask = planTask)
-        taskImpl.run(
-            agent = coordinator,
-            messages = listOf(t.description ?: "") + contextData(),
-            task = task,
-            resultFn = {
-                logToSession("Completed task for Task ID ${t.id}")
-                result1.append(it)
-                t.result = result1.toString()
-                t.status = TaskStatus.COMPLETED
-                semaphore.release()
-            }, // Capture task output
-            planSettings = planSettings,
-        )
-        logToSession("Waiting for task completion for Task ID ${t.id}...")
-        semaphore.acquire()
-        logToSession("Task ID ${t.id} complete")
-        val result = t.result
-        log.info("Completed execution of Task ID ${id} (${t.description}) in processor.")
-        result
-    } catch (e: Exception) {
-        log.error(
-            "Task ID ${id} (${t.description}) execution failed in processor.submit lambda",
-            e
-        )
-        taskMap[id]?.apply {
-            status = TaskStatus.FAILED
-            result = "Execution Error: ${e.message}"
+        id: String, t: Task, task: SessionTask, coordinator: PlanCoordinator, actor: ParsedActor<Tasks>
+    ): String? {
+        return try {
+            log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
+            task.add("Starting execution of task: ${t.description}".renderMarkdown())
+            val answer = actor.answer(
+                listOf(t.description ?: "") + contextData(
+                    t.parentGoalId, t.id
+                ), // Pass focused context
+            ).obj
+            val result1 = StringBuilder()
+            val planTask = answer.tasks?.firstOrNull()
+            logToSession("Resolved task for Task ID ${t.id}\n```json\n${planTask?.toJson() ?: "None"}\n```\n")
+            if (planTask == null) {
+                logToSession("No task implementation generated for Task ID ${t.id}")
+                t.status = TaskStatus.FAILED
+                t.result = "Failed to generate task implementation"
+                task.add("Failed to generate task implementation".renderMarkdown())
+                return t.result
+            }
+            val semaphore = java.util.concurrent.Semaphore(0)
+            val taskImpl = TaskType.getImpl(planSettings, planTask = planTask)
+            taskImpl.run(
+                agent = coordinator,
+                messages = listOf(t.description ?: "") + contextData(),
+                task = task,
+                resultFn = {
+                    logToSession("Completed task for Task ID ${t.id}")
+                    result1.append(it)
+                    t.result = result1.toString()
+                    t.status = TaskStatus.COMPLETED
+                    semaphore.release()
+                }, // Capture task output
+                planSettings = planSettings,
+            )
+            logToSession("Waiting for task completion for Task ID ${t.id}...")
+            val acquired = semaphore.tryAcquire(5, TimeUnit.MINUTES)
+            if (!acquired) {
+                logToSession("Task ID ${t.id} timed out after 5 minutes")
+                t.status = TaskStatus.FAILED
+                t.result = "Task execution timed out"
+                task.add("Task execution timed out after 5 minutes".renderMarkdown())
+            }
+            logToSession("Task ID ${t.id} complete")
+            val result = t.result
+            log.info("Completed execution of Task ID ${id} (${t.description}) in processor.")
+            result
+        } catch (e: Exception) {
+            log.error(
+                "Task ID ${id} (${t.description}) execution failed in processor.submit lambda", e
+            )
+            taskMap[id]?.apply {
+                status = TaskStatus.FAILED
+                result = "Execution Error: ${e.message}"
+            }
+            task.add("Task execution failed: ${e.message}".renderMarkdown())
+            "Task execution failed: ${e.message}"
         }
-        "Task execution failed: ${e.message}"
     }
 
     private fun getParsedActor(
-        t: Task,
-        coordinator: PlanCoordinator,
-        chatter: Chatter
+        t: Task, coordinator: PlanCoordinator, chatter: Chatter
     ): ParsedActor<Tasks> {
         val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
         return ParsedActor(
             name = "TaskTypeChooser",
             resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
             exampleInstance = Tasks(
-                mutableListOf(
-                    TaskType.getAvailableTaskTypes(planSettings).firstOrNull()?.let {
-                        TaskType.getImpl(planSettings, it).taskConfig
-                    }
-                ).filterNotNull().toMutableList()
-            ),
+                mutableListOf(TaskType.getAvailableTaskTypes(planSettings).firstOrNull()?.let {
+                TaskType.getImpl(planSettings, it).taskConfig
+            }).filterNotNull().toMutableList()),
             prompt = """
                         Given the following task description and context, choose the single most appropriate task type and provide all required details.
                         Task Description: ${t.description}
@@ -491,8 +489,7 @@ open class GoalOrientedMode(
             parsingModel = planSettings.parsingChatter,
             temperature = planSettings.temperature,
             describer = describer,
-            parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes
-                .joinToString("\n\n") { taskType ->
+            parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                     "${taskType.name}:\n  ${
                         describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
                     }".trim()
@@ -508,6 +505,7 @@ open class GoalOrientedMode(
             }
             try {
                 if (taskInstance.status != TaskStatus.FAILED) {
+                    var waitCount = 0
                     while (!future.isDone) {
                         if (stopRequested.get()) break
                         if (future.isCancelled) {
@@ -517,14 +515,26 @@ open class GoalOrientedMode(
                             debouncedUpdateGoalTreeUI()
                             break
                         }
-                        if (processor.getActiveTaskCount() == 0) {
+                        if (processor.getActiveTaskCount() == 0 && waitCount > 0) {
                             log.warn("No active tasks in processor but future not done for Task ID ${taskInstance.id}. Possible deadlock.")
-                            break;
+                            // Give it one more chance with a shorter timeout
+                            try {
+                                taskInstance.result = future.get(30, TimeUnit.SECONDS)
+                                taskInstance.status = TaskStatus.COMPLETED
+                                logToSession("Task ID ${taskInstance.id} (${taskInstance.description}) COMPLETED after wait.")
+                            } catch (te: TimeoutException) {
+                                log.error("Task ID ${taskInstance.id} appears to be stuck. Marking as failed.")
+                                taskInstance.status = TaskStatus.FAILED
+                                taskInstance.result = "Task execution appears stuck - no progress detected"
+                                future.cancel(true)
+                            }
+                            break
                         }
-                        log.info("Waiting for Task ID ${taskInstance.id} (${taskInstance.description}) to complete. Currently ${processor.getActiveTaskCount()} active tasks.")
-                        Thread.sleep(60000)
+                        waitCount++
+                        log.info("Waiting for Task ID ${taskInstance.id} (${taskInstance.description}) to complete. Currently ${processor.getActiveTaskCount()} active tasks. Wait cycle: $waitCount")
+                        Thread.sleep(5000) // Check more frequently - every 5 seconds instead of 60
                     }
-                    if (taskInstance.status != TaskStatus.FAILED) {
+                    if (future.isDone && taskInstance.status != TaskStatus.FAILED) {
                         taskInstance.status = TaskStatus.COMPLETED
                         taskInstance.result = future.get()
                         logToSession("Task ID ${taskInstance.id} (${taskInstance.description}) COMPLETED.")
@@ -541,8 +551,7 @@ open class GoalOrientedMode(
             } catch (e: Exception) {
                 val cause = if (e is ExecutionException) e.cause ?: e else e
                 log.error(
-                    "Task ID ${taskInstance.id} (${taskInstance.description}) failed or error retrieving result.",
-                    cause
+                    "Task ID ${taskInstance.id} (${taskInstance.description}) failed or error retrieving result.", cause
                 )
                 if (taskInstance.status != TaskStatus.FAILED) {
                     taskInstance.status = TaskStatus.FAILED
@@ -558,7 +567,7 @@ open class GoalOrientedMode(
 
     private fun parseInitialGoals(
         userMessage: String, chatter: Chatter
-                                  ): List<Goal> {
+    ): List<Goal> {
         val parsedActor = ParsedActor(
             name = "InitialGoalParser",
             resultClass = GoalList::class.java,
@@ -603,8 +612,7 @@ open class GoalOrientedMode(
         }
 
         return goals.map { g ->
-            g.copy(
-                id = g.id?.takeIf { it.isNotBlank() } ?: "G${goalIdCounter.getAndIncrement()}",
+            g.copy(id = g.id?.takeIf { it.isNotBlank() } ?: "G${goalIdCounter.getAndIncrement()}",
                 description = g.description,
                 status = g.status
                     ?: (if (g.dependencies?.isEmpty() != false) GoalStatus.ACTIVE else GoalStatus.ACTIVE_DEPENDENCY_WAIT),
@@ -613,27 +621,21 @@ open class GoalOrientedMode(
                 tasks = g.tasks ?: mutableListOf(),
                 dependencies = g.dependencies ?: mutableListOf(),
                 decompositionAttempted = g.decompositionAttempted ?: false,
-                result = g.result
-            )
+                result = g.result)
         }
     }
 
 
     private fun decomposeGoal(
-        goal: Goal,
-        coordinator: PlanCoordinator,
-        chatter: Chatter
+        goal: Goal, coordinator: PlanCoordinator, chatter: Chatter
     ): Pair<List<Goal>, List<Task>> {
         val inputMessages = mutableListOf(goal.description ?: "")
         inputMessages.addAll(contextData(goal.id, null))
         val goalDecomposition = getGoalParser(
-            goal,
-            coordinator,
-            chatter
+            goal, coordinator, chatter
         ).answer(inputMessages).obj
         val subgoals = goalDecomposition.subgoals?.map { sg ->
-            sg.copy(
-                id = sg.id.takeIf { it.isNotBlank() } ?: "G${goalIdCounter.getAndIncrement()}",
+            sg.copy(id = sg.id.takeIf { it.isNotBlank() } ?: "G${goalIdCounter.getAndIncrement()}",
                 description = sg.description,
                 status = sg.status
                     ?: (if (sg.dependencies?.isEmpty() != false) GoalStatus.ACTIVE else GoalStatus.ACTIVE_DEPENDENCY_WAIT),
@@ -642,28 +644,23 @@ open class GoalOrientedMode(
                 tasks = sg.tasks ?: mutableListOf(),
                 dependencies = sg.dependencies ?: mutableListOf(),
                 decompositionAttempted = sg.decompositionAttempted ?: false,
-                result = sg.result
-            )
+                result = sg.result)
         } ?: emptyList()
         val tasks = goalDecomposition.tasks?.map { t ->
             val actualParentGoalId = t.parentGoalId ?: goal.id
-            t.copy(
-                id = t.id.takeIf { it.isNotBlank() } ?: "T${taskIdCounter.getAndIncrement()}",
+            t.copy(id = t.id.takeIf { it.isNotBlank() } ?: "T${taskIdCounter.getAndIncrement()}",
                 description = t.description,
                 status = t.status
                     ?: (if (t.dependencies?.isEmpty() != false) TaskStatus.PENDING else TaskStatus.ACTIVE_DEPENDENCY_WAIT),
                 parentGoalId = actualParentGoalId,
                 dependencies = t.dependencies ?: mutableListOf(),
-                result = t.result
-            )
+                result = t.result)
         } ?: emptyList()
         return Pair(subgoals, tasks)
     }
 
     private fun getGoalParser(
-        goal: Goal,
-        coordinator: PlanCoordinator,
-        chatter: Chatter
+        goal: Goal, coordinator: PlanCoordinator, chatter: Chatter
     ): ParsedActor<GoalDecomposition> = ParsedActor(
         name = "GoalDecomposer",
         resultClass = GoalDecomposition::class.java,
@@ -677,8 +674,7 @@ open class GoalOrientedMode(
                     tasks = mutableListOf(),
                     dependencies = mutableListOf()
                 )
-            ),
-            tasks = listOf(
+            ), tasks = listOf(
                 Task(
                     id = "T1",
                     description = "Draft OpenAPI spec for upload endpoint",
@@ -692,8 +688,7 @@ open class GoalOrientedMode(
                 .joinToString("\n                ") { "- ${it.name}" }
             val relatedTasksContext = goal.tasks?.mapNotNull { taskMap[it.id] }
                 ?.filter { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.FAILED }
-                ?.takeIf { it.isNotEmpty() }
-                ?.joinToString("\n                ") {
+                ?.takeIf { it.isNotEmpty() }?.joinToString("\n                ") {
                     "  - Task ${it.id} (${it.description?.take(50)}...): ${it.status}"
                 }?.indent("  ") // Indent the context block
             var promptStr = """
@@ -766,10 +761,7 @@ open class GoalOrientedMode(
                         }
                     }
 
-                    if (newStatus != GoalStatus.BLOCKED && dependenciesMet && (goal.decompositionAttempted == true || subGoals?.isNotEmpty() == true || directTasks?.isNotEmpty() == true) &&
-                        (subGoals?.isEmpty() != false || subGoals.all { it.status == GoalStatus.COMPLETED }) &&
-                        (directTasks?.isEmpty() != false || directTasks.all { it.status == TaskStatus.COMPLETED })
-                    ) {
+                    if (newStatus != GoalStatus.BLOCKED && dependenciesMet && (goal.decompositionAttempted == true || subGoals?.isNotEmpty() == true || directTasks?.isNotEmpty() == true) && (subGoals?.isEmpty() != false || subGoals.all { it.status == GoalStatus.COMPLETED }) && (directTasks?.isEmpty() != false || directTasks.all { it.status == TaskStatus.COMPLETED })) {
                         newStatus = GoalStatus.COMPLETED
                         goal.result = goal.result ?: when {
                             subGoals?.isNotEmpty() == true && directTasks?.isNotEmpty() == true -> "All sub-goals and tasks completed."
@@ -792,8 +784,7 @@ open class GoalOrientedMode(
                 }
             }
             // Update UI after all status changes are complete
-            if (goalTree.any { initialGoalStatuses[it.key] != it.value.status } ||
-                taskMap.any { initialTaskStatuses[it.key] != it.value.status }) {
+            if (goalTree.any { initialGoalStatuses[it.key] != it.value.status } || taskMap.any { initialTaskStatuses[it.key] != it.value.status }) {
                 debouncedUpdateGoalTreeUI()
             }
 
@@ -845,22 +836,16 @@ open class GoalOrientedMode(
                 TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
                 null -> "❓ Unknown"
             }
-            val taskDepsString =
-                (if (t.dependencies?.isEmpty() == true) "none" else t.dependencies?.joinToString(", ") { dep ->
-                    if (goalTree.containsKey(dep)) "Goal ${goalTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
-                    else "Task ${taskTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
-                }
-                        ).let {
-                        when (it) {
-                            "" -> ""
-                            else -> "Deps: $it"
-                        }
-                    }
-            nodeSb.append("  - " + ("Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id})").let { it ->
-                taskTasks[t.id]?.manager?.linkToSession(
-                    it
-                ) ?: it
-            } + "    " + taskDepsString)
+            val string = if (t.dependencies?.isEmpty() == true) "none" else t.dependencies?.joinToString(", ") { dep ->
+                idToString(dep)
+            }
+            val text = "Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id})"
+            nodeSb.append(
+                "  - ${taskTasks[t.id]?.manager?.linkToSession(text)}" ?: text + "    " + when (string) {
+                "" -> ""
+                null -> ""
+                else -> "Deps: $string"
+            })
             nodeSb.append("\n")
         }
         goal.subgoals?.mapNotNull { goalTree[it.id] }?.joinToString("\n") { subGoal ->
@@ -868,6 +853,10 @@ open class GoalOrientedMode(
         }.apply { nodeSb.append(this + "\n") }
         return nodeSb.toString()
     }
+
+    private fun idToString(dep: String): CharSequence =
+        if (goalTree.containsKey(dep)) "Goal ${goalTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
+        else "Task ${taskTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
 
     private fun renderGoalTreeText(goals: List<Goal>): String {
         val sb = StringBuilder("### Goal Tree Status\n")
@@ -878,8 +867,7 @@ open class GoalOrientedMode(
             goals.sortedBy { it.id }.forEach {
                 sb.append(
                     renderNode(
-                        it,
-                        mutableSetOf()
+                        it, mutableSetOf()
                     )
                 )
             } // Start new traversal for each potential root in fallback
@@ -971,9 +959,7 @@ open class GoalOrientedMode(
     }
 
     private fun createDebouncedUpdate(
-        scheduler: ScheduledExecutorService,
-        updateFunction: () -> Unit,
-        delayMs: Long
+        scheduler: ScheduledExecutorService, updateFunction: () -> Unit, delayMs: Long
     ): () -> Unit {
         var debounceTask: ScheduledFuture<*>? = null
         return {
@@ -1058,18 +1044,13 @@ open class GoalOrientedMode(
 
     @Description("Result of decomposing a goal into subgoals and tasks.")
     data class GoalDecomposition(
-        val subgoals: List<Goal>? = null,
-        val tasks: List<Task>? = null
+        val subgoals: List<Goal>? = null, val tasks: List<Task>? = null
     )
 
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: SocketManager,
-            planSettings: PlanSettings,
-            session: Session,
-            user: User?,
-            describer: TypeDescriber
+            ui: SocketManager, planSettings: PlanSettings, session: Session, user: User?, describer: TypeDescriber
         ) = GoalOrientedMode(ui, planSettings, session, user, describer)
 
         private val log = LoggerFactory.getLogger(GoalOrientedMode::class.java)

@@ -81,7 +81,7 @@ data class AppSettingsState(
     var awsBucket: String? = null,
 
     /* System Configuration */
-    val executables: MutableSet<String>? = mutableSetOf(),
+    var executables: MutableSet<String>? = mutableSetOf(),
     var analyticsEnabled: Boolean = false,
     var diffLoggingEnabled: Boolean = false,
     var listeningPort: Int = 8081,
@@ -107,7 +107,7 @@ data class AppSettingsState(
 
     /* Recent Activity Helpers */
     val savedCommandConfigsJson: MutableMap<String, String>? = mutableMapOf(),
-    val savedPlanConfigs: MutableMap<String, String>? = mutableMapOf(),
+    var savedPlanConfigs: MutableMap<String, String>? = mutableMapOf(),
     val recentCommandsJson: MutableMap<String, String>? = mutableMapOf(),
     val recentArguments: MutableList<String>? = mutableListOf(),
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
