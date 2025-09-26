@@ -32,6 +32,7 @@ import kotlin.reflect.jvm.isAccessible
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
@@ -43,10 +44,20 @@ class PluginStartupActivity : ProjectActivity {
 
         System.getProperty("cognotik.config")?.let { configFile ->
             try {
+                log.debug("Attempting to load config from: $configFile")
                 val file = File(configFile)
                 if (file.exists()) {
+                    if (!file.canRead()) {
+                        log.error("Config file $configFile exists but is not readable")
+                        return@let
+                    }
                     StaticAppSettingsConfigurable().apply {
-                        import(file.readText())
+                        val configContent = file.readText()
+                        if (configContent.isBlank()) {
+                            log.warn("Config file $configFile is empty")
+                            return@let
+                        }
+                        import(configContent)
                         write(AppSettingsState.instance, AppSettingsComponent())
                     }
                     AppSettingsState.Companion.notifySettingsLoaded()
@@ -65,9 +76,11 @@ class PluginStartupActivity : ProjectActivity {
 
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader
+            log.debug("Setting context class loader for plugin initialization")
             try {
                 currentThread.contextClassLoader = PluginStartupActivity::class.java.classLoader
                 init(project)
+                log.info("Plugin initialization completed successfully")
             } catch (e: Exception) {
                 log.error("Error during plugin startup", e)
             } finally {
@@ -77,8 +90,13 @@ class PluginStartupActivity : ProjectActivity {
             //setupDocumentationTracking(project)
 
             if (AppSettingsState.instance.showWelcomeScreen || AppSettingsState.instance.greetedVersion != AppSettingsState.WELCOME_VERSION) {
+                log.debug("Showing welcome screen - showWelcomeScreen: ${AppSettingsState.instance.showWelcomeScreen}, greetedVersion: ${AppSettingsState.instance.greetedVersion}")
                 val welcomeFile = "welcomePage.md"
                 val resource = PluginStartupActivity::class.java.classLoader.getResource(welcomeFile)
+                if (resource == null) {
+                    log.error("Welcome page resource not found: $welcomeFile")
+                    return
+                }
                 var virtualFile = resource?.let { VirtualFileManager.getInstance().findFileByUrl(it.toString()) }
                 if (virtualFile == null) try {
                     val path = resource?.toURI()?.let { java.nio.file.Paths.get(it) }
@@ -88,6 +106,7 @@ class PluginStartupActivity : ProjectActivity {
                 }
                 if (virtualFile == null) {
                     try {
+                        log.debug("Creating temporary file for welcome page")
                         val tempFile =
                             withContext(Dispatchers.IO) {
                                 File.createTempFile(
@@ -97,24 +116,31 @@ class PluginStartupActivity : ProjectActivity {
                             }
                         tempFile.deleteOnExit()
                         resource?.openStream()?.use { input ->
+                            if (input == null) {
+                                log.error("Failed to open input stream for welcome page resource")
+                                return
+                            }
                             tempFile.outputStream().use { output -> input.copyTo(output) }
                         }
                         virtualFile = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(tempFile.toPath())
+                        log.debug("Welcome page temporary file created: ${tempFile.absolutePath}")
                     } catch (e: Exception) {
                         log.error("Error opening welcome page", e)
                     }
                 }
                 virtualFile?.let {
                     try {
+                        log.debug("Opening welcome page in editor")
                         ApplicationManager.getApplication().invokeLater {
                             FileEditorManager.getInstance(project).openFile(it, true).forEach { editor ->
                                 try {
                                     editor::class.declaredMembers.filter { it.name == "setLayout" }.forEach { member ->
                                         member.isAccessible = true
                                         member.call(editor, TextEditorWithPreview.Layout.SHOW_PREVIEW)
+                                        log.debug("Successfully set preview layout for welcome page")
                                     }
                                 } catch (e: Exception) {
-                                    log.error("Error opening welcome page", e)
+                                    log.warn("Failed to set preview layout for welcome page editor", e)
                                 }
                             }
                         }
@@ -124,10 +150,11 @@ class PluginStartupActivity : ProjectActivity {
                 } ?: log.error("Welcome page not found")
                 AppSettingsState.instance.greetedVersion = AppSettingsState.WELCOME_VERSION
                 AppSettingsState.instance.showWelcomeScreen = false
+                log.info("Welcome screen display completed")
             }
 
         } catch (e: Exception) {
-            log.error("Error during plugin startup", e)
+            log.error("Critical error during plugin startup - plugin may not function correctly", e)
         }
     }
 
@@ -135,7 +162,16 @@ class PluginStartupActivity : ProjectActivity {
 
     private fun init(project: Project) {
         if (isInitialized.getAndSet(true)) return
+        log.info("Initializing ApplicationServices configuration")
         ApplicationServicesConfig.dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
+        if (!ApplicationServicesConfig.dataStorageRoot.exists()) {
+            try {
+                ApplicationServicesConfig.dataStorageRoot.mkdirs()
+                log.info("Created data storage directory: ${ApplicationServicesConfig.dataStorageRoot}")
+            } catch (e: Exception) {
+                log.error("Failed to create data storage directory: ${ApplicationServicesConfig.dataStorageRoot}", e)
+            }
+        }
         SimpleDiffApplier.validatorProviders.add(0) { filename ->
             val extension = filename?.split('.')?.lastOrNull()
             if (IntelliJPsiValidator.isLanguageSupported(extension)) {
@@ -145,15 +181,29 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         AppSettingsState.instance.apply {
+            log.debug("Configuring AWS platform - profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
             ApplicationServices.cloud = when {
-                awsProfile.isNullOrBlank() -> null
-                awsRegion.isNullOrBlank() -> null
-                awsBucket.isNullOrBlank() -> null
+                awsProfile.isNullOrBlank() -> {
+                    log.debug("AWS profile not configured")
+                    null
+                }
+
+                awsRegion.isNullOrBlank() -> {
+                    log.debug("AWS region not configured")
+                    null
+                }
+
+                awsBucket.isNullOrBlank() -> {
+                    log.debug("AWS bucket not configured")
+                    null
+                }
                 else -> AwsPlatform(
                     bucket = awsBucket!!,
                     region = Region.of(awsRegion!!),
                     profileName = awsProfile!!,
-                )
+                ).also {
+                    log.info("AWS platform configured successfully with profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
+                }
             }
         }
         ApplicationServices.authorizationManager = object : AuthorizationInterface {

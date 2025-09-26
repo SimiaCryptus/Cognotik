@@ -61,12 +61,16 @@ object JsonUtil {
     }
 
     fun <T> fromJson(data: String, type: Type): T {
-
         if (type is Class<*> && type.isAssignableFrom(String::class.java)) return data as T
         val objectMapper = objectMapper()
-        val value = objectMapper.readValue(data, objectMapper.typeFactory.constructType(type)) as T
-
-        return value
+        try {
+            val value = objectMapper.readValue(data, objectMapper.typeFactory.constructType(type)) as T
+            return value
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to parse JSON: $data", e)
+        } finally {
+            _initForReading.remove()
+        }
     }
 
 }

@@ -51,7 +51,7 @@ open class UserSettingsManager : UserSettingsInterface {
     companion object {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(UserSettingsManager::class.java)
         @JsonIgnore
-        val defaultUser = User(
+        var defaultUser = User(
             id = "1",
             email = "user@localhost"
         )

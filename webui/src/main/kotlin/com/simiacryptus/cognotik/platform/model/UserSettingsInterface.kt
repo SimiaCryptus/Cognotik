@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.ChatModelsDeserializer
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 
@@ -99,7 +98,7 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
 }
 
 class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ApiChatModel {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ApiChatModel? {
         return when (p.currentToken) {
             com.fasterxml.jackson.core.JsonToken.VALUE_STRING -> {
                 // Handle string format - find model by name/key
@@ -122,13 +121,13 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
                         ?: throw IllegalArgumentException("Unknown model: $modelName")
                     ApiChatModel(model, null)
                 } else {
-                    throw IllegalArgumentException("Invalid ApiChatModel object format")
+                    //throw IllegalArgumentException("Invalid ApiChatModel object format")
+                    null
                 }
             }
-            else -> throw IllegalArgumentException("ApiChatModel must be deserialized from either a string or an object")
+            else -> null // throw IllegalArgumentException("ApiChatModel must be deserialized from either a string or an object")
         }
     }
-
 }
 
 
@@ -163,7 +162,6 @@ data class ApiChatModel(
     val model: ChatModel? = null,
     val provider: ApiData? = null,
 )
-
 
 fun toApiList(
     apiKeys: Map<APIProvider, String>,

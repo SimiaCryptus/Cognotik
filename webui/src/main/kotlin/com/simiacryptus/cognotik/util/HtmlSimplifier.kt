@@ -159,14 +159,15 @@ object HtmlSimplifier {
 
         simplifyDocument(stepName = "RemoveUnsafeAttributes") {
             select("*").forEach { element ->
-                element.attributes().forEach { attr ->
-                    if (!keepScriptElements && (attr.value.contains("javascript:") || attr.value.contains("data:") || attr.value.contains(
-                            "vbscript:"
-                        ) || attr.value.contains(
-                            "file:"
-                        ))
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (!keepScriptElements && (attr.value.contains("javascript:") || 
+                        attr.value.contains("data:") || 
+                        attr.value.contains("vbscript:") || 
+                        attr.value.contains("file:"))
                     ) {
-                        element.removeAttr(attr.key)
+                        iterator.remove()
                     }
                 }
             }
@@ -192,6 +193,7 @@ object HtmlSimplifier {
         }
 
         simplifyDocument(stepName = "RemoveEmptyElements") {
+            val elementsToRemove = mutableListOf<org.jsoup.nodes.Element>()
             select("*:not(img)").forEach { element ->
                 if (element.text().isBlank() &&
                     element.attributes().isEmpty &&
@@ -199,9 +201,10 @@ object HtmlSimplifier {
                         .any()
 
                 ) {
-                    element.remove()
+                    elementsToRemove.add(element)
                 }
             }
+            elementsToRemove.forEach { it.remove() }
         }
 
         simplifyDocument(stepName = "CleanupHrefAttributes") {
@@ -256,10 +259,14 @@ object HtmlSimplifier {
 
         simplifyDocument(stepName = "CleanupTextNodes") {
             select("*").forEach { element ->
+                val nodesToRemove = mutableListOf<org.jsoup.nodes.TextNode>()
                 element.textNodes().forEach { node ->
                     val trimmed = if (preserveWhitespace) node.text() else node.text().trim()
-                    if (trimmed.isBlank()) node.remove()
-                    else node.text(trimmed)
+                    if (trimmed.isBlank()) {
+                        nodesToRemove.add(node)
+                    } else {
+                        node.text(trimmed)
+                    }
                 }
             }
         }

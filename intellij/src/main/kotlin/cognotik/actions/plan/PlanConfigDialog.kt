@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.SavedPlanConfig
-import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
@@ -89,11 +88,9 @@ class PlanConfigDialog(
         private const val FONT_SIZE_DISABLED = 12f
         private const val DIVIDER_PROPORTION = 0.3f
 
-        fun isVisible(it: ChatModel): Boolean {
-            return ApplicationServices.userSettingsManager.getUserSettings().apis.any { api ->
-                api.provider == it.provider && !api.key.isNullOrBlank()
-            }
-        }
+        fun isVisible(chatModel: ChatModel) = ApplicationServices.userSettingsManager.getUserSettings().apis.filter {
+            !it.key.isNullOrBlank()
+        }.any { it.provider == chatModel.provider }
     }
 
     val cognitiveModeCombo = ComboBox(arrayOf(
@@ -463,22 +460,16 @@ class PlanConfigDialog(
         AppSettingsState.instance.savedPlanConfigs?.keys?.sorted()?.forEach { addItem(it) }
     }
 
-    private fun getVisibleModels(): List<ChatModel> =
-        ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap {
-            api ->
-            //ChatModel.values().mapNotNull { it.value }.filter { model -> model.provider == api.provider && !api.key.isNullOrBlank() && model.modelName?.isNotBlank() == true }.map { it to api }
-            ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-                //ChatModel.values().mapNotNull { it.value }.filter { model -> model.provider == apiData.provider && !apiData.key.isNullOrBlank() && model.modelName?.isNotBlank() == true }
-                ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-                    //ChatModel.values().mapNotNull { it.value }.filter { model -> model.provider == apiData.provider && !apiData.key.isNullOrBlank() && model.modelName?.isNotBlank() == true && isVisible(model) }
-                    ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-                        apiData.provider?.getChatModels()?.filter { model -> model.provider == apiData.provider && !apiData.key.isNullOrBlank() && model.modelName?.isNotBlank() == true && isVisible(model) } ?: listOf()
-                    }
-                }.map { it to apiData }
-            }
-        }.distinctBy { it.first.modelName }.map { it.first }
-            .sortedBy { "${it.provider?.name} - ${it.modelName}"
-        }
+    private fun getVisibleModels() =
+        ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+            apiData.provider?.getChatModels()?.filter { model ->
+                model.provider == apiData.provider
+                        && !apiData.key.isNullOrBlank()
+                        && model.modelName?.isNotBlank() == true
+                        && isVisible(model)
+            } ?: listOf()
+        }.distinctBy { it.modelName }
+            .sortedBy { "${it.provider?.name} - ${it.modelName}" }
 
     init {
         taskTypeList.cellRenderer = TaskTypeListCellRenderer()

@@ -19,11 +19,11 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.*
 import java.awt.event.ActionEvent
 import javax.swing.*
@@ -86,31 +86,69 @@ class AppSettingsComponent : Disposable {
         addButton.addActionListener {
             val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
             descriptor.title = "Select Executable"
-            FileChooser.chooseFile(descriptor, null, null) { file ->
-                val executablePath = file.path
-                if (executablePath.isNotBlank() && !executablesModel.contains(executablePath)) {
-                    executablesModel.addElement(executablePath)
-                    AppSettingsState.instance.executables?.add(executablePath)
+            try {
+                FileChooser.chooseFile(descriptor, null, null) { file ->
+                    val executablePath = file.path
+                    if (executablePath.isNotBlank() && !executablesModel.contains(executablePath)) {
+                        executablesModel.addElement(executablePath)
+                        AppSettingsState.instance.executables?.add(executablePath)
+                        log.debug("Successfully added executable: $executablePath")
+                    } else {
+                        if (executablePath.isBlank()) {
+                            log.warn("Attempted to add blank executable path")
+                        } else {
+                            log.warn("Executable already exists in list: $executablePath")
+                        }
+                    }
                 }
+            } catch (e: Exception) {
+                log.error("Failed to add executable: ${e.message}", e)
+                JOptionPane.showMessageDialog(
+                    this, "Failed to add executable: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
+                )
             }
         }
         removeButton.addActionListener {
-            val selectedIndices = executablesList.selectedIndices
-            for (i in selectedIndices.reversed()) {
-                val removed = executablesModel.remove(i)
-                AppSettingsState.instance.executables?.remove(removed)
+            try {
+                val selectedIndices = executablesList.selectedIndices
+                if (selectedIndices.isEmpty()) {
+                    log.warn("No executables selected for removal")
+                    return@addActionListener
+                }
+                for (i in selectedIndices.reversed()) {
+                    val removed = executablesModel.remove(i)
+                    AppSettingsState.instance.executables?.remove(removed)
+                    log.debug("Successfully removed executable: $removed")
+                }
+            } catch (e: Exception) {
+                log.error("Unexpected error removing executable: ${e.message}", e)
+                JOptionPane.showMessageDialog(
+                    this, "Failed to remove executable: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
+                )
             }
         }
         editButton.addActionListener {
-            val selectedIndex = executablesList.selectedIndex
-            if (selectedIndex != -1) {
+            try {
+                val selectedIndex = executablesList.selectedIndex
+                if (selectedIndex == -1) {
+                    log.warn("No executable selected for editing")
+                    return@addActionListener
+                }
                 val currentValue = executablesModel.get(selectedIndex)
                 val newValue = JOptionPane.showInputDialog(this, "Edit executable path:", currentValue)
                 if (newValue != null && newValue.isNotBlank()) {
                     executablesModel.set(selectedIndex, newValue)
                     AppSettingsState.instance.executables?.remove(currentValue)
                     AppSettingsState.instance.executables?.add(newValue)
+                    log.debug("Successfully updated executable from '$currentValue' to '$newValue'")
+                } else {
+                    log.warn("Invalid new executable path provided: ${newValue ?: "null"}")
                 }
+            } catch (e: Exception) {
+                log.error("Unexpected error editing executable: ${e.message}", e)
+                JOptionPane.showMessageDialog(
+                    this, "Failed to edit executable: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
+                )
             }
         }
         executablesList.addListSelectionListener(object : ListSelectionListener {
@@ -151,6 +189,7 @@ class AppSettingsComponent : Disposable {
     @Suppress("unused")
     @Name("Main Image Model")
     val mainImageModel = ComboBox<String>()
+
     @Suppress("unused")
     @Name("Embedding Model")
     val embeddingModel = ComboBox<String>()
@@ -200,15 +239,9 @@ class AppSettingsComponent : Disposable {
     @Suppress("unused")
     val choosePluginHome = TextFieldWithBrowseButton(pluginHome).apply {
         val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
-        val browserDescriptor =
-            ComponentWithBrowseButton.BrowseFolderActionListener(
-                "Select Plugin Home Directory",
-                null,
-                this,
-                null,
-                descriptor,
-                TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
-            )
+        val browserDescriptor = ComponentWithBrowseButton.BrowseFolderActionListener(
+            "Select Plugin Home Directory", null, this, null, descriptor, TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
+        )
         addActionListener(browserDescriptor)
     }
 
@@ -297,7 +330,7 @@ class AppSettingsComponent : Disposable {
             // Initialize with first provider's defaults
             val initialProvider = APIProvider.values().first()
             nameField.text = initialProvider.name
-            urlField.text = initialProvider.base ?: ""
+            urlField.text = initialProvider.base
 
             gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE
             val buttonPanel = JPanel(FlowLayout())
@@ -305,12 +338,29 @@ class AppSettingsComponent : Disposable {
             val cancelButton = JButton("Cancel")
 
             okButton.addActionListener {
+                val provider = providerCombo.selectedItem as? String
+                val name = nameField.text
+                val key = keyField.text
+                val url = urlField.text
+
+                if (provider.isNullOrBlank()) {
+                    log.warn("Provider type is required")
+                    JOptionPane.showMessageDialog(
+                        dialog, "Provider type is required", "Validation Error", JOptionPane.WARNING_MESSAGE
+                    )
+                    return@addActionListener
+                }
+                if (name.isBlank()) {
+                    log.warn("API name is required")
+                    JOptionPane.showMessageDialog(
+                        dialog, "API name is required", "Validation Error", JOptionPane.WARNING_MESSAGE
+                    )
+                    return@addActionListener
+                }
+
                 model.addRow(
                     arrayOf(
-                        providerCombo.selectedItem,
-                        nameField.text,
-                        keyField.text,
-                        urlField.text
+                        providerCombo.selectedItem, nameField.text, keyField.text, urlField.text
                     )
                 )
                 dialog.dispose()
@@ -328,10 +378,24 @@ class AppSettingsComponent : Disposable {
 
 
         removeButton.addActionListener {
-            val selectedRows = apis.selectedRows
-            val model = apis.model as DefaultTableModel
-            for (i in selectedRows.reversed()) {
-                model.removeRow(i)
+            try {
+                val selectedRows = apis.selectedRows
+                if (selectedRows.isEmpty()) {
+                    log.warn("No API configurations selected for removal")
+                    return@addActionListener
+                }
+                val model = apis.model as DefaultTableModel
+                for (i in selectedRows.reversed()) {
+                    val provider = model.getValueAt(i, 0) as? String
+                    val name = model.getValueAt(i, 1) as? String
+                    model.removeRow(i)
+                    log.debug("Successfully removed API configuration: $provider - $name")
+                }
+            } catch (e: Exception) {
+                log.error("Unexpected error removing API configuration: ${e.message}", e)
+                JOptionPane.showMessageDialog(
+                    this, "Failed to remove API configuration: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
+                )
             }
         }
 
@@ -376,7 +440,7 @@ class AppSettingsComponent : Disposable {
                 providerCombo.addActionListener {
                     val selectedProvider = APIProvider.valueOf(providerCombo.selectedItem as String)
                     if (urlField.text == currentUrl || urlField.text.isBlank()) {
-                        urlField.text = selectedProvider.base ?: ""
+                        urlField.text = selectedProvider.base
                     }
                 }
 
@@ -386,10 +450,31 @@ class AppSettingsComponent : Disposable {
                 val cancelButton = JButton("Cancel")
 
                 okButton.addActionListener {
-                    model.setValueAt(providerCombo.selectedItem, selectedRow, 0)
-                    model.setValueAt(nameField.text, selectedRow, 1)
-                    model.setValueAt(keyField.text, selectedRow, 2)
-                    model.setValueAt(urlField.text, selectedRow, 3)
+                    val provider = providerCombo.selectedItem as? String
+                    val name = nameField.text
+                    val key = keyField.text
+                    val url = urlField.text
+
+                    if (provider.isNullOrBlank()) {
+                        log.warn("Provider type is required for editing")
+                        JOptionPane.showMessageDialog(
+                            dialog, "Provider type is required", "Validation Error", JOptionPane.WARNING_MESSAGE
+                        )
+                        return@addActionListener
+                    }
+                    if (name.isBlank()) {
+                        log.warn("API name is required for editing")
+                        JOptionPane.showMessageDialog(
+                            dialog, "API name is required", "Validation Error", JOptionPane.WARNING_MESSAGE
+                        )
+                        return@addActionListener
+                    }
+
+                    model.setValueAt(provider, selectedRow, 0)
+                    model.setValueAt(name, selectedRow, 1)
+                    model.setValueAt(key, selectedRow, 2)
+                    model.setValueAt(url, selectedRow, 3)
+                    log.debug("Updated API configuration: $provider - $name")
                     dialog.dispose()
                 }
                 cancelButton.addActionListener { dialog.dispose() }
@@ -420,124 +505,101 @@ class AppSettingsComponent : Disposable {
     var usage = UsageTable(ApplicationServices.usageManager)
 
     init {
+        log.debug("Initializing AppSettingsComponent")
+        try {
 
-        diffLoggingEnabled.isSelected = AppSettingsState.instance.diffLoggingEnabled
-        awsProfile.text = AppSettingsState.instance.awsProfile ?: ""
-        awsRegion.text = AppSettingsState.instance.awsRegion ?: ""
-        awsBucket.text = AppSettingsState.instance.awsBucket ?: ""
-        disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
+            diffLoggingEnabled.isSelected = AppSettingsState.instance.diffLoggingEnabled
+            awsProfile.text = AppSettingsState.instance.awsProfile ?: ""
+            awsRegion.text = AppSettingsState.instance.awsRegion ?: ""
+            awsBucket.text = AppSettingsState.instance.awsBucket ?: ""
+            disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
 
-        setExecutables(AppSettingsState.instance.executables ?: emptySet())
-        // Populate API table first
-        populateApiTable()
-
-        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
-
-
-        // Get all available models from APIs with valid keys
-        val availableModels = ApplicationServices.userSettingsManager.getUserSettings().apis.filter { api ->
-            api.key.isNotBlank()
-            }.flatMap { api ->
-                //ChatModel.values().entries.filter { it.value.provider == api.provider && api.key.isNotBlank() }
-                api.provider?.getChatModels()?.filter { model ->
-                    isVisible(model)
-                }?.map { it.name to it } ?: emptyList()
-            }.toMap().toSortedMap(compareBy { it })
-
-        availableModels.forEach {
-            this.smartModel.addItem(it.value.modelName)
-            this.fastModel.addItem(it.value.modelName)
+            setExecutables(AppSettingsState.instance.executables ?: emptySet())
+        } catch (e: Exception) {
+            log.error("Error initializing basic settings: ${e.message}", e)
         }
-
-        ImageModels.entries.forEach {
-            this.mainImageModel.addItem(it.name)
+        try {
+            // Populate API table first
+            populateApiTable()
+        } catch (e: Exception) {
+            log.error("Error populating API table: ${e.message}", e)
         }
-        EmbeddingModel.values().keys.forEach {
-            this.embeddingModel.addItem(it)
-        }
+        val apis = ApplicationServices.userSettingsManager.getUserSettings().apis
+        try {
 
-
-        val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }
-            .filter { modelItem ->
-                val value = //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value
-                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
-                        val any = //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api.provider }
-                            ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
-                                api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
-                                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { api3 ->
-                                            api3.provider?.getChatModels()?.any { it.modelName == modelItem } == true && api3.key.isNotBlank()
-                                        } != null
-                            }?.let { api2 ->
-                                //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api2.provider }
-                                api2.provider?.getChatModels()?.find { it.modelName == modelItem }
-                            }
-                        any != null && api.key.isNotBlank()
-                    }?.let { api ->
-                        //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api.provider }?.value
-                        api.provider?.getChatModels()?.find { it.modelName == modelItem }
+            // Get all available models from APIs with valid keys
+            val availableModels = try {
+                apis.filter { api ->
+                    api.key.isNotBlank()
+                }.flatMap { api ->
+                    try {
+                        api.provider?.getChatModels()?.filter { model ->
+                            isVisible(model)
+                        }?.map { it.name to it } ?: emptyList()
+                    } catch (e: Exception) {
+                        log.warn("Failed to get chat models for provider ${api.provider?.name}: ${e.message}")
+                        emptyList()
                     }
-                isVisible(value ?: return@filter false)
+                }.toMap().toSortedMap(compareBy { it })
+            } catch (e: Exception) {
+                log.error("Failed to load available models: ${e.message}", e)
+                emptyMap()
             }
-            .sortedBy { modelItem ->
-                val model = //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
-                        api.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api.provider }
-                                ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
-                                    api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
-                                        api2.provider?.getChatModels()?.any { it.modelName == modelItem } == true
-                                } != null
-                    }?.let { api ->
-                        //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api.provider }?.value
-                        api.provider?.getChatModels()?.find { it.modelName == modelItem }
-                    }!!
-                "${model.provider?.name} - ${model.modelName}"
-            }.toList()
-        val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }
-            .filter { modelItem ->
-                val value: ChatModel? = //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value
-                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
-                        val find = //ChatModel.values().entries.find { it.value.modelName == modelItem }
-                            ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
-                                api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
-                                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { api3 ->
-                                            api3.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api3.provider }
-                                               api3.provider?.getChatModels()?.any { it.modelName == modelItem } == true
-                                        } != null
-                            }?.let { api2 ->
-                                //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api2.provider }
-                                api2.provider?.getChatModels()?.find { it.modelName == modelItem }
-                            }
-                        api.provider == find?.provider && api.key.isNotBlank()
-                    }?.let { api ->
-                        //ChatModel.values().entries.find { it.value.provider == api.provider }?.value
-                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
-                            api2.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider }
-                                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api3 ->
-                                        api3.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api3.provider }
-                                            api3.provider?.getChatModels()?.any { it.modelName == modelItem } == true
-                                    } != null
-                        }?.let { api2 ->
-                            //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api2.provider }?.value
-                            api2.provider?.getChatModels()?.find { it.modelName == modelItem }
-                        }
-                    }
-                isVisible(value ?: return@filter false)
+
+            availableModels.forEach {
+                this.smartModel.addItem(it.value.modelName)
+                this.fastModel.addItem(it.value.modelName)
             }
-            .sortedBy { modelItem ->
-                val model =
-                    //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
-                    ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
-                        api.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api.provider }
-                                ApplicationServices.userSettingsManager.getUserSettings().apis.find { api2 ->
-                                    //ChatModel.values().entries.any { it.value.modelName == modelItem && it.value.provider == api2.provider } && api2.key.isNotBlank()
-                                    api2.provider?.getChatModels()?.any { it.modelName == modelItem } == true && api2.key.isNotBlank()
-                                } != null
-                    }?.let { api ->
-                        //ChatModel.values().entries.find { it.value.modelName == modelItem && it.value.provider == api.provider }?.value
-                        api.provider?.getChatModels()?.find { it.modelName == modelItem }
-                    }
-                "${model?.provider?.name} - ${model?.modelName}"
-            }.toList()
+            log.debug("Loaded ${availableModels.size} available models")
+        } catch (e: Exception) {
+            log.error("Error loading models: ${e.message}", e)
+        }
+        try {
+
+            ImageModels.entries.forEach {
+                this.mainImageModel.addItem(it.name)
+            }
+            EmbeddingModel.values().keys.forEach {
+                this.embeddingModel.addItem(it)
+            }
+        } catch (e: Exception) {
+            log.error("Error loading image and embedding models: ${e.message}", e)
+        }
+
+
+        val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
+            val chatModel = apis.filter { it.key.isNotBlank() }
+                    .mapNotNull { it.provider?.getChatModels()?.find { it.modelName == modelItem } }.firstOrNull()
+            if (chatModel == null) {
+                false
+            } else {
+                val visible = isVisible(chatModel)
+                visible
+            }
+        }.sortedBy { modelItem ->
+            val model =
+                apis.filter { it.key.isNotBlank() }
+                    .find { it.provider?.getChatModels()?.any { it.modelName == modelItem } == true }
+                    ?.let { it.provider?.getChatModels()?.find { it.modelName == modelItem } }!!
+            "${model.provider?.name} - ${model.modelName}"
+        }.toList()
+        val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
+            val chatModel = apis.filter { it.key.isNotBlank() }
+                .mapNotNull { it.provider?.getChatModels()?.find { it.modelName == modelItem } }.firstOrNull()
+            if (chatModel == null) {
+                false
+            } else {
+                val visible = isVisible(chatModel)
+                visible
+            }
+        }.sortedBy { modelItem ->
+            val model =
+                //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
+                apis.filter { it.key.isNotBlank() }
+                    .find { it.provider?.getChatModels()?.any { it.modelName == modelItem } == true }
+                    ?.let { it.provider?.getChatModels()?.find { it.modelName == modelItem } }
+            "${model?.provider?.name} - ${model?.modelName}"
+        }.toList()
         smartModel.removeAllItems()
         fastModel.removeAllItems()
         smartModelItems.forEach { smartModel.addItem(it) }
@@ -560,41 +622,44 @@ class AppSettingsComponent : Disposable {
         AppSettingsState.instance.embeddingModel?.let { model ->
             this.embeddingModel.selectedItem = model
         }
+        log.debug("AppSettingsComponent initialization completed")
     }
 
     override fun dispose() {
+        log.debug("Disposing AppSettingsComponent")
     }
+
     private fun populateApiTable() {
-        val model = apis.model as DefaultTableModel
-        model.rowCount = 0
-        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
-        userSettings.apis.forEach { api ->
-            val providerName = api.provider?.name ?: ""
-            val name = api.name ?: api.provider?.name ?: ""
-            val key = api.key ?: ""
-            val url = api.baseUrl ?: api.provider?.base ?: ""
-            model.addRow(arrayOf(providerName, name, key, url))
+        try {
+            log.debug("Populating API table")
+            val model = apis.model as DefaultTableModel
+            model.rowCount = 0
+            val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
+            userSettings.apis.forEach { api ->
+                val providerName = api.provider?.name ?: ""
+                val name = api.name ?: api.provider?.name ?: ""
+                val key = api.key
+                val url = api.baseUrl
+                model.addRow(arrayOf(providerName, name, key, url))
+            }
+            log.debug("Successfully populated API table with ${userSettings.apis.size} entries")
+        } catch (e: Exception) {
+            log.error("Failed to populate API table: ${e.message}", e)
+            JOptionPane.showMessageDialog(
+                null, "Failed to load API configurations: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
+            )
         }
     }
 
     private fun getModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
         override fun customize(
-            list: JList<out String>,
-            value: String?,
-            index: Int,
-            selected: Boolean,
-            hasFocus: Boolean
+            list: JList<out String>, value: String?, index: Int, selected: Boolean, hasFocus: Boolean
         ) {
             text = value
-
             if (value != null) {
-                val model = ApplicationServices.userSettingsManager.getUserSettings().apis.find { api ->
-                    api.key.isNotBlank() && //ChatModel.values().entries.any { it.value.modelName ==  value && it.value.provider == api.provider }
-                       api.provider?.getChatModels()?.any { it.modelName == value } == true
-                }?.let { api ->
-                    //ChatModel.values().entries.find { it.value.modelName == value && it.value.provider == api.provider }?.value
-                    api.provider?.getChatModels()?.find { it.modelName == value }
-                }
+                val model = ApplicationServices.userSettingsManager.getUserSettings().apis.filter { it.key.isNotBlank() }
+                    .find { it.provider?.getChatModels()?.any { it.modelName == value } == true }
+                    ?.let { it.provider?.getChatModels()?.find { it.modelName == value } }
                 text = "${model?.provider?.name} - $value"
             }
         }
@@ -602,43 +667,51 @@ class AppSettingsComponent : Disposable {
 
     private fun getImageModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
         override fun customize(
-            list: JList<out String>,
-            value: String?,
-            index: Int,
-            selected: Boolean,
-            hasFocus: Boolean
+            list: JList<out String>, value: String?, index: Int, selected: Boolean, hasFocus: Boolean
         ) {
             text = value
 
         }
     }
+
     private fun getEmbeddingModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
         override fun customize(
-            list: JList<out String>,
-            value: String?,
-            index: Int,
-            selected: Boolean,
-            hasFocus: Boolean
+            list: JList<out String>, value: String?, index: Int, selected: Boolean, hasFocus: Boolean
         ) {
-            text = value
             if (value != null) {
                 val model = EmbeddingModel.values()[value]
                 text = "${model?.provider?.name} - $value"
+            } else {
+                text = "None"
             }
         }
     }
 
 
     fun getExecutables(): Set<String> {
-        val model =
-            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
-        return model?.elements()?.toList()?.toSet() ?: emptySet()
+        return try {
+            val model =
+                ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
+            model?.elements()?.toList()?.toSet() ?: emptySet()
+        } catch (e: Exception) {
+            log.error("Failed to get executables list: ${e.message}", e)
+            emptySet()
+        }
     }
 
     fun setExecutables(executables: Set<String>) {
-        val model =
-            ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
-        model?.clear()
-        executables.forEach { model?.addElement(it) }
+        try {
+            val model =
+                ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
+            model?.clear()
+            executables.forEach { model?.addElement(it) }
+            log.debug("Set ${executables.size} executables")
+        } catch (e: Exception) {
+            log.error("Failed to set executables: ${e.message}", e)
+        }
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(AppSettingsComponent::class.java)
     }
 }

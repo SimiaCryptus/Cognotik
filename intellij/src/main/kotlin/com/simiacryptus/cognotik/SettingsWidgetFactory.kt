@@ -62,10 +62,11 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
             val root = DefaultMutableTreeNode(title)
 
+            val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
             val providers = models()
                 .filter { model ->
                     val providerName = model.second.provider?.name
-                    ApplicationServices.userSettingsManager.getUserSettings().apis.any { api ->
+                    userSettings.apis.any { api ->
                         api.provider?.name == providerName && !api.key.isNullOrBlank()
                     }
                 }
@@ -107,13 +108,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
-                    val chatModel = //ChatModel.values().entries.find { it.value.modelName == modelName }?.value
-                        ApplicationServices.userSettingsManager.getUserSettings().apis.find { it.provider?.getChatModels()?.find { modelName == it.modelName } != null }
-                            ?.provider?.getChatModels()?.find { it.modelName == modelName }
-                    val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
-                    val apiData = userSettings.apis.find { it.provider == chatModel?.provider }
-
-                    
+                    val apis = userSettings.apis
+                    val apiData = apis.find { it.provider?.getChatModels()?.find { modelName == it.modelName } != null }
+                    val chatModel = apiData?.provider?.getChatModels()?.find { it.modelName == modelName }
                     when (title) {
                     "Smart Model" -> AppSettingsState.Companion.instance.smartModel = 
                         ApiChatModel(chatModel, apiData)
