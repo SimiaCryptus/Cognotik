@@ -2,14 +2,18 @@ package com.simiacryptus.cognotik.platform.file
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.hsql.HSQLMetadataStorage
+import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.*
 
 open class DataStorage(
     private val dataDir: File,
+    val metadataStorage: MetadataStorageInterface = ApplicationServices.fileApplicationServices(dataDir.parentFile).metadataStorageFactory
 ) : StorageInterface {
 
     init {
@@ -86,7 +90,7 @@ open class DataStorage(
         log.debug("Listing sessions for user: ${user?.email}")
         val globalSessions = listSessions(dataDir.resolve("global"), path)
         val userSessions =
-            if (user == null) listOf() else ApplicationServices.metadataStorageFactory(dataDir).listSessions(
+            if (user == null) listOf() else metadataStorage.listSessions(
                 path
             )
         log.debug("Found ${globalSessions.size} global sessions and ${userSessions.size} user sessions for user: ${user?.email}")
@@ -160,28 +164,30 @@ open class DataStorage(
         Session.validateSessionId(session)
         log.debug("Deleting session: ${session}, user: ${user?.email}")
         val sessionDir = getDataDir(user, session)
-        ApplicationServices.metadataStorageFactory(dataDir).deleteSession(user, session)
+        metadataStorage.deleteSession(user, session)
         sessionDir.deleteRecursively()
     }
 
     @Deprecated("Use metadataStorage instead")
 
     override fun listSessions(dir: File, path: String): List<String> =
-        ApplicationServices.metadataStorageFactory(dataDir).listSessions(path)
+        metadataStorage.listSessions(path)
 
     @Deprecated("Use metadataStorage instead")
 
     override fun getSessionName(
         user: User?,
         session: Session
-    ): String = ApplicationServices.metadataStorageFactory(dataDir).getSessionName(user, session)
+    ): String =
+        metadataStorage.getSessionName(user, session)
 
     @Deprecated("Use metadataStorage instead")
 
     override fun getMessageIds(
         user: User?,
         session: Session
-    ): List<String> = ApplicationServices.metadataStorageFactory(dataDir).getMessageIds(user, session)
+    ): List<String> =
+        metadataStorage.getMessageIds(user, session)
 
     @Deprecated("Use metadataStorage instead")
 
@@ -189,18 +195,18 @@ open class DataStorage(
         user: User?,
         session: Session,
         ids: List<String>
-    ) = ApplicationServices.metadataStorageFactory(dataDir).setMessageIds(user, session, ids)
+    ) = metadataStorage.setMessageIds(user, session, ids)
 
     @Deprecated("Use metadataStorage instead")
 
     override fun getSessionTime(
         user: User?,
         session: Session
-    ): Date? = ApplicationServices.metadataStorageFactory(dataDir).getSessionTime(user, session)
+    ): Date? = metadataStorage.getSessionTime(user, session)
 
     companion object {
 
-        val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(DataStorage::class.java)
+        val log = LoggerFactory.getLogger(DataStorage::class.java)
         val sessionPaths = mutableMapOf<Session, File>()
 
     }

@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -46,12 +46,14 @@ class BasicChatApp(
         val settings = this.settings ?: getSettings(session, user)!!
         fun instance(model: ChatModel): Chatter? {
             val api = model.getApi(user)
+            val threadPoolManager = ApplicationServices.threadPoolManager
             return api?.let { apiData ->
                 model.instance(
                     key = apiData.key,
                     base = apiData.baseUrl,
+                    workPool = threadPoolManager.getPool(session, user),
                     temperature = settings.temperature,
-                    workPool = ApplicationServices.clientManager.getPool(session, user),
+                    scheduledPool = threadPoolManager.getScheduledPool(session, user),
                 )
             }
         }
@@ -64,7 +66,7 @@ class BasicChatApp(
             systemPrompt = "",
             temperature = settings.temperature,
             applicationClass = this::class.java,
-            storage = DataStorage(root),
+            storage = dataStorage,
             fastTopicParsing = true,
             budget = settings.budget,
         )

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.chat
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
@@ -17,6 +18,7 @@ class GoogleChatClient(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream>,
+    scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
     APIProvider.Google,
     apiKey = apiKey,
@@ -24,6 +26,7 @@ class GoogleChatClient(
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams,
+    scheduledPool = scheduledPool
 ) {
     override fun authorize(
         request: HttpRequest,

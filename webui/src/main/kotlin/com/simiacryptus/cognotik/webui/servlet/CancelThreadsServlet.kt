@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.platform.ApplicationServices.clientManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
@@ -68,7 +68,7 @@ class CancelThreadsServlet : HttpServlet() {
                 )
                 { "User $user is not authorized to cancel global sessions" }
             }
-            val pool = clientManager.getPool(session, user)
+            val pool = threadPoolManager.getPool(session, user)
             pool.shutdownNow()
             resp.sendRedirect("/")
         }

@@ -220,7 +220,7 @@ class ApiKeyServlet : HttpServlet() {
     private fun serveEditPage(req: HttpServletRequest, resp: HttpServletResponse, record: ApiKeyRecord) {
         val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
         val usageSummary: Map<String, ApiModel.Usage> =
-            ApplicationServices.usageManager.getUserUsageSummary(user = userinfo!!)
+            ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user = userinfo!!)
 
         resp.writer.write(
             """

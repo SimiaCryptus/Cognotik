@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.chat
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
@@ -12,12 +13,14 @@ import java.util.concurrent.ExecutorService
 class OpenAIChatClient(
     apiKey: String,
     apiBase: String,
-    workPool: ExecutorService
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
     APIProvider.OpenAI,
     apiKey = apiKey,
     apiBase = apiBase,
-    workPool = workPool
+    workPool = workPool,
+    scheduledPool = scheduledPool
 ) {
     override fun authorize(
         request: HttpRequest,

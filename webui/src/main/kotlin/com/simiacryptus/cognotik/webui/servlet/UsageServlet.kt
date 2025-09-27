@@ -13,15 +13,16 @@ class UsageServlet : HttpServlet() {
         resp.contentType = "text/html"
         resp.status = HttpServletResponse.SC_OK
 
+        val usageManager = ApplicationServices.fileApplicationServices().usageManager
         if (req.parameterMap.containsKey("sessionId")) {
             val session = Session(req.getParameter("sessionId"))
-            serve(resp, ApplicationServices.usageManager.getSessionUsageSummary(session))
+            serve(resp, usageManager.getSessionUsageSummary(session))
         } else {
             val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
             if (null == userinfo) {
                 resp.status = HttpServletResponse.SC_BAD_REQUEST
             } else {
-                val usage = ApplicationServices.usageManager.getUserUsageSummary(userinfo)
+                val usage = usageManager.getUserUsageSummary(userinfo)
                 serve(resp, usage)
             }
         }

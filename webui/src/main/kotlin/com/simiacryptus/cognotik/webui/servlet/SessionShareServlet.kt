@@ -81,9 +81,9 @@ class SessionShareServlet(
 
         require(acceptHost(user, host)) { "Invalid url: $url" }
 
-        val storageInterface = ApplicationServices.dataStorageFactory(dataStorageRoot)
+        val storageInterface = ApplicationServices.fileApplicationServices(dataStorageRoot).dataStorageFactory
         val session = Session.parseSessionID(sessionID)
-        val pool = ApplicationServices.clientManager.getPool(session, user)
+        val pool = ApplicationServices.threadPoolManager.getPool(session, user)
         val infoFile = storageInterface.getDataDir(user, session).resolve("info.json").apply { parentFile.mkdirs() }
         val json = if (infoFile.exists()) JsonUtil.fromJson<Map<String, Any>>(
             infoFile.readText(),

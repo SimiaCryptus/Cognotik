@@ -502,7 +502,7 @@ class AppSettingsComponent : Disposable {
     }
 
     @Name("Editor Actions")
-    var usage = UsageTable(ApplicationServices.usageManager)
+    var usage = UsageTable(ApplicationServices.fileApplicationServices().usageManager)
 
     init {
         log.debug("Initializing AppSettingsComponent")

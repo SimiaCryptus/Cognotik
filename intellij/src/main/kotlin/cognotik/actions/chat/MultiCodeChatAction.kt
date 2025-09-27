@@ -116,7 +116,7 @@ class MultiCodeChatAction : BaseAction() {
         parsingModel = parsingModel,
         systemPrompt = "",
         applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
+        storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
         budget = 2.0,
     ) {
 

@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.chat.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
@@ -17,6 +18,7 @@ open class Chatter(
     val provider: APIProvider,
     val modelType: ChatModel,
     val workPool: ExecutorService,
+    val scheduledPool: ListeningScheduledExecutorService,
 ) {
     init {
         require(key.isNotBlank()) { "API key must be provided" }
@@ -31,7 +33,8 @@ open class Chatter(
         base = base,
         workPool = workPool,
         logLevel = logLevel,
-        logStreams = streams
+        logStreams = streams,
+        scheduledPool = scheduledPool,
     ).chat(
         chatRequest = ApiModel.ChatRequest(
             model = modelType.modelName,
@@ -63,5 +66,6 @@ open class Chatter(
         provider = parent.provider,
         modelType = parent.modelType,
         workPool = parent.workPool,
+        scheduledPool = parent.scheduledPool,
     )
 }

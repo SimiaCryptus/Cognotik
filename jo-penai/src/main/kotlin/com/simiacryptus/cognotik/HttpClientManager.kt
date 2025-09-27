@@ -29,6 +29,7 @@ open class HttpClientManager(
     val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
+    val scheduledPool: ListeningScheduledExecutorService,
 ) {
     @Suppress("unused")
     val createdBy = Thread.currentThread().stackTrace
@@ -36,13 +37,13 @@ open class HttpClientManager(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpClientManager::class.java)
 
-        val scheduledPool: ListeningScheduledExecutorService =
-            MoreExecutors.listeningDecorator(
-                ScheduledThreadPoolExecutor(
-                    0,
-                    ThreadFactoryBuilder().setNameFormat("API Scheduler %d").build()
-                )
-            )
+//        val scheduledPool: ListeningScheduledExecutorService =
+//            MoreExecutors.listeningDecorator(
+//                ScheduledThreadPoolExecutor(
+//                    0,
+//                    ThreadFactoryBuilder().setNameFormat("API Scheduler %d").build()
+//                )
+//            )
 
         private const val DEFAULT_USER_AGENT = "Cognotik/1.0"
         val client by lazy { createHttpClient(DEFAULT_USER_AGENT) }

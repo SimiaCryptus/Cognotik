@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.platform.ApplicationServices.clientManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.RecordingThreadFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
@@ -16,7 +16,7 @@ class SessionThreadsServlet : HttpServlet() {
         if (req.parameterMap.containsKey("sessionId")) {
             val session = Session(req.getParameter("sessionId"))
             val user = authenticationManager.getUser(req.getCookie())
-            val pool = clientManager.getPool(session, user)
+            val pool = threadPoolManager.getPool(session, user)
 
 
             resp.writer.write(

@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
-import com.simiacryptus.cognotik.platform.ApplicationServices.dataStorageFactory
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -42,7 +42,9 @@ abstract class ApplicationServer(
         )
     }.toMap()
 
-    final override val dataStorage: StorageInterface by lazy { dataStorageFactory(dataStorageRoot) }
+    final override val dataStorage: StorageInterface by lazy {
+        ApplicationServices.fileApplicationServices(dataStorageRoot).dataStorageFactory
+    }
 
     protected open val appInfoServlet by lazy {
         ServletHolder("appInfo", AppInfoServlet { session ->

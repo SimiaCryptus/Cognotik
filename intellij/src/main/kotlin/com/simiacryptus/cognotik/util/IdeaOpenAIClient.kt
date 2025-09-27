@@ -14,6 +14,10 @@ class IdeaOpenAIClient : OpenAIClient(
     key = emptyMap(),
     apiBase = emptyMap(),
     workPool = Executors.newCachedThreadPool(),
+    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+        AppSettingsState.currentSession,
+        UserSettingsManager.defaultUser
+    ),
 ) {
 
     init {
@@ -25,7 +29,7 @@ class IdeaOpenAIClient : OpenAIClient(
 
     override fun onUsage(model: AIModel?, tokens: ApiModel.Usage) {
 
-        ApplicationServices.usageManager.incrementUsage(
+        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
             AppSettingsState.currentSession,
             UserSettingsManager.defaultUser, model!!, tokens
         )

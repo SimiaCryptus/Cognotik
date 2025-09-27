@@ -37,7 +37,7 @@ class SessionProxyServer : ApplicationServer(
         ?: throw IllegalStateException("No agent found for session $session")
 
     companion object {
-        val metadataStorage by lazy { ApplicationServices.metadataStorageFactory(dataStorageRoot.resolve("metadatadb")) }
+        val metadataStorage by lazy { ApplicationServices.fileApplicationServices(dataStorageRoot.resolve("metadatadb")).metadataStorageFactory }
         val agents = mutableMapOf<Session, SocketManager>()
         val chats = mutableMapOf<Session, ChatServer>()
         val appInfos = mutableMapOf<Session, AppInfoData>()

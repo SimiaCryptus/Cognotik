@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.chat
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
@@ -16,7 +17,8 @@ class AnthropicChatClient(
     workPool: ExecutorService,
     apiBase: String,
     logLevel: Level,
-    logStreams: MutableList<BufferedOutputStream>
+    logStreams: MutableList<BufferedOutputStream>,
+    scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
     APIProvider.Anthropic,
     apiKey = apiKey,
@@ -24,6 +26,7 @@ class AnthropicChatClient(
     workPool = workPool,
     logLevel = logLevel,
     logStreams = logStreams,
+    scheduledPool = scheduledPool
 ) {
     override fun authorize(
         request: HttpRequest,

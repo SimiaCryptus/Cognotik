@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.embedding
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
@@ -32,18 +33,21 @@ abstract class SingleProviderEmbeddingClient(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : EmbeddingClientBase(
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 )
 
 abstract class EmbeddingClientBase(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(
-    logLevel = logLevel, logStreams = logStreams, workPool = workPool
+    logLevel = logLevel, logStreams = logStreams, workPool = workPool, scheduledPool = scheduledPool
 ), EmbeddingClientInterface {
 
     var session: Any? = null
@@ -135,6 +139,8 @@ abstract class EmbeddingClientBase(
     inner class ChildClient() : EmbeddingClientBase(
         logLevel = Level.INFO,
         workPool = workPool,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
     ) {
         init {
             session = this@EmbeddingClientBase.session

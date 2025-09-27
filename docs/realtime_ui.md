@@ -19,7 +19,7 @@ user interactions, and session management.
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  BasicChatApp   │    │SocketManagerBase │    │SessionTaskImpl  │
+│  BasicChatApp   │    │SocketManager │    │SessionTaskImpl  │
 │  (Concrete)     │    │   (Abstract)     │    │   (Concrete)    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                       │
@@ -62,7 +62,7 @@ Defines the contract for managing WebSocket connections and message handling.
 
 ```
 
-### 3. SocketManagerBase (Abstract Implementation)
+### 3. SocketManager (Abstract Implementation)
 
 Provides core functionality for socket management with message queuing and processing.
 
@@ -204,7 +204,7 @@ WebSocket Message → ChatSocket.onWebSocketText() → SocketManager.onWebSocket
 ### 2. Server to Client
 
 ```
-SessionTask.add() → SocketManagerBase.send() → Message Queuing → WebSocket Delivery
+SessionTask.add() → SocketManager.send() → Message Queuing → WebSocket Delivery
 ```
 
 ### 3. Message Processing Pipeline

@@ -159,18 +159,6 @@ val messageIds = metadataStorage.getMessageIds(user, session)
 
 ## Authentication & Authorization
 
-### Authentication Interface
-
-```kotlin
-
-```
-
-### Authorization Interface
-
-```kotlin
-
-```
-
 ### File-based Authorization
 
 The `AuthorizationManager` uses resource files for permission management:
@@ -192,12 +180,6 @@ user@example.com          # Specific user
 
 ## User Settings Management
 
-### User Settings Interface
-
-```kotlin
-
-```
-
 ### Usage Example
 
 ```kotlin
@@ -212,12 +194,6 @@ ApplicationServices.userSettingsManager.updateUserSettings(user, updatedSettings
 ```
 
 ## Usage Tracking
-
-### Usage Interface
-
-```kotlin
-
-```
 
 ### HSQL Usage Manager
 
@@ -261,14 +237,6 @@ class CustomClientManager : ClientManager() {
 
 // Use custom client manager
 ApplicationServices.clientManager = CustomClientManager()
-```
-
-## Cloud Platform Integration
-
-### Cloud Platform Interface
-
-```kotlin
-
 ```
 
 ### AWS Platform Implementation
@@ -361,27 +329,3 @@ sessionDir.resolve("data.json").outputStream().use { output ->
 - Cache frequently accessed data
 - Use appropriate thread pools for concurrent operations
 - Monitor usage patterns and optimize accordingly
-
-## Testing
-
-### Unit Testing Example
-
-```kotlin
-
-```
-
-## Migration Guide
-
-### Upgrading from Legacy Sessions
-
-```kotlin
-// Handle legacy session IDs
-
-```
-
-### Database Migration
-
-```kotlin
-// Migrate from file-based to database storage
-
-```

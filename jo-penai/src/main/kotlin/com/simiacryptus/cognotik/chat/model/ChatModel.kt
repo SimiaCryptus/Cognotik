@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel.Usage
@@ -46,6 +47,7 @@ open class ChatModel(
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
         workPool: ExecutorService,
         temperature: Double = 0.1,
+        scheduledPool: ListeningScheduledExecutorService,
     ) : Chatter = Chatter(
         logStreams = logStreams,
         key = key,
@@ -55,6 +57,7 @@ open class ChatModel(
         provider = provider!!,
         modelType = this,
         workPool = workPool,
+        scheduledPool = scheduledPool
     )
 
     companion object {

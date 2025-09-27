@@ -245,7 +245,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 label.text = if (value != null) {
                     try {
                         val sessionName =
-                            ApplicationServices.metadataStorageFactory(ApplicationServicesConfig.dataStorageRoot).getSessionName(null, value)
+                            ApplicationServices.fileApplicationServices().metadataStorageFactory.getSessionName(
+                                null,
+                                value
+                            )
                         when {
                             sessionName.isNullOrBlank() -> getDefaultSessionLabel(value)
                             else -> "$sessionName (${value.sessionId.take(8)})"
@@ -384,7 +387,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
 
             val usagePanel = JPanel(BorderLayout())
-            usagePanel.add(UsageTable(ApplicationServices.usageManager), BorderLayout.CENTER)
+            usagePanel.add(UsageTable(ApplicationServices.fileApplicationServices().usageManager), BorderLayout.CENTER)
 
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)

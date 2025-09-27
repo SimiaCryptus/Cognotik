@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.PlanCoordinator
 import com.simiacryptus.cognotik.plan.PlanSettings
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode.Tasks
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -97,6 +98,10 @@ open class GoalOrientedMode(
             goalTreeTask.update()
         }
         // Create debounced wrapper for UI updates
+        val scheduledExecutorService = ApplicationServices.threadPoolManager.getScheduledPool(
+            session = session,
+            user = user
+        )
         debouncedUpdateGoalTreeUI =
             createDebouncedUpdate(scheduledExecutorService, updateGoalTreeUI, 500) // 500ms debounce
         periodicUpdateFuture = scheduledExecutorService.scheduleWithFixedDelay({
@@ -1054,6 +1059,5 @@ open class GoalOrientedMode(
         ) = GoalOrientedMode(ui, planSettings, session, user, describer)
 
         private val log = LoggerFactory.getLogger(GoalOrientedMode::class.java)
-        val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
     }
 }

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.chat
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel.Usage
@@ -25,18 +26,21 @@ abstract class SingleProviderChatClient(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : ChatClientBase(
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 )
 
 abstract class ChatClientBase(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(
-    logLevel = logLevel, logStreams = logStreams, workPool = workPool
+    logLevel = logLevel, logStreams = logStreams, workPool = workPool, scheduledPool = scheduledPool
 ), ChatClientInterface {
 
     var session: Any? = null

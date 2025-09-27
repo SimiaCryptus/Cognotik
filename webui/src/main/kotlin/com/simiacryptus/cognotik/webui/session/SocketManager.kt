@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.clientManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
@@ -40,8 +40,8 @@ abstract class SocketManager(
     private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
     private val queueProcessing: MutableSet<ChatSocket> = ConcurrentHashMap.newKeySet()
     private val messageVersions = ConcurrentHashMap<String, AtomicInteger>()
-    val pool get() = clientManager.getPool(sessionId, owner)
-    val scheduledThreadPoolExecutor get() = clientManager.getScheduledPool(sessionId, owner, dataStorage)
+    val pool get() = threadPoolManager.getPool(sessionId, owner)
+    val scheduledThreadPoolExecutor get() = threadPoolManager.getScheduledPool(sessionId, owner)
 
     fun removeSocket(socket: ChatSocket) {
         log.debug("Removing socket: {} (id: {})", socket, System.identityHashCode(socket))

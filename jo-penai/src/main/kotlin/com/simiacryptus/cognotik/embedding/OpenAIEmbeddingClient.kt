@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.embedding
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
@@ -15,14 +17,16 @@ class OpenAIEmbeddingClient(
     apiBase: String = "https://api.openai.com/v1",
     workPool: ExecutorService = Executors.newCachedThreadPool(),
     logLevel: Level = Level.INFO,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
 ) : SingleProviderEmbeddingClient(
     provider = APIProvider.valueOf("OpenAI"),
     apiKey = apiKey,
     apiBase = apiBase,
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 ) {
 
     override fun authorize(

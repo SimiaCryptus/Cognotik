@@ -6,17 +6,22 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
+import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.Timestamp
 
-class HSQLUsageManager() : UsageInterface {
+class HSQLUsageManager(root: File? = null) : UsageInterface {
 
     private val connection: Connection by lazy {
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
-        val connection =
-            DriverManager.getConnection("jdbc:hsqldb:mem:usage", "SA", "")
+        val url = if (null == root) {
+            "jdbc:hsqldb:mem:usage"
+        } else {
+            "jdbc:hsqldb:file:${root.absolutePath};shutdown=true;hsqldb.lock_file=false"
+        }
+        val connection = DriverManager.getConnection(url, "SA", "")
         log.debug("Database connection established: $connection")
         createSchema(connection)
         connection

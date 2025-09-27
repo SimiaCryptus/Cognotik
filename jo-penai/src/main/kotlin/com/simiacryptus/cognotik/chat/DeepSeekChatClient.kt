@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.chat
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
@@ -15,14 +16,16 @@ class DeepSeekChatClient(
     workPool: ExecutorService,
     apiBase: String = "https://api.deepseek.com",
     logLevel: Level = Level.INFO,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+            scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
     APIProvider.DeepSeek,
     apiKey = apiKey,
     apiBase = apiBase,
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 ) {
     override fun authorize(
         request: HttpRequest,

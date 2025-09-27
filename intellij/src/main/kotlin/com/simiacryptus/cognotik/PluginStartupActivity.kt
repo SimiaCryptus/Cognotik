@@ -97,9 +97,9 @@ class PluginStartupActivity : ProjectActivity {
                     log.error("Welcome page resource not found: $welcomeFile")
                     return
                 }
-                var virtualFile = resource?.let { VirtualFileManager.getInstance().findFileByUrl(it.toString()) }
+                var virtualFile = resource.let { VirtualFileManager.getInstance().findFileByUrl(it.toString()) }
                 if (virtualFile == null) try {
-                    val path = resource?.toURI()?.let { java.nio.file.Paths.get(it) }
+                    val path = resource.toURI()?.let { java.nio.file.Paths.get(it) }
                     virtualFile = path?.let { VirtualFileManager.getInstance().findFileByNioPath(it) }
                 } catch (e: Exception) {
                     log.debug("Error opening welcome page", e)
@@ -115,11 +115,7 @@ class PluginStartupActivity : ProjectActivity {
                                 )
                             }
                         tempFile.deleteOnExit()
-                        resource?.openStream()?.use { input ->
-                            if (input == null) {
-                                log.error("Failed to open input stream for welcome page resource")
-                                return
-                            }
+                        resource.openStream()?.use { input ->
                             tempFile.outputStream().use { output -> input.copyTo(output) }
                         }
                         virtualFile = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(tempFile.toPath())

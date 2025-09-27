@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -37,14 +36,14 @@ class GenericChatAction : BaseAction() {
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                val pool = ApplicationServices.clientManager.getPool(session, null)
+                val pool = ApplicationServices.threadPoolManager.getPool(session, null)
                 SessionProxyServer.agents[session] = ChatSocketManager(
                     session = session,
                     model = AppSettingsState.instance.smartChatClient,
                     parsingModel = AppSettingsState.instance.fastChatClient,
                     systemPrompt = systemPrompt,
                     applicationClass = ApplicationServer::class.java,
-                    storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
+                    storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
                     budget = 2.0
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(

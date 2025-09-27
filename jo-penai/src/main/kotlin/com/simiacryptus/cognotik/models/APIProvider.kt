@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.models
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.*
 import com.simiacryptus.cognotik.chat.model.*
 import com.simiacryptus.cognotik.util.DynamicEnum
@@ -24,7 +25,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         base: String,
         workPool: ExecutorService,
         logLevel: Level = Level.INFO,
-        logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+        scheduledPool: ListeningScheduledExecutorService
     ): ChatClientInterface
 
     abstract fun getChatModels(): List<ChatModel>
@@ -39,7 +41,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
         }
 
@@ -52,13 +55,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = GoogleChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
@@ -70,7 +75,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = throw UnsupportedOperationException("Ollama API does not support chat functionality")
         }
         val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
@@ -82,13 +88,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = GoogleChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
@@ -100,13 +108,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = AnthropicChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
@@ -118,13 +128,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = AwsChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
@@ -136,13 +148,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = GroqChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
@@ -154,11 +168,13 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = OpenAIChatClient(
                 apiKey = key,
                 apiBase = base,
-                workPool = workPool
+                workPool = workPool,
+                scheduledPool = scheduledPool
             )
         }
         val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
@@ -170,13 +186,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = ModelsLabChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
@@ -188,13 +206,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = MistralChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
@@ -206,13 +226,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = DeepSeekChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val GoogleSearch: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
@@ -224,13 +246,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = GoogleChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
                 logLevel = logLevel,
-                logStreams = logStreams
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
             )
         }
         val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
@@ -242,7 +266,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 base: String,
                 workPool: ExecutorService,
                 logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
             ) = throw UnsupportedOperationException("Github API does not support chat functionality")
         }
 

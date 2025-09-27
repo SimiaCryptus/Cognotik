@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -429,7 +430,7 @@ fun String?.urlEncode(): String {
 fun ApiChatModel.instance(
     user: User = defaultUser,
     session: Session = globalID,
-    service: ExecutorService = ApplicationServices.clientManager.getPool(session, user),
+    service: ExecutorService = ApplicationServices.threadPoolManager.getPool(session, user),
     temperature: Double = 0.1
 ) = model?.instance(
     key = when(provider?.key){
@@ -443,10 +444,9 @@ fun ApiChatModel.instance(
     },
     base = provider?.provider?.base ?: model?.provider?.base
     ?: throw IllegalStateException("No API base configured for model $model"),
-    logLevel = Level.INFO,
-    logStreams = mutableListOf(),
+    workPool = service,
     temperature = temperature,
-    workPool = service
+    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
 )
 
 private fun ChatModel.toApiChatModel(

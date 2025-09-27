@@ -26,10 +26,6 @@ val FileModificationTask = TaskType(
     "Create new files or modify existing code with AI-powered assistance",
     tooltipHtml = "..."
 )
-
-)
-
-
 ```
 
 ### Type Safety and Registration
@@ -37,7 +33,15 @@ val FileModificationTask = TaskType(
 Task Types use compile-time type safety through generics:
 
 ```kotlin
-
+class FileModificationTask(
+    taskSettings: TaskSettingsBase,
+    task: Task
+) : AbstractTask<FileModificationTaskConfigData>(taskSettings, task) {
+    override fun run(...) {
+        val config = taskConfig ?: return handleError("Configuration required")
+        // Task logic...
+    }
+}
 ```
 
 Tasks are registered with factory functions:
@@ -55,9 +59,13 @@ registerConstructor(FileModificationTask) { settings, task ->
 Create a data class extending `TaskConfigBase`:
 
 ```kotlin
-
-
-
+data class MyCustomTaskConfigData(
+    @Description("A descriptive field")
+    val exampleField: String = "defaultValue",
+    
+    @Description("An optional numeric parameter")
+    val optionalNumber: Int? = null
+) : TaskConfigBase()
 ```
 
 ### Step 2: Create Settings Class (Optional)
@@ -65,25 +73,20 @@ Create a data class extending `TaskConfigBase`:
 For tasks requiring global configuration:
 
 ```kotlin
-
+data class MyCustomTaskSettings(
+    override val task_type: String = "MyCustomTask",
+    override val enabled: Boolean = true,
+    val customSetting: String = "default"
+) : TaskSettingsBase()
 ```
 
 ### Step 3: Implement Task Class
 
-```kotlin
-
-```
-
 ### Step 4: Register Task Type
 
 ```kotlin
-companion object {
-
-    init {
-        registerConstructor(MyCustomTask) { settings, task ->
-            MyCustomTask(settings, task)
-        }
-    }
+registerConstructor(MyCustomTask) { settings, task ->
+    MyCustomTask(settings as MyCustomTaskSettings, task)
 }
 ```
 
@@ -96,11 +99,6 @@ Tasks that read, modify, or create files:
 - **FileModificationTask**: Create/modify source files
 - **FileSearchTask**: Search files with patterns
 - **InsightTask**: Analyze files and provide insights
-
-```kotlin
-// Example: File-based task with input validation
-
-```
 
 ### Planning and Coordination
 
@@ -132,11 +130,6 @@ Tasks that interact with external systems:
 - **GitHubSearchTask**: Search GitHub repositories
 - **SeleniumSessionTask**: Browser automation
 
-```kotlin
-// Example: External API integration
-
-```
-
 ### Code Execution
 
 Tasks that execute code or commands:
@@ -144,11 +137,6 @@ Tasks that execute code or commands:
 - **RunCodeTask**: Execute code snippets
 - **RunShellCommandTask**: Execute shell commands
 - **CommandAutoFixTask**: Run commands with auto-fixing
-
-```kotlin
-// Example: Safe code execution pattern
-
-```
 
 ## Best Practices
 
@@ -236,27 +224,6 @@ override fun run(...) {
 }
 ```
 
-2. **Use connection pooling for HTTP clients**:
-
-```kotlin
-companion object {
-    }
-```
-
-### Output Formatting
-
-1. **Use consistent markdown formatting**:
-
-```kotlin
-
-```
-
-2. **Limit output size for large results**:
-
-```kotlin
-
-```
-
 ## Advanced Patterns
 
 ### Actor Integration
@@ -303,50 +270,12 @@ private val parsedActor by lazy {
 }
 ```
 
-### Concurrent Processing
-
-For tasks that can benefit from parallelism:
-
-```kotlin
-
-```
-
-### Session Management
-
-For tasks that maintain state across operations:
-
-```kotlin
-companion object {
-    }
-
-
-```
-
-## Testing Task Types
-
-### Unit Testing
-
-```kotlin
-
-```
-
-### Integration Testing
-
-```kotlin
-
-```
-
 ## Migration and Versioning
 
 When updating existing task types:
 
 1. **Maintain backward compatibility** in configuration classes
-2. **Add new fields with defaults**:
-
-```kotlin
-
-```
-
+2. **Add new fields with defaults**
 3. **Handle legacy configurations**:
 
 ```kotlin
@@ -369,9 +298,6 @@ override fun run(...) {
 ### Logging
 
 ```kotlin
-companion object {
-}
-
 override fun run(...) {
     log.info("Starting MyCustomTask with config: ${taskConfig?.toJson()}")
 
@@ -383,10 +309,4 @@ override fun run(...) {
         throw e
     }
 }
-```
-
-### Performance Monitoring
-
-```kotlin
-
 ```

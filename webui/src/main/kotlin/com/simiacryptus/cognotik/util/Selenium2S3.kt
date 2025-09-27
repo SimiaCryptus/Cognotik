@@ -346,7 +346,7 @@ open class Selenium2S3(
         Jsoup.parse(html).select("link[href]").map { it.attr("href") }.toSet(),
         Jsoup.parse(html).select("script[src]").map { it.attr("src") }.toSet(),
         Jsoup.parse(html).select("source[src]").map { it.attr("src") }.toSet(),
-    ).flatten().filterNotNull()
+    ).flatten()
 
     protected open fun toAbsolute(base: String, vararg links: String) = links
         .map { it.split("#").first() }.filter { it.isNotBlank() }.distinct()

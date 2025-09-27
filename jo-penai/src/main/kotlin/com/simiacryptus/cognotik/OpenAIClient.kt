@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.cognotik.audio.AudioModels
@@ -36,11 +37,13 @@ open class OpenAIClient(
     protected val apiBase: Map<APIProvider, String>,
     logLevel: Level = Level.TRACE,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    workPool: ExecutorService
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(
     logLevel = logLevel,
     logStreams = logStreams,
-    workPool = workPool
+    workPool = workPool,
+    scheduledPool = scheduledPool
 ) {
     private val log: Logger = LoggerFactory.getLogger(OpenAIClient::class.java).apply {
         info("OpenAIClient initialized with log level: $logLevel")

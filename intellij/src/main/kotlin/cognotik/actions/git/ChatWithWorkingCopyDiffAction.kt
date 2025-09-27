@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -42,7 +41,7 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
         val session = Session.newGlobalID()
-        val pool = ApplicationServices.clientManager.getPool(session, null)
+        val pool = ApplicationServices.threadPoolManager.getPool(session, null)
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = "diff",
@@ -50,7 +49,7 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
             filename = "working_copy_changes.diff",
             model = AppSettingsState.instance.smartChatClient,
             parsingModel = AppSettingsState.instance.fastChatClient,
-            storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
+            storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",

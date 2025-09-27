@@ -41,7 +41,7 @@ class PlanCoordinator(
         }
     }
 
-    val pool: ExecutorService by lazy { ApplicationServices.clientManager.getPool(session, user) }
+    val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
 
     val files: Array<File> by lazy {
         FileSelectionUtils.expandFileList(root.toFile())

@@ -352,7 +352,7 @@ data class AppSettingsState(
         }
 
         val currentSession = Session.Companion.newGlobalID()
-        val workPool = ApplicationServices.clientManager.getPool(currentSession, UserSettingsManager.defaultUser)
+        val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser)
     }
 
     data class UserSuppliedModel(
@@ -379,8 +379,10 @@ fun ApiChatModel.instance(): Chatter? = model?.instance(
     key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
     base = provider?.provider?.base
         ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
-    logLevel = Level.INFO,
-    logStreams = mutableListOf(),
+    workPool = AppSettingsState.workPool,
     temperature = AppSettingsState.instance.temperature,
-    workPool = AppSettingsState.workPool
+    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+        AppSettingsState.currentSession,
+        UserSettingsManager.defaultUser
+    ),
 )

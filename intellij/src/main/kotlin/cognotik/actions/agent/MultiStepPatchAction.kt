@@ -20,7 +20,6 @@ import com.simiacryptus.cognotik.models.ApiModel.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -51,10 +50,8 @@ class MultiStepPatchAction : BaseAction() {
             progress.isIndeterminate = true
             try {
                 val session = Session.newGlobalID()
-                val storage =
-                    ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot) as DataStorage?
                 val selectedFile = e.getSelectedFolder()
-                if (null != storage && null != selectedFile) {
+                if (null != selectedFile) {
                     DataStorage.sessionPaths[session] = selectedFile.toFile
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
@@ -219,7 +216,7 @@ class MultiStepPatchAction : BaseAction() {
                     }
                     description = renderMarkdown(description, ui = task.manager, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
-                    ApplicationServices.clientManager.getPool(session, user).submit {
+                    ApplicationServices.threadPoolManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)
                         Retryable(task) {
                             try {

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.models.ApiModel
@@ -53,7 +54,8 @@ object PresentationAudioInjector {
         val mp3Bytes = OpenAIClient(
             workPool = Executors.newCachedThreadPool(),
             key = emptyMap(),
-            apiBase = emptyMap()
+            apiBase = emptyMap(),
+            scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
         ).createSpeech(
             ApiModel.SpeechRequest(
                 input = text,

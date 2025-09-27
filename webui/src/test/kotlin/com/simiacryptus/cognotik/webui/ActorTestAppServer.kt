@@ -47,7 +47,8 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             logLevel = TODO(),
             logStreams = TODO(),
             workPool = TODO(),
-            temperature = TODO()
+            temperature = TODO(),
+            scheduledPool = TODO(),
         )
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),
@@ -76,6 +77,10 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     workPool = Executors.newCachedThreadPool(),
                     key = emptyMap(),
                     apiBase = emptyMap(),
+                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+                        session = TODO(),
+                        user = TODO()
+                    ),
                 )
             })),
 
