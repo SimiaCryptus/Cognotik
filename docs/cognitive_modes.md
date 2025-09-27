@@ -144,7 +144,7 @@ Hierarchical goal decomposition with dependency management.
 Configuration object that controls planning behavior:
 
 ```kotlin
-,
+data class PlanSettings(
 var autoFix: Boolean = false,
 val env: Map<String, String>? = mapOf(),
 val workingDir: String? = ".",
@@ -218,7 +218,7 @@ Real-time progress tracking with visual updates:
 2. **Register the Mode**:
 
 ```kotlin
-companion object : CognitiveModeStrategy {
+object : CognitiveModeStrategy {
     override val inputCnt = 1
     override fun getCognitiveMode(
         ui: ApplicationInterface,

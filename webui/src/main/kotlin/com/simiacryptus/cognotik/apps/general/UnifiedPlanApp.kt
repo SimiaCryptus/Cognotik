@@ -126,10 +126,11 @@ abstract class UnifiedPlanApp(
 
             val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
                 // Per-type custom initialization
-                user?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }?.apply {
-                    (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
-                        ?.commandAutoFixCommands?.addAll(this.localTools)
-                }
+                user?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
+                    ?.apply {
+                        (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
+                            ?.commandAutoFixCommands?.addAll(this.localTools)
+                    }
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
                     planSettings = settings,

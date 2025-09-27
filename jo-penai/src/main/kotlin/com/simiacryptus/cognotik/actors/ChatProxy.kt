@@ -124,7 +124,6 @@ open class ChatProxy<T : Any>(
 
     val examples = HashMap<String, MutableList<RequestResponse>>()
 
-    @Suppress("unused")
     fun <R : Any> addExample(returnValue: R, functionCall: (T) -> Unit) {
         functionCall(
             Proxy.newProxyInstance(

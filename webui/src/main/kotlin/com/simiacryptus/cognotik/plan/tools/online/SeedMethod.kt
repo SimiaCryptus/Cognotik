@@ -24,10 +24,11 @@ interface SeedStrategy : EnabledStrategy {
         planSettings: PlanSettings
     ): List<Map<String, Any>>?
 }
+
 interface SeedMethodFactory {
     fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy
 }
-@Suppress("unused")
+
 enum class SeedMethod : SeedMethodFactory {
     GoogleSearch {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
@@ -49,7 +50,9 @@ enum class SeedMethod : SeedMethodFactory {
                 val resultCount = min(10, 20) // Ensure we don't exceed API limits
                 val searchLimit = 15 // Reduced from 20 to be more conservative
                 log.debug("Fetching user settings for Google Search API")
-                val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user ?: defaultUser)
+                val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
+                    user ?: defaultUser
+                )
                 val key = userSettings
                     .apis.firstOrNull { it.provider == APIProvider.GoogleSearch }?.key?.trim()
                     ?: throw IllegalStateException("Google API token is required but not configured")
@@ -122,7 +125,8 @@ enum class SeedMethod : SeedMethodFactory {
 
             override fun isEnabled(): Boolean {
                 return user?.let {
-                    val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
+                    val userSettings =
+                        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
                     userSettings.apis.any { api -> api.provider == APIProvider.GoogleSearch && api.key?.isNotBlank() == true } &&
                             userSettings.apiBase[APIProvider.GoogleSearch]?.isNotBlank() == true
                 } ?: false
@@ -130,25 +134,32 @@ enum class SeedMethod : SeedMethodFactory {
         }
     },
     SearchIO_Google_Search {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google").createStrategy(task, user)
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google").createStrategy(task, user)
     },
     SearchIO_Google_Maps {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_maps").createStrategy(task, user)
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google_maps").createStrategy(task, user)
     },
     SearchIO_Google_Trends {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_trends").createStrategy(task, user)
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google_trends").createStrategy(task, user)
     },
     SearchIO_Google_Scholar {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_scholar").createStrategy(task, user)
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google_scholar").createStrategy(task, user)
     },
     SearchIO_Google_Patents {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_patents").createStrategy(task, user)
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google_patents").createStrategy(task, user)
     },
     SearchIO_Google_Finance {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_finance").createStrategy(task, user)
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google_finance").createStrategy(task, user)
     },
     SearchIO_Google_News {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google_news").createStrategy(task, user)
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google_news").createStrategy(task, user)
     },
     DirectUrls {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
@@ -159,19 +170,19 @@ enum class SeedMethod : SeedMethodFactory {
                 log.info("Starting DirectUrls seed method")
                 if (taskConfig?.direct_urls.isNullOrEmpty()) {
                     log.error("Direct URLs are missing for DirectUrls seed method")
-                return emptyList()
+                    return emptyList()
                 }
                 log.debug("Processing direct URLs: ${taskConfig?.direct_urls}")
                 return taskConfig?.direct_urls?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
-                ?.filter { url ->
-                    try {
-                        URI.create(url)
-                        url.startsWith("http://") || url.startsWith("https://")
-                    } catch (e: Exception) {
-                        log.warn("Invalid URL format: $url")
-                        false
+                    ?.filter { url ->
+                        try {
+                            URI.create(url)
+                            url.startsWith("http://") || url.startsWith("https://")
+                        } catch (e: Exception) {
+                            log.warn("Invalid URL format: $url")
+                            false
+                        }
                     }
-                }
                     ?.mapIndexed { index, url ->
                         log.debug("Adding direct URL: $url")
                         mapOf(
@@ -213,7 +224,8 @@ class SearchAPISearch(
             val resultCount = 10
             val searchLimit = 20
             log.debug("Fetching user settings for SearchAPI.io")
-            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user ?: defaultUser)
+            val userSettings =
+                ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user ?: defaultUser)
             val apiKey = userSettings
                 .apis.firstOrNull { it.provider == APIProvider.SearchAPI }?.key?.trim()
                 ?: throw RuntimeException("SearchAPI.io API key is required")
@@ -248,7 +260,7 @@ class SearchAPISearch(
             }.filter { it["link"] != "" }
             log.info(
                 "Successfully retrieved ${results.size} search results, returning ${
-                    Math.min(results.size, searchLimit)
+                    results.size.coerceAtMost(searchLimit)
                 } items"
             )
             return results.take(searchLimit)

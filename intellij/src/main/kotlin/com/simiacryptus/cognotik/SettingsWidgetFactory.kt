@@ -67,7 +67,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 .filter { model ->
                     val providerName = model.second.provider?.name
                     userSettings.apis.any { api ->
-                        api.provider?.name == providerName && !api.key.isNullOrBlank()
+                        api.provider?.name == providerName && api.key.isNotBlank()
                     }
                 }
                 .groupBy { it.second.provider }
@@ -250,7 +250,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                                 value
                             )
                         when {
-                            sessionName.isNullOrBlank() -> getDefaultSessionLabel(value)
+                            sessionName.isBlank() -> getDefaultSessionLabel(value)
                             else -> "$sessionName (${value.sessionId.take(8)})"
                         }
                     } catch (e: Exception) {

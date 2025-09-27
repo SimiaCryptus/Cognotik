@@ -44,7 +44,7 @@ ${
                         else -> ""
                     }
                 }" data-tab="$key">
-${value/*.indent("  ")*/}
+$value
 </div>
 """
             }

@@ -35,11 +35,11 @@ class ControlPanel(
             DictationManager.selectedMicLine = it
             settings.setSelectedMicLine(it)
         }
-        addActionListener({
+        addActionListener {
             settings.setSelectedMicLine(selectedItem as String)
             DictationManager.selectedMicLine = selectedItem as String
             AppSettingsState.instance.selectedMicLine = selectedItem as String
-        })
+        }
     }
     private val rmsProgressBar = JProgressBar(0, 100).apply {
         isStringPainted = true
@@ -94,7 +94,7 @@ class ControlPanel(
             "${settings.sampleRate}Hz ${settings.sampleSize}-bit ${if (settings.channels == 1) "Mono" else "Stereo"}"
         selectedItem = formats.find { it == currentFormat } ?: formats[1]
 
-        addActionListener({
+        addActionListener {
             val format = (selectedItem as String).split(" ")
             val sampleRate = format[0].replace("Hz", "").toInt()
             val sampleSize = format[1].replace("-bit", "").toInt()
@@ -104,11 +104,11 @@ class ControlPanel(
             settings.setChannels(channels)
             AppSettingsState.instance.sampleSize = sampleSize
             AppSettingsState.instance.channels = channels
-        })
+        }
     }
     private val transcriptionModelComboBox = ComboBox<AudioModels>().apply {
         border = JBUI.Borders.emptyRight(5)
-        AudioModels.values().filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
+        AudioModels.entries.filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
         selectedItem = settings.transcriptionModel
         setRenderer { _, value, _, _, _ -> JBLabel(value?.modelName ?: "N/A") }
         addActionListener {

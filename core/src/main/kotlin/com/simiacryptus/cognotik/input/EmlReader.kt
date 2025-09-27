@@ -11,7 +11,7 @@ import java.io.InputStream
 import java.util.*
 import kotlin.io.path.createTempFile
 
-class EmlReader(private val file: File) : DocumentReader {
+class EmlReader(file: File) : DocumentReader {
     private var message: MimeMessage? = null
     private val tempFiles = mutableListOf<File>()
 

@@ -54,20 +54,18 @@ object MarkdownUtil {
         val matches = mermaidRegex.findAll(html)
         var htmlContent = html
         matches.forEach { match ->
-            var mermaidCode = match.groups[1]!!.value
+            val mermaidCode = match.groups[1]!!.value
 
             val fixedMermaidCode = fixupMermaidCode(mermaidCode)
             var mermaidDiagramHTML = """<pre class="mermaid">$fixedMermaidCode</pre>"""
             try {
-                if (true) {
-                    val svg = renderMermaidToSVG(fixedMermaidCode)
-                    if (null != ui) {
-                        val graphTask = ui.newTask(false)
-                        mermaidDiagramHTML = graphTask.placeholder
-                        graphTask.complete(svg)
-                    } else {
-                        mermaidDiagramHTML = svg
-                    }
+                val svg = renderMermaidToSVG(fixedMermaidCode)
+                if (null != ui) {
+                    val graphTask = ui.newTask(false)
+                    mermaidDiagramHTML = graphTask.placeholder
+                    graphTask.complete(svg)
+                } else {
+                    mermaidDiagramHTML = svg
                 }
             } catch (e: Exception) {
                 log.warn("Failed to render Mermaid diagram: " + e.message)

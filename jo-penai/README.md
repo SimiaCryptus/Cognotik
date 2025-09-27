@@ -63,9 +63,6 @@ Each provider (OpenAI, Anthropic, Google, AWS, etc.) has a singleton object (e.g
 ## Usage Examples
 
 ```kotlin
-import com.simiacryptus.jopenai.models.ChatModel
-import com.simiacryptus.jopenai.models.ApiModel
-
 val model: ChatModel = ChatModel.values()["GPT4o"]!!
 
 println(model.modelName)
@@ -85,8 +82,6 @@ println("Cost: $cost")
 You can convert a string to a `ChatModel` using:
 
 ```kotlin
-import com.simiacryptus.jopenai.models.chatModel
-
 val model = "gpt-4o".chatModel()
 ```
 
@@ -95,9 +90,6 @@ val model = "gpt-4o".chatModel()
 All models can be serialized to and from JSON/YAML using Jackson, thanks to custom serializers/deserializers:
 
 ```kotlin
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.jopenai.models.ChatModel
-
 val model = ChatModel.values()["GPT4o"]!!
 val json = JsonUtil.toJson(model)
 val deserialized = JsonUtil.fromJson<ChatModel>(json, ChatModel::class.java)

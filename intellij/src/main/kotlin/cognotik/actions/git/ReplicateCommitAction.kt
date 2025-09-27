@@ -52,7 +52,7 @@ class ReplicateCommitAction : BaseAction() {
             val dataContext = event.dataContext
             val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
             val folder = event.getSelectedFolder()
-            var root = if (null != folder) {
+            val root = if (null != folder) {
                 folder.toFile.toPath()
             } else {
                 project.basePath?.let { File(it).toPath() }

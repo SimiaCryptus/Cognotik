@@ -356,7 +356,13 @@ abstract class PatchApp(
                     errors.forEach { error ->
                         log.info("Processing individual error: ${error.message}")
                         task.header("Processing error: $msg", 3)
-                        task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = task.manager))
+                        task.add(
+                            renderMarkdown(
+                                "```json\n${JsonUtil.toJson(error)}\n```",
+                                tabs = false,
+                                ui = task.manager
+                            )
+                        )
                         task.verbose(
                             renderMarkdown(
                                 "[Extra Details] Error processed at: ${Instant.now()}",
@@ -534,7 +540,10 @@ abstract class PatchApp(
                     true
                 } else {
                     log.debug(
-                        "Not auto-applying fix to: {} (autoFix={}, already changed={})", path, autoFix, changed.contains(
+                        "Not auto-applying fix to: {} (autoFix={}, already changed={})",
+                        path,
+                        autoFix,
+                        changed.contains(
                             path
                         )
                     )

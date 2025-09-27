@@ -72,7 +72,7 @@ class PlanConfigDialog(
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_-]+$")
 
         fun isVisible(chatModel: ChatModel) = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter {
-            !it.key.isNullOrBlank()
+            it.key.isNotBlank()
         }.any { it.provider == chatModel.provider }
     }
 
@@ -235,7 +235,7 @@ class PlanConfigDialog(
 
         // Crawler-specific UI components
         private val seedMethodCombo = if (taskType == TaskType.CrawlerAgentTask) {
-            ComboBox(SeedMethod.values()).apply {
+            ComboBox(SeedMethod.entries.toTypedArray()).apply {
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 val currentSettings =
@@ -245,7 +245,7 @@ class PlanConfigDialog(
         } else null
 
         private val fetchMethodCombo = if (taskType == TaskType.CrawlerAgentTask) {
-            ComboBox(FetchMethod.values()).apply {
+            ComboBox(FetchMethod.entries.toTypedArray()).apply {
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 val currentSettings =
@@ -574,7 +574,7 @@ class PlanConfigDialog(
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
             apiData.provider?.getChatModels()?.filter { model ->
                 model.provider == apiData.provider
-                        && !apiData.key.isNullOrBlank()
+                        && apiData.key.isNotBlank()
                         && model.modelName?.isNotBlank() == true
                         && isVisible(model)
             } ?: listOf()

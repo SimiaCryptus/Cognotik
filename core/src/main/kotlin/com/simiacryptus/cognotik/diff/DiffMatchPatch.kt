@@ -64,15 +64,6 @@ open class DiffMatchPatch {
 
     /**
      * Find the differences between two texts.
-     * @param text1 Old string to be diffed.
-     * @param text2 New string to be diffed.
-     * @param checklines Speedup flag.  If false, then don't run a
-     * line-level diff first to identify the changed areas.
-     * If true, then run a faster slightly less optimal diff.
-     * @return Linked List of Diff objects.
-     */
-    /**
-     * Find the differences between two texts.
      * Run a faster, slightly less optimal diff.
      * This method allows the 'checklines' of diff_main() to be optional.
      * Most of the time checklines is wanted, so default to true.
@@ -252,8 +243,8 @@ open class DiffMatchPatch {
         diffs.add(Diff(Operation.EQUAL, ""))
         var count_delete = 0
         var count_insert = 0
-        var text_delete: String = ""
-        var text_insert: String = ""
+        var text_delete = ""
+        var text_insert = ""
         val pointer = diffs.listIterator()
         var thisDiff: Diff? = pointer.next()
         while (thisDiff != null) {
@@ -788,11 +779,7 @@ open class DiffMatchPatch {
                             pointer.previous()
                         }
                     } else {
-
                         thisDiff = equalities.peek()
-                        while (thisDiff !== pointer.previous()) {
-
-                        }
                     }
 
                     length_insertions1 = 0
@@ -1125,9 +1112,6 @@ open class DiffMatchPatch {
                         } else {
 
                             thisDiff = equalities.peek()
-                        }
-                        while (thisDiff !== pointer.previous()) {
-
                         }
                         post_del = false
                         post_ins = post_del
@@ -1506,7 +1490,7 @@ open class DiffMatchPatch {
         if (textline.length == 0) {
             return patches
         }
-        val textList = Arrays.asList(*textline.split("\n".toRegex()).dropLastWhile { it.isEmpty() }
+        val textList = listOf(*textline.split("\n".toRegex()).dropLastWhile { it.isEmpty() }
             .toTypedArray())
         val text = LinkedList(textList)
         var patch: Patch
@@ -1626,8 +1610,8 @@ open class DiffMatchPatch {
          */
         override fun hashCode(): Int {
             val prime = 31
-            var result = if ((operation == null)) 0 else operation.hashCode()
-            result += prime * (if ((text == null)) 0 else text.hashCode())
+            var result = operation?.hashCode() ?: 0
+            result += prime * (text?.hashCode() ?: 0)
             return result
         }
 
@@ -1665,18 +1649,11 @@ open class DiffMatchPatch {
      * Class representing one patch operation.
      */
     class Patch {
-        var diffs: LinkedList<Diff>
+        var diffs: LinkedList<Diff> = LinkedList()
         var start1: Int = 0
         var start2: Int = 0
         var length1: Int = 0
         var length2: Int = 0
-
-        /**
-         * Constructor.  Initializes with an empty list of diffs.
-         */
-        init {
-            this.diffs = LinkedList()
-        }
 
         /**
          * Emulate GNU diff's format.

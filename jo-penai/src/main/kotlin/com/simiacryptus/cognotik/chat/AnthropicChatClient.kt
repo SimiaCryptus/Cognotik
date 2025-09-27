@@ -63,7 +63,7 @@ class AnthropicChatClient(
                     throw RuntimeException("Failed to parse Anthropic response: ${e.message}", e)
                 }
                 val response = JsonUtil.objectMapper().readValue(responseJson, ApiModel.ChatResponse::class.java)
-                if (response.usage != null && model is ChatModel) {
+                if (response.usage != null) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
                 }
                 response
@@ -158,7 +158,7 @@ class AnthropicChatClient(
                     } else if (errorCheck.has("error") && errorCheck.get("error").has("message")) {
                         errorCheck.get("error").get("message").asText()
                     } else {
-                        "Unknown error: ${errorCheck}"
+                        "Unknown error: $errorCheck"
                     }
                     throw RuntimeException("Anthropic API error: $errorMessage")
                 }

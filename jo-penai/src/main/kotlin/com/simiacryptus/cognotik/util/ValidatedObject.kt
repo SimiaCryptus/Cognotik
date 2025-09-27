@@ -17,7 +17,7 @@ interface ValidatedObject {
             obj.javaClass.declaredFields.forEach { field ->
                 field.isAccessible = true
                 val value = field.get(obj)
-                log.debug("Validating field: ${field.name} with value: $value")
+                log.debug("Validating field: {} with value: {}",field.name,value)
                 if (value is ValidatedObject) {
                     val validate = value.validate()
                     log.warn("Validation failed for field: ${field.name} with message: $validate")
@@ -26,7 +26,7 @@ interface ValidatedObject {
 
                 if (value is List<*>) {
                     value.forEach {
-                        log.debug("Validating list element: $it")
+                        log.debug("Validating list element: {}",it)
                         if (it is ValidatedObject) {
                             val validate = it.validate()
                             log.warn("Validation failed for list element with message: $validate")
@@ -37,7 +37,7 @@ interface ValidatedObject {
             }
             obj.javaClass.kotlin.memberProperties.forEach { property ->
                 val value = property.getter.call(obj)
-                log.debug("Validating property: ${property.name} with value: $value")
+                log.debug("Validating property: {} with value: {}",property.name,value)
                 if (value is ValidatedObject) {
                     val validate = value.validate()
                     log.warn("Validation failed for property: ${property.name} with message: $validate")
@@ -46,7 +46,7 @@ interface ValidatedObject {
 
                 if (value is List<*>) {
                     value.forEach {
-                        log.debug("Validating list element: $it")
+                        log.debug("Validating list element: {}",it)
                         if (it is ValidatedObject) {
                             val validate = it.validate()
                             log.warn("Validation failed for list element with message: $validate")

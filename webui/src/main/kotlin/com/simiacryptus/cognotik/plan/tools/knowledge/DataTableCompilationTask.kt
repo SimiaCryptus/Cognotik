@@ -97,7 +97,8 @@ class DataTableCompilationTask(
             "### ${file.name}\n```\n${content.take(1000)}${if (content.length > 1000) "..." else ""}\n```"
         }
 
-        val chatter = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task)
+        val chatter =
+            (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task)
         val columnsResponse = ParsedActor(
             name = "ColumnIdentifier",
             resultClass = Columns::class.java,

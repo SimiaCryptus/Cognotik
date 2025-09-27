@@ -573,7 +573,7 @@ class ReadonlySocketManager(
     newSession: Session,
     storageInterface: StorageInterface?,
     owner: User?,
-    val clazz: Class<*>
+    clazz: Class<*>
 ) : SocketManager(
     sessionId = newSession,
     dataStorage = storageInterface,

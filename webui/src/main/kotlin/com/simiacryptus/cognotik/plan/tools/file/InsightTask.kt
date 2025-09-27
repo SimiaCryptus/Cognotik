@@ -86,11 +86,14 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
                 When generating insights, consider the existing project context and focus on information that is directly relevant and applicable.
                 Focus on generating insights and information that support the task types available in the system (${
-                this.planSettings.taskSettings.filter<String, TaskSettingsBase> { it.value.enabled }.keys.joinToString<String>(", ")
+                this.planSettings.taskSettings.filter<String, TaskSettingsBase> { it.value.enabled }.keys.joinToString<String>(
+                    ", "
+                )
             }).
                 This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
-            model = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) } ?: this.planSettings.defaultChatter).getChildClient(task),
+            model = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) }
+                ?: this.planSettings.defaultChatter).getChildClient(task),
             temperature = this.planSettings.temperature,
         )
         val inquiryResult = if (!planSettings.autoFix) Discussable(

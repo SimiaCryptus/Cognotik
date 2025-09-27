@@ -35,11 +35,13 @@ open class Retryable(
         tabs.withIndex().joinToString("\n") { (index, pair) ->
             renderButton(index, pair.first)
         }
-    }${socketManager.hrefLink(
-        "♻",
-        """href-link""",
-        null,
-        oneAtATime { it: Unit -> retry() })}
+    }${
+        socketManager.hrefLink(
+            "♻",
+            """href-link""",
+            null,
+            oneAtATime { it: Unit -> retry() })
+    }
 </div>
 """
 

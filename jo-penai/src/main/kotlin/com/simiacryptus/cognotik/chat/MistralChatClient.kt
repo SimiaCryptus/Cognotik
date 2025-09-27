@@ -98,7 +98,7 @@ class MistralChatClient(
             max_tokens = chatRequest.max_tokens,
             temperature = chatRequest.temperature,
             stream = false,
-            stop = chatRequest.stop?.map { if (it.isNullOrEmpty()) "" else it.toString() },
+            stop = chatRequest.stop?.map { if (it.isEmpty()) "" else it.toString() },
             //top_p = chatRequest.top_p,
             //random_seed = chatRequest.seed
         )

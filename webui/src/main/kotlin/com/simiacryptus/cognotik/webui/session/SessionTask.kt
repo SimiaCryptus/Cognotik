@@ -4,12 +4,8 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.util.FailedToImplementException
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -318,22 +314,23 @@ open class SessionTask(
         require(relativePath.isNotBlank()) { "File path cannot be blank" }
         require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
         log.debug("Creating file at path: {}", relativePath)
-        return Pair("fileIndex/${manager.sessionId}/$relativePath", manager.dataStorage?.getSessionDir(
-            manager.owner,
-            manager.sessionId
-        )?.let { dir ->
-            if (!dir.exists() && !dir.mkdirs()) {
-                throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
-            }
-            val resolve = dir.resolve(relativePath)
-            resolve.parentFile?.let { parent ->
-                if (!parent.exists() && !parent.mkdirs()) {
-                    throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+        return Pair(
+            "fileIndex/${manager.sessionId}/$relativePath", manager.dataStorage?.getSessionDir(
+                manager.owner,
+                manager.sessionId
+            )?.let { dir ->
+                if (!dir.exists() && !dir.mkdirs()) {
+                    throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
                 }
-            }
-            log.debug("Successfully created file path: {}", resolve.absolutePath)
-            resolve
-        })
+                val resolve = dir.resolve(relativePath)
+                resolve.parentFile?.let { parent ->
+                    if (!parent.exists() && !parent.mkdirs()) {
+                        throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+                    }
+                }
+                log.debug("Successfully created file path: {}", resolve.absolutePath)
+                resolve
+            })
     }
 
     fun update() = send()

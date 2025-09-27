@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.models
 
 import com.simiacryptus.cognotik.util.LoggerFactory
 
-@Suppress("unused")
 enum class ImageModels(
     override val modelName: String,
     val maxPrompt: Int

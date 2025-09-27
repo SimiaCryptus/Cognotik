@@ -22,7 +22,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
             "jdbc:hsqldb:file:${root.absolutePath};shutdown=true;hsqldb.lock_file=false"
         }
         val connection = DriverManager.getConnection(url, "SA", "")
-        log.debug("Database connection established: $connection")
+        log.debug("Database connection established: {}", connection)
         createSchema(connection)
         connection
     }
@@ -47,13 +47,13 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
 
     override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ApiModel.Usage) {
         try {
-            log.debug("Incrementing usage for session: ${session}, user: ${user.email}, model: ${model.modelName}")
+            log.debug("Incrementing usage for session: {}, user: {}, model: {}", session, user.email, model.modelName)
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val usageValues = UsageInterface.UsageValues()
 
             usageValues.addAndGet(tokens)
             saveUsageValues(usageKey, usageValues)
-            log.debug("Usage incremented for session: ${session}, user: ${user.email}, model: ${model.modelName}")
+            log.debug("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelName)
         } catch (e: Exception) {
             log.error("Error incrementing usage", e)
         }
@@ -114,8 +114,16 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         statement.setLong(5, usageValues.outputTokens.get())
         statement.setDouble(6, usageValues.cost.get())
         statement.setTimestamp(7, Timestamp(System.currentTimeMillis()))
-        log.debug("Executing statement: $statement")
-        log.debug("With parameters: ${usageKey.session}, ${usageKey.user?.email}, ${usageKey.model.modelName}, ${usageValues.inputTokens.get()}, ${usageValues.outputTokens.get()}, ${usageValues.cost.get()}")
+        log.debug("Executing statement: {}", statement)
+        log.debug(
+            "With parameters: {}, {}, {}, {}, {}, {}",
+            usageKey.session,
+            usageKey.user?.email,
+            usageKey.model.modelName,
+            usageValues.inputTokens.get(),
+            usageValues.outputTokens.get(),
+            usageValues.cost.get()
+        )
         statement.executeUpdate()
     }
 

@@ -38,7 +38,7 @@ class EmbeddingSearchTask(
         val min_length: Int = 0,
         @Description("List of regex patterns that must be present in the content")
         val required_regexes: List<String> = emptyList(),
-        val model : EmbeddingModel = EmbeddingModel.OllamaNomadic,
+        val model: EmbeddingModel = EmbeddingModel.OllamaNomadic,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,

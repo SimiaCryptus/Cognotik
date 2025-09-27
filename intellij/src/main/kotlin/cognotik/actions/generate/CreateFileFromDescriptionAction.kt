@@ -139,7 +139,7 @@ class CreateFileFromDescriptionAction :
             } ?: throw IllegalStateException("Empty response from AI")
             var outputPath = basePath
             val header = response.lines().firstOrNull() ?: throw IllegalStateException("Invalid response format")
-            var body = response.lines().drop(1).joinToString("\n").trim().lines()
+            val body = response.lines().drop(1).joinToString("\n").trim().lines()
                 .dropWhile { it.startsWith("```") }
                 .dropLastWhile { it.startsWith("```") }
                 .joinToString("\n")

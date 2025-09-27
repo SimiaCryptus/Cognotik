@@ -60,7 +60,7 @@ class TextCompressor(
         val result = applyAbbreviations(text, sortedCandidates)
         val compressionRatio = if (text.isNotEmpty()) (result.length.toDouble() / text.length) * 100 else 100.0
         log.debug(
-            "Applied abbreviations in {}ms. Original length: {}, Compressed length: {}, Ratio: {:.2f}%",
+            "Applied abbreviations in {}ms. Original length: {}, Compressed length: {}, Ratio: {}",
             System.currentTimeMillis() - abbreviationStartTime, text.length, result.length, compressionRatio
         )
         log.debug("Compression completed in {}ms", System.currentTimeMillis() - startTime)

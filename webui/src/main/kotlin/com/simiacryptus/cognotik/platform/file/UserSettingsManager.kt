@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.platform.file
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
 
@@ -49,6 +49,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
 
     companion object {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(UserSettingsManager::class.java)
+
         @JsonIgnore
         var defaultUser = User(
             id = "1",

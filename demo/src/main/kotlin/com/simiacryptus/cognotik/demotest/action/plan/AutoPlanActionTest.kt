@@ -231,7 +231,7 @@ class AutoPlanActionTest : DemoTestBase(
                             break
                         } else {
                             val iteration = (planIndex - 2) / 2
-                            log.info("Processing agent iteration $iteration: ${planButton}")
+                            log.info("Processing agent iteration $iteration: $planButton")
                             tts("In iteration $iteration, Auto-Plan is analyzing the code structure and planning the next implementation steps.")?.play()
                         }
 

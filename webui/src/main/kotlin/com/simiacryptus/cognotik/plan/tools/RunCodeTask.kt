@@ -51,7 +51,8 @@ class RunCodeTask<T : Interpreter>(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val model = (taskSettings.model?.let { agent.planSettings.instance(it) } ?: agent.planSettings.defaultChatter).getChildClient(task)
+        val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
+            ?: agent.planSettings.defaultChatter).getChildClient(task)
         val codingAgent = object : CodingAgent<T>(
             dataStorage = agent.dataStorage,
             session = agent.session,
@@ -94,10 +95,10 @@ class RunCodeTask<T : Interpreter>(
                         }
                     }\n</div>\n${
                         super.ui.textInput(oneAtATime { feedback: String ->
-                                                    super.responseAction(task, "Revising...", formHandle!!, formText) {
-                                                        super.feedback(task, feedback, request, response)
-                                                    }
-                                                })
+                            super.responseAction(task, "Revising...", formHandle!!, formText) {
+                                super.feedback(task, feedback, request, response)
+                            }
+                        })
                     }", additionalClasses = "reply-message"
                 ) else if (autoRunCounter.incrementAndGet() <= 1) {
                     responseAction(task, "Running...", formHandle, formText) {

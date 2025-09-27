@@ -245,7 +245,7 @@ open class OpenAIClient(
                 checkError(bytes.toString(Charsets.UTF_8))
                 null
             } else {
-                val model = AudioModels.values().find { it.modelName.equals(request.model, true) }
+                val model = AudioModels.entries.find { it.modelName.equals(request.model, true) }
                 onUsage(
                     model, Usage(
                         prompt_tokens = request.input.length.toLong(),
@@ -422,7 +422,7 @@ open class OpenAIClient(
             log(
                 msg = String.format(
                     "Edit Completion:\n\t%s",
-                    response.firstChoice.orElse("").toString().trim { it <= ' ' }.toString().lineSequence()
+                    response.firstChoice.orElse("").toString().trim { it <= ' ' }.lineSequence()
                         .map {
                             when {
                                 it.isBlank() -> {

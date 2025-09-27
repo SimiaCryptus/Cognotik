@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.system.exitProcess
 
 val globalID = Session.newGlobalID()
 val model = AnthropicModels.Claude35Haiku
@@ -79,7 +80,7 @@ open class CognotikApps(
                     log.info("Shutting down server...")
                     server?.stopServer()
                 })
-                System.exit(1)
+                exitProcess(1)
             }
         }
 
@@ -176,7 +177,7 @@ open class CognotikApps(
                             log.debug("Setting port to: ${args[i + 1]}")
                             port = args[++i].toIntOrNull() ?: run {
                                 log.error("Invalid port number: ${args[i]}")
-                                System.exit(1)
+                                exitProcess(1)
                                 throw IllegalArgumentException("Invalid port number: ${args[i]}")
                             }
                         }
@@ -208,7 +209,7 @@ open class CognotikApps(
                 onExit = {
                     log.info("Exit requested from system tray")
                     stopServer()
-                    System.exit(0)
+                    exitProcess(0)
                 })
             systemTrayManager?.initialize()
         } catch (e: Exception) {
@@ -233,7 +234,6 @@ open class CognotikApps(
             override fun logout(accessToken: String, user: User) {}
         }
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
-            @Suppress("UNUSED_PARAMETER")
             override fun isAuthorized(
                 applicationClass: Class<*>?,
                 user: User?,
@@ -316,7 +316,7 @@ open class CognotikApps(
                 Thread.sleep(100)
 
                 stopServer()
-                System.exit(0)
+                exitProcess(0)
             }.start()
             return "Server shutting down"
         } else {
@@ -437,7 +437,7 @@ fun ApiChatModel.instance(
         null -> null
         "NONE" -> null
         else -> provider!!.key
-    } ?: ApplicationServices.userSettingsManager.getUserSettings(user).apis.let {
+    } ?: ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
         it.firstOrNull { it.provider == this.provider }?.key
             ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
             ?: throw IllegalStateException("No API key configured for model $model")
@@ -458,7 +458,7 @@ fun ApiChatModel.instance(
 private fun ChatModel.toApiChatModel(
     user: User = defaultUser
 ): ApiChatModel {
-    val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user = user)
+    val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user = user)
     val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }
     return ApiChatModel(
         model = this,

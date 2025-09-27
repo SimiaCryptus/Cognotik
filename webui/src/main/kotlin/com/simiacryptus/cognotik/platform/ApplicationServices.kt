@@ -39,24 +39,32 @@ object ApplicationServices {
         }
 
     private val fileApplicationServicesCache = mutableMapOf<File, FileApplicationServices>()
-    fun fileApplicationServices(rootDir:File = ApplicationServicesConfig.dataStorageRoot) =
+    fun fileApplicationServices(rootDir: File = ApplicationServicesConfig.dataStorageRoot) =
         fileApplicationServicesCache.getOrPut(rootDir) { FileApplicationServices(rootDir) }
 
 }
 
 open class FileApplicationServices(val rootDir: File?) {
-    open val dataStorageFactory : DataStorage by lazy { DataStorage(
-        dataDir = rootDir?.resolve("data") ?: throw IllegalStateException("Data storage root not configured"),
-        metadataStorage = metadataStorageFactory
-    ) }
-    open val metadataStorageFactory: HSQLMetadataStorage by lazy { HSQLMetadataStorage(
-        rootDir?.resolve("metadatadb")
-    ) }
-    open val usageManager: UsageInterface by lazy { HSQLUsageManager(
-        rootDir?.resolve("usagedb")
-    ) }
+    open val dataStorageFactory: DataStorage by lazy {
+        DataStorage(
+            dataDir = rootDir?.resolve("data") ?: throw IllegalStateException("Data storage root not configured"),
+            metadataStorage = metadataStorageFactory
+        )
+    }
+    open val metadataStorageFactory: HSQLMetadataStorage by lazy {
+        HSQLMetadataStorage(
+            rootDir?.resolve("metadatadb")
+        )
+    }
+    open val usageManager: UsageInterface by lazy {
+        HSQLUsageManager(
+            rootDir?.resolve("usagedb")
+        )
+    }
 
-    open val userSettingsManager: UserSettingsInterface by lazy { UserSettingsManager(
-            rootDir?.resolve("user_settings") ?: throw IllegalStateException("Data storage root not configured"))
+    open val userSettingsManager: UserSettingsInterface by lazy {
+        UserSettingsManager(
+            rootDir?.resolve("user_settings") ?: throw IllegalStateException("Data storage root not configured")
+        )
     }
 }

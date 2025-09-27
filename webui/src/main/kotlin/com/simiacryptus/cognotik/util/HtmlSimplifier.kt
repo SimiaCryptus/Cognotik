@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.util
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Entities
-import kotlin.collections.remove
 
 object HtmlSimplifier {
     private val log = LoggerFactory.getLogger(HtmlSimplifier::class.java)
@@ -162,10 +161,10 @@ object HtmlSimplifier {
                 val iterator = element.attributes().iterator()
                 while (iterator.hasNext()) {
                     val attr = iterator.next()
-                    if (!keepScriptElements && (attr.value.contains("javascript:") || 
-                        attr.value.contains("data:") || 
-                        attr.value.contains("vbscript:") || 
-                        attr.value.contains("file:"))
+                    if (!keepScriptElements && (attr.value.contains("javascript:") ||
+                                attr.value.contains("data:") ||
+                                attr.value.contains("vbscript:") ||
+                                attr.value.contains("file:"))
                     ) {
                         iterator.remove()
                     }
@@ -250,7 +249,8 @@ object HtmlSimplifier {
                 while (iterator.hasNext()) {
                     val attr = iterator.next()
                     if (attr.value.isBlank() || attr.value == "null" ||
-                        attr.value.contains("javascript:") || attr.value.contains("data:")) {
+                        attr.value.contains("javascript:") || attr.value.contains("data:")
+                    ) {
                         iterator.remove()
                     }
                 }

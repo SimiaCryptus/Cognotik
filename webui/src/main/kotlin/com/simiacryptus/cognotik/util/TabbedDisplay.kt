@@ -16,6 +16,7 @@ open class TabbedDisplay(
     companion object {
         val log = LoggerFactory.getLogger(TabbedDisplay::class.java)
     }
+
     val size: Int get() = tabs.size
     private fun render() = if (tabs.isEmpty()) "<div/>" else {
         """

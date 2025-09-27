@@ -63,7 +63,7 @@ class DiffChatAction : BaseAction() {
         val selectedText = primaryCaret.selectedText
         return if (selectedText != null) {
             Triple(
-                selectedText.toString(),
+                selectedText,
                 primaryCaret.selectionStart,
                 primaryCaret.selectionEnd
             )

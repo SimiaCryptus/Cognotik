@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskConfigBase
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
+import java.io.File
 import java.nio.file.FileSystems
 
 abstract class AbstractFileTask<T : FileTaskConfigBase>(
@@ -85,27 +86,26 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
         return textExtensions.contains(file.extension.lowercase())
     }
 
-    private fun extractDocumentContent(file: java.io.File): String {
-        return try {
-            file.getReader().use { reader ->
-                when (reader) {
-                    is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
-                    else -> reader.getText()
-                }
-            }
-        } catch (e: Exception) {
-            log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
-            try {
-                file.readText()
-            } catch (e2: Exception) {
-                "Error reading file: ${e2.message}"
-            }
-        }
-    }
-
     companion object {
         private val log = LoggerFactory.getLogger(AbstractFileTask::class.java)
         const val TRIPLE_TILDE = "```"
 
+        fun extractDocumentContent(file: File): String {
+            return try {
+                file.getReader().use { reader ->
+                    when (reader) {
+                        is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                        else -> reader.getText()
+                    }
+                }
+            } catch (e: Exception) {
+                log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+                try {
+                    file.readText()
+                } catch (e2: Exception) {
+                    "Error reading file: ${e2.message}"
+                }
+            }
+        }
     }
 }

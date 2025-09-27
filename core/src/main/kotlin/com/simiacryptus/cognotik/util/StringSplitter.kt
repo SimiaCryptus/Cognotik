@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.util
 
+import kotlin.math.ln
+
 object StringSplitter {
     fun split(text: String, seperators: Map<String, Double>): Pair<String, String> {
         val splitAt = seperators.entries.map { (sep, weight) ->
@@ -8,7 +10,7 @@ object StringSplitter {
             }.map { i ->
                 val a = i.toDouble() / text.length
                 val b = 1.0 - a
-                i to b * Math.log(a) + a * Math.log(b)
+                i to b * ln(a) + a * ln(b)
             }.maxByOrNull { it.second }
             if (null == splitPoint) null
             else sep to ((splitPoint.first + sep.length) to splitPoint.second / weight)

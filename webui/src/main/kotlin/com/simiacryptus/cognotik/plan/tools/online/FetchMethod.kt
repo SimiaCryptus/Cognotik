@@ -39,11 +39,21 @@ enum class FetchMethod {
                 // Create SSL context that accepts all certificates
                 val sslContext = javax.net.ssl.SSLContext.getInstance("TLS")
                 sslContext.init(null, arrayOf(object : javax.net.ssl.X509TrustManager {
-                    override fun checkClientTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
-                    override fun checkServerTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
+                    override fun checkClientTrusted(
+                        chain: Array<out java.security.cert.X509Certificate>?,
+                        authType: String?
+                    ) {
+                    }
+
+                    override fun checkServerTrusted(
+                        chain: Array<out java.security.cert.X509Certificate>?,
+                        authType: String?
+                    ) {
+                    }
+
                     override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
                 }), java.security.SecureRandom())
-                
+
                 val client = java.net.http.HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(30))
                     .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)

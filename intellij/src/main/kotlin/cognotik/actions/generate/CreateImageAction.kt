@@ -96,7 +96,7 @@ class CreateImageAction : BaseAction() {
                 val folder = e.getSelectedFolder()
                 rootRef.set(
                     if (null != folder) {
-                        log.debug("Using selected folder as root: ${folder.toFile}")
+                        log.debug("Using selected folder as root: {}",folder.toFile)
                         folder.toFile.toPath()
                     } else if (1 == virtualFiles?.size) {
                         log.debug("Using parent of single file as root")
@@ -155,7 +155,7 @@ class CreateImageAction : BaseAction() {
     private fun write(
         code: ImageResponse, path: Path
     ) = try {
-        log.debug("Creating parent directories for: $path")
+        log.debug("Creating parent directories for: {}",path)
         path.parent?.toFile()?.mkdirs()
         val format = path.toString().split(".").last()
         log.debug("Writing image in format: $format")

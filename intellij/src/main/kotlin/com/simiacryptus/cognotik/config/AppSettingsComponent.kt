@@ -33,25 +33,21 @@ import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 
 class AppSettingsComponent : Disposable {
-    @Suppress("unused")
     @Name("Enable Diff Logging")
     val diffLoggingEnabled = JBCheckBox()
 
-    @Suppress("unused")
     @Name("AWS Profile")
     val awsProfile = JBTextField().apply {
         toolTipText = "AWS Profile"
         columns = 30
     }
 
-    @Suppress("unused")
     @Name("AWS Region")
     val awsRegion = JBTextField().apply {
         toolTipText = "AWS Region"
         columns = 30
     }
 
-    @Suppress("unused")
     @Name("AWS Bucket")
     val awsBucket = JBTextField().apply {
         toolTipText = "AWS Bucket"
@@ -70,7 +66,6 @@ class AppSettingsComponent : Disposable {
     }
     val executablesList = JBList(executablesModel)
 
-    @Suppress("unused")
     @Name("Executables")
     val executablesPanel = JPanel(BorderLayout()).apply {
         val scrollPane = JScrollPane(executablesList)
@@ -166,31 +161,24 @@ class AppSettingsComponent : Disposable {
         executablesList.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
     }
 
-    @Suppress("unused")
     @Name("Listening Port")
     val listeningPort = JBTextField()
 
-    @Suppress("unused")
     @Name("Listening Endpoint")
     val listeningEndpoint = JBTextField()
 
-    @Suppress("unused")
     @Name("Suppress Errors")
     val suppressErrors = JBCheckBox()
 
-    @Suppress("unused")
     @Name("Model")
     val smartModel = ComboBox<String>()
 
-    @Suppress("unused")
     @Name("Model")
     val fastModel = ComboBox<String>()
 
-    @Suppress("unused")
     @Name("Main Image Model")
     val mainImageModel = ComboBox<String>()
 
-    @Suppress("unused")
     @Name("Embedding Model")
     val embeddingModel = ComboBox<String>()
 
@@ -220,7 +208,6 @@ class AppSettingsComponent : Disposable {
         }
     })
 
-    @Suppress("unused")
     @Name("Developer Tools")
     val devActions = JBCheckBox()
 
@@ -228,15 +215,12 @@ class AppSettingsComponent : Disposable {
     @Name("Edit API Requests")
     val editRequests = JBCheckBox()
 
-    @Suppress("unused")
     @Name("Disable Auto-Open URLs")
     val disableAutoOpenUrls = JBCheckBox()
 
-    @Suppress("unused")
     @Name("Plugin Home")
     val pluginHome = JBTextField()
 
-    @Suppress("unused")
     val choosePluginHome = TextFieldWithBrowseButton(pluginHome).apply {
         val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
         val browserDescriptor = ComponentWithBrowseButton.BrowseFolderActionListener(
@@ -245,15 +229,12 @@ class AppSettingsComponent : Disposable {
         addActionListener(browserDescriptor)
     }
 
-    @Suppress("unused")
     @Name("Shell Command")
     val shellCommand = JBTextField()
 
-    @Suppress("unused")
     @Name("Show Welcome Screen")
     val showWelcomeScreen = JBCheckBox()
 
-    @Suppress("unused")
     @Name("Temperature")
     val temperature = JBTextField()
 

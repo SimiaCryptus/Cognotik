@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFi
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil

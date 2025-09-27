@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.input
 
 import java.io.File
+import java.lang.Math.log1p
+import kotlin.math.ln1p
 
-class TextReader(private val textFile: File) : PaginatedDocumentReader {
+class TextReader(textFile: File) : PaginatedDocumentReader {
     private val fullText: String = textFile.readLines().joinToString("\n")
     private val pages: List<String> by lazy { splitIntoPages(fullText) }
     private var settings: Settings? = null
@@ -45,13 +47,13 @@ class TextReader(private val textFile: File) : PaginatedDocumentReader {
             val rightSize = lines.subList(i, lines.size).map { it.length }.sum()
             if (leftSize <= 0) return@map i to Double.MAX_VALUE
             if (rightSize <= 0) return@map i to Double.MAX_VALUE
-            var fitness = -((leftSize.toDouble() / text.length) * Math.log1p(rightSize.toDouble() / text.length) +
-                    (rightSize.toDouble() / text.length) * Math.log1p(leftSize.toDouble() / text.length))
+            var fitness = -((leftSize.toDouble() / text.length) * ln1p(rightSize.toDouble() / text.length) +
+                    (rightSize.toDouble() / text.length) * log1p(leftSize.toDouble() / text.length))
             if (lines[i].isEmpty()) fitness *= 2
             i to fitness
         }.toTypedArray().toMutableList()
 
-        val bestSplitIndex = splitFitnesses.minByOrNull { it.second }?.first ?: lines.size / 2
+        val bestSplitIndex = (splitFitnesses.minByOrNull { it.second }?.first ?: lines.size) / 2
         val leftText = lines.subList(0, bestSplitIndex).joinToString("\n")
         val rightText = lines.subList(bestSplitIndex, lines.size).joinToString("\n")
         return splitIntoPages(leftText, maxChars) + splitIntoPages(rightText, maxChars)

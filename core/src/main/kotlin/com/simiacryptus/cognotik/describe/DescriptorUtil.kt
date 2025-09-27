@@ -15,9 +15,7 @@ object DescriptorUtil {
         property: KProperty1<out Any, *>,
     ): List<Annotation> =
         property.annotations + (rawType.kotlin.constructors.firstOrNull()?.parameters?.find { x -> x.name == property.name }?.annotations
-            ?: listOf()).also {
-
-        }
+            ?: listOf())
 
     val Type.isArray: Boolean
         get() {

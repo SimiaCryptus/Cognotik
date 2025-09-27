@@ -94,7 +94,8 @@ class SoftwareGraphGenerationTask(
                                 .joinToString<String>("\n")
                         }"
                     } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
-            model = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) } ?: this.planSettings.defaultChatter).getChildClient(task),
+            model = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) }
+                ?: this.planSettings.defaultChatter).getChildClient(task),
             parsingModel = this.planSettings.parsingChatter,
             temperature = this.planSettings.temperature,
             describer = describer,

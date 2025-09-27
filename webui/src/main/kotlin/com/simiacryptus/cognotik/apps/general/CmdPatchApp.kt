@@ -67,7 +67,7 @@ class CmdPatchApp(
             .filter { root.toPath().resolve(it).toFile().exists() }
             .distinct().sorted()
             .joinToString("\n") { path ->
-                "* ${path} - ${
+                "* $path - ${
                     root.toPath().resolve(path).toFile().length()
                 } bytes".trim()
             }
@@ -94,11 +94,11 @@ class CmdPatchApp(
                     processBuilder.environment().putAll(System.getenv())
                     val cmdString = processBuilder.command().joinToString(" ")
                     log.debug("Full command string: $cmdString")
-                    log.debug("Working directory: ${cmdSettings.workingDirectory}")
+                    log.debug("Working directory: {}", cmdSettings.workingDirectory)
                     val task = task.manager.newTask(false).apply { tabs[cmdString] = placeholder }
                     task.add("Working Directory: ${cmdSettings.workingDirectory}")
-                    task.add("Command: ${cmdString}")
-                    task.add("Model: ${model} / ${parsingModel}")
+                    task.add("Command: $cmdString")
+                    task.add("Model: $model / $parsingModel")
                     val process = processBuilder.start()
                     task.add("Started at: ${java.time.Instant.now()}")
                     val cancelButton = task.add(task.hrefLink("Stop") {

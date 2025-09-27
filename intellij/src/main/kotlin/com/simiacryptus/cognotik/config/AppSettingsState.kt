@@ -129,7 +129,7 @@ data class AppSettingsState(
         val appSettings = try {
             fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
         } catch (e: Exception) {
-            log.warn("Error parsing settings: ${jsonNode}", e)
+            log.warn("Error parsing settings: $jsonNode", e)
             AppSettingsState()
         }
 
@@ -201,7 +201,7 @@ data class AppSettingsState(
         try {
             fromJson(it, MRUItems::class.java)
         } catch (e: Exception) {
-            log.warn("Error loading recent commands: ${it}", e)
+            log.warn("Error loading recent commands: $it", e)
             MRUItems()
         }
     } ?: MRUItems()
@@ -366,13 +366,13 @@ data class AppSettingsState(
 }
 
 fun String.imageModel(): ImageModels {
-    return ImageModels.values().firstOrNull {
+    return ImageModels.entries.firstOrNull {
         it.modelName == this || it.name == this
     } ?: ImageModels.DallE3
 }
 
 fun ApiChatModel.instance(): Chatter? = model?.instance(
-    key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
+    key = provider?.key ?: throw IllegalArgumentException("API key is not set"),
     base = provider?.provider?.base
         ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
     workPool = AppSettingsState.workPool,

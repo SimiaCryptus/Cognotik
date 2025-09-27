@@ -4,7 +4,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.io.File
 
-class HTMLReader(private val htmlFile: File) : PaginatedDocumentReader {
+class HTMLReader(htmlFile: File) : PaginatedDocumentReader {
     private val document: Document = Jsoup.parse(htmlFile, "UTF-8")
     private val fullText: String = document.body().text()
     private val pages: List<String> by lazy { splitIntoPages(fullText) }

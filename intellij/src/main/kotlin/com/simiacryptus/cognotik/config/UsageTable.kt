@@ -33,9 +33,9 @@ class UsageTable(
             ).toMutableList()
         }
 
-        val totalPromptTokens = usageData.sumOf { it[1].toString().toInt() }
-        val totalCompletionTokens = usageData.sumOf { it[2].toString().toInt() }
-        val totalCost = usageData.sumOf { it[3].toString().toDouble() }
+        val totalPromptTokens = usageData.sumOf { it[1].toInt() }
+        val totalCompletionTokens = usageData.sumOf { it[2].toInt() }
+        val totalCost = usageData.sumOf { it[3].toDouble() }
 
         (usageData + listOf(
             listOf(
@@ -50,7 +50,7 @@ class UsageTable(
     private val dataModel by lazy {
         object : AbstractTableModel() {
             override fun getColumnName(column: Int): String {
-                return columnNames.get(column).toString()
+                return columnNames.get(column)
             }
 
             override fun getValueAt(row: Int, col: Int): Any {

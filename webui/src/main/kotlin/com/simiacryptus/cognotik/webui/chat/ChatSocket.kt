@@ -52,7 +52,12 @@ class ChatSocket(
 
     override fun onWebSocketText(message: String) {
         super.onWebSocketText(message)
-        trafficLog.debug("Received message from ${session.remoteAddress}: ${message.take(100)}${if (message.length > 100) "..." else ""}")
+        trafficLog.debug(
+            "Received message from {}: {}{}",
+            session.remoteAddress,
+            message.take(100),
+            if (message.length > 100) "..." else ""
+        )
         sessionState.onWebSocketText(this, message)
     }
 

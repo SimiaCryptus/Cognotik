@@ -16,6 +16,7 @@ import java.io.FileOutputStream
 import java.util.concurrent.Executors
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
+import kotlin.system.exitProcess
 
 object PresentationAudioInjector {
 
@@ -90,11 +91,11 @@ object PresentationAudioInjector {
             processPresentation(htmlFile.absolutePath, outputDir.absolutePath)
             println("Processing completed successfully.")
             log.info("Processing completed successfully.")
-            System.exit(0)
+            exitProcess(0)
         } else {
             println("HTML file selection cancelled.")
             log.warn("HTML file selection cancelled.")
-            System.exit(1)
+            exitProcess(1)
         }
     }
 }

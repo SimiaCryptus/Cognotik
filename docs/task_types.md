@@ -149,13 +149,7 @@ Tasks that execute code or commands:
 val max_results: Int = 10
 ```
 
-2. **Provide sensible defaults**:
-
-```kotlin
-val timeout_seconds: Long = 30L,
-val retry_attempts: Int = 3,
-val include_metadata: Boolean = true
-```
+2. **Provide sensible defaults**
 
 3. **Use enums for constrained choices**:
 

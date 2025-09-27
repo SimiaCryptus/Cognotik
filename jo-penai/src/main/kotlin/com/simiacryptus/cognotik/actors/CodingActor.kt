@@ -225,7 +225,7 @@ ${details ?: ""}
                 else -> throw e
             }
         }
-        log.debug("Result: $result")
+        log.debug("Result: {}",result)
 
         val executionResult = ExecutionResult(result.toString(), OutputInterceptor.getThreadOutput())
         OutputInterceptor.clearThreadOutput()
@@ -320,19 +320,20 @@ ${details ?: ""}
                             return workingCode to workingRenderedResponse
                         } catch (ex: Throwable) {
                             if (fixAttempt == input.fixIterations)
-                                throw if (ex is FailedToImplementException) ex else FailedToImplementException(
-                                    cause = ex,
-                                    message = """
-**ERROR**
-              |
-${TT}text
-${ex.stackTraceToString()}
-${TT}
-""".trim(),
-                                    language = language,
-                                    code = workingCode,
-                                    prefix = input.codePrefix
-                                )
+                                throw ex as? FailedToImplementException
+                                    ?: FailedToImplementException(
+                                        cause = ex,
+                                        message = """
+                            **ERROR**
+                                          |
+                            ${TT}text
+                            ${ex.stackTraceToString()}
+                            ${TT}
+                            """.trim(),
+                                        language = language,
+                                        code = workingCode,
+                                        prefix = input.codePrefix
+                                    )
                             log.debug("Validation failed - ${ex.message}")
                             _status = CodeResult.Status.Correcting
                             val respondWithCode = fixCommand(workingCode, ex, model = model, messages)

@@ -147,7 +147,7 @@ object DaemonClient {
             scriptFile.writeText(
                 """
                 @echo 
-                start /b /min "" "${if (appPath.isNotEmpty()) appPath else "C:/Program Files/Cognotik/Cognotik.exe"}" server --port $port
+                start /b /min "" "${appPath.ifEmpty { "C:/Program Files/Cognotik/Cognotik.exe" }}" server --port $port
                 exit
             """.trimIndent()
             )
@@ -156,7 +156,7 @@ object DaemonClient {
                 """
                #!/bin/sh
                # Use caffeinate to prevent sleep and run in background without UI
-               nohup /usr/bin/caffeinate -i "${if (appPath.isNotEmpty()) appPath else "/Applications/Cognotik.app/Contents/MacOS/Cognotik"}" server --port $port >/dev/null 2>&1 &
+               nohup /usr/bin/caffeinate -i "${appPath.ifEmpty { "/Applications/Cognotik.app/Contents/MacOS/Cognotik" }}" server --port $port >/dev/null 2>&1 &
                # Ensure the process doesn't show in dock
                defaults write "${if (appPath.isNotEmpty()) "${File(appPath).resolve("../../Info")}" else "/Applications/Cognotik.app/Contents/Info"}" LSUIElement -bool true
                exit 0
@@ -167,7 +167,7 @@ object DaemonClient {
             scriptFile.writeText(
                 """
                 #!/bin/sh
-                nohup ${if (appPath.isNotEmpty()) appPath else "/opt/cognotik/bin/Cognotik"} server --port $port &
+                nohup ${appPath.ifEmpty { "/opt/cognotik/bin/Cognotik" }} server --port $port &
                 exit 0
             """.trimIndent()
             )

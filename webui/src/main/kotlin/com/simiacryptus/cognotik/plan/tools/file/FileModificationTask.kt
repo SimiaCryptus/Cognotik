@@ -175,24 +175,24 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     temperature = this.planSettings.temperature,
                 )
                 val codeResult = simpleActor.answer(
-     (messages + listOf(
-         agent.planProcessingState?.tasksByDescription?.filter {
-             taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
-         }?.entries?.joinToString("\n\n") {
-             (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
-                 val file = root.resolve(it).toFile()
-                 if (file.exists()) {
-                     val relativePath = root.relativize(file.toPath())
-                     "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
-                 } else {
-                     "File not found: $it"
-                 }
-             } ?: ""
-         } ?: "",
-         getInputFileWithDiff(),
-         taskConfig?.task_description ?: "",
-     )).filter { it.isNotBlank() }
- )
+                    (messages + listOf(
+                        agent.planProcessingState?.tasksByDescription?.filter {
+                            taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
+                        }?.entries?.joinToString("\n\n") {
+                            (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
+                                val file = root.resolve(it).toFile()
+                                if (file.exists()) {
+                                    val relativePath = root.relativize(file.toPath())
+                                    "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
+                                } else {
+                                    "File not found: $it"
+                                }
+                            } ?: ""
+                        } ?: "",
+                        getInputFileWithDiff(),
+                        taskConfig?.task_description ?: "",
+                    )).filter { it.isNotBlank() }
+                )
                 if (agent.planSettings.autoFix) {
                     onComplete()
                     val markdown = renderMarkdown(codeResult, ui = task.manager) {

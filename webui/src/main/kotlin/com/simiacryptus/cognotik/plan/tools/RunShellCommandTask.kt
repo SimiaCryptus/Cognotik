@@ -52,7 +52,8 @@ class RunShellCommandTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val chatter = (taskSettings.model?.let { this.planSettings.instance(it) } ?: this.planSettings.defaultChatter).getChildClient(task)
+        val chatter = (taskSettings.model?.let { this.planSettings.instance(it) }
+            ?: this.planSettings.defaultChatter).getChildClient(task)
         val planTask = this.taskConfig
         val shellCommandActor = CodingActor(
             name = "RunShellCommand",
@@ -117,6 +118,7 @@ class RunShellCommandTask(
                     // Manual feedback UI
                     val formText = StringBuilder()
                     var formHandle: StringBuilder? = null
+                    @Suppress("AssignedValueIsNeverRead")
                     formHandle = task.add(
                         "<div>\n${
                             if (!super.canPlay) "" else super.playButton(
@@ -152,7 +154,7 @@ class RunShellCommandTask(
 
             fun acceptButton(
                 response: CodingActor.CodeResult,
-                @Suppress("UNUSED_PARAMETER") task: SessionTask // Added task param for potential future use or consistency
+                task: SessionTask // Added task param for potential future use or consistency
             ): String {
                 return ui.hrefLink("Accept", "href-link play-button") {
                     response.let {

@@ -35,6 +35,7 @@ abstract class AbstractTask<T : TaskConfigBase>(
     protected fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder
+        @Suppress("AssignedValueIsNeverRead")
         textHandle = footerTask.complete(ui.hrefLink("Accept", classname = "href-link cmd-button") {
             try {
                 textHandle.set("""<div class="cmd-button">Accepted</div>""")

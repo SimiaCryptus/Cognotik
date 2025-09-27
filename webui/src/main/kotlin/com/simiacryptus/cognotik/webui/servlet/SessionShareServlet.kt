@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationMana
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.cloud
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil

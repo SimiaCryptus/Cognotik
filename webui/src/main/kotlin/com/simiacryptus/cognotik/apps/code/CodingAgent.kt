@@ -199,7 +199,7 @@ open class CodingAgent<T : Interpreter>(
             fn()
         } finally {
             header?.clear()
-            var revertButton: StringBuilder? = null
+            val revertButton: StringBuilder? = null
             task.complete(ui.hrefLink("↩", "href-link regen-button") {
                 revertButton?.clear()
                 formHandle?.append(formText)

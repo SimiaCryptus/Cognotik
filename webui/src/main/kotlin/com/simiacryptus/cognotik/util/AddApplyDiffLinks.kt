@@ -107,6 +107,7 @@ class AddApplyDiffLinks {
                     ), ui = task.manager, split = true
                 ) + "\n" + buttons.placeholder
             } else {
+                @Suppress("AssignedValueIsNeverRead")
                 reverseHrefLink =
                     buttons.complete(socketManager.hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
                         try {

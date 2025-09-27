@@ -1,6 +1,7 @@
 # Cognotik Cognitive Task System - Developer Documentation
 
 ## Table of Contents
+
 1. [System Overview](#system-overview)
 2. [Architecture](#architecture)
 3. [Core Components](#core-components)
@@ -12,9 +13,12 @@
 
 ## System Overview
 
-The Cognotik Cognitive Task System is a sophisticated AI-powered task planning and execution framework that enables intelligent decomposition, planning, and execution of complex software development tasks. The system combines multiple cognitive strategies with a flexible task execution engine to automate and assist with software development workflows.
+The Cognotik Cognitive Task System is a sophisticated AI-powered task planning and execution framework that enables
+intelligent decomposition, planning, and execution of complex software development tasks. The system combines multiple
+cognitive strategies with a flexible task execution engine to automate and assist with software development workflows.
 
 ### Key Features
+
 - **Multiple Cognitive Modes**: Different planning strategies for various use cases
 - **Dynamic Task Management**: Automatic task decomposition and dependency resolution
 - **Extensible Task Types**: Pluggable task implementations for different operations
@@ -92,6 +96,7 @@ class PlanSettings(
 ```
 
 **Key Methods:**
+
 - `instance(model: ApiChatModel): Chatter` - Creates chat instances
 - `planningActor(describer: TypeDescriber)` - Creates planning actors
 - `getTaskSettings(taskType: TaskType)` - Retrieves task-specific settings
@@ -126,6 +131,7 @@ class PlanCoordinator(
 ```
 
 **Responsibilities:**
+
 - Task dependency resolution
 - Parallel task execution
 - State management
@@ -146,6 +152,7 @@ class TaskType<T : TaskConfigBase, U : TaskSettingsBase>(
 ```
 
 **Available Task Types:**
+
 - `FileModificationTask` - File creation and modification
 - `CommandAutoFixTask` - Command execution with auto-fixing
 - `TaskPlanningTask` - Hierarchical task planning
@@ -177,6 +184,7 @@ interface CognitiveMode {
 ### Available Modes
 
 #### 1. PlanAheadMode
+
 Traditional waterfall-style planning where all tasks are planned upfront:
 
 ```kotlin
@@ -187,11 +195,13 @@ class PlanAheadMode : CognitiveMode {
 ```
 
 **Use Cases:**
+
 - Well-defined requirements
 - Predictable workflows
 - Batch processing
 
 #### 2. AutoPlanMode
+
 Iterative planning with thinking status tracking:
 
 ```kotlin
@@ -208,17 +218,20 @@ class AutoPlanMode : CognitiveMode {
 ```
 
 **Features:**
+
 - Maintains thinking status across iterations
 - Adaptive task selection
 - Knowledge accumulation
 - Reflection and improvement
 
 **Use Cases:**
+
 - Exploratory development
 - Complex problem-solving
 - Learning from execution
 
 #### 3. GoalOrientedMode
+
 Hierarchical goal decomposition with dependency management:
 
 ```kotlin
@@ -236,17 +249,20 @@ class GoalOrientedMode : CognitiveMode {
 ```
 
 **Features:**
+
 - Goal tree visualization
 - Automatic dependency resolution
 - Parallel execution optimization
 - Progress tracking
 
 **Use Cases:**
+
 - Complex projects with multiple objectives
 - Dependency-heavy workflows
 - Long-running projects
 
 #### 4. TaskChatMode
+
 Conversational task execution with history:
 
 ```kotlin
@@ -258,11 +274,13 @@ class TaskChatMode : CognitiveMode {
 ```
 
 **Use Cases:**
+
 - Interactive development
 - Quick task execution
 - Conversational workflows
 
 #### 5. GraphOrderedPlanMode
+
 Software graph-based planning:
 
 ```kotlin
@@ -274,6 +292,7 @@ class GraphOrderedPlanMode : CognitiveMode {
 ```
 
 **Use Cases:**
+
 - Codebase-wide refactoring
 - Architecture-driven development
 - Dependency-aware modifications
@@ -322,6 +341,7 @@ open class TaskConfigBase(
 To create a custom task:
 
 1. **Define Configuration Class:**
+
 ```kotlin
 data class MyTaskConfig(
     val customParam: String,
@@ -332,6 +352,7 @@ data class MyTaskConfig(
 ```
 
 2. **Implement Task Class:**
+
 ```kotlin
 class MyTask(
     planSettings: PlanSettings,
@@ -357,8 +378,9 @@ class MyTask(
 ```
 
 3. **Register Task Type:**
+
 ```kotlin
-companion object {
+object {
     val MyTaskType = TaskType(
         "MyTask",
         MyTaskConfig::class.java,
@@ -457,6 +479,7 @@ val task2 = FileModificationTaskConfig(
 ### Key Interfaces
 
 #### CognitiveModeStrategy
+
 ```kotlin
 interface CognitiveModeStrategy {
     val inputCnt: Int
@@ -471,6 +494,7 @@ interface CognitiveModeStrategy {
 ```
 
 #### SessionTask
+
 ```kotlin
 interface SessionTask {
     fun add(content: String): StringBuilder?
@@ -484,7 +508,9 @@ interface SessionTask {
 ### Utility Classes
 
 #### TabbedDisplay
+
 Creates tabbed UI components:
+
 ```kotlin
 val tabs = TabbedDisplay(task)
 tabs["Tab 1"] = content1
@@ -493,7 +519,9 @@ tabs.update()
 ```
 
 #### FixedConcurrencyProcessor
+
 Manages concurrent task execution:
+
 ```kotlin
 val processor = FixedConcurrencyProcessor(executor, maxConcurrency = 4)
 val future = processor.submit {
@@ -504,24 +532,28 @@ val future = processor.submit {
 ## Best Practices
 
 ### 1. Task Design
+
 - Keep tasks atomic and focused
 - Define clear dependencies
 - Provide detailed descriptions
 - Handle errors gracefully
 
 ### 2. Cognitive Mode Selection
+
 - Use `PlanAheadMode` for well-defined tasks
 - Use `AutoPlanMode` for exploratory development
 - Use `GoalOrientedMode` for complex projects
 - Use `TaskChatMode` for interactive sessions
 
 ### 3. Performance Optimization
+
 - Limit `maxTasksPerIteration` for resource management
 - Use appropriate `maxTaskHistoryChars` to control context size
 - Enable task types selectively based on needs
 - Monitor and adjust `budget` settings
 
 ### 4. Error Handling
+
 ```kotlin
 try {
     cognitiveMode.handleUserMessage(message, task)
@@ -534,12 +566,14 @@ try {
 ```
 
 ### 5. Logging and Debugging
+
 - Use structured logging for task execution
 - Track task state transitions
 - Monitor dependency resolution
 - Log AI model interactions
 
 ### 6. Testing
+
 ```kotlin
 @Test
 fun testTaskExecution() {
@@ -562,6 +596,7 @@ fun testTaskExecution() {
 ## Advanced Topics
 
 ### Custom Describer Implementation
+
 ```kotlin
 class CustomDescriber : TypeDescriber {
     override fun describe(clazz: Class<*>): String {
@@ -571,6 +606,7 @@ class CustomDescriber : TypeDescriber {
 ```
 
 ### Task Chaining and Pipelines
+
 ```kotlin
 val pipeline = TaskPipeline()
     .addTask(FileModificationTask())
@@ -580,6 +616,7 @@ val pipeline = TaskPipeline()
 ```
 
 ### Dynamic Task Generation
+
 ```kotlin
 fun generateTasks(context: Context): List<TaskConfigBase> {
     return context.files.map { file ->

@@ -137,6 +137,7 @@ class CrawlerAgentTask(
             cleanup()
         }
     }
+
     private fun innerRun(
         agent: PlanCoordinator,
         task: SessionTask,
@@ -177,7 +178,7 @@ class CrawlerAgentTask(
                         tags = (item["tags"] as? List<*>)?.map { it.toString() },
                         relevance_score = (item["relevance_score"] as? Number)?.toDouble() ?: 100.0
                     ).let { linkData ->
-                        log.debug("Adding seed item to page queue: $linkData")
+                        log.debug("Adding seed item to page queue: {}", linkData)
                         this.add(linkData)
                         if (this.isEmpty()) {
                             log.warn("No valid seed items found after processing")
@@ -705,7 +706,7 @@ class CrawlerAgentTask(
             throw IllegalArgumentException("URL cannot be blank")
         }
 
-        
+
         if (!allow_revisit_pages && urlContentCache.containsKey(url)) {
             log.debug("Using cached content for URL: $url (cache size: ${urlContentCache.size})")
             return urlContentCache[url]!!
