@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable.Companion.retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.toContentList
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -78,7 +77,6 @@ open class ChatSocketManager(
             return ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList())
         }
     protected val chatMessages = mutableListOf<ApiModel.ChatMessage>()
-    val ui = ApplicationInterface(this)
 
     val markdownTranscript by lazy { transcript() }
 
@@ -389,7 +387,7 @@ open class ChatSocketManager(
         return match.groupValues[1].split('|', ',').flatMap { option ->
             recursiveFn(
                 currentMessage.replaceFirst(match.value, option),
-                ui.newTask(false).apply { tabs[option] = placeholder },
+                this.newTask(cancelable = false, root = false).apply { tabs[option] = placeholder },
                 baseMessages.filter { it.content?.any { it.text?.contains(match.value) == true } != true }
             )
         }.apply {
@@ -412,7 +410,7 @@ open class ChatSocketManager(
             val newMessage = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
                 currentMessage = newMessage,
-                task = ui.newTask(false).apply { tabs[item] = placeholder },
+                task = this.newTask(cancelable = false, root = false).apply { tabs[item] = placeholder },
                 baseMessages = messages.filter { it.content?.any { it.text?.contains(expression) == true } != true },
                 transcriptStream = transcriptStream,
                 model = this@ChatSocketManager.model

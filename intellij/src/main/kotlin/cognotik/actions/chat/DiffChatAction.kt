@@ -141,8 +141,7 @@ class DiffChatAction : BaseAction() {
                                 document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
                             }
                         },
-                        task = task,
-                        ui = ui
+                        task = task
                     )
                 )
             }</div>"""

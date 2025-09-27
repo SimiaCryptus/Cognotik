@@ -9,7 +9,8 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.util.oneAtATime
+import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.io.File
@@ -114,7 +115,7 @@ open class SessionTask(
                 "&times;",
                 "close-button href-link",
                 null,
-                ApplicationInterface.Companion.oneAtATime { it: Unit ->
+                oneAtATime { it: Unit ->
                     windowBuffer?.clear()
                     send()
                 })
@@ -344,7 +345,7 @@ open class SessionTask(
         handler: Consumer<Unit>
     ): String {
         log.debug("Creating href link with text: {}", linkText)
-        val operationID = SocketManager.Companion.randomID()
+        val operationID = randomID()
         manager.linkTriggers[operationID] = handler
         return """<a class="$classname" data-id="$operationID"${
             when {

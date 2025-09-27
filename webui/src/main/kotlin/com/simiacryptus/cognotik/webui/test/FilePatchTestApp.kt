@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.nio.file.Files
 
@@ -19,8 +18,7 @@ open class FilePatchTestApp(
 ) {
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
-        val task = ui.newTask(true)
+        val task = socketManager.newTask(cancelable = false, root = true)
 
         val source = """
       fun main(args: Array<String>) {

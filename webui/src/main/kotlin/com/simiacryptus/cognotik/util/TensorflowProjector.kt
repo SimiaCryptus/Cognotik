@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import java.io.IOException
 import java.util.*
 
@@ -13,7 +12,6 @@ class TensorflowProjector(
     val api: OpenAIClient,
     val dataStorage: StorageInterface,
     val sessionID: Session,
-    val session: ApplicationInterface,
     val userId: User?,
     private val iframeHeight: Int = 500,
     private val iframeWidth: String = "100%"

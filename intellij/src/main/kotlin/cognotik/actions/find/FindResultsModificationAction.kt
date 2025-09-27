@@ -24,7 +24,6 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -121,12 +120,10 @@ class FindResultsModificationAction(
 
         override fun newSession(user: User?, session: Session): SocketManager {
             val socketManager = super.newSession(user, session)
-            val ui = (socketManager as ApplicationSocketManager).applicationInterface
-            val task = ui.newTask()
-            //val api = api.getChildClient(task)
+            val task = socketManager.newTask(cancelable = false)
             val tabs = TabbedDisplay(task)
             usages.entries.map { (file, usages) ->
-                val task = ui.newTask(false)
+                val task = socketManager.newTask(cancelable = false, root = false)
                 tabs[file?.name ?: "Unknown"] = task.placeholder
                 lateinit var fileListingMarkdown: String
                 lateinit var prompt: String
@@ -142,7 +139,7 @@ class FindResultsModificationAction(
                     """.trimIndent() + usages.joinToString("\n") { "* `${it.presentation.plainText}`" } +
                             "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + patchFormatPrompt
                 }
-                ui.socketManager!!.pool.submit {
+                socketManager.pool.submit {
                     //val api = api.getChildClient(task)
                     val response = SimpleActor(
                         prompt = prompt,
@@ -154,7 +151,7 @@ class FindResultsModificationAction(
                     ).replace(Regex("""/\* L\d+ \*/"""), "")
                         .replace(Regex("""/\* <<< \*/"""), "")
                     AddApplyFileDiffLinks.instrumentFileDiffs(
-                        ui.socketManager!!,
+                        socketManager,
                         root = root.toPath(),
                         response = response,
                         handle = { newCodeMap ->

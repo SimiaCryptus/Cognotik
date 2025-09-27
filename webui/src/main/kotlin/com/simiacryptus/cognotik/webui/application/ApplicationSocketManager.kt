@@ -26,8 +26,6 @@ abstract class ApplicationSocketManager(
         )
     }
 
-    open val applicationInterface by lazy { ApplicationInterface(this) }
-
     abstract fun userMessage(
         session: Session,
         user: User?,

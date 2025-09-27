@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
@@ -22,9 +21,8 @@ class AddApplyDiffLinks {
             response: String,
             handle: (String) -> Unit,
             task: SessionTask,
-            ui: ApplicationInterface,
             shouldAutoApply: Boolean = false,
-        ) = AddApplyDiffLinks().apply(self, code, response, handle, task, ui, shouldAutoApply)
+        ) = AddApplyDiffLinks().apply(self, code, response, handle, task, shouldAutoApply)
 
     }
 
@@ -34,7 +32,6 @@ class AddApplyDiffLinks {
         response: String,
         handle: (String) -> Unit,
         task: SessionTask,
-        ui: ApplicationInterface,
         shouldAutoApply: Boolean = false,
     ): String {
         val matches = SimpleDiffApplier.DIFF_PATTERN.findAll(response).distinct()
@@ -80,7 +77,7 @@ class AddApplyDiffLinks {
                 }
             }
 
-            val buttons = ui.newTask(false)
+            val buttons = socketManager.newTask(cancelable = false, root = false)
             lateinit var hrefLink: StringBuilder
             var reverseHrefLink: StringBuilder? = null
             hrefLink = buttons.complete(socketManager.hrefLink("Apply Diff", classname = "href-link cmd-button") {

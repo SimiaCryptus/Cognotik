@@ -7,8 +7,7 @@ import com.simiacryptus.cognotik.interpreter.Interpreter
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface.Companion.oneAtATime
+import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File

@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
@@ -69,10 +68,9 @@ abstract class UnifiedPlanApp(
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
         val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
         if (useExpansionSyntax) {
-            ui.newTask(true).expandable(
+            socketManager.newTask(cancelable = false, root = true).expandable(
                 "Query Expansion Syntax Guide", """
                 <div class="expandable-guide">
                   <p>You can use the following syntaxes in your messages to automatically expand your queries:</p>
@@ -94,7 +92,7 @@ abstract class UnifiedPlanApp(
             )
         }
 
-        ui.newTask(true).expandable(
+        socketManager.newTask(cancelable = false, root = true).expandable(
             "Session Info", """
                 Session ID: `${session}`
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`

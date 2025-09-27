@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.io.File
 

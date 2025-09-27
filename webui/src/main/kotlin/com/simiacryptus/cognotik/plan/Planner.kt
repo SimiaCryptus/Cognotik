@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.nio.file.Path

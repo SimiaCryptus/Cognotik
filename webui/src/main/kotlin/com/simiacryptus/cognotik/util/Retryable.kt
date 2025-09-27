@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
@@ -40,7 +39,7 @@ open class Retryable(
         "♻",
         """href-link""",
         null,
-        ApplicationInterface.Companion.oneAtATime { it: Unit -> retry() })}
+        oneAtATime { it: Unit -> retry() })}
 </div>
 """
 

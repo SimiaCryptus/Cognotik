@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
@@ -58,9 +57,8 @@ class KnowledgeIndexingServer(
 
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
         socketManager.pool.submit {
-            val task = ui.newTask(true)
+            val task = socketManager.newTask(cancelable = false, root = true)
             try {
                 executeIndexing(task)
             } catch (e: Exception) {

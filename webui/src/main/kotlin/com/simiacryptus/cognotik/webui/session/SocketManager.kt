@@ -510,21 +510,7 @@ abstract class SocketManager(
     open fun createLinkedManager(newSession: Session): SocketManager {
         log.debug("Creating linked manager for session: {}", newSession)
         trafficLog.info("Creating linked manager for session: {}, owner: {}", newSession, owner?.name ?: "anonymous")
-        return object : SocketManager(
-            sessionId = newSession,
-            dataStorage = dataStorage,
-            owner = owner,
-            applicationClass = applicationClass
-        ) {
-            override fun onRun(userMessage: String, socket: ChatSocket) {
-                throw UnsupportedOperationException("onRun not implemented in linked manager")
-            }
-
-            override fun canWrite(user: User?): Boolean {
-                return false
-            }
-
-        }
+        return ReadonlySocketManager(newSession, dataStorage, owner, applicationClass)
     }
 
 
@@ -580,4 +566,26 @@ abstract class SocketManager(
             }
         }
     }
+}
+
+
+class ReadonlySocketManager(
+    newSession: Session,
+    storageInterface: StorageInterface?,
+    owner: User?,
+    val clazz: Class<*>
+) : SocketManager(
+    sessionId = newSession,
+    dataStorage = storageInterface,
+    owner = owner,
+    applicationClass = clazz
+) {
+    override fun onRun(userMessage: String, socket: ChatSocket) {
+        throw UnsupportedOperationException("onRun not implemented in linked manager")
+    }
+
+    override fun canWrite(user: User?): Boolean {
+        return false
+    }
+
 }
