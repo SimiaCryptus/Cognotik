@@ -29,11 +29,12 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
-import org.slf4j.event.Level
 import java.io.File
+import kotlin.random.Random
 
 data class CommandConfig(
     val commands: List<PatchApp.CommandSettings>,
@@ -84,19 +85,13 @@ data class AppSettingsState(
     var executables: MutableSet<String>? = mutableSetOf(),
     var analyticsEnabled: Boolean = false,
     var diffLoggingEnabled: Boolean = false,
-    var listeningPort: Int = 8081,
+    var listeningPort: Int = Random.nextInt(3000, 9000),
     var listeningEndpoint: String = "localhost",
     var apiThreads: Int = 4,
     var modalTasks: Boolean = false,
     var suppressErrors: Boolean = false,
     var devActions: Boolean = false,
     var disableAutoOpenUrls: Boolean = false,
-    var pluginHome: File = run {
-        var logPath = System.getProperty("idea.plugins.path")
-        //if (logPath == null) logPath = System.getProperty("java.io.tmpdir")
-        if (logPath == null) logPath = System.getProperty("user.home")
-        File(logPath, "AICodingAsst")
-    },
     var showWelcomeScreen: Boolean = true,
     var greetedVersion: String = "",
     var shellCommand: String = getDefaultShell(),
@@ -124,7 +119,9 @@ data class AppSettingsState(
     override fun getState() = SimpleEnvelope(toJson(this))
 
     @JsonIgnore
-    private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
+    private fun handleLegacyApiKeys(
+        jsonNode: JsonNode, userSettingsInterface: UserSettingsInterface
+    ): AppSettingsState {
         val mapper = ObjectMapper()
         val appSettings = try {
             fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
@@ -134,7 +131,7 @@ data class AppSettingsState(
         }
 
         // Migrate legacy API keys to UserSettingsManager
-        val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+        val userSettings = userSettingsInterface.getUserSettings()
         var needsUpdate = false
 
         // Handle old apiKey field
@@ -190,7 +187,7 @@ data class AppSettingsState(
             }
         }
         if (needsUpdate) {
-            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
+            userSettingsInterface.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
         }
 
         return appSettings
@@ -209,13 +206,11 @@ data class AppSettingsState(
     @JsonIgnore
     override fun loadState(state: SimpleEnvelope) {
         state.value ?: return
+        val applicationServices = ApplicationServices.fileApplicationServices()
         val fromJson = try {
-
             val mapper = ObjectMapper()
             val jsonNode = mapper.readTree(state.value)
-
-            handleLegacyApiKeys(jsonNode)
-
+            handleLegacyApiKeys(jsonNode, applicationServices.userSettingsManager)
         } catch (e: Exception) {
             log.warn("Error loading settings: ${state.value}", e)
             AppSettingsState()
@@ -279,7 +274,7 @@ data class AppSettingsState(
         if (modalTasks != other.modalTasks) return false
         if (suppressErrors != other.suppressErrors) return false
         if (devActions != other.devActions) return false
-        if (!FileUtil.filesEqual(pluginHome, other.pluginHome)) return false
+        if (!FileUtil.filesEqual(pluginHome, pluginHome)) return false
         if (recentCommandsJson != other.recentCommandsJson) return false
         if (showWelcomeScreen != other.showWelcomeScreen) return false
         if (greetedVersion != other.greetedVersion) return false
@@ -343,19 +338,19 @@ data class AppSettingsState(
 
         @JsonIgnore
         var onSettingsLoadedListeners = mutableListOf<() -> Unit>()
-        fun notifySettingsLoaded() {
-            onSettingsLoadedListeners.forEach { it() }
-        }
+        fun notifySettingsLoaded() { onSettingsLoadedListeners.forEach { it() } }
 
         val currentSession = Session.Companion.newGlobalID()
         val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser)
+        val pluginHome: File by lazy {
+            run {
+                var logPath = System.getProperty("idea.plugins.path")
+                //if (logPath == null) logPath = System.getProperty("java.io.tmpdir")
+                if (logPath == null) logPath = System.getProperty("user.home")
+                File(logPath, ".cognotik")
+            }
+        }
     }
-
-    data class UserSuppliedModel(
-        var displayName: String = "",
-        var modelId: String = "",
-        var provider: APIProvider? = null
-    )
 
     data class SavedPlanConfig(
         val name: String,
@@ -382,7 +377,7 @@ fun ApiChatModel.instance(): Chatter? = model?.instance(
         UserSettingsManager.defaultUser
     ),
     onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+        ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager.incrementUsage(
             AppSettingsState.currentSession,
             UserSettingsManager.defaultUser, model, usage
         )

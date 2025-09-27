@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLock
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.showDocument
@@ -63,7 +64,7 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         try {
-            com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled =
+            AddApplyFileDiffLinks.loggingEnabled =
                 { AppSettingsState.instance.diffLoggingEnabled }
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader
@@ -94,8 +95,7 @@ class PluginStartupActivity : ProjectActivity {
 
     private fun init(project: Project) {
         if (isInitialized.getAndSet(true)) return // Prevent double initialization
-
-        dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
+        dataStorageRoot = AppSettingsState.Companion.pluginHome
         log.info("Initializing ApplicationServices configuration: $dataStorageRoot")
         if (!dataStorageRoot.exists()) {
             try {

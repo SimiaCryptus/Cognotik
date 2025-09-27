@@ -16,7 +16,7 @@ open class DataStorage(
 ) : StorageInterface {
 
     init {
-        log.debug("Data directory: ${dataDir.absolutePath}")
+        log.info("Data storage directory: ${dataDir.absolutePath}")
     }
 
     override fun getMessages(

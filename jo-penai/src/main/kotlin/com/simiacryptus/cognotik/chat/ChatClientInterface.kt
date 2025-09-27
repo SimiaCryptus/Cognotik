@@ -11,6 +11,7 @@ interface ChatClientInterface {
     val logStreams: MutableList<BufferedOutputStream>
     val workPool : ExecutorService
     val onUsageListeners: MutableList<(model: LLMModel, tokens: ApiModel.Usage) -> Unit>
+    fun getModels(): List<ChatModel>? = null
 
     /**
      * Sends a chat request to the configured model and returns the response

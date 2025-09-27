@@ -223,7 +223,7 @@ data class ApiData(
         if (provider == null) throw IllegalStateException("Provider not set or invalid")
         if (key.isBlank()) throw IllegalStateException("API key not set")
         // Only validate chat models for providers that support chat functionality
-        val supportsChatModels = provider.getChatModels().isNotEmpty()
+        val supportsChatModels = provider.getChatModels(key, baseUrl).isNotEmpty()
         if (supportsChatModels) {
             val model = ChatModel.values().values.firstOrNull { it.provider == provider }
             if (model == null) throw IllegalStateException("No chat model available for provider $provider")

@@ -165,11 +165,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         add(JLabel("Shell Command:"))
                         add(component.shellCommand)
                     })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Plugin Home:"))
-                        add(component.pluginHome)
-                        add(component.choosePluginHome)
-                    })
                 }, BorderLayout.NORTH)
             } catch (e: Exception) {
                 log.warn("Error building Developer Tools", e)
@@ -184,7 +179,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         val dialog = JDialog(null as Frame?, "Export Configuration", true)
         dialog.layout = BorderLayout()
 
-        val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+        val userSettings = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings()
         val fullConfig = try {
             val encryptedSettings = AppSettingsState.instance.copy()
             // Export UserSettings with encrypted keys
@@ -391,7 +386,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         }
                     }.toMutableList()
                 )
-                ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(
+                ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.updateUserSettings(
                     UserSettingsManager.defaultUser, decryptedUserSettings
                 )
                 log.info("Successfully imported configuration with ${decryptedUserSettings.apis.size} API configurations")
@@ -425,7 +420,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.mainImageModel.selectedItem = settings.mainImageModel
             component.temperature.text = settings.temperature.toString()
             component.embeddingModel.selectedItem = settings.embeddingModel
-            component.pluginHome.text = settings.pluginHome.absolutePath
             component.shellCommand.text = settings.shellCommand
             component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
             component.setExecutables(settings.executables ?: emptySet())
@@ -439,7 +433,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+            val userSettings = ApplicationServices.fileApplicationServices(
+                AppSettingsState.Companion.pluginHome
+            ).userSettingsManager.getUserSettings()
             log.debug("Current user has ${userSettings.apis.size} API configurations")
 
             val fastModelName = component.fastModel.selectedItem as String?
@@ -447,10 +443,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             log.debug("Selected models - fast: $fastModelName, smart: $smartModelName")
 
             val fastChatModel = userSettings.apis.filter { it.key.isNotBlank() }.firstOrNull()
-                ?.let { it.provider?.getChatModels()?.find { model -> model.modelName == fastModelName } }
+                ?.let { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { model -> model.modelName == fastModelName } }
             val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
             val smartChatModel = userSettings.apis.filter { it.key.isNotBlank() }.firstOrNull()
-                ?.let { it.provider?.getChatModels()?.find { model -> model.modelName == smartModelName } }
+                ?.let { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { model -> model.modelName == smartModelName } }
             val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
 
             settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
@@ -480,7 +476,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     else -> ""
                 }
             }
-            settings.pluginHome = File(component.pluginHome.text)
             settings.shellCommand = component.shellCommand.text
             settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
 
@@ -514,7 +509,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     log.error("Failed to read API configuration from row $row", e)
                 }
             }
-            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
+            ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
             log.info("Successfully read settings with ${userSettings.apis.size} API configurations")
             log.debug("Settings after reading: ${settings.toJson()}")
 

@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import icons.MyIcons
@@ -48,12 +48,14 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             return smartModelTree!!
         }
+
         private fun getFastModelTree(): Tree {
             if (fastModelTree == null) {
                 fastModelTree = createModelTree("Fast Model", AppSettingsState.Companion.instance.fastModel)
             }
             return fastModelTree!!
         }
+
         private fun recreateModelTrees() {
             smartModelTree = null
             fastModelTree = null
@@ -62,14 +64,15 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
             val root = DefaultMutableTreeNode(title)
 
-            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
-            val providers = models()
-                .filter { model ->
-                    val providerName = model.second.provider?.name
-                    userSettings.apis.any { api ->
-                        api.provider?.name == providerName && api.key.isNotBlank()
-                    }
-                }
+            val rootDir = AppSettingsState.Companion.pluginHome
+            val userSettings = ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings()
+            val pairs = userSettings.apis.flatMap { apiData ->
+                (apiData.provider?.getChatModels(apiData.key, apiData.baseUrl) ?: listOf())
+                    .map { model -> apiData.provider?.name!! to model }
+            }
+            val providers = pairs
+                .filter { userSettings.isVisible(it) }
+                .sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
                 .groupBy { it.second.provider }
 
             for ((provider, models) in providers) {
@@ -109,13 +112,18 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
                     val apis = userSettings.apis
-                    val apiData = apis.find { it.provider?.getChatModels()?.find { modelName == it.modelName } != null }
-                    val chatModel = apiData?.provider?.getChatModels()?.find { it.modelName == modelName }
+                    val apiData = apis.find { apiData ->
+                        apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)
+                            ?.find { modelName == it.modelName } != null
+                    }
+                    val chatModel = apiData?.provider?.getChatModels(apiData.key, apiData.baseUrl)
+                        ?.find { it.modelName == modelName }
                     when (title) {
-                    "Smart Model" -> AppSettingsState.Companion.instance.smartModel = 
-                        ApiChatModel(chatModel, apiData)
-                    "Fast Model" -> AppSettingsState.Companion.instance.fastModel = 
-                        ApiChatModel(chatModel, apiData)
+                        "Smart Model" -> AppSettingsState.Companion.instance.smartModel =
+                            ApiChatModel(chatModel, apiData)
+
+                        "Fast Model" -> AppSettingsState.Companion.instance.fastModel =
+                            ApiChatModel(chatModel, apiData)
                     }
                     statusBar?.updateWidget(ID())
                 }
@@ -245,7 +253,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 label.text = if (value != null) {
                     try {
                         val sessionName =
-                            ApplicationServices.fileApplicationServices().metadataStorageFactory.getSessionName(
+                            ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).metadataStorageFactory.getSessionName(
                                 null,
                                 value
                             )
@@ -253,7 +261,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                             sessionName.isBlank() -> getDefaultSessionLabel(value)
                             else -> "$sessionName (${value.sessionId.take(8)})"
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         getDefaultSessionLabel(value)
                     }
                 } else {
@@ -283,14 +291,14 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 statusBar?.updateWidget(ID())
                 // Recreate model trees when settings are loaded
                 recreateModelTrees()
-               SwingUtilities.invokeLater {
-                   AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
-                       setSelectedModel(getSmartModelTree(), model.modelName ?: "")
-                   }
-                   AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
-                       setSelectedModel(getFastModelTree(), model.modelName ?: "")
-                   }
-               }
+                SwingUtilities.invokeLater {
+                    AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
+                        setSelectedModel(getSmartModelTree(), model.modelName ?: "")
+                    }
+                    AppSettingsState.Companion.instance.fastModel?.model?.let { model ->
+                        setSelectedModel(getFastModelTree(), model.modelName ?: "")
+                    }
+                }
             }
 
             AppSettingsState.Companion.instance.smartModel?.model?.let { model ->
@@ -304,16 +312,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 }
             }
         }
-
-        fun models(): List<Pair<String, ChatModel>> =
-            //ChatModel.Companion.values().filter { isVisible(it.value) }.toList().sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
-            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-                apiData.provider?.getChatModels()?.filter { isVisible(it) }?.map { model ->
-                    apiData.provider?.name to model
-                }?.map {
-                    it.first!! to it.second
-                } ?: listOf()
-            }.sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
 
         override fun ID(): String {
             return "AICodingAssistant.SettingsWidget"
@@ -387,7 +385,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
 
             val usagePanel = JPanel(BorderLayout())
-            usagePanel.add(UsageTable(ApplicationServices.fileApplicationServices().usageManager), BorderLayout.CENTER)
+            usagePanel.add(UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager), BorderLayout.CENTER)
 
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)
@@ -427,10 +425,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         """.trimIndent().trim()
         }
 
-        private fun isVisible(it: ChatModel): Boolean {
-            return true
-        }
-
         companion object {
             private val messages = ResourceBundle.getBundle("messages.SettingsWidget")
             private fun getMessage(key: String, vararg args: Any): String =
@@ -438,6 +432,12 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             fun getSessionLink(session: Session) =
                 "http://${AppSettingsState.Companion.instance.listeningEndpoint}:${AppSettingsState.Companion.instance.listeningPort}/#${session}"
+
+            fun UserSettings.isVisible(
+                model: Pair<String, ChatModel>
+            ): Boolean = apis.any { api ->
+                api.provider?.name == model.second.provider?.name && api.key.isNotBlank()
+            }
         }
 
     }

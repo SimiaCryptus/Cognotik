@@ -572,7 +572,7 @@ class PlanConfigDialog(
 
     private fun getVisibleModels() =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-            apiData.provider?.getChatModels()?.filter { model ->
+            apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.filter { model ->
                 model.provider == apiData.provider
                         && apiData.key.isNotBlank()
                         && model.modelName?.isNotBlank() == true

@@ -9,6 +9,11 @@ import java.io.File
 
 open class UserSettingsManager(val root: File) : UserSettingsInterface {
 
+    init {
+        require(root.exists() || root.mkdirs()) { "Failed to create root directory: $root" }
+        log.info("Initializing UserSettingsManager with root directory: {}", root)
+    }
+
     private val userSettings = HashMap<User, UserSettings>()
     private val userConfigDirectory by lazy { root.apply { mkdirs() } }
 

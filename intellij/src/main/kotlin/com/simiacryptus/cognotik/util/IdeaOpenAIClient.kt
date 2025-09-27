@@ -28,7 +28,7 @@ class IdeaOpenAIClient : OpenAIClient(
     }
 
     override fun onUsage(model: AIModel?, tokens: ApiModel.Usage) {
-        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+        ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager.incrementUsage(
             AppSettingsState.currentSession,
             UserSettingsManager.defaultUser, model!!, tokens
         )

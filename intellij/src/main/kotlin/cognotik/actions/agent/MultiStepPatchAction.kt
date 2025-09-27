@@ -275,7 +275,7 @@ class MultiStepPatchAction : BaseAction() {
 
     companion object {
         private val log = LoggerFactory.getLogger(MultiStepPatchAction::class.java)
-        val root: File get() = File(AppSettingsState.instance.pluginHome, "code_chat")
+        val root: File get() = File(AppSettingsState.Companion.pluginHome, "code_chat")
 
         data class TaskList(
             @Description("List of tasks to be performed in this project")

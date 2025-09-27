@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -11,7 +12,11 @@ import java.sql.Timestamp
 import java.util.*
 
 class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
-    private val log = LoggerFactory.getLogger(javaClass)
+
+    init {
+        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
+        log.info("Initializing UserSettingsManager with root directory: {}", root)
+    }
 
     private val connection: Connection by lazy {
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
@@ -180,6 +185,10 @@ class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
         statement.setString(2, user?.email ?: "")
         statement.executeUpdate()
         log.info("Deleted session: ${session} for user: ${user?.email ?: "anonymous"}")
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(javaClass)
     }
 
 }

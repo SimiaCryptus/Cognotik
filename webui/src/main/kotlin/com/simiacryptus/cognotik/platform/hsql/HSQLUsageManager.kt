@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.platform.hsql
 import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -13,6 +14,11 @@ import java.sql.ResultSet
 import java.sql.Timestamp
 
 class HSQLUsageManager(root: File? = null) : UsageInterface {
+
+    init {
+        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
+        log.info("Initializing UserSettingsManager with root directory: {}", root)
+    }
 
     private val connection: Connection by lazy {
         Class.forName("org.hsqldb.jdbc.JDBCDriver")

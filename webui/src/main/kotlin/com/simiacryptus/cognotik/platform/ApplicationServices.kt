@@ -51,20 +51,9 @@ open class FileApplicationServices(val rootDir: File?) {
             metadataStorage = metadataStorageFactory
         )
     }
-    open val metadataStorageFactory: HSQLMetadataStorage by lazy {
-        HSQLMetadataStorage(
-            rootDir?.resolve("metadatadb")
-        )
-    }
-    open val usageManager: UsageInterface by lazy {
-        HSQLUsageManager(
-            rootDir?.resolve("usagedb")
-        )
-    }
-
+    open val metadataStorageFactory: HSQLMetadataStorage by lazy { HSQLMetadataStorage(rootDir?.resolve("metadatadb")) }
+    open val usageManager: UsageInterface by lazy { HSQLUsageManager(rootDir?.resolve("usagedb")) }
     open val userSettingsManager: UserSettingsInterface by lazy {
-        UserSettingsManager(
-            rootDir?.resolve("user_settings") ?: throw IllegalStateException("Data storage root not configured")
-        )
+        UserSettingsManager(rootDir?.resolve("user_settings") ?: throw IllegalStateException("Data storage root not configured"))
     }
 }

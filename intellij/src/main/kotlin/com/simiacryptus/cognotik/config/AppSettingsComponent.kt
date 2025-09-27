@@ -10,9 +10,6 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.ComboBox
-import com.intellij.openapi.ui.ComponentWithBrowseButton
-import com.intellij.openapi.ui.TextComponentAccessor
-import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBCheckBox
@@ -217,17 +214,6 @@ class AppSettingsComponent : Disposable {
 
     @Name("Disable Auto-Open URLs")
     val disableAutoOpenUrls = JBCheckBox()
-
-    @Name("Plugin Home")
-    val pluginHome = JBTextField()
-
-    val choosePluginHome = TextFieldWithBrowseButton(pluginHome).apply {
-        val descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
-        val browserDescriptor = ComponentWithBrowseButton.BrowseFolderActionListener(
-            "Select Plugin Home Directory", null, this, null, descriptor, TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT
-        )
-        addActionListener(browserDescriptor)
-    }
 
     @Name("Shell Command")
     val shellCommand = JBTextField()
@@ -483,7 +469,7 @@ class AppSettingsComponent : Disposable {
     }
 
     @Name("Editor Actions")
-    var usage = UsageTable(ApplicationServices.fileApplicationServices().usageManager)
+    var usage = UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager)
 
     init {
         log.debug("Initializing AppSettingsComponent")
@@ -505,7 +491,7 @@ class AppSettingsComponent : Disposable {
         } catch (e: Exception) {
             log.error("Error populating API table: ${e.message}", e)
         }
-        val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
+        val apis = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings().apis
         try {
 
             // Get all available models from APIs with valid keys
@@ -514,7 +500,7 @@ class AppSettingsComponent : Disposable {
                     api.key.isNotBlank()
                 }.flatMap { api ->
                     try {
-                        api.provider?.getChatModels()?.filter { model ->
+                        api.provider?.getChatModels(api.key, api.baseUrl)?.filter { model ->
                             isVisible(model)
                         }?.map { it.name to it } ?: emptyList()
                     } catch (e: Exception) {
@@ -550,7 +536,7 @@ class AppSettingsComponent : Disposable {
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key.isNotBlank() }
-                    .mapNotNull { it.provider?.getChatModels()?.find { it.modelName == modelItem } }.firstOrNull()
+                    .mapNotNull { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { it.modelName == modelItem } }.firstOrNull()
             if (chatModel == null) {
                 false
             } else {
@@ -560,13 +546,13 @@ class AppSettingsComponent : Disposable {
         }.sortedBy { modelItem ->
             val model =
                 apis.filter { it.key.isNotBlank() }
-                    .find { it.provider?.getChatModels()?.any { it.modelName == modelItem } == true }
-                    ?.let { it.provider?.getChatModels()?.find { it.modelName == modelItem } }!!
+                    .find { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.any { it.modelName == modelItem } == true }
+                    ?.let { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { it.modelName == modelItem } }!!
             "${model.provider?.name} - ${model.modelName}"
         }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key.isNotBlank() }
-                .mapNotNull { it.provider?.getChatModels()?.find { it.modelName == modelItem } }.firstOrNull()
+                .mapNotNull { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { it.modelName == modelItem } }.firstOrNull()
             if (chatModel == null) {
                 false
             } else {
@@ -577,8 +563,8 @@ class AppSettingsComponent : Disposable {
             val model =
                 //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
                 apis.filter { it.key.isNotBlank() }
-                    .find { it.provider?.getChatModels()?.any { it.modelName == modelItem } == true }
-                    ?.let { it.provider?.getChatModels()?.find { it.modelName == modelItem } }
+                    .find { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.any { it.modelName == modelItem } == true }
+                    ?.let { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { it.modelName == modelItem } }
             "${model?.provider?.name} - ${model?.modelName}"
         }.toList()
         smartModel.removeAllItems()
@@ -615,7 +601,9 @@ class AppSettingsComponent : Disposable {
             log.debug("Populating API table")
             val model = apis.model as DefaultTableModel
             model.rowCount = 0
-            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+            val userSettings = ApplicationServices.fileApplicationServices(
+                AppSettingsState.Companion.pluginHome
+            ).userSettingsManager.getUserSettings()
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -638,9 +626,9 @@ class AppSettingsComponent : Disposable {
         ) {
             text = value
             if (value != null) {
-                val model = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key.isNotBlank() }
-                    .find { it.provider?.getChatModels()?.any { it.modelName == value } == true }
-                    ?.let { it.provider?.getChatModels()?.find { it.modelName == value } }
+                val model = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings().apis.filter { it.key.isNotBlank() }
+                    .find { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.any { it.modelName == value } == true }
+                    ?.let { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { it.modelName == value } }
                 text = "${model?.provider?.name} - $value"
             }
         }
