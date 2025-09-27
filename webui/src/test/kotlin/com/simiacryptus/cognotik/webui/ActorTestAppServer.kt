@@ -49,6 +49,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             workPool = TODO(),
             temperature = TODO(),
             scheduledPool = TODO(),
+            onUsage = { model, usage -> },
         )
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),

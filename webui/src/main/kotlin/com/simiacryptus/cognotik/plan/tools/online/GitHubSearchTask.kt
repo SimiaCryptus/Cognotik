@@ -56,7 +56,7 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
     ) {
         val searchResults = performGitHubSearch(
             agent.user
-                ?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }
+                ?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
                 ?.apis?.firstOrNull { it.provider == APIProvider.Github }?.key?.trim()
                 ?: throw RuntimeException("GitHub API token is required")
         )

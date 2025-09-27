@@ -49,7 +49,7 @@ enum class SeedMethod : SeedMethodFactory {
                 val resultCount = min(10, 20) // Ensure we don't exceed API limits
                 val searchLimit = 15 // Reduced from 20 to be more conservative
                 log.debug("Fetching user settings for Google Search API")
-                val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user ?: defaultUser)
+                val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user ?: defaultUser)
                 val key = userSettings
                     .apis.firstOrNull { it.provider == APIProvider.GoogleSearch }?.key?.trim()
                     ?: throw IllegalStateException("Google API token is required but not configured")
@@ -122,7 +122,7 @@ enum class SeedMethod : SeedMethodFactory {
 
             override fun isEnabled(): Boolean {
                 return user?.let {
-                    val userSettings = ApplicationServices.userSettingsManager.getUserSettings(it)
+                    val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
                     userSettings.apis.any { api -> api.provider == APIProvider.GoogleSearch && api.key?.isNotBlank() == true } &&
                             userSettings.apiBase[APIProvider.GoogleSearch]?.isNotBlank() == true
                 } ?: false
@@ -213,7 +213,7 @@ class SearchAPISearch(
             val resultCount = 10
             val searchLimit = 20
             log.debug("Fetching user settings for SearchAPI.io")
-            val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user ?: defaultUser)
+            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user ?: defaultUser)
             val apiKey = userSettings
                 .apis.firstOrNull { it.provider == APIProvider.SearchAPI }?.key?.trim()
                 ?: throw RuntimeException("SearchAPI.io API key is required")
@@ -255,7 +255,7 @@ class SearchAPISearch(
         }
 
         override fun isEnabled() = user?.let {
-            ApplicationServices.userSettingsManager.getUserSettings(it)
+            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
                 .apis.any { api -> api.provider == APIProvider.SearchAPI && api.key.isNotBlank() }
         } ?: false
     }

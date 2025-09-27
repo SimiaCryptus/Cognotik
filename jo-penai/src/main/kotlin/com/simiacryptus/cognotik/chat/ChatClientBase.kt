@@ -2,7 +2,9 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
+import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.Usage
 import com.simiacryptus.cognotik.models.LLMModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
@@ -144,6 +146,7 @@ abstract class ChatClientBase(
                 log(Level.INFO, "Remaining budget for session: $session, user: $user is $budget", logStreams)
             }
         }
+        super.onUsage(model, tokens, logStreams)
     }
 
     companion object {

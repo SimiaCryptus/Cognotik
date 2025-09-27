@@ -184,7 +184,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         val dialog = JDialog(null as Frame?, "Export Configuration", true)
         dialog.layout = BorderLayout()
 
-        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
+        val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
         val fullConfig = try {
             val encryptedSettings = AppSettingsState.instance.copy()
             // Export UserSettings with encrypted keys
@@ -391,7 +391,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         }
                     }.toMutableList()
                 )
-                ApplicationServices.userSettingsManager.updateUserSettings(
+                ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(
                     UserSettingsManager.defaultUser, decryptedUserSettings
                 )
                 log.info("Successfully imported configuration with ${decryptedUserSettings.apis.size} API configurations")
@@ -439,7 +439,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-            val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
+            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
             log.debug("Current user has ${userSettings.apis.size} API configurations")
 
             val fastModelName = component.fastModel.selectedItem as String?
@@ -514,7 +514,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     log.error("Failed to read API configuration from row $row", e)
                 }
             }
-            ApplicationServices.userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
+            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
             log.info("Successfully read settings with ${userSettings.apis.size} API configurations")
             log.debug("Settings after reading: ${settings.toJson()}")
 

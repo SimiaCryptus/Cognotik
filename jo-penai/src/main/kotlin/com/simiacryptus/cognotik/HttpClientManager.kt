@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.google.common.util.concurrent.MoreExecutors
-import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.cognotik.exceptions.*
+import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
@@ -25,14 +25,28 @@ import java.util.concurrent.*
 import java.util.function.Function
 import kotlin.math.pow
 
-open class HttpClientManager(
+abstract class HttpClientManager(
     val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
     val scheduledPool: ListeningScheduledExecutorService,
+    val onUsageListeners: MutableList<(model: LLMModel, tokens: ApiModel.Usage) -> Unit> = mutableListOf(),
 ) {
     @Suppress("unused")
     val createdBy = Thread.currentThread().stackTrace
+
+    /**
+     * Called when API usage occurs to track tokens and costs
+     * @param model The model that was used
+     * @param tokens Usage information including token counts and cost
+     */
+    open fun onUsage(
+        model: LLMModel,
+        tokens: ApiModel.Usage,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams.toTypedArray().toMutableList(),
+    ) {
+        onUsageListeners.forEach { it(model, tokens) }
+    }
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpClientManager::class.java)

@@ -60,7 +60,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
     }
 
     override fun getUserUsageSummary(user: User): Map<String, ApiModel.Usage> {
-        log.debug("Executing SQL query to get user usage summary for user: ${user.email}")
+        log.info("Executing SQL query to get user usage summary for user: ${user.email}")
         val statement = connection.prepareStatement(
             """
             SELECT model, SUM(prompt_tokens), SUM(completion_tokens), SUM(cost)
@@ -95,7 +95,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
     }
 
     private fun saveUsageValues(usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues) {
-        log.debug(
+        log.info(
             "Saving usage values for session: {}, user: {}, model: {}",
             usageKey.session,
             usageKey.user?.email,
@@ -120,7 +120,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
     }
 
     private fun generateUsageSummary(resultSet: ResultSet): Map<String, ApiModel.Usage> {
-        log.debug("Generating usage summary from result set")
+        log.info("Generating usage summary from result set")
         val summary = mutableMapOf<String, ApiModel.Usage>()
         while (resultSet.next()) {
             val string = resultSet.getString(1)

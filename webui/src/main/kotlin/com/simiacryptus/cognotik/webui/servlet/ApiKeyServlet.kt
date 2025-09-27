@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
@@ -65,7 +65,7 @@ class ApiKeyServlet : HttpServlet() {
             }
 
             "create" -> {
-                val userSettings = userSettingsManager.getUserSettings(user)
+                val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
                 serveEditPage(
                     req,
                     resp,
@@ -114,7 +114,7 @@ class ApiKeyServlet : HttpServlet() {
             } else if (record == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
             } else {
-                val userSettings = userSettingsManager.getUserSettings(user)
+                val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
                 val settings = UserSettings(
                     toApiList(
                         apiKeys = mapOf(APIProvider.OpenAI to apiKey),
@@ -122,7 +122,7 @@ class ApiKeyServlet : HttpServlet() {
                     ),
                     toTools(userSettings.localTools)
                 )
-                userSettingsManager.updateUserSettings(
+                fileApplicationServices().userSettingsManager.updateUserSettings(
                     user, settings
                 )
                 resp.sendRedirect("/")

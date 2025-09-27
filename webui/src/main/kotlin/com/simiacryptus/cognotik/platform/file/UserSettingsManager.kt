@@ -1,17 +1,16 @@
 package com.simiacryptus.cognotik.platform.file
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
 
-open class UserSettingsManager : UserSettingsInterface {
+open class UserSettingsManager(val root: File) : UserSettingsInterface {
 
     private val userSettings = HashMap<User, UserSettings>()
-    private val userConfigDirectory by lazy { dataStorageRoot.resolve("users").apply { mkdirs() } }
+    private val userConfigDirectory by lazy { root.apply { mkdirs() } }
 
     override fun getUserSettings(user: User): UserSettings {
         log.debug("Retrieving user settings for user: {}", user)

@@ -62,7 +62,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
             val root = DefaultMutableTreeNode(title)
 
-            val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
+            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
             val providers = models()
                 .filter { model ->
                     val providerName = model.second.provider?.name
@@ -307,7 +307,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         fun models(): List<Pair<String, ChatModel>> =
             //ChatModel.Companion.values().filter { isVisible(it.value) }.toList().sortedBy { "${it.second.provider?.name} - ${it.second.modelName}" }
-            ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
                 apiData.provider?.getChatModels()?.filter { isVisible(it) }?.map { model ->
                     apiData.provider?.name to model
                 }?.map {

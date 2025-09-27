@@ -524,7 +524,7 @@ class AppSettingsComponent : Disposable {
         } catch (e: Exception) {
             log.error("Error populating API table: ${e.message}", e)
         }
-        val apis = ApplicationServices.userSettingsManager.getUserSettings().apis
+        val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
         try {
 
             // Get all available models from APIs with valid keys
@@ -634,7 +634,7 @@ class AppSettingsComponent : Disposable {
             log.debug("Populating API table")
             val model = apis.model as DefaultTableModel
             model.rowCount = 0
-            val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
+            val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -657,7 +657,7 @@ class AppSettingsComponent : Disposable {
         ) {
             text = value
             if (value != null) {
-                val model = ApplicationServices.userSettingsManager.getUserSettings().apis.filter { it.key.isNotBlank() }
+                val model = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key.isNotBlank() }
                     .find { it.provider?.getChatModels()?.any { it.modelName == value } == true }
                     ?.let { it.provider?.getChatModels()?.find { it.modelName == value } }
                 text = "${model?.provider?.name} - $value"

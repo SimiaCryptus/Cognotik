@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
+import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -19,6 +20,7 @@ open class Chatter(
     val modelType: ChatModel,
     val workPool: ExecutorService,
     val scheduledPool: ListeningScheduledExecutorService,
+    val onUsage: (model: LLMModel, tokens: ApiModel.Usage) -> Unit,
 ) {
     init {
         require(key.isNotBlank()) { "API key must be provided" }
@@ -35,7 +37,9 @@ open class Chatter(
         logLevel = logLevel,
         logStreams = streams,
         scheduledPool = scheduledPool,
-    ).chat(
+    ).apply {
+        onUsageListeners.add { model, usage -> onUsage(model, usage) }
+    }.chat(
         chatRequest = ApiModel.ChatRequest(
             model = modelType.modelName,
             messages = messages,
@@ -67,5 +71,6 @@ open class Chatter(
         modelType = parent.modelType,
         workPool = parent.workPool,
         scheduledPool = parent.scheduledPool,
+        onUsage = parent.onUsage,
     )
 }

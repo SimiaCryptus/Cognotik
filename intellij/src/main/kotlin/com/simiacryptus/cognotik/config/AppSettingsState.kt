@@ -93,12 +93,8 @@ data class AppSettingsState(
     var disableAutoOpenUrls: Boolean = false,
     var pluginHome: File = run {
         var logPath = System.getProperty("idea.plugins.path")
-        if (logPath == null) {
-            logPath = System.getProperty("java.io.tmpdir")
-        }
-        if (logPath == null) {
-            logPath = System.getProperty("user.home")
-        }
+        //if (logPath == null) logPath = System.getProperty("java.io.tmpdir")
+        if (logPath == null) logPath = System.getProperty("user.home")
         File(logPath, "AICodingAsst")
     },
     var showWelcomeScreen: Boolean = true,
@@ -138,7 +134,7 @@ data class AppSettingsState(
         }
 
         // Migrate legacy API keys to UserSettingsManager
-        val userSettings = ApplicationServices.userSettingsManager.getUserSettings()
+        val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
         var needsUpdate = false
 
         // Handle old apiKey field
@@ -194,7 +190,7 @@ data class AppSettingsState(
             }
         }
         if (needsUpdate) {
-            ApplicationServices.userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
+            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
         }
 
         return appSettings
@@ -283,7 +279,7 @@ data class AppSettingsState(
         if (modalTasks != other.modalTasks) return false
         if (suppressErrors != other.suppressErrors) return false
         if (devActions != other.devActions) return false
-        if (FileUtil.filesEqual(pluginHome, other.pluginHome)) return false
+        if (!FileUtil.filesEqual(pluginHome, other.pluginHome)) return false
         if (recentCommandsJson != other.recentCommandsJson) return false
         if (showWelcomeScreen != other.showWelcomeScreen) return false
         if (greetedVersion != other.greetedVersion) return false
@@ -385,4 +381,10 @@ fun ApiChatModel.instance(): Chatter? = model?.instance(
         AppSettingsState.currentSession,
         UserSettingsManager.defaultUser
     ),
+    onUsage = { model, usage ->
+        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+            AppSettingsState.currentSession,
+            UserSettingsManager.defaultUser, model, usage
+        )
+    },
 )

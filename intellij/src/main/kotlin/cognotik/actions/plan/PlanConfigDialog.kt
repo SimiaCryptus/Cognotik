@@ -71,7 +71,7 @@ class PlanConfigDialog(
         // Validation patterns
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_-]+$")
 
-        fun isVisible(chatModel: ChatModel) = ApplicationServices.userSettingsManager.getUserSettings().apis.filter {
+        fun isVisible(chatModel: ChatModel) = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter {
             !it.key.isNullOrBlank()
         }.any { it.provider == chatModel.provider }
     }
@@ -571,7 +571,7 @@ class PlanConfigDialog(
     }
 
     private fun getVisibleModels() =
-        ApplicationServices.userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
             apiData.provider?.getChatModels()?.filter { model ->
                 model.provider == apiData.provider
                         && !apiData.key.isNullOrBlank()
@@ -885,7 +885,7 @@ class PlanConfigDialog(
 
 
 private fun ChatModel.toApiChatModel(): ApiChatModel {
-    val apis = ApplicationServices.userSettingsManager.getUserSettings().apis
+    val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
     return ApiChatModel(
         model = this,
         provider = ApiData(

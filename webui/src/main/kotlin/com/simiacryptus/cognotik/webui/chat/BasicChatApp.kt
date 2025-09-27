@@ -3,10 +3,8 @@ package com.simiacryptus.cognotik.webui.chat
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.userSettingsManager
+import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.io.File
@@ -45,7 +43,8 @@ class BasicChatApp(
         val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
         val settings = this.settings ?: getSettings(session, user)!!
         fun instance(model: ChatModel): Chatter? {
-            val api = model.getApi(user)
+            val api = fileApplicationServices().userSettingsManager.getUserSettings(user).apis
+                .firstOrNull { it.provider == model.provider }?.validate()
             val threadPoolManager = ApplicationServices.threadPoolManager
             return api?.let { apiData ->
                 model.instance(
@@ -54,6 +53,14 @@ class BasicChatApp(
                     workPool = threadPoolManager.getPool(session, user),
                     temperature = settings.temperature,
                     scheduledPool = threadPoolManager.getScheduledPool(session, user),
+                    onUsage = { model, usage ->
+                        fileApplicationServices().usageManager.incrementUsage(
+                            session,
+                            user,
+                            model,
+                            usage
+                        )
+                    },
                 )
             }
         }
@@ -72,8 +79,4 @@ class BasicChatApp(
         )
     }
 }
-
-@Deprecated("Need to refactor to include api config")
-fun ChatModel.getApi(user: User): ApiData? =
-    userSettingsManager.getUserSettings(user).apis.firstOrNull { it.provider == provider }?.validate()
 

@@ -18,12 +18,6 @@ object ApplicationServices {
             field = value
         }
 
-    var userSettingsManager: UserSettingsInterface = UserSettingsManager()
-        private set(value) {
-            require(!isLocked) { "ApplicationServices is locked" }
-            field = value
-        }
-
     var authenticationManager: AuthenticationInterface = AuthenticationManager()
         set(value) {
             require(!isLocked) { "ApplicationServices is locked" }
@@ -62,4 +56,7 @@ open class FileApplicationServices(val rootDir: File?) {
         rootDir?.resolve("usagedb")
     ) }
 
+    open val userSettingsManager: UserSettingsInterface by lazy { UserSettingsManager(
+            rootDir?.resolve("user_settings") ?: throw IllegalStateException("Data storage root not configured"))
+    }
 }

@@ -1,34 +1,27 @@
 package com.simiacryptus.cognotik
 
 import ch.qos.logback.classic.Level
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import com.intellij.openapi.vfs.VirtualFileManager
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.LoggerFactory
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.simiacryptus.cognotik.util.showDocument
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.reflect.full.declaredMembers
-import kotlin.reflect.jvm.isAccessible
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
@@ -36,10 +29,10 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
-        setLogDebug("com.simiacryptus.cognotik.plan")
-        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask")
-        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
-        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
+//        setLogDebug("com.simiacryptus.cognotik.plan")
+//        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask")
+//        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
+//        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
         System.getProperty("cognotik.config")?.let { configFile ->
@@ -70,10 +63,8 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         try {
-
             com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled =
                 { AppSettingsState.instance.diffLoggingEnabled }
-
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader
             log.debug("Setting context class loader for plugin initialization")
@@ -86,64 +77,9 @@ class PluginStartupActivity : ProjectActivity {
             } finally {
                 currentThread.contextClassLoader = prevClassLoader
             }
-
-            //setupDocumentationTracking(project)
-
             if (AppSettingsState.instance.showWelcomeScreen || AppSettingsState.instance.greetedVersion != AppSettingsState.WELCOME_VERSION) {
                 log.debug("Showing welcome screen - showWelcomeScreen: ${AppSettingsState.instance.showWelcomeScreen}, greetedVersion: ${AppSettingsState.instance.greetedVersion}")
-                val welcomeFile = "welcomePage.md"
-                val resource = PluginStartupActivity::class.java.classLoader.getResource(welcomeFile)
-                if (resource == null) {
-                    log.error("Welcome page resource not found: $welcomeFile")
-                    return
-                }
-                var virtualFile = resource.let { VirtualFileManager.getInstance().findFileByUrl(it.toString()) }
-                if (virtualFile == null) try {
-                    val path = resource.toURI()?.let { java.nio.file.Paths.get(it) }
-                    virtualFile = path?.let { VirtualFileManager.getInstance().findFileByNioPath(it) }
-                } catch (e: Exception) {
-                    log.debug("Error opening welcome page", e)
-                }
-                if (virtualFile == null) {
-                    try {
-                        log.debug("Creating temporary file for welcome page")
-                        val tempFile =
-                            withContext(Dispatchers.IO) {
-                                File.createTempFile(
-                                    welcomeFile.substringBefore("."),
-                                    "." + welcomeFile.substringAfter(".")
-                                )
-                            }
-                        tempFile.deleteOnExit()
-                        resource.openStream()?.use { input ->
-                            tempFile.outputStream().use { output -> input.copyTo(output) }
-                        }
-                        virtualFile = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(tempFile.toPath())
-                        log.debug("Welcome page temporary file created: ${tempFile.absolutePath}")
-                    } catch (e: Exception) {
-                        log.error("Error opening welcome page", e)
-                    }
-                }
-                virtualFile?.let {
-                    try {
-                        log.debug("Opening welcome page in editor")
-                        ApplicationManager.getApplication().invokeLater {
-                            FileEditorManager.getInstance(project).openFile(it, true).forEach { editor ->
-                                try {
-                                    editor::class.declaredMembers.filter { it.name == "setLayout" }.forEach { member ->
-                                        member.isAccessible = true
-                                        member.call(editor, TextEditorWithPreview.Layout.SHOW_PREVIEW)
-                                        log.debug("Successfully set preview layout for welcome page")
-                                    }
-                                } catch (e: Exception) {
-                                    log.warn("Failed to set preview layout for welcome page editor", e)
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        log.error("Error opening welcome page", e)
-                    }
-                } ?: log.error("Welcome page not found")
+                if (project.showDocument("welcomePage.md")) return
                 AppSettingsState.instance.greetedVersion = AppSettingsState.WELCOME_VERSION
                 AppSettingsState.instance.showWelcomeScreen = false
                 log.info("Welcome screen display completed")
@@ -157,15 +93,16 @@ class PluginStartupActivity : ProjectActivity {
     private val isInitialized = AtomicBoolean(false)
 
     private fun init(project: Project) {
-        if (isInitialized.getAndSet(true)) return
-        log.info("Initializing ApplicationServices configuration")
-        ApplicationServicesConfig.dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
-        if (!ApplicationServicesConfig.dataStorageRoot.exists()) {
+        if (isInitialized.getAndSet(true)) return // Prevent double initialization
+
+        dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
+        log.info("Initializing ApplicationServices configuration: $dataStorageRoot")
+        if (!dataStorageRoot.exists()) {
             try {
-                ApplicationServicesConfig.dataStorageRoot.mkdirs()
-                log.info("Created data storage directory: ${ApplicationServicesConfig.dataStorageRoot}")
+                dataStorageRoot.mkdirs()
+                log.info("Created data storage directory: $dataStorageRoot")
             } catch (e: Exception) {
-                log.error("Failed to create data storage directory: ${ApplicationServicesConfig.dataStorageRoot}", e)
+                log.error("Failed to create data storage directory: $dataStorageRoot", e)
             }
         }
         SimpleDiffApplier.validatorProviders.add(0) { filename ->

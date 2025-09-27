@@ -48,6 +48,7 @@ open class ChatModel(
         workPool: ExecutorService,
         temperature: Double = 0.1,
         scheduledPool: ListeningScheduledExecutorService,
+        onUsage: (LLMModel, Usage) -> Unit,
     ) : Chatter = Chatter(
         logStreams = logStreams,
         key = key,
@@ -57,7 +58,8 @@ open class ChatModel(
         provider = provider!!,
         modelType = this,
         workPool = workPool,
-        scheduledPool = scheduledPool
+        scheduledPool = scheduledPool,
+        onUsage = onUsage
     )
 
     companion object {

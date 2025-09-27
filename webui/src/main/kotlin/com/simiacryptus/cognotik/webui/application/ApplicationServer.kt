@@ -43,7 +43,7 @@ abstract class ApplicationServer(
     }.toMap()
 
     final override val dataStorage: StorageInterface by lazy {
-        ApplicationServices.fileApplicationServices(dataStorageRoot).dataStorageFactory
+        ApplicationServices.fileApplicationServices().dataStorageFactory
     }
 
     protected open val appInfoServlet by lazy {
