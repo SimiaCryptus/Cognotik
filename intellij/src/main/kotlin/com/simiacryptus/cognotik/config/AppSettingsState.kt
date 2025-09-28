@@ -29,7 +29,6 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -118,80 +117,72 @@ data class AppSettingsState(
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
 
-    @JsonIgnore
-    private fun handleLegacyApiKeys(
-        jsonNode: JsonNode, userSettingsInterface: UserSettingsInterface
-    ): AppSettingsState {
-        val mapper = ObjectMapper()
-        val appSettings = try {
-            fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
-        } catch (e: Exception) {
-            log.warn("Error parsing settings: $jsonNode", e)
-            AppSettingsState()
-        }
-
-        // Migrate legacy API keys to UserSettingsManager
-        val userSettings = userSettingsInterface.getUserSettings()
-        var needsUpdate = false
-
-        // Handle old apiKey field
-        if (jsonNode.has("apiKey")) {
-            val apiKeyNode = jsonNode.get("apiKey")
-            if (apiKeyNode.isObject) {
-                apiKeyNode.fields().forEach { (providerName, keyValue) ->
-                    try {
-                        val provider = APIProvider.valueOf(providerName)
-                        val existingApi = userSettings.apis.find { it.provider == provider }
-                        if (existingApi == null) {
-                            userSettings.apis.add(
-                                ApiData(
-                                    key = keyValue.asText(),
-                                    provider = provider,
-                                    baseUrl = provider.base
-                                ).validate()
-                            )
-                            needsUpdate = true
-                        }
-                    } catch (e: Exception) {
-                        log.warn("Unknown provider in legacy config: $providerName", e)
-                    }
-                }
-            }
-        }
-
-        // Handle apiKeys and apiBase fields
-        if (jsonNode.has("apiKeys") || jsonNode.has("apiBase")) {
-            val apiKeysNode = jsonNode.get("apiKeys")
-            val apiBaseNode = jsonNode.get("apiBase")
-
-            if (apiKeysNode != null && apiKeysNode.isObject) {
-                apiKeysNode.fields().forEach { (providerName, keyValue) ->
-                    try {
-                        val provider = APIProvider.valueOf(providerName)
-                        val baseUrl = apiBaseNode?.get(providerName)?.asText() ?: provider.base
-                        val existingApi = userSettings.apis.find { it.provider == provider }
-                        if (existingApi == null) {
-                            userSettings.apis.add(
-                                ApiData(
-                                    key = keyValue.asText(),
-                                    provider = provider,
-                                    baseUrl = baseUrl
-                                ).validate()
-                            )
-                            needsUpdate = true
-                        }
-                    } catch (e: Exception) {
-                        log.warn("Unknown provider in legacy config: $providerName", e)
-                    }
-                }
-            }
-        }
-        if (needsUpdate) {
-            userSettingsInterface.updateUserSettings(UserSettingsManager.defaultUser, userSettings)
-        }
-
-        return appSettings
-    }
+//    private fun handleLegacyKeys(
+//        jsonNode: JsonNode
+//    ) {
+//        // Migrate legacy API keys to UserSettingsManager
+//        val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+//        var needsUpdate = false
+//
+//        // Handle old apiKey field
+//        if (jsonNode.has("apiKey")) {
+//            val apiKeyNode = jsonNode.get("apiKey")
+//            if (apiKeyNode.isObject) {
+//                apiKeyNode.fields().forEach { (providerName, keyValue) ->
+//                    try {
+//                        val provider = APIProvider.valueOf(providerName)
+//                        val existingApi = userSettings.apis.find { it.provider == provider }
+//                        if (existingApi == null) {
+//                            userSettings.apis.add(
+//                                ApiData(
+//                                    key = keyValue.asText(),
+//                                    provider = provider,
+//                                    baseUrl = provider.base
+//                                ).validate()
+//                            )
+//                            needsUpdate = true
+//                        }
+//                    } catch (e: Exception) {
+//                        log.warn("Unknown provider in legacy config: $providerName", e)
+//                    }
+//                }
+//            }
+//        }
+//
+//        // Handle apiKeys and apiBase fields
+//        if (jsonNode.has("apiKeys") || jsonNode.has("apiBase")) {
+//            val apiKeysNode = jsonNode.get("apiKeys")
+//            val apiBaseNode = jsonNode.get("apiBase")
+//
+//            if (apiKeysNode != null && apiKeysNode.isObject) {
+//                apiKeysNode.fields().forEach { (providerName, keyValue) ->
+//                    try {
+//                        val provider = APIProvider.valueOf(providerName)
+//                        val baseUrl = apiBaseNode?.get(providerName)?.asText() ?: provider.base
+//                        val existingApi = userSettings.apis.find { it.provider == provider }
+//                        if (existingApi == null) {
+//                            userSettings.apis.add(
+//                                ApiData(
+//                                    key = keyValue.asText(),
+//                                    provider = provider,
+//                                    baseUrl = baseUrl
+//                                ).validate()
+//                            )
+//                            needsUpdate = true
+//                        }
+//                    } catch (e: Exception) {
+//                        log.warn("Unknown provider in legacy config: $providerName", e)
+//                    }
+//                }
+//            }
+//        }
+//        if (needsUpdate) {
+//            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(
+//                UserSettingsManager.defaultUser,
+//                userSettings
+//            )
+//        }
+//    }
 
     @JsonIgnore
     fun getRecentCommands(id: String) = recentCommandsJson?.get(id)?.let {
@@ -206,11 +197,15 @@ data class AppSettingsState(
     @JsonIgnore
     override fun loadState(state: SimpleEnvelope) {
         state.value ?: return
-        val applicationServices = ApplicationServices.fileApplicationServices()
         val fromJson = try {
-            val mapper = ObjectMapper()
-            val jsonNode = mapper.readTree(state.value)
-            handleLegacyApiKeys(jsonNode, applicationServices.userSettingsManager)
+            val jsonNode = ObjectMapper().readTree(state.value)
+            //handleLegacyKeys(jsonNode)
+            try {
+                fromJson(ObjectMapper().writeValueAsString(jsonNode), AppSettingsState::class.java)
+            } catch (e: Exception) {
+                log.warn("Error parsing settings: $jsonNode", e)
+                AppSettingsState()
+            }
         } catch (e: Exception) {
             log.warn("Error loading settings: ${state.value}", e)
             AppSettingsState()
@@ -344,9 +339,10 @@ data class AppSettingsState(
         val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser)
         val pluginHome: File by lazy {
             run {
-                var logPath = System.getProperty("idea.plugins.path")
+                var logPath: String? = null
                 //if (logPath == null) logPath = System.getProperty("java.io.tmpdir")
                 if (logPath == null) logPath = System.getProperty("user.home")
+                if (logPath == null) logPath = System.getProperty("idea.plugins.path")
                 File(logPath, ".cognotik")
             }
         }

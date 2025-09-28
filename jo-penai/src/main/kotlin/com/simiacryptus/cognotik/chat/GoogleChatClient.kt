@@ -2,24 +2,26 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.chat.model.GoogleModels
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
-import java.util.concurrent.ExecutorService
+ import java.util.concurrent.ExecutorService
+import java.util.concurrent.ConcurrentHashMap
 
-class GoogleChatClient(
+ class GoogleChatClient(
     apiKey: String,
     apiBase: String,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream>,
     scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+ ) : SingleProviderChatClient(
     APIProvider.Google,
     apiKey = apiKey,
     apiBase = apiBase,
@@ -28,6 +30,44 @@ class GoogleChatClient(
     logStreams = logStreams,
     scheduledPool = scheduledPool
 ) {
+
+    override fun getModels(): List<ChatModel>? {
+        // Check cache first
+        modelsCache[apiBase]?.let { return it }
+        
+        return try {
+            val responseBody = get("${apiBase}/v1beta/models?key=$apiKey")
+            checkError(responseBody)
+            log.debug("Fetched models from Google API: $responseBody")
+            val listResponse = JsonUtil.fromJson<ModelsListResponse>(responseBody, ModelsListResponse::class.java)
+            val models = listResponse.models?.mapNotNull { model ->
+                // Map Google API model to our ChatModel
+                val baseModelId = model.name?.removePrefix("models/") ?: return@mapNotNull null
+                // Try to find a matching model in our predefined GoogleModels
+                GoogleModels.values.values.find {
+                    it.modelName == baseModelId || it.modelName == model.name
+                } ?: run {
+                    // If not found in predefined models, create a dynamic one
+                    ChatModel(
+                        name = model.displayName ?: baseModelId,
+                        modelName = baseModelId,
+                        maxTotalTokens = model.inputTokenLimit ?: 1048576,
+                        maxOutTokens = model.outputTokenLimit ?: 8192,
+                        provider = APIProvider.Google,
+                        inputTokenPricePerK = 0.0, // Default pricing - would need to be configured
+                        outputTokenPricePerK = 0.0
+                    )
+                }
+            }
+            // Cache the result
+            models?.let { modelsCache[apiBase] = it }
+            models
+        } catch (e: Exception) {
+            log.warn("Failed to fetch models from Google API: ${e.message}")
+            null
+        }
+    }
+
     override fun authorize(
         request: HttpRequest,
         apiProvider: APIProvider
@@ -64,6 +104,29 @@ class GoogleChatClient(
     }
 
     companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GoogleChatClient::class.java)
+        private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+        
+        data class ModelsListResponse(
+            val models: List<ModelInfo>? = null,
+            val nextPageToken: String? = null
+        )
+
+        data class ModelInfo(
+            val name: String? = null,
+            val baseModelId: String? = null,
+            val version: String? = null,
+            val displayName: String? = null,
+            val description: String? = null,
+            val inputTokenLimit: Int? = null,
+            val outputTokenLimit: Int? = null,
+            val supportedGenerationMethods: List<String>? = null,
+            val thinking: Boolean? = null,
+            val temperature: Double? = null,
+            val maxTemperature: Double? = null,
+            val topP: Double? = null,
+            val topK: Int? = null
+        )
 
         fun fromGemini(responseBody: String): String {
             val fromJson = JsonUtil.fromJson<GenerateContentResponse>(responseBody, GenerateContentResponse::class.java)
@@ -164,12 +227,14 @@ class GoogleChatClient(
 
             val finishReason: String? = null, val index: Int? = null, val safetyRatings: List<SafetyRating>? = null
         )
+
         data class UsageMetadata(
             val promptTokenCount: Int? = null,
             val candidatesTokenCount: Int? = null,
             val totalTokenCount: Int? = null,
             val promptTokensDetails: List<TokensDetail>? = null
         )
+
         data class TokensDetail(
             val modality: String? = null,
             val tokenCount: Int? = null

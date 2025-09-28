@@ -165,7 +165,7 @@ abstract class ChatClientBase(
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(ChatClientBase::class.java)
+        private val log = LoggerFactory.getLogger(ChatClientBase::class.java)
     }
 }
 

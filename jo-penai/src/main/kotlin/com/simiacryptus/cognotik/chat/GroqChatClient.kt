@@ -6,19 +6,21 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
-import java.io.BufferedOutputStream
-import java.util.concurrent.ExecutorService
+ import java.io.BufferedOutputStream
+ import java.util.concurrent.ExecutorService
+import java.util.concurrent.ConcurrentHashMap
 
-class GroqChatClient(
+ class GroqChatClient(
     apiKey: String,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     apiBase: String,
     scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+ ) : SingleProviderChatClient(
     APIProvider.Groq,
     apiKey = apiKey,
     apiBase = apiBase,
@@ -27,6 +29,81 @@ class GroqChatClient(
     logStreams = logStreams,
     scheduledPool = scheduledPool
 ) {
+    companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GroqChatClient::class.java)
+        private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+        
+        const val HEADER_CONTENT_TYPE = "Content-Type"
+        const val HEADER_ACCEPT = "Accept"
+        const val HEADER_AUTHORIZATION = "Authorization"
+        const val APPLICATION_JSON = "application/json"
+
+        fun toGroq(chatRequest: ApiModel.ChatRequest): ApiModel.GroqChatRequest = ApiModel.GroqChatRequest(
+            messages = chatRequest.messages.map { message ->
+                ApiModel.GroqChatMessage(
+                    role = message.role,
+                    content = message.content?.joinToString("\n") { it.text ?: "" } ?: "",
+                )
+            },
+            model = chatRequest.model,
+            max_tokens = chatRequest.max_tokens,
+            temperature = chatRequest.temperature,
+        )
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class GroqModel(
+        val id: String,
+        val `object`: String,
+        val created: Long,
+        val owned_by: String,
+        val active: Boolean,
+        val context_window: Int,
+        val public_apps: Boolean
+    )
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class GroqModelsResponse(
+        val `object`: String,
+        val data: List<GroqModel>
+    )
+    override fun getModels(): List<ChatModel>? {
+        // Check cache first
+        modelsCache[apiBase]?.let { cachedModels ->
+            //log.debug("Returning cached models for apiBase: $apiBase")
+            return cachedModels
+        }
+        
+        return try {
+            log.info("Fetching available models from Groq API")
+            val result = get("$apiBase/models")
+            checkError(result)
+            log.debug("Groq models response: $result")
+            val response = JsonUtil.objectMapper().readValue(result, GroqModelsResponse::class.java)
+            val models = response.data.filter { it.active }.mapNotNull { groqModel ->
+                // Try to find existing ChatModel definition first
+                ChatModel.values().values.find { it.modelName == groqModel.id }
+                    ?: run {
+                        // Create a basic ChatModel for unknown models
+                        log.debug("Creating basic ChatModel for unknown Groq model: ${groqModel.id}")
+                        ChatModel(
+                            name = groqModel.id,
+                            modelName = groqModel.id,
+                            maxTotalTokens = groqModel.context_window,
+                            maxOutTokens = minOf(groqModel.context_window, 8192), // Conservative default
+                            provider = APIProvider.Groq,
+                            inputTokenPricePerK = 0.0, // Unknown pricing
+                            outputTokenPricePerK = 0.0 // Unknown pricing
+                        )
+                    }
+            }
+            // Cache the result
+            modelsCache[apiBase] = models
+            models
+        } catch (e: Exception) {
+            log.warn("Failed to fetch models from Groq API: ${e.message}")
+            null
+        }
+    }
 
     override fun authorize(
         request: HttpRequest,
@@ -62,24 +139,5 @@ class GroqChatClient(
                 response
             }
         }
-    }
-
-    companion object {
-        const val HEADER_CONTENT_TYPE = "Content-Type"
-        const val HEADER_ACCEPT = "Accept"
-        const val HEADER_AUTHORIZATION = "Authorization"
-        const val APPLICATION_JSON = "application/json"
-
-        fun toGroq(chatRequest: ApiModel.ChatRequest): ApiModel.GroqChatRequest = ApiModel.GroqChatRequest(
-            messages = chatRequest.messages.map { message ->
-                ApiModel.GroqChatMessage(
-                    role = message.role,
-                    content = message.content?.joinToString("\n") { it.text ?: "" } ?: "",
-                )
-            },
-            model = chatRequest.model,
-            max_tokens = chatRequest.max_tokens,
-            temperature = chatRequest.temperature,
-        )
     }
 }

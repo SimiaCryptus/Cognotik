@@ -11,9 +11,10 @@ import com.simiacryptus.cognotik.models.LLMModel
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
  import org.slf4j.event.Level
- import java.io.BufferedOutputStream
-import java.net.URLEncoder
+import java.io.BufferedOutputStream
+ import java.net.URLEncoder
  import java.util.concurrent.ExecutorService
+import java.util.concurrent.ConcurrentHashMap
 
  class AnthropicChatClient(
     apiKey: String,
@@ -22,7 +23,7 @@ import java.net.URLEncoder
     logLevel: Level,
     logStreams: MutableList<BufferedOutputStream>,
     scheduledPool: ListeningScheduledExecutorService,
-) : SingleProviderChatClient(
+ ) : SingleProviderChatClient(
     APIProvider.Anthropic,
     apiKey = apiKey,
     apiBase = apiBase,
@@ -41,22 +42,34 @@ import java.net.URLEncoder
         request.addHeader("anthropic-version", "2023-06-01")
     }
     override fun getModels(): List<ChatModel>? {
+        // Check cache first
+        modelsCache[apiBase]?.let { return it }
+        
         return try {
             val modelsResponse = fetchAllModels()
-            modelsResponse.mapNotNull { modelInfo ->
+            val models = modelsResponse.mapNotNull { modelInfo ->
                 // Map known Anthropic model IDs to our predefined ChatModel instances
                 when (modelInfo.id) {
                     "claude-opus-4-1-20250805" -> AnthropicModels.Claude41Opus
                     "claude-sonnet-4-20250514" -> AnthropicModels.Claude4Sonnet
                     "claude-3-5-haiku-latest", "claude-3-5-haiku-20241022" -> AnthropicModels.Claude35Haiku
                     else -> {
-                        // For unknown models, create a generic ChatModel with default pricing
-                        // You may want to skip unknown models or handle them differently
                         log.debug("Unknown Anthropic model: ${modelInfo.id}")
-                        null
+                        ChatModel(
+                            name = modelInfo.display_name,
+                            modelName = modelInfo.id,
+                            maxOutTokens = 4096, // Default value, adjust as needed
+                            provider = APIProvider.Anthropic,
+                            maxTotalTokens = 8192, // Default value, adjust as needed
+                            inputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
+                            outputTokenPricePerK = 0.0 // TODO: Set actual pricing if known
+                        )
                     }
                 }
             }
+            // Cache the result
+            modelsCache[apiBase] = models
+            models
         } catch (e: Exception) {
             log.error("Failed to fetch Anthropic models", e)
             null
@@ -76,6 +89,7 @@ import java.net.URLEncoder
             val queryString = if (queryParams.isNotEmpty()) "?${queryParams.joinToString("&")}" else ""
             val response = get("${apiBase}/models$queryString")
             checkError(response)
+            log.debug("Anthropic models response: $response")
             val listResponse = JsonUtil.objectMapper().readValue(response, ListModelsResponse::class.java)
             allModels.addAll(listResponse.data)
             hasMore = listResponse.has_more
@@ -88,7 +102,7 @@ import java.net.URLEncoder
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
         model: ChatModel,
-        logStreams: MutableList<java.io.BufferedOutputStream>
+        logStreams: MutableList<BufferedOutputStream>
     ): ApiModel.ChatResponse {
         validateChatRequest(chatRequest, model)
         return withReliability {
@@ -125,6 +139,8 @@ import java.net.URLEncoder
 
 
     companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AnthropicChatClient::class.java)
+        private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
         fun mapToAnthropicChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel): AnthropicChatRequest {
             require(chatRequest.messages.isNotEmpty()) { "Messages cannot be empty" }

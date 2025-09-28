@@ -11,7 +11,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
 
     init {
         require(root.exists() || root.mkdirs()) { "Failed to create root directory: $root" }
-        log.info("Initializing UserSettingsManager with root directory: {}", root)
+        log.info("Initializing UserSettingsManager with root directory: ${root}", RuntimeException() )
     }
 
     private val userSettings = HashMap<User, UserSettings>()
@@ -26,12 +26,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
                     log.info("Loading existing user settings for user: {} from file: {}", user, file)
                     return@getOrPut JsonUtil.fromJson(file.readText(), UserSettings::class.java)
                 } catch (e: Throwable) {
-                    log.error(
-                        "Failed to load user settings for user: {} from file: {}. Creating new settings.",
-                        user,
-                        file,
-                        e
-                    )
+                    log.error("Failed to load user settings for user: {} from file: {}.", user, file, e)
                 }
             }
             log.info("User settings file not found for user: {}. Creating new settings at: {}", user, file)

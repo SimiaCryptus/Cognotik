@@ -17,7 +17,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
 
     init {
         require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
-        log.info("Initializing UserSettingsManager with root directory: {}", root)
+        log.info("Initializing HSQLUsageManager with root directory: {}", root)
     }
 
     private val connection: Connection by lazy {

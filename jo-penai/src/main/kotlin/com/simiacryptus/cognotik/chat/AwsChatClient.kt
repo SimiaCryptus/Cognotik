@@ -110,6 +110,8 @@ class AwsChatClient(
 
 
     companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AwsChatClient::class.java)
+
         fun awsCredentials(awsAuth: AWSAuth): AwsCredentialsProviderChain =
             AwsCredentialsProviderChain.builder().credentialsProviders(
                 InstanceProfileCredentialsProvider.create(),

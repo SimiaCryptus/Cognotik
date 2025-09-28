@@ -34,6 +34,7 @@ class PluginStartupActivity : ProjectActivity {
 //        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask")
 //        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
 //        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
+//        setLogDebug("com.simiacryptus.cognotik.chat")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
         System.getProperty("cognotik.config")?.let { configFile ->

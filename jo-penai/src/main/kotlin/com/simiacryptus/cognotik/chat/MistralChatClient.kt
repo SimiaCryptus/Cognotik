@@ -82,6 +82,7 @@ class MistralChatClient(
     }
 
     companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(MistralChatClient::class.java)
         const val HEADER_CONTENT_TYPE = "Content-Type"
         const val HEADER_ACCEPT = "Accept"
         const val HEADER_AUTHORIZATION = "Authorization"
