@@ -56,10 +56,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         add(component.temperature)
                     })
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Executables:"))
-                        add(component.executablesPanel)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Password:"))
                         add(password)
                         add(JLabel("Configuration:"))
@@ -103,31 +99,50 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         try {
             tabbedPane.addTab("Keys", JPanel(BorderLayout()).apply {
                 add(JPanel(BorderLayout()).apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
                     add(JPanel(BorderLayout()).apply {
                         add(JLabel("API Configurations:"), BorderLayout.NORTH)
                         add(component.apiManagementPanel, BorderLayout.CENTER)
-                    })
-                    add(JPanel(BorderLayout()).apply {
-                        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                        add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                            add(JLabel("AWS Profile:"))
-                            add(component.awsProfile)
-                        })
-                        add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                            add(JLabel("AWS Region:"))
-                            add(component.awsRegion)
-                        })
-                        add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                            add(JLabel("AWS Bucket:"))
-                            add(component.awsBucket)
-                        })
-                    })
+                    }, BorderLayout.CENTER)
                 })
             })
         } catch (e: Exception) {
             log.warn("Error building Configuration", e)
         }
+        try {
+            tabbedPane.addTab("AWS", JPanel(BorderLayout()).apply {
+                add(JPanel().apply {
+                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("AWS Profile:"))
+                        add(component.awsProfile)
+                    })
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("AWS Region:"))
+                        add(component.awsRegion)
+                    })
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("AWS Bucket:"))
+                        add(component.awsBucket)
+                    })
+                }, BorderLayout.NORTH)
+            })
+        } catch (e: Exception) {
+            log.warn("Error building AWS Settings", e)
+        }
+        try {
+            tabbedPane.addTab("Tools", JPanel(BorderLayout()).apply {
+                add(JPanel().apply {
+                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                    add(JPanel(BorderLayout()).apply {
+                        add(JLabel("Executables:"), BorderLayout.NORTH)
+                        add(component.executablesPanel, BorderLayout.CENTER)
+                    })
+                }, BorderLayout.NORTH)
+            })
+        } catch (e: Exception) {
+            log.warn("Error building Tools Settings", e)
+        }
+
 
         tabbedPane.addTab("Advanced Settings", JPanel(BorderLayout()).apply {
             try {

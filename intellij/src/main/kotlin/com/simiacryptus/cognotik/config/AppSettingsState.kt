@@ -362,20 +362,27 @@ fun String.imageModel(): ImageModels {
     } ?: ImageModels.DallE3
 }
 
-fun ApiChatModel.instance(): Chatter? = model?.instance(
-    key = provider?.key ?: throw IllegalArgumentException("API key is not set"),
-    base = provider?.provider?.base
-        ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
-    workPool = AppSettingsState.workPool,
-    temperature = AppSettingsState.instance.temperature,
-    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
-        AppSettingsState.currentSession,
-        UserSettingsManager.defaultUser
-    ),
-    onUsage = { model, usage ->
-        ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager.incrementUsage(
+fun ApiChatModel.instance(): Chatter? {
+    val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager
+    val model = model
+    if (model == null) {
+        throw RuntimeException("Model not configured for ${provider?.provider?.name}")
+    }
+    return (model).instance(
+        key = provider?.key ?: throw IllegalArgumentException("API key is not set"),
+        base = provider?.provider?.base
+            ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
+        workPool = AppSettingsState.workPool,
+        temperature = AppSettingsState.instance.temperature,
+        scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
             AppSettingsState.currentSession,
-            UserSettingsManager.defaultUser, model, usage
-        )
-    },
-)
+            UserSettingsManager.defaultUser
+        ),
+        onUsage = { model, usage ->
+            usageManager.incrementUsage(
+                AppSettingsState.currentSession,
+                UserSettingsManager.defaultUser, model, usage
+            )
+        },
+    )
+}

@@ -13,9 +13,13 @@ import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvide
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.bedrock.BedrockClient
+import software.amazon.awssdk.services.bedrock.model.FoundationModelSummary
+import software.amazon.awssdk.services.bedrock.model.ListFoundationModelsRequest
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest
 import java.io.BufferedOutputStream
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
 class AwsChatClient(
@@ -40,6 +44,153 @@ class AwsChatClient(
     private val bedrockClient: BedrockRuntimeClient by lazy {
         BedrockRuntimeClient.builder().credentialsProvider(awsCredentials(awsAuth)).region(Region.of(awsAuth.region))
             .build()
+    }
+    private val bedrockManagementClient: BedrockClient by lazy {
+        BedrockClient.builder()
+            .credentialsProvider(awsCredentials(awsAuth))
+            .region(Region.of(awsAuth.region))
+            .build()
+    }
+
+    override fun getModels(): List<ChatModel>? {
+        // Check cache first
+        val cacheKey = "${awsAuth.region}:${awsAuth.profile}"
+        modelsCache[cacheKey]?.let { return it }
+        
+        return try {
+            log.info("Fetching available models from AWS Bedrock in region: ${awsAuth.region}")
+            
+            val request = ListFoundationModelsRequest.builder().build()
+            val response = bedrockManagementClient.listFoundationModels(request)
+            
+            val models = response.modelSummaries()?.mapNotNull { modelSummary ->
+                try {
+                    mapAwsModelToChatModel(modelSummary)
+                } catch (e: Exception) {
+                    log.warn("Failed to map AWS model ${modelSummary.modelId()}: ${e.message}")
+                    null
+                }
+            } ?: emptyList()
+            
+            log.info("Found ${models.size} available models in AWS Bedrock")
+            
+            // Cache the result
+            models.takeIf { it.isNotEmpty() }?.let { 
+                modelsCache[cacheKey] = it 
+            }
+            
+            models
+        } catch (e: Exception) {
+            log.error("Failed to fetch models from AWS Bedrock: ${e.message}", e)
+            // Return a default list of known AWS models as fallback
+            getDefaultAwsModels()
+        }
+    }
+    
+    private fun mapAwsModelToChatModel(modelSummary: FoundationModelSummary): ChatModel? {
+        val modelId = modelSummary.modelId() ?: return null
+        val (maxTokens, maxOutTokens, inputPrice, outputPrice) = getModelSpecifications(modelId)
+        return ChatModel(
+            name = modelSummary.modelName() ?: modelId,
+            modelName = modelId,
+            maxTotalTokens = maxTokens,
+            maxOutTokens = maxOutTokens,
+            provider = APIProvider.AWS,
+            inputTokenPricePerK = inputPrice,
+            outputTokenPricePerK = outputPrice
+        )
+    }
+    
+    private fun getModelSpecifications(modelId: String): ModelSpecs {
+        return when {
+            // Anthropic Claude models
+            modelId.contains("claude-3-opus") -> ModelSpecs(200000, 4096, 0.015, 0.075)
+            modelId.contains("claude-3-sonnet") -> ModelSpecs(200000, 4096, 0.003, 0.015)
+            modelId.contains("claude-3-haiku") -> ModelSpecs(200000, 4096, 0.00025, 0.00125)
+            modelId.contains("claude-2.1") -> ModelSpecs(200000, 4096, 0.008, 0.024)
+            modelId.contains("claude-2") -> ModelSpecs(100000, 4096, 0.008, 0.024)
+            modelId.contains("claude-instant") -> ModelSpecs(100000, 4096, 0.0008, 0.0024)
+            
+            // Meta Llama models
+            modelId.contains("llama3-70b") -> ModelSpecs(8192, 2048, 0.00265, 0.0035)
+            modelId.contains("llama3-8b") -> ModelSpecs(8192, 2048, 0.0003, 0.0006)
+            modelId.contains("llama2-70b") -> ModelSpecs(4096, 2048, 0.00195, 0.00256)
+            modelId.contains("llama2-13b") -> ModelSpecs(4096, 2048, 0.00075, 0.001)
+            
+            // Mistral models
+            modelId.contains("mistral-large") -> ModelSpecs(32000, 8192, 0.008, 0.024)
+            modelId.contains("mixtral-8x7b") -> ModelSpecs(32000, 4096, 0.00045, 0.0007)
+            modelId.contains("mistral-7b") -> ModelSpecs(32000, 4096, 0.00015, 0.0002)
+            
+            // Amazon Titan models
+            modelId.contains("titan-text-express") -> ModelSpecs(8192, 8192, 0.0002, 0.0006)
+            modelId.contains("titan-text-lite") -> ModelSpecs(4096, 4096, 0.00015, 0.0002)
+            modelId.contains("titan-text-premier") -> ModelSpecs(32000, 3072, 0.0005, 0.0015)
+            
+            // Cohere models
+            modelId.contains("command-r-plus") -> ModelSpecs(128000, 4096, 0.003, 0.015)
+            modelId.contains("command-r") -> ModelSpecs(128000, 4096, 0.0005, 0.0015)
+            modelId.contains("command-text") -> ModelSpecs(4096, 4096, 0.0015, 0.002)
+            modelId.contains("command-light") -> ModelSpecs(4096, 4096, 0.0003, 0.0006)
+            
+            // AI21 models
+            modelId.contains("j2-ultra") -> ModelSpecs(8192, 8192, 0.0125, 0.0125)
+            modelId.contains("j2-mid") -> ModelSpecs(8192, 8192, 0.0125, 0.0125)
+            
+            // Default values for unknown models
+            else -> ModelSpecs(4096, 2048, 0.001, 0.002)
+        }
+    }
+    
+    private fun getDefaultAwsModels(): List<ChatModel> {
+        // Return a list of commonly available AWS Bedrock models as fallback
+        return listOf(
+            ChatModel(
+                name = "Claude 3 Sonnet",
+                modelName = "anthropic.claude-3-sonnet-20240229-v1:0",
+                maxTotalTokens = 200000,
+                maxOutTokens = 4096,
+                provider = APIProvider.AWS,
+                inputTokenPricePerK = 0.003,
+                outputTokenPricePerK = 0.015
+            ),
+            ChatModel(
+                name = "Claude 3 Haiku",
+                modelName = "anthropic.claude-3-haiku-20240307-v1:0",
+                maxTotalTokens = 200000,
+                maxOutTokens = 4096,
+                provider = APIProvider.AWS,
+                inputTokenPricePerK = 0.00025,
+                outputTokenPricePerK = 0.00125
+            ),
+            ChatModel(
+                name = "Llama 3 70B Instruct",
+                modelName = "meta.llama3-70b-instruct-v1:0",
+                maxTotalTokens = 8192,
+                maxOutTokens = 2048,
+                provider = APIProvider.AWS,
+                inputTokenPricePerK = 0.00265,
+                outputTokenPricePerK = 0.0035
+            ),
+            ChatModel(
+                name = "Mistral 7B Instruct",
+                modelName = "mistral.mistral-7b-instruct-v0:2",
+                maxTotalTokens = 32000,
+                maxOutTokens = 4096,
+                provider = APIProvider.AWS,
+                inputTokenPricePerK = 0.00015,
+                outputTokenPricePerK = 0.0002
+            ),
+            ChatModel(
+                name = "Amazon Titan Text Express",
+                modelName = "amazon.titan-text-express-v1",
+                maxTotalTokens = 8192,
+                maxOutTokens = 8192,
+                provider = APIProvider.AWS,
+                inputTokenPricePerK = 0.0002,
+                outputTokenPricePerK = 0.0006
+            )
+        )
     }
 
     override fun authorize(
@@ -111,6 +262,13 @@ class AwsChatClient(
 
     companion object {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AwsChatClient::class.java)
+        private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+        private data class ModelSpecs(
+            val maxTotalTokens: Int,
+            val maxOutTokens: Int,
+            val inputTokenPricePerK: Double,
+            val outputTokenPricePerK: Double
+        )
 
         fun awsCredentials(awsAuth: AWSAuth): AwsCredentialsProviderChain =
             AwsCredentialsProviderChain.builder().credentialsProviders(

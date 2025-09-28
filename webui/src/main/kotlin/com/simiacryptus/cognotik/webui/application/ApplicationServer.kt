@@ -128,7 +128,7 @@ abstract class ApplicationServer(
         )
         val settingsFile = getSettingsFile(session, userId)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
-        try {
+        if(settingsFile.exists()) try {
             val text = settingsFile.readText()
             logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
             var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
@@ -149,6 +149,9 @@ abstract class ApplicationServer(
             return settings
         } catch (e: Exception) {
             logger.error("Error reading settings file: ${settingsFile.absolutePath}", e)
+            return null
+        } else {
+            logger.debug("Settings file does not exist, returning null")
             return null
         }
     }

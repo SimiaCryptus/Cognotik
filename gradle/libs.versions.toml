@@ -132,6 +132,7 @@ jsr305 = { group = "com.google.code.findbugs", name = "jsr305", version.ref = "j
 jackson-databind-nullable = { group = "org.openapitools", name = "jackson-databind-nullable", version.ref = "jacksonDatabindNullable" }
 jakarta-annotations-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakartaAnnotationsApi" }
 aws-auth = { group = "software.amazon.awssdk", name = "auth", version.ref = "aws" }
+aws-sso = { group = "software.amazon.awssdk", name = "sso", version.ref = "aws" }
 jtransforms = { group = "org.openimaj", name = "JTransforms", version.ref = "jtransforms" }
 scala-java8-compat = { group = "org.scala-lang.modules", name = "scala-java8-compat_2.13", version.ref = "scalaJava8Compat" }
 graalvm-js = { group = "org.graalvm.js", name = "js", version.ref = "graalvm" }

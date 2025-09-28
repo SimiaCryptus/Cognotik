@@ -207,12 +207,12 @@ open class ChatSocketManager(
                         }
                     }
                 } catch (e: Exception) {
+                    task.error(e)
                     log.error("Error in topic extraction", e)
                     ""
                 }
                 response + topicsText
             } catch (e: Exception) {
-                task.error(e)
                 log.error("Error in topic extraction", e)
                 response
             }

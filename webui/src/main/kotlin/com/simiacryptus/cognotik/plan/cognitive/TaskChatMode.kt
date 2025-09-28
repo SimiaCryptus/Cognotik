@@ -87,6 +87,8 @@ open class TaskChatMode(
         )
 
         try {
+            val defaultChatter = coordinator.planSettings.defaultChatter
+            val parsingModel = coordinator.planSettings.parsingChatter
             val parsedActor = ParsedActor(
                 name = "TaskChooser",
                 resultClass = AutoPlanMode.Tasks::class.java,
@@ -108,8 +110,8 @@ open class TaskChatMode(
                     })
                     append("\nChoose the most suitable task type and provide details of how it should be executed.")
                 },
-                model = coordinator.planSettings.defaultChatter.getChildClient(task),
-                parsingModel = coordinator.planSettings.parsingChatter,
+                model = defaultChatter.getChildClient(task),
+                parsingModel = parsingModel,
                 temperature = coordinator.planSettings.temperature,
                 describer = describer,
                 parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
