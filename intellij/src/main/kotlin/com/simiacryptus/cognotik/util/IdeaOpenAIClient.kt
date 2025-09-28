@@ -11,8 +11,8 @@ import org.apache.hc.core5.http.HttpRequest
 import java.util.concurrent.Executors
 
 class IdeaOpenAIClient : OpenAIClient(
-    key = emptyMap(),
-    apiBase = emptyMap(),
+    key = "",
+    apiBase = "",
     workPool = Executors.newCachedThreadPool(),
     scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
         AppSettingsState.currentSession,
@@ -20,28 +20,11 @@ class IdeaOpenAIClient : OpenAIClient(
     ),
 ) {
 
-    init {
-
-        require(key.size == apiBase.size) {
-            "API Key not configured for all providers: ${key.keys} != ${APIProvider.values().toList()}"
-        }
-    }
-
     override fun onUsage(model: AIModel?, tokens: ApiModel.Usage) {
         ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager.incrementUsage(
             AppSettingsState.currentSession,
             UserSettingsManager.defaultUser, model!!, tokens
         )
-    }
-
-    override fun authorize(request: HttpRequest, apiProvider: APIProvider) {
-        val checkApiKey =
-            key.get(apiProvider) ?: throw IllegalArgumentException("No API Key for $apiProvider")
-        key = key.toMutableMap().let {
-            it[apiProvider] = checkApiKey
-            it
-        }.entries.toTypedArray().associate { it.key to it.value }
-        super.authorize(request, apiProvider)
     }
 
     companion object {

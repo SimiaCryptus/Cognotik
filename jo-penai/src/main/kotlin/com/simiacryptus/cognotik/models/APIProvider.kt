@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 import org.slf4j.Logger
 import com.simiacryptus.cognotik.util.LoggerFactory
+import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -33,6 +34,10 @@ abstract class APIProvider private constructor(name: String, val base: String) :
 
     abstract fun getChatModels(key: String, baseUrl: String): List<ChatModel>
 
+    open fun authorize(request: HttpRequest, key: String, apiBase: String) {
+        request.addHeader("Authorization", "Bearer ${key}")
+    }
+
     companion object {
         val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
 
@@ -49,8 +54,21 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
 
         val Google: APIProvider = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
+            override fun authorize(
+                request: HttpRequest,
+                key: String,
+                apiBase: String
+            ) {
+            }
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = GoogleModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = GoogleChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: GoogleModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -83,7 +101,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = OpenAIModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = GoogleChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: OpenAIModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -102,6 +127,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             )
         }
         val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
+            override fun authorize(
+                request: HttpRequest,
+                key: String,
+                apiBase: String
+            ) {
+                request.addHeader("x-api-key", key)
+                request.addHeader("anthropic-version", "2023-06-01")
+            }
 
             override fun getChatModels(key: String, baseUrl: String) = AnthropicChatClient(
                 apiKey = key,
@@ -130,7 +163,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = AWSModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = AwsChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: AWSModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -150,7 +190,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = GroqModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = GroqChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: GroqModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -170,7 +217,12 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = PerplexityModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = OpenAIChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) )
+            ).getModels() ?: PerplexityModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -188,7 +240,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = ModelsLabModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = ModelsLabChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: ModelsLabModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -208,7 +267,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = MistralModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = MistralChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: MistralModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -228,7 +294,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
 
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = DeepSeekModels.values.values.toList()
+            override fun getChatModels(key: String, baseUrl: String) = DeepSeekChatClient(
+                apiKey = key,
+                apiBase = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: DeepSeekModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,

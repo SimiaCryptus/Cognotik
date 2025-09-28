@@ -54,8 +54,8 @@ object PresentationAudioInjector {
         log.debug("Generating audio for text: {}", text)
         val mp3Bytes = OpenAIClient(
             workPool = Executors.newCachedThreadPool(),
-            key = emptyMap(),
-            apiBase = emptyMap(),
+            key = "",
+            apiBase = "",
             scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
         ).createSpeech(
             ApiModel.SpeechRequest(

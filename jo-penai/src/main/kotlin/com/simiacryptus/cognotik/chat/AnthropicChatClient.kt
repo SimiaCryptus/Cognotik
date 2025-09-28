@@ -1,18 +1,21 @@
 package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
 import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.util.JsonUtil
+ import com.simiacryptus.cognotik.util.JsonUtil
+import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
-import org.slf4j.event.Level
-import java.io.BufferedOutputStream
-import java.util.concurrent.ExecutorService
+ import org.slf4j.event.Level
+ import java.io.BufferedOutputStream
+import java.net.URLEncoder
+ import java.util.concurrent.ExecutorService
 
-class AnthropicChatClient(
+ class AnthropicChatClient(
     apiKey: String,
     workPool: ExecutorService,
     apiBase: String,
@@ -37,6 +40,50 @@ class AnthropicChatClient(
         request.addHeader("x-api-key", apiKey)
         request.addHeader("anthropic-version", "2023-06-01")
     }
+    override fun getModels(): List<ChatModel>? {
+        return try {
+            val modelsResponse = fetchAllModels()
+            modelsResponse.mapNotNull { modelInfo ->
+                // Map known Anthropic model IDs to our predefined ChatModel instances
+                when (modelInfo.id) {
+                    "claude-opus-4-1-20250805" -> AnthropicModels.Claude41Opus
+                    "claude-sonnet-4-20250514" -> AnthropicModels.Claude4Sonnet
+                    "claude-3-5-haiku-latest", "claude-3-5-haiku-20241022" -> AnthropicModels.Claude35Haiku
+                    else -> {
+                        // For unknown models, create a generic ChatModel with default pricing
+                        // You may want to skip unknown models or handle them differently
+                        log.debug("Unknown Anthropic model: ${modelInfo.id}")
+                        null
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            log.error("Failed to fetch Anthropic models", e)
+            null
+        }
+    }
+
+
+     private fun fetchAllModels(): List<ModelInfo> {
+        val allModels = mutableListOf<ModelInfo>()
+        var hasMore = true
+        var afterId: String? = null
+        val limit = 100 // Use a larger limit to reduce API calls
+        while (hasMore) {
+            val queryParams = mutableListOf<String>()
+            queryParams.add("limit=$limit")
+            afterId?.let { queryParams.add("after_id=${URLEncoder.encode(it, "UTF-8")}") }
+            val queryString = if (queryParams.isNotEmpty()) "?${queryParams.joinToString("&")}" else ""
+            val response = get("${apiBase}/models$queryString")
+            checkError(response)
+            val listResponse = JsonUtil.objectMapper().readValue(response, ListModelsResponse::class.java)
+            allModels.addAll(listResponse.data)
+            hasMore = listResponse.has_more
+            afterId = listResponse.last_id
+        }
+        return allModels
+    }
+
 
     override fun chat(
         chatRequest: ApiModel.ChatRequest,
@@ -146,6 +193,19 @@ class AnthropicChatClient(
         data class AnthropicUsage(
             val input_tokens: Int? = null, val output_tokens: Int? = null
         )
+        data class ModelInfo(
+            val id: String,
+            val type: String = "model",
+            val display_name: String,
+            val created_at: String
+        )
+        data class ListModelsResponse(
+            val data: List<ModelInfo>,
+            val first_id: String?,
+            val last_id: String?,
+            val has_more: Boolean
+        )
+
 
         fun fromAnthropicResponse(rawResponse: String): String {
             require(rawResponse.isNotBlank()) { "Response cannot be blank" }

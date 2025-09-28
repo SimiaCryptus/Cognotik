@@ -15,17 +15,17 @@ import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import com.simiacryptus.cognotik.util.LoggerFactory
+import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutorService
 
-
 abstract class SingleProviderChatClient(
     protected val provider: APIProvider,
     val apiKey: String,
-    val apiBase: String = provider.base!!,
+    val apiBase: String = provider.base,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
@@ -35,7 +35,22 @@ abstract class SingleProviderChatClient(
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool
-)
+) {
+    protected fun get(url: String) = withClient { client ->
+        client.execute(HttpGet(url).let {
+            provider.authorize(
+                request = it,
+                key = apiKey,
+                apiBase = apiBase
+            )
+            it
+        }).use { response ->
+            val responseBody = response.entity?.content?.bufferedReader()?.readText() ?: ""
+            log(Level.DEBUG, "GET $url -> ${response.code}: $responseBody", logStreams)
+            responseBody
+        }
+    }
+}
 
 abstract class ChatClientBase(
     workPool: ExecutorService,
@@ -126,7 +141,6 @@ abstract class ChatClientBase(
             throw IOException("Empty response entity")
         }
     }
-
 
     override fun onUsage(
         model: LLMModel,

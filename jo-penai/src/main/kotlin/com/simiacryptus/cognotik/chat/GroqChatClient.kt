@@ -27,6 +27,7 @@ class GroqChatClient(
     logStreams = logStreams,
     scheduledPool = scheduledPool
 ) {
+
     override fun authorize(
         request: HttpRequest,
         apiProvider: APIProvider
