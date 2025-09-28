@@ -1,40 +1,49 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.plan.PlanSettings
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.EnabledStrategy
-import com.simiacryptus.cognotik.util.LoggerFactory
-import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.Duration
-import kotlin.math.min
+ import com.fasterxml.jackson.databind.ObjectMapper
+ import com.fasterxml.jackson.module.kotlin.readValue
+import com.simiacryptus.cognotik.describe.Description
+ import com.simiacryptus.cognotik.models.APIProvider
+ import com.simiacryptus.cognotik.plan.PlanSettings
+ import com.simiacryptus.cognotik.platform.ApplicationServices
+ import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
+ import com.simiacryptus.cognotik.platform.model.User
+ import com.simiacryptus.cognotik.util.EnabledStrategy
+ import com.simiacryptus.cognotik.util.LoggerFactory
+ import java.net.URI
+ import java.net.URLEncoder
+ import java.net.http.HttpClient
+ import java.net.http.HttpRequest
+ import java.net.http.HttpResponse
+ import java.time.Duration
+ import kotlin.math.min
+data class SeedItem(
+    val link: String,
+    val title: String,
+    val tags: List<String>? = null,
+    @Description("1-100") val relevance_score: Double = 100.0,
+    val additionalData: Map<String, Any> = emptyMap()
+)
 
-interface SeedStrategy : EnabledStrategy {
+
+ interface SeedStrategy : EnabledStrategy {
     fun getSeedItems(
         taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
         planSettings: PlanSettings
-    ): List<Map<String, Any>>?
+    ): List<SeedItem>?
 }
 
-interface SeedMethodFactory {
+ interface SeedMethodFactory {
     fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy
 }
 
-enum class SeedMethod : SeedMethodFactory {
+ enum class SeedMethod : SeedMethodFactory {
     GoogleSearch {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
             override fun getSeedItems(
                 taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
                 planSettings: PlanSettings
-            ): List<Map<String, Any>>? {
+            ): List<SeedItem>? {
                 log.info("Starting Google Search seed method with query: ${taskConfig?.search_query}")
                 if (taskConfig?.search_query.isNullOrBlank()) {
                     log.error("Search query is missing for Google Search seed method")
@@ -109,11 +118,16 @@ enum class SeedMethod : SeedMethodFactory {
                 return items.take(searchLimit).mapNotNull { item ->
                     val link = item["link"] as? String
                     val title = item["title"] as? String
+                    val snippet = item["snippet"] as? String
                     if (link?.isNotBlank() == true && title?.isNotBlank() == true) {
-                        mapOf(
-                            "link" to link,
-                            "title" to title,
-                            "snippet" to (item["snippet"] as? String ?: "")
+                        SeedItem(
+                            link = link,
+                            title = title,
+                            additionalData = buildMap {
+                                snippet?.let { put("snippet", it) }
+                                item["pagemap"]?.let { put("pagemap", it) }
+                                item["displayLink"]?.let { put("displayLink", it) }
+                            }
                         )
                     } else {
                         log.warn("Skipping invalid search result: $item")
@@ -134,38 +148,38 @@ enum class SeedMethod : SeedMethodFactory {
     },
     SearchIO_Google_Search {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google").createStrategy(task, user)
+            SearchAPISearch("google", "organic_results").createStrategy(task, user)
     },
     SearchIO_Google_Maps {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_maps").createStrategy(task, user)
+            SearchAPISearch("google_maps", "local_results").createStrategy(task, user)
     },
     SearchIO_Google_Trends {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_trends").createStrategy(task, user)
+            SearchAPISearch("google_trends", "results").createStrategy(task, user)
     },
     SearchIO_Google_Scholar {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_scholar").createStrategy(task, user)
+            SearchAPISearch("google_scholar", "results").createStrategy(task, user)
     },
     SearchIO_Google_Patents {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_patents").createStrategy(task, user)
+            SearchAPISearch("google_patents", "results").createStrategy(task, user)
     },
     SearchIO_Google_Finance {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_finance").createStrategy(task, user)
+            SearchAPISearch("google_finance", "results").createStrategy(task, user)
     },
     SearchIO_Google_News {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_news").createStrategy(task, user)
+            SearchAPISearch("google_news", "results").createStrategy(task, user)
     },
     DirectUrls {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
             override fun getSeedItems(
                 taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
                 planSettings: PlanSettings
-            ): List<Map<String, Any>>? {
+            ): List<SeedItem>? {
                 log.info("Starting DirectUrls seed method")
                 if (taskConfig?.direct_urls.isNullOrEmpty()) {
                     log.error("Direct URLs are missing for DirectUrls seed method")
@@ -184,9 +198,10 @@ enum class SeedMethod : SeedMethodFactory {
                     }
                     ?.mapIndexed { index, url ->
                         log.debug("Adding direct URL: $url")
-                        mapOf(
-                            "link" to url,
-                            "title" to "Direct URL ${index + 1}"
+                        SeedItem(
+                            link = url,
+                            title = "Direct URL ${index + 1}",
+                            additionalData = mapOf("index" to index)
                         )
                     }.also {
                         log.info("Successfully processed ${it?.size ?: 0} direct URLs")
@@ -199,4 +214,3 @@ enum class SeedMethod : SeedMethodFactory {
         val log = LoggerFactory.getLogger(SeedMethod::class.java)
     }
 }
-

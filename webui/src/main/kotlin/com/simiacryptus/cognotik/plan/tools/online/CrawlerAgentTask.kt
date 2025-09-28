@@ -171,12 +171,12 @@ class CrawlerAgentTask(
 
 
             val pageQueue = mutableListOf<LinkData>().apply {
-                seedItems.forEach { item: Map<String, Any> ->
+                seedItems.forEach { item ->
                     LinkData(
-                        link = item["link"]?.toString(),
-                        title = item["title"]?.toString() ?: item["link"]?.toString() ?: "No Title",
-                        tags = (item["tags"] as? List<*>)?.map { it.toString() },
-                        relevance_score = (item["relevance_score"] as? Number)?.toDouble() ?: 100.0
+                        link = item.link,
+                        title = item.title,
+                        tags = item.tags,
+                        relevance_score = item.relevance_score
                     ).let { linkData ->
                         log.debug("Adding seed item to page queue: {}", linkData)
                         this.add(linkData)
