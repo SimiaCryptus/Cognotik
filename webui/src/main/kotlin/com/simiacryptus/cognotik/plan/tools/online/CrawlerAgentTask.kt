@@ -62,7 +62,7 @@ class CrawlerAgentTask(
         state = state
     )
 
-    var selenium: Selenium? = null
+    var selenium: Selenium2S3? = null
 
     val urlContentCache = ConcurrentHashMap<String, String>()
 
