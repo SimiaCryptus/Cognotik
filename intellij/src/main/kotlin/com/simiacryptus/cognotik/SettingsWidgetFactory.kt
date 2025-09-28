@@ -67,7 +67,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val rootDir = AppSettingsState.pluginHome
             val userSettings = ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings()
             val pairs = userSettings.apis.flatMap { apiData ->
-                (apiData.provider?.getChatModels(apiData.key, apiData.baseUrl) ?: listOf())
+                (apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: listOf())
                     .map { model -> apiData.provider?.name!! to model }
             }
             val providers = pairs
@@ -113,10 +113,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     val modelName = selectedPath.lastPathComponent.toString()
                     val apis = userSettings.apis
                     val apiData = apis.find { apiData ->
-                        apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
                             ?.find { modelName == it.modelName } != null
                     }
-                    val chatModel = apiData?.provider?.getChatModels(apiData.key, apiData.baseUrl)
+                    val chatModel = apiData?.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
                         ?.find { it.modelName == modelName }
                     when (title) {
                         "Smart Model" -> AppSettingsState.instance.smartModel =
@@ -432,7 +432,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fun UserSettings.isVisible(
                 model: Pair<String, ChatModel>
             ): Boolean = apis.any { api ->
-                api.provider?.name == model.second.provider?.name && api.key.isNotBlank()
+                api.provider?.name == model.second.provider?.name && api.key != null
             }
         }
 

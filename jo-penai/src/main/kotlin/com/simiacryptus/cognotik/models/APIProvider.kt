@@ -53,7 +53,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
         }
 
-        val Google: APIProvider = object : APIProvider("Google", "https://generativelanguage.googleapis.com") {
+        val Gemini: APIProvider = object : APIProvider("Gemini", "https://generativelanguage.googleapis.com") {
             override fun authorize(
                 request: HttpRequest,
                 key: String,
@@ -61,14 +61,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             ) {
             }
 
-            override fun getChatModels(key: String, baseUrl: String) = GoogleChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
                 logStreams = mutableListOf()
-            ).getModels() ?: GoogleModels.values.values.toList()
+            ).getModels() ?: GeminiModels.values.values.toList()
 
             override fun getChatClient(
                 key: String,
@@ -77,7 +77,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logLevel: Level,
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
-            ) = GoogleChatClient(
+            ) = GeminiChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
@@ -87,8 +87,14 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             )
         }
         val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
-
-            override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = emptyList()
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
+                workPool = MoreExecutors.newDirectExecutorService(),
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
+            ).getModels() ?: emptyList()
 
             override fun getChatClient(
                 key: String,
@@ -97,13 +103,20 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logLevel: Level,
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
-            ) = throw UnsupportedOperationException("Ollama API does not support chat functionality")
+            ) = OllamaChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                scheduledPool = scheduledPool,
+                logLevel = logLevel,
+                logStreams = logStreams
+            )
         }
         val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
-            override fun getChatModels(key: String, baseUrl: String) = GoogleChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
@@ -117,7 +130,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logLevel: Level,
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
-            ) = GoogleChatClient(
+            ) = GeminiChatClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
@@ -136,9 +149,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 request.addHeader("anthropic-version", "2023-06-01")
             }
 
-            override fun getChatModels(key: String, baseUrl: String) = AnthropicChatClient(
-                apiKey = key,
-                apiBase = base,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
@@ -163,9 +176,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val AWS: APIProvider = object : APIProvider("AWS", "https://api.openai.aws") {
 
-            override fun getChatModels(key: String, baseUrl: String) = AwsChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
@@ -190,9 +203,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
 
-            override fun getChatModels(key: String, baseUrl: String) = GroqChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
@@ -217,11 +230,13 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
 
-            override fun getChatModels(key: String, baseUrl: String) = OpenAIChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
-                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) )
+                scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
+                logLevel = Level.INFO,
+                logStreams = mutableListOf()
             ).getModels() ?: PerplexityModels.values.values.toList()
 
             override fun getChatClient(
@@ -240,9 +255,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val ModelsLab: APIProvider = object : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
 
-            override fun getChatModels(key: String, baseUrl: String) = ModelsLabChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
@@ -267,9 +282,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val Mistral: APIProvider = object : APIProvider("Mistral", "https://api.mistral.ai/v1") {
 
-            override fun getChatModels(key: String, baseUrl: String) = MistralChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
@@ -294,9 +309,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
         }
         val DeepSeek: APIProvider = object : APIProvider("DeepSeek", "https://api.deepseek.com") {
 
-            override fun getChatModels(key: String, baseUrl: String) = DeepSeekChatClient(
-                apiKey = key,
-                apiBase = baseUrl,
+            override fun getChatModels(key: String, baseUrl: String) = getChatClient(
+                key = key,
+                base = baseUrl,
                 workPool = MoreExecutors.newDirectExecutorService(),
                 scheduledPool = MoreExecutors.listeningDecorator( Executors.newScheduledThreadPool(1) ),
                 logLevel = Level.INFO,
@@ -319,7 +334,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
         }
-        val GoogleSearch: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
+        val Google: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
 
             override fun getChatModels(key: String, baseUrl: String): List<ChatModel> = emptyList()
 
@@ -330,14 +345,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logLevel: Level,
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
-            ) = GoogleChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
-            )
+            ) = throw UnsupportedOperationException("Google Search API does not support chat functionality")
         }
         val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
 
@@ -355,7 +363,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
 
         init {
             log.info("Registering API providers")
-            register(APIProvider::class.java, Google)
+            register(APIProvider::class.java, Gemini)
             register(APIProvider::class.java, OpenAI)
             register(APIProvider::class.java, Anthropic)
             register(APIProvider::class.java, AWS)
@@ -364,7 +372,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             register(APIProvider::class.java, ModelsLab)
             register(APIProvider::class.java, Mistral)
             register(APIProvider::class.java, DeepSeek)
-            register(APIProvider::class.java, GoogleSearch)
+            register(APIProvider::class.java, Google)
             register(APIProvider::class.java, Github)
             register(APIProvider::class.java, Ollama)
             register(APIProvider::class.java, SearchAPI)

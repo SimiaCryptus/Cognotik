@@ -321,7 +321,7 @@ data class AppSettingsState(
         var lastEvent: AnActionEvent? = null
         val log = LoggerFactory.getLogger(AppSettingsState::class.java)
         var auxiliaryLog: File? = null
-        const val WELCOME_VERSION: String = "1.5.0"
+        const val WELCOME_VERSION: String = "2.0.8"
 
         @JvmStatic
         val instance: AppSettingsState by lazy {

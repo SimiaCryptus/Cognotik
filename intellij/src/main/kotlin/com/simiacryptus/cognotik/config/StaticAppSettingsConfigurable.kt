@@ -442,11 +442,11 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val smartModelName = component.smartModel.selectedItem as String?
             log.debug("Selected models - fast: $fastModelName, smart: $smartModelName")
 
-            val fastChatModel = userSettings.apis.filter { it.key.isNotBlank() }.firstOrNull()
-                ?.let { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { model -> model.modelName == fastModelName } }
+            val fastChatModel = userSettings.apis.filter { it.key != null }.firstOrNull()
+                ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { model -> model.modelName == fastModelName } }
             val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
-            val smartChatModel = userSettings.apis.filter { it.key.isNotBlank() }.firstOrNull()
-                ?.let { apiData -> apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.find { model -> model.modelName == smartModelName } }
+            val smartChatModel = userSettings.apis.filter { it.key != null }.firstOrNull()
+                ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { model -> model.modelName == smartModelName } }
             val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
 
             settings.fastModel = ApiChatModel(fastChatModel, fastApiData)

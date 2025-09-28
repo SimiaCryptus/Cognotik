@@ -48,7 +48,7 @@ class BasicChatApp(
             val threadPoolManager = ApplicationServices.threadPoolManager
             return api?.let { apiData ->
                 model.instance(
-                    key = apiData.key,
+                    key = apiData.key ?: return null,
                     base = apiData.baseUrl,
                     workPool = threadPoolManager.getPool(session, user),
                     temperature = settings.temperature,

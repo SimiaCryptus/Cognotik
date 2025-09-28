@@ -74,7 +74,7 @@ open class ChatModel(
                     AWSModels.values +
                     AnthropicModels.values +
                     DeepSeekModels.values +
-                    GoogleModels.values).toMutableMap() }
+                    GeminiModels.values).toMutableMap() }
 
     }
 }

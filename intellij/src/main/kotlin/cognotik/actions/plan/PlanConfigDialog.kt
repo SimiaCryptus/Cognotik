@@ -71,9 +71,9 @@ class PlanConfigDialog(
         // Validation patterns
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_-]+$")
 
-        fun isVisible(chatModel: ChatModel) = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter {
-            it.key.isNotBlank()
-        }.any { it.provider == chatModel.provider }
+        fun isVisible(chatModel: ChatModel) = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
+            .filter { it.key != null }
+            .any { it.provider == chatModel.provider }
     }
 
     private val maxTaskHistoryCharsField = JBTextField(settings.maxTaskHistoryChars.toString())
@@ -572,11 +572,8 @@ class PlanConfigDialog(
 
     private fun getVisibleModels() =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-            apiData.provider?.getChatModels(apiData.key, apiData.baseUrl)?.filter { model ->
-                model.provider == apiData.provider
-                        && apiData.key.isNotBlank()
-                        && model.modelName?.isNotBlank() == true
-                        && isVisible(model)
+            apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
+                model.provider == apiData.provider && model.modelName?.isNotBlank() == true && isVisible(model)
             } ?: listOf()
         }.distinctBy { it.modelName }
             .sortedBy { "${it.provider?.name} - ${it.modelName}" }

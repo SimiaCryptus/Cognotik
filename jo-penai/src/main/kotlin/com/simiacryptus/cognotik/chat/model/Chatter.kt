@@ -23,7 +23,7 @@ open class Chatter(
     val onUsage: (model: LLMModel, tokens: ApiModel.Usage) -> Unit,
 ) {
     init {
-        require(key.isNotBlank()) { "API key must be provided" }
+        //require(key != null) { "API key must be provided" }
         require(base.isNotBlank()) { "Base URL must be provided" }
         require(temperature in 0.0..2.0) { "Temperature must be in range [0.0, 2.0]" }
     }

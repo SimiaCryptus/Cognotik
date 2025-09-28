@@ -54,9 +54,9 @@ enum class SeedMethod : SeedMethodFactory {
                     user ?: defaultUser
                 )
                 val key = userSettings
-                    .apis.firstOrNull { it.provider == APIProvider.GoogleSearch }?.key?.trim()
+                    .apis.firstOrNull { it.provider == APIProvider.Google }?.key?.trim()
                     ?: throw IllegalStateException("Google API token is required but not configured")
-                val engineId = userSettings.apiBase[APIProvider.GoogleSearch]?.trim()
+                val engineId = userSettings.apiBase[APIProvider.Google]?.trim()
                     ?: throw IllegalStateException("Search engine ID is required but not configured")
                 log.debug("Preparing Google Search API request with engine ID: $engineId")
                 val uriBuilder =
@@ -127,8 +127,8 @@ enum class SeedMethod : SeedMethodFactory {
                 return user?.let {
                     val userSettings =
                         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
-                    userSettings.apis.any { api -> api.provider == APIProvider.GoogleSearch && api.key?.isNotBlank() == true } &&
-                            userSettings.apiBase[APIProvider.GoogleSearch]?.isNotBlank() == true
+                    userSettings.apis.any { api -> api.provider == APIProvider.Google && api.key?.isNotBlank() == true } &&
+                            userSettings.apiBase[APIProvider.Google]?.isNotBlank() == true
                 } ?: false
             }
         }
@@ -268,7 +268,7 @@ class SearchAPISearch(
 
         override fun isEnabled() = user?.let {
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
-                .apis.any { api -> api.provider == APIProvider.SearchAPI && api.key.isNotBlank() }
+                .apis.any { api -> api.provider == APIProvider.SearchAPI && api.key != null }
         } ?: false
     }
 }

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.GoogleModels
+import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ApiModel
@@ -14,7 +14,7 @@ import java.io.BufferedOutputStream
  import java.util.concurrent.ExecutorService
 import java.util.concurrent.ConcurrentHashMap
 
- class GoogleChatClient(
+ class GeminiChatClient(
     apiKey: String,
     apiBase: String,
     workPool: ExecutorService,
@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
     logStreams: MutableList<BufferedOutputStream>,
     scheduledPool: ListeningScheduledExecutorService,
  ) : SingleProviderChatClient(
-    APIProvider.Google,
+    APIProvider.Gemini,
     apiKey = apiKey,
     apiBase = apiBase,
     workPool = workPool,
@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap
                 // Map Google API model to our ChatModel
                 val baseModelId = model.name?.removePrefix("models/") ?: return@mapNotNull null
                 // Try to find a matching model in our predefined GoogleModels
-                GoogleModels.values.values.find {
+                GeminiModels.values.values.find {
                     it.modelName == baseModelId || it.modelName == model.name
                 } ?: run {
                     // If not found in predefined models, create a dynamic one
@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap
                         modelName = baseModelId,
                         maxTotalTokens = model.inputTokenLimit ?: 1048576,
                         maxOutTokens = model.outputTokenLimit ?: 8192,
-                        provider = APIProvider.Google,
+                        provider = APIProvider.Gemini,
                         inputTokenPricePerK = 0.0, // Default pricing - would need to be configured
                         outputTokenPricePerK = 0.0
                     )
@@ -90,7 +90,7 @@ import java.util.concurrent.ConcurrentHashMap
         val responseBody = post(
             "${apiBase}/v1beta/models/${model.modelName}:generateContent?key=$apiKey",
             json,
-            APIProvider.Google
+            APIProvider.Gemini
         )
         checkError(responseBody)
 
@@ -104,7 +104,7 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GoogleChatClient::class.java)
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GeminiChatClient::class.java)
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
         
         data class ModelsListResponse(

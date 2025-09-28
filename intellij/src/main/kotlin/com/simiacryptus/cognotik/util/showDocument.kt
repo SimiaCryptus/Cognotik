@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.simiacryptus.cognotik.PluginStartupActivity
+import com.simiacryptus.cognotik.PluginStartupActivity.Companion.log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -16,7 +17,7 @@ import kotlin.reflect.jvm.isAccessible
 suspend fun Project.showDocument(welcomeFile: String): Boolean {
     val resource = PluginStartupActivity::class.java.classLoader.getResource(welcomeFile)
     if (resource == null) {
-        PluginStartupActivity.Companion.log.error("Welcome page resource not found: $welcomeFile")
+        log.error("Welcome page resource not found: $welcomeFile")
         return true
     }
     var virtualFile = resource.let { VirtualFileManager.getInstance().findFileByUrl(it.toString()) }
@@ -24,11 +25,11 @@ suspend fun Project.showDocument(welcomeFile: String): Boolean {
         val path = resource.toURI()?.let { Paths.get(it) }
         virtualFile = path?.let { VirtualFileManager.getInstance().findFileByNioPath(it) }
     } catch (e: Exception) {
-        PluginStartupActivity.Companion.log.debug("Error opening welcome page", e)
+        log.debug("Error opening welcome page", e)
     }
     if (virtualFile == null) {
         try {
-            PluginStartupActivity.Companion.log.debug("Creating temporary file for welcome page")
+            log.debug("Creating temporary file for welcome page")
             val tempFile =
                 withContext(Dispatchers.IO) {
                     File.createTempFile(
@@ -41,30 +42,30 @@ suspend fun Project.showDocument(welcomeFile: String): Boolean {
                 tempFile.outputStream().use { output -> input.copyTo(output) }
             }
             virtualFile = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(tempFile.toPath())
-            PluginStartupActivity.Companion.log.debug("Welcome page temporary file created: ${tempFile.absolutePath}")
+            log.debug("Welcome page temporary file created: ${tempFile.absolutePath}")
         } catch (e: Exception) {
-            PluginStartupActivity.Companion.log.error("Error opening welcome page", e)
+            log.error("Error opening welcome page", e)
         }
     }
     virtualFile?.let {
         try {
-            PluginStartupActivity.Companion.log.debug("Opening welcome page in editor")
+            log.debug("Opening welcome page in editor")
             ApplicationManager.getApplication().invokeLater {
                 FileEditorManager.getInstance(this).openFile(it, true).forEach { editor ->
                     try {
                         editor::class.declaredMembers.filter { it.name == "setLayout" }.forEach { member ->
                             member.isAccessible = true
                             member.call(editor, TextEditorWithPreview.Layout.SHOW_PREVIEW)
-                            PluginStartupActivity.Companion.log.debug("Successfully set preview layout for welcome page")
+                            log.debug("Successfully set preview layout for welcome page")
                         }
                     } catch (e: Exception) {
-                        PluginStartupActivity.Companion.log.warn("Failed to set preview layout for welcome page editor", e)
+                        log.warn("Failed to set preview layout for welcome page editor", e)
                     }
                 }
             }
         } catch (e: Exception) {
-            PluginStartupActivity.Companion.log.error("Error opening welcome page", e)
+            log.error("Error opening welcome page", e)
         }
-    } ?: PluginStartupActivity.Companion.log.error("Welcome page not found")
+    } ?: log.error("Welcome page not found")
     return false
 }

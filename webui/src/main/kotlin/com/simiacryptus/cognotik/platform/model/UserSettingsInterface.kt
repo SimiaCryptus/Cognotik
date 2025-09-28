@@ -207,7 +207,7 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
  */
 data class ApiData(
     val name: String? = null,
-    val key: String = "",
+    val key: String? = null,
     val baseUrl: String = "",
     val provider: APIProvider? = null,
 ) {
@@ -221,7 +221,7 @@ data class ApiData(
      */
     fun validate(): ApiData {
         if (provider == null) throw IllegalStateException("Provider not set or invalid")
-        if (key.isBlank()) throw IllegalStateException("API key not set")
+        if (key == null) throw IllegalStateException("API key not set")
         // Only validate chat models for providers that support chat functionality
         val supportsChatModels = provider.getChatModels(key, baseUrl).isNotEmpty()
         if (supportsChatModels) {
@@ -256,7 +256,7 @@ fun toApiList(
     apiKeys: Map<APIProvider, String>, apiBase: Map<APIProvider, String>
 ): MutableList<ApiData> = apiKeys.map {
     ApiData(
-        key = it.value, baseUrl = apiBase[it.key] ?: it.key.base ?: "", provider = it.key
+        key = it.value, baseUrl = apiBase[it.key] ?: it.key.base, provider = it.key
     ).validate()
 }.toMutableList()
 

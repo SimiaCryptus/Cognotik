@@ -3,13 +3,13 @@ package com.simiacryptus.cognotik.chat.model
 import com.simiacryptus.cognotik.models.APIProvider
 
 @Suppress("unused")
-object GoogleModels {
+object GeminiModels {
     val GeminiPro_15 = ChatModel(
         name = "GeminiPro_15",
         modelName = "gemini-1.5-pro",
         maxTotalTokens = 2097152,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00125,
         outputTokenPricePerK = 0.005
     )
@@ -19,7 +19,7 @@ object GoogleModels {
         modelName = "gemini-1.0-pro",
         maxTotalTokens = 2097152,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00025,
         outputTokenPricePerK = 0.0005
     )
@@ -29,7 +29,7 @@ object GoogleModels {
         modelName = "gemini-1.5-flash",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.000075,
         outputTokenPricePerK = 0.0003
     )
@@ -39,7 +39,7 @@ object GoogleModels {
         modelName = "gemini-1.5-flash-8b",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.0000375,
         outputTokenPricePerK = 0.00015
     )
@@ -49,7 +49,7 @@ object GoogleModels {
         modelName = "gemini-2.0-flash",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.0001,
         outputTokenPricePerK = 0.0004
     )
@@ -59,7 +59,7 @@ object GoogleModels {
         modelName = "gemini-2.0-flash-lite",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00005,
         outputTokenPricePerK = 0.0002
     )
@@ -69,7 +69,7 @@ object GoogleModels {
         modelName = "gemini-2.0-flash-live-001",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.0001,
         outputTokenPricePerK = 0.0004
     )
@@ -78,7 +78,7 @@ object GoogleModels {
         modelName = "gemini-2.0-flash-preview-image-generation",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.0001,
         outputTokenPricePerK = 0.0004
     )
@@ -88,7 +88,7 @@ object GoogleModels {
         modelName = "gemini-2.5-pro",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.0015,
         outputTokenPricePerK = 0.006
     )
@@ -98,7 +98,7 @@ object GoogleModels {
         modelName = "gemini-2.5-flash",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00015,
         outputTokenPricePerK = 0.0006
     )
@@ -107,7 +107,7 @@ object GoogleModels {
         modelName = "gemini-2.5-flash-lite",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00005,
         outputTokenPricePerK = 0.0002
     )
@@ -116,7 +116,7 @@ object GoogleModels {
         modelName = "gemini-live-2.5-flash-preview",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00015,
         outputTokenPricePerK = 0.0006
     )
@@ -125,7 +125,7 @@ object GoogleModels {
         modelName = "gemini-2.5-flash-preview-native-audio-dialog",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00015,
         outputTokenPricePerK = 0.0006
     )
@@ -134,7 +134,7 @@ object GoogleModels {
         modelName = "gemini-2.5-flash-exp-native-audio-thinking-dialog",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00015,
         outputTokenPricePerK = 0.0006
     )
@@ -143,7 +143,7 @@ object GoogleModels {
         modelName = "gemini-2.5-flash-preview-tts",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.00015,
         outputTokenPricePerK = 0.0006
     )
@@ -152,7 +152,7 @@ object GoogleModels {
         modelName = "gemini-2.5-pro-preview-tts",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
-        provider = APIProvider.Companion.Google,
+        provider = APIProvider.Companion.Gemini,
         inputTokenPricePerK = 0.0015,
         outputTokenPricePerK = 0.006
     )

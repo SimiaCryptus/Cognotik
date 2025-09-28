@@ -26,6 +26,7 @@ class UserSettingsServlet : HttpServlet() {
                         ApiData(
                             key = when (apiData.key) {
                                 "" -> ""
+                                null -> null
                                 else -> mask
                             },
                             baseUrl = apiData.baseUrl,
