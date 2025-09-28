@@ -70,13 +70,13 @@ open class SearchAPISearch(
             )
             results = results.take(searchLimit)
             return results.mapNotNull { result ->
-                val link = (result["link"] ?: result["url"] ?: result["website"]) as? String
+                val link = (result["link"] ?: result["url"] ?: result["website"] ?: result["pdf"]) as? String
                 val title = (result["title"]) as? String
                 if (link?.isNotBlank() == true && title?.isNotBlank() == true) {
                     SeedItem(
                         link = link,
                         title = title,
-                        additionalData = result.filterKeys { it != "link" && it != "url" && it != "title" && it != "website" }
+                        additionalData = result.filterKeys { it != "link" && it != "url" && it != "title" && it != "website" && it != "pdf" }
                     )
                 } else {
                     log.warn("Skipping invalid search result missing link or title: $result")
