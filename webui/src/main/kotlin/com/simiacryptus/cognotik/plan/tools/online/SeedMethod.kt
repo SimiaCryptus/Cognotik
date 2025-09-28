@@ -154,25 +154,17 @@ data class SeedItem(
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
             SearchAPISearch("google_maps", "local_results").createStrategy(task, user)
     },
-    SearchIO_Google_Trends {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_trends", "results").createStrategy(task, user)
-    },
     SearchIO_Google_Scholar {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_scholar", "results").createStrategy(task, user)
+            SearchAPISearch("google_scholar", "organic_results").createStrategy(task, user)
     },
     SearchIO_Google_Patents {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_patents", "results").createStrategy(task, user)
-    },
-    SearchIO_Google_Finance {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_finance", "results").createStrategy(task, user)
+            SearchAPISearch("google_patents", "organic_results").createStrategy(task, user)
     },
     SearchIO_Google_News {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
-            SearchAPISearch("google_news", "results").createStrategy(task, user)
+            SearchAPISearch("google_news", "organic_results").createStrategy(task, user)
     },
     DirectUrls {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
