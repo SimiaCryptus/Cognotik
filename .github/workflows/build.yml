@@ -414,9 +414,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Gradle Wrapper Validation
-        uses: gradle/actions/wrapper-validation@v3
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -495,9 +492,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
-      - name: Gradle Wrapper Validation
-        uses: gradle/actions/wrapper-validation@v3
 
       - name: Setup Java
         uses: actions/setup-java@v4

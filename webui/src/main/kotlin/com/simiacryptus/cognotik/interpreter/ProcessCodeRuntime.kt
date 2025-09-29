@@ -45,12 +45,13 @@ open class ProcessCodeRuntime(
             process.destroy()
             throw RuntimeException("Process execution timed out after $timeoutMinutes minutes; output: $output; error: $error")
         } else if (error.isNotEmpty()) {
-
             return "ERROR:\n```text\n$error\n```\n\nOUTPUT:\n```text\n$output\n```"
         } else {
             return output
         }
     }
 
-    companion object
+    companion object {
+        val log = org.slf4j.LoggerFactory.getLogger(ProcessCodeRuntime::class.java)
+    }
 }
