@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.kotlin
 
-import com.simiacryptus.cognotik.interpreter.Interpreter
+import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -83,5 +83,5 @@ abstract class InterpreterTestBase {
         assertThrows<Exception> { with(interpreter.validate("x * y")) { throw this!! } }
     }
 
-    abstract fun newInterpreter(map: Map<String, Any>): Interpreter
+    abstract fun newInterpreter(map: Map<String, Any>): CodeRuntime
 }

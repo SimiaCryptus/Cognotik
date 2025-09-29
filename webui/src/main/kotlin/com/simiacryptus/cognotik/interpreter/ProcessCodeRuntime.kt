@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.interpreter
 
 import java.util.concurrent.TimeUnit
 
-open class ProcessInterpreter(
+open class ProcessCodeRuntime(
     private val defs: Map<String, Any> = mapOf(),
-) : Interpreter {
+) : CodeRuntime {
 
     val command: List<String>
         get() = defs["command"]?.let { command ->

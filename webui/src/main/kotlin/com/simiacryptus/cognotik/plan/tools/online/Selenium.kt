@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.util.Selenium2S3
 import java.io.File
 import java.util.concurrent.ExecutorService
@@ -12,7 +12,7 @@ class Selenium : FetchMethodFactory {
             webSearchDir: File,
             index: Int,
             pool: ExecutorService,
-            planSettings: PlanSettings
+            orchestrationConfig: OrchestrationConfig
         ): String {
             FetchMethod.Companion.log.info("Selenium fetching URL: $url (index: $index)")
             return try {
@@ -38,7 +38,7 @@ class Selenium : FetchMethodFactory {
             } catch (e: Exception) {
                 FetchMethod.Companion.log.warn("Selenium fetch failed for URL: $url, falling back to HttpClient. Error: ${e.message}", e)
                 FetchConfig.isSeleniumEnabled = false
-                createStrategy(task).fetch(url, webSearchDir, index, pool, planSettings)
+                createStrategy(task).fetch(url, webSearchDir, index, pool, orchestrationConfig)
             }
         }
 

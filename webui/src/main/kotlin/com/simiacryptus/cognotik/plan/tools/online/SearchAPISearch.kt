@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.SeedMethod.Companion.log
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -23,8 +23,8 @@ open class SearchAPISearch(
         user: User?,
     ): SeedStrategy = object : SeedStrategy {
         override fun getSeedItems(
-            taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
-            planSettings: PlanSettings,
+            taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+            orchestrationConfig: OrchestrationConfig,
         ): List<SeedItem>? {
             log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
             if (taskConfig?.search_query.isNullOrBlank()) {

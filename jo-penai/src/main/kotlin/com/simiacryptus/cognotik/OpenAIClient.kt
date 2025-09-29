@@ -7,7 +7,7 @@ import com.google.gson.JsonObject
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.models.*
-import com.simiacryptus.cognotik.models.ApiModel.*
+import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
@@ -211,7 +211,7 @@ open class OpenAIClient(
             }
         }
 
-    open fun createSpeech(request: ApiModel.SpeechRequest): ByteArray? = withReliability {
+    open fun createSpeech(request: ModelSchema.SpeechRequest): ByteArray? = withReliability {
         withPerformanceLogging {
             val httpRequest = HttpPost("${apiBase}/audio/speech")
             provider.authorize(httpRequest, key, apiBase)

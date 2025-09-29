@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -18,20 +18,20 @@ open class Planner {
         root: Path,
         task: SessionTask,
         userMessage: String,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         contextFn: () -> List<String> = { emptyList() },
         describer: TypeDescriber
     ): TaskBreakdownWithPrompt {
         val toInput = inputFn(codeFiles, files, root)
         task.echo(userMessage.renderMarkdown())
-        return if (!planSettings.autoFix)
+        return if (!orchestrationConfig.autoFix)
             Discussable(
                 task = task,
                 heading = "",
                 userMessage = { userMessage },
                 initialResponse = {
                     newPlan(
-                        planSettings,
+                        orchestrationConfig,
                         toInput(userMessage) + contextFn(),
                         describer
                     )
@@ -51,9 +51,9 @@ open class Planner {
                         e.message ?: e.javaClass.simpleName
                     }
                 },
-                reviseResponse = { userMessages: List<Pair<String, ApiModel.Role>> ->
+                reviseResponse = { userMessages: List<Pair<String, ModelSchema.Role>> ->
                     newPlan(
-                        planSettings,
+                        orchestrationConfig,
                         userMessages.map { it.first },
                         describer
                     )
@@ -67,7 +67,7 @@ open class Planner {
             }
         else {
             newPlan(
-                planSettings,
+                orchestrationConfig,
                 toInput(userMessage) + contextFn(),
                 describer
             ).let {
@@ -81,12 +81,12 @@ open class Planner {
     }
 
     open fun newPlan(
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         inStrings: List<String>,
         describer: TypeDescriber
     ): ParsedResponse<Map<String, TaskConfigBase>> {
-        planSettings.absoluteWorkingDir?.apply { File(this).mkdirs() }
-        val planningActor = planSettings.planningActor(describer)
+        orchestrationConfig.absoluteWorkingDir?.apply { File(this).mkdirs() }
+        val planningActor = orchestrationConfig.planningActor(describer)
         return planningActor.respond(
             messages = planningActor.chatMessages(inStrings),
             input = inStrings,

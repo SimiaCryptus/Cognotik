@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools
 
-import com.simiacryptus.cognotik.actors.CodingActor
+import com.simiacryptus.cognotik.actors.CodeAgent
 import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.interpreter.ProcessInterpreter
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.interpreter.ProcessCodeRuntime
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -15,9 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
 class RunShellCommandTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: RunShellCommandTaskConfigData?
-) : AbstractTask<RunShellCommandTask.RunShellCommandTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<RunShellCommandTask.RunShellCommandTaskConfigData>(orchestrationConfig, planTask) {
 
     class RunShellCommandTaskConfigData(
         @Description("The shell command to be executed")
@@ -37,51 +37,51 @@ class RunShellCommandTask(
     )
 
     override fun promptSegment() = """
-    RunShellCommandTask - Execute ${planSettings.language ?: "bash"} shell commands and provide the output
+    RunShellCommandTask - Execute ${orchestrationConfig.language ?: "bash"} shell commands and provide the output
       ** Specify the command to be executed, or describe the task to be performed
       ** Optionally specify a working directory for the command execution
       ** Optionally specify a timeout in minutes (default: 15)
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val chatter = (taskSettings.model?.let { this.planSettings.instance(it) }
-            ?: this.planSettings.defaultChatter).getChildClient(task)
+        val chatter = (taskSettings.model?.let { this.orchestrationConfig.instance(it) }
+            ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
         val planTask = this.taskConfig
-        val shellCommandActor = CodingActor(
+        val shellCommandActor = CodeAgent(
             name = "RunShellCommand",
-            interpreterClass = ProcessInterpreter::class,
+            codeRuntimeClass = ProcessCodeRuntime::class,
             details = """
         Execute the following shell command(s) and provide the output. Ensure to handle any errors or exceptions gracefully.
         Note: This task is for running simple and safe commands. Avoid executing commands that can cause harm to the system or compromise security.
         """.trimIndent(),
             symbols = mapOf<String, Any>(
-                "env" to (this.planSettings.env ?: emptyMap<String, String>()),
+                "env" to (this.orchestrationConfig.env ?: emptyMap<String, String>()),
                 "workingDir" to ((planTask?.workingDir?.let { File(it).absolutePath }
-                    ?: File(this.planSettings.absoluteWorkingDir ?: ".").absolutePath)
-                    ?.let { a -> this.planSettings.absoluteWorkingDir?.let { b -> File(b).resolve(a) } }
-                    ?: this.planSettings.absoluteWorkingDir ?: "."),
-                "language" to (this.planSettings.language ?: "bash"),
-                "command" to (this.planSettings.shellCmd),
+                    ?: File(this.orchestrationConfig.absoluteWorkingDir ?: ".").absolutePath)
+                    ?.let { a -> this.orchestrationConfig.absoluteWorkingDir?.let { b -> File(b).resolve(a) } }
+                    ?: this.orchestrationConfig.absoluteWorkingDir ?: "."),
+                "language" to (this.orchestrationConfig.language ?: "bash"),
+                "command" to (this.orchestrationConfig.shellCmd),
                 "timeoutMinutes" to (planTask?.timeoutMinutes ?: 15L),
             ),
             model = chatter,
-            temperature = this.planSettings.temperature,
+            temperature = this.orchestrationConfig.temperature,
             fallbackModel = chatter
         )
-        val codingAgent = object : CodingAgent<ProcessInterpreter>(
+        val codingAgent = object : CodingAgent<ProcessCodeRuntime>(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
             ui = task.manager,
-            interpreter = shellCommandActor.interpreterClass as KClass<ProcessInterpreter>,
+            interpreter = shellCommandActor.codeRuntimeClass as KClass<ProcessCodeRuntime>,
             symbols = shellCommandActor.symbols,
             temperature = shellCommandActor.temperature,
             details = shellCommandActor.details,
@@ -91,10 +91,10 @@ class RunShellCommandTask(
         ) {
             override fun execute(
                 task: SessionTask,
-                response: CodingActor.CodeResult
+                response: CodeAgent.CodeResult
             ): String {
                 val result = super.execute(task, response) // Runs the interpreter, updates response.result
-                if (planSettings.autoFix) {
+                if (orchestrationConfig.autoFix) {
                     val resultString =
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
                                 "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" + // STDOUT
@@ -107,14 +107,14 @@ class RunShellCommandTask(
 
             override fun displayFeedback(
                 task: SessionTask,
-                request: CodingActor.CodeRequest,
-                response: CodingActor.CodeResult
+                request: CodeAgent.CodeRequest,
+                response: CodeAgent.CodeResult
             ) {
-                if (planSettings.autoFix && autoRunCounter.incrementAndGet() <= 1) {
+                if (orchestrationConfig.autoFix && autoRunCounter.incrementAndGet() <= 1) {
                     super.responseAction(task, "Running...", null, StringBuilder()) {
                         this.execute(task, response, request) // Calls the overridden execute
                     }
-                } else if (!planSettings.autoFix) {
+                } else if (!orchestrationConfig.autoFix) {
                     // Manual feedback UI
                     val formText = StringBuilder()
                     var formHandle: StringBuilder? = null
@@ -153,7 +153,7 @@ class RunShellCommandTask(
             }
 
             fun acceptButton(
-                response: CodingActor.CodeResult,
+                response: CodeAgent.CodeResult,
                 task: SessionTask // Added task param for potential future use or consistency
             ): String {
                 return ui.hrefLink("Accept", "href-link play-button") {
@@ -168,9 +168,9 @@ class RunShellCommandTask(
         }
         codingAgent.start(
             codingAgent.codeRequest(
-                messages.map { it to ApiModel.Role.user } +
+                messages.map { it to ModelSchema.Role.user } +
                         listOfNotNull(
-                            this.taskConfig?.command?.takeIf { it.isNotBlank() }?.let { it to ApiModel.Role.user }
+                            this.taskConfig?.command?.takeIf { it.isNotBlank() }?.let { it to ModelSchema.Role.user }
                         )
             )
         )

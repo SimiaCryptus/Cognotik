@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Role
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
@@ -19,11 +19,11 @@ import java.nio.file.FileSystems
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
-class InsightTask(
-    planSettings: PlanSettings,
-    planTask: InsightTaskConfigData?
-) : AbstractTask<InsightTask.InsightTaskConfigData>(planSettings, planTask) {
-    class InsightTaskConfigData(
+class AnalysisTask(
+    orchestrationConfig: OrchestrationConfig,
+    planTask: AnalysisTaskConfigData?
+) : AbstractTask<AnalysisTask.AnalysisTaskConfigData>(orchestrationConfig, planTask) {
+    class AnalysisTaskConfigData(
         @Description("The specific questions or topics to be addressed in the inquiry")
         val inquiry_questions: List<String>? = null,
         @Description("The goal or purpose of the inquiry")
@@ -36,13 +36,13 @@ class InsightTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskConfigBase(
-        task_type = TaskType.InsightTask.name,
+        task_type = AnalysisTaskType.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
-    override fun promptSegment() = (if (!planSettings.autoFix) """
+    override fun promptSegment() = (if (!orchestrationConfig.autoFix) """
 InsightTask - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
   * Specify the questions and the goal of the inquiry.
   * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
@@ -59,11 +59,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 """
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
 
         val toInput = { it: String ->
@@ -73,8 +73,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             ).filter { it.isNotBlank() }
         }
 
-        val taskConfig: InsightTaskConfigData? = this.taskConfig
-        val insightActor = SimpleActor(
+        val taskConfig: AnalysisTaskConfigData? = this.taskConfig
+        val insightActor = ChatAgent(
             name = "Insight",
             prompt = """
                 Create code for a new file that fulfills the specified requirements and context.
@@ -86,17 +86,17 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
                 When generating insights, consider the existing project context and focus on information that is directly relevant and applicable.
                 Focus on generating insights and information that support the task types available in the system (${
-                this.planSettings.taskSettings.filter<String, TaskSettingsBase> { it.value.enabled }.keys.joinToString<String>(
+                this.orchestrationConfig.taskSettings.filter<String, TaskSettingsBase> { it.value.enabled }.keys.joinToString<String>(
                     ", "
                 )
             }).
                 This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
-            model = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) }
-                ?: this.planSettings.defaultChatter).getChildClient(task),
-            temperature = this.planSettings.temperature,
+            model = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
+            temperature = this.orchestrationConfig.temperature,
         )
-        val inquiryResult = if (!planSettings.autoFix) Discussable(
+        val inquiryResult = if (!orchestrationConfig.autoFix) Discussable(
             task = task,
             userMessage = {
                 "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
@@ -114,8 +114,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                     taskConfig?.inquiry_questions?.joinToString("\n")
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${this.taskConfig?.toJson()}"
-                val messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
-                    .toTypedArray<ApiModel.ChatMessage>()
+                val messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                    .toTypedArray<ModelSchema.ChatMessage>()
                 insightActor.respond(
                     messages = messages,
                     input = toInput(inStr),
@@ -213,10 +213,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(InsightTask::class.java)
-        val InsightTaskType = TaskType(
-            "InsightTask",
-            InsightTaskConfigData::class.java,
+        private val log = LoggerFactory.getLogger(AnalysisTask::class.java)
+        val AnalysisTaskType = TaskType(
+            "AnalysisTask",
+            AnalysisTaskConfigData::class.java,
             TaskSettingsBase::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
             """

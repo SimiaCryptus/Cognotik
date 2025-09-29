@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools
 
-import com.simiacryptus.cognotik.actors.CodingActor
+import com.simiacryptus.cognotik.actors.CodeAgent
 import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.interpreter.Interpreter
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.interpreter.CodeRuntime
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.oneAtATime
@@ -15,11 +15,11 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
-class RunCodeTask<T : Interpreter>(
-    planSettings: PlanSettings,
+class RunCodeTask<T : CodeRuntime>(
+    orchestrationConfig: OrchestrationConfig,
     planTask: RunCodeTaskConfigData?,
     val interpreter: KClass<T>,
-) : AbstractTask<RunCodeTask.RunCodeTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<RunCodeTask.RunCodeTaskConfigData>(orchestrationConfig, planTask) {
 
     class RunCodeTaskConfigData(
         @Description("The task or goal to be accomplished")
@@ -43,16 +43,16 @@ class RunCodeTask<T : Interpreter>(
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
-            ?: agent.planSettings.defaultChatter).getChildClient(task)
+        val model = (taskSettings.model?.let { agent.orchestrationConfig.instance(it) }
+            ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
         val codingAgent = object : CodingAgent<T>(
             dataStorage = agent.dataStorage,
             session = agent.session,
@@ -60,15 +60,15 @@ class RunCodeTask<T : Interpreter>(
             ui = task.manager,
             interpreter = interpreter,
             symbols = mapOf<String, Any>(
-                "env" to (planSettings.env ?: emptyMap()),
+                "env" to (orchestrationConfig.env ?: emptyMap()),
                 "workingDir" to (
-                        planSettings.absoluteWorkingDir?.let { File(it).absolutePath }
-                            ?: planSettings.absoluteWorkingDir?.let { File(it).absolutePath }
+                        orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
+                            ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
                             ?: File(".").absolutePath
                         ),
                 "language" to "kotlin",
             ),
-            temperature = planSettings.temperature,
+            temperature = orchestrationConfig.temperature,
             details = """
                 Code a solution using Kotlin to the user's request.
             """.trimIndent(),
@@ -78,12 +78,12 @@ class RunCodeTask<T : Interpreter>(
         ) {
             override fun displayFeedback(
                 task: SessionTask,
-                request: CodingActor.CodeRequest,
-                response: CodingActor.CodeResult
+                request: CodeAgent.CodeRequest,
+                response: CodeAgent.CodeResult
             ) {
                 val formText = StringBuilder()
                 var formHandle: StringBuilder? = null
-                if (!planSettings.autoFix) formHandle = task.add(
+                if (!orchestrationConfig.autoFix) formHandle = task.add(
                     "<div>\n${
                         if (!super.canPlay) "" else super.playButton(task, request, response, formText) { formHandle!! }
                     }\n${
@@ -112,10 +112,10 @@ class RunCodeTask<T : Interpreter>(
 
             override fun execute(
                 task: SessionTask,
-                response: CodingActor.CodeResult
+                response: CodeAgent.CodeResult
             ): String {
                 val result = super.execute(task, response)
-                if (planSettings.autoFix) {
+                if (orchestrationConfig.autoFix) {
                     response.let {
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
                     }.apply { resultFn(this) }
@@ -126,8 +126,8 @@ class RunCodeTask<T : Interpreter>(
         }
         codingAgent.start(
             codingAgent.codeRequest(
-                messages.map { it to ApiModel.Role.user } + listOf(
-                    (this.taskConfig?.goal ?: "") to ApiModel.Role.user,
+                messages.map { it to ModelSchema.Role.user } + listOf(
+                    (this.taskConfig?.goal ?: "") to ModelSchema.Role.user,
                 )
             )
         )

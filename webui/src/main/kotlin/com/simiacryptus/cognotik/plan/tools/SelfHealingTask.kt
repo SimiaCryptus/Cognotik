@@ -13,23 +13,23 @@ import java.io.File
 import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
 
-class CommandAutoFixTask(
-    planSettings: PlanSettings, planTask: CommandAutoFixTaskConfigData?
-) : AbstractTask<CommandAutoFixTask.CommandAutoFixTaskConfigData>(planSettings, planTask) {
-    class CommandAutoFixTaskSettings(
+class SelfHealingTask(
+    orchestrationConfig: OrchestrationConfig, planTask: SelfHealingTaskConfigData?
+) : AbstractTask<SelfHealingTask.SelfHealingTaskConfigData>(orchestrationConfig, planTask) {
+    class SelfHealingTaskSettings(
         task_type: String? = null,
         enabled: Boolean = false,
         model: ApiChatModel? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
     ) : TaskSettingsBase(task_type, enabled, model)
 
-    class CommandAutoFixTaskConfigData(
+    class SelfHealingTaskConfigData(
         @Description("The commands to be executed with their respective working directories") val commands: List<CommandWithWorkingDir>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskConfigBase(
-        task_type = TaskType.CommandAutoFixTask.name,
+        task_type = TaskType.SelfHealingTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -41,7 +41,7 @@ class CommandAutoFixTask(
     )
 
     override fun promptSegment(): String {
-        val settings = planSettings.getTaskSettings(TaskType.CommandAutoFixTask) as CommandAutoFixTaskSettings
+        val settings = orchestrationConfig.getTaskSettings(TaskType.SelfHealingTask) as SelfHealingTaskSettings
         return ("""
       CommandAutoFixTask - Run a command and automatically fix any issues that arise
       * Specify the commands to be executed along with their working directories
@@ -52,22 +52,22 @@ class CommandAutoFixTask(
       """.trimIndent() + settings.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}" }).trim()
     }
 
-    override val taskSettings: CommandAutoFixTaskSettings
-        get() = super.taskSettings as CommandAutoFixTaskSettings
+    override val taskSettings: SelfHealingTaskSettings
+        get() = super.taskSettings as SelfHealingTaskSettings
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val semaphore = Semaphore(0)
         Retryable(task = task) {
             val task = task.manager.newTask()
             agent.pool.submit {
-                val model = (taskSettings.model?.let { agent.planSettings.instance(it) }
-                    ?: agent.planSettings.defaultChatter).getChildClient(task)
+                val model = (taskSettings.model?.let { agent.orchestrationConfig.instance(it) }
+                    ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
@@ -91,12 +91,12 @@ class CommandAutoFixTask(
                                 additionalInstructions = ""
                             )
                         } ?: emptyList(),
-                        autoFix = agent.planSettings.autoFix,
+                        autoFix = agent.orchestrationConfig.autoFix,
                         includeLineNumbers = false,
                     ),
                     files = agent.files,
                     model = model,
-                    parsingModel = agent.planSettings.parsingChatter,
+                    parsingModel = agent.orchestrationConfig.parsingChatter,
                 ).run(
                     task = task, model = model
                 ).apply {
@@ -127,6 +127,6 @@ class CommandAutoFixTask(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CommandAutoFixTask::class.java)
+        private val log = LoggerFactory.getLogger(SelfHealingTask::class.java)
     }
 }

@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.plan.tools.knowledge
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -22,9 +22,9 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 class DataTableCompilationTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: DataTableCompilationTaskConfigData?
-) : AbstractTask<DataTableCompilationTask.DataTableCompilationTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<DataTableCompilationTask.DataTableCompilationTaskConfigData>(orchestrationConfig, planTask) {
 
     class DataTableCompilationTaskConfigData(
         @Description("List of file glob patterns to include in the data compilation")
@@ -64,16 +64,16 @@ class DataTableCompilationTask(
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
 
         task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns"))
         val result = mutableListOf<Path>()
-        val basePath = Paths.get(planSettings.absoluteWorkingDir ?: ".")
+        val basePath = Paths.get(orchestrationConfig.absoluteWorkingDir ?: ".")
         taskConfig?.file_patterns?.forEach { pattern ->
             val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
             Files.walk(basePath).use { paths ->
@@ -98,8 +98,8 @@ class DataTableCompilationTask(
         }
 
         val chatter =
-            (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter).getChildClient(task)
-        val columnsResponse = ParsedActor(
+            (taskSettings.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultChatter).getChildClient(task)
+        val columnsResponse = ParsedAgent(
             name = "ColumnIdentifier",
             resultClass = Columns::class.java,
             exampleInstance = Columns(
@@ -130,8 +130,8 @@ class DataTableCompilationTask(
                 2. Provide a detailed description of what the column represents
             """.trimIndent(),
             model = chatter,
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
+            parsingModel = orchestrationConfig.parsingChatter,
+            temperature = orchestrationConfig.temperature,
             describer = agent.describer,
         ).answer(
             listOf(
@@ -146,7 +146,7 @@ class DataTableCompilationTask(
                 description = it.description,
             )
         }
-        val rowsList = ParsedActor(
+        val rowsList = ParsedAgent(
             name = "RowIdentifier",
             resultClass = Rows::class.java,
             exampleInstance = Rows(
@@ -173,8 +173,8 @@ class DataTableCompilationTask(
                 2. List the source files that contain data for this row
             """.trimIndent(),
             model = chatter,
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
+            parsingModel = orchestrationConfig.parsingChatter,
+            temperature = orchestrationConfig.temperature,
             describer = agent.describer,
         ).answer(
             listOf(
@@ -199,7 +199,7 @@ class DataTableCompilationTask(
                     ui = task.manager
                 )
             )
-            val rowDataResponse = ParsedActor(
+            val rowDataResponse = ParsedAgent(
                 name = "CellExtractor",
                 resultClass = RowData::class.java,
                 exampleInstance = RowData(
@@ -215,8 +215,8 @@ class DataTableCompilationTask(
                         "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n" +
                         "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
                 model = chatter,
-                parsingModel = planSettings.parsingChatter,
-                temperature = planSettings.temperature,
+                parsingModel = orchestrationConfig.parsingChatter,
+                temperature = orchestrationConfig.temperature,
                 describer = agent.describer,
             ).answer(
                 listOf(
@@ -239,8 +239,8 @@ class DataTableCompilationTask(
         task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table"))
 
         val outputPath = taskConfig?.output_file ?: "compiled_data.json"
-        val outputFile = if (planSettings.absoluteWorkingDir != null) {
-            File(planSettings.absoluteWorkingDir, outputPath)
+        val outputFile = if (orchestrationConfig.absoluteWorkingDir != null) {
+            File(orchestrationConfig.absoluteWorkingDir, outputPath)
         } else {
             File(outputPath)
         }

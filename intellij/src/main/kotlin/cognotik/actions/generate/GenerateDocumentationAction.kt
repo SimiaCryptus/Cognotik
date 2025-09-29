@@ -15,10 +15,10 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.getSelectedFile
 import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.util.toContentList
@@ -274,17 +274,17 @@ class GenerateDocumentationAction : cognotik.actions.FileContextAction<GenerateD
     }
 
     private fun transformContent(
-        path: Path, fileContent: String, transformationMessage: String, model: Chatter
+        path: Path, fileContent: String, transformationMessage: String, model: ChatInterface
     ) = run {
         model.chat(
             listOf(
-                ApiModel.ChatMessage(
-                    ApiModel.Role.system, """
+                ModelSchema.ChatMessage(
+                    ModelSchema.Role.system, """
                         You will combine natural language instructions with a user provided code example to document code.
                         """.trimIndent().toContentList(), null
                 ),
-                ApiModel.ChatMessage(
-                    ApiModel.Role.user,
+                ModelSchema.ChatMessage(
+                    ModelSchema.Role.user,
                     "## Project:\n${findGitRoot(path)?.let { getProjectStructure(it) }}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
                 ),
             )

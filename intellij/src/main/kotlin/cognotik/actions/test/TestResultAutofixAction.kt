@@ -7,8 +7,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
@@ -191,7 +191,7 @@ class TestResultAutofixAction : BaseAction() {
             Retryable(task) {
                 try {
                     val task = socketManager.newTask(cancelable = false, root = false)
-                    val plan = ParsedActor(
+                    val plan = ParsedAgent(
                         resultClass = ParsedErrors::class.java,
                         prompt = """
                         You are a helpful AI that helps people with coding.
@@ -259,7 +259,7 @@ class TestResultAutofixAction : BaseAction() {
             socketManager: SocketManager
         ) {
             task.add("Generating fix suggestions...")
-            val response = SimpleActor(
+            val response = ChatAgent(
                 prompt = """
                 You are a helpful AI that helps people with coding.
                 Suggest fixes for the following test failure:

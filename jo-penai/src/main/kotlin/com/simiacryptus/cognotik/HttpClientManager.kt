@@ -2,11 +2,9 @@ package com.simiacryptus.cognotik
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.exceptions.*
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.LoggerFactory
-import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
@@ -33,7 +31,7 @@ abstract class HttpClientManager(
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
     val scheduledPool: ListeningScheduledExecutorService,
-    val onUsageListeners: MutableList<(model: LLMModel, tokens: ApiModel.Usage) -> Unit> = mutableListOf(),
+    val onUsageListeners: MutableList<(model: LLMModel, tokens: ModelSchema.Usage) -> Unit> = mutableListOf(),
 ) {
     @Suppress("unused")
     val createdBy = Thread.currentThread().stackTrace
@@ -45,7 +43,7 @@ abstract class HttpClientManager(
      */
     open fun onUsage(
         model: LLMModel,
-        tokens: ApiModel.Usage,
+        tokens: ModelSchema.Usage,
         logStreams: MutableList<BufferedOutputStream> = this.logStreams.toTypedArray().toMutableList(),
     ) {
         onUsageListeners.forEach { it(model, tokens) }

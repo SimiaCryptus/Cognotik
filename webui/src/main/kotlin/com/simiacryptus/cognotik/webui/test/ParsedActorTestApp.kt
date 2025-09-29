@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.test
 
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class ParsedActorTestApp<T : Any>(
-    private val actor: ParsedActor<T>,
+    private val actor: ParsedAgent<T>,
     applicationName: String = "ParsedActorTest_" + actor.resultClass?.simpleName,
     temperature: Double = 0.3,
 ) : ApplicationServer(

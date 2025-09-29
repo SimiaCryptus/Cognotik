@@ -5,10 +5,9 @@ import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
  import com.simiacryptus.cognotik.util.JsonUtil
-import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.core5.http.HttpRequest
  import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -100,10 +99,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         validateChatRequest(chatRequest, model)
         return withReliability {
             withPerformanceLogging {
@@ -123,7 +122,7 @@ import java.util.concurrent.ConcurrentHashMap
                     log.error("Failed to parse Anthropic response: $rawResponse", e)
                     throw RuntimeException("Failed to parse Anthropic response: ${e.message}", e)
                 }
-                val response = JsonUtil.objectMapper().readValue(responseJson, ApiModel.ChatResponse::class.java)
+                val response = JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
                 if (response.usage != null) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
                 }
@@ -131,7 +130,7 @@ import java.util.concurrent.ConcurrentHashMap
             }
         }
     }
-    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
+    private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
@@ -142,24 +141,24 @@ import java.util.concurrent.ConcurrentHashMap
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AnthropicChatClient::class.java)
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
 
-        fun mapToAnthropicChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel): AnthropicChatRequest {
+        fun mapToAnthropicChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel): AnthropicChatRequest {
             require(chatRequest.messages.isNotEmpty()) { "Messages cannot be empty" }
             require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
 
             return AnthropicChatRequest(
                 model = chatRequest.model ?: model.modelName,
                 system = chatRequest.messages.firstOrNull {
-                    it.role == ApiModel.Role.system
+                    it.role == ModelSchema.Role.system
                 }?.content?.joinToString("\n\n") { it.text.orEmpty() },
                 messages = alternateAnthropicRoles(chatRequest.messages.filter {
-                    it.role != ApiModel.Role.system
+                    it.role != ModelSchema.Role.system
                 }).filter { !it.content.isNullOrBlank() },
                 max_tokens = chatRequest.max_tokens ?: model.maxOutTokens,
                 temperature = chatRequest.temperature,
             )
         }
 
-        fun alternateAnthropicRoles(messages: List<ApiModel.ChatMessage>): List<AnthropicMessage> {
+        fun alternateAnthropicRoles(messages: List<ModelSchema.ChatMessage>): List<AnthropicMessage> {
             if (messages.isEmpty()) return emptyList()
 
             val alternatingMessages = mutableListOf<AnthropicMessage>()
@@ -241,13 +240,13 @@ import java.util.concurrent.ConcurrentHashMap
 
                 val response = JsonUtil.objectMapper().readValue(rawResponse, AnthropicResponse::class.java)
                 return JsonUtil.toJson(
-                    ApiModel.ChatResponse(
+                    ModelSchema.ChatResponse(
                         id = response.id, choices = listOf(
-                            ApiModel.ChatChoice(
-                                message = ApiModel.ChatMessageResponse(
+                            ModelSchema.ChatChoice(
+                                message = ModelSchema.ChatMessageResponse(
                                     content = response.content?.joinToString("\n") { it.text ?: "" }), index = 0
                             )
-                        ), usage = ApiModel.Usage(
+                        ), usage = ModelSchema.Usage(
                             prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
                             completion_tokens = response.usage?.output_tokens?.toLong() ?: 0,
                             total_tokens = (response.usage?.input_tokens?.toLong()

@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit
 abstract class PatchApp(
     override val root: File,
     protected val settings: Settings,
-    val model: Chatter,
-    val parsingModel: Chatter,
+    val model: ChatInterface,
+    val parsingModel: ChatInterface,
     private val promptPrefix: String = """The following command was run and produced an error:""",
 ) : ApplicationServer(
     applicationName = "Magic Code Fixer",
@@ -257,7 +257,7 @@ abstract class PatchApp(
 
     fun run(
         task: SessionTask,
-        model: Chatter,
+        model: ChatInterface,
     ): OutputResult {
         log.info("Starting run with settings: ${JsonUtil.toJson(settings)}")
 
@@ -331,7 +331,7 @@ abstract class PatchApp(
         settings: Settings,
         changed: MutableSet<Path>,
         progressHeader: StringBuilder?,
-        model: Chatter
+        model: ChatInterface
     ) {
         log.info("Starting fixAllErrors")
         val tabs = TabbedDisplay(task)
@@ -409,10 +409,10 @@ abstract class PatchApp(
     }
 
     private fun parsedErrorsParsedResponse(
-        settings: Settings, output: OutputResult, model: Chatter
+        settings: Settings, output: OutputResult, model: ChatInterface
     ): ParsedResponse<ParsedErrors> {
         log.info("Parsing errors from command output")
-        val plan = ParsedActor(
+        val plan = ParsedAgent(
             resultClass = ParsedErrors::class.java,
             exampleInstance = if (previousParsedErrorsRecords.isEmpty()) ParsedErrors(
                 listOf(
@@ -475,7 +475,7 @@ abstract class PatchApp(
         autoFix: Boolean,
         changed: MutableSet<Path>,
         task: SessionTask,
-        model: Chatter,
+        model: ChatInterface,
     ) {
         log.info("Starting fix for error: ${error.message}")
         val paths = ((error.research?.fixFiles ?: emptyList()) +
@@ -509,7 +509,7 @@ abstract class PatchApp(
 
         val summary = codeSummary(prunedPaths.distinct(), error)
         log.info("Generated code summary (${summary.length} chars)")
-        val fixResponse = SimpleActor(
+        val fixResponse = ChatAgent(
             prompt = """
         You are a helpful AI that helps people with coding.
         You will be answering questions about the following code:

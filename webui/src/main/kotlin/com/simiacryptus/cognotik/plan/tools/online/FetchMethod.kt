@@ -1,13 +1,13 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.util.EnabledStrategy
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.util.concurrent.ExecutorService
 
 interface FetchStrategy : EnabledStrategy {
-    fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, planSettings: PlanSettings): String
+    fun fetch(url: String, webSearchDir: File, index: Int, pool: ExecutorService, orchestrationConfig: OrchestrationConfig): String
 }
 
 object FetchConfig {

@@ -11,7 +11,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.actors.ChatProxy
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -25,7 +25,7 @@ import java.awt.datatransfer.DataFlavor.*
  * Base class for paste actions that convert clipboard content to appropriate code format
  * Supports both text and HTML clipboard content with automatic language detection
  */
-abstract class PasteActionBase(private val model: (AppSettingsState) -> Chatter) : SelectionAction<String>(false) {
+abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInterface) : SelectionAction<String>(false) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     /**
@@ -198,7 +198,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> Chatter)
             }
         } ?: false
 
-        fun converter(chatModel: Chatter, temp: Double) = ChatProxy(
+        fun converter(chatModel: ChatInterface, temp: Double) = ChatProxy(
             clazz = VirtualAPI::class.java,
             model = chatModel,
             temperature = temp

@@ -6,9 +6,9 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.models.ApiModel.*
+import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.toContentList
 import java.io.File
@@ -111,7 +111,7 @@ class CreateFileFromDescriptionAction :
     private fun generateFile(
         basePath: String,
         directive: String,
-        model: Chatter
+        model: ChatInterface
     ): ProjectFile {
         require(directive.isNotBlank()) { "Directive cannot be empty" }
         try {

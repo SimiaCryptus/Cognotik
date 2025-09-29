@@ -12,14 +12,14 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.RowLayout
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
+import com.simiacryptus.cognotik.apps.graph.DependencyGraphMode
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.SavedPlanConfig
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
+import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
 import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
@@ -41,7 +41,7 @@ import javax.swing.table.DefaultTableModel
 
 class PlanConfigDialog(
     project: Project?,
-    val settings: PlanSettings,
+    val settings: OrchestrationConfig,
     val singleTaskMode: Boolean = false,
 ) : DialogWrapper(project) {
 
@@ -80,7 +80,7 @@ class PlanConfigDialog(
     private val maxTasksPerIterationField = JBTextField(settings.maxTasksPerIteration.toString())
     private val maxIterationsField = JBTextField(settings.maxIterations.toString())
 
-    private val graphFileTextField = JBTextField(GraphOrderedPlanMode.graphFile ?: "")
+    private val graphFileTextField = JBTextField(DependencyGraphMode.graphFile ?: "")
     private val selectGraphFileButton = JButton("Select File")
     private val graphFilePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -239,7 +239,7 @@ class PlanConfigDialog(
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 val currentSettings =
-                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
+                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.CrawlerTaskSettings
                 selectedItem = currentSettings?.seed_method ?: SeedMethod.GoogleSearch
             }
         } else null
@@ -249,12 +249,12 @@ class PlanConfigDialog(
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 val currentSettings =
-                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.SearchAndAnalyzeTaskSettings
+                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.CrawlerTaskSettings
                 selectedItem = currentSettings?.fetch_method ?: FetchMethod.HttpClient
             }
         } else null
 
-        private val commandList = if (taskType == TaskType.CommandAutoFixTask) {
+        private val commandList = if (taskType == TaskType.SelfHealingTask) {
             createCommandListTable().apply {
                 preferredScrollableViewportSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
                 columnModel.getColumn(0).apply {
@@ -279,7 +279,7 @@ class PlanConfigDialog(
                     AppSettingsState.instance.executables?.sortedWith(String.CASE_INSENSITIVE_ORDER)
                 sortedExecutables?.forEach { command ->
                     val isEnabled =
-                        (settings.getTaskSettings(taskType) as? CommandAutoFixTask.CommandAutoFixTaskSettings)?.commandAutoFixCommands?.contains(
+                        (settings.getTaskSettings(taskType) as? SelfHealingTask.SelfHealingTaskSettings)?.commandAutoFixCommands?.contains(
                             command
                         ) ?: true
                     entries.add(CommandTableEntry(isEnabled, command))
@@ -306,7 +306,7 @@ class PlanConfigDialog(
 
             private fun updateCommandSettings() {
                 settings.setTaskSettings(
-                    taskType, CommandAutoFixTask.CommandAutoFixTaskSettings(
+                    taskType, SelfHealingTask.SelfHealingTaskSettings(
                         taskType.name,
                         settings.getTaskSettings(taskType).enabled,
                         findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
@@ -425,7 +425,7 @@ class PlanConfigDialog(
 
             enabledCheckbox.addItemListener {
                 val newSettings = when (taskType) {
-                    TaskType.CrawlerAgentTask -> CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                    TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskSettings(
                         seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
                         fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
                         task_type = taskType.name,
@@ -433,7 +433,7 @@ class PlanConfigDialog(
                         model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     )
 
-                    TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
+                    TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
                         taskType.name,
                         enabledCheckbox.isSelected,
                         getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
@@ -474,7 +474,7 @@ class PlanConfigDialog(
 
         private fun updateSettings() {
             val newSettings = when (taskType) {
-                TaskType.CrawlerAgentTask -> CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskSettings(
                     seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
                     fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
                     task_type = taskType.name,
@@ -482,7 +482,7 @@ class PlanConfigDialog(
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 )
 
-                TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
+                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
                     taskType.name,
                     enabledCheckbox.isSelected,
                     findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
@@ -499,7 +499,7 @@ class PlanConfigDialog(
 
         private fun updateCrawlerSettings() {
             if (taskType == TaskType.CrawlerAgentTask && seedMethodCombo != null && fetchMethodCombo != null) {
-                val newSettings = CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                val newSettings = CrawlerAgentTask.CrawlerTaskSettings(
                     seed_method = seedMethodCombo.selectedItem as? SeedMethod,
                     fetch_method = fetchMethodCombo.selectedItem as? FetchMethod,
                     task_type = taskType.name,
@@ -514,7 +514,7 @@ class PlanConfigDialog(
 
         fun saveSettings() {
             val newSettings = when (taskType) {
-                TaskType.CrawlerAgentTask -> CrawlerAgentTask.SearchAndAnalyzeTaskSettings(
+                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskSettings(
                     seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
                     fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
                     task_type = taskType.name,
@@ -522,7 +522,7 @@ class PlanConfigDialog(
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 )
 
-                TaskType.CommandAutoFixTask -> CommandAutoFixTask.CommandAutoFixTaskSettings(
+                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
@@ -628,21 +628,21 @@ class PlanConfigDialog(
             if (result == JFileChooser.APPROVE_OPTION) {
                 val selectedFile = chooser.selectedFile
                 graphFileTextField.text = selectedFile.absolutePath
-                GraphOrderedPlanMode.graphFile = selectedFile.absolutePath
+                DependencyGraphMode.graphFile = selectedFile.absolutePath
             }
         }
 
         graphFileTextField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent?) {
-                GraphOrderedPlanMode.graphFile = graphFileTextField.text
+                DependencyGraphMode.graphFile = graphFileTextField.text
             }
 
             override fun removeUpdate(e: DocumentEvent?) {
-                GraphOrderedPlanMode.graphFile = graphFileTextField.text
+                DependencyGraphMode.graphFile = graphFileTextField.text
             }
 
             override fun changedUpdate(e: DocumentEvent?) {
-                GraphOrderedPlanMode.graphFile = graphFileTextField.text
+                DependencyGraphMode.graphFile = graphFileTextField.text
             }
         })
 

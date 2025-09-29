@@ -1,10 +1,10 @@
 package cognotik.actions.agent
 
 import com.google.common.util.concurrent.Futures
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -28,9 +28,9 @@ class DocumentedMassPatchServer(
     override val inputCnt = 0
     override val stickyInput = true
 
-    private val mainActor: SimpleActor
+    private val mainActor: ChatAgent
         get() {
-            return SimpleActor(
+            return ChatAgent(
                 prompt = """
          You are a helpful AI that helps people with coding.
 
@@ -143,7 +143,7 @@ class DocumentedMassPatchServer(
                             reviseResponse = { userMessages ->
                                 mainActor.respond(
                                     messages = userMessages.map {
-                                        ApiModel.ChatMessage(
+                                        ModelSchema.ChatMessage(
                                             it.second,
                                             it.first.toContentList()
                                         )

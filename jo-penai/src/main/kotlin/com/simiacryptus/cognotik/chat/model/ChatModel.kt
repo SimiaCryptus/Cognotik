@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel.Usage
+import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -49,7 +49,7 @@ open class ChatModel(
         temperature: Double = 0.1,
         scheduledPool: ListeningScheduledExecutorService,
         onUsage: (LLMModel, Usage) -> Unit,
-    ) : Chatter = Chatter(
+    ) : ChatInterface = ChatInterface(
         logStreams = logStreams,
         key = key,
         base = base,

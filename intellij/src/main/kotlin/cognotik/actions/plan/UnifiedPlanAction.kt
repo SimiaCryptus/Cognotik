@@ -7,12 +7,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
-import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
+import com.simiacryptus.cognotik.apps.graph.DependencyGraphMode
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
@@ -34,7 +34,7 @@ class UnifiedPlanAction : BaseAction() {
     override fun handle(e: AnActionEvent) {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
-            e.project, object : PlanSettings(
+            e.project, object : OrchestrationConfig(
                 defaultModel = AppSettingsState.instance.smartModel
                     ?: throw IllegalStateException("Smart model not configured"),
                 parsingModel = AppSettingsState.instance.fastModel
@@ -69,12 +69,12 @@ class UnifiedPlanAction : BaseAction() {
                                 }
                             }
                         }
-                        TaskChatMode
+                        ConversationalMode
                     }
-                    "Task Planning" -> PlanAheadMode
-                    "Graph" -> GraphOrderedPlanMode
-                    "Iterative Loop" -> AutoPlanMode
-                    "Goal Oriented" -> GoalOrientedMode
+                    "Task Planning" -> WaterfallMode
+                    "Graph" -> DependencyGraphMode
+                    "Iterative Loop" -> AdaptivePlanningMode
+                    "Goal Oriented" -> HierarchicalPlanningMode
                     else -> throw RuntimeException("Unknown plan mode: $selectedCognitiveMode")
                 }
                 UITools.runAsync(e.project, "Initializing Unified Plan", true) { progress ->
@@ -90,7 +90,7 @@ class UnifiedPlanAction : BaseAction() {
     private fun initializeChat(
         e: AnActionEvent,
         progress: ProgressIndicator,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         cognitiveStrategy: CognitiveModeStrategy
     ) {
         progress.text = "Setting up session..."
@@ -100,7 +100,7 @@ class UnifiedPlanAction : BaseAction() {
         setupChatSession(
             session,
             root,
-            planSettings,
+            orchestrationConfig,
             cognitiveStrategy,
             object : AbbrevWhitelistYamlDescriber(
                 "com.simiacryptus", "cognotik.actions"
@@ -109,7 +109,7 @@ class UnifiedPlanAction : BaseAction() {
 
                 override fun getEnumValues(clazz: Class<*>): List<String> {
                     return if (clazz == TaskType::class.java) {
-                        planSettings.taskSettings.filter { it.value.enabled }.map { it.key }
+                        orchestrationConfig.taskSettings.filter { it.value.enabled }.map { it.key }
                     } else {
                         super.getEnumValues(clazz)
                     }
@@ -130,7 +130,7 @@ class UnifiedPlanAction : BaseAction() {
     private fun setupChatSession(
         session: Session,
         root: File,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         cognitiveStrategy: CognitiveModeStrategy,
         describer: TypeDescriber
     ) {
@@ -140,7 +140,7 @@ class UnifiedPlanAction : BaseAction() {
         val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
-            planSettings = planSettings.copy(
+            orchestrationConfig = orchestrationConfig.copy(
                 env = mapOf(),
                 workingDir = root.absolutePath,
                 language = if (isWindows) "powershell" else "bash",

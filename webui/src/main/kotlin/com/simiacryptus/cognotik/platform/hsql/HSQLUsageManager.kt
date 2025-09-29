@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -51,7 +50,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         )
     }
 
-    override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ApiModel.Usage) {
+    override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
         try {
             log.debug("Incrementing usage for session: {}, user: {}, model: {}", session, user.email, model.modelName)
             val usageKey = UsageInterface.UsageKey(session, user, model)
@@ -65,7 +64,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         }
     }
 
-    override fun getUserUsageSummary(user: User): Map<String, ApiModel.Usage> {
+    override fun getUserUsageSummary(user: User): Map<String, ModelSchema.Usage> {
         log.info("Executing SQL query to get user usage summary for user: ${user.email}")
         val statement = connection.prepareStatement(
             """
@@ -80,7 +79,7 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         return generateUsageSummary(resultSet)
     }
 
-    override fun getSessionUsageSummary(session: Session): Map<String, ApiModel.Usage> {
+    override fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage> {
         log.info("Getting session usage summary for session: ${session}")
         val statement = connection.prepareStatement(
             """
@@ -133,12 +132,12 @@ class HSQLUsageManager(root: File? = null) : UsageInterface {
         statement.executeUpdate()
     }
 
-    private fun generateUsageSummary(resultSet: ResultSet): Map<String, ApiModel.Usage> {
+    private fun generateUsageSummary(resultSet: ResultSet): Map<String, ModelSchema.Usage> {
         log.info("Generating usage summary from result set")
-        val summary = mutableMapOf<String, ApiModel.Usage>()
+        val summary = mutableMapOf<String, ModelSchema.Usage>()
         while (resultSet.next()) {
             val string = resultSet.getString(1)
-            val usage = ApiModel.Usage(
+            val usage = ModelSchema.Usage(
                 prompt_tokens = resultSet.getLong(2),
                 completion_tokens = resultSet.getLong(3),
                 cost = resultSet.getDouble(4)

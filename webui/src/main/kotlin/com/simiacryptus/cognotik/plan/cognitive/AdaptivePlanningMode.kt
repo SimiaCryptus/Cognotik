@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -25,21 +25,21 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
-open class AutoPlanMode(
+open class AdaptivePlanningMode(
     override val ui: SocketManager,
-    override val planSettings: PlanSettings,
+    override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
-    private val maxTaskHistoryChars: Int = planSettings.maxTaskHistoryChars,
-    private val maxTasksPerIteration: Int = planSettings.maxTasksPerIteration,
-    private val maxIterations: Int = planSettings.maxIterations,
+    private val maxTaskHistoryChars: Int = orchestrationConfig.maxTaskHistoryChars,
+    private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration,
+    private val maxIterations: Int = orchestrationConfig.maxIterations,
     val describer: TypeDescriber
 ) : CognitiveMode {
-    private val log = LoggerFactory.getLogger(AutoPlanMode::class.java)
+    private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
 
     private val currentUserMessage = AtomicReference<String?>(null)
     private val executionRecords = mutableListOf<ExecutionRecord>()
-    private val thinkingStatus = AtomicReference<ThinkingStatus?>(null)
+    private val reasoningState = AtomicReference<ReasoningState?>(null)
     private var isRunning = false
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+)+)}""")
 
@@ -81,27 +81,27 @@ open class AutoPlanMode(
                 task.complete()
 
                 val coordinator = socketManager.dataStorage?.let {
-                    PlanCoordinator(
+                    TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
-                        root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                             ?: socketManager.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath(),
-                        planSettings = planSettings
+                        orchestrationConfig = orchestrationConfig
                     )
                 }
                 log.debug("Created plan coordinator")
 
-                val initialStatus = initThinking(planSettings, userMessage, task)
+                val initialStatus = initThinking(orchestrationConfig, userMessage, task)
                 log.debug("Initialized thinking status")
                 initialStatus.initialPrompt = userMessage
-                thinkingStatus.set(initialStatus)
+                reasoningState.set(initialStatus)
 
                 var iteration = 0
                 while (iteration++ < maxIterations && continueLoop) {
                     log.debug("Starting iteration $iteration")
                     task.complete()
-                    val currentThinkingStatus = thinkingStatus.get()
+                    val currentThinkingStatus = reasoningState.get()
                         ?: throw IllegalStateException("ThinkingStatus is null at iteration $iteration")
                     val iterationTask = ui.newTask(false).apply { tabbedDisplay["Iteration $iteration"] = placeholder }
                     val iterationTabbedDisplay = TabbedDisplay(iterationTask, additionalClasses = "iteration")
@@ -209,7 +209,7 @@ $fullTaskDataJson
                     try {
                         log.debug("Updating thinking status")
                         val updatedStatus = updateThinking(currentThinkingStatus, completedTasks, task)
-                        thinkingStatus.set(updatedStatus)
+                        reasoningState.set(updatedStatus)
                         log.debug("Updated thinking status")
                         thinkingStatusTask.complete(
                             renderMarkdown(
@@ -239,7 +239,7 @@ $fullTaskDataJson
                 summaryTask.add(
                     renderMarkdown(
                         "Auto Plan Chat completed. Final thinking status:\n${
-                            thinkingStatus.get()?.let {
+                            reasoningState.get()?.let {
                                 formatThinkingStatus(it)
                             } ?: "null"
                         }")
@@ -250,50 +250,39 @@ $fullTaskDataJson
     }
 
     private fun runTask(
-        coordinator: PlanCoordinator,
+        coordinator: TaskOrchestrator,
         currentTask: TaskConfigBase,
         userMessage: String,
         task: SessionTask
     ): String {
         val currentThinkingStatus =
-            thinkingStatus.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
-        val taskImpl = TaskType.getImpl(coordinator.planSettings, currentTask)
+            reasoningState.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
+        val taskImpl = TaskType.getImpl(coordinator.orchestrationConfig, currentTask)
         val result = StringBuilder()
 
         taskImpl.run(
-            agent = coordinator.copy(
-                planSettings = coordinator.planSettings.copy(
-                    taskSettings = coordinator.planSettings.taskSettings.toList().toTypedArray().toMap().toMutableMap()
-                        .apply {
-                            this[TaskType.TaskPlanningTask.name] = TaskSettingsBase(
-                                task_type = TaskType.TaskPlanningTask.name,
-                                enabled = false,
-                                model = null
-                            )
-                        }
-                )
-            ),
+            agent = coordinator,
             messages = listOf(
                 userMessage,
                 "Current thinking status:\n${formatThinkingStatus(currentThinkingStatus)}"
             ) + formatEvalRecords(),
             task = task,
             resultFn = { result.append(it) },
-            planSettings = planSettings,
+            orchestrationConfig = orchestrationConfig,
         )
 
         return result.toString()
     }
 
     private fun getNextTask(
-        coordinator: PlanCoordinator,
+        coordinator: TaskOrchestrator,
         userMessage: String,
-        thinkingStatus: ThinkingStatus,
+        reasoningState: ReasoningState,
         task: SessionTask
     ): List<TaskData>? {
         val describer = coordinator.describer
 
-        val parsedActor = ParsedActor(
+        val parsedActor = ParsedAgent(
             name = "TaskChooser",
             resultClass = Tasks::class.java,
             exampleInstance = Tasks(
@@ -309,19 +298,19 @@ $fullTaskDataJson
                 append(" tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
                 append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
                 append("Available task types:\n")
-                append(TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
+                append(TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).joinToString("\n\n") { taskType ->
                     "* ${
-                        TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent()
+                        TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim().trimIndent()
                             .indent("  ")
                     }"
                 })
                 append("\nChoose the most suitable task types and provide details of how they should be executed.")
             },
-            model = coordinator.planSettings.defaultChatter.getChildClient(task),
-            parsingModel = coordinator.planSettings.parsingChatter,
-            temperature = coordinator.planSettings.temperature,
+            model = coordinator.orchestrationConfig.defaultChatter.getChildClient(task),
+            parsingModel = coordinator.orchestrationConfig.parsingChatter,
+            temperature = coordinator.orchestrationConfig.temperature,
             describer = describer,
-            parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
+            parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
                 .joinToString("\n\n") { taskType ->
                     "${taskType.name}:\n  ${
                         describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
@@ -331,7 +320,7 @@ $fullTaskDataJson
         val answer = parsedActor.answer(
             listOf(userMessage) + contextData() + listOf(
                 """
-        Current thinking status: ${formatThinkingStatus(thinkingStatus)}
+        Current thinking status: ${formatThinkingStatus(reasoningState)}
         Please choose the next single task to execute based on the current status.
         If there are no tasks to execute, return {}.
         """.trimIndent()
@@ -358,7 +347,7 @@ $fullTaskDataJson
                 ) to (if (taskConfigBase.task_type == null) {
                     null
                 } else {
-                    TaskType.getImpl(coordinator.planSettings, taskConfigBase)
+                    TaskType.getImpl(coordinator.orchestrationConfig, taskConfigBase)
                 })?.taskConfig
             } ?: emptyList()
         }.flatten()
@@ -392,7 +381,7 @@ $fullTaskDataJson
     private fun processTaskExpansionRecursive(
         currentText: String,
         task: SessionTask,
-        parsedActor: ParsedActor<Tasks>,
+        parsedActor: ParsedAgent<Tasks>,
         processor: FixedConcurrencyProcessor
     ): List<TaskData> {
         val match = expansionExpressionPattern.find(currentText)
@@ -421,14 +410,14 @@ $fullTaskDataJson
     }
 
     private fun initThinking(
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         userMessage: String,
         task: SessionTask,
-    ): ThinkingStatus {
-        return ParsedActor(
+    ): ReasoningState {
+        return ParsedAgent(
             name = "ThinkingStatusInitializer",
-            resultClass = ThinkingStatus::class.java,
-            exampleInstance = ThinkingStatus(
+            resultClass = ReasoningState::class.java,
+            exampleInstance = ReasoningState(
                 initialPrompt = "Example prompt",
                 goals = Goals(
                     shortTerm = mutableListOf(Goal("Understand the user's request")),
@@ -462,21 +451,21 @@ $fullTaskDataJson
         * Maintain alignment between short-term actions and long-term goals
         * Ensure scalability and maintainability of the approach
       """.trimIndent(),
-            model = planSettings.defaultChatter.getChildClient(task),
-            parsingModel = planSettings.parsingChatter.getChildClient(task),
-            temperature = planSettings.temperature,
+            model = orchestrationConfig.defaultChatter.getChildClient(task),
+            parsingModel = orchestrationConfig.parsingChatter.getChildClient(task),
+            temperature = orchestrationConfig.temperature,
             describer = describer
         ).answer(listOf(userMessage) + contextData()).obj
     }
 
     private fun updateThinking(
-        thinkingStatus: ThinkingStatus,
+        reasoningState: ReasoningState,
         completedTasks: List<ExecutionRecord>,
         task: SessionTask,
-    ): ThinkingStatus = ParsedActor(
+    ): ReasoningState = ParsedAgent(
         name = "UpdateQuestionsActor",
-        resultClass = ThinkingStatus::class.java,
-        exampleInstance = ThinkingStatus(
+        resultClass = ReasoningState::class.java,
+        exampleInstance = ReasoningState(
             initialPrompt = "Create a Python script to analyze log files and generate a summary report",
             confidence = 0.8,
             iteration = 1,
@@ -532,12 +521,12 @@ $fullTaskDataJson
       Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
       If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
-        model = planSettings.defaultChatter.getChildClient(task),
-        parsingModel = planSettings.parsingChatter,
-        temperature = planSettings.temperature,
+        model = orchestrationConfig.defaultChatter.getChildClient(task),
+        parsingModel = orchestrationConfig.parsingChatter,
+        temperature = orchestrationConfig.temperature,
         describer = describer
     ).answer(
-        listOf("Current thinking status: ${formatThinkingStatus(thinkingStatus)}") +
+        listOf("Current thinking status: ${formatThinkingStatus(reasoningState)}") +
                 contextData() +
                 completedTasks.flatMap { record ->
                     val task: TaskConfigBase? = record.task
@@ -597,13 +586,13 @@ $fullTaskDataJson
         return formattedRecords
     }
 
-    private fun formatThinkingStatus(thinkingStatus: ThinkingStatus) =
-        "```json\n${JsonUtil.toJson(thinkingStatus)}\n```"
+    private fun formatThinkingStatus(reasoningState: ReasoningState) =
+        "```json\n${JsonUtil.toJson(reasoningState)}\n```"
 
     override fun contextData(): List<String> = emptyList()
 
     @Description("The current thinking status of the AI assistant.")
-    data class ThinkingStatus(
+    data class ReasoningState(
         @Description("The original user prompt or request that initiated the conversation.")
         var initialPrompt: String? = null,
 
@@ -701,10 +690,10 @@ $fullTaskDataJson
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: SocketManager,
-            planSettings: PlanSettings,
+            orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = AutoPlanMode(ui, planSettings, session, user, describer = describer)
+        ) = AdaptivePlanningMode(ui, orchestrationConfig, session, user, describer = describer)
     }
 }

@@ -14,9 +14,9 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 class GitHubSearchTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: GitHubSearchTaskConfigData?
-) : AbstractTask<GitHubSearchTask.GitHubSearchTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<GitHubSearchTask.GitHubSearchTaskConfigData>(orchestrationConfig, planTask) {
     class GitHubSearchTaskConfigData(
         @Description("The search query to use for GitHub search")
         val search_query: String = "",
@@ -48,11 +48,11 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val searchResults = performGitHubSearch(
             agent.user

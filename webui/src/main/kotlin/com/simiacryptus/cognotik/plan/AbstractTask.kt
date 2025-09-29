@@ -8,18 +8,18 @@ import java.io.File
 import java.nio.file.Path
 
 abstract class AbstractTask<T : TaskConfigBase>(
-    val planSettings: PlanSettings,
+    val orchestrationConfig: OrchestrationConfig,
     val taskConfig: T?
 ) {
     var state: TaskState? = TaskState.Pending
     protected val codeFiles = mutableMapOf<Path, String>()
 
     protected open val root: Path
-        get() = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+        get() = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
             ?: throw IllegalStateException("Working directory not set")
 
     open val taskSettings: TaskSettingsBase
-        get() = planSettings.taskSettings[taskConfig?.task_type!!]!!
+        get() = orchestrationConfig.taskSettings[taskConfig?.task_type!!]!!
 
     enum class TaskState {
         Pending,
@@ -27,9 +27,9 @@ abstract class AbstractTask<T : TaskConfigBase>(
         Completed,
     }
 
-    open fun getPriorCode(planProcessingState: PlanProcessingState) =
+    open fun getPriorCode(executionState: ExecutionState) =
         taskConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
-            "# $dependency\n\n${planProcessingState.taskResult[dependency] ?: ""}"
+            "# $dependency\n\n${executionState.taskResult[dependency] ?: ""}"
         } ?: ""
 
     protected fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
@@ -51,11 +51,11 @@ abstract class AbstractTask<T : TaskConfigBase>(
     abstract fun promptSegment(): String
 
     abstract fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String> = listOf(),
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
     )
 
     companion object {

@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.OutputInterceptor
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.interpreter.Interpreter
-import com.simiacryptus.cognotik.models.ApiModel.*
+import com.simiacryptus.cognotik.interpreter.CodeRuntime
+import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
@@ -15,27 +15,27 @@ import kotlin.reflect.KClass
 private const val TT = "`" + "`" + "`"
 typealias CodeInterceptor = (String) -> String
 
-open class CodingActor(
-    val interpreterClass: KClass<out Interpreter>,
+open class CodeAgent(
+    val codeRuntimeClass: KClass<out CodeRuntime>,
     val symbols: Map<String, Any> = mapOf(),
     val describer: TypeDescriber = AbbrevWhitelistTSDescriber(
         "com.simiacryptus"
     ),
-    name: String? = interpreterClass.simpleName,
+    name: String? = codeRuntimeClass.simpleName,
     val details: String? = null,
-    model: Chatter,
-    val fallbackModel: Chatter,
+    model: ChatInterface,
+    val fallbackModel: ChatInterface,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
     var codeInterceptor: CodeInterceptor = { it }
-) : BaseActor<CodingActor.CodeRequest, CodingActor.CodeResult>(
+) : BaseAgent<CodeAgent.CodeRequest, CodeAgent.CodeResult>(
     prompt = "",
     name = name,
     model = model,
     temperature = temperature,
 ) {
-    val interpreter: Interpreter
-        get() = interpreterClass.java.getConstructor(Map::class.java).newInstance(symbols + runtimeSymbols)
+    val codeRuntime: CodeRuntime
+        get() = codeRuntimeClass.java.getConstructor(Map::class.java).newInstance(symbols + runtimeSymbols)
 
     data class CodeRequest(
         val messages: List<Pair<String, Role>>,
@@ -105,7 +105,7 @@ ${details ?: ""}
             "$name:\n    ${describe.indent("    ")}"
         }.joinToString("\n")
 
-    val language: String by lazy { interpreter.getLanguage() }
+    val language: String by lazy { codeRuntime.getLanguage() }
 
     override fun chatMessages(questions: CodeRequest): Array<ChatMessage> {
         var chatMessages = arrayOf(
@@ -202,7 +202,7 @@ ${details ?: ""}
         log.debug("Running $code")
         OutputInterceptor.clearGlobalOutput()
         val result = try {
-            interpreter.run((prefix + "\n" + codeInterceptor(code)).sortCode())
+            codeRuntime.run((prefix + "\n" + codeInterceptor(code)).sortCode())
         } catch (e: Exception) {
             when {
                 e is FailedToImplementException -> throw e
@@ -266,7 +266,7 @@ ${details ?: ""}
         override val code: String = givenCode ?: implementation.first
 
         private fun implement(
-            model: Chatter,
+            model: ChatInterface,
         ): Pair<String, String> {
             val request = ChatRequest(messages = ArrayList(this.messages.toList()))
             for (codingAttempt in 0..input.fixRetries) {
@@ -313,7 +313,7 @@ ${details ?: ""}
                     for (fixAttempt in 0..input.fixIterations) {
                         try {
                             val validate =
-                                interpreter.validate((input.codePrefix + "\n" + codeInterceptor(workingCode)).sortCode())
+                                codeRuntime.validate((input.codePrefix + "\n" + codeInterceptor(workingCode)).sortCode())
                             if (validate != null) throw validate
                             log.debug("Validation succeeded")
                             _status = CodeResult.Status.Success
@@ -394,7 +394,7 @@ ${details ?: ""}
     private fun fixCommand(
         previousCode: String,
         error: Throwable,
-        model: Chatter,
+        model: ChatInterface,
         vararg promptMessages: Array<out ChatMessage>
     ): String = chat(
         request = ChatRequest(
@@ -426,13 +426,13 @@ Correct the code and try again.
         model = model
     )
 
-    private fun chat(request: ChatRequest, model: Chatter): String {
+    private fun chat(request: ChatRequest, model: ChatInterface): String {
         return model.chat(request.messages)
             .choices.first().message?.content.orEmpty().trim()
     }
 
-    override fun withModel(model: Chatter): CodingActor = CodingActor(
-        interpreterClass = interpreterClass,
+    override fun withModel(model: ChatInterface): CodeAgent = CodeAgent(
+        codeRuntimeClass = codeRuntimeClass,
         symbols = symbols,
         describer = describer,
         name = name,
@@ -445,7 +445,7 @@ Correct the code and try again.
     )
 
     companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodingActor::class.java)
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodeAgent::class.java)
 
         fun String.indent(indent: String = "  ") = this.lineSequence()
             .map {

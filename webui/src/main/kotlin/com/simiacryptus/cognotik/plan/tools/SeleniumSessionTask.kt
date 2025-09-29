@@ -14,9 +14,9 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class SeleniumSessionTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: SeleniumSessionTaskConfigData?
-) : AbstractTask<SeleniumSessionTask.SeleniumSessionTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<SeleniumSessionTask.SeleniumSessionTaskConfigData>(orchestrationConfig, planTask) {
     companion object {
         private val log = LoggerFactory.getLogger(SeleniumSessionTask::class.java)
         private val activeSessions = ConcurrentHashMap<String, Selenium>()
@@ -115,11 +115,11 @@ class SeleniumSessionTask(
     }
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val seleniumFactory: (pool: java.util.concurrent.ExecutorService, cookies: Array<out jakarta.servlet.http.Cookie>?) -> Selenium =
             { pool, cookies ->

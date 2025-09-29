@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.platform.model
 
 import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import java.util.concurrent.atomic.AtomicLong
 
@@ -19,20 +19,20 @@ interface UsageInterface {
      * Retrieves a summary of AI model usage for a specific user.
      *
      * @param user The user whose usage summary is to be retrieved
-     * @return A map where keys are model names and values are [ApiModel.Usage] objects
+     * @return A map where keys are model names and values are [ModelSchema.Usage] objects
      *         containing aggregated token counts and costs for each model the user has used
      */
 
-    fun getUserUsageSummary(user: User): Map<String, ApiModel.Usage>
+    fun getUserUsageSummary(user: User): Map<String, ModelSchema.Usage>
 
     /**
      * Retrieves a summary of AI model usage for a specific session.
      *
      * @param session The session whose usage summary is to be retrieved
-     * @return A map where keys are model names and values are [ApiModel.Usage] objects
+     * @return A map where keys are model names and values are [ModelSchema.Usage] objects
      *         containing aggregated token counts and costs for each model used in the session
      */
-    fun getSessionUsageSummary(session: Session): Map<String, ApiModel.Usage>
+    fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage>
 
     /**
      * Records and increments usage statistics for a specific AI model invocation.
@@ -44,7 +44,7 @@ interface UsageInterface {
      * @param model The AI model that was used
      * @param tokens The usage details including prompt tokens, completion tokens, and cost
      */
-    fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ApiModel.Usage)
+    fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage)
 
     /**
      * Clears all stored usage data.
@@ -97,7 +97,7 @@ interface UsageInterface {
          *
          * @param tokens The usage object containing tokens and cost to add
          */
-        fun addAndGet(tokens: ApiModel.Usage) {
+        fun addAndGet(tokens: ModelSchema.Usage) {
             inputTokens.addAndGet(tokens.prompt_tokens)
             outputTokens.addAndGet(tokens.completion_tokens)
             cost.addAndGet(tokens.cost ?: 0.0)

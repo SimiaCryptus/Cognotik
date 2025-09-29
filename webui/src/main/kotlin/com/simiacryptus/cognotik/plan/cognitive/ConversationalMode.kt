@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -21,17 +21,17 @@ import java.util.concurrent.ConcurrentLinkedQueue
 /**
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
  */
-open class TaskChatMode(
+open class ConversationalMode(
     override val ui: SocketManager,
-    override val planSettings: PlanSettings,
+    override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
     val describer: TypeDescriber
 ) : CognitiveMode {
-    private val log = LoggerFactory.getLogger(TaskChatMode::class.java)
+    private val log = LoggerFactory.getLogger(ConversationalMode::class.java)
 
     private val messagesLock = Any()
-    private val messages = ConcurrentLinkedQueue<ApiModel.ChatMessage>()
+    private val messages = ConcurrentLinkedQueue<ModelSchema.ChatMessage>()
 
     private val messageBuffer = ConcurrentLinkedQueue<String>()
 
@@ -40,10 +40,10 @@ open class TaskChatMode(
     private val systemPrompt = "Given the following input, choose ONE task to execute and describe it in detail."
 
     override fun initialize() {
-        val enabledTasks = TaskType.getAvailableTaskTypes(planSettings)
+        val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
         log.debug("TaskChatMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
         synchronized(messagesLock) {
-            messages.add(ApiModel.ChatMessage(ApiModel.Role.system, systemPrompt.toContentList()))
+            messages.add(ModelSchema.ChatMessage(ModelSchema.Role.system, systemPrompt.toContentList()))
         }
     }
 
@@ -60,7 +60,7 @@ open class TaskChatMode(
         }
 
         synchronized(messagesLock) {
-            messages.add(ApiModel.ChatMessage(ApiModel.Role.user, userMessage.toContentList()))
+            messages.add(ModelSchema.ChatMessage(ModelSchema.Role.user, userMessage.toContentList()))
         }
 
         task.echo(renderMarkdown(userMessage))
@@ -74,37 +74,37 @@ open class TaskChatMode(
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-        val coordinator = PlanCoordinator(
+        val coordinator = TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = ui.dataStorage!!,
-            root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+            root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                 ?: ui.dataStorage?.getSessionDir(
                     user,
                     session
                 )?.toPath() ?: File(".").toPath(),
-            planSettings = planSettings
+            orchestrationConfig = orchestrationConfig
         )
 
         try {
-            val defaultChatter = coordinator.planSettings.defaultChatter
-            val parsingModel = coordinator.planSettings.parsingChatter
-            val parsedActor = ParsedActor(
+            val defaultChatter = coordinator.orchestrationConfig.defaultChatter
+            val parsingModel = coordinator.orchestrationConfig.parsingChatter
+            val parsedActor = ParsedAgent(
                 name = "TaskChooser",
-                resultClass = AutoPlanMode.Tasks::class.java,
-                exampleInstance = AutoPlanMode.Tasks(
+                resultClass = AdaptivePlanningMode.Tasks::class.java,
+                exampleInstance = AdaptivePlanningMode.Tasks(
                     listOfNotNull(
-                        TaskType.getAvailableTaskTypes(coordinator.planSettings).first().let {
-                            TaskType.getImpl(coordinator.planSettings, it).taskConfig
+                        TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).first().let {
+                            TaskType.getImpl(coordinator.orchestrationConfig, it).taskConfig
                         }
                     ).toMutableList()
                 ),
                 prompt = buildString {
                     append("Given the following input, choose ONE task to execute. Select the most appropriate task type for the given input and provide all required details.\n")
                     append("Available task types:\n")
-                    append(TaskType.getAvailableTaskTypes(coordinator.planSettings).joinToString("\n\n") { taskType ->
+                    append(TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).joinToString("\n\n") { taskType ->
                         "* ${
-                            TaskType.getImpl(coordinator.planSettings, taskType).promptSegment().trim().trimIndent()
+                            TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim().trimIndent()
                                 .indent("  ")
                         }"
                     })
@@ -112,9 +112,9 @@ open class TaskChatMode(
                 },
                 model = defaultChatter.getChildClient(task),
                 parsingModel = parsingModel,
-                temperature = coordinator.planSettings.temperature,
+                temperature = coordinator.orchestrationConfig.temperature,
                 describer = describer,
-                parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.planSettings)
+                parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
                     .joinToString("\n\n") { taskType ->
                         "${taskType.name}:\n  ${
                             describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
@@ -141,14 +141,14 @@ open class TaskChatMode(
             }
             ui.newTask(false).apply {
                 tabs["Run"] = placeholder
-                TaskType.getImpl(planSettings, chosenTasks).run(
+                TaskType.getImpl(orchestrationConfig, chosenTasks).run(
                     agent = coordinator,
                     messages = listOf(userMessage),
                     task = this,
                     resultFn = {
                         result.append(it)
                     },
-                    planSettings = planSettings,
+                    orchestrationConfig = orchestrationConfig,
                 )
             }
             ui.newTask(false).apply {
@@ -158,7 +158,7 @@ open class TaskChatMode(
 
             val assistantResponse = "Task executed: ${chosenTasks.task_type}\n${result}"
             synchronized(messagesLock) {
-                messages.add(ApiModel.ChatMessage(ApiModel.Role.assistant, assistantResponse.toContentList()))
+                messages.add(ModelSchema.ChatMessage(ModelSchema.Role.assistant, assistantResponse.toContentList()))
             }
 
             task.complete()
@@ -224,10 +224,10 @@ open class TaskChatMode(
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: SocketManager,
-            planSettings: PlanSettings,
+            orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = TaskChatMode(ui, planSettings, session, user, describer)
+        ) = ConversationalMode(ui, orchestrationConfig, session, user, describer)
     }
 }

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
@@ -361,7 +361,7 @@ val Throwable.stackTraceTxt: String
         return sw.toString()
     }
 
-fun Chatter.getChildClient(task: SessionTask): Chatter {
+fun ChatInterface.getChildClient(task: SessionTask): ChatInterface {
     val childClient = this.getChildClient()
     childClient.logStreams += task.newLogStream()
     return childClient

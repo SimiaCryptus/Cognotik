@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.groovy
 
-import com.simiacryptus.cognotik.interpreter.Interpreter
+import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import groovy.lang.GroovyShell
 import groovy.lang.Script
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 
-open class GroovyInterpreter(private val defs: java.util.Map<String, Object>) : Interpreter {
+open class GroovyCodeRuntime(private val defs: java.util.Map<String, Object>) : CodeRuntime {
 
     private val shell: GroovyShell
 

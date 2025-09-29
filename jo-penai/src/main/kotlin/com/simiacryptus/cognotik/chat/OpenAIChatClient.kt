@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -32,10 +32,10 @@ class OpenAIChatClient(
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         validateChatRequest(chatRequest, model)
 
         return withReliability {
@@ -47,7 +47,7 @@ class OpenAIChatClient(
                 val rawResponse = post("${apiBase}/chat/completions", json, APIProvider.OpenAI)
                 checkError(rawResponse)
 
-                val response = JsonUtil.objectMapper().readValue(rawResponse, ApiModel.ChatResponse::class.java)
+                val response = JsonUtil.objectMapper().readValue(rawResponse, ModelSchema.ChatResponse::class.java)
 
                 if (response.usage != null && model is ChatModel) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
@@ -57,7 +57,7 @@ class OpenAIChatClient(
             }
         }
     }
-    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
+    private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }

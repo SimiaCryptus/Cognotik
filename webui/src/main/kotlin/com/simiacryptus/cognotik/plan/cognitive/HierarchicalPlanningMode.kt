@@ -1,15 +1,15 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode.Tasks
+import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode.Tasks
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
-open class GoalOrientedMode(
+open class HierarchicalPlanningMode(
     override val ui: SocketManager,
-    override val planSettings: PlanSettings,
+    override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
     val describer: TypeDescriber,
@@ -114,16 +114,16 @@ open class GoalOrientedMode(
 
         sessionLogTask = task.linkedTask("Session Log")
         logToSession("Starting Goal-Oriented session for: $userMessage")
-        val coordinator = PlanCoordinator(
+        val coordinator = TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = ui.dataStorage ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
-            root = planSettings.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage?.getSessionDir(
+            root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage?.getSessionDir(
                 user,
                 session
             )?.toPath() ?: File(".").toPath(),
-            planSettings = planSettings)
-        val planningChatter = coordinator.planSettings.defaultChatter.getChildClient(task)
+            orchestrationConfig = orchestrationConfig)
+        val planningChatter = coordinator.orchestrationConfig.defaultChatter.getChildClient(task)
 
         try {
             val initialGoals = parseInitialGoals(userMessage, planningChatter)
@@ -168,8 +168,8 @@ open class GoalOrientedMode(
 
     private fun nextIteration(
         iteration: Int,
-        coordinator: PlanCoordinator,
-        planningChatter: Chatter,
+        coordinator: TaskOrchestrator,
+        planningChatInterface: ChatInterface,
         goalsTask: SessionTask,
         tasksTask: SessionTask
     ): Boolean {
@@ -187,7 +187,7 @@ open class GoalOrientedMode(
 
         for (goal in decomposableGoals) {
             if (stopRequested.get()) break
-            expandGoal(goal, coordinator, planningChatter, goalsTask.linkedTask("Goal ID ${goal.id}"))
+            expandGoal(goal, coordinator, planningChatInterface, goalsTask.linkedTask("Goal ID ${goal.id}"))
             updateGoalTreeUI()
         }
 
@@ -214,8 +214,8 @@ open class GoalOrientedMode(
                 taskTasks[t.id] = executionUiTask
                 val future = processor.submit {
                     executeTask(
-                        t.id, t, executionUiTask, coordinator, this@GoalOrientedMode.getParsedActor(
-                            t, coordinator, planningChatter
+                        t.id, t, executionUiTask, coordinator, this@HierarchicalPlanningMode.getParsedActor(
+                            t, coordinator, planningChatInterface
                         )
                     )
                 }
@@ -249,8 +249,8 @@ open class GoalOrientedMode(
 
     private fun expandGoal(
         goal: Goal,
-        coordinator: PlanCoordinator,
-        planningChatter: Chatter,
+        coordinator: TaskOrchestrator,
+        planningChatInterface: ChatInterface,
         task: SessionTask
     ) {
         logToSession("Decomposing goal: ${goal.description} (ID: ${goal.id})")
@@ -262,7 +262,7 @@ open class GoalOrientedMode(
             val inputMessages = mutableListOf(goal.description ?: "")
             inputMessages.addAll(contextData(goal.id, null))
             val goalDecomposition = getGoalParser(
-                goal, coordinator, planningChatter
+                goal, coordinator, planningChatInterface
             ).answer(inputMessages).obj
             val subgoals = goalDecomposition.subgoals?.map { sg ->
                 sg.copy(id = sg.id.takeIf { it.isNotBlank() } ?: "G${goalIdCounter.getAndIncrement()}",
@@ -480,7 +480,7 @@ open class GoalOrientedMode(
     }
 
     private fun executeTask(
-        id: String, t: Task, task: SessionTask, coordinator: PlanCoordinator, actor: ParsedActor<Tasks>
+        id: String, t: Task, task: SessionTask, coordinator: TaskOrchestrator, actor: ParsedAgent<Tasks>
     ): String? {
         return try {
             log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
@@ -501,7 +501,7 @@ open class GoalOrientedMode(
                 return t.result
             }
             val semaphore = java.util.concurrent.Semaphore(0)
-            val taskImpl = TaskType.getImpl(planSettings, planTask = planTask)
+            val taskImpl = TaskType.getImpl(orchestrationConfig, planTask = planTask)
             taskImpl.run(
                 agent = coordinator,
                 messages = listOf(t.description ?: "") + contextData(),
@@ -513,7 +513,7 @@ open class GoalOrientedMode(
                     t.status = TaskStatus.COMPLETED
                     semaphore.release()
                 }, // Capture task output
-                planSettings = planSettings,
+                orchestrationConfig = orchestrationConfig,
             )
             logToSession("Waiting for task completion for Task ID ${t.id}...")
             val acquired = semaphore.tryAcquire(5, TimeUnit.MINUTES)
@@ -541,15 +541,15 @@ open class GoalOrientedMode(
     }
 
     private fun getParsedActor(
-        t: Task, coordinator: PlanCoordinator, chatter: Chatter
-    ): ParsedActor<Tasks> {
-        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
-        return ParsedActor(
+        t: Task, coordinator: TaskOrchestrator, chatInterface: ChatInterface
+    ): ParsedAgent<Tasks> {
+        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+        return ParsedAgent(
             name = "TaskTypeChooser",
             resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
             exampleInstance = Tasks(
-                mutableListOf(TaskType.getAvailableTaskTypes(planSettings).firstOrNull()?.let {
-                    TaskType.getImpl(planSettings, it).taskConfig
+                mutableListOf(TaskType.getAvailableTaskTypes(orchestrationConfig).firstOrNull()?.let {
+                    TaskType.getImpl(orchestrationConfig, it).taskConfig
                 }).filterNotNull().toMutableList()
             ),
             prompt = """
@@ -558,9 +558,9 @@ open class GoalOrientedMode(
                         Available task types (and their schemas):
                         ${availableTaskTypes.joinToString("\n") { it.name }}
                     """.trimIndent(),
-            model = chatter,
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
+            model = chatInterface,
+            parsingModel = orchestrationConfig.parsingChatter,
+            temperature = orchestrationConfig.temperature,
             describer = describer,
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                 "${taskType.name}:\n  ${
@@ -639,9 +639,9 @@ open class GoalOrientedMode(
     }
 
     private fun parseInitialGoals(
-        userMessage: String, chatter: Chatter
+        userMessage: String, chatInterface: ChatInterface
     ): List<Goal> {
-        val parsedActor = ParsedActor(
+        val parsedActor = ParsedAgent(
             name = "InitialGoalParser",
             resultClass = GoalList::class.java,
             exampleInstance = GoalList(
@@ -661,9 +661,9 @@ open class GoalOrientedMode(
                 Each goal should be a clear, actionable objective.
                 Return a list of goal objects with unique IDs and descriptions.
             """.trimIndent(),
-            model = chatter,
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
+            model = chatInterface,
+            parsingModel = orchestrationConfig.parsingChatter,
+            temperature = orchestrationConfig.temperature,
             describer = describer
         )
         val answer = parsedActor.answer(listOf(userMessage))
@@ -700,8 +700,8 @@ open class GoalOrientedMode(
 
 
     private fun getGoalParser(
-        goal: Goal, coordinator: PlanCoordinator, chatter: Chatter
-    ): ParsedActor<GoalDecomposition> = ParsedActor(
+        goal: Goal, coordinator: TaskOrchestrator, chatInterface: ChatInterface
+    ): ParsedAgent<GoalDecomposition> = ParsedAgent(
         name = "GoalDecomposer",
         resultClass = GoalDecomposition::class.java,
         exampleInstance = GoalDecomposition( // Example should match the structure and intent
@@ -724,7 +724,7 @@ open class GoalOrientedMode(
             )
         ),
         prompt = run {
-            val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.planSettings)
+            val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
                 .joinToString("\n                ") { "- ${it.name}" }
             val relatedTasksContext = goal.tasks?.mapNotNull { taskMap[it.id] }
                 ?.filter { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.FAILED }
@@ -749,9 +749,9 @@ open class GoalOrientedMode(
             }
             promptStr
         },
-        model = chatter,
-        parsingModel = coordinator.planSettings.parsingChatter,
-        temperature = coordinator.planSettings.temperature,
+        model = chatInterface,
+        parsingModel = coordinator.orchestrationConfig.parsingChatter,
+        temperature = coordinator.orchestrationConfig.temperature,
         describer = describer
     )
 
@@ -1091,9 +1091,9 @@ open class GoalOrientedMode(
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: SocketManager, planSettings: PlanSettings, session: Session, user: User?, describer: TypeDescriber
-        ) = GoalOrientedMode(ui, planSettings, session, user, describer)
+            ui: SocketManager, orchestrationConfig: OrchestrationConfig, session: Session, user: User?, describer: TypeDescriber
+        ) = HierarchicalPlanningMode(ui, orchestrationConfig, session, user, describer)
 
-        private val log = LoggerFactory.getLogger(GoalOrientedMode::class.java)
+        private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
     }
 }

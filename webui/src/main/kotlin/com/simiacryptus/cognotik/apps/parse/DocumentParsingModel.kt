@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
 open class DocumentParsingModel(
-    private val parsingModel: Chatter,
+    private val parsingModel: ChatInterface,
     private val temperature: Double,
 ) : ParsingModel<DocumentParsingModel.DocumentData> {
 
@@ -58,7 +58,7 @@ open class DocumentParsingModel(
     open val exampleInstance = DocumentData()
 
     override fun getFastParser(): (String) -> DocumentData {
-        val parser = ParsedActor(
+        val parser = ParsedAgent(
             resultClass = DocumentData::class.java,
             exampleInstance = exampleInstance,
             prompt = "",

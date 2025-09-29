@@ -14,7 +14,7 @@ import com.intellij.usages.Usage
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
@@ -141,7 +141,7 @@ class FindResultsModificationAction(
                 }
                 socketManager.pool.submit {
                     //val api = api.getChildClient(task)
-                    val response = SimpleActor(
+                    val response = ChatAgent(
                         prompt = prompt,
                         model = AppSettingsState.instance.smartChatClient.getChildClient(task)
                     ).answer(

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
@@ -219,7 +219,7 @@ class ApiKeyServlet : HttpServlet() {
 
     private fun serveEditPage(req: HttpServletRequest, resp: HttpServletResponse, record: ApiKeyRecord) {
         val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-        val usageSummary: Map<String, ApiModel.Usage> =
+        val usageSummary: Map<String, ModelSchema.Usage> =
             ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user = userinfo!!)
 
         resp.writer.write(
@@ -290,7 +290,7 @@ class ApiKeyServlet : HttpServlet() {
       <!-- Usage Summary -->
       <h2>Usage Summary</h2>
       ${
-                usageSummary.entries.joinToString { (model: String, usage: ApiModel.Usage) ->
+                usageSummary.entries.joinToString { (model: String, usage: ModelSchema.Usage) ->
                     """
           <div>
             <h3>${model}</h3>

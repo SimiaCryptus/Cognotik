@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
@@ -38,9 +38,9 @@ import java.util.concurrent.ConcurrentHashMap
         const val HEADER_AUTHORIZATION = "Authorization"
         const val APPLICATION_JSON = "application/json"
 
-        fun toGroq(chatRequest: ApiModel.ChatRequest): ApiModel.GroqChatRequest = ApiModel.GroqChatRequest(
+        fun toGroq(chatRequest: ModelSchema.ChatRequest): ModelSchema.GroqChatRequest = ModelSchema.GroqChatRequest(
             messages = chatRequest.messages.map { message ->
-                ApiModel.GroqChatMessage(
+                ModelSchema.GroqChatMessage(
                     role = message.role,
                     content = message.content?.joinToString("\n") { it.text ?: "" } ?: "",
                 )
@@ -116,10 +116,10 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         log.info("Starting Groq chat with model: ${model.modelName}")
 
         return withReliability {
@@ -130,7 +130,7 @@ import java.util.concurrent.ConcurrentHashMap
 
                 val result = post("$apiBase/openai/chat/completions", json, APIProvider.Groq)
                 checkError(result)
-                val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
+                val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
 
                 if (response.usage != null && model is ChatModel) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)

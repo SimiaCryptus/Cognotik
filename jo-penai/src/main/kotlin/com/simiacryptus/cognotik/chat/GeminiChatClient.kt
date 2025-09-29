@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
@@ -78,10 +78,10 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         val geminiChatRequest = toGeminiChatRequest(chatRequest, model)
         val json = JsonUtil.objectMapper()
             .writerWithDefaultPrettyPrinter()
@@ -96,7 +96,7 @@ import java.util.concurrent.ConcurrentHashMap
 
         val responseJson = fromGemini(responseBody)
         val response = JsonUtil.objectMapper()
-            .readValue(responseJson, ApiModel.ChatResponse::class.java)
+            .readValue(responseJson, ModelSchema.ChatResponse::class.java)
         if (response.usage != null && model is ChatModel) {
             onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
         }
@@ -131,14 +131,14 @@ import java.util.concurrent.ConcurrentHashMap
         fun fromGemini(responseBody: String): String {
             val fromJson = JsonUtil.fromJson<GenerateContentResponse>(responseBody, GenerateContentResponse::class.java)
             return JsonUtil.toJson(
-                ApiModel.ChatResponse(
+                ModelSchema.ChatResponse(
                     choices = fromJson.candidates?.mapIndexed { index, candidate ->
-                        ApiModel.ChatChoice(
-                            message = ApiModel.ChatMessageResponse(
+                        ModelSchema.ChatChoice(
+                            message = ModelSchema.ChatMessageResponse(
                                 content = candidate.content?.parts?.joinToString("\n") { it.text ?: "" }), index = index
                         )
                     } ?: emptyList(),
-                    usage = ApiModel.Usage(
+                    usage = ModelSchema.Usage(
                         prompt_tokens = (fromJson.usageMetadata?.promptTokenCount ?: 0).toLong(),
                         completion_tokens = (fromJson.usageMetadata?.candidatesTokenCount ?: 0).toLong(),
                         total_tokens = (fromJson.usageMetadata?.totalTokenCount ?: 0).toLong()
@@ -146,7 +146,7 @@ import java.util.concurrent.ConcurrentHashMap
                 ))
         }
 
-        fun toGeminiChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel): GenerateContentRequest {
+        fun toGeminiChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel): GenerateContentRequest {
             return GenerateContentRequest(
                 contents = collectRoleSequences(chatRequest.messages.filter {
                     when (it.role) {
@@ -156,9 +156,9 @@ import java.util.concurrent.ConcurrentHashMap
                 }.map {
                     Content(
                         role = when (it.role) {
-                            ApiModel.Role.user -> "user"
-                            ApiModel.Role.system -> "user"
-                            ApiModel.Role.assistant -> "model"
+                            ModelSchema.Role.user -> "user"
+                            ModelSchema.Role.system -> "user"
+                            ModelSchema.Role.assistant -> "model"
                             else -> throw RuntimeException("Unsupported role: ${it.role}")
                         }, parts = it.content?.map {
                             Part(

@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 // Register the new mode in the package
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
  */
 interface CognitiveMode {
     val ui: SocketManager
-    val planSettings: PlanSettings
+    val orchestrationConfig: OrchestrationConfig
     val session: Session
     val user: User?
 
@@ -37,7 +37,7 @@ interface CognitiveModeStrategy {
 
     fun getCognitiveMode(
         ui: SocketManager,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         session: Session,
         user: User?,
         describer: TypeDescriber

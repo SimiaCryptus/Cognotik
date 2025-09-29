@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
@@ -201,10 +201,10 @@ class AwsChatClient(
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         validateChatRequest(chatRequest, model)
 
         log.info("Starting AWS Bedrock chat with model: ${model.modelName}")
@@ -242,7 +242,7 @@ class AwsChatClient(
                     throw RuntimeException("Failed to parse AWS response", e)
                 }
 
-                val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
+                val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
 
                 if (response.usage != null && model is ChatModel) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
@@ -253,7 +253,7 @@ class AwsChatClient(
             }
         }
     }
-    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
+    private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(awsAuth.region.isNotBlank()) { "AWS region must be specified" }
@@ -281,13 +281,13 @@ class AwsChatClient(
             val region: String = Region.US_WEST_2.id(),
         )
 
-        fun toAWS(model: LLMModel, chatRequest: ApiModel.ChatRequest) =
+        fun toAWS(model: LLMModel, chatRequest: ModelSchema.ChatRequest) =
             InvokeModelRequest.builder().modelId(model.modelName).accept("application/json")
                 .contentType("application/json")
                 .body(SdkBytes.fromString(JsonUtil.toJson(awsBody(model, chatRequest)), Charsets.UTF_8)).build()
 
         fun awsBody(
-            model: LLMModel, chatRequest: ApiModel.ChatRequest
+            model: LLMModel, chatRequest: ModelSchema.ChatRequest
         ): Map<String, Any> = when {
             model.modelName?.contains("llama") == true -> {
                 mapOf(
@@ -344,7 +344,7 @@ class AwsChatClient(
                     "temperature" to chatRequest.temperature,
                     "messages" to alternatingMessages.filter {
                         when (it.role) {
-                            ApiModel.Role.system -> false
+                            ModelSchema.Role.system -> false
                             else -> true
                         }
                     }.map {
@@ -355,7 +355,7 @@ class AwsChatClient(
                                 )
                             })
                     },
-                    "system" to toSimplePrompt(chatRequest) { it.role == ApiModel.Role.system },
+                    "system" to toSimplePrompt(chatRequest) { it.role == ModelSchema.Role.system },
                 )
             }
 
@@ -367,8 +367,8 @@ class AwsChatClient(
 
         }
 
-        fun alternateMessagesRoles(messages: List<ApiModel.ChatMessage>): List<ApiModel.ChatMessage> {
-            val alternatingMessages = mutableListOf<ApiModel.ChatMessage>()
+        fun alternateMessagesRoles(messages: List<ModelSchema.ChatMessage>): List<ModelSchema.ChatMessage> {
+            val alternatingMessages = mutableListOf<ModelSchema.ChatMessage>()
             val messagesCopy = messages.toMutableList()
             var isFirst = true
             while (messagesCopy.isNotEmpty()) {
@@ -377,24 +377,24 @@ class AwsChatClient(
                 if (isFirst) {
                     isFirst = false
                     if ((consolidatedMessage?.role ?: "") != "user") {
-                        val chatMessage = takeAll(messagesCopy, ApiModel.Role.user)
+                        val chatMessage = takeAll(messagesCopy, ModelSchema.Role.user)
                         alternatingMessages.add(
                             concat(
-                                (consolidatedMessage ?: ApiModel.ChatMessage()).copy(role = ApiModel.Role.user),
-                                chatMessage ?: ApiModel.ChatMessage()
+                                (consolidatedMessage ?: ModelSchema.ChatMessage()).copy(role = ModelSchema.Role.user),
+                                chatMessage ?: ModelSchema.ChatMessage()
                             )
                         )
                         continue
                     }
                 }
-                alternatingMessages.add(consolidatedMessage ?: ApiModel.ChatMessage())
+                alternatingMessages.add(consolidatedMessage ?: ModelSchema.ChatMessage())
             }
             return alternatingMessages
         }
 
         fun takeAll(
-            messagesCopy: MutableList<ApiModel.ChatMessage>, thisRole: ApiModel.Role?
-        ): ApiModel.ChatMessage? {
+            messagesCopy: MutableList<ModelSchema.ChatMessage>, thisRole: ModelSchema.Role?
+        ): ModelSchema.ChatMessage? {
             val toConsolidate = messagesCopy.takeWhile { it.role == thisRole }.toTypedArray()
             messagesCopy.removeAll(toConsolidate)
             val consolidatedMessage = toConsolidate.reduceOrNull { acc, chatMessage ->
@@ -404,10 +404,10 @@ class AwsChatClient(
         }
 
         fun concat(
-            acc: ApiModel.ChatMessage, chatMessage: ApiModel.ChatMessage
-        ) = ApiModel.ChatMessage(
+            acc: ModelSchema.ChatMessage, chatMessage: ModelSchema.ChatMessage
+        ) = ModelSchema.ChatMessage(
             role = acc.role, content = listOf(
-                ApiModel.ContentPart(
+                ModelSchema.ContentPart(
                     type = "text",
                     text = (acc.content?.plus(chatMessage.content ?: emptyList()) ?: chatMessage.content)?.joinToString(
                         "\n"
@@ -416,7 +416,7 @@ class AwsChatClient(
         )
 
         fun toSimplePrompt(
-            chatRequest: ApiModel.ChatRequest, filterFn: (ApiModel.ChatMessage) -> Boolean = { true }
+            chatRequest: ModelSchema.ChatRequest, filterFn: (ModelSchema.ChatMessage) -> Boolean = { true }
         ) = if (chatRequest.messages.filter(filterFn).map { it.role }.distinct().size <= 1) {
             chatRequest.messages.filter(filterFn).joinToString("\n\n") {
                 it.content?.joinToString("\n") { it.text ?: "" } ?: ""
@@ -439,14 +439,14 @@ class AwsChatClient(
                         throw RuntimeException("Failed to parse Llama response", e)
                     }
                     JsonUtil.toJson(
-                        ApiModel.ChatResponse(
+                        ModelSchema.ChatResponse(
                             choices = listOf(
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(
+                                ModelSchema.ChatChoice(
+                                    message = ModelSchema.ChatMessageResponse(
                                         content = fromJson.generation ?: ""
                                     ), index = 0
                                 )
-                            ), usage = ApiModel.Usage(
+                            ), usage = ModelSchema.Usage(
                                 prompt_tokens = fromJson.prompt_token_count?.toLong() ?: 0,
                                 completion_tokens = fromJson.generation_token_count?.toLong() ?: 0,
                                 total_tokens = (fromJson.prompt_token_count?.toLong()
@@ -459,10 +459,10 @@ class AwsChatClient(
                 model.contains("mistral") -> {
                     val fromJson = JsonUtil.fromJson<AwsResponseMistral>(responseBody, AwsResponseMistral::class.java)
                     JsonUtil.toJson(
-                        ApiModel.ChatResponse(
+                        ModelSchema.ChatResponse(
                             choices = listOf(
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(
+                                ModelSchema.ChatChoice(
+                                    message = ModelSchema.ChatMessageResponse(
                                         content = fromJson.outputs?.firstOrNull()?.text ?: ""
                                     ), index = 0
                                 )
@@ -474,10 +474,10 @@ class AwsChatClient(
                 model.contains("titan") -> {
                     val fromJson = JsonUtil.fromJson<AwsResponseTitan>(responseBody, AwsResponseTitan::class.java)
                     JsonUtil.toJson(
-                        ApiModel.ChatResponse(
+                        ModelSchema.ChatResponse(
                             choices = listOf(
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(
+                                ModelSchema.ChatChoice(
+                                    message = ModelSchema.ChatMessageResponse(
                                         content = fromJson.results?.firstOrNull()?.outputText ?: ""
                                     ), index = 0
                                 )
@@ -489,10 +489,10 @@ class AwsChatClient(
                 model.contains("cohere") -> {
                     val fromJson = JsonUtil.fromJson<AwsResponseCohere>(responseBody, AwsResponseCohere::class.java)
                     JsonUtil.toJson(
-                        ApiModel.ChatResponse(
+                        ModelSchema.ChatResponse(
                             choices = listOf(
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(
+                                ModelSchema.ChatChoice(
+                                    message = ModelSchema.ChatMessageResponse(
                                         content = fromJson.generations?.firstOrNull()?.text ?: ""
                                     ), index = 0
                                 )
@@ -504,10 +504,10 @@ class AwsChatClient(
                 model.contains("ai21") -> {
                     val fromJson = JsonUtil.objectMapper().readValue(responseBody, Ai21ChatResponse::class.java)
                     return JsonUtil.toJson(
-                        ApiModel.ChatResponse(
+                        ModelSchema.ChatResponse(
                             choices = fromJson.completions?.mapIndexed { index, completion ->
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(
+                                ModelSchema.ChatChoice(
+                                    message = ModelSchema.ChatMessageResponse(
                                         content = completion.data?.text ?: ""
                                     ), index = index
                                 )
@@ -522,14 +522,14 @@ class AwsChatClient(
                         throw RuntimeException("Failed to parse Anthropic response", e)
                     }
                     JsonUtil.toJson(
-                        ApiModel.ChatResponse(
+                        ModelSchema.ChatResponse(
                             choices = listOf(
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(
+                                ModelSchema.ChatChoice(
+                                    message = ModelSchema.ChatMessageResponse(
                                         content = fromJson.content?.firstOrNull()?.text ?: ""
                                     ), index = 0
                                 )
-                            ), usage = ApiModel.Usage(
+                            ), usage = ModelSchema.Usage(
                                 prompt_tokens = fromJson.usage?.input_tokens?.toLong() ?: 0,
                                 completion_tokens = fromJson.usage?.output_tokens?.toLong() ?: 0,
                                 total_tokens = (fromJson.usage?.input_tokens?.toLong()

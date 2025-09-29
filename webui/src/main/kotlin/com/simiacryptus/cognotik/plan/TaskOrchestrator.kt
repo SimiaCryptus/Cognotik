@@ -19,11 +19,11 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
-class PlanCoordinator(
+class TaskOrchestrator(
     val user: User?,
     val session: Session,
     val dataStorage: StorageInterface,
-    val planSettings: PlanSettings,
+    val orchestrationConfig: OrchestrationConfig,
     val root: Path
 ) {
 
@@ -34,7 +34,7 @@ class PlanCoordinator(
 
         override fun getEnumValues(clazz: Class<*>): List<String> {
             return if (clazz == TaskType::class.java) {
-                planSettings.taskSettings.filter { it.value.enabled }.map { it.key }
+                orchestrationConfig.taskSettings.filter { it.value.enabled }.map { it.key }
             } else {
                 super.getEnumValues(clazz)
             }
@@ -60,16 +60,16 @@ class PlanCoordinator(
                 }
             }
 
-    var planProcessingState: PlanProcessingState? = null
+    var executionState: ExecutionState? = null
 
     fun executePlan(
         plan: Map<String, TaskConfigBase>,
         task: SessionTask,
         userMessage: String,
-    ): PlanProcessingState {
+    ): ExecutionState {
         val tabs = TabbedDisplay(task)
         val planProcessingState = newState(plan)
-        this.planProcessingState = planProcessingState
+        this.executionState = planProcessingState
         try {
             val diagramTask = task.manager.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
@@ -79,7 +79,7 @@ class PlanCoordinator(
                 ),
                 subTasks = planProcessingState.subTasks,
                 task = diagramTask,
-                planProcessingState = planProcessingState,
+                executionState = planProcessingState,
                 taskIdProcessingQueue = planProcessingState.taskIdProcessingQueue,
                 pool = pool,
                 userMessage = userMessage,
@@ -94,7 +94,7 @@ class PlanCoordinator(
     }
 
     private fun newState(plan: Map<String, TaskConfigBase>) =
-        PlanProcessingState(
+        ExecutionState(
             subTasks = (filterPlan { plan }?.entries?.toTypedArray<Map.Entry<String, TaskConfigBase>>()
                 ?.associate { it.key to it.value } ?: mapOf()).toMutableMap()
         )
@@ -103,7 +103,7 @@ class PlanCoordinator(
         diagramBuffer: StringBuilder?,
         subTasks: Map<String, TaskConfigBase>,
         task: SessionTask,
-        planProcessingState: PlanProcessingState,
+        executionState: ExecutionState,
         taskIdProcessingQueue: MutableList<String>,
         pool: ExecutorService,
         userMessage: String,
@@ -121,7 +121,7 @@ class PlanCoordinator(
                     append("<div class='tabs'>\n")
                     super.tabs.withIndex().forEach { (idx, t) ->
                         val (taskId, taskV) = t
-                        val subTask = planProcessingState.tasksByDescription[taskId]
+                        val subTask = executionState.tasksByDescription[taskId]
                         if (null == subTask) {
                             log.warn("Task tab not found: $taskId")
                         }
@@ -140,8 +140,8 @@ class PlanCoordinator(
         }
         taskIdProcessingQueue.forEach { taskId ->
             val newTask = task.manager.newTask(false)
-            planProcessingState.uitaskMap[taskId] = newTask
-            val subtask: TaskConfigBase? = planProcessingState.subTasks[taskId]
+            executionState.uitaskMap[taskId] = newTask
+            val subtask: TaskConfigBase? = executionState.subTasks[taskId]
             val description = subtask?.task_description
             log.debug("Creating task tab: $taskId ${System.identityHashCode(subtask)} $description")
             taskTabs[description ?: taskId] = newTask.placeholder
@@ -149,12 +149,12 @@ class PlanCoordinator(
         Thread.sleep(100)
         while (taskIdProcessingQueue.isNotEmpty()) {
             val taskId = taskIdProcessingQueue.removeAt(0)
-            val subTask = planProcessingState.subTasks[taskId] ?: throw RuntimeException("Task not found: $taskId")
-            planProcessingState.taskFutures[taskId] = pool.submit {
+            val subTask = executionState.subTasks[taskId] ?: throw RuntimeException("Task not found: $taskId")
+            executionState.taskFutures[taskId] = pool.submit {
                 subTask.state = AbstractTask.TaskState.Pending
                 log.debug("Awaiting dependencies: ${subTask.task_dependencies?.joinToString(", ") ?: ""}")
                 subTask.task_dependencies
-                    ?.associate { it to planProcessingState.taskFutures[it] }
+                    ?.associate { it to executionState.taskFutures[it] }
                     ?.forEach { (id, future) ->
                         try {
                             future?.get() ?: log.warn("Dependency not found: $id")
@@ -165,14 +165,14 @@ class PlanCoordinator(
                 subTask.state = AbstractTask.TaskState.InProgress
                 taskTabs.update()
                 log.debug("Running task: ${System.identityHashCode(subTask)} ${subTask.task_description}")
-                val task1 = planProcessingState.uitaskMap.get(taskId) ?: task.manager.newTask(false).apply {
+                val task1 = executionState.uitaskMap.get(taskId) ?: task.manager.newTask(false).apply {
                     taskTabs[taskId] = placeholder
                 }
                 try {
                     val dependencies = subTask.task_dependencies?.toMutableSet() ?: mutableSetOf()
                     dependencies += getAllDependencies(
                         subPlanTask = subTask,
-                        subTasks = planProcessingState.subTasks,
+                        subTasks = executionState.subTasks,
                         visited = mutableSetOf()
                     )
 
@@ -182,31 +182,31 @@ class PlanCoordinator(
                                 TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
                                 "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
                     )
-                    val impl = getImpl(planSettings, subTask)
+                    val impl = getImpl(orchestrationConfig, subTask)
                     val messages = listOf(
                         userMessage,
                         JsonUtil.toJson(plan),
-                        impl.getPriorCode(planProcessingState)
+                        impl.getPriorCode(executionState)
                     )
                     impl.run(
                         agent = this,
                         messages = messages,
                         task = task1,
-                        resultFn = { planProcessingState.taskResult[taskId] = it },
-                        planSettings = planSettings
+                        resultFn = { executionState.taskResult[taskId] = it },
+                        orchestrationConfig = orchestrationConfig
                     )
                 } catch (e: Throwable) {
                     log.warn("Error during task execution", e)
                     task1.error(e)
                 } finally {
-                    planProcessingState.completedTasks.add(element = taskId)
+                    executionState.completedTasks.add(element = taskId)
                     subTask.state = AbstractTask.TaskState.Completed
                     log.debug("Completed task: $taskId ${System.identityHashCode(subTask)}")
                     taskTabs.update()
                 }
             }
         }
-        await(planProcessingState.taskFutures)
+        await(executionState.taskFutures)
     }
 
     fun await(futures: MutableMap<String, Future<*>>) {
@@ -222,18 +222,18 @@ class PlanCoordinator(
         user: User? = this.user,
         session: Session = this.session,
         dataStorage: StorageInterface = this.dataStorage,
-        planSettings: PlanSettings = this.planSettings,
+        orchestrationConfig: OrchestrationConfig = this.orchestrationConfig,
         root: Path = this.root
-    ) = PlanCoordinator(
+    ) = TaskOrchestrator(
         user = user,
         session = session,
         dataStorage = dataStorage,
-        planSettings = planSettings,
+        orchestrationConfig = orchestrationConfig,
         root = root
     )
 
     companion object : Planner() {
-        private val log = LoggerFactory.getLogger(PlanCoordinator::class.java)
+        private val log = LoggerFactory.getLogger(TaskOrchestrator::class.java)
     }
 }
 

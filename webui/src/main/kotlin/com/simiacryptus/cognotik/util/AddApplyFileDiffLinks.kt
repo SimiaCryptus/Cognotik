@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
 import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.diff.PatchResult
@@ -74,7 +74,7 @@ open class AddApplyFileDiffLinks {
             response: String,
             handle: (Map<Path, String>) -> Unit = {},
             shouldAutoApply: (Path) -> Boolean = { false },
-            model: Chatter? = null,
+            model: ChatInterface? = null,
             defaultFile: String? = null,
         ): String {
             log.debug("Instrumenting file diffs for root: {}", root)
@@ -130,7 +130,7 @@ open class AddApplyFileDiffLinks {
         response: String,
         handle: (Map<Path, String>) -> Unit = {},
         shouldAutoApply: (Path) -> Boolean = { false },
-        model: Chatter? = null,
+        model: ChatInterface? = null,
         defaultFile: String? = null,
     ): String {
         self.apply {

@@ -7,16 +7,16 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Role
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -119,7 +119,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: Chatter? = null,
+            val model: ChatInterface? = null,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -132,12 +132,12 @@ class MultiStepPatchAction : BaseAction() {
         val session: Session,
         val user: User?,
         val ui: SocketManager,
-        val model: Chatter,
-        val parsingModel: Chatter,
+        val model: ChatInterface,
+        val parsingModel: ChatInterface,
         val event: AnActionEvent,
     ) {
         val actors = mapOf(
-            ActorTypes.DesignActor to ParsedActor(
+            ActorTypes.DesignActor to ParsedAgent(
                 resultClass = TaskList::class.java,
                 prompt = """
           Translate the user directive into an action plan for the project.
@@ -147,7 +147,7 @@ class MultiStepPatchAction : BaseAction() {
                 model = model,
                 parsingModel = parsingModel,
             ),
-            ActorTypes.TaskCodingActor to SimpleActor(
+            ActorTypes.TaskCodingActor to ChatAgent(
                 prompt = "Implement the changes to the codebase as described in the task list.\n\n" + patchFormatPrompt,
                 model = model
             ),
@@ -158,8 +158,8 @@ class MultiStepPatchAction : BaseAction() {
             TaskCodingActor,
         }
 
-        private val designActor by lazy { actors.get(ActorTypes.DesignActor.name)!! as ParsedActor<TaskList> }
-        private val taskActor by lazy { actors.get(ActorTypes.TaskCodingActor.name)!! as SimpleActor }
+        private val designActor by lazy { actors.get(ActorTypes.DesignActor.name)!! as ParsedAgent<TaskList> }
+        private val taskActor by lazy { actors.get(ActorTypes.TaskCodingActor.name)!! as ChatAgent }
 
         fun start(
             userMessage: String,
@@ -197,8 +197,8 @@ class MultiStepPatchAction : BaseAction() {
                 },
                 reviseResponse = { userMessages: List<Pair<String, Role>> ->
                     designActor.respond(
-                        messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
-                            .toTypedArray<ApiModel.ChatMessage>()),
+                        messages = (userMessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                            .toTypedArray<ModelSchema.ChatMessage>()),
                         input = toInput(userMessage),
                     )
                 },

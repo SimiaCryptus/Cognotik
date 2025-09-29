@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -13,8 +13,8 @@ class ValidationPatchApp(
     root: File,
     settings: Settings,
     val files: Array<out File>?,
-    model: Chatter,
-    parsingModel: Chatter,
+    model: ChatInterface,
+    parsingModel: ChatInterface,
 ) : PatchApp(root, settings, model, parsingModel) {
 
     companion object {

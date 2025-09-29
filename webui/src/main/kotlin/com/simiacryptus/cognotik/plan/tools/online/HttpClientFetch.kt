@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
 import com.simiacryptus.cognotik.input.getReader
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.util.HtmlSimplifier
 import java.io.File
 import java.io.FileOutputStream
@@ -25,7 +25,7 @@ class HttpClientFetch : FetchMethodFactory {
             webSearchDir: File,
             index: Int,
             pool: ExecutorService,
-            planSettings: PlanSettings
+            orchestrationConfig: OrchestrationConfig
         ): String {
             FetchMethod.Companion.log.info("HttpClient fetching URL: $url (index: $index)")
             // Create SSL context that accepts all certificates

@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanCoordinator.Companion.initialPlan
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskOrchestrator.Companion.initialPlan
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -14,14 +14,14 @@ import java.io.File
 /**
  * A cognitive mode that implements the traditional plan-ahead strategy.
  */
-open class PlanAheadMode(
+open class WaterfallMode(
     override val ui: SocketManager,
-    override val planSettings: PlanSettings,
+    override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
     val describer: TypeDescriber
 ) : CognitiveMode {
-    private val log = LoggerFactory.getLogger(PlanAheadMode::class.java)
+    private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
 
     override fun initialize() {
         log.debug("Initializing PlanAheadMode")
@@ -36,16 +36,16 @@ open class PlanAheadMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val coordinator = PlanCoordinator(
+            val coordinator = TaskOrchestrator(
                 user = user,
                 session = session,
                 dataStorage = ui.dataStorage!!,
-                root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+                root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                     ?: ui.dataStorage?.getSessionDir(
                         user,
                         session
                     )?.toPath() ?: File(".").toPath(),
-                planSettings = planSettings
+                orchestrationConfig = orchestrationConfig
             )
 
             val plan = initialPlan(
@@ -54,7 +54,7 @@ open class PlanAheadMode(
                 root = coordinator.root,
                 task = task,
                 userMessage = userMessage,
-                planSettings = coordinator.planSettings,
+                orchestrationConfig = coordinator.orchestrationConfig,
                 contextFn = { contextData() },
                 describer = describer
             )
@@ -75,10 +75,10 @@ open class PlanAheadMode(
         override val inputCnt = 1
         override fun getCognitiveMode(
             ui: SocketManager,
-            planSettings: PlanSettings,
+            orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?,
             describer: TypeDescriber
-        ) = PlanAheadMode(ui, planSettings, session, user, describer)
+        ) = WaterfallMode(ui, orchestrationConfig, session, user, describer)
     }
 }

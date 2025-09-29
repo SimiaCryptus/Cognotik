@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.actors
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.gson.reflect.TypeToken
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.DescriptorUtil
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -20,7 +20,7 @@ import kotlin.reflect.jvm.javaType
 
 open class ChatProxy<T : Any>(
     val clazz: Class<out T>,
-    private var model: Chatter,
+    private var model: ChatInterface,
     private var temperature: Double = 0.5,
     val validation: Boolean = true,
     private var maxRetries: Int = 5,
@@ -155,15 +155,15 @@ open class ChatProxy<T : Any>(
 
     fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String {
         log.info("Starting completion with prompt: {}", prompt.toString())
-        var request = ApiModel.ChatRequest()
+        var request = ModelSchema.ChatRequest()
         val exampleMessages = examples.flatMap {
             listOf(
-                ApiModel.ChatMessage(
-                    ApiModel.Role.user,
+                ModelSchema.ChatMessage(
+                    ModelSchema.Role.user,
                     argsToString(it.argList).toContentList()
                 ),
-                ApiModel.ChatMessage(
-                    ApiModel.Role.assistant,
+                ModelSchema.ChatMessage(
+                    ModelSchema.Role.assistant,
                     it.response.toContentList()
                 )
             )
@@ -171,8 +171,8 @@ open class ChatProxy<T : Any>(
         request = request.copy(
             messages = ArrayList(
                 listOf(
-                    ApiModel.ChatMessage(
-                        ApiModel.Role.system, ("""
+                    ModelSchema.ChatMessage(
+                        ModelSchema.Role.system, ("""
                           You are a JSON-RPC Service
                           Responses are in JSON format
                           Do not include explaining text outside the JSON
@@ -184,8 +184,8 @@ open class ChatProxy<T : Any>(
                     )
                 ) + exampleMessages +
                         listOf(
-                            ApiModel.ChatMessage(
-                                ApiModel.Role.user,
+                            ModelSchema.ChatMessage(
+                                ModelSchema.Role.user,
                                 argsToString(prompt.argList).toContentList()
                             )
                         )

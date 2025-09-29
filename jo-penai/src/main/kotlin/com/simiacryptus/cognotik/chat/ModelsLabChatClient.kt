@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ModelsLabDataModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.runWithPermit
 import org.apache.hc.core5.http.HttpRequest
@@ -40,10 +40,10 @@ class ModelsLabChatClient(
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         return modelsLabThrottle.runWithPermit {
             val modelsLabRequest = toModelsLab(chatRequest)
             val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
@@ -52,8 +52,8 @@ class ModelsLabChatClient(
             val rawResponse = post("$apiBase/llm/chat", json, APIProvider.ModelsLab)
             val responseJson = fromModelsLab(rawResponse, this)
 
-            val response: ApiModel.ChatResponse =
-                JsonUtil.objectMapper().readValue(responseJson, ApiModel.ChatResponse::class.java)
+            val response: ModelSchema.ChatResponse =
+                JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
             if (response.usage != null && model is ChatModel) {
                 onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
             }
@@ -73,13 +73,13 @@ class ModelsLabChatClient(
             return when (response.status) {
                 "success" -> {
                     JsonUtil.toJson(
-                        ApiModel.ChatResponse(
+                        ModelSchema.ChatResponse(
                             id = response.chat_id, choices = listOf(
-                                ApiModel.ChatChoice(
-                                    message = ApiModel.ChatMessageResponse(content = response.message), index = 0
+                                ModelSchema.ChatChoice(
+                                    message = ModelSchema.ChatMessageResponse(content = response.message), index = 0
                                 )
                             ), usage = response.meta?.let {
-                                ApiModel.Usage(
+                                ModelSchema.Usage(
                                     prompt_tokens = it.max_new_tokens?.toLong() ?: 0,
                                     completion_tokens = 0,
                                     total_tokens = it.max_new_tokens?.toLong() ?: 0
@@ -120,12 +120,12 @@ class ModelsLabChatClient(
             }
         }
 
-        fun toModelsLab(chatRequest: ApiModel.ChatRequest) = modelslab_chatRequest_prototype.copy(
+        fun toModelsLab(chatRequest: ModelSchema.ChatRequest) = modelslab_chatRequest_prototype.copy(
             model_id = chatRequest.model,
-            system_prompt = chatRequest.messages.filter { it.role == ApiModel.Role.system }.joinToString("\n") {
+            system_prompt = chatRequest.messages.filter { it.role == ModelSchema.Role.system }.joinToString("\n") {
                 it.content?.joinToString("\n") { it.text ?: "" } ?: ""
             },
-            prompt = chatRequest.messages.filter { it.role != ApiModel.Role.system }.joinToString("\n") {
+            prompt = chatRequest.messages.filter { it.role != ModelSchema.Role.system }.joinToString("\n") {
                 it.content?.joinToString("\n") { it.text ?: "" } ?: ""
             },
             temperature = chatRequest.temperature,

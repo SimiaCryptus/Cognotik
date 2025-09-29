@@ -9,7 +9,6 @@ var transcriptionModel: String = AudioModels.Whisper.modelName
  * framework to save settings across IDE restarts.
  */
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -19,7 +18,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
@@ -28,7 +27,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -104,11 +102,11 @@ data class AppSettingsState(
 ) : PersistentStateComponent<SimpleEnvelope> {
 
     @get:JsonIgnore
-    val smartChatClient: Chatter
+    val smartChatClient: ChatInterface
         get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
 
     @get:JsonIgnore
-    val fastChatClient: Chatter
+    val fastChatClient: ChatInterface
         get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
 
     @get:JsonIgnore
@@ -362,7 +360,7 @@ fun String.imageModel(): ImageModels {
     } ?: ImageModels.DallE3
 }
 
-fun ApiChatModel.instance(): Chatter? {
+fun ApiChatModel.instance(): ChatInterface? {
     val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager
     val model = model
     if (model == null) {

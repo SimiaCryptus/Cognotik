@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
-import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
+import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -32,7 +32,7 @@ import java.util.concurrent.Executors
 abstract class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
-    val planSettings: PlanSettings,
+    val orchestrationConfig: OrchestrationConfig,
     showMenubar: Boolean = true,
     val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
@@ -41,7 +41,7 @@ abstract class UnifiedPlanApp(
     applicationName = applicationName,
     path = path,
     showMenubar = showMenubar,
-    root = planSettings.absoluteWorkingDir?.let { File(it) } ?: dataStorageRoot,
+    root = orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: dataStorageRoot,
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
     private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
@@ -59,16 +59,16 @@ abstract class UnifiedPlanApp(
     override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it + 2 else it + 3 }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T = planSettings as T
+    override fun <T : Any> initSettings(session: Session): T = orchestrationConfig as T
 
-    abstract fun instance(model: ApiChatModel): Chatter
+    abstract fun instance(model: ApiChatModel): ChatInterface
 
     override fun newSession(
         user: User?,
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
-        val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+        val settings = getSettings(session, user, OrchestrationConfig::class.java) ?: orchestrationConfig
         if (useExpansionSyntax) {
             socketManager.newTask(cancelable = false, root = true).expandable(
                 "Query Expansion Syntax Guide", """
@@ -113,7 +113,7 @@ abstract class UnifiedPlanApp(
         ui: SocketManager
     ) {
         try {
-            val settings = getSettings(session, user, PlanSettings::class.java) ?: planSettings
+            val settings = getSettings(session, user, OrchestrationConfig::class.java) ?: orchestrationConfig
             settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
@@ -128,12 +128,12 @@ abstract class UnifiedPlanApp(
                 // Per-type custom initialization
                 user?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
                     ?.apply {
-                        (settings.taskSettings[TaskType.CommandAutoFixTask.name] as? CommandAutoFixTask.CommandAutoFixTaskSettings)
+                        (settings.taskSettings[TaskType.SelfHealingTask.name] as? SelfHealingTask.SelfHealingTaskSettings)
                             ?.commandAutoFixCommands?.addAll(this.localTools)
                     }
                 cognitiveStrategy.getCognitiveMode(
                     ui = ui,
-                    planSettings = settings,
+                    orchestrationConfig = settings,
                     session = session,
                     user = user,
                     describer = describer
@@ -233,7 +233,7 @@ abstract class UnifiedPlanApp(
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
             cognitiveStrategy.getCognitiveMode(
                 ui = ui,
-                planSettings = getSettings(session, user, PlanSettings::class.java) ?: planSettings,
+                orchestrationConfig = getSettings(session, user, OrchestrationConfig::class.java) ?: orchestrationConfig,
                 session = session,
                 user = user,
                 describer = describer

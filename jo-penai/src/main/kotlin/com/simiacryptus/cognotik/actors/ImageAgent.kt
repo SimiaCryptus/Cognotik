@@ -1,12 +1,10 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.OpenAIClient
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
-import com.simiacryptus.cognotik.models.ApiModel.ImageGenerationRequest
+import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.ImageGenerationRequest
 import com.simiacryptus.cognotik.models.ImageModels
 import com.simiacryptus.cognotik.util.toChatMessage
 import com.simiacryptus.cognotik.util.toContentList
@@ -14,16 +12,16 @@ import java.awt.image.BufferedImage
 import java.net.URL
 import javax.imageio.ImageIO
 
-open class ImageActor(
+open class ImageAgent(
     prompt: String = "Transform the user request into an image generation prompt that the user will like",
     name: String? = null,
-    textModel: Chatter,
+    textModel: ChatInterface,
     val imageModel: ImageModels = ImageModels.DallE2,
     temperature: Double = 0.3,
     val width: Int = 1024,
     val height: Int = 1024,
     var openAI: OpenAIClient? = null,
-) : BaseActor<List<String>, ImageResponse>(
+) : BaseAgent<List<String>, ImageResponse>(
     prompt = prompt,
     name = name,
     model = textModel,
@@ -31,12 +29,12 @@ open class ImageActor(
 ) {
     override fun chatMessages(questions: List<String>) = arrayOf(
         ChatMessage(
-            role = ApiModel.Role.system,
+            role = ModelSchema.Role.system,
             content = prompt.toContentList()
         ),
     ) + questions.map {
         ChatMessage(
-            role = ApiModel.Role.user,
+            role = ModelSchema.Role.user,
             content = it.toContentList()
         )
     }
@@ -81,7 +79,7 @@ open class ImageActor(
         return ImageResponseImpl(text, api = this.openAI ?: throw RuntimeException("No API"))
     }
 
-    override fun withModel(model: Chatter): ImageActor = ImageActor(
+    override fun withModel(model: ChatInterface): ImageAgent = ImageAgent(
         prompt = prompt,
         name = name,
         textModel = model,
@@ -92,7 +90,7 @@ open class ImageActor(
         openAI = openAI
     )
 
-    fun setImageAPI(openAI: OpenAIClient): ImageActor {
+    fun setImageAPI(openAI: OpenAIClient): ImageAgent {
         this.openAI = openAI
         return this
     }

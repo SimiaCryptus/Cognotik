@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.test
 
-import com.simiacryptus.cognotik.actors.CodingActor
+import com.simiacryptus.cognotik.actors.CodeAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.util.*
 
 open class CodingActorTestApp(
-    private val actor: CodingActor,
+    private val actor: CodeAgent,
     applicationName: String = "CodingActorTest_" + actor.name,
     temperature: Double = 0.3,
 ) : ApplicationServer(
@@ -26,7 +26,7 @@ open class CodingActorTestApp(
         val message = ui.newTask()
         try {
             message.echo(userMessage.renderMarkdown)
-            val response = actor.answer(CodingActor.CodeRequest(listOf(userMessage to ApiModel.Role.user)))
+            val response = actor.answer(CodeAgent.CodeRequest(listOf(userMessage to ModelSchema.Role.user)))
             val canPlay =
                 ApplicationServices.authorizationManager.isAuthorized(this::class.java, user, OperationType.Execute)
             val playLink = if (!canPlay) "" else {

@@ -8,13 +8,12 @@ package cognotik.actions.chat
  import com.intellij.openapi.vfs.VirtualFile
  import com.simiacryptus.cognotik.CognotikAppServer
  import com.simiacryptus.cognotik.apps.general.renderMarkdown
- import com.simiacryptus.cognotik.chat.model.Chatter
+ import com.simiacryptus.cognotik.chat.model.ChatInterface
  import com.simiacryptus.cognotik.config.AppSettingsState
  import com.simiacryptus.cognotik.input.getReader
- import com.simiacryptus.cognotik.models.ApiModel
+ import com.simiacryptus.cognotik.models.ModelSchema
  import com.simiacryptus.cognotik.platform.ApplicationServices
  import com.simiacryptus.cognotik.platform.Session
- import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
  import com.simiacryptus.cognotik.util.*
  import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
  import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -106,8 +105,8 @@ class MultiCodeChatAction : BaseAction() {
     /** Chat manager that handles the chat interface and code modifications */
     inner class CodeChatManager(
         session: Session,
-        model: Chatter,
-        parsingModel: Chatter,
+        model: ChatInterface,
+        parsingModel: ChatInterface,
         val root: File,
         private val codeFiles: Set<Path>
     ) : ChatSocketManager(
@@ -166,7 +165,7 @@ class MultiCodeChatAction : BaseAction() {
         override fun respond(
             task: SessionTask,
             userMessage: String,
-            currentChatMessages: List<ApiModel.ChatMessage>,
+            currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?
         ): String {
             val codex = GPT4Tokenizer()

@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
@@ -21,9 +21,9 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
 class FileModificationTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: FileModificationTaskConfigData?
-) : AbstractFileTask<FileModificationTaskConfigData>(planSettings, planTask) {
+) : AbstractFileTask<FileModificationTaskConfigData>(orchestrationConfig, planTask) {
     class FileModificationTaskConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
@@ -94,11 +94,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val defaultFile = if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).isEmpty()) {
             task.complete("CONFIGURATION ERROR: No input files specified")
@@ -116,9 +116,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         Retryable(task = task) {
             val task = task.manager.newTask(false)
             task.manager.pool.submit {
-                val chatter = (taskSettings.model?.let<ApiChatModel, Chatter> { this.planSettings.instance(it) }
-                    ?: this.planSettings.defaultChatter).getChildClient(task)
-                val simpleActor = SimpleActor(
+                val chatInterface = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                    ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
+                val chatAgent = ChatAgent(
                     name = "FileModification",
                     prompt = """
         Generate precise code modifications and new files based on requirements:
@@ -171,12 +171,12 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         }
         ${TRIPLE_TILDE}
         """.trimIndent(),
-                    model = chatter,
-                    temperature = this.planSettings.temperature,
+                    model = chatInterface,
+                    temperature = this.orchestrationConfig.temperature,
                 )
-                val codeResult = simpleActor.answer(
+                val codeResult = chatAgent.answer(
                     (messages + listOf(
-                        agent.planProcessingState?.tasksByDescription?.filter {
+                        agent.executionState?.tasksByDescription?.filter {
                             taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
                         }?.entries?.joinToString("\n\n") {
                             (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
@@ -193,7 +193,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         taskConfig?.task_description ?: "",
                     )).filter { it.isNotBlank() }
                 )
-                if (agent.planSettings.autoFix) {
+                if (agent.orchestrationConfig.autoFix) {
                     onComplete()
                     val markdown = renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -205,8 +205,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            shouldAutoApply = { agent.planSettings.autoFix },
-                            model = chatter,
+                            shouldAutoApply = { agent.orchestrationConfig.autoFix },
+                            model = chatInterface,
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"
                     }
@@ -222,7 +222,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            model = chatter,
+                            model = chatInterface,
                             defaultFile = defaultFile,
                         ) + acceptButtonFooter(task.manager) {
                             task.complete()

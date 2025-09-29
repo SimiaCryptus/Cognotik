@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.plan.tools.online
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -25,8 +25,8 @@ import java.util.regex.Pattern
 import kotlin.math.min
 
 class CrawlerAgentTask(
-    planSettings: PlanSettings,
-    planTask: SearchAndAnalyzeTaskConfigData?,
+    orchestrationConfig: OrchestrationConfig,
+    planTask: CrawlerTaskConfigData?,
     val follow_links: Boolean = true,
     val max_pages_per_task: Int = 50,
     val max_final_output_size: Int = 10000,
@@ -34,9 +34,9 @@ class CrawlerAgentTask(
     val allow_revisit_pages: Boolean = false,
     val create_final_summary: Boolean? = true,
     val min_content_length: Int = 100,
-) : AbstractTask<CrawlerAgentTask.SearchAndAnalyzeTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<CrawlerAgentTask.CrawlerTaskConfigData>(orchestrationConfig, planTask) {
 
-    class SearchAndAnalyzeTaskSettings(
+    class CrawlerTaskSettings(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         task_type: String = "CrawlerAgentTask",
@@ -44,10 +44,10 @@ class CrawlerAgentTask(
         model: ApiChatModel? = null,
     ) : TaskSettingsBase(task_type, enabled, model)
 
-    override val taskSettings: SearchAndAnalyzeTaskSettings
-        get() = super.taskSettings.jsonCast<SearchAndAnalyzeTaskSettings>()
+    override val taskSettings: CrawlerTaskSettings
+        get() = super.taskSettings.jsonCast<CrawlerTaskSettings>()
 
-    class SearchAndAnalyzeTaskConfigData(
+    class CrawlerTaskConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
@@ -119,15 +119,15 @@ class CrawlerAgentTask(
     )
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         log.info("Starting CrawlerAgentTask.run() with messages count: ${messages.size}")
         try {
-            resultFn(innerRun(agent, task, planSettings))
+            resultFn(innerRun(agent, task, orchestrationConfig))
         } catch (e: Throwable) {
             log.error("Unhandled exception in CrawlerAgentTask", e)
             val errorMessage = "Error: ${e.message ?: "Unknown error occurred"}"
@@ -139,9 +139,9 @@ class CrawlerAgentTask(
     }
 
     private fun innerRun(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         task: SessionTask,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ): String {
         try {
             val startTime = System.currentTimeMillis()
@@ -158,7 +158,7 @@ class CrawlerAgentTask(
             val seedMethod = taskSettings.seed_method ?: SeedMethod.GoogleSearch
             log.info("Using seed method: $seedMethod")
             val seedItems = try {
-                seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, planSettings)
+                seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, orchestrationConfig)
             } catch (e: Exception) {
                 log.error("Failed to get seed items using method: $seedMethod", e)
                 task.error(e)
@@ -227,7 +227,7 @@ class CrawlerAgentTask(
                     webSearchDir,
                     agent,
                     fetchStrategy,
-                    planSettings,
+                    orchestrationConfig,
                     analysisResultsMap
                 )
             } catch (e: Exception) {
@@ -294,9 +294,9 @@ class CrawlerAgentTask(
         exeManager: FixedConcurrencyProcessor,
         processedCount: AtomicInteger,
         webSearchDir: File,
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         analysisResultsMap: ConcurrentHashMap<Int, String>
     ) {
         log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=$maxIterations")
@@ -322,7 +322,7 @@ class CrawlerAgentTask(
                 webSearchDir,
                 agent,
                 fetchStrategy,
-                planSettings,
+                orchestrationConfig,
                 analysisResultsMap
             )
         }
@@ -342,9 +342,9 @@ class CrawlerAgentTask(
         exeManager: FixedConcurrencyProcessor,
         processedCount: AtomicInteger,
         webSearchDir: File,
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         analysisResultsMap: ConcurrentHashMap<Int, String>
     ) {
         val queueStats =
@@ -368,7 +368,7 @@ class CrawlerAgentTask(
                     webSearchDir,
                     agent,
                     fetchStrategy,
-                    planSettings,
+                    orchestrationConfig,
                     analysisResultsMap
                 )
             ) break
@@ -399,9 +399,9 @@ class CrawlerAgentTask(
         processedCount: AtomicInteger,
         maxPages: Int,
         webSearchDir: File,
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         analysisResultsMap: ConcurrentHashMap<Int, String>
     ): Boolean {
         log.info("Status before queuing next page: $queueStats, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
@@ -443,7 +443,7 @@ class CrawlerAgentTask(
                     webSearchDir,
                     agent,
                     fetchStrategy,
-                    planSettings,
+                    orchestrationConfig,
                     pageQueue,
                     errorCount,
                     subTask,
@@ -465,9 +465,9 @@ class CrawlerAgentTask(
         page: LinkData,
         maxPages: Int,
         webSearchDir: File,
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         pageQueue: MutableList<LinkData>,
         errorCount: AtomicInteger,
         task: SessionTask,
@@ -512,7 +512,7 @@ class CrawlerAgentTask(
                                 transformContent(
                                     content,
                                     analysisGoal,
-                                    planSettings,
+                                    orchestrationConfig,
                                     agent.describer
                                 )
 
@@ -656,7 +656,7 @@ class CrawlerAgentTask(
 
         val urlSections = extractUrlSections(analysisResults)
         log.info("Extracted ${urlSections.size} URL sections for summarization")
-        val summary = SimpleActor(
+        val summary = ChatAgent(
             prompt = listOf(
                 "Create a comprehensive summary of the following web search results and analyses.",
                 "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
@@ -667,7 +667,7 @@ class CrawlerAgentTask(
                 "Include the most important links that should be followed up on.",
                 "Keep your response under ${maxSize / 1000}K characters."
             ).joinToString("\n\n"),
-            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter),
+            model = (taskSettings.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
@@ -718,7 +718,7 @@ class CrawlerAgentTask(
         )
 
         return try {
-            val content = fetchStrategy.fetch(url, webSearchDir, index, pool, planSettings)
+            val content = fetchStrategy.fetch(url, webSearchDir, index, pool, orchestrationConfig)
             // Cache successful fetches
             if (content.isNotBlank()) {
                 urlContentCache[url] = content
@@ -830,14 +830,14 @@ class CrawlerAgentTask(
     private fun transformContent(
         content: String,
         analysisGoal: String,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         describer: TypeDescriber
     ): ParsedResponse<ParsedPage> {
 
         val maxChunkSize = 50000
         if (content.length <= maxChunkSize) {
             log.debug("Content size (${content.length}) within limit, processing as single chunk")
-            return pageParsedResponse(planSettings, analysisGoal, content, describer)
+            return pageParsedResponse(orchestrationConfig, analysisGoal, content, describer)
         }
 
         log.debug("Content size (${content.length}) exceeds limit, splitting into chunks")
@@ -846,7 +846,7 @@ class CrawlerAgentTask(
         val chunkResults = chunks.mapIndexed { index, chunk ->
             log.debug("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
             val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
-            pageParsedResponse(planSettings, chunkGoal, chunk, describer)
+            pageParsedResponse(orchestrationConfig, chunkGoal, chunk, describer)
         }
         if (chunkResults.size == 1) {
             log.debug("Only one chunk result, returning directly")
@@ -854,16 +854,16 @@ class CrawlerAgentTask(
         }
         log.debug("Combining ${chunkResults.size} chunk results into final analysis")
         val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n") { it.text }
-        return pageParsedResponse(planSettings, analysisGoal, combinedAnalysis, describer)
+        return pageParsedResponse(orchestrationConfig, analysisGoal, combinedAnalysis, describer)
     }
 
     private fun pageParsedResponse(
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         analysisGoal: String,
         content: String,
         describer: TypeDescriber
     ) = try {
-        ParsedActor(
+        ParsedAgent(
             prompt = listOf(
                 "Below are analyses of different parts of a web page related to this goal: $analysisGoal",
                 "Create a unified summary that combines the key insights from all parts.",
@@ -871,9 +871,9 @@ class CrawlerAgentTask(
                 "Identify the most important links that should be followed up on according to the goal."
             ).joinToString("\n\n"),
             resultClass = ParsedPage::class.java,
-            model = (taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.parsingChatter),
+            model = (taskSettings.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
             describer = describer,
-            parsingModel = planSettings.parsingChatter,
+            parsingModel = orchestrationConfig.parsingChatter,
         ).answer(listOf(content))
     } catch (e: Exception) {
         log.error("Error during content transformation", e)

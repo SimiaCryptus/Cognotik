@@ -1,37 +1,37 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.toContentList
 
-open class SimpleActor(
+open class ChatAgent(
     prompt: String,
     name: String? = null,
-    model: Chatter,
+    model: ChatInterface,
     temperature: Double = 0.3,
-) : BaseActor<List<String>, String>(
+) : BaseAgent<List<String>, String>(
     prompt = prompt,
     name = name,
     model = model,
     temperature = temperature,
 ) {
 
-    override fun respond(input: List<String>, vararg messages: ApiModel.ChatMessage): String =
+    override fun respond(input: List<String>, vararg messages: ModelSchema.ChatMessage): String =
         response(*messages).choices.first().message?.content ?: throw RuntimeException("No response")
 
     override fun chatMessages(questions: List<String>) = arrayOf(
-        ApiModel.ChatMessage(
-            role = ApiModel.Role.system,
+        ModelSchema.ChatMessage(
+            role = ModelSchema.Role.system,
             content = prompt.toContentList()
         ),
     ) + questions.map {
-        ApiModel.ChatMessage(
-            role = ApiModel.Role.user,
+        ModelSchema.ChatMessage(
+            role = ModelSchema.Role.user,
             content = it.toContentList()
         )
     }
 
-    override fun withModel(model: Chatter): SimpleActor = SimpleActor(
+    override fun withModel(model: ChatInterface): ChatAgent = ChatAgent(
         prompt = prompt,
         name = name,
         model = model,

@@ -6,9 +6,9 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 
 class ForeachTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: ForeachTaskConfigData?
-) : AbstractTask<ForeachTask.ForeachTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<ForeachTask.ForeachTaskConfigData>(orchestrationConfig, planTask) {
 
     class ForeachTaskConfigData(
         @Description("A list of items over which the ForEach task will iterate. (Only applicable for ForeachTask tasks) Can be used to process outputs from previous tasks.")
@@ -34,11 +34,11 @@ ForeachTask - Execute a task for each item in a list
     }
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val userMessage = messages.joinToString("\n")
         val items =
@@ -52,15 +52,15 @@ ForeachTask - Execute a task for each item in a list
                 subTaskPlan.task_description = "${subTaskPlan.task_description} - Item $index: $item"
                 subTaskPlan
             }
-            val itemPlanProcessingState = PlanProcessingState(itemSubTasks)
+            val itemExecutionState = ExecutionState(itemSubTasks)
             val tabs = TabbedDisplay(task)
             agent.executePlan(
                 diagramBuffer = subPlanTask.add(
-                    PlanUtil.diagram(itemPlanProcessingState.subTasks)
+                    PlanUtil.diagram(itemExecutionState.subTasks)
                 ),
                 subTasks = itemSubTasks,
                 task = subPlanTask,
-                planProcessingState = itemPlanProcessingState,
+                executionState = itemExecutionState,
                 taskIdProcessingQueue = PlanUtil.executionOrder(itemSubTasks)
                     .toMutableList(),
                 pool = agent.pool,

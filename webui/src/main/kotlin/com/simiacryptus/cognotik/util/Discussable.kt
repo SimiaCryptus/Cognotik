@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.models.ApiModel.Role
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.util.concurrent.Callable
 import java.util.concurrent.Semaphore

@@ -8,7 +8,7 @@ import java.util.*
 import javax.imageio.ImageIO
 
 @Suppress("PropertyName", "SpellCheckingInspection")
-interface ApiModel {
+interface ModelSchema {
     data class AudioInput(
         val data: String,
         val format: String

@@ -11,9 +11,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 class CommandSessionTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: CommandSessionTaskConfigData?
-) : AbstractTask<CommandSessionTask.CommandSessionTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<CommandSessionTask.CommandSessionTaskConfigData>(orchestrationConfig, planTask) {
     companion object {
         private val log = LoggerFactory.getLogger(CommandSessionTask::class.java)
         private val activeSessions = ConcurrentHashMap<String, Process>()
@@ -76,11 +76,11 @@ class CommandSessionTask(
     }
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         requireNotNull(taskConfig) { "CommandSessionTaskData is required" }
         var process: Process? = null

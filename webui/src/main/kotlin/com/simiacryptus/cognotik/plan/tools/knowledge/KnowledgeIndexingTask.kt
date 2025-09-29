@@ -13,9 +13,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class KnowledgeIndexingTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: KnowledgeIndexingTaskConfigData?
-) : AbstractTask<KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData>(orchestrationConfig, planTask) {
 
     class KnowledgeIndexingTaskConfigData(
         @Description("The file paths to process and index")
@@ -38,11 +38,11 @@ class KnowledgeIndexingTask(
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val filePaths = taskConfig?.file_paths ?: return
         val files = filePaths.map { path ->

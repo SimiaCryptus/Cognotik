@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
@@ -37,16 +37,16 @@ class DeepSeekChatClient(
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         val deepSeekRequest = toDeepSeek(chatRequest)
         val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
             .writeValueAsString(deepSeekRequest)
         val result = post("$apiBase/chat/completions", json, APIProvider.DeepSeek)
         checkError(result)
-        val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
+        val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
         if (response.usage != null && model is ChatModel) {
             onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
         }
@@ -60,7 +60,7 @@ class DeepSeekChatClient(
         const val APPLICATION_JSON = "application/json"
 
 
-        fun toDeepSeek(chatRequest: ApiModel.ChatRequest): Map<String, Any> {
+        fun toDeepSeek(chatRequest: ModelSchema.ChatRequest): Map<String, Any> {
             val request = mutableMapOf<String, Any>(
                 "model" to (chatRequest.model ?: throw RuntimeException("Model not specified")),
                 "messages" to chatRequest.messages.map { message ->

@@ -1,14 +1,14 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.model.User
 import java.net.URI
 
 class DirectUrls : SeedMethodFactory {
     override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
         override fun getSeedItems(
-            taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
-            planSettings: PlanSettings
+            taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+            orchestrationConfig: OrchestrationConfig
         ): List<SeedItem>? {
             SeedMethod.Companion.log.info("Starting DirectUrls seed method")
             if (taskConfig?.direct_urls.isNullOrEmpty()) {

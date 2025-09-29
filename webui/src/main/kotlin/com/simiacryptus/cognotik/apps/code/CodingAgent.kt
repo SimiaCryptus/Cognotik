@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.apps.code
 
-import com.simiacryptus.cognotik.actors.CodingActor
-import com.simiacryptus.cognotik.actors.CodingActor.CodeResult
+import com.simiacryptus.cognotik.actors.CodeAgent
+import com.simiacryptus.cognotik.actors.CodeAgent.CodeResult
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.interpreter.Interpreter
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.interpreter.CodeRuntime
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
@@ -18,7 +18,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
-open class CodingAgent<T : Interpreter>(
+open class CodingAgent<T : CodeRuntime>(
     val dataStorage: StorageInterface,
     val session: Session,
     val user: User?,
@@ -27,13 +27,13 @@ open class CodingAgent<T : Interpreter>(
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
-    val model: Chatter,
+    val model: ChatInterface,
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
 ) {
 
     open val actor by lazy {
-        CodingActor(
+        CodeAgent(
             interpreter,
             symbols = symbols,
             temperature = temperature,
@@ -54,7 +54,7 @@ open class CodingAgent<T : Interpreter>(
     ) {
         try {
             mainTask.echo(userMessage.renderMarkdown)
-            val codeRequest = codeRequest(listOf(userMessage to ApiModel.Role.user))
+            val codeRequest = codeRequest(listOf(userMessage to ModelSchema.Role.user))
             start(codeRequest, mainTask)
         } catch (e: Throwable) {
             log.warn("Error", e)
@@ -63,7 +63,7 @@ open class CodingAgent<T : Interpreter>(
     }
 
     fun start(
-        codeRequest: CodingActor.CodeRequest,
+        codeRequest: CodeAgent.CodeRequest,
         task: SessionTask = mainTask,
     ) {
         val task = ui.newTask(root = false).apply { task.complete(placeholder) }
@@ -100,14 +100,14 @@ open class CodingAgent<T : Interpreter>(
         }
     }
 
-    open fun codeRequest(messages: List<Pair<String, ApiModel.Role>>) = CodingActor.CodeRequest(messages)
+    open fun codeRequest(messages: List<Pair<String, ModelSchema.Role>>) = CodeAgent.CodeRequest(messages)
 
     fun displayCode(
         task: SessionTask,
-        codeRequest: CodingActor.CodeRequest,
+        codeRequest: CodeAgent.CodeRequest,
     ) {
         try {
-            val lastUserMessage = codeRequest.messages.last { it.second == ApiModel.Role.user }.first.trim()
+            val lastUserMessage = codeRequest.messages.last { it.second == ModelSchema.Role.user }.first.trim()
             val codeResponse: CodeResult = if (lastUserMessage.startsWith("```")) {
                 actor.CodeResultImpl(
                     messages = actor.chatMessages(codeRequest),
@@ -125,7 +125,7 @@ open class CodingAgent<T : Interpreter>(
 
     protected fun displayCodeAndFeedback(
         task: SessionTask,
-        codeRequest: CodingActor.CodeRequest,
+        codeRequest: CodeAgent.CodeRequest,
         response: CodeResult,
     ) {
         try {
@@ -138,10 +138,10 @@ open class CodingAgent<T : Interpreter>(
     }
 
     fun append(
-        codeRequest: CodingActor.CodeRequest, response: CodeResult
+        codeRequest: CodeAgent.CodeRequest, response: CodeResult
     ) = codeRequest(
         messages = codeRequest.messages + listOf(
-            response.code to ApiModel.Role.assistant,
+            response.code to ModelSchema.Role.assistant,
         ).filter { it.first.isNotBlank() })
 
     fun displayCode(
@@ -155,7 +155,7 @@ open class CodingAgent<T : Interpreter>(
     }
 
     open fun displayFeedback(
-        task: SessionTask, request: CodingActor.CodeRequest, response: CodeResult
+        task: SessionTask, request: CodeAgent.CodeRequest, response: CodeResult
     ) {
         val formText = StringBuilder()
         var formHandle: StringBuilder? = null
@@ -180,7 +180,7 @@ open class CodingAgent<T : Interpreter>(
 
     protected fun playButton(
         task: SessionTask,
-        request: CodingActor.CodeRequest,
+        request: CodeAgent.CodeRequest,
         response: CodeResult,
         formText: StringBuilder,
         formHandle: () -> StringBuilder
@@ -209,15 +209,15 @@ open class CodingAgent<T : Interpreter>(
     }
 
     protected open fun feedback(
-        task: SessionTask, feedback: String, request: CodingActor.CodeRequest, response: CodeResult
+        task: SessionTask, feedback: String, request: CodeAgent.CodeRequest, response: CodeResult
     ) {
         try {
             task.echo(feedback.renderMarkdown)
             start(
                 codeRequest = codeRequest(
                     messages = request.messages + listOf(
-                        response.code to ApiModel.Role.assistant,
-                        feedback to ApiModel.Role.user,
+                        response.code to ModelSchema.Role.assistant,
+                        feedback to ModelSchema.Role.user,
                     ).filter { it.first.isNotBlank() }.map { it.first to it.second }), task = task
             )
         } catch (e: Throwable) {
@@ -229,14 +229,14 @@ open class CodingAgent<T : Interpreter>(
     protected fun execute(
         task: SessionTask,
         response: CodeResult,
-        request: CodingActor.CodeRequest,
+        request: CodeAgent.CodeRequest,
     ) {
         try {
             val result = execute(task, response)
             displayFeedback(
                 task, codeRequest(
                     messages = request.messages + listOf(
-                        "Running...\n\n$result" to ApiModel.Role.assistant,
+                        "Running...\n\n$result" to ModelSchema.Role.assistant,
                     ).filter { it.first.isNotBlank() }), response
             )
         } catch (e: Throwable) {
@@ -245,7 +245,7 @@ open class CodingAgent<T : Interpreter>(
     }
 
     protected open fun handleExecutionError(
-        e: Throwable, task: SessionTask, request: CodingActor.CodeRequest, response: CodeResult
+        e: Throwable, task: SessionTask, request: CodeAgent.CodeRequest, response: CodeResult
     ) {
         val message = when {
             e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
@@ -254,10 +254,10 @@ open class CodingAgent<T : Interpreter>(
         }
         task.add(message, true, "div", "error")
         displayCode(
-            task, CodingActor.CodeRequest(
+            task, CodeAgent.CodeRequest(
                 messages = request.messages + listOf(
-                    response.code to ApiModel.Role.assistant,
-                    message to ApiModel.Role.system,
+                    response.code to ModelSchema.Role.assistant,
+                    message to ModelSchema.Role.system,
                 ).filter { it.first.isNotBlank() })
         )
     }
@@ -278,6 +278,6 @@ open class CodingAgent<T : Interpreter>(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(CodingAgent::class.java)
+        private val log = LoggerFactory.getLogger(CodeAgent::class.java)
     }
 }

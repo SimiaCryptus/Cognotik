@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.kotlin
 
-import com.simiacryptus.cognotik.interpreter.Interpreter
+import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineBase
 import org.jetbrains.kotlin.cli.common.repl.KotlinJsr223JvmScriptEngineFactoryBase
@@ -19,9 +19,9 @@ import kotlin.script.experimental.jvm.updateClasspath
 import kotlin.script.experimental.jvm.util.scriptCompilationClasspathFromContext
 import kotlin.script.experimental.jvmhost.jsr223.KotlinJsr223ScriptEngineImpl
 
-open class KotlinInterpreter(
+open class KotlinCodeRuntime(
     val defs: Map<String, Any> = mapOf(),
-) : Interpreter {
+) : CodeRuntime {
 
     final override fun getLanguage(): String = "Kotlin"
     override fun getSymbols() = defs
@@ -147,7 +147,7 @@ open class KotlinInterpreter(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(KotlinInterpreter::class.java)
+        private val log = LoggerFactory.getLogger(KotlinCodeRuntime::class.java)
 
         fun errorMessage(
             code: String,
@@ -161,7 +161,7 @@ open class KotlinInterpreter(
                 ) + "^"
             }\n```".trim()
 
-        var classLoader: ClassLoader? = KotlinInterpreter::class.java.classLoader
+        var classLoader: ClassLoader? = KotlinCodeRuntime::class.java.classLoader
 
     }
 }

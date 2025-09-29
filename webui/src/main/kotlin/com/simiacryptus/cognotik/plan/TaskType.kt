@@ -2,14 +2,15 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
+import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearchTaskType
-import com.simiacryptus.cognotik.plan.tools.file.InsightTask.Companion.InsightTaskType
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.AnalysisTaskType
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
 import com.simiacryptus.cognotik.plan.tools.plan.ForeachTask.ForeachTaskConfigData
-import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -93,32 +94,11 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
         )
 
         private val taskConstructors =
-            mutableMapOf<TaskType<*, *>, (PlanSettings, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
+            mutableMapOf<TaskType<*, *>, (OrchestrationConfig, TaskConfigBase?) -> AbstractTask<out TaskConfigBase>>()
 
-        val TaskPlanningTask = TaskType(
-            "TaskPlanningTask",
-            PlanningTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
-            "Break down and coordinate complex development tasks with dependency management",
-            """
-                      Orchestrates complex development tasks by breaking them down into manageable subtasks.
-                      <ul>
-                        <li>Analyzes project requirements and constraints to create optimal task sequences</li>
-                        <li>Establishes clear task dependencies and relationships between components</li>
-                        <li>Optimizes task ordering for maximum parallel execution efficiency</li>
-                        <li>Provides interactive visual dependency graphs for progress tracking</li>
-                        <li>Supports both fully automated and interactive planning modes</li>
-                        <li>Estimates task complexity and resource requirements</li>
-                        <li>Identifies critical paths and potential bottlenecks</li>
-                      </ul>
-                    """
-        )
-        val InsightTask = InsightTaskType
-        val FileSearchTask = FileSearchTaskType
-
-        val EmbeddingSearchTask = TaskType(
-            "EmbeddingSearchTask",
-            com.simiacryptus.cognotik.plan.tools.knowledge.EmbeddingSearchTask.EmbeddingSearchTaskConfigData::class.java,
+        val VectorSearchTask = TaskType(
+            "VectorSearchTask",
+            com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.VectorSearchTaskConfigData::class.java,
             TaskSettingsBase::class.java,
             "Perform semantic search using AI embeddings",
             """
@@ -165,10 +145,10 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
           </ul>
         """
         )
-        val CommandAutoFixTask = TaskType(
-            "CommandAutoFixTask",
-            com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData::class.java,
-            com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskSettings::class.java,
+        val SelfHealingTask = TaskType(
+            "SelfHealingTask",
+            com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskConfigData::class.java,
+            com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskSettings::class.java,
             "Run a command and automatically fix any issues that arise",
             """
           Executes a command and automatically fixes any issues that arise.
@@ -264,8 +244,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
         )
         val CrawlerAgentTask = TaskType(
             "CrawlerAgentTask",
-            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskConfigData::class.java,
-            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.SearchAndAnalyzeTaskSettings::class.java,
+            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskConfigData::class.java,
+            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskSettings::class.java,
             "Search Google, fetch top results, and analyze content",
             """
           Searches Google for specified queries and analyzes the top results.
@@ -303,19 +283,19 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                     task
                 )
             }
-            registerConstructor(CommandAutoFixTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask(
+            registerConstructor(SelfHealingTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.SelfHealingTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(InsightTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.file.InsightTask(
+            registerConstructor(AnalysisTaskType) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.file.AnalysisTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(FileSearchTask) { settings, task ->
+            registerConstructor(FileSearchTaskType) { settings, task ->
                 com.simiacryptus.cognotik.plan.tools.file.FileSearchTask(
                     settings,
                     task
@@ -327,8 +307,8 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                     task
                 )
             }
-            registerConstructor(EmbeddingSearchTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.knowledge.EmbeddingSearchTask(
+            registerConstructor(VectorSearchTask) { settings, task ->
+                com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask(
                     settings,
                     task
                 )
@@ -346,20 +326,14 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                 )
             }
             registerConstructor(RunCodeTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.RunCodeTask<KotlinInterpreter>(
+                com.simiacryptus.cognotik.plan.tools.RunCodeTask<KotlinCodeRuntime>(
                     settings,
                     task,
-                    KotlinInterpreter::class
+                    KotlinCodeRuntime::class
                 )
             }
             registerConstructor(ForeachTask) { settings, task ->
                 com.simiacryptus.cognotik.plan.tools.plan.ForeachTask(
-                    settings,
-                    task
-                )
-            }
-            registerConstructor(TaskPlanningTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.plan.PlanningTask(
                     settings,
                     task
                 )
@@ -391,9 +365,9 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
         }
 
         fun <T : TaskConfigBase, U : TaskSettingsBase> registerConstructor(
-            taskType: TaskType<T, U>, constructor: (PlanSettings, T?) -> AbstractTask<T>
+            taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T>
         ) {
-            taskConstructors[taskType] = { settings: PlanSettings, task: TaskConfigBase? ->
+            taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskConfigBase? ->
                 constructor(settings, task as T?)
             }
             register(taskType)
@@ -401,31 +375,31 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
 
         fun values() = values(TaskType::class.java)
         fun getImpl(
-            planSettings: PlanSettings, planTask: TaskConfigBase?, strict: Boolean = true
+            orchestrationConfig: OrchestrationConfig, planTask: TaskConfigBase?, strict: Boolean = true
         ) = getImpl(
-            planSettings = planSettings,
+            orchestrationConfig = orchestrationConfig,
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
             planTask = planTask,
             strict = strict)
 
         fun getImpl(
-            planSettings: PlanSettings,
+            orchestrationConfig: OrchestrationConfig,
             taskType: TaskType<*, *>,
             planTask: TaskConfigBase? = null,
             strict: Boolean = true
         ): AbstractTask<out TaskConfigBase> {
-            if (strict && !planSettings.getTaskSettings(taskType).enabled) {
+            if (strict && !orchestrationConfig.getTaskSettings(taskType).enabled) {
                 throw DisabledTaskException(taskType)
             }
             val constructor = taskConstructors[taskType]
             if (constructor == null) {
                 throw RuntimeException("Unknown task type: ${taskType.name}")
             }
-            return constructor(planSettings, planTask)
+            return constructor(orchestrationConfig, planTask)
         }
 
-        fun getAvailableTaskTypes(planSettings: PlanSettings) = values().filter {
-            planSettings.getTaskSettings(it).enabled
+        fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig) = values().filter {
+            orchestrationConfig.getTaskSettings(it).enabled
         }
 
         fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)

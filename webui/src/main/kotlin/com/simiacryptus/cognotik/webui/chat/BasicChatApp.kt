@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -42,7 +42,7 @@ class BasicChatApp(
     override fun newSession(user: User?, session: Session): ChatSocketManager {
         val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
         val settings = this.settings ?: getSettings(session, user)!!
-        fun instance(model: ChatModel): Chatter? {
+        fun instance(model: ChatModel): ChatInterface? {
             val api = fileApplicationServices().userSettingsManager.getUserSettings(user).apis
                 .firstOrNull { it.provider == model.provider }?.validate()
             val threadPoolManager = ApplicationServices.threadPoolManager

@@ -1,23 +1,23 @@
 package com.simiacryptus.cognotik.actors
 
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MultiExeption
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.function.Function
 
-open class ParsedActor<T : Any>(
+open class ParsedAgent<T : Any>(
     var resultClass: Class<T>? = null,
     val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
     prompt: String = "",
     name: String? = resultClass?.simpleName,
-    model: Chatter,
+    model: ChatInterface,
     temperature: Double = 0.3,
-    val parsingModel: Chatter,
+    val parsingModel: ChatInterface,
     val deserializerRetries: Int = 2,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
@@ -25,7 +25,7 @@ open class ParsedActor<T : Any>(
         override val includeMethods: Boolean get() = false
     },
     var parserPrompt: String? = null,
-) : BaseActor<List<String>, ParsedResponse<T>>(
+) : BaseAgent<List<String>, ParsedResponse<T>>(
     prompt = prompt,
     name = name,
     model = model,
@@ -38,18 +38,18 @@ open class ParsedActor<T : Any>(
     }
 
     override fun chatMessages(questions: List<String>) = arrayOf(
-        ApiModel.ChatMessage(
-            role = ApiModel.Role.system,
+        ModelSchema.ChatMessage(
+            role = ModelSchema.Role.system,
             content = prompt.toContentList()
         ),
     ) + questions.map {
-        ApiModel.ChatMessage(
-            role = ApiModel.Role.user,
+        ModelSchema.ChatMessage(
+            role = ModelSchema.Role.user,
             content = it.toContentList()
         )
     }
 
-    private inner class ParsedResponseImpl(vararg messages: ApiModel.ChatMessage) :
+    private inner class ParsedResponseImpl(vararg messages: ModelSchema.ChatMessage) :
         ParsedResponse<T>(resultClass!!) {
         override val text =
             response(*messages).choices.firstOrNull()?.message?.content
@@ -74,9 +74,9 @@ open class ParsedActor<T : Any>(
             try {
                 val content = model.chat(
                     listOf(
-                        ApiModel.ChatMessage(role = ApiModel.Role.system, content = prompt.toContentList()),
-                        ApiModel.ChatMessage(
-                            role = ApiModel.Role.user,
+                        ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
+                        ModelSchema.ChatMessage(
+                            role = ModelSchema.Role.user,
                             content = "The user message to parse:\n\n$input".toContentList()
                         ),
                     )
@@ -140,7 +140,7 @@ open class ParsedActor<T : Any>(
         throw MultiExeption(exceptions)
     }
 
-    override fun respond(input: List<String>, vararg messages: ApiModel.ChatMessage): ParsedResponse<T> =
+    override fun respond(input: List<String>, vararg messages: ModelSchema.ChatMessage): ParsedResponse<T> =
         try {
             ParsedResponseImpl(*messages)
         } catch (e: Exception) {
@@ -148,7 +148,7 @@ open class ParsedActor<T : Any>(
             throw e
         }
 
-    override fun withModel(model: Chatter): ParsedActor<T> = ParsedActor(
+    override fun withModel(model: ChatInterface): ParsedAgent<T> = ParsedAgent(
         resultClass = resultClass,
         prompt = prompt,
         name = name,
@@ -158,7 +158,7 @@ open class ParsedActor<T : Any>(
     )
 
     companion object {
-        private val log = LoggerFactory.getLogger(ParsedActor::class.java)
+        private val log = LoggerFactory.getLogger(ParsedAgent::class.java)
     }
 
 }

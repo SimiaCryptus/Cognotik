@@ -3,15 +3,14 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.simiacryptus.cognotik.models.ApiModel.ChatChoice
-import com.simiacryptus.cognotik.models.ApiModel.ChatMessageResponse
-import com.simiacryptus.cognotik.models.ApiModel.Role
+import com.simiacryptus.cognotik.models.ModelSchema.ChatChoice
+import com.simiacryptus.cognotik.models.ModelSchema.ChatMessageResponse
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -44,10 +43,10 @@ class OllamaChatClient(
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         validateChatRequest(chatRequest, model)
 
         return withReliability {
@@ -61,7 +60,7 @@ class OllamaChatClient(
                         is String -> content
                         is List<*> -> content.joinToString("\n") { 
                             when (it) {
-                                is ApiModel.ContentPart -> it.text ?: ""
+                                is ModelSchema.ContentPart -> it.text ?: ""
                                 else -> it.toString()
                             }
                         }
@@ -107,7 +106,7 @@ class OllamaChatClient(
                 val ollamaResponse = JsonUtil.objectMapper().readValue(rawResponse, OllamaChatResponse::class.java)
                 
                 // Convert Ollama response to OpenAI format
-                val response = ApiModel.ChatResponse(
+                val response = ModelSchema.ChatResponse(
                     id = "ollama-${System.currentTimeMillis()}",
                     `object` = "chat.completion",
                     created = System.currentTimeMillis() / 1000,
@@ -124,7 +123,7 @@ class OllamaChatClient(
                             finish_reason = if (ollamaResponse.done) "stop" else "length"
                         )
                     ),
-                    usage = ApiModel.Usage(
+                    usage = ModelSchema.Usage(
                         prompt_tokens = ollamaResponse.prompt_eval_count?.toLong() ?: 0L,
                         completion_tokens = ollamaResponse.eval_count?.toLong() ?: 0L,
                         total_tokens = ((ollamaResponse.prompt_eval_count ?: 0) + (ollamaResponse.eval_count ?: 0)).toLong()
@@ -162,7 +161,7 @@ class OllamaChatClient(
         }
     }
 
-    private fun validateChatRequest(chatRequest: ApiModel.ChatRequest, model: LLMModel) {
+    private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }

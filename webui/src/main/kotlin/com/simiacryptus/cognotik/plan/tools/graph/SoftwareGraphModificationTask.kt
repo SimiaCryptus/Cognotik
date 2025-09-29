@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.graph
 
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
 import com.simiacryptus.cognotik.describe.Description
@@ -11,9 +11,9 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 
 class SoftwareGraphModificationTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: SoftwareGraphModificationTaskConfigData?
-) : AbstractTask<SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData>(orchestrationConfig, planTask) {
 
     class SoftwareGraphModificationTaskConfigData(
         @Description("The path to the input software graph JSON file")
@@ -40,13 +40,13 @@ class SoftwareGraphModificationTask(
    """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
-        val graphModificationActor = ParsedActor(
+        val graphModificationActor = ParsedAgent(
             name = "SoftwareGraphModification",
             resultClass = SoftwareNodeType.SoftwareGraph::class.java,
             prompt = """
@@ -79,14 +79,14 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = (taskSettings.model?.let { planSettings.instance(it) }
-                ?: planSettings.defaultChatter).getChildClient(task),
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
+            model = (taskSettings.model?.let { orchestrationConfig.instance(it) }
+                ?: orchestrationConfig.defaultChatter).getChildClient(task),
+            parsingModel = orchestrationConfig.parsingChatter,
+            temperature = orchestrationConfig.temperature,
             describer = agent.describer,
         )
 
-        val inputFile = (planSettings.absoluteWorkingDir?.let { File(it) } ?: File("."))
+        val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(taskConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
         val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
@@ -104,7 +104,7 @@ class SoftwareGraphModificationTask(
         val deltaGraph = response.obj
         val newGraph = originalGraph + deltaGraph
 
-        val outputFile = (planSettings.absoluteWorkingDir?.let { File(it) } ?: File("."))
+        val outputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(
                 when {
                     !taskConfig.output_graph_file.isNullOrBlank() -> taskConfig.output_graph_file

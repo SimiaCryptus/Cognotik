@@ -5,15 +5,14 @@ import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.plan.PlanSettings
-import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
-import com.simiacryptus.cognotik.plan.cognitive.GoalOrientedMode
-import com.simiacryptus.cognotik.plan.cognitive.PlanAheadMode
-import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode
+import com.simiacryptus.cognotik.plan.cognitive.HierarchicalPlanningMode
+import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
+import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -21,7 +20,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
-import org.slf4j.event.Level
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.BufferedWriter
@@ -245,7 +243,7 @@ open class CognotikApps(
 
 
     override val childWebApps by lazy {
-        val planSettings = object : PlanSettings(
+        val orchestrationConfig = object : OrchestrationConfig(
             defaultModel = model.toApiChatModel(),
             parsingModel = model.toApiChatModel(),
             workingDir = "."
@@ -260,8 +258,8 @@ open class CognotikApps(
                 "/taskChat", object : UnifiedPlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
-                    planSettings = planSettings,
-                    cognitiveStrategy = TaskChatMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = ConversationalMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
@@ -272,8 +270,8 @@ open class CognotikApps(
                 "/autoPlan", object : UnifiedPlanApp(
                     path = "/autoPlan",
                     applicationName = "Auto-Plan",
-                    planSettings = planSettings,
-                    cognitiveStrategy = AutoPlanMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = AdaptivePlanningMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
@@ -284,8 +282,8 @@ open class CognotikApps(
                 "/planAhead", object : UnifiedPlanApp(
                     path = "/planAhead",
                     applicationName = "Plan-Ahead",
-                    planSettings = planSettings,
-                    cognitiveStrategy = PlanAheadMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = WaterfallMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
@@ -296,8 +294,8 @@ open class CognotikApps(
                 "/goalOriented", object : UnifiedPlanApp(
                     path = "/goalOriented",
                     applicationName = "Goal-Oriented",
-                    planSettings = planSettings,
-                    cognitiveStrategy = GoalOrientedMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = HierarchicalPlanningMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()

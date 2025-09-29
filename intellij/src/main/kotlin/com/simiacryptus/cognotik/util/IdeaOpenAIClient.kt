@@ -3,11 +3,9 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import org.apache.hc.core5.http.HttpRequest
 import java.util.concurrent.Executors
 
 class IdeaOpenAIClient : OpenAIClient(
@@ -20,7 +18,7 @@ class IdeaOpenAIClient : OpenAIClient(
     ),
 ) {
 
-    override fun onUsage(model: AIModel?, tokens: ApiModel.Usage) {
+    override fun onUsage(model: AIModel?, tokens: ModelSchema.Usage) {
         ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager.incrementUsage(
             AppSettingsState.currentSession,
             UserSettingsManager.defaultUser, model!!, tokens

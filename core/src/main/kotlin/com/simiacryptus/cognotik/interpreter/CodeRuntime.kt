@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.interpreter
 
-interface Interpreter {
+interface CodeRuntime {
 
     fun getLanguage(): String
     fun getSymbols(): Map<String, Any>
@@ -21,7 +21,7 @@ interface Interpreter {
         }
 
         @JvmStatic
-        fun test(factory: java.util.function.Function<Map<String, Any>, Interpreter>) {
+        fun test(factory: java.util.function.Function<Map<String, Any>, CodeRuntime>) {
             val testImpl = object : TestInterface {
                 override fun square(x: Int): Int = x * x
             }

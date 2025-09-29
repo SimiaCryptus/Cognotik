@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
@@ -30,7 +30,7 @@ class UsageServlet : HttpServlet() {
 
     private fun serve(
         resp: HttpServletResponse,
-        usage: Map<String, ApiModel.Usage>
+        usage: Map<String, ModelSchema.Usage>
     ) {
         val totalPromptTokens = usage.values.sumOf { it.prompt_tokens }
         val totalCompletionTokens = usage.values.sumOf { it.completion_tokens }

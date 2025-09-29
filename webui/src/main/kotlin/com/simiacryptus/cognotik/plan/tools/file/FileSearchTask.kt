@@ -14,9 +14,9 @@ import java.util.regex.Pattern
 import kotlin.math.max
 
 class FileSearchTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: SearchTaskConfigData?
-) : AbstractTask<FileSearchTask.SearchTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<FileSearchTask.SearchTaskConfigData>(orchestrationConfig, planTask) {
     // SearchTaskConfigData remains the same
     class SearchTaskConfigData(
         @Description("The search pattern (substring or regex) to look for in the files")
@@ -33,7 +33,7 @@ class FileSearchTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskConfigBase(
-        task_type = TaskType.FileSearchTask.name,
+        task_type = FileSearchTaskType.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -52,11 +52,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     // run remains the same
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val searchResults = performSearch()
         val formattedResults = formatSearchResults(searchResults)

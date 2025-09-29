@@ -7,8 +7,8 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.DistanceType
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.plan.AbstractTask
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -21,11 +21,11 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import kotlin.streams.asSequence
 
-class EmbeddingSearchTask(
-    planSettings: PlanSettings,
-    planTask: EmbeddingSearchTaskConfigData?
-) : AbstractTask<EmbeddingSearchTask.EmbeddingSearchTaskConfigData>(planSettings, planTask) {
-    class EmbeddingSearchTaskConfigData(
+class VectorSearchTask(
+    orchestrationConfig: OrchestrationConfig,
+    planTask: VectorSearchTaskConfigData?
+) : AbstractTask<VectorSearchTask.VectorSearchTaskConfigData>(orchestrationConfig, planTask) {
+    class VectorSearchTaskConfigData(
         @Description("The positive search queries to look for in the embeddings")
         val positive_queries: List<String>,
         @Description("The negative search queries to avoid in the embeddings")
@@ -58,11 +58,11 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
     """.trim()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val threadPool = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors().coerceAtMost(8)
@@ -270,7 +270,7 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
     )
 
     companion object {
-        private val log = LoggerFactory.getLogger(EmbeddingSearchTask::class.java)
+        private val log = LoggerFactory.getLogger(VectorSearchTask::class.java)
     }
 }
 

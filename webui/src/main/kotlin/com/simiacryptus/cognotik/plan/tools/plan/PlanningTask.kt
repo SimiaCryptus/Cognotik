@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.plan
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -12,16 +12,16 @@ import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.session.SessionTask
 
 class PlanningTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: PlanningTaskConfigData?
-) : AbstractTask<PlanningTask.PlanningTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<PlanningTask.PlanningTaskConfigData>(orchestrationConfig, planTask) {
 
     class PlanningTaskConfigData(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
     ) : TaskConfigBase(
-        task_type = TaskType.TaskPlanningTask.name,
+        task_type = "TaskPlanningTask",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -45,26 +45,26 @@ class PlanningTask(
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val userMessage = messages.joinToString("\n")
         val newTask = task.manager.newTask(false).apply { add(placeholder) }
         fun toInput(s: String) = (messages + listOf(s)).filter { it.isNotBlank() }
 
-        val subPlan = if (!planSettings.autoFix) {
+        val subPlan = if (!orchestrationConfig.autoFix) {
             createSubPlanDiscussable(
                 newTask,
                 userMessage,
                 ::toInput,
-                planSettings,
+                orchestrationConfig,
                 agent.describer
             ).call()?.obj
         } else {
-            val design = planSettings.planningActor(agent.describer).answer(
+            val design = orchestrationConfig.planningActor(agent.describer).answer(
                 toInput("Expand ${taskConfig?.task_description ?: ""}"),
             )
             PlanUtil.render(
@@ -88,13 +88,13 @@ class PlanningTask(
         task: SessionTask,
         userMessage: String,
         toInput: (String) -> List<String>,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         describer: TypeDescriber
     ) = Discussable(
         task = task,
         userMessage = { "Expand ${taskConfig?.task_description ?: ""}" },
         heading = "",
-        initialResponse = { it: String -> planSettings.planningActor(describer).answer(toInput(it)) },
+        initialResponse = { it: String -> orchestrationConfig.planningActor(describer).answer(toInput(it)) },
         outputFn = { design: ParsedResponse<TaskBreakdownResult> ->
             PlanUtil.render(
                 withPrompt = TaskBreakdownWithPrompt(
@@ -104,41 +104,37 @@ class PlanningTask(
                 )
             )
         },
-        reviseResponse = { usermessages: List<Pair<String, ApiModel.Role>> ->
-            planSettings.planningActor(describer).respond(
-                messages = usermessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
-                    .toTypedArray<ApiModel.ChatMessage>(),
+        reviseResponse = { usermessages: List<Pair<String, ModelSchema.Role>> ->
+            orchestrationConfig.planningActor(describer).respond(
+                messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                    .toTypedArray<ModelSchema.ChatMessage>(),
                 input = toInput("Expand ${taskConfig?.task_description ?: ""}\n${JsonUtil.toJson(this)}"),
             )
         },
     )
 
     private fun executeSubTasks(
-        coordinator: PlanCoordinator,
+        coordinator: TaskOrchestrator,
         userMessage: String,
         subPlan: Map<String, TaskConfigBase>,
         parentTask: SessionTask,
     ) {
         val subPlanTask = parentTask.manager.newTask(false)
         parentTask.add(subPlanTask.placeholder)
-        val planProcessingState = PlanProcessingState(subPlan.toMutableMap())
+        val executionState = ExecutionState(subPlan.toMutableMap())
         coordinator.copy(
-            planSettings = coordinator.planSettings.copy(
-                taskSettings = coordinator.planSettings.taskSettings.toList().toTypedArray().toMap().toMutableMap()
-                    .apply {
-                        this["TaskPlanning"] =
-                            TaskSettingsBase(enabled = false, model = null, task_type = TaskType.TaskPlanningTask.name)
-                    }
+            orchestrationConfig = coordinator.orchestrationConfig.copy(
+                taskSettings = coordinator.orchestrationConfig.taskSettings.toList().toTypedArray().toMap().toMutableMap()
             )
         ).executePlan(
             diagramBuffer = subPlanTask.add(
                 PlanUtil.diagram(
-                    planProcessingState.subTasks
+                    executionState.subTasks
                 )
             ),
             subTasks = subPlan,
             task = subPlanTask,
-            planProcessingState = planProcessingState,
+            executionState = executionState,
             taskIdProcessingQueue = PlanUtil.executionOrder(subPlan).toMutableList(),
             pool = coordinator.pool,
             userMessage = userMessage,

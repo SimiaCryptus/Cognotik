@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -16,8 +16,8 @@ class CmdPatchApp(
     root: Path,
     settings: Settings,
     val files: Array<out File>?,
-    model: Chatter,
-    parsingModel: Chatter,
+    model: ChatInterface,
+    parsingModel: ChatInterface,
 ) : PatchApp(root.toFile(), settings, model, parsingModel = parsingModel) {
 
     companion object {

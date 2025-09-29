@@ -3,14 +3,14 @@ package com.simiacryptus.cognotik.chat.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
-open class Chatter(
+open class ChatInterface(
     val logStreams: MutableList<BufferedOutputStream>,
     private val key: String,
     private val base: String,
@@ -20,7 +20,7 @@ open class Chatter(
     val modelType: ChatModel,
     val workPool: ExecutorService,
     val scheduledPool: ListeningScheduledExecutorService,
-    val onUsage: (model: LLMModel, tokens: ApiModel.Usage) -> Unit,
+    val onUsage: (model: LLMModel, tokens: ModelSchema.Usage) -> Unit,
 ) {
     init {
         //require(key != null) { "API key must be provided" }
@@ -40,7 +40,7 @@ open class Chatter(
     ).apply {
         onUsageListeners.add { model, usage -> onUsage(model, usage) }
     }.chat(
-        chatRequest = ApiModel.ChatRequest(
+        chatRequest = ModelSchema.ChatRequest(
             model = modelType.modelName,
             messages = messages,
             temperature = temperature,
@@ -54,14 +54,14 @@ open class Chatter(
         set(value) {}
 
     @JsonIgnore
-    fun getChildClient(): Chatter = ChildChatter(
+    fun getChildClient(): ChatInterface = ChildChatInterface(
         parent = this,
     )
 
-    class ChildChatter(
-        val parent: Chatter,
+    class ChildChatInterface(
+        val parent: ChatInterface,
         logStreams: MutableList<BufferedOutputStream> = parent.logStreams.toTypedArray().toMutableList(),
-    ) : Chatter(
+    ) : ChatInterface(
         logStreams = logStreams,
         key = parent.key,
         base = parent.base,

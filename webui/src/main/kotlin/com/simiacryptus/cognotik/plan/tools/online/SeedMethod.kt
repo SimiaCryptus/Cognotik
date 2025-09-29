@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
- import com.simiacryptus.cognotik.describe.Description
- import com.simiacryptus.cognotik.plan.PlanSettings
- import com.simiacryptus.cognotik.platform.model.User
- import com.simiacryptus.cognotik.util.EnabledStrategy
- import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.EnabledStrategy
+import com.simiacryptus.cognotik.util.LoggerFactory
 
 data class SeedItem(
     val link: String,
@@ -14,23 +14,21 @@ data class SeedItem(
     val additionalData: Map<String, Any> = emptyMap()
 )
 
-
- interface SeedStrategy : EnabledStrategy {
+interface SeedStrategy : EnabledStrategy {
     fun getSeedItems(
-        taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
-        planSettings: PlanSettings
+        taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+        orchestrationConfig: OrchestrationConfig
     ): List<SeedItem>?
 }
 
- interface SeedMethodFactory {
+interface SeedMethodFactory {
     fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy
 }
 
-;
-
- enum class SeedMethod : SeedMethodFactory {
-     GoogleSearch {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = GoogleSearch().createStrategy(task, user)
+enum class SeedMethod : SeedMethodFactory {
+    GoogleSearch {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            GoogleSearch().createStrategy(task, user)
     },
     SearchIO_Google_Search {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
@@ -52,8 +50,25 @@ data class SeedItem(
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
             SearchAPISearch("google_news", "organic_results").createStrategy(task, user)
     },
-     DirectUrls {
-        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = DirectUrls().createStrategy(task, user)
+    SearchIO_Amazon {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("amazon-search", "organic_results").createStrategy(task, user)
+    },
+    SearchIO_Bing {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("bing", "organic_results").createStrategy(task, user)
+    },
+    SearchIO_DuckDuckGo {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("duckduckgo", "organic_results").createStrategy(task, user)
+    },
+    SearchIO_EBay {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("ebay-search-api", "organic_results").createStrategy(task, user)
+    },
+    DirectUrls {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            DirectUrls().createStrategy(task, user)
     };
 
     companion object {

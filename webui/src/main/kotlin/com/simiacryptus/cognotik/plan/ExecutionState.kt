@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.util.concurrent.Future
 
-data class PlanProcessingState(
+data class ExecutionState(
     val subTasks: Map<String, TaskConfigBase>,
     val tasksByDescription: MutableMap<String?, TaskConfigBase> = subTasks.entries.toTypedArray()
         .associate { (it.value.task_description ?: it.key) to it.value }.toMutableMap(),

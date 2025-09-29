@@ -8,14 +8,15 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getAvailableTaskTypes
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask
-import com.simiacryptus.cognotik.plan.tools.CommandAutoFixTask.CommandAutoFixTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
+import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
@@ -68,7 +69,7 @@ class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSett
 }
 
 
-open class PlanSettings(
+open class OrchestrationConfig(
     var defaultModel: ApiChatModel? = null,
     var parsingModel: ApiChatModel? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
@@ -78,7 +79,7 @@ open class PlanSettings(
     val taskSettings: MutableMap<String, TaskSettingsBase> = TaskType.values().associateWith { taskType ->
         TaskSettingsBase(
             taskType.name, when (taskType) {
-                TaskType.FileModificationTask, TaskType.InsightTask -> true
+                TaskType.FileModificationTask, AnalysisTask.AnalysisTaskType -> true
                 else -> false
             }
         )
@@ -103,7 +104,7 @@ open class PlanSettings(
         )
 
     @JsonIgnore
-    open fun instance(model: ApiChatModel): Chatter {
+    open fun instance(model: ApiChatModel): ChatInterface {
         throw NotImplementedError("Must be implemented in subclass")
     }
 
@@ -140,8 +141,8 @@ open class PlanSettings(
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-        instanceFn: (ApiChatModel) -> Chatter = this::instance,
-    ): PlanSettings = PlanSettingsCopy(
+        instanceFn: (ApiChatModel) -> ChatInterface = this::instance,
+    ): OrchestrationConfig = OrchestrationConfigCopy(
         model,
         parsingModel,
         command,
@@ -158,10 +159,7 @@ open class PlanSettings(
         maxIterations,
     )
 
-    fun planningActor(describer: TypeDescriber): ParsedActor<TaskBreakdownResult> {
-        val planTaskSettings = this.getTaskSettings(TaskType.TaskPlanningTask)
-
-
+    fun planningActor(describer: TypeDescriber): ParsedAgent<TaskBreakdownResult> {
         val prompt = """
                       Given a user request, identify and list smaller, actionable tasks that can be directly implemented in code.
                       (Do not repeat or ask for the JSON content since the platform already handles reading the software graph.)
@@ -175,7 +173,7 @@ open class PlanSettings(
             "* ${getImpl(this, taskType).promptSegment()}"
         } + """
                       (Remember: the JSON file content is already loaded by the platform.)
-                      """.trimIndent() + (if (planTaskSettings.enabled) "Do not start your plan with a plan to plan!\n" else "")
+                      """.trimIndent()
         val parserPrompt =
             ("\nTask Subtype Schema:\n\n" + getAvailableTaskTypes(this).joinToString("\n\n") { taskType ->
                 "\n${taskType.name}:\n  ${
@@ -195,13 +193,12 @@ open class PlanSettings(
                         .joinToString("\n")
                 }\n".trim()
             } + "\n")
-        return ParsedActor(
+        return ParsedAgent(
             name = "TaskBreakdown",
             resultClass = TaskBreakdownResult::class.java,
             exampleInstance = exampleInstance,
             prompt = prompt,
-            model = (planTaskSettings.model ?: defaultModel)?.let { instance(it) }
-                ?: throw IllegalStateException("No model configured"),
+            model = defaultModel?.let { instance(it) } ?: throw IllegalStateException("No model configured"),
             parsingModel = this.parsingChatter,
             temperature = this.temperature,
             describer = describer,
@@ -212,9 +209,9 @@ open class PlanSettings(
     companion object {
         var exampleInstance = TaskBreakdownResult(
             tasksByID = mapOf(
-                "1" to CommandAutoFixTaskConfigData(
+                "1" to SelfHealingTaskConfigData(
                     task_description = "Task 1", task_dependencies = listOf(), commands = listOf(
-                        CommandAutoFixTask.CommandWithWorkingDir(
+                        SelfHealingTask.CommandWithWorkingDir(
                             command = listOf("echo", "Hello, World!"), workingDir = "."
                         )
                     )
@@ -232,7 +229,7 @@ open class PlanSettings(
     }
 }
 
-private class PlanSettingsCopy(
+private class OrchestrationConfigCopy(
     model: ApiChatModel?,
     parsingModel: ApiChatModel?,
     command: List<String>,
@@ -243,11 +240,11 @@ private class PlanSettingsCopy(
     env: Map<String, String>?,
     workingDir: String?,
     language: String?,
-    @JsonIgnore val instanceFn: (ApiChatModel) -> Chatter,
+    @JsonIgnore val instanceFn: (ApiChatModel) -> ChatInterface,
     maxTaskHistoryChars: Int,
     maxTasksPerIteration: Int,
     maxIterations: Int,
-) : PlanSettings(
+) : OrchestrationConfig(
     defaultModel = model,
     parsingModel = parsingModel,
     shellCmd = command,
@@ -262,5 +259,5 @@ private class PlanSettingsCopy(
     maxTasksPerIteration = maxTasksPerIteration,
     maxIterations = maxIterations,
 ) {
-    override fun instance(model: ApiChatModel): Chatter = instanceFn(model)
+    override fun instance(model: ApiChatModel): ChatInterface = instanceFn(model)
 }

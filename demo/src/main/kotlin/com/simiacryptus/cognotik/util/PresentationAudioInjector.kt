@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.audio.AudioModels
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -58,7 +58,7 @@ object PresentationAudioInjector {
             apiBase = "",
             scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
         ).createSpeech(
-            ApiModel.SpeechRequest(
+            ModelSchema.SpeechRequest(
                 input = text,
                 model = AudioModels.TTS.modelName,
                 voice = "shimmer",

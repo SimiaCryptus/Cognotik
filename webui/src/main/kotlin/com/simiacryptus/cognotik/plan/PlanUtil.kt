@@ -113,25 +113,7 @@ object PlanUtil {
         retries: Int = 3,
         fn: () -> Map<String, TaskConfigBase>?
     ): Map<String, TaskConfigBase>? {
-        val obj = fn() ?: emptyMap()
-        val tasksByID = obj.filter { (k, v) ->
-            when {
-                v.task_type == TaskType.Companion.TaskPlanningTask.name && v.task_dependencies.isNullOrEmpty() ->
-                    if (retries <= 0) {
-                        log.warn(
-                            "TaskPlanning task $k has no dependencies: " + JsonUtil.toJson(
-                                obj
-                            )
-                        )
-                        true
-                    } else {
-                        log.info("TaskPlanning task $k has no dependencies")
-                        return filterPlan(retries - 1, fn)
-                    }
-
-                else -> true
-            }
-        }
+        val tasksByID = fn() ?: emptyMap()
         tasksByID.forEach {
             it.value.task_dependencies = it.value.task_dependencies?.filter { it in tasksByID.keys }?.toMutableList()
             it.value.state = TaskState.Pending
@@ -140,15 +122,15 @@ object PlanUtil {
             executionOrder(tasksByID)
         } catch (e: RuntimeException) {
             if (retries <= 0) {
-                log.warn("Error filtering plan: " + JsonUtil.toJson(obj), e)
+                log.warn("Error filtering plan: " + JsonUtil.toJson(fn() ?: emptyMap<String, TaskConfigBase>()), e)
                 throw e
             } else {
                 log.info("Circular dependency detected in task breakdown")
                 return filterPlan(retries - 1, fn)
             }
         }
-        return if (tasksByID.size == obj.size) {
-            obj
+        return if (tasksByID.size == (fn() ?: emptyMap()).size) {
+            fn() ?: emptyMap()
         } else filterPlan {
             tasksByID
         }

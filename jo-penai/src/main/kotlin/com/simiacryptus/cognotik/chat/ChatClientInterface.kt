@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.chat
 
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -10,7 +10,7 @@ interface ChatClientInterface {
     var budget: Number?
     val logStreams: MutableList<BufferedOutputStream>
     val workPool : ExecutorService
-    val onUsageListeners: MutableList<(model: LLMModel, tokens: ApiModel.Usage) -> Unit>
+    val onUsageListeners: MutableList<(model: LLMModel, tokens: ModelSchema.Usage) -> Unit>
     fun getModels(): List<ChatModel>? = null
 
     /**
@@ -23,10 +23,10 @@ interface ChatClientInterface {
      */
     @Deprecated("Use chat with messages parameter instead via preauthenticated chat models")
     fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<BufferedOutputStream> = this.logStreams
-    ): ApiModel.ChatResponse
+    ): ModelSchema.ChatResponse
 
     /**
      * Moderates the given text for policy violations

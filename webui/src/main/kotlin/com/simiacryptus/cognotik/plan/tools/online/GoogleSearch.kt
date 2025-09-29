@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.online
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.User
@@ -18,8 +18,8 @@ import kotlin.math.min
 class GoogleSearch : SeedMethodFactory {
     override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
         override fun getSeedItems(
-            taskConfig: CrawlerAgentTask.SearchAndAnalyzeTaskConfigData?,
-            planSettings: PlanSettings
+            taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+            orchestrationConfig: OrchestrationConfig
         ): List<SeedItem>? {
             SeedMethod.Companion.log.info("Starting Google Search seed method with query: ${taskConfig?.search_query}")
             if (taskConfig?.search_query.isNullOrBlank()) {

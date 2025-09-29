@@ -1,10 +1,10 @@
 package cognotik.actions.agent
 
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.input.getReader
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -67,7 +67,7 @@ class CustomFileSetPatchServer(
         return _selectedDirectory
     }
 
-    private val mainActor: SimpleActor
+    private val mainActor: ChatAgent
         get() {
             val prompt = when (outputMode) {
                 CustomFileSetPatchAction.OutputMode.EDIT_FILES -> """
@@ -98,7 +98,7 @@ class CustomFileSetPatchServer(
 
             }
 
-            return SimpleActor(
+            return ChatAgent(
                 prompt = prompt,
                 model = AppSettingsState.instance.smartChatClient,
                 temperature = AppSettingsState.instance.temperature,
@@ -803,7 +803,7 @@ class CustomFileSetPatchServer(
             reviseResponse = { userMessages ->
                 mainActor.respond(
                     messages = userMessages.map {
-                        ApiModel.ChatMessage(
+                        ModelSchema.ChatMessage(
                             it.second, it.first.toContentList()
                         )
                     }.toTypedArray(), input = toInput(userMessage)

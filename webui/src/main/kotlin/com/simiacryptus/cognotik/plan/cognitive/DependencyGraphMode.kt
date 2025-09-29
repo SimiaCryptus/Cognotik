@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.apps.graph
 
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanProcessingState
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.ExecutionState
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskConfigBase
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
@@ -23,15 +23,15 @@ import java.io.File
  * This mode reads a software graph, orders nodes by priority, transforms each node into
  * a plan task, and executes the resulting plan.
  */
-open class GraphOrderedPlanMode(
+open class DependencyGraphMode(
     override val ui: SocketManager,
-    override val planSettings: PlanSettings,
+    override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
     private val graphFile: String,
     val describer: TypeDescriber,
 ) : CognitiveMode {
-    private val log = LoggerFactory.getLogger(GraphOrderedPlanMode::class.java)
+    private val log = LoggerFactory.getLogger(DependencyGraphMode::class.java)
 
     data class ExtraTaskDependencies(
         val dependencies: Map<String, List<String>> = emptyMap()
@@ -51,7 +51,7 @@ open class GraphOrderedPlanMode(
     private fun execute(userMessage: String, task: SessionTask) {
         try {
             task.add("Reading graph file: $graphFile")
-            val graphFileContent = readGraphFile(planSettings)
+            val graphFileContent = readGraphFile(orchestrationConfig)
             val softwareGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
                 graphFileContent, SoftwareNodeType.SoftwareGraph::class.java
             )
@@ -59,7 +59,7 @@ open class GraphOrderedPlanMode(
             task.add("Successfully loaded graph with ${softwareGraph.nodes.size} nodes")
             val orderedNodes = orderGraphNodes(softwareGraph.nodes)
             task.add("Ordered ${orderedNodes.size} nodes by priority")
-            val cumulativeTasks = transformNodesToPlan(orderedNodes, planSettings, userMessage, graphFile)
+            val cumulativeTasks = transformNodesToPlan(orderedNodes, orchestrationConfig, userMessage, graphFile)
             addDependencies(cumulativeTasks, graphFileContent, userMessage, task)
             val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { cumulativeTasks } ?: emptyMap()
             log.info("Ordered plan built successfully. Proceeding to execute DAG.")
@@ -68,16 +68,16 @@ open class GraphOrderedPlanMode(
             task.add(buildPlanSummary(plan).let(::renderMarkdown))
             task.add(
                 buildExecutionSummary(
-                    PlanCoordinator(
+                    TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = ui.dataStorage!!,
-                        root = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                             ?: ui.dataStorage?.getSessionDir(
                                 user,
                                 session
                             )?.toPath() ?: File(".").toPath(),
-                        planSettings = planSettings
+                        orchestrationConfig = orchestrationConfig
                     ).executePlan(
                         plan = plan,
                         task = task,
@@ -108,7 +108,7 @@ open class GraphOrderedPlanMode(
                 it.value.task_dependencies?.toSet() ?: emptySet()
             }
 
-            ParsedActor(
+            ParsedAgent(
                 resultClass = ExtraTaskDependencies::class.java,
                 prompt = """
                     Analyze the current plan context and the provided software graph to identify missing task dependencies.
@@ -120,8 +120,8 @@ open class GraphOrderedPlanMode(
                     Only suggest new dependencies that are not already present.
                     Ensure all suggested task IDs exist in the current plan.
                 """.trimIndent(),
-                model = planSettings.defaultChatter.getChildClient(task),
-                parsingModel = planSettings.parsingChatter,
+                model = orchestrationConfig.defaultChatter.getChildClient(task),
+                parsingModel = orchestrationConfig.parsingChatter,
             ).answer(
                 contextData() +
                         listOf(
@@ -195,8 +195,8 @@ open class GraphOrderedPlanMode(
     /**
      * Read and return the content of the graph file.
      */
-    private fun readGraphFile(planSettings: PlanSettings): String {
-        val workingDirectory = planSettings.absoluteWorkingDir ?: "."
+    private fun readGraphFile(orchestrationConfig: OrchestrationConfig): String {
+        val workingDirectory = orchestrationConfig.absoluteWorkingDir ?: "."
         val file = File(workingDirectory).resolve(graphFile)
         if (!file.exists()) {
             log.error("Graph file does not exist at: ${file.absolutePath}")
@@ -228,7 +228,7 @@ open class GraphOrderedPlanMode(
      */
     private fun transformNodesToPlan(
         nodes: List<SoftwareNodeType.NodeBase<*>>,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         userMessage: String,
         graphFile: String
     ): MutableMap<String, TaskConfigBase> {
@@ -236,10 +236,10 @@ open class GraphOrderedPlanMode(
         nodes.forEach {
             tasks.putAll(
                 getNodePlan(
-                    planSettings = planSettings,
+                    orchestrationConfig = orchestrationConfig,
                     tasks = tasks,
                     graphFile = graphFile,
-                    graphTxt = readGraphFile(planSettings),
+                    graphTxt = readGraphFile(orchestrationConfig),
                     node = it,
                     userMessage = userMessage
                 ) ?: emptyMap()
@@ -249,7 +249,7 @@ open class GraphOrderedPlanMode(
     }
 
     private fun getNodePlan(
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         tasks: MutableMap<String, TaskConfigBase>,
         graphFile: String,
         graphTxt: String,
@@ -265,7 +265,7 @@ open class GraphOrderedPlanMode(
         }
         while (true) {
             try {
-                return planSettings.planningActor(describer).answer(
+                return orchestrationConfig.planningActor(describer).answer(
                     contextData() +
                             listOf(
                                 "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
@@ -302,7 +302,7 @@ open class GraphOrderedPlanMode(
     /**
      * Build an execution summary string for UI display.
      */
-    private fun buildExecutionSummary(state: PlanProcessingState): String = buildString {
+    private fun buildExecutionSummary(state: ExecutionState): String = buildString {
         appendLine("## Plan Execution Summary")
         appendLine("- Completed Tasks: ${state.completedTasks.size}")
         appendLine("- Failed Tasks: ${state.subTasks.size - state.completedTasks.size}")
@@ -323,12 +323,12 @@ open class GraphOrderedPlanMode(
 
         override fun getCognitiveMode(
             ui: SocketManager,
-            planSettings: PlanSettings,
+            orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?,
             describer: TypeDescriber
         ): CognitiveMode {
-            return GraphOrderedPlanMode(ui, planSettings, session, user, graphFile, describer)
+            return DependencyGraphMode(ui, orchestrationConfig, session, user, graphFile, describer)
         }
     }
 }
