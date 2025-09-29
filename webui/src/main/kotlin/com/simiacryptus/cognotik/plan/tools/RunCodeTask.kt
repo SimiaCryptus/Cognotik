@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools
 
 import com.simiacryptus.cognotik.actors.CodeAgent
-import com.simiacryptus.cognotik.apps.code.CodingAgent
+import com.simiacryptus.cognotik.apps.code.CodingTask
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
@@ -65,19 +65,21 @@ class RunCodeTask(
         val semaphore = Semaphore(0)
         val model = (taskSettings.model?.let { agent.orchestrationConfig.instance(it) }
             ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
-        
-        val runtime = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask).let{ it as RunCodeTaskSettings }.codeRuntime
-            ?: CodeRuntimes.KotlinRuntime
-        val codeRuntime = CodeRuntimes.getRuntime(runtime, mapOf(
+
+//        val taskSettings = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask)
+        val taskSettings = taskSettings as? RunCodeTaskSettings
+        val runtime = taskSettings?.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
+        val defs = mapOf(
             "env" to (orchestrationConfig.env ?: emptyMap()),
             "workingDir" to (
                     orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
                         ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
                         ?: File(".").absolutePath
                     ),
-        ))
+        )
+        val codeRuntime = CodeRuntimes.getRuntime(runtime, defs)
         
-        val codingAgent = object : CodingAgent<CodeRuntime>(
+        val codingAgent = object : CodingTask<CodeRuntime>(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,

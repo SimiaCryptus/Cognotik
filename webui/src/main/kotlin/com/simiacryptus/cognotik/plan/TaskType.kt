@@ -2,13 +2,15 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.plan.tools.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskSettings
-import com.simiacryptus.cognotik.plan.tools.RunShellCommandTask.RunShellCommandTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask.RunShellCommandTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.AnalysisTaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearchTaskType
+import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
+import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
+import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -190,7 +192,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
             )
         val SeleniumSessionTask = TaskType(
             "SeleniumSessionTask",
-            com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
+            com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask.SeleniumSessionTaskConfigData::class.java,
             TaskSettingsBase::class.java,
             "Automate browser interactions with Selenium",
             """
@@ -206,7 +208,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
         )
         val CommandSessionTask = TaskType(
             "CommandSessionTask",
-            com.simiacryptus.cognotik.plan.tools.CommandSessionTask.CommandSessionTaskConfigData::class.java,
+            com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask.CommandSessionTaskConfigData::class.java,
             TaskSettingsBase::class.java,
             "Manage interactive command-line sessions",
             """
@@ -298,7 +300,7 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                 )
             }
             registerConstructor(RunShellCommandTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.RunShellCommandTask(
+                RunShellCommandTask(
                     settings,
                     task
                 )
@@ -322,13 +324,13 @@ class TaskType<out T : TaskConfigBase, out U : TaskSettingsBase>(
                 )
             }
             registerConstructor(SeleniumSessionTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.SeleniumSessionTask(
+                SeleniumSessionTask(
                     settings,
                     task
                 )
             }
             registerConstructor(CommandSessionTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.CommandSessionTask(
+                CommandSessionTask(
                     settings,
                     task
                 )

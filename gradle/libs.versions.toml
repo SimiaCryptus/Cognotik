@@ -22,7 +22,7 @@ mockito = "5.17.0"
 flexmark = "0.64.8"
 h2 = "2.3.232"
 scala = "2.13.16"
-groovy = "4.0.26"
+groovy = "3.0.19" # IntelliJ IDEA 2023.2 uses Groovy 3.0.19
 jsoup = "1.20.1"
 monteMedia = "17.2.1"
 selenium = "4.32.0"
@@ -112,7 +112,7 @@ h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 scala-library = { group = "org.scala-lang", name = "scala-library", version.ref = "scala" }
 scala-compiler = { group = "org.scala-lang", name = "scala-compiler", version.ref = "scala" }
 scala-reflect = { group = "org.scala-lang", name = "scala-reflect", version.ref = "scala" }
-groovy-all = { group = "org.apache.groovy", name = "groovy-all", version.ref = "groovy" }
+groovy-all = { group = "org.codehaus.groovy", name = "groovy-all", version.ref = "groovy" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 monte-media-screenrecorder = { group = "ch.randelshofer", name = "org.monte.media.screenrecorder", version.ref = "monteMedia" }
 monte-media = { group = "ch.randelshofer", name = "org.monte.media", version.ref = "monteMedia" }

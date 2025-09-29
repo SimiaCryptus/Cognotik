@@ -1,7 +1,7 @@
-package com.simiacryptus.cognotik.plan.tools
+package com.simiacryptus.cognotik.plan.tools.session
 
 import com.simiacryptus.cognotik.actors.CodeAgent
-import com.simiacryptus.cognotik.apps.code.CodingAgent
+import com.simiacryptus.cognotik.apps.code.CodingTask
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.interpreter.ProcessCodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -76,7 +76,7 @@ class RunShellCommandTask(
             temperature = this.orchestrationConfig.temperature,
             fallbackModel = chatter
         )
-        val codingAgent = object : CodingAgent<ProcessCodeRuntime>(
+        val codingAgent = object : CodingTask<ProcessCodeRuntime>(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,

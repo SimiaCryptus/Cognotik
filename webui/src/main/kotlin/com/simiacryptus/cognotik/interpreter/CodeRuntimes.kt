@@ -61,7 +61,9 @@ class CodeRuntimes(
             defs: Map<String, Any> = mapOf()
         ): CodeRuntime {
             val constructor = runtimeConstructors[runtimeType]
-                ?: throw RuntimeException("Unknown runtime type: ${runtimeType.name}")
+            if (constructor == null) {
+                throw RuntimeException("Unknown runtime type: ${runtimeType.name}")
+            }
             return constructor(defs)
         }
 

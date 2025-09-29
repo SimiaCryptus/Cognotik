@@ -20,6 +20,12 @@ class KnowledgeIndexingTask(
     class KnowledgeIndexingTaskConfigData(
         @Description("The file paths to process and index")
         val file_paths: List<String>,
+    @Description("The type of parsing to use: 'document' or 'code'")
+    val parsing_type: String? = "document",
+    @Description("The chunk size for splitting documents (0.0 to 1.0)")
+    val chunk_size: Double? = 0.1,
+    @Description("The embedding model to use for indexing")
+    val embedding_model: String? = "OllamaNomadic",
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -35,6 +41,7 @@ class KnowledgeIndexingTask(
         ** Specify the file paths to process
         ** Specify the parsing type (document or code)
         ** Optionally specify the chunk size (default 0.1)
+        ** Optionally specify the embedding model (default OllamaNomadic)
     """.trimIndent()
 
     override fun run(
@@ -72,15 +79,30 @@ class KnowledgeIndexingTask(
         )
         try {
             val progressState = ProgressState.progressBar(task)
+            // Determine embedding model from configuration
+            val embeddingModel = when (taskConfig?.embedding_model?.lowercase()) {
+                "ollamanomadic", null -> EmbeddingModel.OllamaNomadic
+                // Add more model mappings as needed
+                else -> {
+                    log.warn("Unknown embedding model: ${taskConfig?.embedding_model}, using OllamaNomadic")
+                    EmbeddingModel.OllamaNomadic
+                }
+            }
+            
             indexJsonFile(
                 pool = threadPool,
                 progressState = progressState,
                 inputPaths = files.map { it.absolutePath }.toTypedArray(),
-                model = EmbeddingModel.OllamaNomadic
+                model = embeddingModel
             )
 
             val result = buildString {
                 appendLine("# Knowledge Indexing Complete")
+                appendLine()
+                appendLine("## Configuration")
+                appendLine("* Embedding Model: ${taskConfig?.embedding_model ?: "OllamaNomadic"}")
+                appendLine("* Parsing Type: ${taskConfig?.parsing_type ?: "document"}")
+                appendLine("* Chunk Size: ${taskConfig?.chunk_size ?: 0.1}")
                 appendLine()
                 appendLine("Processed ${files.size} files:")
                 files.forEach { file ->

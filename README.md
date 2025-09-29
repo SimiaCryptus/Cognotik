@@ -13,6 +13,20 @@ Cognotik is a comprehensive AI-powered development platform that combines intell
 interactive interfaces to streamline software development workflows. The platform consists of multiple integrated
 components that work together to provide a complete solution for AI-assisted development.
 
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/SimiaCryptus/Cognotik.git
+cd Cognotik
+# Build the project
+./gradlew build
+# Run the desktop application
+./gradlew :desktop:run
+```
+
+For detailed installation instructions, see the [Installation Guide](#installation-options).
+
 ## Open Source & Bring Your Own Key
 
 Cognotik is 100% open source software, released under the Apache 2.0 license. The platform follows a "Bring Your Own
@@ -37,6 +51,8 @@ The foundation of the platform, providing essential services and utilities for A
 - Authentication and authorization
 - Code patch generation and application utilities
 - Extensible interpreter framework for code execution
+- Token counting and cost estimation
+- Rate limiting and retry logic
 
 ### 2. Web UI Framework (webui)
 
@@ -48,6 +64,9 @@ A framework for building interactive web applications with real-time communicati
 - Session management and state persistence
 - Interactive UI components (links, inputs, tasks, file handling)
 - Application framework for building web interfaces
+- Local storage management
+- File upload and download capabilities
+- Session history and management
 
 ### 3. Planning Framework (plan)
 
@@ -56,9 +75,10 @@ AI-assisted task planning and execution framework.
 **Key Features:**
 
 - Task types for file modifications, code generation, and web searches
-- Multiple cognitive modes (AutoPlanMode, PlanAheadMode)
 - Plan coordination with dependency management
 - Plan visualization tools
+- Multiple cognitive modes (AutoPlanMode, PlanAheadMode, GoalOrientedMode, TaskChatMode, GraphOrderedPlanMode)
+- Self-healing task execution
 
 ### 4. Desktop Application (desktop)
 
@@ -70,6 +90,7 @@ A standalone desktop application that hosts the Cognotik platform.
 - Background daemon process
 - Socket-based communication for remote control
 - Cross-platform support (Windows, macOS, Linux)
+- Auto-update functionality
 
 ### 5. Web Application (webapp)
 
@@ -81,6 +102,7 @@ A React-based chat application interface with real-time messaging.
 - Multiple themes with dynamic switching
 - Markdown support with syntax highlighting
 - Tab system with state persistence
+- Event-driven architecture for real-time updates
 
 ### 6. IntelliJ Plugin (intellij)
 
@@ -92,6 +114,8 @@ An IntelliJ-based plugin that integrates Cognotik capabilities into the IDE.
 - Contextual AI chat with code understanding
 - Intelligent workflows for multi-step changes
 - Test result autofix and problem analysis
+- Code review and documentation generation
+- Refactoring suggestions
 
 ### 7. JOpenAI (jo-penai)
 
@@ -139,44 +163,58 @@ Communication between components:
 #### Desktop Application
 
 1. Download the appropriate package for your platform:
-    - Windows: MSI installer
-    - macOS: DMG package
-    - Linux: DEB package
+    - **Windows**: [Download MSI installer](https://github.com/SimiaCryptus/Cognotik/releases/latest)
+    - **macOS**: [Download DMG package](https://github.com/SimiaCryptus/Cognotik/releases/latest)
+    - **Linux**: [Download DEB/RPM package](https://github.com/SimiaCryptus/Cognotik/releases/latest)
 
 2. Run the installer and follow the instructions.
 
 3. Launch the application from your desktop or start menu.
+4. Configure your API keys in Settings → API Configuration.
 
 #### Web Application
 
 1. Clone the repository
 2. Install dependencies:
+
    ```bash
    cd webapp
    npm install
    ```
-3. Start the development server:
+
+3. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
+4. Start the development server:
    ```bash
    npm start
    ```
-4. Open your browser and navigate to `http://localhost:3000`
+5. Open your browser and navigate to `http://localhost:3000`
 
 #### IntelliJ Plugin
 
 1. Install from the JetBrains Marketplace:
     - Open IntelliJ IDEA
     - Go to Settings/Preferences > Plugins
-    - Search for "AI Coding Assistant"
+    - Search for "Cognotik"
     - Click Install and restart the IDE
+2. Configure API keys:
+    - Go to Settings/Preferences > Tools > Cognotik
+    - Enter your API keys for the providers you want to use
 
 ### Building from Source
 
 1. Clone the repository
 2. Build using Gradle:
+
    ```bash
    ./gradlew build
    ```
+
 3. For specific components:
+
    ```bash
    # Desktop application
    ./gradlew :desktop:build
@@ -197,12 +235,16 @@ The platform can be configured through various mechanisms:
 2. **Configuration Files**: JSON or YAML files for detailed configuration.
 3. **UI Settings**: Each application provides UI-based configuration options.
 
-Key configuration options:
+### Key Configuration Options
 
-- API provider selection and API keys
-- Model preferences and parameters
-- Storage locations and persistence options
-- UI themes and preferences
+| Configuration       | Description                | Example                |
+|---------------------|----------------------------|------------------------|
+| `OPENAI_API_KEY`    | OpenAI API key             | `sk-...`               |
+| `ANTHROPIC_API_KEY` | Anthropic API key          | `sk-ant-...`           |
+| `DEFAULT_MODEL`     | Default AI model           | `gpt-4`                |
+| `STORAGE_PATH`      | Data storage location      | `/home/user/.cognotik` |
+| `MAX_TOKENS`        | Maximum tokens per request | `4096`                 |
+| `TEMPERATURE`       | Model temperature          | `0.7`                  |
 
 ## Development
 
@@ -217,7 +259,9 @@ cognotik/
 ├── webapp/             # Web application (React)
 ├── intellij/           # IntelliJ plugin
 ├── jo-penai/           # JOpenAI model registry
-└── gradle/             # Gradle configuration
+├── gradle/             # Gradle configuration
+├── docs/               # Documentation
+└── examples/           # Example projects
 ```
 
 ### Extension Points
@@ -259,12 +303,34 @@ Use the platform's knowledge tools to:
 - Generate documentation from code
 - Visualize document relationships
 
+### 4. Code Analysis and Review
+
+Leverage AI for:
+
+- Security vulnerability detection
+- Performance optimization suggestions
+- Code quality metrics
+- Architecture analysis
+- Dependency management
+
 ## Support and Resources
 
-- **Documentation**: Comprehensive documentation for each component
-- **Examples**: Sample projects and use cases
-- **Community**: Forums and discussion groups for users and developers
-- **Issue Tracking**: GitHub issues for bug reports and feature requests
+- **📚 Documentation**: [Full documentation](https://github.com/SimiaCryptus/Cognotik/wiki)
+- **💡 Examples**: [Sample projects and use cases](https://github.com/SimiaCryptus/Cognotik/tree/main/examples)
+- **💬 Community
+  **: [Discord Server](https://discord.gg/cognotik) | [GitHub Discussions](https://github.com/SimiaCryptus/Cognotik/discussions)
+- **🐛 Issue Tracking**: [GitHub Issues](https://github.com/SimiaCryptus/Cognotik/issues)
+- **📧 Contact**: [Email Support](mailto:support@cognotik.ai)
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Code of Conduct
+- Development setup
+- Submitting pull requests
+- Reporting issues
+- Feature requests
 
 ## License
 
@@ -280,10 +346,32 @@ Cognotik uses a "Bring Your Own Key" (BYOK) model for all AI service integration
 - No data is shared with any third parties without your explicit configuration
 - The software includes usage tracking tools to help you monitor your API consumption
 
+### Supported AI Providers
+
+- **OpenAI** (GPT-4, GPT-3.5, DALL-E)
+- **Anthropic** (Claude 3, Claude 2)
+- **Google** (Gemini, PaLM)
+- **AWS Bedrock** (Various models)
+- **Azure OpenAI** (GPT models)
+- **Groq** (Fast inference)
+- **Mistral AI** (Mistral models)
+- **DeepSeek** (Coding models)
+- **Perplexity** (Search-optimized models)
+- **Local Models** (Ollama, LM Studio)
+
 ## Acknowledgments
 
 - OpenAI, Anthropic, and other AI providers for their powerful models
 - JetBrains for the IntelliJ platform
 - The open-source community for various libraries and tools used in the project
-## Improvements
-This is a small improvement to the documentation.
+- All contributors who have helped improve Cognotik
+
+## Roadmap
+
+See our [public roadmap](https://github.com/SimiaCryptus/Cognotik/projects) for upcoming features and improvements.
+
+---
+
+<p align="center">
+  Made with ❤️ by the Cognotik Team
+</p>

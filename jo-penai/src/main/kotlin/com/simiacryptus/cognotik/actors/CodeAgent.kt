@@ -149,7 +149,7 @@ ${details ?: ""}
                 )
                 throw ex
             }
-            val respondWithCode = fixCommand(result.code, ex, model = model, messages)
+            val respondWithCode = fixCommand(result.code, ex, model = model, *messages)
             val blocks = extractTextBlocks(respondWithCode)
             val renderedResponse = getRenderedResponse(blocks)
             val codedInstruction = codeInterceptor(getCode(language, blocks))
@@ -336,7 +336,7 @@ ${details ?: ""}
                                     )
                             log.debug("Validation failed - ${ex.message}")
                             _status = CodeResult.Status.Correcting
-                            val respondWithCode = fixCommand(workingCode, ex, model = model, messages)
+                            val respondWithCode = fixCommand(workingCode, ex, model = model, *messages)
                             val codeBlocks = extractTextBlocks(respondWithCode)
                             workingRenderedResponse = getRenderedResponse(codeBlocks)
                             workingCode = codeInterceptor(getCode(language, codeBlocks))
@@ -395,7 +395,7 @@ ${details ?: ""}
         previousCode: String,
         error: Throwable,
         model: ChatInterface,
-        vararg promptMessages: Array<out ChatMessage>
+        vararg promptMessages: ChatMessage
     ): String = chat(
         request = ChatRequest(
             messages = ArrayList(

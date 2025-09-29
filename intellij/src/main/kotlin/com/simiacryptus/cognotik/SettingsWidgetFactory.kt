@@ -288,28 +288,32 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         init {
             AppSettingsState.onSettingsLoadedListeners.add {
-                statusBar?.updateWidget(ID())
-                // Recreate model trees when settings are loaded
-                recreateModelTrees()
-                SwingUtilities.invokeLater {
-                    AppSettingsState.instance.smartModel?.model.let { model ->
+                Thread {
+                    statusBar?.updateWidget(ID())
+                    // Recreate model trees when settings are loaded
+                    recreateModelTrees()
+                    SwingUtilities.invokeLater {
+                        AppSettingsState.instance.smartModel?.model.let { model ->
+                            setSelectedModel(getSmartModelTree(), model?.modelName ?: "")
+                        }
+                        AppSettingsState.instance.fastModel?.model.let { model ->
+                            setSelectedModel(getFastModelTree(), model?.modelName ?: "")
+                        }
+                    }
+                }.start()
+            }
+            Thread {
+                AppSettingsState.instance.smartModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
                         setSelectedModel(getSmartModelTree(), model?.modelName ?: "")
                     }
-                    AppSettingsState.instance.fastModel?.model.let { model ->
+                }
+                AppSettingsState.instance.fastModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
                         setSelectedModel(getFastModelTree(), model?.modelName ?: "")
                     }
                 }
-            }
-            AppSettingsState.instance.smartModel?.model.let { model ->
-                SwingUtilities.invokeLater {
-                    setSelectedModel(getSmartModelTree(), model?.modelName ?: "")
-                }
-            }
-            AppSettingsState.instance.fastModel?.model.let { model ->
-                SwingUtilities.invokeLater {
-                    setSelectedModel(getFastModelTree(), model?.modelName ?: "")
-                }
-            }
+            }.start()
         }
 
         override fun ID(): String {

@@ -11,10 +11,15 @@ open class GroovyCodeRuntime(private val defs: java.util.Map<String, Object>) : 
     private val shell: GroovyShell
 
     init {
-        val compilerConfiguration = CompilerConfiguration()
-        shell = GroovyShell(compilerConfiguration)
-        defs.forEach { key, value ->
-            shell.setVariable(key, value)
+        try {
+            val compilerConfiguration = CompilerConfiguration()
+            shell = GroovyShell(compilerConfiguration)
+            defs.forEach { key, value ->
+                shell.setVariable(key, value)
+            }
+        } catch (e: Throwable) {
+            log.error("Error initializing Groovy shell", e)
+            throw RuntimeException("Failed to initialize Groovy shell", e)
         }
     }
 
@@ -39,6 +44,10 @@ open class GroovyCodeRuntime(private val defs: java.util.Map<String, Object>) : 
     override fun validate(code: String): Exception? {
         shell.parse(wrapCode(code))
         return null
+    }
+
+    companion object {
+        val log = org.slf4j.LoggerFactory.getLogger(GroovyCodeRuntime::class.java)
     }
 }
 

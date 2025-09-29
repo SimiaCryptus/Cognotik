@@ -1,10 +1,11 @@
-package com.simiacryptus.cognotik.plan.tools
+package com.simiacryptus.cognotik.plan.tools.session
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import io.github.bonigarcia.wdm.WebDriverManager
+import jakarta.servlet.http.Cookie
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.devtools.v136.log.Log
@@ -12,6 +13,7 @@ import org.openqa.selenium.devtools.v136.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 
 class SeleniumSessionTask(
     orchestrationConfig: OrchestrationConfig,
@@ -121,7 +123,7 @@ class SeleniumSessionTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val seleniumFactory: (pool: java.util.concurrent.ExecutorService, cookies: Array<out jakarta.servlet.http.Cookie>?) -> Selenium =
+        val seleniumFactory: (pool: ExecutorService, cookies: Array<out Cookie>?) -> Selenium =
             { pool, cookies ->
                 try {
                     Selenium2S3(

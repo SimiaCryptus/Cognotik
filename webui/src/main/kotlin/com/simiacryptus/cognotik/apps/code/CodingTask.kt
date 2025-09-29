@@ -18,7 +18,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
-open class CodingAgent<T : CodeRuntime>(
+open class CodingTask<T : CodeRuntime>(
     val dataStorage: StorageInterface,
     val session: Session,
     val user: User?,
@@ -32,7 +32,7 @@ open class CodingAgent<T : CodeRuntime>(
     val retryable: Boolean = true,
 ) {
 
-    open val actor by lazy {
+    open val codeAgent by lazy {
         CodeAgent(
             interpreter,
             symbols = symbols,
@@ -47,19 +47,6 @@ open class CodingAgent<T : CodeRuntime>(
         ApplicationServices.authorizationManager.isAuthorized(
             this::class.java, user, OperationType.Execute
         )
-    }
-
-    fun start(
-        userMessage: String,
-    ) {
-        try {
-            mainTask.echo(userMessage.renderMarkdown)
-            val codeRequest = codeRequest(listOf(userMessage to ModelSchema.Role.user))
-            start(codeRequest, mainTask)
-        } catch (e: Throwable) {
-            log.warn("Error", e)
-            mainTask.error(e)
-        }
     }
 
     fun start(
@@ -109,13 +96,13 @@ open class CodingAgent<T : CodeRuntime>(
         try {
             val lastUserMessage = codeRequest.messages.last { it.second == ModelSchema.Role.user }.first.trim()
             val codeResponse: CodeResult = if (lastUserMessage.startsWith("```")) {
-                actor.CodeResultImpl(
-                    messages = actor.chatMessages(codeRequest),
+                codeAgent.CodeResultImpl(
+                    messages = codeAgent.chatMessages(codeRequest),
                     input = codeRequest,
                     givenCode = lastUserMessage.removePrefix("```").removeSuffix("```")
                 )
             } else {
-                actor.answer(codeRequest)
+                codeAgent.answer(codeRequest)
             }
             displayCodeAndFeedback(task, codeRequest, codeResponse)
         } catch (e: Throwable) {
@@ -147,11 +134,9 @@ open class CodingAgent<T : CodeRuntime>(
     fun displayCode(
         task: SessionTask, response: CodeResult
     ) {
-        task.expanded(
-            "Code",
-            response.renderedResponse
-                ?: "```${actor.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```".renderMarkdown
-        )
+        val string = response.renderedResponse
+            ?: "\n```${codeAgent.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```\n"
+        task.expanded("Code", string.renderMarkdown)
     }
 
     open fun displayFeedback(
@@ -270,6 +255,7 @@ open class CodingAgent<T : CodeRuntime>(
         val tabs = TabbedDisplay(task)
         tabs["Result"] = "```text\n$resultValue\n```".renderMarkdown()
         tabs["Output"] = "```text\n$resultOutput\n```".renderMarkdown()
+        task.update()
         return when {
             resultValue.isBlank() || resultValue.trim().lowercase() == "null" -> "# Output\n```text\n$resultOutput\n```"
             else -> "# Result\n```\n$resultValue\n```\n\n# Output\n```text\n$resultOutput\n```"
