@@ -4,7 +4,6 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
 ![logo.svg](logo.svg)
 
 ## Overview
@@ -37,6 +36,28 @@ complete control over:
 - Your data privacy and security
 - Your usage costs and billing
 - Service configuration and customization
+
+## API Keys and Usage
+
+Cognotik uses a "Bring Your Own Key" (BYOK) model for all AI service integrations:
+
+- You must provide your own API keys for services like OpenAI, Anthropic, Google AI, etc.
+- All API usage costs are billed directly to your accounts with these providers
+- No data is shared with any third parties without your explicit configuration
+- The software includes usage tracking tools to help you monitor your API consumption
+
+### Supported AI Providers
+
+- **OpenAI** (GPT-4, GPT-3.5, DALL-E)
+- **Anthropic** (Claude 3, Claude 2)
+- **Google** (Gemini, PaLM)
+- **AWS Bedrock** (Various models)
+- **Azure OpenAI** (GPT models)
+- **Groq** (Fast inference)
+- **Mistral AI** (Mistral models)
+- **DeepSeek** (Coding models)
+- **Perplexity** (Search-optimized models)
+- **Local Models** (Ollama, LM Studio)
 
 ## Core Components
 
@@ -227,27 +248,6 @@ Communication between components:
    npm run build
    ```
 
-## Configuration
-
-The platform can be configured through various mechanisms:
-
-1. **Environment Variables**: Configure API endpoints, credentials, and feature flags.
-2. **Configuration Files**: JSON or YAML files for detailed configuration.
-3. **UI Settings**: Each application provides UI-based configuration options.
-
-### Key Configuration Options
-
-| Configuration       | Description                | Example                |
-|---------------------|----------------------------|------------------------|
-| `OPENAI_API_KEY`    | OpenAI API key             | `sk-...`               |
-| `ANTHROPIC_API_KEY` | Anthropic API key          | `sk-ant-...`           |
-| `DEFAULT_MODEL`     | Default AI model           | `gpt-4`                |
-| `STORAGE_PATH`      | Data storage location      | `/home/user/.cognotik` |
-| `MAX_TOKENS`        | Maximum tokens per request | `4096`                 |
-| `TEMPERATURE`       | Model temperature          | `0.7`                  |
-
-## Development
-
 ### Project Structure
 
 ```
@@ -336,28 +336,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 This project is licensed under the Apache 2.0 License - see the LICENSE file for details. As open source software, you
 are free to use, modify, and distribute the code according to the terms of the license.
-
-## API Keys and Usage
-
-Cognotik uses a "Bring Your Own Key" (BYOK) model for all AI service integrations:
-
-- You must provide your own API keys for services like OpenAI, Anthropic, Google AI, etc.
-- All API usage costs are billed directly to your accounts with these providers
-- No data is shared with any third parties without your explicit configuration
-- The software includes usage tracking tools to help you monitor your API consumption
-
-### Supported AI Providers
-
-- **OpenAI** (GPT-4, GPT-3.5, DALL-E)
-- **Anthropic** (Claude 3, Claude 2)
-- **Google** (Gemini, PaLM)
-- **AWS Bedrock** (Various models)
-- **Azure OpenAI** (GPT models)
-- **Groq** (Fast inference)
-- **Mistral AI** (Mistral models)
-- **DeepSeek** (Coding models)
-- **Perplexity** (Search-optimized models)
-- **Local Models** (Ollama, LM Studio)
 
 ## Acknowledgments
 
