@@ -20,24 +20,26 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
-import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.util.JsonUtil.fromJson
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
-import org.slf4j.LoggerFactory
-import java.awt.CardLayout
-import java.awt.Component
-import java.awt.Dimension
-import java.awt.Font
-import java.awt.event.ItemListener
-import javax.swing.*
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
-import javax.swing.table.DefaultTableModel
+ import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+ import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
+ import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
+import com.simiacryptus.cognotik.plan.tools.RunCodeTask
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
+ import com.simiacryptus.cognotik.platform.ApplicationServices
+ import com.simiacryptus.cognotik.platform.model.ApiChatModel
+ import com.simiacryptus.cognotik.platform.model.ApiData
+ import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+ import com.simiacryptus.cognotik.util.JsonUtil.toJson
+ import org.slf4j.LoggerFactory
+ import java.awt.CardLayout
+ import java.awt.Component
+ import java.awt.Dimension
+ import java.awt.Font
+ import java.awt.event.ItemListener
+ import javax.swing.*
+ import javax.swing.event.DocumentEvent
+ import javax.swing.event.DocumentListener
+ import javax.swing.table.DefaultTableModel
 
 class PlanConfigDialog(
     project: Project?,
@@ -254,6 +256,16 @@ class PlanConfigDialog(
             }
         } else null
 
+        // RunCodeTask-specific UI components
+        private val codeRuntimeCombo = if (taskType == TaskType.RunCodeTask) {
+            ComboBox(CodeRuntimes.values().map { it.name }.toTypedArray()).apply {
+                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
+                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
+                val currentSettings = settings.getTaskSettings(taskType) as? RunCodeTask.RunCodeTaskSettings
+                selectedItem = currentSettings?.codeRuntime?.name ?: CodeRuntimes.KotlinRuntime.name
+            }
+        } else null
+
         private val commandList = if (taskType == TaskType.SelfHealingTask) {
             createCommandListTable().apply {
                 preferredScrollableViewportSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
@@ -350,6 +362,13 @@ class PlanConfigDialog(
                 add(Box.createVerticalStrut(2))
                 add(fetchMethodCombo.apply { alignmentX = LEFT_ALIGNMENT })
             }
+            // Add RunCodeTask-specific configuration
+            if (codeRuntimeCombo != null) {
+                add(Box.createVerticalStrut(10))
+                add(JLabel("Code Runtime:").apply { alignmentX = LEFT_ALIGNMENT })
+                add(Box.createVerticalStrut(2))
+                add(codeRuntimeCombo.apply { alignmentX = LEFT_ALIGNMENT })
+            }
         }
 
         private fun setupCommandComponents() {
@@ -432,6 +451,14 @@ class PlanConfigDialog(
                         enabled = enabledCheckbox.isSelected,
                         model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     )
+                    TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskSettings(
+                        task_type = taskType.name,
+                        enabled = enabledCheckbox.isSelected,
+                        model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
+                        codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
+                            CodeRuntimes.values().find { it.name == runtimeName }
+                        }
+                    )
 
                     TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
                         taskType.name,
@@ -451,6 +478,7 @@ class PlanConfigDialog(
                             getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     }
                 }
+                settings.setTaskSettings(taskType, newSettings)
             }
             val enabledListener = ItemListener {
                 updateSettings()
@@ -470,6 +498,10 @@ class PlanConfigDialog(
             fetchMethodCombo?.addActionListener {
                 updateCrawlerSettings()
             }
+            // Add listener for RunCodeTask-specific components
+            codeRuntimeCombo?.addActionListener {
+                updateRunCodeSettings()
+            }
         }
 
         private fun updateSettings() {
@@ -481,6 +513,12 @@ class PlanConfigDialog(
                     enabled = enabledCheckbox.isSelected,
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 )
+                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskSettings(
+                    codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
+                        CodeRuntimes.values().find { it.name == runtimeName }
+                    }
+                )
+
 
                 TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
                     taskType.name,
@@ -510,6 +548,21 @@ class PlanConfigDialog(
                 taskTypeList.repaint()
             }
         }
+        private fun updateRunCodeSettings() {
+            if (taskType == TaskType.RunCodeTask && codeRuntimeCombo != null) {
+                val newSettings = RunCodeTask.RunCodeTaskSettings(
+                    task_type = taskType.name,
+                    enabled = enabledCheckbox.isSelected,
+                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
+                    codeRuntime = codeRuntimeCombo.selectedItem?.let { runtimeName ->
+                        CodeRuntimes.values().find { it.name == runtimeName }
+                    }
+                )
+                settings.setTaskSettings(taskType, newSettings)
+                taskTypeList.repaint()
+            }
+        }
+
 
 
         fun saveSettings() {
@@ -521,6 +574,12 @@ class PlanConfigDialog(
                     enabled = enabledCheckbox.isSelected,
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 )
+                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskSettings(
+                    codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
+                        CodeRuntimes.values().find { it.name == runtimeName }
+                    }
+                )
+
 
                 TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
                     task_type = taskType.name,
@@ -546,6 +605,7 @@ class PlanConfigDialog(
             modelComboBox.actionListeners?.forEach { modelComboBox.removeActionListener(it) }
             seedMethodCombo?.actionListeners?.forEach { seedMethodCombo.removeActionListener(it) }
             fetchMethodCombo?.actionListeners?.forEach { fetchMethodCombo.removeActionListener(it) }
+            codeRuntimeCombo?.actionListeners?.forEach { codeRuntimeCombo.removeActionListener(it) }
         }
     }
 

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getAvailableTaskTypes
@@ -17,9 +18,8 @@ import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
-import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.PlanningTaskConfigData
-import com.simiacryptus.cognotik.plan.tools.plan.PlanningTask.TaskBreakdownResult
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import java.io.File
 
@@ -79,7 +79,7 @@ open class OrchestrationConfig(
     val taskSettings: MutableMap<String, TaskSettingsBase> = TaskType.values().associateWith { taskType ->
         TaskSettingsBase(
             taskType.name, when (taskType) {
-                TaskType.FileModificationTask, AnalysisTask.AnalysisTaskType -> true
+                FileModificationTaskType, AnalysisTask.AnalysisTaskType -> true
                 else -> false
             }
         )
@@ -220,9 +220,6 @@ open class OrchestrationConfig(
                     task_dependencies = listOf("1"),
                     related_files = listOf("input2.txt"),
                     files = listOf("output2.txt"),
-                ), "3" to PlanningTaskConfigData(
-                    task_description = "Task 3",
-                    task_dependencies = listOf("2"),
                 )
             ),
         )
@@ -261,3 +258,9 @@ private class OrchestrationConfigCopy(
 ) {
     override fun instance(model: ApiChatModel): ChatInterface = instanceFn(model)
 }
+
+
+data class TaskBreakdownResult(
+    @Description("A map where each task ID is associated with its corresponding PlanTask object. Crucial for defining task relationships and information flow.")
+    val tasksByID: Map<String, TaskConfigBase>? = null,
+)

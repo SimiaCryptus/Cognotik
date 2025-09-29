@@ -36,7 +36,7 @@ class FileModificationTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : FileTaskConfigBase(
-        task_type = TaskType.FileModificationTask.name,
+        task_type = FileModificationTaskType.name,
         task_description = task_description,
         task_dependencies = task_dependencies,
         related_files = related_files,

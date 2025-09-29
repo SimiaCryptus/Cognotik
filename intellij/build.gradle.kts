@@ -31,6 +31,11 @@ dependencies {
         exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
+    implementation(project(":groovy")) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+        exclude(group = "com.fasterxml.jackson.core")
+    }
     implementation(project(":webui")) {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.slf4j")

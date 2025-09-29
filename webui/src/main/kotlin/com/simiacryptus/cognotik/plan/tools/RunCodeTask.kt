@@ -3,9 +3,11 @@ package com.simiacryptus.cognotik.plan.tools
 import com.simiacryptus.cognotik.actors.CodeAgent
 import com.simiacryptus.cognotik.apps.code.CodingAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -15,11 +17,21 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
-class RunCodeTask<T : CodeRuntime>(
+class RunCodeTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: RunCodeTaskConfigData?,
-    val interpreter: KClass<T>,
 ) : AbstractTask<RunCodeTask.RunCodeTaskConfigData>(orchestrationConfig, planTask) {
+
+    class RunCodeTaskSettings(
+        task_type : String = TaskType.RunCodeTask.name,
+        val codeRuntime: CodeRuntimes? = null,
+        enabled: Boolean = true,
+        model: ApiChatModel? = null,
+    ) : TaskSettingsBase(
+        task_type = task_type,
+        enabled = enabled,
+        model = model,
+    )
 
     class RunCodeTaskConfigData(
         @Description("The task or goal to be accomplished")
@@ -37,7 +49,7 @@ class RunCodeTask<T : CodeRuntime>(
     )
 
     override fun promptSegment() = """
-    RunCodeTask - Use a Kotlin interpreter to solve and complete the user's request.
+    RunCodeTask - Use a code interpreter to solve and complete the user's request.
       * Do not directly write code (yet)
       * Include detailed technical requirements for the needed solution
     """.trimIndent()
@@ -53,12 +65,24 @@ class RunCodeTask<T : CodeRuntime>(
         val semaphore = Semaphore(0)
         val model = (taskSettings.model?.let { agent.orchestrationConfig.instance(it) }
             ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
-        val codingAgent = object : CodingAgent<T>(
+        
+        val runtime = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask).let{ it as RunCodeTaskSettings }.codeRuntime
+            ?: CodeRuntimes.KotlinRuntime
+        val codeRuntime = CodeRuntimes.getRuntime(runtime, mapOf(
+            "env" to (orchestrationConfig.env ?: emptyMap()),
+            "workingDir" to (
+                    orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
+                        ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
+                        ?: File(".").absolutePath
+                    ),
+        ))
+        
+        val codingAgent = object : CodingAgent<CodeRuntime>(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
             ui = task.manager,
-            interpreter = interpreter,
+            interpreter = codeRuntime::class as KClass<CodeRuntime>,
             symbols = mapOf<String, Any>(
                 "env" to (orchestrationConfig.env ?: emptyMap()),
                 "workingDir" to (
@@ -66,11 +90,11 @@ class RunCodeTask<T : CodeRuntime>(
                             ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
                             ?: File(".").absolutePath
                         ),
-                "language" to "kotlin",
+                "language" to runtime.name.lowercase().replace("runtime", ""),
             ),
             temperature = orchestrationConfig.temperature,
             details = """
-                Code a solution using Kotlin to the user's request.
+                Code a solution using ${runtime.name} to the user's request.
             """.trimIndent(),
             model = model,
             mainTask = task,

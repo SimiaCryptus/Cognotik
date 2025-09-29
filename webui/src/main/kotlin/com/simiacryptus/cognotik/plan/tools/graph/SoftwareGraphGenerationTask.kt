@@ -33,7 +33,7 @@ class SoftwareGraphGenerationTask(
         input_files: List<String>? = null,
         state: TaskState? = null
     ) : AbstractFileTask.FileTaskConfigBase(
-        task_type = TaskType.SoftwareGraphGenerationTask.name,
+        task_type = "SoftwareGraphGenerationTask",
         task_description = task_description,
         task_dependencies = task_dependencies,
         related_files = input_files,

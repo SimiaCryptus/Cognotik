@@ -1,11 +1,14 @@
-package com.simiacryptus.cognotik.plan.tools.knowledge
+package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskConfigBase
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -41,7 +44,7 @@ class DataTableCompilationTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskConfigBase(
-        task_type = TaskType.DataTableCompilationTask.name,
+        task_type = "DataTableCompilationTask",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state

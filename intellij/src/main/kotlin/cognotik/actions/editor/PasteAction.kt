@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.actors.ChatProxy
+import com.simiacryptus.cognotik.actors.ProxyAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.ComputerLanguage
@@ -198,7 +198,7 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInte
             }
         } ?: false
 
-        fun converter(chatModel: ChatInterface, temp: Double) = ChatProxy(
+        fun converter(chatModel: ChatInterface, temp: Double) = ProxyAgent(
             clazz = VirtualAPI::class.java,
             model = chatModel,
             temperature = temp

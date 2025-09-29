@@ -18,7 +18,7 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.full.functions
 import kotlin.reflect.jvm.javaType
 
-open class ChatProxy<T : Any>(
+open class ProxyAgent<T : Any>(
     val clazz: Class<out T>,
     private var model: ChatInterface,
     private var temperature: Double = 0.5,
@@ -247,7 +247,7 @@ open class ChatProxy<T : Any>(
 
         }
 
-        private val log = LoggerFactory.getLogger(ChatProxy::class.java)
+        private val log = LoggerFactory.getLogger(ProxyAgent::class.java)
         private fun trimPrefix(completion: String): String {
             val braceIndex = completion.indexOf('{')
             val bracketIndex = completion.indexOf('[')

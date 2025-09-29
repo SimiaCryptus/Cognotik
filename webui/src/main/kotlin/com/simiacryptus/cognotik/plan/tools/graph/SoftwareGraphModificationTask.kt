@@ -26,7 +26,7 @@ class SoftwareGraphModificationTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskConfigBase(
-        task_type = TaskType.SoftwareGraphModificationTask.name,
+        task_type = "SoftwareGraphModificationTask",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state

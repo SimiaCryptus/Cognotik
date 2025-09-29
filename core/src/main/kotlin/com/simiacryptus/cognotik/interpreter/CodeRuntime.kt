@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.interpreter
 
-interface CodeRuntime {
+import com.simiacryptus.cognotik.util.EnabledStrategy
+
+interface CodeRuntime : EnabledStrategy {
 
     fun getLanguage(): String
     fun getSymbols(): Map<String, Any>
