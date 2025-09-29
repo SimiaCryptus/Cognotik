@@ -132,14 +132,6 @@ import java.util.Locale
             runtimeName: String,
             defs: Map<String, Any> = mapOf()
         ) = getRuntime(valueOf(runtimeName), defs)
-        /**
-         * Get the default shell runtime for the current platform
-         */
-        fun getDefaultShellRuntime(): CodeRuntimes = when {
-            isWindows -> PowerShellRuntime
-            else -> BashRuntime
-        }
-
 
         fun valueOf(name: String): CodeRuntimes = valueOf(CodeRuntimes::class.java, name)
         private fun register(runtime: CodeRuntimes) = register(CodeRuntimes::class.java, runtime)
