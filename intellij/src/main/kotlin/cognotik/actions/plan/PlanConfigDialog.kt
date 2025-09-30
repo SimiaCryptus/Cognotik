@@ -4,46 +4,35 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
-import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBList
-import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
-import com.intellij.ui.dsl.builder.RowLayout
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.SavedPlanConfig
-import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
-import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
-import org.slf4j.LoggerFactory
-import java.awt.CardLayout
-import java.awt.Component
-import java.awt.Dimension
-import java.awt.Font
-import java.awt.event.ItemListener
-import javax.swing.*
-import javax.swing.table.DefaultTableModel
-import kotlin.div
+ import org.slf4j.LoggerFactory
+ import java.awt.Component
+ import java.awt.Dimension
+ import java.awt.Font
+import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
+ import javax.swing.*
 
-class PlanConfigDialog(
+ class PlanConfigDialog(
     project: Project?,
     val settings: OrchestrationConfig,
     val singleTaskMode: Boolean = false,
-) : DialogWrapper(project) {
+ ) : DialogWrapper(project) {
 
     private val maxTaskHistoryCharsField = JBTextField(settings.maxTaskHistoryChars.toString()).apply {
         toolTipText = "Maximum characters to retain in task history ($MIN_TASK_HISTORY-$MAX_TASK_HISTORY)"
@@ -54,6 +43,7 @@ class PlanConfigDialog(
             }
         }
     }
+
     private val maxTasksPerIterationField = JBTextField(settings.maxTasksPerIteration.toString()).apply {
         toolTipText = "Maximum number of tasks to execute per iteration ($MIN_TASKS_PER_ITER-$MAX_TASKS_PER_ITER)"
         inputVerifier = object : InputVerifier() {
@@ -63,6 +53,7 @@ class PlanConfigDialog(
             }
         }
     }
+
     private val maxIterationsField = JBTextField(settings.maxIterations.toString()).apply {
         toolTipText = "Maximum number of planning iterations ($MIN_ITERATIONS-$MAX_ITERATIONS)"
         inputVerifier = object : InputVerifier() {
@@ -72,6 +63,7 @@ class PlanConfigDialog(
             }
         }
     }
+
     private val autoPlanPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(JLabel("Max Task History Chars:"))
@@ -84,6 +76,7 @@ class PlanConfigDialog(
         add(maxIterationsField)
         isVisible = false
     }
+
     val cognitiveModeCombo = ComboBox(
         arrayOf(
             "Single Task", "Task Planning", "Iterative Loop", "Graph", "Goal Oriented"
@@ -93,8 +86,25 @@ class PlanConfigDialog(
         selectedIndex = 0
         toolTipText = "Select the cognitive strategy for task execution"
     }
+
     private val modelCache = mutableMapOf<String, ChatModel?>()
     private val visibleModelsCache by lazy { getVisibleModels() }
+
+    private val globalModelCombo =
+        ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
+            maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
+            selectedItem =
+                settings.defaultModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
+            toolTipText = "Default AI model for all tasks"
+        }
+    private val parsingModelCombo =
+        ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
+            maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
+            selectedItem =
+                settings.parsingModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
+            toolTipText = "AI model for parsing and understanding tasks"
+        }
+
     private val temperatureSlider =
         JSlider(MIN_TEMP, MAX_TEMP, (settings.temperature * TEMPERATURE_SCALE).toInt()).apply {
             addChangeListener {
@@ -102,657 +112,223 @@ class PlanConfigDialog(
                 temperatureLabel.text = TEMPERATURE_LABEL.format(settings.temperature)
             }
         }
+
     private val temperatureLabel = JLabel(TEMPERATURE_LABEL.format(settings.temperature))
     private val autoFixCheckbox = JCheckBox("Auto-apply fixes", settings.autoFix)
-    private val taskTypeList = JBList(TaskType.values())
-    private val configPanelContainer = JPanel(CardLayout())
-    private val taskConfigs = mutableMapOf<String, TaskTypeConfigPanel>()
+
+
     private val savedConfigsCombo = ComboBox<String>().apply {
         preferredSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
         AppSettingsState.instance.savedPlanConfigs?.keys?.sorted()?.forEach { addItem(it) }
     }
+    // Task configuration list
+    private val taskConfigListModel = DefaultListModel<TaskConfigEntry>()
+    private val taskConfigList = JBList(taskConfigListModel).apply {
+        cellRenderer = TaskConfigListCellRenderer()
+        selectionMode = ListSelectionModel.SINGLE_SELECTION
+        toolTipText = "Configured tasks - double-click to edit"
+    }
+
 
     init {
-        taskTypeList.cellRenderer = TaskTypeListCellRenderer()
-        taskTypeList.addListSelectionListener { e ->
-            if (!e.valueIsAdjusting) {
-                val selectedType = (taskTypeList.selectedValue as TaskType<*, *>).name
-                (configPanelContainer.layout as CardLayout).show(configPanelContainer, selectedType)
+        // Start with empty task configurations
+        // Double-click to edit task configuration
+        taskConfigList.addMouseListener(object : java.awt.event.MouseAdapter() {
+            override fun mouseClicked(e: java.awt.event.MouseEvent) {
+                if (e.clickCount == 2) {
+                    val selected = taskConfigList.selectedValue
+                    if (selected != null) {
+                        editTaskConfig(selected)
+                    }
+                }
             }
-        }
-
-        TaskType.values().forEach { taskType ->
-            val configPanel = TaskTypeConfigPanel(taskType)
-            taskConfigs[taskType.name] = configPanel
-            configPanelContainer.add(configPanel, taskType.name)
-        }
-        taskTypeList.selectedIndex = 0
-
+        })
         cognitiveModeCombo.addActionListener {
             val selected = cognitiveModeCombo.selectedItem as String
             autoPlanPanel.isVisible = (selected == "Auto Plan")
-
-            if (selected == "Single Task") {
-                taskTypeList.isEnabled = true
-                if (taskTypeList.selectedIndex == -1) {
-                    taskTypeList.selectedIndex = 0
-                }
-            } else {
-                taskTypeList.isEnabled = true
-            }
         }
-
         init()
         title = "Configure Planning and Tasks"
     }
 
-    private inner class TaskTypeListCellRenderer : DefaultListCellRenderer() {
-        private fun getTaskTooltip(taskType: TaskType<*, *>): String = """
-      <html>
-      <body style='width: 300px; padding: 5px;'>
-      <h3>${taskType.name}</h3>
-      <p>${taskType.tooltipHtml}</p>
-      </body>
-      </html>
-    """
+    private data class TaskConfigEntry(
+        val taskType: TaskType<*, *>,
+        val config: TaskTypeConfig
+    ) {
+        override fun toString(): String {
+            val name = config.name ?: "Default"
+            return "${taskType.name} - $name"
+        }
+    }
 
+    private inner class TaskConfigListCellRenderer : DefaultListCellRenderer() {
         override fun getListCellRendererComponent(
             list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean
         ): Component {
             val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-            if (component is JLabel && value is TaskType<*, *>) {
-                toolTipText = getTaskTooltip(value)
-                val taskConfigs = settings.getTaskConfigs(value)
-                val hasConfigs = taskConfigs.isNotEmpty()
-                font = when (hasConfigs) {
-                    true -> font.deriveFont(Font.BOLD + Font.PLAIN, FONT_SIZE_ENABLED)
-                    false -> font.deriveFont(Font.ITALIC + Font.PLAIN, FONT_SIZE_DISABLED)
-                }
-                foreground = if (hasConfigs) {
-                    list?.foreground?.darker()?.darker()
-                } else {
-                    list?.foreground?.darker()
-                }
-                text = buildString {
-                    val taskDescription = value.description ?: ""
-                    append(value.name)
-                    if (taskConfigs.isNotEmpty()) {
-                        append(" (${taskConfigs.size} config${if (taskConfigs.size > 1) "s" else ""})")
-                    }
-                    if (taskDescription.isNotEmpty()) {
-                        append(" - ")
-                        append(taskDescription)
-                    }
-                }
+
+            if (component is JLabel && value is TaskConfigEntry) {
+                val modelName = value.config.model?.model?.modelName ?: "No model"
+                text = "${value.taskType.name} - ${value.config.name ?: "Default"} ($modelName)"
+                toolTipText = """
+                    <html>
+                    <body style='width: 300px; padding: 5px;'>
+                    <h3>${value.taskType.name}</h3>
+                    <p><b>Config:</b> ${value.config.name ?: "Default"}</p>
+                    <p><b>Model:</b> $modelName</p>
+                    <p>${value.taskType.tooltipHtml}</p>
+                    </body>
+                    </html>
+                """.trimIndent()
+                font = font.deriveFont(Font.PLAIN, FONT_SIZE_ENABLED)
             }
             return component
         }
     }
 
-    private inner class TaskTypeConfigPanel(val taskType: TaskType<*, *>) : JPanel() {
-        private val listeners = mutableListOf<Any>()
-        private val configListModel = DefaultListModel<String>()
-        private val configList = JBList(configListModel).apply {
-            selectionMode = ListSelectionModel.SINGLE_SELECTION
-            preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
-            toolTipText = "Available configurations for this task type"
-            addListSelectionListener { e ->
-                if (!e.valueIsAdjusting) {
-                    val selectedConfig = selectedValue
-                    if (selectedConfig != null) {
-                        loadConfigIntoPanel(selectedConfig)
-                    }
-                }
-            }
+    private fun editTaskConfig(entry: TaskConfigEntry) {
+        val dialog = TaskConfigEditDialog(null, entry.taskType, entry.config, visibleModelsCache)
+        if (dialog.showAndGet()) {
+            val updatedConfig = dialog.getConfig()
+            settings.removeTaskConfig(entry.taskType, entry.config.name ?: "")
+            settings.addTaskConfig(entry.taskType, updatedConfig)
+            val index = taskConfigListModel.indexOf(entry)
+            taskConfigListModel.removeElement(entry)
+            taskConfigListModel.add(index, TaskConfigEntry(entry.taskType, updatedConfig))
+            taskConfigList.selectedIndex = index
         }
+    }
 
-        val configNameField = JBTextField(settings.getTaskSettings(taskType).name ?: "").apply {
-            maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-            preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-            toolTipText = "Name for this task configuration"
-        }
-        val modelComboBox =
-            ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                selectedItem = AppSettingsState.instance.smartModel?.model?.modelName
-                toolTipText = "AI model to use for this task type"
-            }
-
-        // Crawler-specific UI components
-        private val seedMethodCombo = if (taskType == TaskType.CrawlerAgentTask) {
-            ComboBox(SeedMethod.entries.toTypedArray()).apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                selectedItem = SeedMethod.GoogleSearch
-                toolTipText = "Method to seed the crawler with initial URLs"
-            }
-        } else null
-
-        private val fetchMethodCombo = if (taskType == TaskType.CrawlerAgentTask) {
-            ComboBox(FetchMethod.entries.toTypedArray()).apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                selectedItem = FetchMethod.HttpClient
-                toolTipText = "Method to fetch web pages"
-            }
-        } else null
-
-        // RunCodeTask-specific UI components
-        private val codeRuntimeCombo = if (taskType == TaskType.RunCodeTask) {
-            ComboBox(CodeRuntimes.values().map { it.name }.toTypedArray()).apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                selectedItem = CodeRuntimes.KotlinRuntime.name
-                toolTipText = "Runtime environment for code execution"
-            }
-        } else null
-
-        private val commandList = if (taskType == TaskType.SelfHealingTask) {
-            createCommandListTable().apply {
-                preferredScrollableViewportSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
-                toolTipText = "Available shell commands for task execution"
-                columnModel.getColumn(0).apply {
-                    preferredWidth = 50
-                    maxWidth = 100
-                    cellEditor = DefaultCellEditor(JCheckBox())
-                    headerValue = "<html>Enable/disable<br>command</html>"
-                }
-                columnModel.getColumn(1).apply {
-                    headerValue = "<html>Command path<br>or name</html>"
-                }
-            }
-        } else null
-
-        private fun loadConfigIntoPanel(selectedConfig: String) {
-            val taskConfig = settings.getTaskConfig(taskType, selectedConfig)
-            if (taskConfig != null) {
-                configNameField.text = taskConfig.name ?: ""
-                modelComboBox.selectedItem = taskConfig.model?.model?.modelName
-                when (taskType) {
-                    TaskType.CrawlerAgentTask -> {
-                        val crawlerConfig = taskConfig as? CrawlerAgentTask.CrawlerTaskTypeConfig
-                        seedMethodCombo?.selectedItem = crawlerConfig?.seed_method ?: SeedMethod.GoogleSearch
-                        fetchMethodCombo?.selectedItem = crawlerConfig?.fetch_method ?: FetchMethod.HttpClient
-                    }
-
-                    TaskType.RunCodeTask -> {
-                        val runCodeConfig = taskConfig as? RunCodeTask.RunCodeTaskTypeConfig
-                        codeRuntimeCombo?.selectedItem =
-                            runCodeConfig?.codeRuntime?.name ?: CodeRuntimes.KotlinRuntime.name
-                    }
-
-                    TaskType.SelfHealingTask -> {
-                        val selfHealingConfig = taskConfig as? SelfHealingTask.SelfHealingTaskTypeConfig
-                        val enabledCommands = selfHealingConfig?.commandAutoFixCommands ?: listOf()
-                        (commandList?.model as? CommandTableModel)?.let { model ->
-                            for (i in 0 until model.rowCount) {
-                                val command = model.getValueAt(i, 1) as? String
-                                model.setValueAt(enabledCommands.contains(command), i, 0)
-                            }
-                        }
-                    }
-
-                    else -> {
-                        // No additional fields to load
-                    }
-                }
-            }
-        }
-
-        private fun createCommandListTable() = JBTable(CommandTableModel())
-
-        private inner class CommandTableModel : DefaultTableModel(arrayOf("Enabled", "Command"), 0) {
-            private val entries = mutableListOf<CommandTableEntry>()
-
-            init {
-                val sortedExecutables = AppSettingsState.instance.executables?.sortedWith(String.CASE_INSENSITIVE_ORDER)
-                sortedExecutables?.forEach { command ->
-                    entries.add(CommandTableEntry(true, command))
-                    addRow(arrayOf(true, command))
-                }
-            }
-
-            override fun getColumnClass(columnIndex: Int) = when (columnIndex) {
-                0 -> java.lang.Boolean::class.java
-                else -> super.getColumnClass(columnIndex)
-            }
-
-            override fun isCellEditable(row: Int, column: Int) = column == 0
-
-            override fun setValueAt(aValue: Any?, row: Int, column: Int) {
-                if (column == 0 && aValue is Boolean) {
-                    entries[row].enabled = aValue
-                    super.setValueAt(aValue, row, column)
-                    fireTableCellUpdated(row, column)
-                    taskTypeList.repaint()
-                }
-            }
-
-            fun getEnabledCommands() = entries.filter { it.enabled }.map { it.command }
-        }
-
-
-        init {
-            configListModel.clear()
-            settings.getTaskConfigs(taskType).forEach { config ->
-                configListModel.addElement(config.name ?: "Default")
-            }
-            if (configListModel.size() > 0) {
-                configList.selectedIndex = 0
-            }
-
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            alignmentX = LEFT_ALIGNMENT
-            border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
-            setupConfigListComponents()
-
-            setupBasicComponents()
-            setupCrawlerComponents()
-            setupCommandComponents()
-            setupListeners()
-        }
-
-        private fun setupConfigListComponents() {
-            add(JLabel("Task Configurations:").apply { alignmentX = LEFT_ALIGNMENT })
-            add(Box.createVerticalStrut(2))
-            add(JBScrollPane(configList).apply {
-                alignmentX = LEFT_ALIGNMENT
-                preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
-            })
-            add(Box.createVerticalStrut(5))
-            add(createConfigManagementButtonPanel())
-            add(Box.createVerticalStrut(10))
-            add(JSeparator().apply {
-                alignmentX = LEFT_ALIGNMENT
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 2)
-            })
-            add(Box.createVerticalStrut(10))
-        }
-
-        private fun createConfigManagementButtonPanel() = JPanel().apply {
-            add(JButton("Add Config").apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 3 - 10, 30)
-                toolTipText = "Add a new configuration for this task type"
-                addActionListener { handleAddConfig() }
-            })
-            add(Box.createHorizontalStrut(5))
-            add(JButton("Remove Config").apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 3 - 10, 30)
-                toolTipText = "Remove the selected configuration"
-                addActionListener { handleRemoveConfig() }
-            })
-            add(Box.createHorizontalStrut(5))
-            add(JButton("Save Config").apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 3 - 10, 30)
-                toolTipText = "Save changes to the selected configuration"
-                addActionListener { handleSaveConfig() }
-            })
-            layout = BoxLayout(this, BoxLayout.X_AXIS)
-            alignmentX = LEFT_ALIGNMENT
-            maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-        }
-
-        private fun setupBasicComponents() {
-            add(Box.createVerticalStrut(5))
-            add(JLabel("Config Name (optional):").apply { alignmentX = LEFT_ALIGNMENT })
-            add(Box.createVerticalStrut(2))
-            add(configNameField.apply { alignmentX = LEFT_ALIGNMENT })
-            add(Box.createVerticalStrut(5))
-            add(JLabel("Model:").apply { alignmentX = LEFT_ALIGNMENT })
-            add(Box.createVerticalStrut(2))
-            add(modelComboBox.apply { alignmentX = LEFT_ALIGNMENT })
-        }
-
-        private fun setupCrawlerComponents() {
-            // Add crawler-specific configuration
-            if (seedMethodCombo != null && fetchMethodCombo != null) {
-                add(Box.createVerticalStrut(10))
-                add(JLabel("Seed Method:").apply { alignmentX = LEFT_ALIGNMENT })
-                add(Box.createVerticalStrut(2))
-                add(seedMethodCombo.apply { alignmentX = LEFT_ALIGNMENT })
-                add(Box.createVerticalStrut(5))
-                add(JLabel("Fetch Method:").apply { alignmentX = LEFT_ALIGNMENT })
-                add(Box.createVerticalStrut(2))
-                add(fetchMethodCombo.apply { alignmentX = LEFT_ALIGNMENT })
-            }
-            // Add RunCodeTask-specific configuration
-            if (codeRuntimeCombo != null) {
-                add(Box.createVerticalStrut(10))
-                add(JLabel("Code Runtime:").apply { alignmentX = LEFT_ALIGNMENT })
-                add(Box.createVerticalStrut(2))
-                add(codeRuntimeCombo.apply { alignmentX = LEFT_ALIGNMENT })
-            }
-        }
-
-        private fun setupCommandComponents() {
-            if (commandList != null) {
-                add(Box.createVerticalStrut(10))
-                add(JLabel("Available Commands:").apply { alignmentX = LEFT_ALIGNMENT })
-                add(Box.createVerticalStrut(2))
-                add(JBScrollPane(commandList).apply {
-                    alignmentX = LEFT_ALIGNMENT
-                    preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, DEFAULT_LIST_HEIGHT / 2)
-                    maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, DEFAULT_LIST_HEIGHT / 2)
-                })
-                add(Box.createVerticalStrut(5))
-                add(createCommandButtonPanel())
-            }
-        }
-
-        private fun createCommandButtonPanel() = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.X_AXIS)
-            alignmentX = LEFT_ALIGNMENT
-            maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-            add(JButton("Add Command").apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 2 - 30, 30)
-                addActionListener { handleAddCommand() }
-            })
-            add(Box.createHorizontalStrut(5))
-            add(JButton("Remove Command").apply {
-                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 2 - 30, 30)
-                addActionListener { handleRemoveCommand() }
-            })
-        }
-
-        private fun handleAddCommand() {
-            val command = Messages.showInputDialog(
-                "Enter command path:", "Add Command", Messages.getQuestionIcon()
+    private fun addTaskConfig() {
+        // Show dialog to select task type
+        val taskTypes = TaskType.values().map { it.name }.toTypedArray()
+        val selectedType = Messages.showEditableChooseDialog(
+            "Select Task Type",
+            "Add Task Configuration",
+            Messages.getQuestionIcon(),
+            taskTypes,
+            taskTypes[0],
+            null
+        )
+        if (selectedType != null) {
+            val taskType = TaskType.values().find { it.name == selectedType } ?: return
+            val newConfig = TaskTypeConfig(
+                task_type = taskType.name,
+                name = null,
+                model = null
             )
-            if (!command.isNullOrBlank()) {
-                (commandList?.model as? DefaultTableModel)?.addRow(arrayOf(true, command))
-                AppSettingsState.instance.executables =
-                    (AppSettingsState.instance.executables ?: mutableListOf()).apply { add(command) }.toMutableSet()
+            val dialog = TaskConfigEditDialog(null, taskType, newConfig, visibleModelsCache)
+            if (dialog.showAndGet()) {
+                val config = dialog.getConfig()
+                settings.addTaskConfig(taskType, config)
+                taskConfigListModel.addElement(TaskConfigEntry(taskType, config))
             }
         }
+    }
 
-        private fun handleRemoveCommand() {
-            val selectedRow = commandList?.selectedRow ?: -1
-            if (selectedRow != -1) {
-                val command = (commandList?.model as? DefaultTableModel)?.getValueAt(selectedRow, 1) as? String
-                if (command != null) {
-                    (commandList.model as? DefaultTableModel)?.removeRow(selectedRow)
-                    AppSettingsState.instance.executables =
-                        (AppSettingsState.instance.executables ?: mutableListOf()).apply { remove(command) }
-                            .toMutableSet()
-                }
-            } else {
+    private fun deleteTaskConfig(entry: TaskConfigEntry) {
+        val confirmResult = JOptionPane.showConfirmDialog(
+            null,
+            "Delete task configuration '${entry.config.name ?: "Default"}' for ${entry.taskType.name}?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+        )
+        if (confirmResult == JOptionPane.YES_OPTION) {
+            settings.removeTaskConfig(entry.taskType, entry.config.name ?: "")
+            taskConfigListModel.removeElement(entry)
+        }
+    }
+    private fun exportTaskConfigs() {
+        try {
+            val configs = mutableListOf<TaskConfigEntry>()
+            for (i in 0 until taskConfigListModel.size()) {
+                configs.add(taskConfigListModel.getElementAt(i))
+            }
+            val exportData = configs.map { entry ->
+                mapOf(
+                    "taskType" to entry.taskType.name,
+                    "config" to mapOf(
+                        "task_type" to entry.config.task_type,
+                        "name" to entry.config.name,
+                        "model" to entry.config.model?.model?.modelName
+                    )
+                )
+            }
+            val json = toJson(exportData)
+            val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+            clipboard.setContents(StringSelection(json), null)
+            Messages.showInfoMessage(
+                "Task configurations exported to clipboard",
+                "Export Successful"
+            )
+        } catch (e: Exception) {
+            log.error("Failed to export task configurations", e)
+            Messages.showErrorDialog(
+                "Failed to export configurations: ${e.message}",
+                "Export Error"
+            )
+        }
+    }
+    private fun importTaskConfigs() {
+        try {
+            val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+            val contents = clipboard.getContents(null)
+            if (!contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 Messages.showWarningDialog(
-                    "Please select a command to remove.", "No Selection"
-                )
-            }
-        }
-
-        private fun findModelByName(modelName: String?): ChatModel? {
-            if (modelName == null) return null
-            return modelCache.getOrPut(modelName) {
-                visibleModelsCache.find { it.modelName == modelName }
-            }
-        }
-
-        private fun handleAddConfig() {
-            val configName = Messages.showInputDialog(
-                "Enter configuration name:", "Add Configuration", Messages.getQuestionIcon()
-            )?.trim()
-            if (!validateConfigName(configName)) {
-                return
-            }
-            // Check if config already exists
-            if (settings.getTaskConfigs(taskType).any { it.name == configName }) {
-                Messages.showWarningDialog(
-                    "Configuration '$configName' already exists for this task type.", "Duplicate Name"
-                )
-                return
-            }
-            // Create new config with current settings
-            val newConfig = when (taskType) {
-                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskTypeConfig(
-                    name = configName,
-                    seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
-                    fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
-                )
-
-                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskTypeConfig(
-                    name = configName,
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
-                    codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
-                        CodeRuntimes.values().find { it.name == runtimeName }
-                    }
-                )
-
-                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskTypeConfig(
-                    name = configName,
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
-                    commandAutoFixCommands = (commandList?.model as? CommandTableModel)?.getEnabledCommands()
-                        ?.toMutableList() ?: mutableListOf()
-                )
-
-                else -> TaskTypeConfig(taskType.name, configName).apply {
-                    this.model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
-                }
-            }
-            settings.addTaskConfig(taskType, newConfig)
-            configListModel.addElement(configName!!)
-            configList.setSelectedValue(configName, true)
-            taskTypeList.repaint()
-        }
-
-        private fun handleRemoveConfig() {
-            val selectedConfig = configList.selectedValue
-            if (selectedConfig == null) {
-                Messages.showWarningDialog(
-                    "Please select a configuration to remove.", "No Selection"
+                    "Clipboard does not contain text data",
+                    "Import Error"
                 )
                 return
             }
+            val json = contents.getTransferData(DataFlavor.stringFlavor) as String
+            val importData = fromJson(json, List::class.java) as List<Map<String, Any>>
             val confirmResult = JOptionPane.showConfirmDialog(
                 null,
-                "Remove configuration '$selectedConfig'?",
-                "Confirm Remove",
+                "Import will replace all current task configurations. Continue?",
+                "Confirm Import",
                 JOptionPane.YES_NO_OPTION
             )
             if (confirmResult != JOptionPane.YES_OPTION) {
                 return
             }
-            settings.removeTaskConfig(taskType, selectedConfig)
-            configListModel.removeElement(selectedConfig)
-            // Select first config if available
-            if (configListModel.size() > 0) {
-                configList.selectedIndex = 0
-            } else {
-                // Clear the form if no configs left
-                configNameField.text = ""
-                modelComboBox.selectedIndex = 0
-            }
-            taskTypeList.repaint()
-        }
-
-        private fun handleSaveConfig() {
-            val selectedConfig = configList.selectedValue
-            if (selectedConfig == null) {
-                Messages.showWarningDialog(
-                    "Please select a configuration to save.", "No Selection"
-                )
-                return
-            }
-            val newName = configNameField.text.trim()
-            if (newName.isNotEmpty() && newName != selectedConfig) {
-                if (!validateConfigName(newName)) {
-                    return
-                }
-                // Check if new name already exists
-                if (settings.getTaskConfigs(taskType).any { it.name == newName }) {
-                    Messages.showWarningDialog(
-                        "Configuration '$newName' already exists for this task type.", "Duplicate Name"
-                    )
-                    return
+            // Clear existing configurations
+            taskConfigListModel.clear()
+            TaskType.values().forEach { taskType ->
+                settings.getTaskConfigs(taskType).forEach { config ->
+                    settings.removeTaskConfig(taskType, config.name ?: "")
                 }
             }
-            // Remove old config and add updated one
-            settings.removeTaskConfig(taskType, selectedConfig)
-            saveSettings()
-            // Update list if name changed
-            if (newName.isNotEmpty() && newName != selectedConfig) {
-                val index = configListModel.indexOf(selectedConfig)
-                configListModel.removeElement(selectedConfig)
-                configListModel.add(index, newName)
-                configList.setSelectedValue(newName, true)
-            }
-            taskTypeList.repaint()
-            Messages.showInfoMessage("Configuration saved successfully.", "Success")
-        }
-
-
-        private fun setupListeners() {
-            val enabledListener = ItemListener {
-                updateSettings()
-                taskTypeList.repaint()
-            }
-            listeners.add(enabledListener)
-
-            modelComboBox.addActionListener {
-                updateSettings()
-            }
-
-            // Add listeners for crawler-specific components
-            seedMethodCombo?.addActionListener {
-                updateCrawlerSettings()
-            }
-            fetchMethodCombo?.addActionListener {
-                updateCrawlerSettings()
-            }
-            // Add listener for RunCodeTask-specific components
-            codeRuntimeCombo?.addActionListener {
-                updateRunCodeSettings()
-            }
-            // Add listener for config name changes
-            configNameField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
-                override fun insertUpdate(e: javax.swing.event.DocumentEvent?) = validateConfigNameField()
-                override fun removeUpdate(e: javax.swing.event.DocumentEvent?) = validateConfigNameField()
-                override fun changedUpdate(e: javax.swing.event.DocumentEvent?) = validateConfigNameField()
-                private fun validateConfigNameField() {
-                    val name = configNameField.text
-                    configNameField.foreground = if (name.isEmpty() || CONFIG_NAME_PATTERN.matches(name)) {
-                        UIManager.getColor("TextField.foreground")
-                    } else {
-                        java.awt.Color.RED
-                    }
-                }
-            })
-        }
-
-        private fun updateSettings() {
-            val newSettings = when (taskType) {
-                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskTypeConfig(
-                    seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
-                    fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
+            // Import new configurations
+            importData.forEach { entry ->
+                val taskTypeName = entry["taskType"] as? String ?: return@forEach
+                val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
+                val configMap = entry["config"] as? Map<String, Any> ?: return@forEach
+                val configName = configMap["name"] as? String
+                val modelName = configMap["model"] as? String
+                val model = if (modelName != null) {
+                    visibleModelsCache.find { it.modelName == modelName }?.toApiChatModel()
+                } else null
+                val config = TaskTypeConfig(
+                    task_type = taskTypeName,
+                    name = configName,
+                    model = model
                 )
-
-                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskTypeConfig(
-                    codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
-                        CodeRuntimes.values().find { it.name == runtimeName }
-                    })
-
-
-                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskTypeConfig(
-                    taskType.name,
-                    findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
-                    (commandList?.model as? CommandTableModel)?.getEnabledCommands()?.toMutableList() ?: mutableListOf()
-                )
-
-                else -> TaskTypeConfig(taskType.name, taskType.name).apply {
-                    this.model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
-                }
+                settings.addTaskConfig(taskType, config)
+                taskConfigListModel.addElement(TaskConfigEntry(taskType, config))
             }
-            settings.setTaskSettings(taskType, newSettings)
-        }
-
-        private fun updateCrawlerSettings() {
-            if (taskType == TaskType.CrawlerAgentTask && seedMethodCombo != null && fetchMethodCombo != null) {
-                val newSettings = CrawlerAgentTask.CrawlerTaskTypeConfig(
-                    seed_method = seedMethodCombo.selectedItem as? SeedMethod,
-                    fetch_method = fetchMethodCombo.selectedItem as? FetchMethod,
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
-                )
-                settings.setTaskSettings(taskType, newSettings)
-                taskTypeList.repaint()
-            }
-        }
-
-        private fun updateRunCodeSettings() {
-            if (taskType == TaskType.RunCodeTask && codeRuntimeCombo != null) {
-                val newSettings = RunCodeTask.RunCodeTaskTypeConfig(
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
-                    codeRuntime = codeRuntimeCombo.selectedItem?.let { runtimeName ->
-                        CodeRuntimes.values().find { it.name == runtimeName }
-                    })
-                settings.setTaskSettings(taskType, newSettings)
-                taskTypeList.repaint()
-            }
-        }
-
-        fun saveSettings() {
-            val newSettings = when (taskType) {
-                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskTypeConfig(
-                    seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
-                    fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
-                )
-
-                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskTypeConfig(
-                    codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
-                        CodeRuntimes.values().find { it.name == runtimeName }
-                    })
-
-
-                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskTypeConfig(
-                    task_type = taskType.name,
-                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
-                    commandAutoFixCommands = (commandList?.model as? CommandTableModel)?.getEnabledCommands()
-                        ?.toMutableList() ?: mutableListOf()
-                )
-
-                else -> TaskTypeConfig(taskType.name, taskType.name).apply {
-                    this.model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
-                }
-            }
-            if (validateModelSelection(taskType, newSettings.model?.model)) {
-                settings.setTaskSettings(taskType, newSettings)
-            }
-        }
-
-        fun cleanup() {
-            listeners.clear()
-            // Remove all listeners
-            modelComboBox.actionListeners?.forEach { modelComboBox.removeActionListener(it) }
-            seedMethodCombo?.actionListeners?.forEach { seedMethodCombo.removeActionListener(it) }
-            fetchMethodCombo?.actionListeners?.forEach { fetchMethodCombo.removeActionListener(it) }
-            codeRuntimeCombo?.actionListeners?.forEach { codeRuntimeCombo.removeActionListener(it) }
+            Messages.showInfoMessage(
+                "Successfully imported ${importData.size} task configurations",
+                "Import Successful"
+            )
+        } catch (e: Exception) {
+            log.error("Failed to import task configurations", e)
+            Messages.showErrorDialog(
+                "Failed to import configurations: ${e.message}",
+                "Import Error"
+            )
         }
     }
 
-    private data class CommandTableEntry(
-        var enabled: Boolean, val command: String
-    )
-
-
-    private fun validateModelSelection(taskType: TaskType<*, *>, model: ChatModel?): Boolean {
-        if (model == null) {
-            log.warn("Model not selected for task type: ${taskType.name}")
-            return false
-        }
-        return true
-    }
 
     private fun validateConfigName(name: String?) = when {
         name.isNullOrBlank() -> {
@@ -820,8 +396,6 @@ class PlanConfigDialog(
         if (!validateConfigName(configName)) {
             return
         }
-
-        taskConfigs.values.forEach { it.saveSettings() }
 
         if (AppSettingsState.instance.savedPlanConfigs?.containsKey(configName ?: "") == true) {
             val confirmResult = JOptionPane.showConfirmDialog(
@@ -895,11 +469,7 @@ class PlanConfigDialog(
             config.taskSettings.forEach { (taskTypeName: String, serializedSettings: TaskTypeConfig) ->
                 val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
                 settings.setTaskSettings(taskType, serializedSettings)
-                taskConfigs[taskType.name]?.apply {
-                    modelComboBox.selectedItem = serializedSettings.model?.model?.modelName
-                }
             }
-            taskTypeList.repaint()
         } catch (e: Exception) {
             log.error("Error loading configuration", e)
             Messages.showErrorDialog(
@@ -958,6 +528,48 @@ class PlanConfigDialog(
                     .comment("Adjust AI response creativity (higher = more creative)")
                 cell(temperatureLabel)
             }
+            group("Task Configurations") {
+                row {
+                    scrollCell(taskConfigList)
+                        .align(Align.FILL)
+                        .comment("Double-click to edit a task configuration")
+                        .resizableColumn()
+                }.resizableRow()
+                row {
+                    button("Add Task Config") {
+                        addTaskConfig()
+                    }
+                    button("Edit Selected") {
+                        val selected = taskConfigList.selectedValue
+                        if (selected != null) {
+                            editTaskConfig(selected)
+                        } else {
+                            Messages.showWarningDialog(
+                                "Please select a task configuration to edit",
+                                "No Selection"
+                            )
+                        }
+                    }
+                    button("Delete Selected") {
+                        val selected = taskConfigList.selectedValue
+                        if (selected != null) {
+                            deleteTaskConfig(selected)
+                        } else {
+                            Messages.showWarningDialog(
+                                "Please select a task configuration to delete",
+                                "No Selection"
+                            )
+                        }
+                    }
+                    button("Export to Clipboard") {
+                        exportTaskConfigs()
+                    }
+                    button("Import from Clipboard") {
+                        importTaskConfigs()
+                    }
+                }
+            }
+
 
             group("Planning Settings") {
                 row("Cognitive Mode:") {
@@ -967,41 +579,10 @@ class PlanConfigDialog(
                     cell(autoPlanPanel).align(Align.FILL)
                 }
             }
-
-            group("Task Settings") {
-                row {
-                    cell(
-                        JBSplitter(false, DIVIDER_PROPORTION).apply {
-                            firstComponent = JBScrollPane(taskTypeList).apply {
-                                minimumSize = Dimension(DEFAULT_LIST_WIDTH, DEFAULT_LIST_HEIGHT)
-                                preferredSize = Dimension(DEFAULT_LIST_WIDTH + 100, DEFAULT_LIST_HEIGHT)
-                            }
-                            secondComponent = JBScrollPane(configPanelContainer).apply {
-                                minimumSize = Dimension(DEFAULT_PANEL_WIDTH, DEFAULT_PANEL_HEIGHT / 2)
-                                preferredSize = Dimension(DEFAULT_PANEL_WIDTH, DEFAULT_PANEL_HEIGHT)
-                            }
-                            dividerWidth = 3
-                            isShowDividerControls = true
-                            isShowDividerIcon = true
-                        }).align(Align.FILL).resizableColumn()
-                }.resizableRow()
-            }.layout(RowLayout.PARENT_GRID).resizableRow()
         }
     }
 
     override fun doOKAction() {
-        val invalidTasks = taskConfigs.values.filter { configPanel ->
-            val model = visibleModelsCache.find { it.modelName == configPanel.modelComboBox.selectedItem }
-            model == null
-        }
-
-        if (invalidTasks.isNotEmpty()) {
-            val taskNames = invalidTasks.joinToString(", ") { it.taskType.name }
-            Messages.showWarningDialog(
-                "Please select models for enabled tasks: $taskNames", "Missing Models"
-            )
-            return
-        }
         // Validate numeric fields
         val maxTaskHistory =
             validateNumericField(maxTaskHistoryCharsField, "Max Task History Chars", MIN_TASK_HISTORY, MAX_TASK_HISTORY)
@@ -1016,10 +597,6 @@ class PlanConfigDialog(
         val maxIters = validateNumericField(maxIterationsField, "Max Iterations", 1, 1000) ?: return
         validateNumericField(maxIterationsField, "Max Iterations", MIN_ITERATIONS, MAX_ITERATIONS) ?: return
 
-        taskConfigs.values.forEach { configPanel ->
-            configPanel.saveSettings()
-        }
-
         settings.autoFix = autoFixCheckbox.isSelected
         settings.maxTaskHistoryChars = maxTaskHistory
         settings.maxTasksPerIteration = maxTasksPerIter
@@ -1030,7 +607,6 @@ class PlanConfigDialog(
 
     override fun dispose() {
         // Clean up resources
-        taskConfigs.values.forEach { it.cleanup() }
         modelCache.clear()
         super.dispose()
     }
@@ -1043,15 +619,9 @@ class PlanConfigDialog(
         private const val CONFIG_COMBO_HEIGHT = 30
         private const val MIN_TEMP = 0
         private const val MAX_TEMP = 100
-        private const val DEFAULT_LIST_WIDTH = 150
-        private const val DEFAULT_LIST_HEIGHT = 200
-        private const val DEFAULT_PANEL_WIDTH = 350
-        private const val DEFAULT_PANEL_HEIGHT = 200
         private const val TEMPERATURE_SCALE = 100.0
         private const val TEMPERATURE_LABEL = "%.2f"
         private const val FONT_SIZE_ENABLED = 14f
-        private const val FONT_SIZE_DISABLED = 12f
-        private const val DIVIDER_PROPORTION = 0.3f
         private const val MIN_TASK_HISTORY = 100
         private const val MAX_TASK_HISTORY = 1000000
         private const val MIN_TASKS_PER_ITER = 1
@@ -1069,7 +639,7 @@ class PlanConfigDialog(
 }
 
 
-private fun ChatModel.toApiChatModel(): ApiChatModel {
+fun ChatModel.toApiChatModel(): ApiChatModel {
     val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
     return ApiChatModel(
         model = this, provider = ApiData(
