@@ -1,6 +1,6 @@
 package com.simiacryptus.diff
 
-import com.simiacryptus.cognotik.diff.IterativePatchUtil
+import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -20,7 +20,7 @@ class IterativePatchUtilTest {
             line2
             line3
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(source), normalize(result))
     }
 
@@ -43,7 +43,7 @@ class IterativePatchUtilTest {
             newLine
             line3
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
@@ -65,7 +65,7 @@ class IterativePatchUtilTest {
             modifiedLine2
             line3
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
@@ -85,7 +85,7 @@ class IterativePatchUtilTest {
             line1
             line3
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
@@ -114,7 +114,7 @@ class IterativePatchUtilTest {
            line2
            line3
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
@@ -143,7 +143,7 @@ class IterativePatchUtilTest {
           line2
           line3
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
@@ -211,7 +211,7 @@ class IterativePatchUtilTest {
             });
         }
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
@@ -298,7 +298,7 @@ class IterativePatchUtilTest {
             }
 
         """.trimIndent()
-        val result = IterativePatchUtil.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher.applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 
@@ -306,7 +306,7 @@ class IterativePatchUtilTest {
     fun testGeneratePatchNoChanges() {
         val oldCode = "line1\nline2\nline3"
         val newCode = oldCode
-        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val result = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         val expected = ""
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
@@ -315,7 +315,7 @@ class IterativePatchUtilTest {
     fun testGeneratePatchAddLine() {
         val oldCode = "line1\nline2\nline3"
         val newCode = "line1\nline2\nnewLine\nline3"
-        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val result = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         val expected = "  line1\n  line2\n+ newLine\n  line3"
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
@@ -324,7 +324,7 @@ class IterativePatchUtilTest {
     fun testGeneratePatchRemoveLine() {
         val oldCode = "line1\nline2\nline3"
         val newCode = "line1\nline3"
-        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val result = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         val expected = "  line1\n- line2\n  line3"
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
@@ -333,7 +333,7 @@ class IterativePatchUtilTest {
     fun testGeneratePatchModifyLine() {
         val oldCode = "line1\nline2\nline3"
         val newCode = "line1\nmodifiedLine2\nline3"
-        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val result = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         val expected = "  line1\n- line2\n+ modifiedLine2\n  line3"
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
@@ -355,7 +355,7 @@ class IterativePatchUtilTest {
                 return x > 0;
             }
         """.trimIndent()
-        val result = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val result = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         val expected = """
             function example() {
             -     console.log("Hello");
@@ -401,7 +401,7 @@ class IterativePatchUtilTest {
               line6
         """.trimIndent()
 
-        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val actualPatch = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
     }
 
@@ -435,7 +435,7 @@ class IterativePatchUtilTest {
             + line2
         """.trimIndent()
 
-        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val actualPatch = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
     }
 
@@ -470,7 +470,7 @@ class IterativePatchUtilTest {
               line6
         """.trimIndent()
 
-        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val actualPatch = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
     }
 
@@ -505,7 +505,7 @@ class IterativePatchUtilTest {
               line6
         """.trimIndent()
 
-        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val actualPatch = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
     }
 
@@ -537,7 +537,7 @@ class IterativePatchUtilTest {
             + line4
               line6
         """.trimIndent()
-        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val actualPatch = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
     }
 
@@ -568,7 +568,7 @@ class IterativePatchUtilTest {
             + line2
               line6
         """.trimIndent()
-        val actualPatch = IterativePatchUtil.generatePatch(oldCode, newCode)
+        val actualPatch = FuzzyPatchMatcher.generatePatch(oldCode, newCode)
         Assertions.assertEquals(normalize(expectedPatch), normalize(actualPatch))
     }
 }

@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.PatchProccessors
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -514,7 +514,7 @@ abstract class PatchApp(
         You are a helpful AI that helps people with coding.
         You will be answering questions about the following code:
         $summary
-        ${PatchProccessors.Iterative.patchFormatPrompt}
+        ${PatchProcessors.Fuzzy.patchFormatPrompt}
         If needed, new files can be created by using code blocks labeled with the filename in the same manner.
         Note: Ignore any "/* Error: ... */" comments when generating patches - these are just for reference.
         """.trimIndent(),

@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.PatchProccessors
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -148,7 +148,7 @@ class MultiStepPatchAction : BaseAction() {
                 parsingModel = parsingModel,
             ),
             ActorTypes.TaskCodingActor to ChatAgent(
-                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + PatchProccessors.Iterative.patchFormatPrompt,
+                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + PatchProcessors.Fuzzy.patchFormatPrompt,
                 model = model
             ),
         ).map { it.key.name to it.value }.toMap()

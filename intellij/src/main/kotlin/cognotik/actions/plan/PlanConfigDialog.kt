@@ -5,7 +5,6 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.JBSplitter
-import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
@@ -38,6 +37,7 @@ import java.awt.Font
 import java.awt.event.ItemListener
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
+import kotlin.div
 
 class PlanConfigDialog(
     project: Project?,
@@ -95,11 +95,6 @@ class PlanConfigDialog(
     }
     private val modelCache = mutableMapOf<String, ChatModel?>()
     private val visibleModelsCache by lazy { getVisibleModels() }
-    private val taskSearchField = SearchTextField().apply {
-        toolTipText = "Search task types by name or description"
-    }
-    private val taskListModel = DefaultListModel<TaskType<*, *>>()
-    private var allTaskTypes = TaskType.values().toList()
     private val temperatureSlider =
         JSlider(MIN_TEMP, MAX_TEMP, (settings.temperature * TEMPERATURE_SCALE).toInt()).apply {
             addChangeListener {
@@ -125,20 +120,6 @@ class PlanConfigDialog(
                 (configPanelContainer.layout as CardLayout).show(configPanelContainer, selectedType)
             }
         }
-        // Add search functionality
-        taskSearchField.addDocumentListener(object : javax.swing.event.DocumentListener {
-            override fun insertUpdate(e: javax.swing.event.DocumentEvent?) = filterTaskList()
-            override fun removeUpdate(e: javax.swing.event.DocumentEvent?) = filterTaskList()
-            override fun changedUpdate(e: javax.swing.event.DocumentEvent?) = filterTaskList()
-            private fun filterTaskList() {
-                val searchText = taskSearchField.text.lowercase()
-                taskListModel.clear()
-                allTaskTypes.filter { taskType ->
-                    taskType.name.lowercase().contains(searchText) ||
-                            taskType.description?.lowercase()?.contains(searchText) == true
-                }.forEach { taskListModel.addElement(it) }
-            }
-        })
 
         TaskType.values().forEach { taskType ->
             val configPanel = TaskTypeConfigPanel(taskType)
@@ -381,7 +362,7 @@ class PlanConfigDialog(
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 100)
             })
             add(Box.createVerticalStrut(5))
-            add(createConfigButtonPanel())
+            add(createConfigManagementButtonPanel())
             add(Box.createVerticalStrut(10))
             add(JSeparator().apply {
                 alignmentX = LEFT_ALIGNMENT
@@ -390,7 +371,24 @@ class PlanConfigDialog(
             add(Box.createVerticalStrut(10))
         }
 
-        private fun createConfigButtonPanel() = JPanel().apply {
+        private fun createConfigManagementButtonPanel() = JPanel().apply {
+            add(JButton("Add Config").apply {
+                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 3 - 10, 30)
+                toolTipText = "Add a new configuration for this task type"
+                addActionListener { handleAddConfig() }
+            })
+            add(Box.createHorizontalStrut(5))
+            add(JButton("Remove Config").apply {
+                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 3 - 10, 30)
+                toolTipText = "Remove the selected configuration"
+                addActionListener { handleRemoveConfig() }
+            })
+            add(Box.createHorizontalStrut(5))
+            add(JButton("Save Config").apply {
+                maximumSize = Dimension(DEFAULT_PANEL_WIDTH / 3 - 10, 30)
+                toolTipText = "Save changes to the selected configuration"
+                addActionListener { handleSaveConfig() }
+            })
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             alignmentX = LEFT_ALIGNMENT
             maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
@@ -493,6 +491,122 @@ class PlanConfigDialog(
             }
         }
 
+        private fun handleAddConfig() {
+            val configName = Messages.showInputDialog(
+                "Enter configuration name:", "Add Configuration", Messages.getQuestionIcon()
+            )?.trim()
+            if (!validateConfigName(configName)) {
+                return
+            }
+            // Check if config already exists
+            if (settings.getTaskConfigs(taskType).any { it.name == configName }) {
+                Messages.showWarningDialog(
+                    "Configuration '$configName' already exists for this task type.", "Duplicate Name"
+                )
+                return
+            }
+            // Create new config with current settings
+            val newConfig = when (taskType) {
+                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskTypeConfig(
+                    name = configName,
+                    seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
+                    fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
+                    task_type = taskType.name,
+                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
+                )
+
+                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskTypeConfig(
+                    name = configName,
+                    task_type = taskType.name,
+                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
+                    codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
+                        CodeRuntimes.values().find { it.name == runtimeName }
+                    }
+                )
+
+                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskTypeConfig(
+                    name = configName,
+                    task_type = taskType.name,
+                    model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
+                    commandAutoFixCommands = (commandList?.model as? CommandTableModel)?.getEnabledCommands()
+                        ?.toMutableList() ?: mutableListOf()
+                )
+
+                else -> TaskTypeConfig(taskType.name, configName).apply {
+                    this.model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
+                }
+            }
+            settings.addTaskConfig(taskType, newConfig)
+            configListModel.addElement(configName!!)
+            configList.setSelectedValue(configName, true)
+            taskTypeList.repaint()
+        }
+
+        private fun handleRemoveConfig() {
+            val selectedConfig = configList.selectedValue
+            if (selectedConfig == null) {
+                Messages.showWarningDialog(
+                    "Please select a configuration to remove.", "No Selection"
+                )
+                return
+            }
+            val confirmResult = JOptionPane.showConfirmDialog(
+                null,
+                "Remove configuration '$selectedConfig'?",
+                "Confirm Remove",
+                JOptionPane.YES_NO_OPTION
+            )
+            if (confirmResult != JOptionPane.YES_OPTION) {
+                return
+            }
+            settings.removeTaskConfig(taskType, selectedConfig)
+            configListModel.removeElement(selectedConfig)
+            // Select first config if available
+            if (configListModel.size() > 0) {
+                configList.selectedIndex = 0
+            } else {
+                // Clear the form if no configs left
+                configNameField.text = ""
+                modelComboBox.selectedIndex = 0
+            }
+            taskTypeList.repaint()
+        }
+
+        private fun handleSaveConfig() {
+            val selectedConfig = configList.selectedValue
+            if (selectedConfig == null) {
+                Messages.showWarningDialog(
+                    "Please select a configuration to save.", "No Selection"
+                )
+                return
+            }
+            val newName = configNameField.text.trim()
+            if (newName.isNotEmpty() && newName != selectedConfig) {
+                if (!validateConfigName(newName)) {
+                    return
+                }
+                // Check if new name already exists
+                if (settings.getTaskConfigs(taskType).any { it.name == newName }) {
+                    Messages.showWarningDialog(
+                        "Configuration '$newName' already exists for this task type.", "Duplicate Name"
+                    )
+                    return
+                }
+            }
+            // Remove old config and add updated one
+            settings.removeTaskConfig(taskType, selectedConfig)
+            saveSettings()
+            // Update list if name changed
+            if (newName.isNotEmpty() && newName != selectedConfig) {
+                val index = configListModel.indexOf(selectedConfig)
+                configListModel.removeElement(selectedConfig)
+                configListModel.add(index, newName)
+                configList.setSelectedValue(newName, true)
+            }
+            taskTypeList.repaint()
+            Messages.showInfoMessage("Configuration saved successfully.", "Success")
+        }
+
 
         private fun setupListeners() {
             val enabledListener = ItemListener {
@@ -585,7 +699,6 @@ class PlanConfigDialog(
                 taskTypeList.repaint()
             }
         }
-
 
         fun saveSettings() {
             val newSettings = when (taskType) {
@@ -856,10 +969,6 @@ class PlanConfigDialog(
             }
 
             group("Task Settings") {
-                row {
-                    cell(taskSearchField).align(Align.FILL)
-                        .comment("Search task types by name or description")
-                }
                 row {
                     cell(
                         JBSplitter(false, DIVIDER_PROPORTION).apply {

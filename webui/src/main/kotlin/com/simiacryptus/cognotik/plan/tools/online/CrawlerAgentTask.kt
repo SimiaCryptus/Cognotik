@@ -41,7 +41,8 @@ class CrawlerAgentTask(
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         task_type: String = "CrawlerAgentTask",
         model: ApiChatModel? = null,
-    ) : TaskTypeConfig(task_type, task_type, model)
+        name: String? = task_type,
+    ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
 
     override val typeConfig: CrawlerTaskTypeConfig
         get() = super.typeConfig.jsonCast<CrawlerTaskTypeConfig>()

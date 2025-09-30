@@ -11,7 +11,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.PatchProccessors
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
@@ -124,7 +124,7 @@ class DiffChatAction : BaseAction() {
                   - If a line is part of the original code and hasn't been modified, simply include it without '+' or '-'.
                   - Lines starting with "@@" or "---" or "+++" are treated as headers and are ignored.
 
-                """.trimIndent() + PatchProccessors.Iterative.patchFormatPrompt
+                """.trimIndent() + PatchProcessors.Fuzzy.patchFormatPrompt
 
             override fun renderResponse(response: String, task: SessionTask): String = """<div>${
                 renderMarkdown(

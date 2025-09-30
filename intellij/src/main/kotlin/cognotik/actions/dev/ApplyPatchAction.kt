@@ -11,7 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.*
-import com.simiacryptus.cognotik.diff.PatchProccessors
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -100,7 +100,7 @@ class ApplyPatchAction : BaseAction(
     private fun applyPatch(file: VirtualFile, patchContent: String, project: com.intellij.openapi.project.Project) {
         WriteCommandAction.runWriteCommandAction(project) {
             val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runWriteCommandAction
-            val newContent = PatchProccessors.Iterative.applyPatch(psiFile.text, patchContent)
+            val newContent = PatchProcessors.Fuzzy.applyPatch(psiFile.text, patchContent)
             if (newContent == psiFile.text) {
                 Messages.showWarningDialog(project, "Patch made no changes to ${file.name}", "No Changes")
                 return@runWriteCommandAction

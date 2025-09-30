@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.diff.DiffUtil
-import com.simiacryptus.cognotik.diff.PatchProccessors
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
@@ -99,7 +99,7 @@ class AddApplyDiffLinks {
                 diffVal.lines().reversed().joinToString("\n")
             ).newCode
             val newValue = if (patchRev == patch) {
-                val test1 = PatchProccessors.Iterative.generatePatch(code().replace("\r", ""), patch)
+                val test1 = PatchProcessors.Fuzzy.generatePatch(code().replace("\r", ""), patch)
                 displayMapInTabs(
                     mapOf(
                         "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.manager, tabs = true),
@@ -123,7 +123,7 @@ class AddApplyDiffLinks {
                             task.error(e)
                         }
                     })!!
-                val test1 = PatchProccessors.Iterative.generatePatch(code().replace("\r", ""), patch)
+                val test1 = PatchProcessors.Fuzzy.generatePatch(code().replace("\r", ""), patch)
                 val test2 = DiffUtil.formatDiff(
                     DiffUtil.generateDiff(
                         code().lines(),

@@ -1,20 +1,23 @@
 package com.simiacryptus.cognotik.diff
 
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.Companion.LineType.ADD
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.Companion.LineType.CONTEXT
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.Companion.LineType.DELETE
-import com.simiacryptus.cognotik.util.LoggerFactory
-import org.apache.commons.text.similarity.LevenshteinDistance
-import kotlin.compareTo
-import kotlin.inc
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.text.compareTo
-import kotlin.text.get
-import kotlin.text.toDouble
-import kotlin.times
+ import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.ADD
+ import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.CONTEXT
+ import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.DELETE
+ import com.simiacryptus.cognotik.util.LoggerFactory
+ import org.apache.commons.text.similarity.LevenshteinDistance
+ import kotlin.math.floor
+ import kotlin.math.max
 
-open class IterativePatchUtil : PatchProccessor {
+open class FuzzyPatchMatcher(
+    private val contextSize: Int = DEFAULT_CONTEXT_SIZE,
+    private val maxRecursionDepth: Int = MAX_RECURSION_DEPTH,
+    private val levenshteinThresholdDivisor: Int = LEVENSHTEIN_THRESHOLD_DIVISOR,
+    private val minLineLengthForFuzzyMatch: Int = MIN_LINE_LENGTH_FOR_FUZZY_MATCH,
+    private val enableFuzzyMatching: Boolean = true,
+    private val enableSnippetPatching: Boolean = true,
+    private val snippetMatchThreshold: Double = 0.8,
+    private val requireAnchorMatch: Boolean = true
+) : PatchProcessor {
 
     override val patchFormatPrompt = """
       Response should use one or more code patches in diff format within ```diff code blocks.
@@ -206,7 +209,6 @@ open class IterativePatchUtil : PatchProccessor {
     }
 
     private fun truncateContext(diff: MutableList<LineRecord>): MutableList<LineRecord> {
-        val contextSize = DEFAULT_CONTEXT_SIZE
 
         log.debug("Truncating context with size $contextSize")
         if (diff.isEmpty()) return mutableListOf()
@@ -273,8 +275,8 @@ open class IterativePatchUtil : PatchProccessor {
         levenshteinDistance: LevenshteinDistance?
     ) {
         log.debug("Subsequence linking at depth $depth")
-        if (depth > MAX_RECURSION_DEPTH || sourceLines.isEmpty() || patchLines.isEmpty()) {
-            if (depth > MAX_RECURSION_DEPTH) {
+        if (depth > maxRecursionDepth || sourceLines.isEmpty() || patchLines.isEmpty()) {
+            if (depth > maxRecursionDepth) {
                 log.warn("Maximum recursion depth reached in subsequence linking")
             }
             return
@@ -558,6 +560,10 @@ open class IterativePatchUtil : PatchProccessor {
         patchPrev: LineRecord,
         levenshteinDistance: LevenshteinDistance?
     ): Boolean {
+        if (!enableFuzzyMatching) {
+            return normalizeLine(sourcePrev.line ?: "") == normalizeLine(patchPrev.line ?: "")
+        }
+
         val normalizedSource = normalizeLine(sourcePrev.line ?: "")
         val normalizedPatch = normalizeLine(patchPrev.line ?: "")
 
@@ -590,10 +596,10 @@ open class IterativePatchUtil : PatchProccessor {
 
         val maxLength = max(normalizedSource.length, normalizedPatch.length)
 
-        if (maxLength > MIN_LINE_LENGTH_FOR_FUZZY_MATCH && levenshteinDistance != null) {
+        if (maxLength > minLineLengthForFuzzyMatch && levenshteinDistance != null) {
             val distance = levenshteinDistance.apply(normalizedSource, normalizedPatch)
             log.debug("Levenshtein distance: $distance")
-            return distance <= floor(maxLength / LEVENSHTEIN_THRESHOLD_DIVISOR.toDouble()).toInt()
+            return distance <= floor(maxLength / levenshteinThresholdDivisor.toDouble()).toInt()
         }
         return false
     }
@@ -776,7 +782,7 @@ open class IterativePatchUtil : PatchProccessor {
         return null
     }
 
-    private val log = LoggerFactory.getLogger(PatchProccessor::class.java)
+    private val log = LoggerFactory.getLogger(PatchProcessor::class.java)
 
     /**
      * Applies a snippet patch that consists solely of context lines.
@@ -785,6 +791,11 @@ open class IterativePatchUtil : PatchProccessor {
      * If not found, the original source is returned unchanged.
      */
     private fun applySnippetPatch(source: String, patch: String): String {
+        if (!enableSnippetPatching) {
+            log.debug("Snippet patching disabled, returning original source")
+            return source
+        }
+
         val patchLines = patch.lines().filter { it.isNotBlank() }
         if (patchLines.isEmpty()) {
             log.debug("Empty patch lines, returning original source")
@@ -868,12 +879,12 @@ open class IterativePatchUtil : PatchProccessor {
                     matchScore++
                 }
             }
-            // Require at least 80% match to consider it valid (higher threshold)
+            // Require at least snippetMatchThreshold match to consider it valid
             // And at least 2 lines must match exactly (first and last ideally)
             val hasAnchorMatch = normalizedSource[i] == normalizedPatch[0] ||
                     normalizedSource[i + patchSize - 1] == normalizedPatch[patchSize - 1]
-            if (matchScore > bestScore && matchScore >= (patchSize * 0.8).toInt() &&
-                (hasAnchorMatch || matchScore >= patchSize - 1)
+            if (matchScore > bestScore && matchScore >= (patchSize * snippetMatchThreshold).toInt() &&
+                (!requireAnchorMatch || hasAnchorMatch || matchScore >= patchSize - 1)
             ) {
                 bestScore = matchScore
                 bestMatch = i
@@ -895,7 +906,7 @@ open class IterativePatchUtil : PatchProccessor {
         newSource.addAll(sourceLines.subList(endIndex + 1, sourceLines.size))
         return newSource.joinToString("\n")
     }
-    companion object : IterativePatchUtil() {
+    companion object : FuzzyPatchMatcher() {
         enum class LineType { CONTEXT, ADD, DELETE }
 
 

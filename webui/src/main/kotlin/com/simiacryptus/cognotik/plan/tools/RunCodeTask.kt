@@ -26,8 +26,10 @@ class RunCodeTask(
         task_type : String = TaskType.RunCodeTask.name,
         val codeRuntime: CodeRuntimes? = null,
         model: ApiChatModel? = null,
+        name: String? = task_type,
     ) : TaskTypeConfig(
         task_type = task_type,
+        name = name,
         model = model,
     )
 

@@ -19,8 +19,9 @@ class SelfHealingTask(
     class SelfHealingTaskTypeConfig(
         task_type: String? = null,
         model: ApiChatModel? = null,
-        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
-    ) : TaskTypeConfig(task_type, task_type, model)
+        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf(),
+        name: String? = task_type,
+    ) : TaskTypeConfig(task_type, name, model)
 
     class SelfHealingTaskExecutionConfigData(
         @Description("The commands to be executed with their respective working directories") val commands: List<CommandWithWorkingDir>? = null,
