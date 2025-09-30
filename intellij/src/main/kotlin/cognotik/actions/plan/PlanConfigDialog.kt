@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.SavedPlanConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
  import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
@@ -241,7 +241,7 @@ class PlanConfigDialog(
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 val currentSettings =
-                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.CrawlerTaskSettings
+                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.CrawlerTaskTypeConfig
                 selectedItem = currentSettings?.seed_method ?: SeedMethod.GoogleSearch
             }
         } else null
@@ -251,7 +251,7 @@ class PlanConfigDialog(
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 val currentSettings =
-                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.CrawlerTaskSettings
+                    settings.getTaskSettings(taskType) as? CrawlerAgentTask.CrawlerTaskTypeConfig
                 selectedItem = currentSettings?.fetch_method ?: FetchMethod.HttpClient
             }
         } else null
@@ -261,7 +261,7 @@ class PlanConfigDialog(
             ComboBox(CodeRuntimes.values().map { it.name }.toTypedArray()).apply {
                 maximumSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
                 preferredSize = Dimension(DEFAULT_PANEL_WIDTH - 50, 30)
-                val currentSettings = settings.getTaskSettings(taskType) as? RunCodeTask.RunCodeTaskSettings
+                val currentSettings = settings.getTaskSettings(taskType) as? RunCodeTask.RunCodeTaskTypeConfig
                 selectedItem = currentSettings?.codeRuntime?.name ?: CodeRuntimes.KotlinRuntime.name
             }
         } else null
@@ -291,7 +291,7 @@ class PlanConfigDialog(
                     AppSettingsState.instance.executables?.sortedWith(String.CASE_INSENSITIVE_ORDER)
                 sortedExecutables?.forEach { command ->
                     val isEnabled =
-                        (settings.getTaskSettings(taskType) as? SelfHealingTask.SelfHealingTaskSettings)?.commandAutoFixCommands?.contains(
+                        (settings.getTaskSettings(taskType) as? SelfHealingTask.SelfHealingTaskTypeConfig)?.commandAutoFixCommands?.contains(
                             command
                         ) ?: true
                     entries.add(CommandTableEntry(isEnabled, command))
@@ -318,7 +318,7 @@ class PlanConfigDialog(
 
             private fun updateCommandSettings() {
                 settings.setTaskSettings(
-                    taskType, SelfHealingTask.SelfHealingTaskSettings(
+                    taskType, SelfHealingTask.SelfHealingTaskTypeConfig(
                         taskType.name,
                         settings.getTaskSettings(taskType).enabled,
                         findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
@@ -444,14 +444,14 @@ class PlanConfigDialog(
 
             enabledCheckbox.addItemListener {
                 val newSettings = when (taskType) {
-                    TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskSettings(
+                    TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskTypeConfig(
                         seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
                         fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
                         task_type = taskType.name,
                         enabled = enabledCheckbox.isSelected,
                         model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     )
-                    TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskSettings(
+                    TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskTypeConfig(
                         task_type = taskType.name,
                         enabled = enabledCheckbox.isSelected,
                         model = getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
@@ -460,7 +460,7 @@ class PlanConfigDialog(
                         }
                     )
 
-                    TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
+                    TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskTypeConfig(
                         taskType.name,
                         enabledCheckbox.isSelected,
                         getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel(),
@@ -473,7 +473,7 @@ class PlanConfigDialog(
                             .map { row -> commandList?.model?.getValueAt(row, 1) as String }.toMutableList()
                     )
 
-                    else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
+                    else -> TaskTypeConfig(taskType.name, enabledCheckbox.isSelected).apply {
                         this.model =
                             getVisibleModels().find { it.modelName == modelComboBox.selectedItem }?.toApiChatModel()
                     }
@@ -506,28 +506,28 @@ class PlanConfigDialog(
 
         private fun updateSettings() {
             val newSettings = when (taskType) {
-                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskSettings(
+                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskTypeConfig(
                     seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
                     fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 )
-                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskSettings(
+                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskTypeConfig(
                     codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
                         CodeRuntimes.values().find { it.name == runtimeName }
                     }
                 )
 
 
-                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
+                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskTypeConfig(
                     taskType.name,
                     enabledCheckbox.isSelected,
                     findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
                     (commandList?.model as? CommandTableModel)?.getEnabledCommands()?.toMutableList() ?: mutableListOf()
                 )
 
-                else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
+                else -> TaskTypeConfig(taskType.name, enabledCheckbox.isSelected).apply {
                     this.model =
                         findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 }
@@ -537,7 +537,7 @@ class PlanConfigDialog(
 
         private fun updateCrawlerSettings() {
             if (taskType == TaskType.CrawlerAgentTask && seedMethodCombo != null && fetchMethodCombo != null) {
-                val newSettings = CrawlerAgentTask.CrawlerTaskSettings(
+                val newSettings = CrawlerAgentTask.CrawlerTaskTypeConfig(
                     seed_method = seedMethodCombo.selectedItem as? SeedMethod,
                     fetch_method = fetchMethodCombo.selectedItem as? FetchMethod,
                     task_type = taskType.name,
@@ -550,7 +550,7 @@ class PlanConfigDialog(
         }
         private fun updateRunCodeSettings() {
             if (taskType == TaskType.RunCodeTask && codeRuntimeCombo != null) {
-                val newSettings = RunCodeTask.RunCodeTaskSettings(
+                val newSettings = RunCodeTask.RunCodeTaskTypeConfig(
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
@@ -567,21 +567,21 @@ class PlanConfigDialog(
 
         fun saveSettings() {
             val newSettings = when (taskType) {
-                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskSettings(
+                TaskType.CrawlerAgentTask -> CrawlerAgentTask.CrawlerTaskTypeConfig(
                     seed_method = seedMethodCombo?.selectedItem as? SeedMethod,
                     fetch_method = fetchMethodCombo?.selectedItem as? FetchMethod,
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 )
-                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskSettings(
+                TaskType.RunCodeTask -> RunCodeTask.RunCodeTaskTypeConfig(
                     codeRuntime = codeRuntimeCombo?.selectedItem?.let { runtimeName ->
                         CodeRuntimes.values().find { it.name == runtimeName }
                     }
                 )
 
 
-                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskSettings(
+                TaskType.SelfHealingTask -> SelfHealingTask.SelfHealingTaskTypeConfig(
                     task_type = taskType.name,
                     enabled = enabledCheckbox.isSelected,
                     model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel(),
@@ -589,7 +589,7 @@ class PlanConfigDialog(
                         ?.toMutableList() ?: mutableListOf()
                 )
 
-                else -> TaskSettingsBase(taskType.name, enabledCheckbox.isSelected).apply {
+                else -> TaskTypeConfig(taskType.name, enabledCheckbox.isSelected).apply {
                     this.model = findModelByName(modelComboBox.selectedItem as? String)?.toApiChatModel()
                 }
             }
@@ -737,7 +737,7 @@ class PlanConfigDialog(
 
         val taskSettingsMap = TaskType.values().associate { taskType ->
             val taskSettings = settings.getTaskSettings(taskType)
-            taskType.name to TaskSettingsBase(
+            taskType.name to TaskTypeConfig(
                 task_type = taskType.name,
                 enabled = taskSettings.enabled,
                 model = taskSettings.model,
@@ -794,7 +794,7 @@ class PlanConfigDialog(
             settings.autoFix = config.autoFix
             autoFixCheckbox.isSelected = config.autoFix
 
-            config.taskSettings.forEach { (taskTypeName: String, serializedSettings: TaskSettingsBase) ->
+            config.taskSettings.forEach { (taskTypeName: String, serializedSettings: TaskTypeConfig) ->
                 val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
                 settings.setTaskSettings(taskType, serializedSettings)
                 taskConfigs[taskType.name]?.apply {

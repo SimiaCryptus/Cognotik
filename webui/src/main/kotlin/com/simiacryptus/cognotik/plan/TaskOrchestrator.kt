@@ -63,7 +63,7 @@ class TaskOrchestrator(
     var executionState: ExecutionState? = null
 
     fun executePlan(
-        plan: Map<String, TaskConfigBase>,
+        plan: Map<String, TaskExecutionConfig>,
         task: SessionTask,
         userMessage: String,
     ): ExecutionState {
@@ -93,21 +93,21 @@ class TaskOrchestrator(
         return planProcessingState
     }
 
-    private fun newState(plan: Map<String, TaskConfigBase>) =
+    private fun newState(plan: Map<String, TaskExecutionConfig>) =
         ExecutionState(
-            subTasks = (filterPlan { plan }?.entries?.toTypedArray<Map.Entry<String, TaskConfigBase>>()
+            subTasks = (filterPlan { plan }?.entries?.toTypedArray<Map.Entry<String, TaskExecutionConfig>>()
                 ?.associate { it.key to it.value } ?: mapOf()).toMutableMap()
         )
 
     fun executePlan(
         diagramBuffer: StringBuilder?,
-        subTasks: Map<String, TaskConfigBase>,
+        subTasks: Map<String, TaskExecutionConfig>,
         task: SessionTask,
         executionState: ExecutionState,
         taskIdProcessingQueue: MutableList<String>,
         pool: ExecutorService,
         userMessage: String,
-        plan: Map<String, TaskConfigBase>,
+        plan: Map<String, TaskExecutionConfig>,
         tabs: TabbedDisplay,
     ) {
         val sessionTask = task.manager.newTask(false).apply { tabs["Session"] = placeholder }
@@ -141,7 +141,7 @@ class TaskOrchestrator(
         taskIdProcessingQueue.forEach { taskId ->
             val newTask = task.manager.newTask(false)
             executionState.uitaskMap[taskId] = newTask
-            val subtask: TaskConfigBase? = executionState.subTasks[taskId]
+            val subtask: TaskExecutionConfig? = executionState.subTasks[taskId]
             val description = subtask?.task_description
             log.debug("Creating task tab: $taskId ${System.identityHashCode(subtask)} $description")
             taskTabs[description ?: taskId] = newTask.placeholder

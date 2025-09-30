@@ -7,7 +7,7 @@ import java.net.URI
 class DirectUrls : SeedMethodFactory {
     override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
         override fun getSeedItems(
-            taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+            taskConfig: CrawlerAgentTask.CrawlerTaskExecutionConfigData?,
             orchestrationConfig: OrchestrationConfig
         ): List<SeedItem>? {
             SeedMethod.Companion.log.info("Starting DirectUrls seed method")

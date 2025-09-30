@@ -84,15 +84,15 @@ open class Planner {
         orchestrationConfig: OrchestrationConfig,
         inStrings: List<String>,
         describer: TypeDescriber
-    ): ParsedResponse<Map<String, TaskConfigBase>> {
+    ): ParsedResponse<Map<String, TaskExecutionConfig>> {
         orchestrationConfig.absoluteWorkingDir?.apply { File(this).mkdirs() }
         val planningActor = orchestrationConfig.planningActor(describer)
         return planningActor.respond(
             messages = planningActor.chatMessages(inStrings),
             input = inStrings,
         ).map(Map::class.java) {
-            it.tasksByID ?: emptyMap<String, TaskConfigBase>()
-        } as ParsedResponse<Map<String, TaskConfigBase>>
+            it.tasksByID ?: emptyMap<String, TaskExecutionConfig>()
+        } as ParsedResponse<Map<String, TaskExecutionConfig>>
     }
 
     open fun inputFn(

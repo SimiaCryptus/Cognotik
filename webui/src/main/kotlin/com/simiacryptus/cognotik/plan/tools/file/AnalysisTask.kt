@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicReference
 
 class AnalysisTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: AnalysisTaskConfigData?
-) : AbstractTask<AnalysisTask.AnalysisTaskConfigData>(orchestrationConfig, planTask) {
-    class AnalysisTaskConfigData(
+    planTask: AnalysisTaskExecutionConfigData?
+) : AbstractTask<AnalysisTask.AnalysisTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+    class AnalysisTaskExecutionConfigData(
         @Description("The specific questions or topics to be addressed in the inquiry")
         val inquiry_questions: List<String>? = null,
         @Description("The goal or purpose of the inquiry")
@@ -35,7 +35,7 @@ class AnalysisTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = AnalysisTaskType.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -73,7 +73,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             ).filter { it.isNotBlank() }
         }
 
-        val taskConfig: AnalysisTaskConfigData? = this.taskConfig
+        val taskConfig: AnalysisTaskExecutionConfigData? = this.executionConfig
         val insightActor = ChatAgent(
             name = "Insight",
             prompt = """
@@ -86,13 +86,13 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
                 When generating insights, consider the existing project context and focus on information that is directly relevant and applicable.
                 Focus on generating insights and information that support the task types available in the system (${
-                this.orchestrationConfig.taskSettings.filter<String, TaskSettingsBase> { it.value.enabled }.keys.joinToString<String>(
+                this.orchestrationConfig.taskSettings.filter<String, TaskTypeConfig> { it.value.enabled }.keys.joinToString<String>(
                     ", "
                 )
             }).
                 This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
-            model = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+            model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                 ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
             temperature = this.orchestrationConfig.temperature,
         )
@@ -103,7 +103,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     taskConfig?.inquiry_questions?.joinToString(
                         "\n"
                     )
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.taskConfig?.toJson()}"
+                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
             },
             heading = "",
             initialResponse = { it: String -> insightActor.answer(toInput(it)) },
@@ -113,7 +113,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             reviseResponse = { usermessages: List<Pair<String, Role>> ->
                 val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                     taskConfig?.inquiry_questions?.joinToString("\n")
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.taskConfig?.toJson()}"
+                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
                 val messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
                     .toTypedArray<ModelSchema.ChatMessage>()
                 insightActor.respond(
@@ -138,7 +138,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     }
 
     private fun getInputFileCode(): String =
-        ((taskConfig?.input_files ?: listOf()))
+        ((executionConfig?.input_files ?: listOf()))
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
                 listOf(FileSelectionUtils.filteredWalkAsciiTree(root.toFile()) {
@@ -155,7 +155,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             .joinToString("\n\n") { relativePath ->
                 val file = root.resolve(relativePath).toFile()
                 try {
-                    val content = if (taskConfig?.extractContent == true && !isTextFile(file)) {
+                    val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
                         extractDocumentContent(file)
                     } else {
                         codeFiles[file.toPath()] ?: file.readText()
@@ -216,8 +216,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         private val log = LoggerFactory.getLogger(AnalysisTask::class.java)
         val AnalysisTaskType = TaskType(
             "AnalysisTask",
-            AnalysisTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
+            AnalysisTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
             """
             Provides direct answers and insights using the LLM, optionally referencing project files.

@@ -26,7 +26,7 @@ import kotlin.math.min
 
 class CrawlerAgentTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: CrawlerTaskConfigData?,
+    planTask: CrawlerTaskExecutionConfigData?,
     val follow_links: Boolean = true,
     val max_pages_per_task: Int = 50,
     val max_final_output_size: Int = 10000,
@@ -34,20 +34,20 @@ class CrawlerAgentTask(
     val allow_revisit_pages: Boolean = false,
     val create_final_summary: Boolean? = true,
     val min_content_length: Int = 100,
-) : AbstractTask<CrawlerAgentTask.CrawlerTaskConfigData>(orchestrationConfig, planTask) {
+) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class CrawlerTaskSettings(
+    class CrawlerTaskTypeConfig(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         task_type: String = "CrawlerAgentTask",
         enabled: Boolean = false,
         model: ApiChatModel? = null,
-    ) : TaskSettingsBase(task_type, enabled, model)
+    ) : TaskTypeConfig(task_type, enabled, model)
 
-    override val taskSettings: CrawlerTaskSettings
-        get() = super.taskSettings.jsonCast<CrawlerTaskSettings>()
+    override val typeConfig: CrawlerTaskTypeConfig
+        get() = super.typeConfig.jsonCast<CrawlerTaskTypeConfig>()
 
-    class CrawlerTaskConfigData(
+    class CrawlerTaskExecutionConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
@@ -55,7 +55,7 @@ class CrawlerAgentTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = TaskType.CrawlerAgentTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -145,7 +145,7 @@ class CrawlerAgentTask(
     ): String {
         try {
             val startTime = System.currentTimeMillis()
-            log.info("Starting CrawlerAgentTask with config: search_query='${taskConfig?.search_query}', direct_urls='${taskConfig?.direct_urls}', max_pages=${taskConfig?.max_pages_per_task ?: max_pages_per_task}")
+            log.info("Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query}', direct_urls='${executionConfig?.direct_urls}', max_pages=${executionConfig?.max_pages_per_task ?: max_pages_per_task}")
             val webSearchDir = File(agent.root.toFile(), ".websearch")
             if (!webSearchDir.exists()) {
                 if (!webSearchDir.mkdirs()) {
@@ -155,10 +155,10 @@ class CrawlerAgentTask(
                 log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
             }
 
-            val seedMethod = taskSettings.seed_method ?: SeedMethod.GoogleSearch
+            val seedMethod = typeConfig.seed_method ?: SeedMethod.GoogleSearch
             log.info("Using seed method: $seedMethod")
             val seedItems = try {
-                seedMethod.createStrategy(this, agent.user).getSeedItems(taskConfig, orchestrationConfig)
+                seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
             } catch (e: Exception) {
                 log.error("Failed to get seed items using method: $seedMethod", e)
                 task.error(e)
@@ -193,7 +193,7 @@ class CrawlerAgentTask(
             }
 
             val analysisResultsMap = ConcurrentHashMap<Int, String>()
-            val maxPages = taskConfig?.max_pages_per_task ?: max_pages_per_task
+            val maxPages = executionConfig?.max_pages_per_task ?: max_pages_per_task
             val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
             log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
 
@@ -204,7 +204,7 @@ class CrawlerAgentTask(
             val errorCount = AtomicInteger(0)
             val maxErrors = maxPages / 2 // Stop if too many errors
             log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
-            val fetchStrategy = (this@CrawlerAgentTask.taskSettings.fetch_method
+            val fetchStrategy = (this@CrawlerAgentTask.typeConfig.fetch_method
                 ?: FetchMethod.HttpClient).createStrategy(
                 this@CrawlerAgentTask
             )
@@ -503,8 +503,8 @@ class CrawlerAgentTask(
                             }
 
                             val analysisGoal = when {
-                                this@CrawlerAgentTask.taskConfig?.content_queries != null -> taskConfig.toJson()
-                                this@CrawlerAgentTask.taskConfig?.task_description?.isNotBlank() == true -> taskConfig.toString()
+                                this@CrawlerAgentTask.executionConfig?.content_queries != null -> executionConfig.toJson()
+                                this@CrawlerAgentTask.executionConfig?.task_description?.isNotBlank() == true -> executionConfig.toString()
                                 else -> "Analyze the content and provide insights."
                             }
                             log.debug("Analyzing content for '$url' with goal: $analysisGoal")
@@ -651,7 +651,7 @@ class CrawlerAgentTask(
         val header = if (headerEndIndex > 0) {
             analysisResults.substring(0, headerEndIndex)
         } else {
-            "# Web Search: ${taskConfig?.search_query ?: taskConfig?.direct_urls ?: ""}\n\n"
+            "# Web Search: ${executionConfig?.search_query ?: executionConfig?.direct_urls ?: ""}\n\n"
         }
 
         val urlSections = extractUrlSections(analysisResults)
@@ -659,15 +659,15 @@ class CrawlerAgentTask(
         val summary = ChatAgent(
             prompt = listOf(
                 "Create a comprehensive summary of the following web search results and analyses.",
-                "Original analysis contained ${urlSections.size} web pages related to: ${taskConfig?.search_query ?: ""}",
-                "Analysis goal: ${taskConfig?.content_queries ?: taskConfig?.task_description ?: "Provide key insights"}",
+                "Original analysis contained ${urlSections.size} web pages related to: ${executionConfig?.search_query ?: ""}",
+                "Analysis goal: ${executionConfig?.content_queries ?: executionConfig?.task_description ?: "Provide key insights"}",
                 "For each source, extract the most important insights, facts, and conclusions.",
                 "Organize information by themes rather than by source when possible.",
                 "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
                 "Include the most important links that should be followed up on.",
                 "Keep your response under ${maxSize / 1000}K characters."
             ).joinToString("\n\n"),
-            model = (taskSettings.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
+            model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
@@ -714,7 +714,7 @@ class CrawlerAgentTask(
         log.debug(
             "Fetching content for URL: {} using method: {}",
             url,
-            taskSettings.fetch_method ?: FetchMethod.HttpClient
+            typeConfig.fetch_method ?: FetchMethod.HttpClient
         )
 
         return try {
@@ -802,8 +802,8 @@ class CrawlerAgentTask(
                 "url" to url,
                 "timestamp" to LocalDateTime.now().toString(),
                 "index" to index,
-                "query" to (taskConfig?.search_query ?: ""),
-                "content_query" to (taskConfig?.content_queries ?: "")
+                "query" to (executionConfig?.search_query ?: ""),
+                "content_query" to (executionConfig?.content_queries ?: "")
             )
             val metadataJson = try {
                 ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
@@ -871,7 +871,7 @@ class CrawlerAgentTask(
                 "Identify the most important links that should be followed up on according to the goal."
             ).joinToString("\n\n"),
             resultClass = ParsedPage::class.java,
-            model = (taskSettings.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
+            model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
             describer = describer,
             parsingModel = orchestrationConfig.parsingChatter,
         ).answer(listOf(content))

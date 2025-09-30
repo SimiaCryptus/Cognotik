@@ -15,9 +15,9 @@ import java.net.http.HttpResponse
 
 class GitHubSearchTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: GitHubSearchTaskConfigData?
-) : AbstractTask<GitHubSearchTask.GitHubSearchTaskConfigData>(orchestrationConfig, planTask) {
-    class GitHubSearchTaskConfigData(
+    planTask: GitHubSearchTaskExecutionConfigData?
+) : AbstractTask<GitHubSearchTask.GitHubSearchTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+    class GitHubSearchTaskExecutionConfigData(
         @Description("The search query to use for GitHub search")
         val search_query: String = "",
         @Description("The type of GitHub search to perform (code, commits, issues, repositories, topics, users)")
@@ -31,7 +31,7 @@ class GitHubSearchTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = TaskType.GitHubSearchTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -68,22 +68,22 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
     private fun performGitHubSearch(githubToken: String): String {
         val queryParams = mutableListOf<String>()
 
-        var searchQuery = taskConfig?.search_query
+        var searchQuery = executionConfig?.search_query
         //if (searchQuery.isNullOrBlank()) throw IllegalArgumentException("GitHub search query is required and cannot be empty.")
         if (searchQuery.isNullOrBlank()) {
             searchQuery = ""
         }
         queryParams.add("q=${java.net.URLEncoder.encode(searchQuery, "UTF-8")}")
 
-        queryParams.add("per_page=${taskConfig?.per_page}") // perPage is now guaranteed non-null
-        taskConfig?.sort?.let { queryParams.add("sort=${java.net.URLEncoder.encode(it, "UTF-8")}") }
-        taskConfig?.order?.let { queryParams.add("order=${java.net.URLEncoder.encode(it, "UTF-8")}") }
+        queryParams.add("per_page=${executionConfig?.per_page}") // perPage is now guaranteed non-null
+        executionConfig?.sort?.let { queryParams.add("sort=${java.net.URLEncoder.encode(it, "UTF-8")}") }
+        executionConfig?.order?.let { queryParams.add("order=${java.net.URLEncoder.encode(it, "UTF-8")}") }
         return HttpClient.newHttpClient().send(
             HttpRequest.newBuilder()
                 .uri(
                     URI.create(
                         URI("https://api.github.com")
-                            .resolve("/search/${taskConfig?.search_type}")
+                            .resolve("/search/${executionConfig?.search_type}")
                             .toURL().toString() + "?" + queryParams.joinToString("&")
                     )
                 )
@@ -102,7 +102,7 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
     private fun formatSearchResults(results: String): String {
         val mapper = ObjectMapper()
         val searchResults: Map<String, Any> = mapper.readValue(results)
-        val effectiveSearchType = this.taskConfig?.search_type ?: GitHubSearchTaskConfigData().search_type
+        val effectiveSearchType = this.executionConfig?.search_type ?: GitHubSearchTaskExecutionConfigData().search_type
         return buildString {
             appendLine("# GitHub Search Results")
             appendLine()

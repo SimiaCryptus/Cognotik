@@ -7,16 +7,16 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 
 class SoftwareGraphPlanningTask(
-    orchestrationConfig: OrchestrationConfig, planTask: GraphBasedPlanningTaskConfigData?
-) : AbstractTask<SoftwareGraphPlanningTask.GraphBasedPlanningTaskConfigData>(orchestrationConfig, planTask) {
+    orchestrationConfig: OrchestrationConfig, planTask: GraphBasedPlanningTaskExecutionConfigData?
+) : AbstractTask<SoftwareGraphPlanningTask.GraphBasedPlanningTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class GraphBasedPlanningTaskConfigData(
+    class GraphBasedPlanningTaskExecutionConfigData(
         @Description("REQUIRED: The path to the input software graph JSON file") val input_graph_file: String? = null,
         @Description("The instruction or goal to be achieved") val instruction: String = "",
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = "SoftwareGraphPlanningTask",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -37,15 +37,15 @@ class SoftwareGraphPlanningTask(
     ) {
         val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File(".")).resolve(
             when {
-                !taskConfig?.input_graph_file.isNullOrBlank() -> taskConfig?.input_graph_file!!
+                !executionConfig?.input_graph_file.isNullOrBlank() -> executionConfig?.input_graph_file!!
                 else -> throw IllegalArgumentException("Input graph file not specified")
             }
         )
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
         val response = orchestrationConfig.planningActor(agent.describer).answer(
             (messages + listOf(
-                "Software Graph `${taskConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
-                "Instruction: ${taskConfig.instruction}"
+                "Software Graph `${executionConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
+                "Instruction: ${executionConfig.instruction}"
             )).filter { it.isNotBlank() },
         )
         val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { response.obj.tasksByID } ?: emptyMap()
@@ -58,7 +58,7 @@ class SoftwareGraphPlanningTask(
             appendLine("```")
         }
         val planProcessingState = agent.executePlan(
-            plan = plan, task = task, userMessage = taskConfig.instruction
+            plan = plan, task = task, userMessage = executionConfig.instruction
         )
         val executionSummary = buildString {
             appendLine("## Plan Execution Summary")

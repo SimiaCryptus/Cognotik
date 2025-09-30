@@ -12,10 +12,10 @@ import java.io.File
 
 class SoftwareGraphModificationTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: SoftwareGraphModificationTaskConfigData?
-) : AbstractTask<SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: SoftwareGraphModificationTaskExecutionConfigData?
+) : AbstractTask<SoftwareGraphModificationTask.SoftwareGraphModificationTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class SoftwareGraphModificationTaskConfigData(
+    class SoftwareGraphModificationTaskExecutionConfigData(
         @Description("The path to the input software graph JSON file")
         val input_graph_file: String? = null,
         @Description("The path where the modified graph will be saved")
@@ -25,7 +25,7 @@ class SoftwareGraphModificationTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = "SoftwareGraphModificationTask",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -79,7 +79,7 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = (taskSettings.model?.let { orchestrationConfig.instance(it) }
+            model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
                 ?: orchestrationConfig.defaultChatter).getChildClient(task),
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
@@ -87,7 +87,7 @@ class SoftwareGraphModificationTask(
         )
 
         val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
-            .resolve(taskConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
+            .resolve(executionConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
         val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
             inputFile.readText(),
@@ -97,7 +97,7 @@ class SoftwareGraphModificationTask(
         val response = graphModificationActor.answer(
             messages + listOf(
                 "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
-                "Modification goal: ${taskConfig.modification_goal}"
+                "Modification goal: ${executionConfig.modification_goal}"
             ),
         )
 
@@ -107,8 +107,8 @@ class SoftwareGraphModificationTask(
         val outputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(
                 when {
-                    !taskConfig.output_graph_file.isNullOrBlank() -> taskConfig.output_graph_file
-                    taskConfig.input_graph_file.isNotBlank() -> taskConfig.input_graph_file
+                    !executionConfig.output_graph_file.isNullOrBlank() -> executionConfig.output_graph_file
+                    executionConfig.input_graph_file.isNotBlank() -> executionConfig.input_graph_file
                     else -> "modified_graph.json"
                 }
             )

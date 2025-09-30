@@ -5,9 +5,9 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit
 
 class FileModificationTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: FileModificationTaskConfigData?
-) : AbstractFileTask<FileModificationTaskConfigData>(orchestrationConfig, planTask) {
-    class FileModificationTaskConfigData(
+    planTask: FileModificationTaskExecutionConfigData?
+) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
+    class FileModificationTaskExecutionConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
         extractContent: Boolean = false,
@@ -35,7 +35,7 @@ class FileModificationTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : FileTaskConfigBase(
+    ) : FileTaskExecutionConfig(
         task_type = FileModificationTaskType.name,
         task_description = task_description,
         task_dependencies = task_dependencies,
@@ -64,9 +64,9 @@ class FileModificationTask(
     }
 
     private fun getInputFileWithDiff(): String {
-        if (!taskConfig?.includeGitDiff!!) return getInputFileCode()
+        if (!executionConfig?.includeGitDiff!!) return getInputFileCode()
         val fileContent = getInputFileCode()
-        val gitDiffs = (taskConfig?.related_files ?: listOf())
+        val gitDiffs = (executionConfig?.related_files ?: listOf())
             .mapNotNull { file ->
                 getGitDiff(file)?.let { diff ->
                     "Git diff for $file:\n$diff"
@@ -100,12 +100,12 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val defaultFile = if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).isEmpty()) {
+        val defaultFile = if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).isEmpty()) {
             task.complete("CONFIGURATION ERROR: No input files specified")
             resultFn("CONFIGURATION ERROR: No input files specified")
             return
-        } else if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).distinct().size == 1) {
-            ((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).first()
+        } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).distinct().size == 1) {
+            ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
         } else {
             null
         }
@@ -116,7 +116,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         Retryable(task = task) {
             val task = task.manager.newTask(false)
             task.manager.pool.submit {
-                val chatInterface = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                val chatInterface = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                     ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
                 val chatAgent = ChatAgent(
                     name = "FileModification",
@@ -177,9 +177,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 val codeResult = chatAgent.answer(
                     (messages + listOf(
                         agent.executionState?.tasksByDescription?.filter {
-                            taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
+                            executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
                         }?.entries?.joinToString("\n\n") {
-                            (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
+                            (it.value as FileModificationTaskExecutionConfigData).files?.joinToString("\n") {
                                 val file = root.resolve(it).toFile()
                                 if (file.exists()) {
                                     val relativePath = root.relativize(file.toPath())
@@ -190,7 +190,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             } ?: ""
                         } ?: "",
                         getInputFileWithDiff(),
-                        taskConfig?.task_description ?: "",
+                        executionConfig?.task_description ?: "",
                     )).filter { it.isNotBlank() }
                 )
                 if (agent.orchestrationConfig.autoFix) {
@@ -246,8 +246,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
         val FileModificationTaskType = TaskType(
             "FileModificationTask",
-            FileModificationTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
+            FileModificationTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
             "Create new files or modify existing code with AI-powered assistance",
             """
                       Creates or modifies source files with AI assistance while maintaining code quality.

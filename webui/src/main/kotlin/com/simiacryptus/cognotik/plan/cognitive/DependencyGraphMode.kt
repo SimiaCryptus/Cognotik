@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskConfigBase
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.platform.Session
@@ -92,7 +92,7 @@ open class DependencyGraphMode(
     }
 
     private fun addDependencies(
-        cumulativeTasks: MutableMap<String, TaskConfigBase>,
+        cumulativeTasks: MutableMap<String, TaskExecutionConfig>,
         graphFileContent: String,
         userMessage: String,
         task: SessionTask
@@ -182,7 +182,7 @@ open class DependencyGraphMode(
     private fun wouldCreateCycle(
         taskId: String,
         newDependencyId: String,
-        tasks: Map<String, TaskConfigBase>,
+        tasks: Map<String, TaskExecutionConfig>,
         visited: MutableSet<String> = mutableSetOf()
     ): Boolean {
         if (taskId == newDependencyId) return true
@@ -231,8 +231,8 @@ open class DependencyGraphMode(
         orchestrationConfig: OrchestrationConfig,
         userMessage: String,
         graphFile: String
-    ): MutableMap<String, TaskConfigBase> {
-        val tasks = mutableMapOf<String, TaskConfigBase>()
+    ): MutableMap<String, TaskExecutionConfig> {
+        val tasks = mutableMapOf<String, TaskExecutionConfig>()
         nodes.forEach {
             tasks.putAll(
                 getNodePlan(
@@ -250,12 +250,12 @@ open class DependencyGraphMode(
 
     private fun getNodePlan(
         orchestrationConfig: OrchestrationConfig,
-        tasks: MutableMap<String, TaskConfigBase>,
+        tasks: MutableMap<String, TaskExecutionConfig>,
         graphFile: String,
         graphTxt: String,
         node: SoftwareNodeType.NodeBase<*>,
         userMessage: String
-    ): Map<String, TaskConfigBase>? {
+    ): Map<String, TaskExecutionConfig>? {
         val maxRetries = 3
         val retryDelayMillis = 1000L
         var attempt = 0
@@ -290,7 +290,7 @@ open class DependencyGraphMode(
     /**
      * Build a plan summary string for UI display.
      */
-    private fun buildPlanSummary(plan: Map<String, TaskConfigBase>): String = buildString {
+    private fun buildPlanSummary(plan: Map<String, TaskExecutionConfig>): String = buildString {
         appendLine("# Graph-Based Planning Result")
         appendLine()
         appendLine("## Generated Plan (DAG)")

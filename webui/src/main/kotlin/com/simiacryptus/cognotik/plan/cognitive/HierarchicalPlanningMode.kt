@@ -549,7 +549,7 @@ open class HierarchicalPlanningMode(
             resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
             exampleInstance = Tasks(
                 mutableListOf(TaskType.getAvailableTaskTypes(orchestrationConfig).firstOrNull()?.let {
-                    TaskType.getImpl(orchestrationConfig, it).taskConfig
+                    TaskType.getImpl(orchestrationConfig, it).executionConfig
                 }).filterNotNull().toMutableList()
             ),
             prompt = """

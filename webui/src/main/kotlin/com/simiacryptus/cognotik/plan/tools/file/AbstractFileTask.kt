@@ -5,19 +5,20 @@ import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskConfigBase
-import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskConfigBase
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
 
-abstract class AbstractFileTask<T : FileTaskConfigBase>(
+abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     orchestrationConfig: OrchestrationConfig,
     planTask: T?
-) : AbstractTask<T>(orchestrationConfig, planTask) {
+) : AbstractTask<T, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    open class FileTaskConfigBase(
+    open class FileTaskExecutionConfig(
         task_type: String? = null,
         task_description: String? = null,
         @Description("REQUIRED: The files to be generated as output for the task (relative paths)") val files: List<String>? = null,
@@ -25,7 +26,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
         @Description("Whether to extract text content from non-text files (PDF, HTML, etc.)") val extractContent: Boolean = false,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = task_type,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -33,7 +34,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
     )
 
     protected fun getInputFileCode(): String =
-        ((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf()))
+        ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
                 listOf(FileSelectionUtils.filteredWalkAsciiTree(root.toFile()) { path ->
@@ -45,7 +46,7 @@ abstract class AbstractFileTask<T : FileTaskConfigBase>(
             .joinToString("\n\n") { relativePath ->
                 val file = root.resolve(relativePath).toFile()
                 try {
-                    val content = if (taskConfig?.extractContent == true && !isTextFile(file)) {
+                    val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
                         extractDocumentContent(file)
                     } else {
                         codeFiles[file.toPath()] ?: file.readText()

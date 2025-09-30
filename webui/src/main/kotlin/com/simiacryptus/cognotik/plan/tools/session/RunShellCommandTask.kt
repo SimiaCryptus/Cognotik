@@ -16,10 +16,10 @@ import kotlin.reflect.KClass
 
 class RunShellCommandTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: RunShellCommandTaskConfigData?
-) : AbstractTask<RunShellCommandTask.RunShellCommandTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: RunShellCommandTaskExecutionConfigData?
+) : AbstractTask<RunShellCommandTask.RunShellCommandTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class RunShellCommandTaskConfigData(
+    class RunShellCommandTaskExecutionConfigData(
         @Description("The shell command to be executed")
         val command: String? = null,
         @Description("The relative file path of the working directory")
@@ -29,7 +29,7 @@ class RunShellCommandTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = TaskType.RunShellCommandTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -52,9 +52,9 @@ class RunShellCommandTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val chatter = (taskSettings.model?.let { this.orchestrationConfig.instance(it) }
+        val chatter = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
             ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
-        val planTask = this.taskConfig
+        val planTask = this.executionConfig
         val shellCommandActor = CodeAgent(
             name = "RunShellCommand",
             codeRuntimeClass = ProcessCodeRuntime::class,
@@ -170,7 +170,7 @@ class RunShellCommandTask(
             codingAgent.codeRequest(
                 messages.map { it to ModelSchema.Role.user } +
                         listOfNotNull(
-                            this.taskConfig?.command?.takeIf { it.isNotBlank() }?.let { it to ModelSchema.Role.user }
+                            this.executionConfig?.command?.takeIf { it.isNotBlank() }?.let { it to ModelSchema.Role.user }
                         )
             )
         )

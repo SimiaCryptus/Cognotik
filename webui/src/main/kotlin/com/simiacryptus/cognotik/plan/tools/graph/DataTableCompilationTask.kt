@@ -7,8 +7,9 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskConfigBase
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -26,10 +27,10 @@ import kotlin.io.path.name
 
 class DataTableCompilationTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: DataTableCompilationTaskConfigData?
-) : AbstractTask<DataTableCompilationTask.DataTableCompilationTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: DataTableCompilationTaskExecutionConfigData?
+) : AbstractTask<DataTableCompilationTask.DataTableCompilationTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class DataTableCompilationTaskConfigData(
+    class DataTableCompilationTaskExecutionConfigData(
         @Description("List of file glob patterns to include in the data compilation")
         val file_patterns: List<String> = listOf(),
         @Description("REQUIRED: Output file path where the compiled data table will be saved (CSV or JSON)")
@@ -43,7 +44,7 @@ class DataTableCompilationTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = "DataTableCompilationTask",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -77,7 +78,7 @@ class DataTableCompilationTask(
         task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns"))
         val result = mutableListOf<Path>()
         val basePath = Paths.get(orchestrationConfig.absoluteWorkingDir ?: ".")
-        taskConfig?.file_patterns?.forEach { pattern ->
+        executionConfig?.file_patterns?.forEach { pattern ->
             val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
             Files.walk(basePath).use { paths ->
                 paths
@@ -88,7 +89,7 @@ class DataTableCompilationTask(
         }
         val matchedFiles = result.distinct()
         if (matchedFiles.isEmpty()) {
-            val errorMsg = "No files matched the provided patterns: ${taskConfig?.file_patterns?.joinToString(", ")}"
+            val errorMsg = "No files matched the provided patterns: ${executionConfig?.file_patterns?.joinToString(", ")}"
             task.error(Exception(errorMsg))
             resultFn(errorMsg)
             return
@@ -101,7 +102,7 @@ class DataTableCompilationTask(
         }
 
         val chatter =
-            (taskSettings.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultChatter).getChildClient(task)
+            (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultChatter).getChildClient(task)
         val columnsResponse = ParsedAgent(
             name = "ColumnIdentifier",
             resultClass = Columns::class.java,
@@ -126,7 +127,7 @@ class DataTableCompilationTask(
             ),
             prompt = """
                 Analyze the provided files and identify distinct columns for a data table based on the following instructions:
-                ${taskConfig?.column_identification_instructions}
+                ${executionConfig?.column_identification_instructions}
 
                 For each column you identify:
                 1. Assign a unique column ID - should be a short, descriptive string
@@ -169,7 +170,7 @@ class DataTableCompilationTask(
                 Analyze the provided files and identify ALL distinct rows found in the data:
 
                 Special Instructions:
-                ${taskConfig?.row_identification_instructions}
+                ${executionConfig?.row_identification_instructions}
 
                 For each row you identify:
                 1. Assign a unique row ID - should be a short, descriptive string
@@ -215,7 +216,7 @@ class DataTableCompilationTask(
                 ),
                 prompt = "Extract data for a data row for `${row.id}` from the provided source files.\n\n" +
                         "Expected Columns:\n${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}\n\n" +
-                        "Special Instructions:\n${taskConfig?.cell_extraction_instructions}\n\n" +
+                        "Special Instructions:\n${executionConfig?.cell_extraction_instructions}\n\n" +
                         "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
                 model = chatter,
                 parsingModel = orchestrationConfig.parsingChatter,
@@ -241,7 +242,7 @@ class DataTableCompilationTask(
 
         task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table"))
 
-        val outputPath = taskConfig?.output_file ?: "compiled_data.json"
+        val outputPath = executionConfig?.output_file ?: "compiled_data.json"
         val outputFile = if (orchestrationConfig.absoluteWorkingDir != null) {
             File(orchestrationConfig.absoluteWorkingDir, outputPath)
         } else {

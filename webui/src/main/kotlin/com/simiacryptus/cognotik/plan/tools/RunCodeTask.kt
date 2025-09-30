@@ -19,21 +19,21 @@ import kotlin.reflect.KClass
 
 class RunCodeTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: RunCodeTaskConfigData?,
-) : AbstractTask<RunCodeTask.RunCodeTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: RunCodeTaskExecutionConfigData?,
+) : AbstractTask<RunCodeTask.RunCodeTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class RunCodeTaskSettings(
+    class RunCodeTaskTypeConfig(
         task_type : String = TaskType.RunCodeTask.name,
         val codeRuntime: CodeRuntimes? = null,
         enabled: Boolean = true,
         model: ApiChatModel? = null,
-    ) : TaskSettingsBase(
+    ) : TaskTypeConfig(
         task_type = task_type,
         enabled = enabled,
         model = model,
     )
 
-    class RunCodeTaskConfigData(
+    class RunCodeTaskExecutionConfigData(
         @Description("The task or goal to be accomplished")
         val goal: String? = null,
         @Description("The relative file path of the working directory")
@@ -41,7 +41,7 @@ class RunCodeTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = TaskType.RunCodeTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -63,11 +63,11 @@ class RunCodeTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val model = (taskSettings.model?.let { agent.orchestrationConfig.instance(it) }
+        val model = (typeConfig.model?.let { agent.orchestrationConfig.instance(it) }
             ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
 
 //        val taskSettings = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask)
-        val taskSettings = taskSettings as? RunCodeTaskSettings
+        val taskSettings = typeConfig as? RunCodeTaskTypeConfig
         val runtime = taskSettings?.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
         val defs = mapOf(
             "env" to (orchestrationConfig.env ?: emptyMap()),
@@ -153,7 +153,7 @@ class RunCodeTask(
         codingAgent.start(
             codingAgent.codeRequest(
                 messages.map { it to ModelSchema.Role.user } + listOf(
-                    (this.taskConfig?.goal ?: "") to ModelSchema.Role.user,
+                    (this.executionConfig?.goal ?: "") to ModelSchema.Role.user,
                 )
             )
         )

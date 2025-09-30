@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 
-@JsonTypeIdResolver(TaskSettingsBase.PlanTaskTypeIdResolver::class)
+@JsonTypeIdResolver(TaskTypeConfig.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")
-open class TaskSettingsBase(
+open class TaskTypeConfig(
     val task_type: String? = null,
     var enabled: Boolean = false,
     var model: ApiChatModel? = null
@@ -17,7 +17,7 @@ open class TaskSettingsBase(
     class PlanTaskTypeIdResolver : TypeIdResolverBase() {
         override fun idFromValue(value: Any): String? {
             return when (value) {
-                is TaskSettingsBase -> value.task_type ?: return null
+                is TaskTypeConfig -> value.task_type ?: return null
 
                 else -> throw IllegalArgumentException("Unexpected value type: ${value.javaClass}")
             }

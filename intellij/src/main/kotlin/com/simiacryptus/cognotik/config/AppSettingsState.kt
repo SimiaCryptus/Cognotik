@@ -22,7 +22,7 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -350,7 +350,7 @@ data class AppSettingsState(
         val name: String,
         val temperature: Double,
         val autoFix: Boolean,
-        val taskSettings: Map<String, TaskSettingsBase>
+        val taskSettings: Map<String, TaskTypeConfig>
     )
 }
 

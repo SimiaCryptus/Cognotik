@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit
 
 class CommandSessionTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: CommandSessionTaskConfigData?
-) : AbstractTask<CommandSessionTask.CommandSessionTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: CommandSessionTaskExecutionConfigData?
+) : AbstractTask<CommandSessionTask.CommandSessionTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
     companion object {
         private val log = LoggerFactory.getLogger(CommandSessionTask::class.java)
         private val activeSessions = ConcurrentHashMap<String, Process>()
@@ -39,7 +39,7 @@ class CommandSessionTask(
 
     }
 
-    class CommandSessionTaskConfigData(
+    class CommandSessionTaskExecutionConfigData(
         @Description("The command to start the interactive session")
         val command: List<String>,
         @Description("Commands to send to the interactive session")
@@ -53,7 +53,7 @@ class CommandSessionTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = TaskType.CommandSessionTask.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -82,32 +82,32 @@ class CommandSessionTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        requireNotNull(taskConfig) { "CommandSessionTaskData is required" }
+        requireNotNull(executionConfig) { "CommandSessionTaskData is required" }
         var process: Process? = null
         try {
             cleanupInactiveSessions()
-            if (activeSessions.size >= MAX_SESSIONS && taskConfig.sessionId == null) {
+            if (activeSessions.size >= MAX_SESSIONS && executionConfig.sessionId == null) {
                 throw IllegalStateException("Maximum number of concurrent sessions ($MAX_SESSIONS) reached")
             }
 
-            process = taskConfig.sessionId?.let { id -> activeSessions[id] }
-                ?: ProcessBuilder(taskConfig.command)
+            process = executionConfig.sessionId?.let { id -> activeSessions[id] }
+                ?: ProcessBuilder(executionConfig.command)
                     .redirectErrorStream(true)
                     .start()
                     .also { newProcess ->
-                        log.info("Started new process for command: ${taskConfig.command.joinToString(" ")}")
-                        taskConfig.sessionId?.let { id -> activeSessions[id] = newProcess }
+                        log.info("Started new process for command: ${executionConfig.command.joinToString(" ")}")
+                        executionConfig.sessionId?.let { id -> activeSessions[id] = newProcess }
                     }
 
             val reader = BufferedReader(InputStreamReader(process!!.inputStream))
             val writer = PrintWriter(process.outputStream, true)
 
-            val results = taskConfig.inputs.map { input ->
+            val results = executionConfig.inputs.map { input ->
                 try {
                     writer.println(input)
                     writer.flush()
                     val output = StringBuilder()
-                    val endTime = System.currentTimeMillis() + taskConfig.timeout
+                    val endTime = System.currentTimeMillis() + executionConfig.timeout
                     while (System.currentTimeMillis() < endTime) {
                         if (reader.ready()) {
                             val line = reader.readLine()
@@ -123,19 +123,19 @@ class CommandSessionTask(
                 }
             }
 
-            val result = formatResults(taskConfig, results)
+            val result = formatResults(executionConfig, results)
             task.add(result)
             resultFn(result)
 
         } finally {
-            if ((taskConfig.sessionId == null || taskConfig.closeSession) && process != null) {
+            if ((executionConfig.sessionId == null || executionConfig.closeSession) && process != null) {
                 try {
                     process.destroy()
                     if (!process.waitFor(5, TimeUnit.SECONDS)) {
                         process.destroyForcibly()
                     }
-                    if (taskConfig.sessionId != null) {
-                        activeSessions.remove(taskConfig.sessionId)
+                    if (executionConfig.sessionId != null) {
+                        activeSessions.remove(executionConfig.sessionId)
                     }
                 } catch (e: Exception) {
                     log.error("Error closing process", e)
@@ -145,7 +145,7 @@ class CommandSessionTask(
     }
 
     private fun formatResults(
-        planTask: CommandSessionTaskConfigData,
+        planTask: CommandSessionTaskExecutionConfigData,
         results: List<String>
     ): String = buildString {
         appendLine("## Command Session Results")

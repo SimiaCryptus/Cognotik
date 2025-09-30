@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
@@ -64,7 +64,7 @@ class UnifiedPlanAction : BaseAction() {
                                 // Disable all other tasks
                                 if (taskType != enabledTask) {
                                     var taskSettings = planSettings.getTaskSettings(taskType)
-                                    taskSettings = TaskSettingsBase(taskType.name, false, taskSettings.model)
+                                    taskSettings = TaskTypeConfig(taskType.name, false, taskSettings.model)
                                     planSettings.setTaskSettings(taskType, taskSettings)
                                 }
                             }

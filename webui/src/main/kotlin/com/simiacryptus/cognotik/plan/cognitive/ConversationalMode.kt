@@ -95,7 +95,7 @@ open class ConversationalMode(
                 exampleInstance = AdaptivePlanningMode.Tasks(
                     listOfNotNull(
                         TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).firstOrNull()?.let {
-                            TaskType.getImpl(coordinator.orchestrationConfig, it).taskConfig
+                            TaskType.getImpl(coordinator.orchestrationConfig, it).executionConfig
                         }
                     ).toMutableList()
                 ),

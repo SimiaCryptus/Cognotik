@@ -147,7 +147,7 @@ open class AdaptivePlanningMode(
                     }
                     log.debug("Retrieved next tasks: ${nextTask.size}")
 
-                    val taskResults = mutableListOf<Pair<TaskConfigBase, Future<String>>>()
+                    val taskResults = mutableListOf<Pair<TaskExecutionConfig, Future<String>>>()
                     for ((index, currentTask: TaskData) in nextTask.withIndex()) {
                         val currentTaskId = "task_${index + 1}"
                         log.debug("Executing task $currentTaskId")
@@ -251,7 +251,7 @@ $fullTaskDataJson
 
     private fun runTask(
         coordinator: TaskOrchestrator,
-        currentTask: TaskConfigBase,
+        currentTask: TaskExecutionConfig,
         userMessage: String,
         task: SessionTask
     ): String {
@@ -287,7 +287,7 @@ $fullTaskDataJson
             resultClass = Tasks::class.java,
             exampleInstance = Tasks(
                 listOf(
-                    FileModificationTask.FileModificationTaskConfigData(
+                    FileModificationTask.FileModificationTaskExecutionConfigData(
                         task_description = "Modify the file 'example.txt' to include the given input."
                     )
                 ).toMutableList()
@@ -348,7 +348,7 @@ $fullTaskDataJson
                     null
                 } else {
                     TaskType.getImpl(coordinator.orchestrationConfig, taskConfigBase)
-                })?.taskConfig
+                })?.executionConfig
             } ?: emptyList()
         }.flatten()
 
@@ -529,7 +529,7 @@ $fullTaskDataJson
         listOf("Current thinking status: ${formatThinkingStatus(reasoningState)}") +
                 contextData() +
                 completedTasks.flatMap { record ->
-                    val task: TaskConfigBase? = record.task
+                    val task: TaskExecutionConfig? = record.task
                     listOf(
                         "Completed task: ${task?.task_description}",
                         "Task result: ${record.result}",
@@ -615,7 +615,7 @@ $fullTaskDataJson
     data class ExecutionRecord(
         val time: Date? = Date(),
         val iteration: Int = 0,
-        val task: TaskConfigBase? = null,
+        val task: TaskExecutionConfig? = null,
         val result: String? = null,
         @Description("Meta-cognitive reflection about the task execution.")
         val reflections: Reflection? = null
@@ -683,7 +683,7 @@ $fullTaskDataJson
     )
 
     data class Tasks(
-        val tasks: MutableList<TaskConfigBase>? = null
+        val tasks: MutableList<TaskExecutionConfig>? = null
     )
 
     companion object : CognitiveModeStrategy {

@@ -128,7 +128,7 @@ abstract class UnifiedPlanApp(
                 // Per-type custom initialization
                 user?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
                     ?.apply {
-                        (settings.taskSettings[TaskType.SelfHealingTask.name] as? SelfHealingTask.SelfHealingTaskSettings)
+                        (settings.taskSettings[TaskType.SelfHealingTask.name] as? SelfHealingTask.SelfHealingTaskTypeConfig)
                             ?.commandAutoFixCommands?.addAll(this.localTools)
                     }
                 cognitiveStrategy.getCognitiveMode(
