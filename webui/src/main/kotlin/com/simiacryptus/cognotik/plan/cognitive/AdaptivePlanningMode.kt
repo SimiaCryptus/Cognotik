@@ -5,7 +5,10 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -298,13 +301,29 @@ $fullTaskDataJson
                 append(" tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
                 append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
                 append("Available task types:\n")
-                append(TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).joinToString("\n\n") { taskType ->
-                    "* ${
-                        TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim().trimIndent()
-                            .indent("  ")
-                    }"
-                })
+                append(
+                    TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+                    .flatMap { taskType ->
+                        val configs = coordinator.orchestrationConfig.getTaskConfigs(taskType)
+                        configs.map { config ->
+                            val configName = config.name?.let { " - Configuration: '$it'" } ?: ""
+                            "* ${taskType.name}$configName:\n  ${
+                                TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim()
+                                    .trimIndent()
+                                    .indent("  ")
+                            }"
+                        }
+                    }
+                    .joinToString("\n\n"))
                 append("\nChoose the most suitable task types and provide details of how they should be executed.")
+                val namedConfigs = coordinator.orchestrationConfig.taskSettings.values.filter { it.name != null }
+                if (namedConfigs.isNotEmpty()) {
+                    append("\n\nAvailable named configurations:")
+                    namedConfigs.groupBy { it.task_type }.forEach { (taskType, configs) ->
+                        append("\n* $taskType: ${configs.mapNotNull { it.name }.joinToString(", ")}")
+                    }
+                    append("\nYou can specify which configuration to use by setting the task_config_name field.")
+                }
             },
             model = coordinator.orchestrationConfig.defaultChatter.getChildClient(task),
             parsingModel = coordinator.orchestrationConfig.parsingChatter,

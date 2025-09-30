@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask.RunShellCommandTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.AnalysisTaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearchTaskType
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
+import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask.RunShellCommandTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
@@ -262,24 +262,34 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
             planTask = planTask,
             strict = strict)
+
         fun getImpl(
             orchestrationConfig: OrchestrationConfig,
             taskType: TaskType<*, *>,
             planTask: TaskExecutionConfig? = null,
             strict: Boolean = true
         ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
-            if (strict && !orchestrationConfig.getTaskSettings(taskType).enabled) {
+            if (strict && !orchestrationConfig.isTaskTypeAvailable(taskType)) {
                 throw DisabledTaskException(taskType)
             }
+            // Get the specific configuration for this task
+            val taskConfig = orchestrationConfig.getTaskConfig(
+                taskType,
+                planTask?.task_config_name
+            )
+
             val constructor = taskConstructors[taskType]
             if (constructor == null) {
                 throw RuntimeException("Unknown task type: ${taskType.name}")
             }
-            return constructor(orchestrationConfig, planTask)
+
+            val task = constructor(orchestrationConfig, planTask)
+
+            return task
         }
 
         fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig) = values().filter {
-            orchestrationConfig.getTaskSettings(it).enabled
+            orchestrationConfig.isTaskTypeAvailable(it)
         }
 
         fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)

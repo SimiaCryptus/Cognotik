@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.plan.tools.online
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -40,9 +40,8 @@ class CrawlerAgentTask(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         task_type: String = "CrawlerAgentTask",
-        enabled: Boolean = false,
         model: ApiChatModel? = null,
-    ) : TaskTypeConfig(task_type, enabled, model)
+    ) : TaskTypeConfig(task_type, task_type, model)
 
     override val typeConfig: CrawlerTaskTypeConfig
         get() = super.typeConfig.jsonCast<CrawlerTaskTypeConfig>()

@@ -51,7 +51,7 @@ class SimpleDiffApplier {
                 if (!validateDiffSize(diffVal)) {
                     throw IllegalArgumentException("Diff size exceeds maximum limit")
                 }
-                val newCode = IterativePatchUtil.applyPatch(currentCode, diffVal).replace("\r", "")
+                val newCode = PatchProccessors.Iterative.applyPatch(currentCode, diffVal).replace("\r", "")
 
                 val validationErrors = validator.validateGrammar(newCode)
                 currentCode = newCode

@@ -219,7 +219,7 @@ class TaskOrchestrator(
         root = root
     )
 
-    companion object : Planner() {
+    companion object {
         private val log = LoggerFactory.getLogger(TaskOrchestrator::class.java)
     }
 }

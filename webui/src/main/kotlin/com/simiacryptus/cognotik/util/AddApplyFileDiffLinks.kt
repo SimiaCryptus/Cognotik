@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
-import com.simiacryptus.cognotik.diff.IterativePatchUtil
+import com.simiacryptus.cognotik.diff.PatchProccessors
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils.fuzzyResolveToRelativePath
@@ -338,7 +338,7 @@ open class AddApplyFileDiffLinks {
         val apply = diffApplier.apply(prevCode, "```diff\n$diffVal\n```", filename)
         var newCode = apply.patchResult
         val echoDiff = try {
-            IterativePatchUtil.generatePatch(prevCode, newCode.newCode)
+            PatchProccessors.Iterative.generatePatch(prevCode, newCode.newCode)
         } catch (e: Throwable) {
             "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
         }

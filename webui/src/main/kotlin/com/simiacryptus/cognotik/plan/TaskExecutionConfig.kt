@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.describe.Description
 open class TaskExecutionConfig(
     @Description("An enumeration indicating the type of task to be executed. Must be a single value from the TaskType enum.")
     val task_type: String? = null,
+    @Description("Optional name of the specific task configuration to use. This allows selecting between multiple configurations of the same task type. If not specified, the first available configuration will be used.")
+    var task_config_name: String? = null,
     @Description("A brief user-facing description of the task")
     var task_description: String? = null,
     @Description("A list of IDs of tasks that must be completed before this task can be executed. This defines upstream dependencies ensuring proper task order and information flow.")

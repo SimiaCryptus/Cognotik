@@ -96,7 +96,6 @@ abstract class UnifiedPlanApp(
             "Session Info", """
                 Session ID: `${session}`
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-                Enabled Tasks: `${settings.taskSettings.filter { it.value.enabled }.keys.joinToString(", ")}`
                 Root: `${settings.absoluteWorkingDir}`
                 Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
                 Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`

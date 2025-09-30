@@ -1,67 +1,60 @@
 package com.simiacryptus.cognotik.diff
 
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.LineType.*
+import com.simiacryptus.cognotik.diff.IterativePatchUtil.Companion.LineType.ADD
+import com.simiacryptus.cognotik.diff.IterativePatchUtil.Companion.LineType.CONTEXT
+import com.simiacryptus.cognotik.diff.IterativePatchUtil.Companion.LineType.DELETE
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.commons.text.similarity.LevenshteinDistance
+import kotlin.compareTo
+import kotlin.inc
 import kotlin.math.floor
 import kotlin.math.max
+import kotlin.text.compareTo
+import kotlin.text.get
+import kotlin.text.toDouble
+import kotlin.times
 
-object IterativePatchUtil {
-    private enum class LineType { CONTEXT, ADD, DELETE }
+open class IterativePatchUtil : PatchProccessor {
 
-    private const val DEFAULT_CONTEXT_SIZE = 3
-    private const val MAX_RECURSION_DEPTH = 100
-    private const val LEVENSHTEIN_THRESHOLD_DIVISOR = 4
-    private const val MIN_LINE_LENGTH_FOR_FUZZY_MATCH = 5
-    private const val MAX_ITERATION_MULTIPLIER = 10
+    override val patchFormatPrompt = """
+      Response should use one or more code patches in diff format within ```diff code blocks.
+      Each diff should be preceded by a header that identifies the file being modified.
+      The diff format should use + for line additions, - for line deletions.
+      The diff should include 2 lines of context before and after every change.
 
-    private data class LineMetrics(
-        var parenthesesDepth: Int = 0,
-        var squareBracketsDepth: Int = 0,
-        var curlyBracesDepth: Int = 0
-    )
+      Example:
 
-    private data class LineRecord(
-        val index: Int,
-        val line: String?,
-        var previousLine: LineRecord? = null,
-        var nextLine: LineRecord? = null,
-        var matchingLine: LineRecord? = null,
-        var type: LineType = CONTEXT,
-        var metrics: LineMetrics = LineMetrics()
-    ) {
-        override fun toString(): String {
-            val sb = StringBuilder()
-            sb.append("${index.toString().padStart(5, ' ')}: ")
-            when (type) {
-                CONTEXT -> sb.append(" ")
-                ADD -> sb.append("+")
-                DELETE -> sb.append("-")
-            }
-            sb.append(" ")
-            sb.append(line)
-            sb.append(" (${metrics.parenthesesDepth})[${metrics.squareBracketsDepth}]{${metrics.curlyBracesDepth}}")
-            return sb.toString()
-        }
+      Here are the patches:
 
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-            other as LineRecord
-            if (index != other.index) return false
-            if (line != other.line) return false
-            return true
-        }
+      ### src/utils/exampleUtils.js
+      ```diff
 
-        override fun hashCode(): Int {
-            var result = index
-            result = 31 * result + (line?.hashCode() ?: 0)
-            return result
-        }
+       const b = 2;
+       function exampleFunction() {
+      -   return b + 1;
+      +   return b + 2;
+       }
+      ```
 
-    }
+      ### tests/exampleUtils.test.js
+      ```diff
 
-    fun generatePatch(oldCode: String, newCode: String): String {
+       const assert = require('assert');
+       const { exampleFunction } = require('../src/utils/exampleUtils');
+
+       describe('exampleFunction', () => {
+      -   it('should return 3', () => {
+      +   it('should return 4', () => {
+           assert.equal(exampleFunction(), 4);
+         });
+       });
+      ```
+
+      Alternately, the patch can be provided as a snippet of updated code with context.
+      This is useful when the patch is small and can be applied directly, when creating the delete lines is cumbersome, or when creating a new file.
+      """.trimIndent()
+
+    override fun generatePatch(oldCode: String, newCode: String): String {
         log.info("Starting patch generation process")
         if (oldCode == newCode) {
             log.debug("No changes detected, returning empty patch")
@@ -81,7 +74,7 @@ object IterativePatchUtil {
         log.debug("Parsed and linked source lines: ${sourceLines.size}, new lines: ${newLines.size}")
         markMovedLines(newLines)
         val longDiff = newToPatch(newLines)
-        val shortDiff = truncateContext(longDiff).toMutableList()
+        val shortDiff = truncateContext(longDiff)
         fixPatchLineOrder(shortDiff)
         annihilateNoopLinePairs(shortDiff)
         log.debug("Generated diff with ${shortDiff.size} lines after processing")
@@ -97,13 +90,7 @@ object IterativePatchUtil {
         return patch.toString().trimEnd()
     }
 
-    /**
-     * Applies a patch to the given source text.
-     * @param source The original text.
-     * @param patch The patch to apply.
-     * @return The text after the patch has been applied.
-     */
-    fun applyPatch(source: String, patch: String): String {
+    override fun applyPatch(source: String, patch: String): String {
         if (patch.isBlank()) {
             log.debug("Empty patch provided, returning original source")
             return source
@@ -262,11 +249,6 @@ object IterativePatchUtil {
         return truncatedDiff
     }
 
-    /**
-     * Normalizes a line by removing all whitespace.
-     * @param line The line to normalize.
-     * @return The normalized line.
-     */
     private fun normalizeLine(line: String): String {
         // Preserve more structure - only trim ends and normalize consecutive spaces
         // but preserve single spaces and indentation patterns
@@ -331,7 +313,10 @@ object IterativePatchUtil {
                     usedPatchLines.add(patchLine)
 
                     var nextPatchLine = patchLine.nextLine
-                    while (nextPatchLine != null && nextPatchLine.type == ADD && !usedPatchLines.contains(nextPatchLine)) {
+                    while (nextPatchLine != null && nextPatchLine.type == ADD && !usedPatchLines.contains(
+                            nextPatchLine
+                        )
+                    ) {
                         log.debug("Inserting added line after delete: {}", nextPatchLine)
                         patchedText.add(nextPatchLine.line ?: "")
                         usedPatchLines.add(nextPatchLine)
@@ -768,44 +753,6 @@ object IterativePatchUtil {
         log.debug("Finished calculating line metrics")
     }
 
-    val patchFormatPrompt = """
-      Response should use one or more code patches in diff format within ```diff code blocks.
-      Each diff should be preceded by a header that identifies the file being modified.
-      The diff format should use + for line additions, - for line deletions.
-      The diff should include 2 lines of context before and after every change.
-
-      Example:
-
-      Here are the patches:
-
-      ### src/utils/exampleUtils.js
-      ```diff
-
-       const b = 2;
-       function exampleFunction() {
-      -   return b + 1;
-      +   return b + 2;
-       }
-      ```
-
-      ### tests/exampleUtils.test.js
-      ```diff
-
-       const assert = require('assert');
-       const { exampleFunction } = require('../src/utils/exampleUtils');
-
-       describe('exampleFunction', () => {
-      -   it('should return 3', () => {
-      +   it('should return 4', () => {
-           assert.equal(exampleFunction(), 4);
-         });
-       });
-      ```
-
-      Alternately, the patch can be provided as a snippet of updated code with context.
-      This is useful when the patch is small and can be applied directly, when creating the delete lines is cumbersome, or when creating a new file.
-      """.trimIndent()
-
     private fun findPreviousValidLine(
         start: LineRecord?,
         skipAdd: Boolean = false,
@@ -829,7 +776,7 @@ object IterativePatchUtil {
         return null
     }
 
-    private val log = LoggerFactory.getLogger(IterativePatchUtil::class.java)
+    private val log = LoggerFactory.getLogger(PatchProccessor::class.java)
 
     /**
      * Applies a snippet patch that consists solely of context lines.
@@ -947,5 +894,62 @@ object IterativePatchUtil {
         newSource.addAll(patchLines)
         newSource.addAll(sourceLines.subList(endIndex + 1, sourceLines.size))
         return newSource.joinToString("\n")
+    }
+    companion object : IterativePatchUtil() {
+        enum class LineType { CONTEXT, ADD, DELETE }
+
+
+        const val DEFAULT_CONTEXT_SIZE = 3
+        const val MAX_RECURSION_DEPTH = 100
+        const val LEVENSHTEIN_THRESHOLD_DIVISOR = 4
+        const val MIN_LINE_LENGTH_FOR_FUZZY_MATCH = 5
+        const val MAX_ITERATION_MULTIPLIER = 10
+
+        data class LineMetrics(
+            var parenthesesDepth: Int = 0,
+            var squareBracketsDepth: Int = 0,
+            var curlyBracesDepth: Int = 0
+        )
+
+        data class LineRecord(
+            val index: Int,
+            val line: String?,
+            var previousLine: LineRecord? = null,
+            var nextLine: LineRecord? = null,
+            var matchingLine: LineRecord? = null,
+            var type: LineType = CONTEXT,
+            var metrics: LineMetrics = LineMetrics()
+        ) {
+            override fun toString(): String {
+                val sb = StringBuilder()
+                sb.append("${index.toString().padStart(5, ' ')}: ")
+                when (type) {
+                    CONTEXT -> sb.append(" ")
+                    ADD -> sb.append("+")
+                    DELETE -> sb.append("-")
+                }
+                sb.append(" ")
+                sb.append(line)
+                sb.append(" (${metrics.parenthesesDepth})[${metrics.squareBracketsDepth}]{${metrics.curlyBracesDepth}}")
+                return sb.toString()
+            }
+
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+                other as LineRecord
+                if (index != other.index) return false
+                if (line != other.line) return false
+                return true
+            }
+
+            override fun hashCode(): Int {
+                var result = index
+                result = 31 * result + (line?.hashCode() ?: 0)
+                return result
+            }
+
+        }
+
     }
 }

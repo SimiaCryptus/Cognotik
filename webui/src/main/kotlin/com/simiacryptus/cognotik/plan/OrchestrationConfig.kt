@@ -9,8 +9,6 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import java.io.File
@@ -25,10 +23,7 @@ open class OrchestrationConfig(
     @JsonDeserialize(using = TaskSettingsMapDeserializer::class)
     val taskSettings: MutableMap<String, TaskTypeConfig> = TaskType.values().associateWith { taskType ->
         TaskTypeConfig(
-            taskType.name, when (taskType) {
-                FileModificationTaskType, AnalysisTask.AnalysisTaskType -> true
-                else -> false
-            }
+            taskType.name, taskType.description
         )
     }.mapKeys { it.key.name }.toMutableMap(),
     var autoFix: Boolean = false,
@@ -223,5 +218,31 @@ open class OrchestrationConfig(
                 }\n".trim()
             } + "\n")
         )
+    }
+
+    /**
+     * Get all available task configurations for a given task type
+     */
+    fun getTaskConfigs(taskType: TaskType<*, *>): List<TaskTypeConfig> {
+        return taskSettings.filter { it.value.task_type == taskType.name }.values.toList()
+    }
+
+    /**
+     * Get a specific task configuration by task type and name
+     */
+    fun getTaskConfig(taskType: TaskType<*, *>, configName: String?): TaskTypeConfig? {
+        val configs = getTaskConfigs(taskType)
+        return if (configName != null) {
+            configs.firstOrNull { it.name == configName }
+        } else {
+            configs.firstOrNull()
+        }
+    }
+
+    /**
+     * Check if a task type is available (has at least one configuration)
+     */
+    fun isTaskTypeAvailable(taskType: TaskType<*, *>): Boolean {
+        return getTaskConfigs(taskType).isNotEmpty()
     }
 }

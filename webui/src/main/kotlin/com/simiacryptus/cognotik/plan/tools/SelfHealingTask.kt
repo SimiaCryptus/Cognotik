@@ -18,10 +18,9 @@ class SelfHealingTask(
 ) : AbstractTask<SelfHealingTask.SelfHealingTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
     class SelfHealingTaskTypeConfig(
         task_type: String? = null,
-        enabled: Boolean = false,
         model: ApiChatModel? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
-    ) : TaskTypeConfig(task_type, enabled, model)
+    ) : TaskTypeConfig(task_type, task_type, model)
 
     class SelfHealingTaskExecutionConfigData(
         @Description("The commands to be executed with their respective working directories") val commands: List<CommandWithWorkingDir>? = null,

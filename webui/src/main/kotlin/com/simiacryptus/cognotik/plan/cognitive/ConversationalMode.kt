@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -41,7 +41,13 @@ open class ConversationalMode(
 
     override fun initialize() {
         val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
-        log.debug("TaskChatMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
+        log.debug("ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
+        log.debug(
+            "Task configurations: ${
+                orchestrationConfig.taskSettings.values.joinToString(", ") {
+                    "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
+                }
+        }")
         synchronized(messagesLock) {
             messages.add(ModelSchema.ChatMessage(ModelSchema.Role.system, systemPrompt.toContentList()))
         }
@@ -102,13 +108,19 @@ open class ConversationalMode(
                 prompt = buildString {
                     append("Given the following input, choose ONE task to execute. Select the most appropriate task type for the given input and provide all required details.\n")
                     append("Available task types:\n")
-                    append(TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).joinToString("\n\n") { taskType ->
-                        "* ${
-                            TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim().trimIndent()
+                    append(coordinator.orchestrationConfig.taskSettings.values.joinToString("\n\n") { config ->
+                        val taskType = TaskType.valueOf(config.task_type ?: return@joinToString "")
+                        val configName = config.name?.let { " ($it)" } ?: ""
+                        "* ${taskType.name}$configName:\n  ${
+                            TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim()
+                                .trimIndent()
                                 .indent("  ")
                         }"
                     })
                     append("\nChoose the most suitable task type and provide details of how it should be executed.")
+                    if (coordinator.orchestrationConfig.taskSettings.values.any { it.name != null }) {
+                        append("\nNote: Some task types have multiple configurations available. You can specify which configuration to use by setting the task_config_name field.")
+                    }
                 },
                 model = defaultChatter.getChildClient(task),
                 parsingModel = parsingModel,

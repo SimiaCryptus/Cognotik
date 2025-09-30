@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.plan.tools
 import com.simiacryptus.cognotik.actors.CodeAgent
 import com.simiacryptus.cognotik.apps.code.CodingTask
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -25,11 +25,9 @@ class RunCodeTask(
     class RunCodeTaskTypeConfig(
         task_type : String = TaskType.RunCodeTask.name,
         val codeRuntime: CodeRuntimes? = null,
-        enabled: Boolean = true,
         model: ApiChatModel? = null,
     ) : TaskTypeConfig(
         task_type = task_type,
-        enabled = enabled,
         model = model,
     )
 

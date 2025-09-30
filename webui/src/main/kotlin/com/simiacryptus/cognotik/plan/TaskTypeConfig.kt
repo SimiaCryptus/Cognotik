@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")
 open class TaskTypeConfig(
     val task_type: String? = null,
-    var enabled: Boolean = false,
+    var name: String? = null,
     var model: ApiChatModel? = null
 ) {
     class PlanTaskTypeIdResolver : TypeIdResolverBase() {

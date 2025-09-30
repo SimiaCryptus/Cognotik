@@ -58,13 +58,13 @@ class UnifiedPlanAction : BaseAction() {
                 val selectedCognitiveMode = dialog.cognitiveModeCombo.selectedItem as String
                 val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
                     "Single Task" -> {
-                        val enabledTask = TaskType.values().find { planSettings.getTaskSettings(it).enabled }
+                        val enabledTask = planSettings.taskSettings.values.firstOrNull()
                         if (enabledTask != null) {
                             TaskType.values().forEach { taskType ->
                                 // Disable all other tasks
                                 if (taskType != enabledTask) {
                                     var taskSettings = planSettings.getTaskSettings(taskType)
-                                    taskSettings = TaskTypeConfig(taskType.name, false, taskSettings.model)
+                                    taskSettings = TaskTypeConfig(taskType.name, taskType.name, taskSettings.model)
                                     planSettings.setTaskSettings(taskType, taskSettings)
                                 }
                             }

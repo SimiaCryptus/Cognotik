@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.diff.PatchProccessors
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -132,7 +132,7 @@ open class ModifyFilesAction(
         You will be answering questions about the following code:
         ${codeSummary()}
         ${if (showLineNumbers) "\nNote: Line numbers are shown at the beginning of each line in the format 'NUMBER | CODE'. These are for reference only and should not be included in any patches or code modifications.\n" else ""}
-        ${patchFormatPrompt}
+        ${PatchProccessors.Iterative.patchFormatPrompt}
       """.trimIndent()
 
         private fun getCodeFiles(): Set<Path> {
