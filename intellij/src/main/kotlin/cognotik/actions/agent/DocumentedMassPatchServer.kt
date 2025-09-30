@@ -1,16 +1,15 @@
 package cognotik.actions.agent
 
 import com.google.common.util.concurrent.Futures
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.nio.file.Path
 import java.util.concurrent.Semaphore
@@ -29,9 +28,9 @@ class DocumentedMassPatchServer(
     override val inputCnt = 0
     override val stickyInput = true
 
-    private val mainActor: SimpleActor
+    private val mainActor: ChatAgent
         get() {
-            return SimpleActor(
+            return ChatAgent(
                 prompt = """
          You are a helpful AI that helps people with coding.
 
@@ -57,9 +56,8 @@ class DocumentedMassPatchServer(
 
     override fun newSession(user: User?, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
         _root = config.project?.basePath?.let { Path.of(it) } ?: Path.of(".")
-        val task = ui.newTask(true)
+        val task = socketManager.newTask(cancelable = false, root = true)
         val tabs = TabbedDisplay(task)
         val userMessage = config.settings?.transformationMessage ?: "Review and update code according to documentation"
 
@@ -88,7 +86,7 @@ class DocumentedMassPatchServer(
                              ```
                          """.trimIndent()
 
-                    val fileTask = ui.newTask(false).apply {
+                    val fileTask = socketManager.newTask(cancelable = false, root = false).apply {
                         tabs[path.toString()] = placeholder
                     }
 
@@ -99,7 +97,7 @@ class DocumentedMassPatchServer(
                         if (design.isNotBlank()) {
                             fileTask.add(
                                 AddApplyFileDiffLinks.instrumentFileDiffs(
-                                    self = ui.socketManager!!,
+                                    self = socketManager,
                                     root = _root,
                                     response = design,
                                     handle = { newCodeMap ->
@@ -107,7 +105,6 @@ class DocumentedMassPatchServer(
                                             fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                         }
                                     },
-                                    ui = ui,
                                     shouldAutoApply = { autoApply },
                                     model = AppSettingsState.instance.fastChatClient,
                                     defaultFile = path.toString()
@@ -128,7 +125,7 @@ class DocumentedMassPatchServer(
                                 """<div>${
                                     renderMarkdown(design) {
                                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                                            self = ui.socketManager!!,
+                                            self = socketManager,
                                             root = _root,
                                             response = design,
                                             handle = { newCodeMap ->
@@ -136,7 +133,6 @@ class DocumentedMassPatchServer(
                                                     fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                                 }
                                             },
-                                            ui = ui,
                                             shouldAutoApply = { autoApply },
                                             model = AppSettingsState.instance.fastChatClient,
                                             defaultFile = path.toString()
@@ -144,11 +140,10 @@ class DocumentedMassPatchServer(
                                     }
                                 }</div>"""
                             },
-                            ui = ui,
                             reviseResponse = { userMessages ->
                                 mainActor.respond(
                                     messages = userMessages.map {
-                                        ApiModel.ChatMessage(
+                                        ModelSchema.ChatMessage(
                                             it.second,
                                             it.first.toContentList()
                                         )

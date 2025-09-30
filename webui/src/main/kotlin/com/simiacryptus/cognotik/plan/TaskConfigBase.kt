@@ -28,7 +28,9 @@ open class TaskConfigBase(
                 throw IllegalArgumentException("Unknown task type")
             }
 
-            else -> throw IllegalArgumentException("Unexpected value type: ${value.javaClass}")
+            else -> {
+                throw IllegalArgumentException("Unexpected value type: ${value.javaClass}")
+            }
         }
 
         override fun idFromValueAndType(value: Any, suggestedType: Class<*>): String {

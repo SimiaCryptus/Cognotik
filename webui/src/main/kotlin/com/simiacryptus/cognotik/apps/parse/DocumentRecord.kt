@@ -70,8 +70,8 @@ data class DocumentRecord(
 
     @Throws(IOException::class, ClassNotFoundException::class)
     fun readObject(input: ObjectInputStream): DocumentRecord {
-        val text = input.readUTF().let { if (it.isEmpty()) null else it }
-        val metadata = input.readUTF().let { if (it.isEmpty()) null else it }
+        val text = input.readUTF().let { it.ifEmpty { null } }
+        val metadata = input.readUTF().let { it.ifEmpty { null } }
         val sourcePath = input.readUTF()
         val jsonPath = input.readUTF()
         val vector = input.readObject() as DoubleArray?

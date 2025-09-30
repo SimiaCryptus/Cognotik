@@ -21,11 +21,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.dsl.builder.*
 import com.intellij.util.ui.FormBuilder
-import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.exceptions.ModerationException
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import java.awt.BorderLayout
 import java.awt.Component
@@ -656,21 +654,12 @@ fun AnActionEvent.getSelectedFolder(): VirtualFile? {
     return null
 }
 
-@Suppress("unused")
 fun AnActionEvent.hasSelection(): Boolean {
     val caret = getData(CommonDataKeys.CARET)
     return null != caret && caret.hasSelection()
 }
 
-fun AnActionEvent.getIndent(): CharSequence {
-    val caret = getData(CommonDataKeys.CARET)
-    val indent: CharSequence = if (null == caret) {
-        ""
-    } else {
-        caret.getIndent()
-    }
-    return indent
-}
+fun AnActionEvent.getIndent() = getData(CommonDataKeys.CARET)?.getIndent() ?: ""
 
 fun Caret?.getIndent(): CharSequence {
     if (null == this) return ""
@@ -685,7 +674,7 @@ fun Caret?.getIndent(): CharSequence {
 fun AnActionEvent.redoableTask(
     request: Supplier<Runnable>,
 ) {
-    UITools.log.debug("Starting redoableTask with event: ${this}, request: ${request}")
+    UITools.log.debug("Starting redoableTask with event: {}, request: {}",this,request)
     Futures.addCallback(UITools.pool.submit<Runnable> {
         request.get()
     }, futureCallback(request), UITools.pool)

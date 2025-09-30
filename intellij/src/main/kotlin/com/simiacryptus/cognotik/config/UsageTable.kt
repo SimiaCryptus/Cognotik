@@ -2,6 +2,7 @@
 
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
@@ -23,7 +24,7 @@ class UsageTable(
     val columnNames = arrayOf("Model", "Prompt", "Completion", "Cost")
 
     val rowData by lazy {
-        val usageData = usage.getUserUsageSummary(AppSettingsState.Companion.defaultUser).map { entry ->
+        val usageData = usage.getUserUsageSummary(UserSettingsManager.defaultUser).map { entry ->
             listOf(
                 entry.key,
                 entry.value.prompt_tokens.toString(),
@@ -32,9 +33,9 @@ class UsageTable(
             ).toMutableList()
         }
 
-        val totalPromptTokens = usageData.sumOf { it[1].toString().toInt() }
-        val totalCompletionTokens = usageData.sumOf { it[2].toString().toInt() }
-        val totalCost = usageData.sumOf { it[3].toString().toDouble() }
+        val totalPromptTokens = usageData.sumOf { it[1].toInt() }
+        val totalCompletionTokens = usageData.sumOf { it[2].toInt() }
+        val totalCost = usageData.sumOf { it[3].toDouble() }
 
         (usageData + listOf(
             listOf(
@@ -49,7 +50,7 @@ class UsageTable(
     private val dataModel by lazy {
         object : AbstractTableModel() {
             override fun getColumnName(column: Int): String {
-                return columnNames.get(column).toString()
+                return columnNames.get(column)
             }
 
             override fun getValueAt(row: Int, col: Int): Any {

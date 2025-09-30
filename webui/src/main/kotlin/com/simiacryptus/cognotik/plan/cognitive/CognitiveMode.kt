@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 // Register the new mode in the package
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 /**
  * The CognitiveMode interface defines the “cognitive” strategy
@@ -14,8 +14,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
  * thought updates.
  */
 interface CognitiveMode {
-    val ui: ApplicationInterface
-    val planSettings: PlanSettings
+    val ui: SocketManager
+    val orchestrationConfig: OrchestrationConfig
     val session: Session
     val user: User?
 
@@ -36,8 +36,8 @@ interface CognitiveModeStrategy {
     val inputCnt: Int
 
     fun getCognitiveMode(
-        ui: ApplicationInterface,
-        planSettings: PlanSettings,
+        ui: SocketManager,
+        orchestrationConfig: OrchestrationConfig,
         session: Session,
         user: User?,
         describer: TypeDescriber

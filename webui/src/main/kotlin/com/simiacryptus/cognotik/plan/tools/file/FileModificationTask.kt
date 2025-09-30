@@ -1,26 +1,29 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
 class FileModificationTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: FileModificationTaskConfigData?
-) : AbstractFileTask<FileModificationTaskConfigData>(planSettings, planTask) {
+) : AbstractFileTask<FileModificationTaskConfigData>(orchestrationConfig, planTask) {
     class FileModificationTaskConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
@@ -33,7 +36,7 @@ class FileModificationTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : FileTaskConfigBase(
-        task_type = TaskType.FileModificationTask.name,
+        task_type = FileModificationTaskType.name,
         task_description = task_description,
         task_dependencies = task_dependencies,
         related_files = related_files,
@@ -82,65 +85,6 @@ class FileModificationTask(
         }
     }
 
-    val fileModificationActor by lazy {
-        SimpleActor(
-            name = "FileModification",
-            prompt = """
-Generate precise code modifications and new files based on requirements:
-For modifying existing files:
-- Write efficient, readable, and maintainable code changes
-- Ensure modifications integrate smoothly with existing code
-- Follow project coding standards and patterns
-- Consider dependencies and potential side effects
-- Provide clear context and rationale for changes
-
-For creating new files:
-- Choose appropriate file locations and names
-- Structure code according to project conventions
-- Include necessary imports and dependencies
-- Add comprehensive documentation
-- Ensure no duplication of existing functionality
-
-Provide a clear summary explaining:
-- What changes were made and why
-- Any important implementation details
-- Potential impacts on other code
-- Required follow-up actions
-
-Response format:
-For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
-For new files: Use $TRIPLE_TILDE code blocks with a header specifying the new file path.
-The diff format should use + for line additions, - for line deletions.
-Include 2 lines of context before and after every change in diffs.
-Separate code blocks with a single blank line.
-For new files, specify the language for syntax highlighting after the opening triple backticks.
-
-Example:
-
-Here are the modifications:
-
-### src/utils/existingFile.js
-${TRIPLE_TILDE}diff
-
-function existingFunction() {
-return 'old result';
-return 'new result';
-}
-$TRIPLE_TILDE
-
-### src/utils/newFile.js
-${TRIPLE_TILDE}js
-
-function newFunction() {
- return 'new functionality';
-}
-$TRIPLE_TILDE
-""".trimIndent(),
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
-            temperature = planSettings.temperature,
-        )
-    }
-
     override fun promptSegment() = """
 FileModificationTask - Modify existing files or create new files
   * For each file, specify the relative file path and the goal of the modification or creation
@@ -150,11 +94,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val defaultFile = if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).isEmpty()) {
             task.complete("CONFIGURATION ERROR: No input files specified")
@@ -169,13 +113,71 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         val semaphore = Semaphore(0)
         val onComplete = { semaphore.release() }
         val completionNotes = mutableListOf<String>()
-        Retryable(agent.ui, task = task) {
-            val task = agent.ui.newTask(false)
-            agent.ui.socketManager?.pool?.submit {
-                val codeResult = fileModificationActor.answer(
+        Retryable(task = task) {
+            val task = task.manager.newTask(false)
+            task.manager.pool.submit {
+                val chatInterface = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                    ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
+                val chatAgent = ChatAgent(
+                    name = "FileModification",
+                    prompt = """
+        Generate precise code modifications and new files based on requirements:
+        For modifying existing files:
+        - Write efficient, readable, and maintainable code changes
+        - Ensure modifications integrate smoothly with existing code
+        - Follow project coding standards and patterns
+        - Consider dependencies and potential side effects
+        - Provide clear context and rationale for changes
+        
+        For creating new files:
+        - Choose appropriate file locations and names
+        - Structure code according to project conventions
+        - Include necessary imports and dependencies
+        - Add comprehensive documentation
+        - Ensure no duplication of existing functionality
+        
+        Provide a clear summary explaining:
+        - What changes were made and why
+        - Any important implementation details
+        - Potential impacts on other code
+        - Required follow-up actions
+        
+        Response format:
+        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
+        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
+        The diff format should use + for line additions, - for line deletions.
+        Include 2 lines of context before and after every change in diffs.
+        Separate code blocks with a single blank line.
+        For new files, specify the language for syntax highlighting after the opening triple backticks.
+        
+        Example:
+        
+        Here are the modifications:
+        
+        ### src/utils/existingFile.js
+        ${TRIPLE_TILDE}diff
+        
+        function existingFunction() {
+        return 'old result';
+        return 'new result';
+        }
+        ${TRIPLE_TILDE}
+        
+        ### src/utils/newFile.js
+        ${TRIPLE_TILDE}js
+        
+        function newFunction() {
+         return 'new functionality';
+        }
+        ${TRIPLE_TILDE}
+        """.trimIndent(),
+                    model = chatInterface,
+                    temperature = this.orchestrationConfig.temperature,
+                )
+                val codeResult = chatAgent.answer(
                     (messages + listOf(
-                        agent.planProcessingState?.tasksByDescription?.filter {
-                            this.taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
+                        agent.executionState?.tasksByDescription?.filter {
+                            taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
                         }?.entries?.joinToString("\n\n") {
                             (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
                                 val file = root.resolve(it).toFile()
@@ -188,13 +190,14 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             } ?: ""
                         } ?: "",
                         getInputFileWithDiff(),
-                        this.taskConfig?.task_description ?: "",
+                        taskConfig?.task_description ?: "",
                     )).filter { it.isNotBlank() }
                 )
-                if (agent.planSettings.autoFix) {
-                    val markdown = renderMarkdown(codeResult, ui = agent.ui) {
+                if (agent.orchestrationConfig.autoFix) {
+                    onComplete()
+                    val markdown = renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            agent.ui.socketManager,
+                            task.manager,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->
@@ -202,19 +205,16 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = agent.ui,
-                            shouldAutoApply = { agent.planSettings.autoFix },
-                            model = taskSettings.model?.let { planSettings.instance(it) }
-                                ?: planSettings.defaultChatter,
+                            shouldAutoApply = { agent.orchestrationConfig.autoFix },
+                            model = chatInterface,
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"
                     }
-                    onComplete()
                     task.complete(markdown)
                 } else {
-                    task.complete(renderMarkdown(codeResult, ui = agent.ui) {
+                    task.complete(renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            agent.ui.socketManager,
+                            task.manager,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->
@@ -222,11 +222,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = agent.ui,
-                            model = taskSettings.model?.let { planSettings.instance(it) }
-                                ?: planSettings.defaultChatter,
+                            model = chatInterface,
                             defaultFile = defaultFile,
-                        ) + acceptButtonFooter(agent.ui) {
+                        ) + acceptButtonFooter(task.manager) {
                             task.complete()
                             onComplete()
                         }

@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.util
 
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Future
-import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -24,102 +24,136 @@ class FixedConcurrencyProcessor(
         log.info("Initializing FixedConcurrencyProcessor with concurrency limit of {}", concurrencyLimit)
     }
 
-    private val semaphore = Semaphore(concurrencyLimit)
-    private val activeThreads = mutableListOf<Thread>()
-    private val waitingThreads = mutableListOf<Thread>()
+    private val activeTasks = AtomicInteger(0)
+    private val waitingTasks = ConcurrentLinkedQueue<PendingTask<*>>()
     private val taskCounter = AtomicInteger(0)
+
+    private data class PendingTask<T>(
+        val taskId: Int,
+        val task: () -> T,
+        val future: CompletableFuture<T>
+    )
+
 
     /**
      * Submits a task for execution with concurrency control.
-     * The task will be executed when a permit is available from the semaphore.
+     * The task will be executed when a slot becomes available.
      *
      * @param task The task to execute
-     * @return A Future representing the pending completion of the task
+     * @return A CompletableFuture representing the pending completion of the task
      */
-    fun <T> submit(task: () -> T): Future<T> = pool.submit<T> {
+    fun <T> submit(task: () -> T): CompletableFuture<T> {
         val taskId = taskCounter.incrementAndGet()
-        val currentThread = Thread.currentThread()
-        log.debug("Task #{} submitted on thread {}", taskId, currentThread.name)
-        try {
-            synchronized(waitingThreads) {
-                waitingThreads.add(currentThread)
+        val future = CompletableFuture<T>()
+        val pendingTask = PendingTask(taskId, task, future)
+
+        log.debug("Task #{} submitted", taskId)
+
+        // Try to execute immediately if under limit
+        if (tryExecuteTask(pendingTask)) {
+            log.debug("Task #{} executing immediately", taskId)
+        } else {
+            // Add to waiting queue
+            waitingTasks.offer(pendingTask)
+            log.debug("Task #{} added to waiting queue. Queue size: {}", taskId, waitingTasks.size)
+        }
+        return future
+    }
+
+    /**
+     * Attempts to execute a task if under the concurrency limit.
+     *
+     * @return true if the task was executed, false if it should be queued
+     */
+    private fun <T> tryExecuteTask(pendingTask: PendingTask<T>): Boolean {
+        val currentActive = activeTasks.get()
+        if (currentActive >= concurrencyLimit) {
+            return false
+        }
+        // Try to increment active count atomically
+        if (!activeTasks.compareAndSet(currentActive, currentActive + 1)) {
+            // Another thread beat us, retry
+            return tryExecuteTask(pendingTask)
+        }
+        // We got a slot, execute the task
+        executeTask(pendingTask)
+        return true
+    }
+
+    /**
+     * Executes a task asynchronously and handles completion.
+     */
+    private fun <T> executeTask(pendingTask: PendingTask<T>) {
+        log.debug(
+            "Task #{}: Starting execution. Active tasks: {}",
+            pendingTask.taskId, activeTasks.get()
+        )
+        CompletableFuture.supplyAsync({
+            try {
                 log.debug(
-                    "Task #{}: Thread {} added to waiting list. Current waiting count: {}",
-                    taskId, currentThread.name, waitingThreads.size
+                    "Task #{}: Executing on thread {}",
+                    pendingTask.taskId, Thread.currentThread().name
                 )
+                val result = pendingTask.task()
+                log.debug("Task #{}: Execution completed", pendingTask.taskId)
+                result
+            } catch (e: Exception) {
+                log.error("Task #{}: Execution failed", pendingTask.taskId, e)
+                throw e
             }
+        }, pool).whenComplete { result, throwable ->
+            // Decrement active count
+            val newActive = activeTasks.decrementAndGet()
             log.debug(
-                "Task #{}: Attempting to acquire semaphore permit. Available permits: {}",
-                taskId, semaphore.availablePermits()
+                "Task #{}: Released slot. Active tasks: {}",
+                pendingTask.taskId, newActive
             )
-            semaphore.acquire()
-            log.debug(
-                "Task #{}: Semaphore permit acquired. Remaining permits: {}",
-                taskId, semaphore.availablePermits()
-            )
-            synchronized(waitingThreads) {
-                waitingThreads.remove(currentThread)
-                log.debug(
-                    "Task #{}: Thread {} removed from waiting list. Current waiting count: {}",
-                    taskId, currentThread.name, waitingThreads.size
-                )
+            // Complete the original future
+            if (throwable != null) {
+                pendingTask.future.completeExceptionally(throwable)
+            } else {
+                pendingTask.future.complete(result)
             }
-            synchronized(activeThreads) {
-                activeThreads.add(currentThread)
-                log.debug(
-                    "Task #{}: Thread {} added to active list. Current active count: {}",
-                    taskId, currentThread.name, activeThreads.size
-                )
-            }
-            log.debug("Task #{}: Executing task on thread {}", taskId, currentThread.name)
-            val result = task()
-            log.debug("Task #{}: Task execution completed on thread {}", taskId, currentThread.name)
-            result
-        } finally {
-            log.debug("Task #{}: Releasing semaphore permit", taskId)
-            semaphore.release()
-            log.debug(
-                "Task #{}: Semaphore permit released. Available permits: {}",
-                taskId, semaphore.availablePermits()
-            )
-            synchronized(activeThreads) {
-                activeThreads.remove(currentThread)
-                log.debug(
-                    "Task #{}: Thread {} removed from active list. Current active count: {}",
-                    taskId, currentThread.name, activeThreads.size
-                )
-            }
-            synchronized(waitingThreads) {
-                waitingThreads.remove(currentThread)
-                log.debug(
-                    "Task #{}: Thread {} removed from waiting list (cleanup). Current waiting count: {}",
-                    taskId, currentThread.name, waitingThreads.size
-                )
+            // Try to process next waiting task
+            processNextWaitingTask()
+        }
+    }
+
+    /**
+     * Processes the next task from the waiting queue if a slot is available.
+     */
+    private fun processNextWaitingTask() {
+        val nextTask = waitingTasks.poll()
+        if (nextTask != null) {
+            log.debug("Processing waiting task #{}", nextTask.taskId)
+            if (!tryExecuteTask(nextTask)) {
+                // If we couldn't execute it (race condition), put it back
+                waitingTasks.offer(nextTask)
             }
         }
     }
 
     /**
-     * Gets the current number of active threads.
+     * Gets the current number of active tasks.
      *
-     * @return The number of active threads
+     * @return The number of active tasks
      */
-    fun getActiveThreadCount(): Int = synchronized(activeThreads) { activeThreads.size }
+    fun getActiveTaskCount(): Int = activeTasks.get()
 
     /**
-     * Gets the current number of waiting threads.
+     * Gets the current number of waiting tasks.
      *
-     * @return The number of waiting threads
+     * @return The number of waiting tasks
      */
-    fun getWaitingThreadCount(): Int = synchronized(waitingThreads) { waitingThreads.size }
+    fun getWaitingTaskCount(): Int = waitingTasks.size
 
     /**
      * Shuts down the processor, waiting for all tasks to complete.
      */
     fun shutdown() {
         log.info(
-            "Shutting down FixedConcurrencyProcessor. Active threads: {}, Waiting threads: {}",
-            getActiveThreadCount(), getWaitingThreadCount()
+            "Shutting down FixedConcurrencyProcessor. Active tasks: {}, Waiting tasks: {}",
+            getActiveTaskCount(), getWaitingTaskCount()
         )
         pool.shutdown()
         log.info("FixedConcurrencyProcessor shutdown completed")

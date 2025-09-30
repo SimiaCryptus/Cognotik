@@ -1,23 +1,33 @@
 package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.models.AIModel
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
+import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
 import java.sql.Timestamp
 
-class HSQLUsageManager() : UsageInterface {
+class HSQLUsageManager(root: File? = null) : UsageInterface {
+
+    init {
+        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
+        log.info("Initializing HSQLUsageManager with root directory: {}", root)
+    }
 
     private val connection: Connection by lazy {
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
-        val connection =
-            DriverManager.getConnection("jdbc:hsqldb:mem:usage", "SA", "")
-        log.debug("Database connection established: $connection")
+        val url = if (null == root) {
+            "jdbc:hsqldb:mem:usage"
+        } else {
+            "jdbc:hsqldb:file:${root.absolutePath};shutdown=true;hsqldb.lock_file=false"
+        }
+        val connection = DriverManager.getConnection(url, "SA", "")
+        log.debug("Database connection established: {}", connection)
         createSchema(connection)
         connection
     }
@@ -40,22 +50,22 @@ class HSQLUsageManager() : UsageInterface {
         )
     }
 
-    override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ApiModel.Usage) {
+    override fun incrementUsage(session: Session, user: User, model: AIModel, tokens: ModelSchema.Usage) {
         try {
-            log.debug("Incrementing usage for session: ${session}, user: ${user.email}, model: ${model.modelName}")
+            log.debug("Incrementing usage for session: {}, user: {}, model: {}", session, user.email, model.modelName)
             val usageKey = UsageInterface.UsageKey(session, user, model)
             val usageValues = UsageInterface.UsageValues()
 
             usageValues.addAndGet(tokens)
             saveUsageValues(usageKey, usageValues)
-            log.debug("Usage incremented for session: ${session}, user: ${user.email}, model: ${model.modelName}")
+            log.debug("Usage incremented for session: {}, user: {}, model: {}", session, user.email, model.modelName)
         } catch (e: Exception) {
             log.error("Error incrementing usage", e)
         }
     }
 
-    override fun getUserUsageSummary(user: User): Map<String, ApiModel.Usage> {
-        log.debug("Executing SQL query to get user usage summary for user: ${user.email}")
+    override fun getUserUsageSummary(user: User): Map<String, ModelSchema.Usage> {
+        log.info("Executing SQL query to get user usage summary for user: ${user.email}")
         val statement = connection.prepareStatement(
             """
             SELECT model, SUM(prompt_tokens), SUM(completion_tokens), SUM(cost)
@@ -69,7 +79,7 @@ class HSQLUsageManager() : UsageInterface {
         return generateUsageSummary(resultSet)
     }
 
-    override fun getSessionUsageSummary(session: Session): Map<String, ApiModel.Usage> {
+    override fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage> {
         log.info("Getting session usage summary for session: ${session}")
         val statement = connection.prepareStatement(
             """
@@ -90,7 +100,7 @@ class HSQLUsageManager() : UsageInterface {
     }
 
     private fun saveUsageValues(usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues) {
-        log.debug(
+        log.info(
             "Saving usage values for session: {}, user: {}, model: {}",
             usageKey.session,
             usageKey.user?.email,
@@ -109,17 +119,25 @@ class HSQLUsageManager() : UsageInterface {
         statement.setLong(5, usageValues.outputTokens.get())
         statement.setDouble(6, usageValues.cost.get())
         statement.setTimestamp(7, Timestamp(System.currentTimeMillis()))
-        log.debug("Executing statement: $statement")
-        log.debug("With parameters: ${usageKey.session}, ${usageKey.user?.email}, ${usageKey.model.modelName}, ${usageValues.inputTokens.get()}, ${usageValues.outputTokens.get()}, ${usageValues.cost.get()}")
+        log.debug("Executing statement: {}", statement)
+        log.debug(
+            "With parameters: {}, {}, {}, {}, {}, {}",
+            usageKey.session,
+            usageKey.user?.email,
+            usageKey.model.modelName,
+            usageValues.inputTokens.get(),
+            usageValues.outputTokens.get(),
+            usageValues.cost.get()
+        )
         statement.executeUpdate()
     }
 
-    private fun generateUsageSummary(resultSet: ResultSet): Map<String, ApiModel.Usage> {
-        log.debug("Generating usage summary from result set")
-        val summary = mutableMapOf<String, ApiModel.Usage>()
+    private fun generateUsageSummary(resultSet: ResultSet): Map<String, ModelSchema.Usage> {
+        log.info("Generating usage summary from result set")
+        val summary = mutableMapOf<String, ModelSchema.Usage>()
         while (resultSet.next()) {
             val string = resultSet.getString(1)
-            val usage = ApiModel.Usage(
+            val usage = ModelSchema.Usage(
                 prompt_tokens = resultSet.getLong(2),
                 completion_tokens = resultSet.getLong(3),
                 cost = resultSet.getDouble(4)

@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 
 @JsonDeserialize(using = CloudNodeTypesDeserializer::class)
 @JsonSerialize(using = CloudNodeTypesSerializer::class)
-@Suppress("UNUSED_PARAMETER")
 class CloudNodeType<T : CloudNodeType.NodeBase> private constructor(
     name: String,
     nodeClass: Class<T>,

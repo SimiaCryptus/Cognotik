@@ -1,9 +1,10 @@
 package com.simiacryptus.cognotik.chat
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
@@ -23,7 +24,7 @@ data class MistralChatRequest(
 )
 
 data class MistralChatMessage(
-    val role: ApiModel.Role,
+    val role: ModelSchema.Role,
     val content: String
 )
 
@@ -33,14 +34,16 @@ class MistralChatClient(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    apiBase: String
+    apiBase: String,
+    scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
     APIProvider.Mistral,
     apiKey = apiKey,
     apiBase = apiBase,
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 ) {
     override fun authorize(
         request: HttpRequest,
@@ -53,10 +56,10 @@ class MistralChatClient(
     }
 
     override fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<java.io.BufferedOutputStream>
-    ): ApiModel.ChatResponse {
+    ): ModelSchema.ChatResponse {
         log.info("Starting Mistral chat with model: ${model.modelName}")
 
         return withReliability {
@@ -67,7 +70,7 @@ class MistralChatClient(
 
                 val result = post("$apiBase/chat/completions", json, APIProvider.Mistral)
                 checkError(result)
-                val response = JsonUtil.objectMapper().readValue(result, ApiModel.ChatResponse::class.java)
+                val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
 
                 if (response.usage != null && model is ChatModel) {
                     onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
@@ -79,12 +82,13 @@ class MistralChatClient(
     }
 
     companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(MistralChatClient::class.java)
         const val HEADER_CONTENT_TYPE = "Content-Type"
         const val HEADER_ACCEPT = "Accept"
         const val HEADER_AUTHORIZATION = "Authorization"
         const val APPLICATION_JSON = "application/json"
 
-        fun toMistral(chatRequest: ApiModel.ChatRequest): MistralChatRequest = MistralChatRequest(
+        fun toMistral(chatRequest: ModelSchema.ChatRequest): MistralChatRequest = MistralChatRequest(
             messages = chatRequest.messages.map { message ->
                 MistralChatMessage(
                     role = message.role!!,
@@ -95,7 +99,7 @@ class MistralChatClient(
             max_tokens = chatRequest.max_tokens,
             temperature = chatRequest.temperature,
             stream = false,
-            stop = chatRequest.stop?.map { if (it.isNullOrEmpty()) "" else it.toString() },
+            stop = chatRequest.stop?.map { if (it.isEmpty()) "" else it.toString() },
             //top_p = chatRequest.top_p,
             //random_seed = chatRequest.seed
         )

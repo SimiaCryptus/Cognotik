@@ -1,16 +1,21 @@
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import java.io.File
 
-open class UserSettingsManager : UserSettingsInterface {
+open class UserSettingsManager(val root: File) : UserSettingsInterface {
+
+    init {
+        require(root.exists() || root.mkdirs()) { "Failed to create root directory: $root" }
+        log.info("Initializing UserSettingsManager with root directory: ${root}", RuntimeException() )
+    }
 
     private val userSettings = HashMap<User, UserSettings>()
-    private val userConfigDirectory by lazy { dataStorageRoot.resolve("users").apply { mkdirs() } }
+    private val userConfigDirectory by lazy { root.apply { mkdirs() } }
 
     override fun getUserSettings(user: User): UserSettings {
         log.debug("Retrieving user settings for user: {}", user)
@@ -21,12 +26,7 @@ open class UserSettingsManager : UserSettingsInterface {
                     log.info("Loading existing user settings for user: {} from file: {}", user, file)
                     return@getOrPut JsonUtil.fromJson(file.readText(), UserSettings::class.java)
                 } catch (e: Throwable) {
-                    log.error(
-                        "Failed to load user settings for user: {} from file: {}. Creating new settings.",
-                        user,
-                        file,
-                        e
-                    )
+                    log.error("Failed to load user settings for user: {} from file: {}.", user, file, e)
                 }
             }
             log.info("User settings file not found for user: {}. Creating new settings at: {}", user, file)
@@ -49,6 +49,12 @@ open class UserSettingsManager : UserSettingsInterface {
 
     companion object {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(UserSettingsManager::class.java)
+
+        @JsonIgnore
+        var defaultUser = User(
+            id = "1",
+            email = "user@localhost"
+        )
     }
 
 }

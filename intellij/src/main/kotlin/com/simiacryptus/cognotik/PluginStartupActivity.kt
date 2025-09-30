@@ -1,53 +1,58 @@
 package com.simiacryptus.cognotik
 
 import ch.qos.logback.classic.Level
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import com.intellij.openapi.vfs.VirtualFileManager
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
-import com.simiacryptus.cognotik.platform.ClientManager
-import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
-import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.LoggerFactory
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.simiacryptus.cognotik.util.showDocument
 import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.reflect.full.declaredMembers
-import kotlin.reflect.jvm.isAccessible
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
-        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
+//        setLogDebug("com.simiacryptus.cognotik.plan")
+//        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask")
+//        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
+//        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
+//        setLogDebug("com.simiacryptus.cognotik.chat")
         setLogInfo("TRAFFIC.com.simiacryptus.cognotik.webui.chat")
 
         System.getProperty("cognotik.config")?.let { configFile ->
             try {
+                log.debug("Attempting to load config from: $configFile")
                 val file = File(configFile)
                 if (file.exists()) {
+                    if (!file.canRead()) {
+                        log.error("Config file $configFile exists but is not readable")
+                        return@let
+                    }
                     StaticAppSettingsConfigurable().apply {
-                        import(file.readText())
+                        val configContent = file.readText()
+                        if (configContent.isBlank()) {
+                            log.warn("Config file $configFile is empty")
+                            return@let
+                        }
+                        import(configContent)
                         write(AppSettingsState.instance, AppSettingsComponent())
                     }
                     AppSettingsState.Companion.notifySettingsLoaded()
@@ -60,82 +65,47 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         try {
-
-            com.simiacryptus.cognotik.util.AddApplyFileDiffLinks.loggingEnabled = { AppSettingsState.instance.diffLoggingEnabled }
-
+            AddApplyFileDiffLinks.loggingEnabled =
+                { AppSettingsState.instance.diffLoggingEnabled }
             val currentThread = Thread.currentThread()
             val prevClassLoader = currentThread.contextClassLoader
+            log.debug("Setting context class loader for plugin initialization")
             try {
                 currentThread.contextClassLoader = PluginStartupActivity::class.java.classLoader
                 init(project)
+                log.info("Plugin initialization completed successfully")
             } catch (e: Exception) {
                 log.error("Error during plugin startup", e)
             } finally {
                 currentThread.contextClassLoader = prevClassLoader
             }
-
-            //setupDocumentationTracking(project)
-
             if (AppSettingsState.instance.showWelcomeScreen || AppSettingsState.instance.greetedVersion != AppSettingsState.WELCOME_VERSION) {
-                val welcomeFile = "welcomePage.md"
-                val resource = PluginStartupActivity::class.java.classLoader.getResource(welcomeFile)
-                var virtualFile = resource?.let { VirtualFileManager.getInstance().findFileByUrl(it.toString()) }
-                if (virtualFile == null) try {
-                    val path = resource?.toURI()?.let { java.nio.file.Paths.get(it) }
-                    virtualFile = path?.let { VirtualFileManager.getInstance().findFileByNioPath(it) }
-                } catch (e: Exception) {
-                    log.debug("Error opening welcome page", e)
-                }
-                if (virtualFile == null) {
-                    try {
-                        val tempFile =
-                            withContext(Dispatchers.IO) {
-                                File.createTempFile(
-                                    welcomeFile.substringBefore("."),
-                                    "." + welcomeFile.substringAfter(".")
-                                )
-                            }
-                        tempFile.deleteOnExit()
-                        resource?.openStream()?.use { input ->
-                            tempFile.outputStream().use { output -> input.copyTo(output) }
-                        }
-                        virtualFile = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(tempFile.toPath())
-                    } catch (e: Exception) {
-                        log.error("Error opening welcome page", e)
-                    }
-                }
-                virtualFile?.let {
-                    try {
-                        ApplicationManager.getApplication().invokeLater {
-                            FileEditorManager.getInstance(project).openFile(it, true).forEach { editor ->
-                                try {
-                                    editor::class.declaredMembers.filter { it.name == "setLayout" }.forEach { member ->
-                                        member.isAccessible = true
-                                        member.call(editor, TextEditorWithPreview.Layout.SHOW_PREVIEW)
-                                    }
-                                } catch (e: Exception) {
-                                    log.error("Error opening welcome page", e)
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        log.error("Error opening welcome page", e)
-                    }
-                } ?: log.error("Welcome page not found")
+                log.debug("Showing welcome screen - showWelcomeScreen: ${AppSettingsState.instance.showWelcomeScreen}, greetedVersion: ${AppSettingsState.instance.greetedVersion}")
+                if (project.showDocument("welcomePage.md")) return
                 AppSettingsState.instance.greetedVersion = AppSettingsState.WELCOME_VERSION
                 AppSettingsState.instance.showWelcomeScreen = false
+                log.info("Welcome screen display completed")
             }
 
         } catch (e: Exception) {
-            log.error("Error during plugin startup", e)
+            log.error("Critical error during plugin startup - plugin may not function correctly", e)
         }
     }
 
     private val isInitialized = AtomicBoolean(false)
 
     private fun init(project: Project) {
-        if (isInitialized.getAndSet(true)) return
-        ApplicationServicesConfig.dataStorageRoot = AppSettingsState.instance.pluginHome.resolve(".cognotik")
+        if (isInitialized.getAndSet(true)) return // Prevent double initialization
+        dataStorageRoot = AppSettingsState.Companion.pluginHome
+        log.info("Initializing ApplicationServices configuration: $dataStorageRoot")
+        if (!dataStorageRoot.exists()) {
+            try {
+                dataStorageRoot.mkdirs()
+                log.info("Created data storage directory: $dataStorageRoot")
+            } catch (e: Exception) {
+                log.error("Failed to create data storage directory: $dataStorageRoot", e)
+            }
+        }
         SimpleDiffApplier.validatorProviders.add(0) { filename ->
             val extension = filename?.split('.')?.lastOrNull()
             if (IntelliJPsiValidator.isLanguageSupported(extension)) {
@@ -145,15 +115,29 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         AppSettingsState.instance.apply {
+            log.debug("Configuring AWS platform - profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
             ApplicationServices.cloud = when {
-                awsProfile.isNullOrBlank() -> null
-                awsRegion.isNullOrBlank() -> null
-                awsBucket.isNullOrBlank() -> null
+                awsProfile.isNullOrBlank() -> {
+                    log.debug("AWS profile not configured")
+                    null
+                }
+
+                awsRegion.isNullOrBlank() -> {
+                    log.debug("AWS region not configured")
+                    null
+                }
+
+                awsBucket.isNullOrBlank() -> {
+                    log.debug("AWS bucket not configured")
+                    null
+                }
                 else -> AwsPlatform(
                     bucket = awsBucket!!,
                     region = Region.of(awsRegion!!),
                     profileName = awsProfile!!,
-                )
+                ).also {
+                    log.info("AWS platform configured successfully with profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
+                }
             }
         }
         ApplicationServices.authorizationManager = object : AuthorizationInterface {
@@ -173,18 +157,6 @@ class PluginStartupActivity : ProjectActivity {
 
     companion object {
         val log = LoggerFactory.getLogger(PluginStartupActivity::class.java)
-        fun addUserSuppliedModels(userModels: List<AppSettingsState.UserSuppliedModel>) {
-            userModels.forEach { model ->
-                ChatModel.values[model.displayName] = ChatModel(
-                    name = model.displayName,
-                    modelName = model.modelId,
-                    maxTotalTokens = 4096,
-                    provider = model.provider!!,
-                    inputTokenPricePerK = 0.0,
-                    outputTokenPricePerK = 0.0,
-                )
-            }
-        }
 
         private fun setLogInfo(name: String) {
             try {

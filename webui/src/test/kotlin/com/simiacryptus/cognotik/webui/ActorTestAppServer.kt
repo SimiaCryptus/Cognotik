@@ -1,18 +1,18 @@
 package com.simiacryptus.cognotik.webui
 
 import com.simiacryptus.cognotik.OpenAIClient
-import com.simiacryptus.cognotik.actors.CodingActor
-import com.simiacryptus.cognotik.actors.ImageActor
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.CodeAgent
+import com.simiacryptus.cognotik.actors.ImageAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.StressTestApp
 import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import com.simiacryptus.cognotik.apps.parse.DocumentParsingModel
 import com.simiacryptus.cognotik.apps.parse.ParsingModel
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
-import com.simiacryptus.cognotik.groovy.GroovyInterpreter
-import com.simiacryptus.cognotik.kotlin.KotlinInterpreter
+import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
+import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -47,14 +47,16 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             logLevel = TODO(),
             logStreams = TODO(),
             workPool = TODO(),
-            temperature = TODO()
+            temperature = TODO(),
+            scheduledPool = TODO(),
+            onUsage = { model, usage -> },
         )
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),
             ChildWebApp(
                 "/test_simple",
                 SimpleActorTestApp(
-                    SimpleActor(
+                    ChatAgent(
                         "Translate the user's request into pig latin.",
                         "PigLatin",
                         model = model
@@ -63,7 +65,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             ),
             ChildWebApp(
                 "/test_parsed_joke", ParsedActorTestApp(
-                    ParsedActor(
+                    ParsedAgent(
                         resultClass = TestJokeDataStructure::class.java,
                         prompt = "Tell me a joke",
                         parsingModel = model,
@@ -71,11 +73,15 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     )
                 )
             ),
-            ChildWebApp("/images", ImageActorTestApp(ImageActor(textModel = model).apply {
+            ChildWebApp("/images", ImageActorTestApp(ImageAgent(textModel = model).apply {
                 openAI = OpenAIClient(
                     workPool = Executors.newCachedThreadPool(),
-                    key = emptyMap(),
-                    apiBase = emptyMap(),
+                    key = "",
+                    apiBase = "",
+                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+                        session = TODO(),
+                        user = TODO()
+                    ),
                 )
             })),
 
@@ -83,8 +89,8 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             ChildWebApp(
                 "/test_coding_kotlin",
                 CodingActorTestApp(
-                    CodingActor(
-                        KotlinInterpreter::class,
+                    CodeAgent(
+                        KotlinCodeRuntime::class,
                         model = model,
                         fallbackModel = model,
                     )
@@ -93,8 +99,8 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
             ChildWebApp(
                 "/test_coding_groovy",
                 CodingActorTestApp(
-                    CodingActor(
-                        GroovyInterpreter::class,
+                    CodeAgent(
+                        GroovyCodeRuntime::class,
                         model = model,
                         fallbackModel = model,
                     )

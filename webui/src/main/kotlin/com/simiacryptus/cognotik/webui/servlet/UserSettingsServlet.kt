@@ -19,12 +19,14 @@ class UserSettingsServlet : HttpServlet() {
             resp.status = HttpServletResponse.SC_BAD_REQUEST
         } else {
             try {
-                val settings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
+                val settings =
+                    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(userinfo)
                 val visibleSettings = UserSettings(
                     apis = settings.apis.map { apiData ->
                         ApiData(
                             key = when (apiData.key) {
                                 "" -> ""
+                                null -> null
                                 else -> mask
                             },
                             baseUrl = apiData.baseUrl,
@@ -87,7 +89,8 @@ class UserSettingsServlet : HttpServlet() {
             resp.status = HttpServletResponse.SC_BAD_REQUEST
         } else {
             val settings = JsonUtil.fromJson<UserSettings>(req.getParameter("settings"), UserSettings::class.java)
-            val prevSettings = ApplicationServices.userSettingsManager.getUserSettings(userinfo)
+            val prevSettings =
+                ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(userinfo)
             val reconstructedApis = settings.apis.mapIndexed { index, apiData ->
                 val prevApiData = prevSettings.apis.getOrNull(index)
                 ApiData(
@@ -104,7 +107,10 @@ class UserSettingsServlet : HttpServlet() {
                 tools = (prevSettings.tools + settings.tools).distinctBy { it.name }.toMutableList(),
                 etc = settings.etc
             )
-            ApplicationServices.userSettingsManager.updateUserSettings(userinfo, reconstructedSettings)
+            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(
+                userinfo,
+                reconstructedSettings
+            )
             resp.sendRedirect("/")
         }
     }

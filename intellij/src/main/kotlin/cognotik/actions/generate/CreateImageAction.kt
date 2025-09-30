@@ -10,7 +10,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.ui.JBUI
-import com.simiacryptus.cognotik.actors.ImageActor
+import com.simiacryptus.cognotik.actors.ImageAgent
 import com.simiacryptus.cognotik.actors.ImageResponse
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.imageModel
@@ -96,7 +96,7 @@ class CreateImageAction : BaseAction() {
                 val folder = e.getSelectedFolder()
                 rootRef.set(
                     if (null != folder) {
-                        log.debug("Using selected folder as root: ${folder.toFile}")
+                        log.debug("Using selected folder as root: {}",folder.toFile)
                         folder.toFile.toPath()
                     } else if (1 == virtualFiles?.size) {
                         log.debug("Using parent of single file as root")
@@ -120,7 +120,7 @@ class CreateImageAction : BaseAction() {
                 log.debug("Collected ${codeFiles.size} code files")
                 progress.text = "Generating image..."
                 log.info("Starting image generation with ${codeFiles.size} files")
-                val imageActor = ImageActor(
+                val imageActor = ImageAgent(
                     prompt = """
                     You are a technical drawing assistant.
                     You will be composing an image about the following code:
@@ -155,7 +155,7 @@ class CreateImageAction : BaseAction() {
     private fun write(
         code: ImageResponse, path: Path
     ) = try {
-        log.debug("Creating parent directories for: $path")
+        log.debug("Creating parent directories for: {}",path)
         path.parent?.toFile()?.mkdirs()
         val format = path.toString().split(".").last()
         log.debug("Writing image in format: $format")

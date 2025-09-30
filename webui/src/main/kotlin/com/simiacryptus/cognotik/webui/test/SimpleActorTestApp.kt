@@ -1,15 +1,15 @@
 package com.simiacryptus.cognotik.webui.test
 
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class SimpleActorTestApp(
-    private val actor: SimpleActor,
+    private val actor: ChatAgent,
     applicationName: String = "SimpleActorTest_" + actor.javaClass.simpleName,
     temperature: Double = 0.3,
 ) : ApplicationServer(
@@ -18,7 +18,7 @@ open class SimpleActorTestApp(
 ) {
 
     data class Settings(
-        val actor: SimpleActor? = null,
+        val actor: ChatAgent? = null,
     )
 
     override val settingsClass: Class<*> get() = Settings::class.java
@@ -30,7 +30,7 @@ open class SimpleActorTestApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         val message = ui.newTask()
         try {

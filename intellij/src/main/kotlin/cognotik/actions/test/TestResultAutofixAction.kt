@@ -7,8 +7,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
@@ -18,9 +18,7 @@ import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
@@ -61,10 +59,10 @@ class TestResultAutofixAction : BaseAction() {
                 .map { root.relativize(it) ?: it }.toSet()
             val str = codeFiles
                 .asSequence()
-                .filter { root.resolve(it)?.toFile()?.exists() == true }
+                .filter { root.resolve(it).toFile().exists() }
                 .distinct().sorted()
                 .joinToString("\n") { path ->
-                    "* ${path} - ${root.resolve(path)?.toFile()?.length() ?: "?"} bytes".trim()
+                    "* ${path} - ${root.resolve(path).toFile().length()} bytes".trim()
                 }
             return str
         }
@@ -179,20 +177,21 @@ class TestResultAutofixAction : BaseAction() {
         override val stickyInput = false
         override fun newSession(user: User?, session: Session): SocketManager {
             val socketManager = super.newSession(user, session)
-            val ui = (socketManager as ApplicationSocketManager).applicationInterface
-            val task = ui.newTask()
+            val task = socketManager.newTask(cancelable = false)
             task.add("Analyzing test result and suggesting fixes...")
             Thread {
-                runAutofix(ui, task)
+                runAutofix(task, socketManager)
             }.start()
             return socketManager
         }
 
-        private fun runAutofix(ui: ApplicationInterface, task: SessionTask) {
-            Retryable(ui, task) {
+        private fun runAutofix(
+            task: SessionTask, socketManager: SocketManager
+        ) {
+            Retryable(task) {
                 try {
-                    val task = ui.newTask(false)
-                    val plan = ParsedActor(
+                    val task = socketManager.newTask(cancelable = false, root = false)
+                    val plan = ParsedAgent(
                         resultClass = ParsedErrors::class.java,
                         prompt = """
                         You are a helpful AI that helps people with coding.
@@ -224,8 +223,8 @@ class TestResultAutofixAction : BaseAction() {
                     )
 
                     plan.obj.errors?.forEach { error ->
-                        Retryable(ui, task) {
-                            val task = ui.newTask(false)
+                        Retryable(task) {
+                            val task = socketManager.newTask(cancelable = false, root = false)
                             val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
                             val summary = filesToFix.joinToString("\n\n") { filePath ->
                                 val file = File(projectPath, filePath)
@@ -240,7 +239,7 @@ class TestResultAutofixAction : BaseAction() {
                                     "# $filePath\nFile not found"
                                 }
                             }
-                            generateAndAddResponse(ui, task, error, summary, filesToFix)
+                            generateAndAddResponse(task, error, summary, socketManager)
                             return@Retryable task.placeholder
                         }
                     }
@@ -254,14 +253,13 @@ class TestResultAutofixAction : BaseAction() {
         }
 
         private fun generateAndAddResponse(
-            ui: ApplicationInterface,
             task: SessionTask,
             error: ParsedError,
             summary: String,
-            filesToFix: List<String>
+            socketManager: SocketManager
         ) {
             task.add("Generating fix suggestions...")
-            val response = SimpleActor(
+            val response = ChatAgent(
                 prompt = """
                 You are a helpful AI that helps people with coding.
                 Suggest fixes for the following test failure:
@@ -282,8 +280,8 @@ $projectStructure
             ).answer(listOf(error.message ?: ""), )
             task.add("Processing suggested fixes...")
 
-            var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-                ui.socketManager!!,
+            val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
+                socketManager,
                 root = root.toPath(),
                 response = response,
                 handle = { newCodeMap ->
@@ -292,9 +290,8 @@ $projectStructure
                         task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                     }
                 },
-                ui = ui,
             )
-            task.add("<div>${renderMarkdown(markdown!!)}</div>")
+            task.add("<div>${renderMarkdown(markdown)}</div>")
         }
     }
 

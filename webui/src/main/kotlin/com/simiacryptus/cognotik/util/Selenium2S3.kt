@@ -247,7 +247,7 @@ open class Selenium2S3(
 
             override fun completed(p0: SimpleHttpResponse?) {
                 try {
-                    log.debug("Fetched $request")
+                    log.debug("Fetched {}", request)
                     val bytes = p0?.body?.bodyBytes ?: return
                     if (validate(mimeType, p0.body.contentType.mimeType, bytes))
                         cloud!!.upload(
@@ -346,7 +346,7 @@ open class Selenium2S3(
         Jsoup.parse(html).select("link[href]").map { it.attr("href") }.toSet(),
         Jsoup.parse(html).select("script[src]").map { it.attr("src") }.toSet(),
         Jsoup.parse(html).select("source[src]").map { it.attr("src") }.toSet(),
-    ).flatten().filterNotNull()
+    ).flatten()
 
     protected open fun toAbsolute(base: String, vararg links: String) = links
         .map { it.split("#").first() }.filter { it.isNotBlank() }.distinct()

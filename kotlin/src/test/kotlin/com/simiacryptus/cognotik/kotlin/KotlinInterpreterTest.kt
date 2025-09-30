@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 
 class KotlinInterpreterTest : InterpreterTestBase() {
 
-    override fun newInterpreter(map: Map<String, Any>) = KotlinInterpreter(map)
+    override fun newInterpreter(map: Map<String, Any>) = KotlinCodeRuntime(map)
 
     @Test
     fun `test run with kotlin println`() {

@@ -1,15 +1,15 @@
 package com.simiacryptus.cognotik.webui.test
 
-import com.simiacryptus.cognotik.actors.ImageActor
+import com.simiacryptus.cognotik.actors.ImageAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class ImageActorTestApp(
-    private val actor: ImageActor,
+    private val actor: ImageAgent,
     applicationName: String = "ImageActorTest_" + actor.javaClass.simpleName,
 ) : ApplicationServer(
     applicationName = applicationName,
@@ -17,7 +17,7 @@ open class ImageActorTestApp(
 ) {
 
     data class Settings(
-        val actor: ImageActor? = null,
+        val actor: ImageAgent? = null,
     )
 
     override val settingsClass: Class<*> get() = Settings::class.java
@@ -29,7 +29,7 @@ open class ImageActorTestApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         val message = ui.newTask()
         try {

@@ -10,9 +10,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
@@ -38,15 +36,14 @@ open class DocumentParserApp(
     override val stickyInput: Boolean = false
 
     override fun newSession(user: User?, session: Session): SocketManager {
-        val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
+        val ui = super.newSession(user, session)
         val settings = getSettings(session, user, Settings::class.java) ?: Settings()
         val app = this
         if (null == (fileInputs ?: settings.fileInputs)) {
             log.info("No file input provided")
         } else (fileInputs ?: settings.fileInputs).apply {
             val progressBar = progressBar(ui.newTask())
-            socketManager.pool.submit {
+            ui.pool.submit {
                 run(
                     task = ui.newTask(),
                     ui = ui,
@@ -59,12 +56,12 @@ open class DocumentParserApp(
                 )
             }
         }
-        return socketManager
+        return ui
     }
 
-    override fun userMessage(session: Session, user: User?, userMessage: String, ui: ApplicationInterface) {
+    override fun userMessage(session: Session, user: User?, userMessage: String, ui: SocketManager) {
         val settings = getSettings(session, user, Settings::class.java) ?: Settings()
-        ui.socketManager!!.pool.submit {
+        ui.pool.submit {
             run(
                 task = ui.newTask(),
                 ui = ui,
@@ -79,7 +76,7 @@ open class DocumentParserApp(
 
     private fun run(
         task: SessionTask,
-        ui: ApplicationInterface,
+        ui: SocketManager,
         fileInputs: List<Path>,
         maxPages: Int,
         settings: Settings,
@@ -105,7 +102,7 @@ open class DocumentParserApp(
                     task.error(IllegalArgumentException("File not found: $file"))
                     return
                 }
-                ui.socketManager?.pool?.submit {
+                ui.pool.submit {
                     val docTask = ui.newTask(false).apply { docTabs[file.toString()] = this.placeholder }
                     val pageTabs = TabbedDisplay(docTask)
                     val outputDir = root.resolve("output").apply<File> { mkdirs() }
@@ -189,7 +186,7 @@ open class DocumentParserApp(
                                 )
                                 previousPageText = text
                                 if (fastMode) {
-                                    ui.socketManager.pool.submit<DocumentData?> {
+                                    ui.pool.submit<DocumentData?> {
                                         val jsonResult = parsingModel.getFastParser()(
                                             promptList.toList<String>().joinToString<String>("\n\n")
                                         )
@@ -267,7 +264,7 @@ open class DocumentParserApp(
         batchStart: Int,
         batchEnd: Int,
         jsonResult: DocumentData,
-        ui: ApplicationInterface,
+        ui: SocketManager,
         pageTabs: TabbedDisplay,
         text: String,
         pageTask: SessionTask,

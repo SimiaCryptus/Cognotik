@@ -86,7 +86,8 @@ open class DictationManager {
                     client = OpenAIClient(
                         workPool = Executors.newCachedThreadPool(),
                         key = TODO(),
-                        apiBase = TODO()
+                        apiBase = TODO(),
+                        scheduledPool = TODO(),
                     ),
                     audioBuffer = processedBuffer,
                     model = transcriptionModel,

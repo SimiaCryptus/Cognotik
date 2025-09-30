@@ -8,8 +8,6 @@ import java.util.concurrent.*
  * In contrast to typical Java executor services, this implementation does not queue tasks unless the MAXIMUM thread count is reached, only then queues tasks.
  * The core thread count is set to 0, meaning that threads are created as needed and will be terminated when idle with the stable state of the pool being 0 threads.
  *
- * @param session The session associated with this executor service.
- * @param user The user associated with this executor service, if any.
  */
 class ImmediateExecutorService(
     val threadFactory: ThreadFactoryTrackerInterface = ThreadFactoryTracker()

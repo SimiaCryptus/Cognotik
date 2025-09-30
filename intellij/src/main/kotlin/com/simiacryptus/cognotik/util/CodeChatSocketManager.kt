@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -13,8 +13,8 @@ open class CodeChatSocketManager(
     val language: String,
     val filename: String,
     val codeSelection: String,
-    model: Chatter,
-    parsingModel: Chatter,
+    model: ChatInterface,
+    parsingModel: ChatInterface,
     storage: StorageInterface?,
 ) : ChatSocketManager(
     session = session,

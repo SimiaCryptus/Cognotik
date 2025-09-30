@@ -13,8 +13,8 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
@@ -26,9 +26,9 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -52,7 +52,7 @@ class ReplicateCommitAction : BaseAction() {
             val dataContext = event.dataContext
             val virtualFiles = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
             val folder = event.getSelectedFolder()
-            var root = if (null != folder) {
+            val root = if (null != folder) {
                 folder.toFile.toPath()
             } else {
                 project.basePath?.let { File(it).toPath() }
@@ -188,7 +188,7 @@ class ReplicateCommitAction : BaseAction() {
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface
+            ui: SocketManager
         ) {
             val task = ui.newTask()
             task.echo(userMessage)
@@ -201,7 +201,7 @@ class ReplicateCommitAction : BaseAction() {
     }
 
     private fun PatchApp.run(
-        ui: ApplicationInterface,
+        ui: SocketManager,
         task: SessionTask,
         session: Session,
         settings: Settings,
@@ -211,9 +211,9 @@ class ReplicateCommitAction : BaseAction() {
         try {
             val planTxt = projectSummary()
             task.add(renderMarkdown(planTxt))
-            Retryable(ui, task) {
+            Retryable(task) {
                 val task = ui.newTask(false)
-                val plan = ParsedActor(
+                val plan = ParsedAgent(
                     resultClass = ParsedTasks::class.java,
                     prompt = """
                       You are a helpful AI that helps people with coding.
@@ -240,20 +240,20 @@ class ReplicateCommitAction : BaseAction() {
                 task.add(
                     AgentPatterns.displayMapInTabs(
                         mapOf(
-                          "Text" to plan.text.renderMarkdown,
-                          "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
+                            "Text" to plan.text.renderMarkdown,
+                            "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
                         )
                     )
                 )
                 plan.obj.errors?.map { planTask ->
-                    Retryable(ui, task) {
+                    Retryable(task) {
                         val task = ui.newTask(false)
                         val paths =
                             ((planTask.fixFiles ?: emptyList()) + (planTask.relatedFiles ?: emptyList())).flatMap {
                                 toPaths(settings.workingDirectory.toPath(), it)
                             }
                         val codeSummary = codeSummary(paths)
-                        val response = SimpleActor(
+                        val response = ChatAgent(
                             prompt = """
                   You are a helpful AI that helps people with coding.
 
@@ -275,8 +275,8 @@ class ReplicateCommitAction : BaseAction() {
                               """.trimIndent() + (planTask.message?.prependIndent("  ") ?: "")
                             ),
                         )
-                        var markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-                            ui.socketManager!!,
+                        val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
+                            ui,
                             root = root.toPath(),
                             response = response,
                             handle = { newCodeMap ->
@@ -284,7 +284,6 @@ class ReplicateCommitAction : BaseAction() {
                                     task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = ui,
                         )
                         task.add(renderMarkdown(markdown))
                         task.placeholder

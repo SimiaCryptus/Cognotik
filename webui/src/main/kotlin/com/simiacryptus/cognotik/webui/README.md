@@ -48,7 +48,7 @@ A simple implementation of a chat application using the framework.
 
 The session system handles user sessions, state persistence, and task management.
 
-#### `SocketManager` and `SocketManagerBase`
+#### `SocketManager` and `SocketManager`
 
 Interface and base implementation for managing WebSocket connections and session state.
 
@@ -95,7 +95,7 @@ Provides UI components and interaction patterns.
 
 #### `ApplicationSocketManager`
 
-Extends `SocketManagerBase` to provide application-specific functionality.
+Extends `SocketManager` to provide application-specific functionality.
 
 - Processes user messages in an application context
 - Provides access to the application interface

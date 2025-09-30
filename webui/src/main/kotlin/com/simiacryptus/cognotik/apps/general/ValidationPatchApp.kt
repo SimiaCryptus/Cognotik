@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.nio.file.Path
@@ -14,8 +13,8 @@ class ValidationPatchApp(
     root: File,
     settings: Settings,
     val files: Array<out File>?,
-    model: Chatter,
-    parsingModel: Chatter,
+    model: ChatInterface,
+    parsingModel: ChatInterface,
 ) : PatchApp(root, settings, model, parsingModel) {
 
     companion object {
@@ -26,14 +25,13 @@ class ValidationPatchApp(
     override fun output(
         task: SessionTask,
         settings: Settings,
-        ui: ApplicationInterface,
         tabs: TabbedDisplay
     ): OutputResult {
         val validationErrors = mutableListOf<ValidationError>()
 
         val filePaths = getFiles(files)
         filePaths.forEach { file ->
-            val fileTask = ui.newTask(false).apply { tabs[file.toString()] = placeholder }
+            val fileTask = task.manager.newTask(false).apply { tabs[file.toString()] = placeholder }
             try {
                 val validator = SimpleDiffApplier.getValidator(file.toFile().toString()) ?: return@forEach
                 val content = file.toFile().readText()

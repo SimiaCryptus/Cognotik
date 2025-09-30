@@ -11,7 +11,13 @@ different types of AI interactions.
 All actors inherit from `BaseActor<I, R>`, which defines the core interface:
 
 ```kotlin
-
+abstract class BaseActor<I, R>(
+    val prompt: String,
+    val model: Model = GPT35Turbo,
+    val temperature: Double = 0.0
+) {
+    abstract fun answer(input: I, api: OpenAI): R
+}
 ```
 
 - **I**: Input type
@@ -189,18 +195,3 @@ val result = imageGen.answer(listOf("A serene mountain landscape at sunset"), ap
 val image = result.image // BufferedImage
 val description = result.text // Enhanced prompt used for generation
 ```
-
-**Key Features**:
-
-- Two-stage generation (text enhancement + image creation)
-- Automatic prompt optimization
-- Multiple image model support
-- Configurable dimensions
-- Prompt length management for model limits
-
-**Configuration Options**:
-
-- `imageModel`: DALL-E 2, DALL-E 3, etc.
-- `width`/`height`: Image dimensions
-- `textModel`: Model for prompt enhancement
-- `openAI`: Separate OpenAI client for image generation

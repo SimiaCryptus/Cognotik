@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.util.LoggerFactory
 
 open class LogDataParsingModel(
-    private val parsingModel: Chatter,
+    private val parsingModel: ChatInterface,
     private val temperature: Double
 ) : ParsingModel<LogDataParsingModel.LogData> {
     private val maxIterations = 10

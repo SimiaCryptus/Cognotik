@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.PaginatedDocumentReader
-import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extractDocumentContent
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -15,9 +14,9 @@ import java.util.regex.Pattern
 import kotlin.math.max
 
 class FileSearchTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: SearchTaskConfigData?
-) : AbstractTask<FileSearchTask.SearchTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<FileSearchTask.SearchTaskConfigData>(orchestrationConfig, planTask) {
     // SearchTaskConfigData remains the same
     class SearchTaskConfigData(
         @Description("The search pattern (substring or regex) to look for in the files")
@@ -34,7 +33,7 @@ class FileSearchTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskConfigBase(
-        task_type = TaskType.FileSearchTask.name,
+        task_type = FileSearchTaskType.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -53,15 +52,15 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     // run remains the same
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val searchResults = performSearch()
         val formattedResults = formatSearchResults(searchResults)
-        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = agent.ui))
+        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
         resultFn(formattedResults)
     }
 
@@ -213,24 +212,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             "maven"
         )
         return textExtensions.contains(file.extension.lowercase())
-    }
-
-    private fun extractDocumentContent(file: java.io.File): String {
-        return try {
-            file.getReader().use { reader ->
-                when (reader) {
-                    is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
-                    else -> reader.getText()
-                }
-            }
-        } catch (e: Exception) {
-            log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
-            try {
-                file.readText()
-            } catch (e2: Exception) {
-                "Error reading file: ${e2.message}"
-            }
-        }
     }
 
 

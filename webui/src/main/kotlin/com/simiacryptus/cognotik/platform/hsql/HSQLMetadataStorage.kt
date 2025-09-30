@@ -1,21 +1,31 @@
 package com.simiacryptus.cognotik.platform.hsql
 
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
+import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Timestamp
 import java.util.*
 
-class HSQLMetadataStorage() : MetadataStorageInterface {
-    private val log = LoggerFactory.getLogger(javaClass)
+class HSQLMetadataStorage(root: File?) : MetadataStorageInterface {
+
+    init {
+        require(root?.exists() != false || root.mkdirs()) { "Failed to create root directory: $root" }
+        log.info("Initializing UserSettingsManager with root directory: {}", root)
+    }
 
     private val connection: Connection by lazy {
         Class.forName("org.hsqldb.jdbc.JDBCDriver")
-        val connection =
-            DriverManager.getConnection("jdbc:hsqldb:mem:metadata", "SA", "")
+        val url = if (null == root) {
+            "jdbc:hsqldb:mem:metadata"
+        } else {
+            "jdbc:hsqldb:file:${root.absolutePath};shutdown=true;hsqldb.lock_file=false"
+        }
+        val connection = DriverManager.getConnection(url, "SA", "")
         createSchema(connection)
         connection
     }
@@ -37,7 +47,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
     }
 
     override fun getSessionName(user: User?, session: Session): String {
-        log.debug("Fetching session name for session: ${session}, user: ${user?.email}")
+        log.debug("Fetching session name for session: {}, user: {}", session, user?.email)
         val statement = connection.prepareStatement(
             "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'name'"
         )
@@ -46,7 +56,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
         val resultSet = statement.executeQuery()
         return if (resultSet.next()) {
             val name = resultSet.getString("value")
-            log.debug("Retrieved session name: $name for session: ${session}")
+            log.debug("Retrieved session name: {} for session: {}", name, session)
             name
         } else {
             session.sessionId
@@ -54,7 +64,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
     }
 
     override fun setSessionName(user: User?, session: Session, name: String) {
-        log.debug("Setting session name for session: ${session}, user: ${user?.email} to $name")
+        log.debug("Setting session name for session: {}, user: {} to {}", session, user?.email, name)
         val statement = connection.prepareStatement(
             """
             MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
@@ -73,7 +83,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
     }
 
     override fun getMessageIds(user: User?, session: Session): List<String> {
-        log.debug("Fetching message IDs for session: ${session}, user: ${user?.email}")
+        log.debug("Fetching message IDs for session: {}, user: {}", session, user?.email)
         val statement = connection.prepareStatement(
             "SELECT value FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'message_ids'"
         )
@@ -82,16 +92,16 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
         val resultSet = statement.executeQuery()
         return if (resultSet.next()) {
             val ids = resultSet.getString("value").split(",")
-            log.debug("Retrieved ${ids.size} message IDs for session: ${session}")
+            log.debug("Retrieved {} message IDs for session: {}", ids.size, session)
             ids
         } else {
-            log.debug("No message IDs found for session: ${session}")
+            log.debug("No message IDs found for session: {}", session)
             emptyList()
         }
     }
 
     override fun setMessageIds(user: User?, session: Session, ids: List<String>) {
-        log.debug("Setting message IDs for session: ${session}, user: ${user?.email} to $ids")
+        log.debug("Setting message IDs for session: {}, user: {} to {}", session, user?.email, ids)
         val statement = connection.prepareStatement(
             """
             MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
@@ -106,11 +116,11 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
         statement.setString(4, ids.joinToString(","))
         statement.setTimestamp(5, Timestamp(System.currentTimeMillis()))
         statement.executeUpdate()
-        log.debug("Set ${ids.size} message IDs for session: ${session}")
+        log.debug("Set {} message IDs for session: {}", ids.size, session)
     }
 
     override fun getSessionTime(user: User?, session: Session): Date? {
-        log.debug("Fetching session time for session: ${session}, user: ${user?.email}")
+        log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
         val statement = connection.prepareStatement(
             "SELECT value, timestamp FROM metadata WHERE session_id = ? AND user_email = ? AND key = 'session_time'"
         )
@@ -121,7 +131,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
             val time = resultSet.getString("value")
             try {
                 Date(time.toLong()).also {
-                    log.debug("Retrieved session time: $it for session: ${session}")
+                    log.debug("Retrieved session time: {} for session: {}", it, session)
                 }
             } catch (e: NumberFormatException) {
                 log.warn("Invalid session time value: $time, falling back to timestamp for session: ${session}")
@@ -133,7 +143,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
     }
 
     override fun setSessionTime(user: User?, session: Session, time: Date) {
-        log.debug("Setting session time for session: ${session}, user: ${user?.email} to $time")
+        log.debug("Setting session time for session: {}, user: {} to {}", session, user?.email, time)
         val statement = connection.prepareStatement(
             """
             MERGE INTO metadata USING (VALUES(?, ?, ?, ?, ?)) AS vals(session_id, user_email, key, value, timestamp)
@@ -167,7 +177,7 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
     }
 
     override fun deleteSession(user: User?, session: Session) {
-        log.debug("Deleting session: ${session}, user: ${user?.email}")
+        log.debug("Deleting session: {}, user: {}", session, user?.email)
         val statement = connection.prepareStatement(
             "DELETE FROM metadata WHERE session_id = ? AND user_email = ?"
         )
@@ -175,6 +185,10 @@ class HSQLMetadataStorage() : MetadataStorageInterface {
         statement.setString(2, user?.email ?: "")
         statement.executeUpdate()
         log.info("Deleted session: ${session} for user: ${user?.email ?: "anonymous"}")
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(javaClass)
     }
 
 }

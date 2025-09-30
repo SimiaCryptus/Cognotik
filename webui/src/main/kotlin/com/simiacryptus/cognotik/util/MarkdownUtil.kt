@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
@@ -15,14 +15,14 @@ object MarkdownUtil {
         rawMarkdown: String,
         options: MutableDataSet = defaultOptions(),
         tabs: Boolean = true,
-        ui: ApplicationInterface? = null,
+        ui: SocketManager? = null,
     ) = renderMarkdown(rawMarkdown, options, tabs, ui) { it }
 
     fun renderMarkdown(
         rawMarkdown: String,
         options: MutableDataSet = defaultOptions(),
         tabs: Boolean = true,
-        ui: ApplicationInterface? = null,
+        ui: SocketManager? = null,
         markdownEditor: (String) -> String,
     ): String {
         if (rawMarkdown.isBlank()) return ""
@@ -48,26 +48,24 @@ object MarkdownUtil {
         }
     }
 
-    private fun renderMermaid(html: String, ui: ApplicationInterface?, tabs: Boolean): String {
+    private fun renderMermaid(html: String, ui: SocketManager?, tabs: Boolean): String {
         val mermaidRegex =
             Regex("<pre[^>]*><code class=\"language-mermaid\">(.*?)</code></pre>", RegexOption.DOT_MATCHES_ALL)
         val matches = mermaidRegex.findAll(html)
         var htmlContent = html
         matches.forEach { match ->
-            var mermaidCode = match.groups[1]!!.value
+            val mermaidCode = match.groups[1]!!.value
 
             val fixedMermaidCode = fixupMermaidCode(mermaidCode)
             var mermaidDiagramHTML = """<pre class="mermaid">$fixedMermaidCode</pre>"""
             try {
-                if (true) {
-                    val svg = renderMermaidToSVG(fixedMermaidCode)
-                    if (null != ui) {
-                        val graphTask = ui.newTask(false)
-                        mermaidDiagramHTML = graphTask.placeholder
-                        graphTask.complete(svg)
-                    } else {
-                        mermaidDiagramHTML = svg
-                    }
+                val svg = renderMermaidToSVG(fixedMermaidCode)
+                if (null != ui) {
+                    val graphTask = ui.newTask(false)
+                    mermaidDiagramHTML = graphTask.placeholder
+                    graphTask.complete(svg)
+                } else {
+                    mermaidDiagramHTML = svg
                 }
             } catch (e: Exception) {
                 log.warn("Failed to render Mermaid diagram: " + e.message)

@@ -1,7 +1,9 @@
 package com.simiacryptus.cognotik.embedding
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.event.Level
@@ -15,14 +17,16 @@ class OpenAIEmbeddingClient(
     apiBase: String = "https://api.openai.com/v1",
     workPool: ExecutorService = Executors.newCachedThreadPool(),
     logLevel: Level = Level.INFO,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
 ) : SingleProviderEmbeddingClient(
     provider = APIProvider.valueOf("OpenAI"),
     apiKey = apiKey,
     apiBase = apiBase,
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 ) {
 
     override fun authorize(
@@ -39,9 +43,9 @@ class OpenAIEmbeddingClient(
     }
 
     override fun createEmbedding(
-        request: ApiModel.EmbeddingRequest,
+        request: ModelSchema.EmbeddingRequest,
         model: EmbeddingModel
-    ): ApiModel.EmbeddingResponse {
+    ): ModelSchema.EmbeddingResponse {
         validateEmbeddingRequest(request, model)
 
         return withReliability {
@@ -64,7 +68,7 @@ class OpenAIEmbeddingClient(
                 checkError(rawResponse)
 
                 // Parse OpenAI response
-                val response = JsonUtil.objectMapper().readValue(rawResponse, ApiModel.EmbeddingResponse::class.java)
+                val response = JsonUtil.objectMapper().readValue(rawResponse, ModelSchema.EmbeddingResponse::class.java)
 
                 // Validate response
                 if (response.data.isEmpty()) {
@@ -81,7 +85,7 @@ class OpenAIEmbeddingClient(
         }
     }
 
-    private fun validateEmbeddingRequest(request: ApiModel.EmbeddingRequest, model: EmbeddingModel) {
+    private fun validateEmbeddingRequest(request: ModelSchema.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
         require(apiKey.isNotBlank()) { "OpenAI API key is required" }

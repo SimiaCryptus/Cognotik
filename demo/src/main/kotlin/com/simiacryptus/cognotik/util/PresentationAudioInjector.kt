@@ -1,8 +1,9 @@
 package com.simiacryptus.cognotik.util
 
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.audio.AudioModels
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -15,6 +16,7 @@ import java.io.FileOutputStream
 import java.util.concurrent.Executors
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
+import kotlin.system.exitProcess
 
 object PresentationAudioInjector {
 
@@ -52,10 +54,11 @@ object PresentationAudioInjector {
         log.debug("Generating audio for text: {}", text)
         val mp3Bytes = OpenAIClient(
             workPool = Executors.newCachedThreadPool(),
-            key = emptyMap(),
-            apiBase = emptyMap()
+            key = "",
+            apiBase = "",
+            scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1))
         ).createSpeech(
-            ApiModel.SpeechRequest(
+            ModelSchema.SpeechRequest(
                 input = text,
                 model = AudioModels.TTS.modelName,
                 voice = "shimmer",
@@ -88,11 +91,11 @@ object PresentationAudioInjector {
             processPresentation(htmlFile.absolutePath, outputDir.absolutePath)
             println("Processing completed successfully.")
             log.info("Processing completed successfully.")
-            System.exit(0)
+            exitProcess(0)
         } else {
             println("HTML file selection cancelled.")
             log.warn("HTML file selection cancelled.")
-            System.exit(1)
+            exitProcess(1)
         }
     }
 }

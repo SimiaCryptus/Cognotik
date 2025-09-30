@@ -7,13 +7,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
-import com.simiacryptus.cognotik.apps.graph.GraphOrderedPlanMode
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.apps.graph.DependencyGraphMode
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskSettingsBase
 import com.simiacryptus.cognotik.plan.TaskType
@@ -21,13 +20,9 @@ import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.io.File
 import java.text.SimpleDateFormat
@@ -39,7 +34,7 @@ class UnifiedPlanAction : BaseAction() {
     override fun handle(e: AnActionEvent) {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
-            e.project, object : PlanSettings(
+            e.project, object : OrchestrationConfig(
                 defaultModel = AppSettingsState.instance.smartModel
                     ?: throw IllegalStateException("Smart model not configured"),
                 parsingModel = AppSettingsState.instance.fastModel
@@ -60,156 +55,28 @@ class UnifiedPlanAction : BaseAction() {
         if (dialog.showAndGet()) {
             try {
                 val planSettings = dialog.settings
-
                 val selectedCognitiveMode = dialog.cognitiveModeCombo.selectedItem as String
-
                 val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
-                    "Plan Ahead" -> object : CognitiveModeStrategy {
-                        override val inputCnt = 1
-
-                        override fun getCognitiveMode(
-                            ui: ApplicationInterface,
-                            planSettings: PlanSettings,
-                            session: Session,
-                            user: User?,
-                            describer: TypeDescriber
-                        ) = object : PlanAheadMode(ui, planSettings, session, user,  describer) {
-                            override fun contextData(): List<String> {
-                                return listOf(
-                                    buildString {
-
-                                        append("Selected Files:\n")
-                                        append(filteredWalk(File(root)).joinToString("\n") {
-                                            "* ${
-                                                it.toRelativeString(
-                                                    File(root)
-                                                )
-                                            }"
-                                        })
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    "Single Task" -> object : CognitiveModeStrategy {
-                        override val inputCnt = 0
-                        override fun getCognitiveMode(
-                            ui: ApplicationInterface,
-                            planSettings: PlanSettings,
-                            session: Session,
-                            user: User?,
-                            describer: TypeDescriber
-                        ) = object : TaskChatMode(ui, planSettings, session, user, describer) {
-                            override fun contextData(): List<String> {
-                                return listOf(
-                                    buildString {
-
-                                        append("Selected Files:\n")
-                                        append(filteredWalk(File(root)).joinToString("\n") {
-                                            "* ${
-                                                it.toRelativeString(
-                                                    File(root)
-                                                )
-                                            }"
-                                        })
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    "Graph" -> object : CognitiveModeStrategy {
-                        override val inputCnt = 1
-                        override fun getCognitiveMode(
-                            ui: ApplicationInterface,
-                            planSettings: PlanSettings,
-                            session: Session,
-                            user: User?,
-                            describer: TypeDescriber
-                        ) = object : GraphOrderedPlanMode(
-                            ui,
-                            planSettings,
-                            session,
-                            user,
-                            graphFile,
-                            describer
-                        ) {
-                            override fun contextData(): List<String> {
-                                return listOf(
-                                    buildString {
-
-                                        append("Selected Files:\n")
-                                        append(filteredWalk(File(root)).joinToString("\n") {
-                                            "* ${
-                                                it.toRelativeString(
-                                                    File(root)
-                                                )
-                                            }"
-                                        })
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    "Auto Plan" -> object : CognitiveModeStrategy {
-                        override val inputCnt = 1
-                        override fun getCognitiveMode(
-                            ui: ApplicationInterface,
-                            planSettings: PlanSettings,
-                            session: Session,
-                            user: User?,
-                            describer: TypeDescriber
-                        ): CognitiveMode {
-                            return object : AutoPlanMode(
-                                ui = ui,
-                                planSettings = planSettings,
-                                session = session,
-                                user = user,
-                                maxTaskHistoryChars = dialog.settings.maxTaskHistoryChars,
-                                maxTasksPerIteration = dialog.settings.maxTasksPerIteration,
-                                maxIterations = dialog.settings.maxIterations,
-                                describer
-                            ) {
-                                override fun contextData(): List<String> {
-                                    return listOf(
-                                        buildString {
-                                            append("Selected Files:\n")
-                                            append(filteredWalk(File(root)).joinToString("\n") {
-                                                "* ${
-                                                    it.toRelativeString(
-                                                        File(root)
-                                                    )
-                                                }"
-                                            })
-                                        }
-                                    )
+                    "Single Task" -> {
+                        val enabledTask = TaskType.values().find { planSettings.getTaskSettings(it).enabled }
+                        if (enabledTask != null) {
+                            TaskType.values().forEach { taskType ->
+                                // Disable all other tasks
+                                if (taskType != enabledTask) {
+                                    var taskSettings = planSettings.getTaskSettings(taskType)
+                                    taskSettings = TaskSettingsBase(taskType.name, false, taskSettings.model)
+                                    planSettings.setTaskSettings(taskType, taskSettings)
                                 }
                             }
                         }
+                        ConversationalMode
                     }
-
+                    "Task Planning" -> WaterfallMode
+                    "Graph" -> DependencyGraphMode
+                    "Iterative Loop" -> AdaptivePlanningMode
+                    "Goal Oriented" -> HierarchicalPlanningMode
                     else -> throw RuntimeException("Unknown plan mode: $selectedCognitiveMode")
                 }
-
-                val isSingleTaskMode = selectedCognitiveMode == "Single Task"
-
-                if (isSingleTaskMode) {
-                    val enabledTask = TaskType.values().find { planSettings.getTaskSettings(it).enabled }
-                    if (enabledTask != null) {
-
-                        TaskType.values().forEach { taskType ->
-                            if (taskType != enabledTask) {
-                                planSettings.setTaskSettings(
-                                    taskType,
-                                    TaskSettingsBase(taskType.name, false, planSettings.getTaskSettings(taskType).model)
-                                )
-                            }
-                        }
-                    }
-                }
-
                 UITools.runAsync(e.project, "Initializing Unified Plan", true) { progress ->
                     initializeChat(e, progress, planSettings, cognitiveMode)
                 }
@@ -223,7 +90,7 @@ class UnifiedPlanAction : BaseAction() {
     private fun initializeChat(
         e: AnActionEvent,
         progress: ProgressIndicator,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         cognitiveStrategy: CognitiveModeStrategy
     ) {
         progress.text = "Setting up session..."
@@ -233,7 +100,7 @@ class UnifiedPlanAction : BaseAction() {
         setupChatSession(
             session,
             root,
-            planSettings,
+            orchestrationConfig,
             cognitiveStrategy,
             object : AbbrevWhitelistYamlDescriber(
                 "com.simiacryptus", "cognotik.actions"
@@ -242,7 +109,7 @@ class UnifiedPlanAction : BaseAction() {
 
                 override fun getEnumValues(clazz: Class<*>): List<String> {
                     return if (clazz == TaskType::class.java) {
-                        planSettings.taskSettings.filter { it.value.enabled }.map { it.key }
+                        orchestrationConfig.taskSettings.filter { it.value.enabled }.map { it.key }
                     } else {
                         super.getEnumValues(clazz)
                     }
@@ -263,17 +130,17 @@ class UnifiedPlanAction : BaseAction() {
     private fun setupChatSession(
         session: Session,
         root: File,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
         cognitiveStrategy: CognitiveModeStrategy,
         describer: TypeDescriber
     ) {
         DataStorage.sessionPaths[session] = root
         val fastChatModel = (AppSettingsState.instance.fastModel
             ?: throw IllegalStateException("Fast model not configured"))
-        SessionProxyServer.chats[session] = object : UnifiedPlanApp(
+        val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
-            planSettings = planSettings.copy(
+            orchestrationConfig = orchestrationConfig.copy(
                 env = mapOf(),
                 workingDir = root.absolutePath,
                 language = if (isWindows) "powershell" else "bash",
@@ -282,9 +149,6 @@ class UnifiedPlanAction : BaseAction() {
                 ),
                 parsingModel = fastChatModel,
             ),
-            model = AppSettingsState.instance.smartModel
-                ?: throw IllegalStateException("Smart model not configured"),
-            parsingModel = fastChatModel,
             showMenubar = false,
             cognitiveStrategy = cognitiveStrategy,
             describer = describer
@@ -292,12 +156,12 @@ class UnifiedPlanAction : BaseAction() {
             override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")
         }
+        SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
-            applicationName = "Unified Planning",
-            inputCnt = 1,
-            stickyInput = true,
-            loadImages = false,
-            showMenubar = false
+            applicationName = "Cognotik",
+            inputCnt = app.inputCnt,
+            stickyInput = app.stickyInput,
+            showMenubar = app.showMenubar
         )
         SessionProxyServer.metadataStorage.setSessionName(
             null,

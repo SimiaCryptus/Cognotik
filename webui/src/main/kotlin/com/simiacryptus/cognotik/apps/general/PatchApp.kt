@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.SimpleActor
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
@@ -11,9 +11,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -27,8 +25,8 @@ import java.util.concurrent.TimeUnit
 abstract class PatchApp(
     override val root: File,
     protected val settings: Settings,
-    val model: Chatter,
-    val parsingModel: Chatter,
+    val model: ChatInterface,
+    val parsingModel: ChatInterface,
     private val promptPrefix: String = """The following command was run and produced an error:""",
 ) : ApplicationServer(
     applicationName = "Magic Code Fixer",
@@ -73,12 +71,12 @@ abstract class PatchApp(
             }?.flatMap {
                 it.lines ?: emptyList()
             }?.toSet() ?: emptySet()
-            log.debug("Found ${errorLocations.size} error locations in file: $path")
+            log.debug("Found {} error locations in file: {}", errorLocations.size, path)
 
             try {
                 val fileContent = path.readText()
                 val lines = fileContent.lines()
-                log.debug("Read ${lines.size} lines from file: $path")
+                log.debug("Read {} lines from file: {}", lines.size, path)
                 val annotatedLines = lines.mapIndexed { lineIndex, line ->
                     val lineNumber = lineIndex + 1
                     val linePrefix = if (settings.includeLineNumbers) "$lineNumber: " else ""
@@ -91,7 +89,7 @@ abstract class PatchApp(
                 }
                 val gitDiff = if (settings.includeGitDiffs) {
                     try {
-                        log.debug("Attempting to get git diff for: $path")
+                        log.debug("Attempting to get git diff for: {}", path)
 
                         val relativePath = path.toString()
                         val process = ProcessBuilder("git", "diff", "HEAD", "--", relativePath)
@@ -104,7 +102,11 @@ abstract class PatchApp(
                             }
                             it.readText()
                         }
-                        log.debug("Git diff for $path: ${if (diffOutput.isBlank()) "No changes" else "${diffOutput.lines().size} lines of diff"}")
+                        log.debug(
+                            "Git diff for {}: {}",
+                            path,
+                            if (diffOutput.isBlank()) "No changes" else "${diffOutput.lines().size} lines of diff"
+                        )
                         if (diffOutput.isNotBlank()) "\nGit Diff:\n```diff\n$diffOutput\n```" else ""
                     } catch (e: Exception) {
                         log.info("Failed to get git diff for $path: ${e.message}")
@@ -122,7 +124,9 @@ abstract class PatchApp(
     }
 
     abstract fun output(
-        task: SessionTask, settings: Settings, ui: ApplicationInterface, tabs: TabbedDisplay = TabbedDisplay(task)
+        task: SessionTask,
+        settings: Settings,
+        tabs: TabbedDisplay = TabbedDisplay(task)
     ): OutputResult
 
     abstract fun searchFiles(searchStrings: List<String>): Set<Path>
@@ -132,7 +136,7 @@ abstract class PatchApp(
         log.info("Creating new session for user: ${user?.id ?: "anonymous"}")
         var retries: Int = -1
         val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
+        val ui = socketManager
         val task = ui.newTask()
         var retryOnOffButton: StringBuilder? = null
         val disableButton = task.hrefLink("Disable Auto-Retry") {
@@ -146,7 +150,7 @@ abstract class PatchApp(
             retryOnOffButton = task.add(disableButton)
         }
         lateinit var retry: Retryable
-        retry = Retryable(ui = ui, task = task) { content ->
+        retry = Retryable(task = task) { content ->
             if (retries < 0) {
                 retries = when {
                     settings.autoFix -> settings.maxRetries
@@ -158,7 +162,7 @@ abstract class PatchApp(
             Thread {
                 log.info("Starting run thread")
                 val model = model.getChildClient(task)
-                val result = run(ui, newTask, model)
+                val result = run(newTask, model)
                 log.info("Run completed with exit code: ${result.exitCode}")
                 if (result.exitCode != 0 && retries > 0) {
                     log.info("Triggering retry (${retries} remaining)")
@@ -252,15 +256,14 @@ abstract class PatchApp(
     )
 
     fun run(
-        ui: ApplicationInterface,
         task: SessionTask,
-        model: Chatter,
+        model: ChatInterface,
     ): OutputResult {
         log.info("Starting run with settings: ${JsonUtil.toJson(settings)}")
 
         val tabs = TabbedDisplay(task)
 
-        val outputResult = output(task, settings, ui, tabs)
+        val outputResult = output(task, settings, tabs)
         log.info("Command execution completed with exit code: ${outputResult.exitCode}")
         if (outputResult.exitCode == 0) {
             log.info("Command executed successfully, no fixes needed")
@@ -268,7 +271,7 @@ abstract class PatchApp(
             return outputResult
         }
 
-        val fixTask = ui.newTask(false).apply { tabs["Fix"] = placeholder }
+        val fixTask = task.manager.newTask(false).apply { tabs["Fix"] = placeholder }
         try {
             log.info("Creating child API client for fix task")
             val plan = if (outputResult.errors == null) {
@@ -302,7 +305,6 @@ abstract class PatchApp(
             fixAllErrors(
                 task = fixTask,
                 plan = plan,
-                ui = ui,
                 settings = settings,
                 changed = mutableSetOf(),
                 progressHeader = progressHeader,
@@ -326,11 +328,10 @@ abstract class PatchApp(
     private fun fixAllErrors(
         task: SessionTask,
         plan: ParsedResponse<ParsedErrors>,
-        ui: ApplicationInterface,
         settings: Settings,
         changed: MutableSet<Path>,
         progressHeader: StringBuilder?,
-        model: Chatter
+        model: ChatInterface
     ) {
         log.info("Starting fixAllErrors")
         val tabs = TabbedDisplay(task)
@@ -350,17 +351,23 @@ abstract class PatchApp(
         filteredErrors.groupBy { it.message }
             .map { (msg, errors) ->
                 log.info("Processing error group: $msg with ${errors.size} instances")
-                ui.socketManager?.pool?.submit {
-                    val task = ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
+                task.manager.pool.submit {
+                    val task = task.manager.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
                     errors.forEach { error ->
                         log.info("Processing individual error: ${error.message}")
                         task.header("Processing error: $msg", 3)
-                        task.add(renderMarkdown("```json\n${JsonUtil.toJson(error)}\n```", tabs = false, ui = ui))
+                        task.add(
+                            renderMarkdown(
+                                "```json\n${JsonUtil.toJson(error)}\n```",
+                                tabs = false,
+                                ui = task.manager
+                            )
+                        )
                         task.verbose(
                             renderMarkdown(
                                 "[Extra Details] Error processed at: ${Instant.now()}",
                                 tabs = false,
-                                ui = ui
+                                ui = task.manager
                             )
                         )
 
@@ -381,14 +388,13 @@ abstract class PatchApp(
                                 renderMarkdown(
                                     "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}",
                                     tabs = false,
-                                    ui = ui
+                                    ui = task.manager
                                 )
                             )
                         }
                         fix(
                             error,
                             searchResults.toList().map { it.toFile().absolutePath },
-                            ui,
                             settings.autoFix,
                             changed,
                             task,
@@ -396,17 +402,17 @@ abstract class PatchApp(
                         )
                     }
                 }
-            }.toTypedArray().onEach { it?.get() }
+            }.toTypedArray().onEach { it.get() }
         log.info("All error fixes have been submitted")
         progressHeader?.set("Finished processing tasks")
         task.append("", false)
     }
 
     private fun parsedErrorsParsedResponse(
-        settings: Settings, output: OutputResult, model: Chatter
+        settings: Settings, output: OutputResult, model: ChatInterface
     ): ParsedResponse<ParsedErrors> {
         log.info("Parsing errors from command output")
-        val plan = ParsedActor(
+        val plan = ParsedAgent(
             resultClass = ParsedErrors::class.java,
             exampleInstance = if (previousParsedErrorsRecords.isEmpty()) ParsedErrors(
                 listOf(
@@ -466,11 +472,10 @@ abstract class PatchApp(
     private fun fix(
         error: ParsedError,
         additionalFiles: List<String>? = null,
-        ui: ApplicationInterface,
         autoFix: Boolean,
         changed: MutableSet<Path>,
         task: SessionTask,
-        model: Chatter,
+        model: ChatInterface,
     ) {
         log.info("Starting fix for error: ${error.message}")
         val paths = ((error.research?.fixFiles ?: emptyList()) +
@@ -504,7 +509,7 @@ abstract class PatchApp(
 
         val summary = codeSummary(prunedPaths.distinct(), error)
         log.info("Generated code summary (${summary.length} chars)")
-        val fixResponse = SimpleActor(
+        val fixResponse = ChatAgent(
             prompt = """
         You are a helpful AI that helps people with coding.
         You will be answering questions about the following code:
@@ -528,7 +533,6 @@ abstract class PatchApp(
         val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
             root = root.toPath(),
             response = fixResponse,
-            ui = ui,
             shouldAutoApply = { path ->
                 if (autoFix && !changed.contains(path)) {
                     log.info("Auto-applying fix to: $path")
@@ -536,23 +540,24 @@ abstract class PatchApp(
                     true
                 } else {
                     log.debug(
-                        "Not auto-applying fix to: $path (autoFix=$autoFix, already changed=${
-                            changed.contains(
-                                path
-                            )
-                        })"
+                        "Not auto-applying fix to: {} (autoFix={}, already changed={})",
+                        path,
+                        autoFix,
+                        changed.contains(
+                            path
+                        )
                     )
                     false
                 }
             },
             model = model,
-            self = ui.socketManager!!
+            self = task.manager
         )
         log.info("Instrumented file diffs with apply links")
         task.verbose(
             renderMarkdown("Previous occurrences of this error:\n\n" + previousErrorOccurances.joinToString("\n") {
                 "* " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(it.timestamp)
-            } + "\nNon-matching instances: ${others.size}", tabs = false, ui = ui))
+            } + "\nNon-matching instances: ${others.size}", tabs = false, ui = task.manager))
         task.verbose(
             renderMarkdown(
                 "Files identified for modification:\n\n${
@@ -561,7 +566,7 @@ abstract class PatchApp(
                             root.toPath().resolve(it).toFile().length()
                         } bytes)"
                     }
-                }", tabs = false, ui = ui))
+                }", tabs = false, ui = task.manager))
         log.info("Fix process completed for error: ${error.message}")
         task.complete("<div>${renderMarkdown(markdown)}</div>")
     }

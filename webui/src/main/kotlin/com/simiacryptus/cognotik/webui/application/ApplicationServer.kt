@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.application
 
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
-import com.simiacryptus.cognotik.platform.ApplicationServices.dataStorageFactory
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -42,7 +42,9 @@ abstract class ApplicationServer(
         )
     }.toMap()
 
-    final override val dataStorage: StorageInterface by lazy { dataStorageFactory(dataStorageRoot) }
+    final override val dataStorage: StorageInterface by lazy {
+        ApplicationServices.fileApplicationServices().dataStorageFactory
+    }
 
     protected open val appInfoServlet by lazy {
         ServletHolder("appInfo", AppInfoServlet { session ->
@@ -90,7 +92,7 @@ abstract class ApplicationServer(
                 session = session,
                 user = user,
                 userMessage = userMessage,
-                ui = socketManager.applicationInterface
+                ui = socketManager
             )
         }
         logger.info("New session created successfully: {}", session)
@@ -100,7 +102,7 @@ abstract class ApplicationServer(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: ApplicationInterface
+        ui: SocketManager
     ) {
         logger.warn(
             "userMessage not implemented for application: {} - session: {} user: {}",
@@ -126,25 +128,32 @@ abstract class ApplicationServer(
         )
         val settingsFile = getSettingsFile(session, userId)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
-        val text = settingsFile.readText()
-        logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
-        var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
-
-        if (null == settings) {
-            logger.debug("No existing settings found, initializing default settings")
-            val initSettings = initSettings<T>(session)
-            if (null != initSettings) {
-                logger.debug("Writing initial settings to file")
-                settingsFile.writeText(JsonUtil.toJson(initSettings))
+        if(settingsFile.exists()) try {
+            val text = settingsFile.readText()
+            logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
+            var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
+            if (null == settings) {
+                logger.debug("No existing settings found, initializing default settings")
+                val initSettings = initSettings<T>(session)
+                if (null != initSettings) {
+                    logger.debug("Writing initial settings to file")
+                    settingsFile.writeText(JsonUtil.toJson(initSettings))
+                }
+                if (settingsFile.exists()) {
+                    settings = JsonUtil.fromJson(text, clazz)
+                    logger.debug("Loaded initial settings from file")
+                }
+            } else {
+                logger.debug("Loaded existing settings from file")
             }
-            if (settingsFile.exists()) {
-                settings = JsonUtil.fromJson(text, clazz)
-                logger.debug("Loaded initial settings from file")
-            }
+            return settings
+        } catch (e: Exception) {
+            logger.error("Error reading settings file: ${settingsFile.absolutePath}", e)
+            return null
         } else {
-            logger.debug("Loaded existing settings from file")
+            logger.debug("Settings file does not exist, returning null")
+            return null
         }
-        return settings
     }
 
     fun getSettingsFile(

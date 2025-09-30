@@ -12,7 +12,7 @@ import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
@@ -21,8 +21,8 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.text.SimpleDateFormat
@@ -170,17 +170,17 @@ class FindResultsChatAction(
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface
+            ui: SocketManager
         ) {
             val task = ui.newTask()
             task.echo(renderMarkdown(userMessage))
             task.verbose((getCodeContext()).renderMarkdown())
             val model = AppSettingsState.instance.smartChatClient.getChildClient(task)
-            Retryable(ui = ui, task = task) { content ->
+            Retryable(task = task) { content ->
                 val task = ui.newTask(false)
                 task.add(
                     "<div>" + renderMarkdown(
-                        SimpleActor(
+                        ChatAgent(
                             prompt = """
                              You are a helpful AI that helps people understand code.
                              You will be answering questions about code with the following find results:

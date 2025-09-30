@@ -51,7 +51,7 @@ open class TranscriptionProcessor(
                     |Text: ${transcriptionResult.text}
                     |Prompt: ${transcriptionResult.prompt}
                     |Processing time: ${transcriptionResult.processingTime}ms
-                    |Audio duration: ${recordAudio.samples.size / recordAudio.audioFormat.sampleRate.toFloat()}s
+                    |Audio duration: ${recordAudio.samples.size / recordAudio.audioFormat.sampleRate}s
                     |""".trimMargin()
                 )
             }

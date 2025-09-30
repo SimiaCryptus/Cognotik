@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.google.common.util.concurrent.MoreExecutors
-import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.simiacryptus.cognotik.exceptions.*
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
@@ -12,6 +12,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager
 import org.apache.hc.core5.http.HttpHeaders
 import org.apache.hc.core5.http.io.SocketConfig
+import org.apache.hc.core5.http.message.BasicHeader
 import org.apache.hc.core5.util.Timeout
 import org.slf4j.Logger
 import org.slf4j.event.Level
@@ -25,24 +26,31 @@ import java.util.concurrent.*
 import java.util.function.Function
 import kotlin.math.pow
 
-open class HttpClientManager(
+abstract class HttpClientManager(
     val logLevel: Level = Level.INFO,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
+    val scheduledPool: ListeningScheduledExecutorService,
+    val onUsageListeners: MutableList<(model: LLMModel, tokens: ModelSchema.Usage) -> Unit> = mutableListOf(),
 ) {
     @Suppress("unused")
     val createdBy = Thread.currentThread().stackTrace
 
+    /**
+     * Called when API usage occurs to track tokens and costs
+     * @param model The model that was used
+     * @param tokens Usage information including token counts and cost
+     */
+    open fun onUsage(
+        model: LLMModel,
+        tokens: ModelSchema.Usage,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams.toTypedArray().toMutableList(),
+    ) {
+        onUsageListeners.forEach { it(model, tokens) }
+    }
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpClientManager::class.java)
-
-        val scheduledPool: ListeningScheduledExecutorService =
-            MoreExecutors.listeningDecorator(
-                ScheduledThreadPoolExecutor(
-                    0,
-                    ThreadFactoryBuilder().setNameFormat("API Scheduler %d").build()
-                )
-            )
 
         private const val DEFAULT_USER_AGENT = "Cognotik/1.0"
         val client by lazy { createHttpClient(DEFAULT_USER_AGENT) }
@@ -69,7 +77,7 @@ open class HttpClientManager(
                 this
             })
             .setUserAgent(userAgent)
-            .setDefaultHeaders(listOf(org.apache.hc.core5.http.message.BasicHeader(HttpHeaders.USER_AGENT, userAgent)))
+            .setDefaultHeaders(listOf(BasicHeader(HttpHeaders.USER_AGENT, userAgent)))
             .build()
 
         val startTime by lazy { System.currentTimeMillis() }
@@ -129,7 +137,7 @@ open class HttpClientManager(
 
     val stackCalls: MutableMap<Thread, String> = ConcurrentHashMap()
 
-    private fun <T> withPool(logStreams1: MutableList<java.io.BufferedOutputStream> = this.logStreams, fn: () -> T): T {
+    private fun <T> withPool(logStreams1: MutableList<BufferedOutputStream> = this.logStreams, fn: () -> T): T {
         val callerStack = captureCallerStack()
 
         val future = workPool.submit(Callable {
@@ -137,7 +145,7 @@ open class HttpClientManager(
             return@Callable fn()
         })
 
-        fun handleException(future: Future<*>, e: Throwable, callerStack: String, logStreams: MutableList<java.io.BufferedOutputStream> = logStreams1): Nothing {
+        fun handleException(future: Future<*>, e: Throwable, callerStack: String, logStreams: MutableList<BufferedOutputStream> = logStreams1): Nothing {
             future.cancel(true)
             when (e) {
                 is InterruptedException -> {
@@ -176,7 +184,7 @@ open class HttpClientManager(
     private fun <T> withExpBackoffRetry(
         retryCount: Int,
         sleepScale: Long = TimeUnit.SECONDS.toMillis(5),
-        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams,
         fn: () -> T,
     ): T {
         var lastException: Throwable? = null
@@ -201,7 +209,7 @@ open class HttpClientManager(
     open fun throwIfNonrecoverable(
         exception: Throwable,
         sleepPeriod: Long,
-        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams,
     ) {
         when (exception) {
             is RateLimitException -> {
@@ -231,7 +239,7 @@ open class HttpClientManager(
 
     private fun <T> withTimeout(
         duration: Duration,
-        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams,
         fn: () -> T
     ): T {
         val thread = Thread.currentThread()
@@ -254,12 +262,12 @@ open class HttpClientManager(
     fun <T> withReliability(
         requestTimeoutSeconds: Long = (5 * 60),
         retryCount: Int = 0,
-        logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams,
         fn: () -> T,
     ): T =
         withExpBackoffRetry(retryCount, logStreams = logStreams) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), logStreams = logStreams, fn) }
 
-    fun <T> withPerformanceLogging(logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams, fn: () -> T): T {
+    fun <T> withPerformanceLogging(logStreams: MutableList<BufferedOutputStream> = this.logStreams, fn: () -> T): T {
         val start = Date()
         try {
             return fn()
@@ -270,7 +278,7 @@ open class HttpClientManager(
 
     fun <T> withClient(fn: Function<CloseableHttpClient, T>): T = fn.apply(client)
 
-    protected open fun log(level: Level = logLevel, msg: String, logStreams: MutableList<java.io.BufferedOutputStream> = this.logStreams) {
+    protected open fun log(level: Level = logLevel, msg: String, logStreams: MutableList<BufferedOutputStream> = this.logStreams) {
         val message = msg.trim().takeIf { it.isNotEmpty() }?.lineSequence()
            ?.map {
                 when {

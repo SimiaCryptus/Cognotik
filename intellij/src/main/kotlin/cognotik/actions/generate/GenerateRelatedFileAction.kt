@@ -8,11 +8,11 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.models.ApiModel.ChatMessage
-import com.simiacryptus.cognotik.models.ApiModel.Role
+import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.util.getSelectedFiles
@@ -155,7 +155,7 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
     }
 
     private fun generateFile(
-        baseFile: ProjectFile, directive: String, progress: ProgressIndicator, model: Chatter
+        baseFile: ProjectFile, directive: String, progress: ProgressIndicator, model: ChatInterface
     ): ProjectFile = try {
         progress.text = "Generating content with AI..."
         progress.fraction = 0.4

@@ -413,8 +413,7 @@ abstract class DemoTestBase(
             val startTime = System.currentTimeMillis()
             while (true) {
                 try {
-                    return wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector)))
-                        .let { fn(it) }
+                    return fn(wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector))))
                 } catch (e: WebDriverException) {
                     if (e is TimeoutException) throw e
                     if (System.currentTimeMillis() - startTime > 30000) throw e

@@ -1,5 +1,3 @@
-@file:Suppress("LoggingSimilarMessage")
-
 package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.LineType.*

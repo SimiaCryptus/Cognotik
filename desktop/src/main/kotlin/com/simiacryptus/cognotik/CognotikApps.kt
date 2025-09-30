@@ -5,26 +5,21 @@ import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.plan.PlanSettings
-import com.simiacryptus.cognotik.plan.cognitive.AutoPlanMode
-import com.simiacryptus.cognotik.plan.cognitive.GoalOrientedMode
-import com.simiacryptus.cognotik.plan.cognitive.PlanAheadMode
-import com.simiacryptus.cognotik.plan.cognitive.TaskChatMode
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode
+import com.simiacryptus.cognotik.plan.cognitive.HierarchicalPlanningMode
+import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
+import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
 import org.eclipse.jetty.webapp.WebAppContext
-import org.slf4j.event.Level
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.BufferedWriter
@@ -37,8 +32,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.system.exitProcess
 
-val globalUser = User(id = "1", email = "user@localhost")
 val globalID = Session.newGlobalID()
 val model = AnthropicModels.Claude35Haiku
 val describer = AbbrevWhitelistYamlDescriber("com.simiacryptus")
@@ -83,7 +78,7 @@ open class CognotikApps(
                     log.info("Shutting down server...")
                     server?.stopServer()
                 })
-                System.exit(1)
+                exitProcess(1)
             }
         }
 
@@ -180,7 +175,7 @@ open class CognotikApps(
                             log.debug("Setting port to: ${args[i + 1]}")
                             port = args[++i].toIntOrNull() ?: run {
                                 log.error("Invalid port number: ${args[i]}")
-                                System.exit(1)
+                                exitProcess(1)
                                 throw IllegalArgumentException("Invalid port number: ${args[i]}")
                             }
                         }
@@ -212,7 +207,7 @@ open class CognotikApps(
                 onExit = {
                     log.info("Exit requested from system tray")
                     stopServer()
-                    System.exit(0)
+                    exitProcess(0)
                 })
             systemTrayManager?.initialize()
         } catch (e: Exception) {
@@ -232,12 +227,11 @@ open class CognotikApps(
     override fun setupPlatform() {
         super.setupPlatform()
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = globalUser
+            override fun getUser(accessToken: String?) = defaultUser
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
             override fun logout(accessToken: String, user: User) {}
         }
         ApplicationServices.authorizationManager = object : AuthorizationManager() {
-            @Suppress("UNUSED_PARAMETER")
             override fun isAuthorized(
                 applicationClass: Class<*>?,
                 user: User?,
@@ -249,7 +243,7 @@ open class CognotikApps(
 
 
     override val childWebApps by lazy {
-        val planSettings = object : PlanSettings(
+        val orchestrationConfig = object : OrchestrationConfig(
             defaultModel = model.toApiChatModel(),
             parsingModel = model.toApiChatModel(),
             workingDir = "."
@@ -264,10 +258,8 @@ open class CognotikApps(
                 "/taskChat", object : UnifiedPlanApp(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
-                    planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
-                    cognitiveStrategy = TaskChatMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = ConversationalMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
@@ -278,10 +270,8 @@ open class CognotikApps(
                 "/autoPlan", object : UnifiedPlanApp(
                     path = "/autoPlan",
                     applicationName = "Auto-Plan",
-                    planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
-                    cognitiveStrategy = AutoPlanMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = AdaptivePlanningMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
@@ -292,10 +282,8 @@ open class CognotikApps(
                 "/planAhead", object : UnifiedPlanApp(
                     path = "/planAhead",
                     applicationName = "Plan-Ahead",
-                    planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
-                    cognitiveStrategy = PlanAheadMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = WaterfallMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
@@ -306,10 +294,8 @@ open class CognotikApps(
                 "/goalOriented", object : UnifiedPlanApp(
                     path = "/goalOriented",
                     applicationName = "Goal-Oriented",
-                    planSettings = planSettings,
-                    model = model.toApiChatModel(),
-                    parsingModel = model.toApiChatModel(),
-                    cognitiveStrategy = GoalOrientedMode,
+                    orchestrationConfig = orchestrationConfig,
+                    cognitiveStrategy = HierarchicalPlanningMode,
                     describer = describer
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
@@ -328,7 +314,7 @@ open class CognotikApps(
                 Thread.sleep(100)
 
                 stopServer()
-                System.exit(0)
+                exitProcess(0)
             }.start()
             return "Server shutting down"
         } else {
@@ -440,32 +426,37 @@ fun String?.urlEncode(): String {
 }
 
 fun ApiChatModel.instance(
-    user: User = globalUser,
+    user: User = defaultUser,
     session: Session = globalID,
-    service: ExecutorService = ApplicationServices.clientManager.getPool(session, user),
+    service: ExecutorService = ApplicationServices.threadPoolManager.getPool(session, user),
     temperature: Double = 0.1
 ) = model?.instance(
     key = when(provider?.key){
         null -> null
         "NONE" -> null
         else -> provider!!.key
-    } ?: ApplicationServices.userSettingsManager.getUserSettings(user).apis.let {
+    } ?: ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
         it.firstOrNull { it.provider == this.provider }?.key
             ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
             ?: throw IllegalStateException("No API key configured for model $model")
     },
     base = provider?.provider?.base ?: model?.provider?.base
     ?: throw IllegalStateException("No API base configured for model $model"),
-    logLevel = Level.INFO,
-    logStreams = mutableListOf(),
+    workPool = service,
     temperature = temperature,
-    workPool = service
+    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
+    onUsage = { model, usage ->
+        ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+            session,
+            user, model, usage
+        )
+    }
 )
 
 private fun ChatModel.toApiChatModel(
-    user: User = globalUser
+    user: User = defaultUser
 ): ApiChatModel {
-    val userSettings = ApplicationServices.userSettingsManager.getUserSettings(user = user)
+    val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user = user)
     val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }
     return ApiChatModel(
         model = this,

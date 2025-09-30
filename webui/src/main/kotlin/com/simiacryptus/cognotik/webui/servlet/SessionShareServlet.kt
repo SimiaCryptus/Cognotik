@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationMana
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.cloud
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -81,9 +80,9 @@ class SessionShareServlet(
 
         require(acceptHost(user, host)) { "Invalid url: $url" }
 
-        val storageInterface = ApplicationServices.dataStorageFactory(dataStorageRoot)
+        val storageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory
         val session = Session.parseSessionID(sessionID)
-        val pool = ApplicationServices.clientManager.getPool(session, user)
+        val pool = ApplicationServices.threadPoolManager.getPool(session, user)
         val infoFile = storageInterface.getDataDir(user, session).resolve("info.json").apply { parentFile.mkdirs() }
         val json = if (infoFile.exists()) JsonUtil.fromJson<Map<String, Any>>(
             infoFile.readText(),

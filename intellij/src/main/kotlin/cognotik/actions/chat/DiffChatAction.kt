@@ -63,7 +63,7 @@ class DiffChatAction : BaseAction() {
         val selectedText = primaryCaret.selectedText
         return if (selectedText != null) {
             Triple(
-                selectedText.toString(),
+                selectedText,
                 primaryCaret.selectionStart,
                 primaryCaret.selectionEnd
             )
@@ -110,7 +110,7 @@ class DiffChatAction : BaseAction() {
             filename = filename,
             model = AppSettingsState.instance.smartChatClient,
             parsingModel = AppSettingsState.instance.fastChatClient,
-            storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot)
+            storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         ) {
 
             override val systemPrompt: String
@@ -141,8 +141,7 @@ class DiffChatAction : BaseAction() {
                                 document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
                             }
                         },
-                        task = task,
-                        ui = ui
+                        task = task
                     )
                 )
             }</div>"""

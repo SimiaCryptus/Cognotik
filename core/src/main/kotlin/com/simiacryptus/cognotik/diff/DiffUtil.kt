@@ -53,7 +53,7 @@ object DiffUtil {
             val originalLine = originalLines[i]
             val modifiedLine = modifiedLines[j]
 
-            log.trace("Comparing lines - Original: $originalLine, Modified: $modifiedLine")
+            log.trace("Comparing lines - Original: {}, Modified: {}", originalLine, modifiedLine)
             if (originalLine == modifiedLine) {
                 patchLines.add(PatchLine(Unchanged, originalLine.lineNumber, original[i]))
                 i++

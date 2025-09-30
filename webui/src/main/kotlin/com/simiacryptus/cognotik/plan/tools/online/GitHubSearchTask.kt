@@ -14,9 +14,9 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 class GitHubSearchTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: GitHubSearchTaskConfigData?
-) : AbstractTask<GitHubSearchTask.GitHubSearchTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<GitHubSearchTask.GitHubSearchTaskConfigData>(orchestrationConfig, planTask) {
     class GitHubSearchTaskConfigData(
         @Description("The search query to use for GitHub search")
         val search_query: String = "",
@@ -48,24 +48,20 @@ GitHubSearchTask - Search GitHub for code, commits, issues, repositories, topics
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
         val searchResults = performGitHubSearch(
             agent.user
-                ?.let { ApplicationServices.userSettingsManager.getUserSettings(it) }
+                ?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
                 ?.apis?.firstOrNull { it.provider == APIProvider.Github }?.key?.trim()
                 ?: throw RuntimeException("GitHub API token is required")
         )
-        // formattedResults is the "actor answer text" that will be passed to the task chooser (PlanCoordinator)
         val actorAnswerText = formatSearchResults(searchResults)
-        // Output the actor answer text to the task execution's SessionTask (UI tab)
-        val displayText = MarkdownUtil.renderMarkdown(actorAnswerText, ui = agent.ui)
-        task.add(displayText)
-        // Pass the actor answer text to the result function for the PlanCoordinator
+        task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.manager))
         resultFn(actorAnswerText)
     }
 

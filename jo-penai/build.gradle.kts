@@ -22,7 +22,9 @@ dependencies {
 
     implementation(platform(libs.aws.bom)) // Use BOM alias
     implementation(libs.aws.bedrockruntime)
+    implementation(libs.aws.bedrock)
     implementation(libs.aws.auth)
+    implementation(libs.aws.sso)
 
     implementation(libs.swagger.annotations)
     implementation(libs.jsr305)

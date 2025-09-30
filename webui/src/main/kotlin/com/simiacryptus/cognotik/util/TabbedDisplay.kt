@@ -7,8 +7,10 @@ open class TabbedDisplay(
     val task: SessionTask,
     val tabs: MutableList<Pair<String, StringBuilder>> = mutableListOf(),
     val additionalClasses: String = "",
-    val closable: Boolean = true
+    val closable: Boolean = true,
+    val id: UUID = UUID.randomUUID(),
 ) {
+
     var selectedTab: Int = 0
 
     companion object {
@@ -16,13 +18,12 @@ open class TabbedDisplay(
     }
 
     val size: Int get() = tabs.size
-    val tabId = UUID.randomUUID()
     private fun render() = if (tabs.isEmpty()) "<div/>" else {
         """
   <div class="${
             (additionalClasses.split(" ").toSet() + setOf("tabs-container")).filter { it.isNotEmpty() }
                 .joinToString(" ")
-        }" id="$tabId">
+        }" id="$id">
   ${renderTabButtons()}
   ${
             tabs.toTypedArray().withIndex().joinToString("\n")

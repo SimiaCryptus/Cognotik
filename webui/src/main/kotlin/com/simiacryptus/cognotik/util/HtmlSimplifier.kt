@@ -101,7 +101,7 @@ object HtmlSimplifier {
             document.fn()
             val endTime = System.currentTimeMillis()
             val newLength = document.html().length
-            log.info("Simplified HTML in ${stepName} from ${prevDocSize} to $newLength in ${endTime - startTime}ms")
+            log.debug("Simplified HTML in ${stepName} from ${prevDocSize} to $newLength in ${endTime - startTime}ms")
         } catch (e: Exception) {
             log.warn("Failed to simplify HTML in ${stepName}: ${e.message}", e)
         }
@@ -130,15 +130,27 @@ object HtmlSimplifier {
         }
 
         simplifyDocument(stepName = "RemoveDataAttributes") {
-            select("[data-*]").forEach { it.attributes().removeAll { attr -> attr.key.startsWith("data-") } }
+            select("[data-*]").forEach { element ->
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (attr.key.startsWith("data-")) {
+                        iterator.remove()
+                    }
+                }
+            }
         }
 
         simplifyDocument(stepName = "RemoveEventHandlers") {
             if (!keepEventHandlers) {
                 select("*").forEach { element ->
-                    element.attributes().removeAll { attr ->
 
-                        attr.key.lowercase().startsWith("on") && attr.key !in SCRIPT_ATTRIBUTES
+                    val iterator = element.attributes().iterator()
+                    while (iterator.hasNext()) {
+                        val attr = iterator.next()
+                        if (attr.key.lowercase().startsWith("on") && attr.key !in SCRIPT_ATTRIBUTES) {
+                            iterator.remove()
+                        }
                     }
                 }
             }
@@ -146,14 +158,15 @@ object HtmlSimplifier {
 
         simplifyDocument(stepName = "RemoveUnsafeAttributes") {
             select("*").forEach { element ->
-                element.attributes().forEach { attr ->
-                    if (!keepScriptElements && (attr.value.contains("javascript:") || attr.value.contains("data:") || attr.value.contains(
-                            "vbscript:"
-                        ) || attr.value.contains(
-                            "file:"
-                        ))
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (!keepScriptElements && (attr.value.contains("javascript:") ||
+                                attr.value.contains("data:") ||
+                                attr.value.contains("vbscript:") ||
+                                attr.value.contains("file:"))
                     ) {
-                        element.removeAttr(attr.key)
+                        iterator.remove()
                     }
                 }
             }
@@ -168,11 +181,18 @@ object HtmlSimplifier {
                 }
             }.toSet()
             select("*").forEach { element ->
-                element.attributes().removeAll { attr -> attr.key !in importantAttributes }
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (attr.key !in importantAttributes) {
+                        iterator.remove()
+                    }
+                }
             }
         }
 
         simplifyDocument(stepName = "RemoveEmptyElements") {
+            val elementsToRemove = mutableListOf<org.jsoup.nodes.Element>()
             select("*:not(img)").forEach { element ->
                 if (element.text().isBlank() &&
                     element.attributes().isEmpty &&
@@ -180,9 +200,10 @@ object HtmlSimplifier {
                         .any()
 
                 ) {
-                    element.remove()
+                    elementsToRemove.add(element)
                 }
             }
+            elementsToRemove.forEach { it.remove() }
         }
 
         simplifyDocument(stepName = "CleanupHrefAttributes") {
@@ -224,20 +245,28 @@ object HtmlSimplifier {
 
         simplifyDocument(stepName = "RemoveInvalidAttributes") {
             select("*").forEach { element ->
-                element.attributes().removeAll { attr ->
-                    attr.value.isBlank() || attr.value == "null" || attr.value.contains("javascript:") || attr.value.contains(
-                        "data:"
-                    )
+                val iterator = element.attributes().iterator()
+                while (iterator.hasNext()) {
+                    val attr = iterator.next()
+                    if (attr.value.isBlank() || attr.value == "null" ||
+                        attr.value.contains("javascript:") || attr.value.contains("data:")
+                    ) {
+                        iterator.remove()
+                    }
                 }
             }
         }
 
         simplifyDocument(stepName = "CleanupTextNodes") {
             select("*").forEach { element ->
+                val nodesToRemove = mutableListOf<org.jsoup.nodes.TextNode>()
                 element.textNodes().forEach { node ->
                     val trimmed = if (preserveWhitespace) node.text() else node.text().trim()
-                    if (trimmed.isBlank()) node.remove()
-                    else node.text(trimmed)
+                    if (trimmed.isBlank()) {
+                        nodesToRemove.add(node)
+                    } else {
+                        node.text(trimmed)
+                    }
                 }
             }
         }

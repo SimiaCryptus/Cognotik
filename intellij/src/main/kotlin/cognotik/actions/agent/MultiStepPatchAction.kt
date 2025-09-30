@@ -7,28 +7,27 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Role
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -51,10 +50,8 @@ class MultiStepPatchAction : BaseAction() {
             progress.isIndeterminate = true
             try {
                 val session = Session.newGlobalID()
-                val storage =
-                    ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot) as DataStorage?
                 val selectedFile = e.getSelectedFolder()
-                if (null != storage && null != selectedFile) {
+                if (null != selectedFile) {
                     DataStorage.sessionPaths[session] = selectedFile.toFile
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
@@ -101,7 +98,7 @@ class MultiStepPatchAction : BaseAction() {
             session: Session,
             user: User?,
             userMessage: String,
-            ui: ApplicationInterface
+            ui: SocketManager
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
@@ -122,7 +119,7 @@ class MultiStepPatchAction : BaseAction() {
         data class Settings(
             val budget: Double? = 2.00,
             val tools: List<String> = emptyList(),
-            val model: Chatter? = null,
+            val model: ChatInterface? = null,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -134,13 +131,13 @@ class MultiStepPatchAction : BaseAction() {
     class AutoDevAgent(
         val session: Session,
         val user: User?,
-        val ui: ApplicationInterface,
-        val model: Chatter,
-        val parsingModel: Chatter,
+        val ui: SocketManager,
+        val model: ChatInterface,
+        val parsingModel: ChatInterface,
         val event: AnActionEvent,
     ) {
         val actors = mapOf(
-            ActorTypes.DesignActor to ParsedActor(
+            ActorTypes.DesignActor to ParsedAgent(
                 resultClass = TaskList::class.java,
                 prompt = """
           Translate the user directive into an action plan for the project.
@@ -150,7 +147,7 @@ class MultiStepPatchAction : BaseAction() {
                 model = model,
                 parsingModel = parsingModel,
             ),
-            ActorTypes.TaskCodingActor to SimpleActor(
+            ActorTypes.TaskCodingActor to ChatAgent(
                 prompt = "Implement the changes to the codebase as described in the task list.\n\n" + patchFormatPrompt,
                 model = model
             ),
@@ -161,8 +158,8 @@ class MultiStepPatchAction : BaseAction() {
             TaskCodingActor,
         }
 
-        private val designActor by lazy { actors.get(ActorTypes.DesignActor.name)!! as ParsedActor<TaskList> }
-        private val taskActor by lazy { actors.get(ActorTypes.TaskCodingActor.name)!! as SimpleActor }
+        private val designActor by lazy { actors.get(ActorTypes.DesignActor.name)!! as ParsedAgent<TaskList> }
+        private val taskActor by lazy { actors.get(ActorTypes.TaskCodingActor.name)!! as ChatAgent }
 
         fun start(
             userMessage: String,
@@ -198,11 +195,10 @@ class MultiStepPatchAction : BaseAction() {
                         )
                     )
                 },
-                ui = ui,
                 reviseResponse = { userMessages: List<Pair<String, Role>> ->
                     designActor.respond(
-                        messages = (userMessages.map { ApiModel.ChatMessage(it.second, it.first.toContentList()) }
-                            .toTypedArray<ApiModel.ChatMessage>()),
+                        messages = (userMessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                            .toTypedArray<ModelSchema.ChatMessage>()),
                         input = toInput(userMessage),
                     )
                 },
@@ -218,11 +214,11 @@ class MultiStepPatchAction : BaseAction() {
                     while (description.startsWith("#")) {
                         description = description.substring(1)
                     }
-                    description = renderMarkdown(description, ui = ui, tabs = false)
+                    description = renderMarkdown(description, ui = task.manager, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
-                    ApplicationServices.clientManager.getPool(session, user).submit {
+                    ApplicationServices.threadPoolManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)
-                        Retryable(ui, task) {
+                        Retryable(task) {
                             try {
                                 val filter = codeFiles.filter { path ->
                                     paths?.find { path.toString().contains(it) }?.isNotEmpty() == true
@@ -242,7 +238,7 @@ class MultiStepPatchAction : BaseAction() {
                                 }
                                 renderMarkdown(
                                     AddApplyFileDiffLinks.instrumentFileDiffs(
-                                        ui.socketManager!!,
+                                        ui,
                                         root = root,
                                         response = taskActor.answer(
                                             listOf(
@@ -262,7 +258,6 @@ class MultiStepPatchAction : BaseAction() {
                                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                             }
                                         },
-                                        ui = ui,
                                     )
                                 )
                             } catch (e: Exception) {
@@ -280,7 +275,7 @@ class MultiStepPatchAction : BaseAction() {
 
     companion object {
         private val log = LoggerFactory.getLogger(MultiStepPatchAction::class.java)
-        val root: File get() = File(AppSettingsState.instance.pluginHome, "code_chat")
+        val root: File get() = File(AppSettingsState.Companion.pluginHome, "code_chat")
 
         data class TaskList(
             @Description("List of tasks to be performed in this project")

@@ -101,7 +101,7 @@ object ApxPatchUtil {
         b: String,
         factor: Double = 0.1,
     ): Boolean {
-        val threshold = (Math.max(a.trim().length, b.trim().length) * factor).toInt()
+        val threshold = (a.trim().length.coerceAtLeast(b.trim().length) * factor).toInt()
         val levenshteinDistance = LevenshteinDistance(threshold + 1)
         val dist = levenshteinDistance.apply(a.trim(), b.trim())
         return if (dist >= 0) {

@@ -201,7 +201,7 @@ class PlanAheadActionTest : DemoTestBase(
                     tts("Task Runner is analyzing the task and creating an execution plan.")?.play()
 
                     var planIndex = 1
-                    var maxPlanIterations = 10
+                    val maxPlanIterations = 10
                     while (true) {
                         if (planIndex > maxPlanIterations) {
                             log.info("Reached maximum plan iterations")
@@ -210,7 +210,7 @@ class PlanAheadActionTest : DemoTestBase(
 
                         val duration = Duration.ofSeconds(if (planIndex == 1) 300 else 60)
                         val wait = WebDriverWait(driver, duration)
-                        log.debug("Waiting $duration for plan iteration $planIndex")
+                        log.debug("Waiting {} for plan iteration {}", duration, planIndex)
                         try {
                             clickElement(
                                 driver,

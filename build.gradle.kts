@@ -11,7 +11,6 @@ subprojects {
     }
     when (name) {
         "android" -> { /* Skip Java plugin for Android project */ }
-//        "webui" -> {}
         else -> {
             apply(plugin = "java")
             apply(plugin = "kotlin")

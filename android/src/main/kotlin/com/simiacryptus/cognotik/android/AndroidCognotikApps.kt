@@ -19,13 +19,15 @@ import com.simiacryptus.cognotik.webui.servlet.WelcomeServlet
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.Chatter
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.instance
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.util.resource.PathResource
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
@@ -156,16 +158,10 @@ class AndroidCognotikApps private constructor(
         
         super.setupPlatform()
         log.debug("Creating mock authentication and authorization managers")
-        val mockUser = User(
-            "1",
-            "user@android.local",
-            "Android User",
-            ""
-        )
-        log.debug("Created mock user: ${mockUser.email}")
+        log.debug("Created mock user: ${UserSettingsManager.Companion.defaultUser.email}")
         
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = mockUser
+            override fun getUser(accessToken: String?) = UserSettingsManager.Companion.defaultUser
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
             override fun logout(accessToken: String, user: User) {}
         }
@@ -211,8 +207,8 @@ class AndroidCognotikApps private constructor(
         log.debug("Default model: ${model.javaClass.simpleName}")
         
         val planSettings = object : PlanSettings(
-            defaultModel = model,
-            parsingModel = model,
+            defaultModel = model.instance()!!,
+            parsingModel = model.instance()!!,
             workingDir = filesDir
         ) {
             override fun instance(model: ApiChatModel): Chatter {
@@ -229,8 +225,6 @@ class AndroidCognotikApps private constructor(
                     path = "/taskChat",
                     applicationName = "Task-Runner",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
                     cognitiveStrategy = TaskChatMode,
                     describer = describer
                 ) {
@@ -244,8 +238,6 @@ class AndroidCognotikApps private constructor(
                     path = "/autoPlan",
                     applicationName = "Auto-Plan",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
                     cognitiveStrategy = AutoPlanMode,
                     describer = describer
                 ) {
@@ -259,8 +251,6 @@ class AndroidCognotikApps private constructor(
                     path = "/planAhead",
                     applicationName = "Plan-Ahead",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
                     cognitiveStrategy = PlanAheadMode,
                     describer = describer
                 ) {
@@ -274,8 +264,6 @@ class AndroidCognotikApps private constructor(
                     path = "/goalOriented",
                     applicationName = "Goal-Oriented",
                     planSettings = planSettings,
-                    model = model,
-                    parsingModel = model,
                     cognitiveStrategy = GoalOrientedMode,
                     describer = describer
                 ) {

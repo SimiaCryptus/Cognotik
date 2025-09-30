@@ -9,25 +9,23 @@ pluginManagement {
 }
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.1.20" apply false
+    id("org.jetbrains.kotlin.jvm") version "2.2.20" apply false
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.8.0")
-    id("com.github.ben-manes.versions") version "0.50.0" apply false
+    id("com.github.ben-manes.versions") version "0.53.0" apply false
     id("io.github.gradle-nexus.publish-plugin") version "1.3.0" apply false
-    // This seems to be incompatible with the SASS plugin
-        id("com.android.application") version "8.9.3" apply false
-        id("org.jetbrains.kotlin.android") version "2.1.20" apply false
+    id("com.android.application") version "8.9.3" apply false
+    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
 }
 
 include(":jo-penai")
 include(":antlr")
 include(":core")
 include(":groovy")
-//include(":scala")
 include(":kotlin")
 include(":webui")
 include(":desktop")
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
-    include(":android")
+//    include(":android")
 }
 include(":intellij")
 include(":demo")

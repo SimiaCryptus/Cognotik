@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class Retryable(
-    val ui: ApplicationInterface,
     task: SessionTask,
+    val socketManager: SocketManager = task.manager,
     val process: (StringBuilder) -> String
 ) : TabbedDisplay(task) {
 
@@ -35,20 +35,25 @@ open class Retryable(
         tabs.withIndex().joinToString("\n") { (index, pair) ->
             renderButton(index, pair.first)
         }
-    }${ui.hrefLink("♻") { retry() }}
+    }${
+        socketManager.hrefLink(
+            "♻",
+            """href-link""",
+            null,
+            oneAtATime { it: Unit -> retry() })
+    }
 </div>
 """
 
     companion object {
         fun retryable(
-            ui: ApplicationInterface,
-            pool: ImmediateExecutorService = ui.socketManager?.pool
-                ?: throw IllegalStateException("No socket manager available"),
-            task: SessionTask = ui.newTask(true),
+            socketManager: SocketManager,
+            pool: ImmediateExecutorService = socketManager.pool,
+            task: SessionTask = socketManager.newTask(true),
             fn: (SessionTask) -> Unit
         ) {
-            Retryable(ui, task) {
-                val task = ui.newTask(false)
+            Retryable(task) {
+                val task = socketManager.newTask(false)
                 pool.submit { fn(task) }
                 task.placeholder
             }

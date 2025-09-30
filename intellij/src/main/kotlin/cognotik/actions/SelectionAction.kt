@@ -13,7 +13,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiRecursiveElementVisitor
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.util.*
 
 abstract class SelectionAction<T : Any>(
@@ -110,7 +110,31 @@ abstract class SelectionAction<T : Any>(
         val line: Pair<Int, Int>,
         val psiFile: PsiFile?,
         val contextRanges: Array<ContextRange> = arrayOf(),
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as EditorState
+
+            if (cursorOffset != other.cursorOffset) return false
+            if (text != other.text) return false
+            if (line != other.line) return false
+            if (psiFile != other.psiFile) return false
+            if (!contextRanges.contentEquals(other.contextRanges)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = cursorOffset
+            result = 31 * result + text.hashCode()
+            result = 31 * result + line.hashCode()
+            result = 31 * result + (psiFile?.hashCode() ?: 0)
+            result = 31 * result + contextRanges.contentHashCode()
+            return result
+        }
+    }
 
     data class ContextRange(
         val name: String,
@@ -176,7 +200,43 @@ abstract class SelectionAction<T : Any>(
         val project: Project? = null,
         val progress: ProgressIndicator? = null,
         val editor: Editor? = null,
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as SelectionState
+
+            if (selectionOffset != other.selectionOffset) return false
+            if (selectionLength != other.selectionLength) return false
+            if (selectedText != other.selectedText) return false
+            if (entireDocument != other.entireDocument) return false
+            if (language != other.language) return false
+            if (indent != other.indent) return false
+            if (!contextRanges.contentEquals(other.contextRanges)) return false
+            if (psiFile != other.psiFile) return false
+            if (project != other.project) return false
+            if (progress != other.progress) return false
+            if (editor != other.editor) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = selectionOffset
+            result = 31 * result + (selectionLength ?: 0)
+            result = 31 * result + (selectedText?.hashCode() ?: 0)
+            result = 31 * result + (entireDocument?.hashCode() ?: 0)
+            result = 31 * result + (language?.hashCode() ?: 0)
+            result = 31 * result + (indent?.hashCode() ?: 0)
+            result = 31 * result + contextRanges.contentHashCode()
+            result = 31 * result + (psiFile?.hashCode() ?: 0)
+            result = 31 * result + (project?.hashCode() ?: 0)
+            result = 31 * result + (progress?.hashCode() ?: 0)
+            result = 31 * result + (editor?.hashCode() ?: 0)
+            return result
+        }
+    }
 
     open fun isLanguageSupported(computerLanguage: ComputerLanguage?): Boolean {
         return true

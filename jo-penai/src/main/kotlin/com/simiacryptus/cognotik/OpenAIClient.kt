@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.models.*
-import com.simiacryptus.cognotik.models.ApiModel.*
+import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
@@ -17,7 +18,6 @@ import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.entity.mime.HttpMultipartMode
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder
 import org.apache.hc.core5.http.ContentType
-import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import org.slf4j.Logger
@@ -32,15 +32,17 @@ import java.util.concurrent.ExecutorService
 import javax.imageio.ImageIO
 
 open class OpenAIClient(
-    protected var key: Map<APIProvider, String>,
-    protected val apiBase: Map<APIProvider, String>,
+    protected var key: String,
+    protected val apiBase: String,
     logLevel: Level = Level.TRACE,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    workPool: ExecutorService
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(
     logLevel = logLevel,
     logStreams = logStreams,
-    workPool = workPool
+    workPool = workPool,
+    scheduledPool = scheduledPool
 ) {
     private val log: Logger = LoggerFactory.getLogger(OpenAIClient::class.java).apply {
         info("OpenAIClient initialized with log level: $logLevel")
@@ -58,29 +60,12 @@ open class OpenAIClient(
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
         log.info("Sending POST request to URL: $url with payload: $json")
-        authorize(request, apiProvider)
+        apiProvider.authorize(request, key, apiBase)
         request.entity = StringEntity(json, Charsets.UTF_8, false)
         return post(request)
-        log.info("Executed POST request: ${request.uri}")
     }
 
     protected fun post(request: HttpPost): String = withClient { EntityUtils.toString(it.execute(request).entity) }
-
-    @Throws(IOException::class)
-    protected open fun authorize(request: HttpRequest, apiProvider: APIProvider) {
-        when (apiProvider) {
-            APIProvider.Google -> {
-
-            }
-
-            APIProvider.Anthropic -> {
-                request.addHeader("x-api-key", "${key.get(apiProvider)}")
-                request.addHeader("anthropic-version", "2023-06-01")
-            }
-
-            else -> request.addHeader("Authorization", "Bearer ${key.get(apiProvider)}")
-        }
-    }
 
     @Throws(IOException::class)
     protected operator fun get(url: String?, apiProvider: APIProvider): String = withClient {
@@ -88,7 +73,7 @@ open class OpenAIClient(
         request.addHeader("Content-Type", "application/json")
         request.addHeader("Accept", "application/json")
         log.debug("Sending GET request to URL: $url")
-        authorize(request, apiProvider)
+        apiProvider.authorize(request, key, apiBase)
         EntityUtils.toString(it.execute(request).entity)
     }
 
@@ -199,10 +184,10 @@ open class OpenAIClient(
     open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
         withReliability {
             withPerformanceLogging {
-                val url = "${apiBase[provider]}/audio/transcriptions"
+                val url = "${apiBase}/audio/transcriptions"
                 val request = HttpPost(url)
                 request.addHeader("Accept", "application/json")
-                authorize(request, provider)
+                provider.authorize(request, key, apiBase)
                 val entity = MultipartEntityBuilder.create()
                 entity.setMode(HttpMultipartMode.EXTENDED)
                 entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
@@ -226,10 +211,10 @@ open class OpenAIClient(
             }
         }
 
-    open fun createSpeech(request: ApiModel.SpeechRequest): ByteArray? = withReliability {
+    open fun createSpeech(request: ModelSchema.SpeechRequest): ByteArray? = withReliability {
         withPerformanceLogging {
-            val httpRequest = HttpPost("${apiBase[provider]}/audio/speech")
-            authorize(httpRequest, provider)
+            val httpRequest = HttpPost("${apiBase}/audio/speech")
+            provider.authorize(httpRequest, key, apiBase)
             httpRequest.addHeader("Accept", "application/json")
             httpRequest.addHeader("Content-Type", "application/json")
             httpRequest.entity =
@@ -242,7 +227,7 @@ open class OpenAIClient(
                 checkError(bytes.toString(Charsets.UTF_8))
                 null
             } else {
-                val model = AudioModels.values().find { it.modelName.equals(request.model, true) }
+                val model = AudioModels.entries.find { it.modelName.equals(request.model, true) }
                 onUsage(
                     model, Usage(
                         prompt_tokens = request.input.length.toLong(),
@@ -257,11 +242,11 @@ open class OpenAIClient(
     open fun render(prompt: String = "", resolution: Int = 1024, count: Int = 1): List<BufferedImage> =
         withReliability {
             withPerformanceLogging {
-                val url = "${apiBase[provider]}/images/generations"
+                val url = "${apiBase}/images/generations"
                 val request = HttpPost(url)
                 request.addHeader("Accept", "application/json")
                 request.addHeader("Content-Type", "application/json")
-                authorize(request, provider)
+                provider.authorize(request, key, apiBase)
                 val jsonObject = JsonObject()
                 jsonObject.addProperty("prompt", prompt)
                 jsonObject.addProperty("n", count)
@@ -314,7 +299,7 @@ open class OpenAIClient(
                 throw RuntimeException(e)
             }
             val result: String = try {
-                this.post("${apiBase[provider]}/moderations", body, provider)
+                this.post("${apiBase}/moderations", body, provider)
             } catch (e: IOException) {
                 log.warn("IOException during moderation request", e)
                 throw RuntimeException(e)
@@ -404,7 +389,7 @@ open class OpenAIClient(
             val request: String = StringUtil.restrictCharacterSet(
                 JsonUtil.objectMapper().writeValueAsString(editRequest), allowedCharset
             )
-            val result = post("${apiBase[provider]}/edits", request, provider)
+            val result = post("${apiBase}/edits", request, provider)
             log.info("Edit response received")
             checkError(result)
             val response = JsonUtil.objectMapper().readValue(
@@ -419,7 +404,7 @@ open class OpenAIClient(
             log(
                 msg = String.format(
                     "Edit Completion:\n\t%s",
-                    response.firstChoice.orElse("").toString().trim { it <= ' ' }.toString().lineSequence()
+                    response.firstChoice.orElse("").toString().trim { it <= ' ' }.lineSequence()
                         .map {
                             when {
                                 it.isBlank() -> {
@@ -439,19 +424,13 @@ open class OpenAIClient(
         }
     }
 
-    open fun listModels(): ApiModel.ModelListResponse {
-        val result = get("${apiBase[provider]}/models", provider)
-        checkError(result)
-        return JsonUtil.objectMapper().readValue(result, ModelListResponse::class.java)
-    }
-
     open fun createImage(request: ImageGenerationRequest): ImageGenerationResponse = withReliability {
         withPerformanceLogging {
-            val url = "${apiBase[provider]}/images/generations"
+            val url = "${apiBase}/images/generations"
             val httpRequest = HttpPost(url)
             httpRequest.addHeader("Accept", "application/json")
             httpRequest.addHeader("Content-Type", "application/json")
-            authorize(httpRequest, provider)
+            provider.authorize(httpRequest, key, apiBase)
 
             val requestBody = Gson().toJson(request)
             httpRequest.entity = StringEntity(requestBody, Charsets.UTF_8, false)

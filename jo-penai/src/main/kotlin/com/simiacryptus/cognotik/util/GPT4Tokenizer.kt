@@ -45,7 +45,7 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
         }
 
         val range = { x: Int, y: Int ->
-            val res = (Array(y, { i -> i + x })).toList()
+            val res = (Array(y) { i -> i + x }).toList()
             res
         }
 
@@ -310,10 +310,10 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
         if(input.length >= 0){
             return input.length / 3
         }
-        var count: Int = 0
+        var count = 0
         val matches = bpeRegex.toRegex().findAll(input).flatMap { it.groupValues }.toList().toTypedArray()
         for (token in matches) {
-            var newToken = token.toCharArray()
+            val newToken = token.toCharArray()
                 .map { this.byteEncoder[it.code] }
                 .joinToString(separator = "")
             val newTokens = this.bpe(newToken).split(" ")

@@ -9,7 +9,6 @@ var transcriptionModel: String = AudioModels.Whisper.modelName
  * framework to save settings across IDE restarts.
  */
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -19,8 +18,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ImageModels
@@ -29,16 +27,11 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.platform.model.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
-import org.slf4j.event.Level
 import java.io.File
-import java.util.concurrent.ExecutorService
+import kotlin.random.Random
 
 data class CommandConfig(
     val commands: List<PatchApp.CommandSettings>,
@@ -86,52 +79,35 @@ data class AppSettingsState(
     var awsBucket: String? = null,
 
     /* System Configuration */
-    val executables: MutableSet<String>? = mutableSetOf(),
+    var executables: MutableSet<String>? = mutableSetOf(),
     var analyticsEnabled: Boolean = false,
     var diffLoggingEnabled: Boolean = false,
-    var listeningPort: Int = 8081,
+    var listeningPort: Int = Random.nextInt(3000, 9000),
     var listeningEndpoint: String = "localhost",
     var apiThreads: Int = 4,
     var modalTasks: Boolean = false,
     var suppressErrors: Boolean = false,
     var devActions: Boolean = false,
     var disableAutoOpenUrls: Boolean = false,
-    var pluginHome: File = run {
-        var logPath = System.getProperty("idea.plugins.path")
-        if (logPath == null) {
-            logPath = System.getProperty("java.io.tmpdir")
-        }
-        if (logPath == null) {
-            logPath = System.getProperty("user.home")
-        }
-        File(logPath, "AICodingAsst")
-    },
     var showWelcomeScreen: Boolean = true,
     var greetedVersion: String = "",
     var shellCommand: String = getDefaultShell(),
 
     /* Recent Activity Helpers */
     val savedCommandConfigsJson: MutableMap<String, String>? = mutableMapOf(),
-    val savedPlanConfigs: MutableMap<String, String>? = mutableMapOf(),
+    var savedPlanConfigs: MutableMap<String, String>? = mutableMapOf(),
     val recentCommandsJson: MutableMap<String, String>? = mutableMapOf(),
     val recentArguments: MutableList<String>? = mutableListOf(),
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
 ) : PersistentStateComponent<SimpleEnvelope> {
-    @JsonIgnore
-    private val userSettingsManager = UserSettingsManager()
-
-    @JsonIgnore
-    fun getUserSettings(): UserSettings = userSettingsManager.getUserSettings(defaultUser)
-
-    @JsonIgnore
-    fun updateUserSettings(settings: UserSettings) =
-        userSettingsManager.updateUserSettings(defaultUser, settings)
 
     @get:JsonIgnore
-    val smartChatClient: Chatter get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
+    val smartChatClient: ChatInterface
+        get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
 
     @get:JsonIgnore
-    val fastChatClient: Chatter get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
+    val fastChatClient: ChatInterface
+        get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
 
     @get:JsonIgnore
     val embeddingClient: com.simiacryptus.cognotik.embedding.Embedder? get() = embeddingModel?.instance()
@@ -139,85 +115,79 @@ data class AppSettingsState(
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
 
-    @JsonIgnore
-    private fun handleLegacyApiKeys(jsonNode: JsonNode): AppSettingsState {
-        val mapper = ObjectMapper()
-        val appSettings = try {
-                fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
-            } catch (e: Exception) {
-                log.warn("Error parsing settings: ${jsonNode}", e)
-                AppSettingsState()
-            }
-
-        // Migrate legacy API keys to UserSettingsManager
-        val userSettings = getUserSettings()
-        var needsUpdate = false
-
-        // Handle old apiKey field
-        if (jsonNode.has("apiKey")) {
-            val apiKeyNode = jsonNode.get("apiKey")
-            if (apiKeyNode.isObject) {
-                apiKeyNode.fields().forEach { (providerName, keyValue) ->
-                    try {
-                        val provider = APIProvider.valueOf(providerName)
-                        val existingApi = userSettings.apis.find { it.provider == provider }
-                        if (existingApi == null) {
-                            userSettings.apis.add(
-                                ApiData(
-                                    key = keyValue.asText(),
-                                    provider = provider,
-                                    baseUrl = provider.base
-                                ).validate()
-                            )
-                            needsUpdate = true
-                        }
-                    } catch (e: Exception) {
-                        log.warn("Unknown provider in legacy config: $providerName", e)
-                    }
-                }
-            }
-        }
-
-        // Handle apiKeys and apiBase fields
-        if (jsonNode.has("apiKeys") || jsonNode.has("apiBase")) {
-            val apiKeysNode = jsonNode.get("apiKeys")
-            val apiBaseNode = jsonNode.get("apiBase")
-
-            if (apiKeysNode != null && apiKeysNode.isObject) {
-                apiKeysNode.fields().forEach { (providerName, keyValue) ->
-                    try {
-                        val provider = APIProvider.valueOf(providerName)
-                        val baseUrl = apiBaseNode?.get(providerName)?.asText() ?: provider.base
-                        val existingApi = userSettings.apis.find { it.provider == provider }
-                        if (existingApi == null) {
-                            userSettings.apis.add(
-                                ApiData(
-                                    key = keyValue.asText(),
-                                    provider = provider,
-                                    baseUrl = baseUrl
-                                ).validate()
-                            )
-                            needsUpdate = true
-                        }
-                    } catch (e: Exception) {
-                        log.warn("Unknown provider in legacy config: $providerName", e)
-                    }
-                }
-            }
-        }
-        if (needsUpdate) {
-            updateUserSettings(userSettings)
-        }
-
-        return appSettings
-    }
+//    private fun handleLegacyKeys(
+//        jsonNode: JsonNode
+//    ) {
+//        // Migrate legacy API keys to UserSettingsManager
+//        val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+//        var needsUpdate = false
+//
+//        // Handle old apiKey field
+//        if (jsonNode.has("apiKey")) {
+//            val apiKeyNode = jsonNode.get("apiKey")
+//            if (apiKeyNode.isObject) {
+//                apiKeyNode.fields().forEach { (providerName, keyValue) ->
+//                    try {
+//                        val provider = APIProvider.valueOf(providerName)
+//                        val existingApi = userSettings.apis.find { it.provider == provider }
+//                        if (existingApi == null) {
+//                            userSettings.apis.add(
+//                                ApiData(
+//                                    key = keyValue.asText(),
+//                                    provider = provider,
+//                                    baseUrl = provider.base
+//                                ).validate()
+//                            )
+//                            needsUpdate = true
+//                        }
+//                    } catch (e: Exception) {
+//                        log.warn("Unknown provider in legacy config: $providerName", e)
+//                    }
+//                }
+//            }
+//        }
+//
+//        // Handle apiKeys and apiBase fields
+//        if (jsonNode.has("apiKeys") || jsonNode.has("apiBase")) {
+//            val apiKeysNode = jsonNode.get("apiKeys")
+//            val apiBaseNode = jsonNode.get("apiBase")
+//
+//            if (apiKeysNode != null && apiKeysNode.isObject) {
+//                apiKeysNode.fields().forEach { (providerName, keyValue) ->
+//                    try {
+//                        val provider = APIProvider.valueOf(providerName)
+//                        val baseUrl = apiBaseNode?.get(providerName)?.asText() ?: provider.base
+//                        val existingApi = userSettings.apis.find { it.provider == provider }
+//                        if (existingApi == null) {
+//                            userSettings.apis.add(
+//                                ApiData(
+//                                    key = keyValue.asText(),
+//                                    provider = provider,
+//                                    baseUrl = baseUrl
+//                                ).validate()
+//                            )
+//                            needsUpdate = true
+//                        }
+//                    } catch (e: Exception) {
+//                        log.warn("Unknown provider in legacy config: $providerName", e)
+//                    }
+//                }
+//            }
+//        }
+//        if (needsUpdate) {
+//            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(
+//                UserSettingsManager.defaultUser,
+//                userSettings
+//            )
+//        }
+//    }
 
     @JsonIgnore
     fun getRecentCommands(id: String) = recentCommandsJson?.get(id)?.let {
         try {
             fromJson(it, MRUItems::class.java)
         } catch (e: Exception) {
-            log.warn("Error loading recent commands: ${it}", e)
+            log.warn("Error loading recent commands: $it", e)
             MRUItems()
         }
     } ?: MRUItems()
@@ -226,12 +196,14 @@ data class AppSettingsState(
     override fun loadState(state: SimpleEnvelope) {
         state.value ?: return
         val fromJson = try {
-
-            val mapper = ObjectMapper()
-            val jsonNode = mapper.readTree(state.value)
-
-            handleLegacyApiKeys(jsonNode)
-
+            val jsonNode = ObjectMapper().readTree(state.value)
+            //handleLegacyKeys(jsonNode)
+            try {
+                fromJson(ObjectMapper().writeValueAsString(jsonNode), AppSettingsState::class.java)
+            } catch (e: Exception) {
+                log.warn("Error parsing settings: $jsonNode", e)
+                AppSettingsState()
+            }
         } catch (e: Exception) {
             log.warn("Error loading settings: ${state.value}", e)
             AppSettingsState()
@@ -286,16 +258,16 @@ data class AppSettingsState(
         if (sampleSize != other.sampleSize) return false
         if (channels != other.channels) return false
         if (temperature != other.temperature) return false
-if (smartModel != other.smartModel) return false
-         if (fastModel != other.fastModel) return false
-         if (mainImageModel != other.mainImageModel) return false
+        if (smartModel != other.smartModel) return false
+        if (fastModel != other.fastModel) return false
+        if (mainImageModel != other.mainImageModel) return false
         if (listeningPort != other.listeningPort) return false
         if (listeningEndpoint != other.listeningEndpoint) return false
         if (apiThreads != other.apiThreads) return false
         if (modalTasks != other.modalTasks) return false
         if (suppressErrors != other.suppressErrors) return false
         if (devActions != other.devActions) return false
-        if (FileUtil.filesEqual(pluginHome, other.pluginHome)) return false
+        if (!FileUtil.filesEqual(pluginHome, pluginHome)) return false
         if (recentCommandsJson != other.recentCommandsJson) return false
         if (showWelcomeScreen != other.showWelcomeScreen) return false
         if (greetedVersion != other.greetedVersion) return false
@@ -347,7 +319,7 @@ if (smartModel != other.smartModel) return false
         var lastEvent: AnActionEvent? = null
         val log = LoggerFactory.getLogger(AppSettingsState::class.java)
         var auxiliaryLog: File? = null
-        const val WELCOME_VERSION: String = "1.5.0"
+        const val WELCOME_VERSION: String = "2.0.8"
 
         @JvmStatic
         val instance: AppSettingsState by lazy {
@@ -359,21 +331,20 @@ if (smartModel != other.smartModel) return false
 
         @JsonIgnore
         var onSettingsLoadedListeners = mutableListOf<() -> Unit>()
-        fun notifySettingsLoaded() {
-            onSettingsLoadedListeners.forEach { it() }
-        }
+        fun notifySettingsLoaded() { onSettingsLoadedListeners.forEach { it() } }
 
-        @JsonIgnore
-        val defaultUser = User(id = "1", email = "user@localhost")
         val currentSession = Session.Companion.newGlobalID()
-        val workPool = ApplicationServices.clientManager.getPool(currentSession, defaultUser)
+        val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser)
+        val pluginHome: File by lazy {
+            run {
+                var logPath: String? = null
+                //if (logPath == null) logPath = System.getProperty("java.io.tmpdir")
+                if (logPath == null) logPath = System.getProperty("user.home")
+                if (logPath == null) logPath = System.getProperty("idea.plugins.path")
+                File(logPath, ".cognotik")
+            }
+        }
     }
-
-    data class UserSuppliedModel(
-        var displayName: String = "",
-        var modelId: String = "",
-        var provider: APIProvider? = null
-    )
 
     data class SavedPlanConfig(
         val name: String,
@@ -384,16 +355,32 @@ if (smartModel != other.smartModel) return false
 }
 
 fun String.imageModel(): ImageModels {
-    return ImageModels.values().firstOrNull {
+    return ImageModels.entries.firstOrNull {
         it.modelName == this || it.name == this
     } ?: ImageModels.DallE3
 }
 
-fun ApiChatModel.instance(): Chatter? = model?.instance(
-    key = provider?.key ?: throw IllegalArgumentException("API key for ${provider?.provider?.name} is not set"),
-    base = provider?.provider?.base ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
-    logLevel = Level.INFO,
-    logStreams = mutableListOf(),
-    temperature = AppSettingsState.instance.temperature,
-    workPool = AppSettingsState.workPool
-)
+fun ApiChatModel.instance(): ChatInterface? {
+    val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager
+    val model = model
+    if (model == null) {
+        throw RuntimeException("Model not configured for ${provider?.provider?.name}")
+    }
+    return (model).instance(
+        key = provider?.key ?: throw IllegalArgumentException("API key is not set"),
+        base = provider?.provider?.base
+            ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
+        workPool = AppSettingsState.workPool,
+        temperature = AppSettingsState.instance.temperature,
+        scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+            AppSettingsState.currentSession,
+            UserSettingsManager.defaultUser
+        ),
+        onUsage = { model, usage ->
+            usageManager.incrementUsage(
+                AppSettingsState.currentSession,
+                UserSettingsManager.defaultUser, model, usage
+            )
+        },
+    )
+}

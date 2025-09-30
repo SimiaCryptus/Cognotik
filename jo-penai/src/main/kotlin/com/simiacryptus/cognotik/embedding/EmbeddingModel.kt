@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.embedding
 
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 
@@ -20,7 +20,7 @@ open class EmbeddingModel(
     maxTotalTokens = maxTokens
 ) {
     private val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
-    override fun pricing(usage: ApiModel.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
+    override fun pricing(usage: ModelSchema.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
         .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }
     fun instance() = EmbedderClient(
         when (provider) {
@@ -60,7 +60,7 @@ open class EmbeddingModel(
 
 class EmbedderClient(private val embeddingClient: EmbeddingClientInterface, val model : EmbeddingModel) : Embedder {
     override fun embed(input: String): DoubleArray {
-        val request = ApiModel.EmbeddingRequest(
+        val request = ModelSchema.EmbeddingRequest(
             model = model.modelName,
             input = input
         )

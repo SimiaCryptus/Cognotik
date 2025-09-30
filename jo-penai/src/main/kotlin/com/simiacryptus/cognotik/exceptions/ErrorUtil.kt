@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.exceptions
 
 import com.google.gson.Gson
 import com.google.gson.JsonElement
+import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
 import com.simiacryptus.cognotik.models.LLMModel
 import java.io.IOException
@@ -129,7 +130,7 @@ object ErrorUtil {
                     }
                 }
             }
-        } catch (e: JsonSyntaxException) {
+        } catch (e: JsonParseException) {
             throw IOException(
                 "Invalid JSON response: $result" + (if (null == model) "" else "\nChat Model: ${model}"),
                 e

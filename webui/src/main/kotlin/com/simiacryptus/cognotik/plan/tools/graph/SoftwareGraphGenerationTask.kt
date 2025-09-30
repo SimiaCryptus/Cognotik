@@ -1,24 +1,27 @@
 package com.simiacryptus.cognotik.plan.tools.graph
 
-import com.simiacryptus.cognotik.actors.ParsedActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.AbstractTask
-import com.simiacryptus.cognotik.plan.PlanCoordinator
-import com.simiacryptus.cognotik.plan.PlanSettings
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 
 class SoftwareGraphGenerationTask(
-    planSettings: PlanSettings,
+    orchestrationConfig: OrchestrationConfig,
     planTask: SoftwareGraphGenerationTaskConfigData?
-) : AbstractTask<SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData>(planSettings, planTask) {
+) : AbstractTask<SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData>(orchestrationConfig, planTask) {
 
     class SoftwareGraphGenerationTaskConfigData(
         @Description("The output file path where the software graph will be saved")
@@ -30,7 +33,7 @@ class SoftwareGraphGenerationTask(
         input_files: List<String>? = null,
         state: TaskState? = null
     ) : AbstractFileTask.FileTaskConfigBase(
-        task_type = TaskType.SoftwareGraphGenerationTask.name,
+        task_type = "SoftwareGraphGenerationTask",
         task_description = task_description,
         task_dependencies = task_dependencies,
         related_files = input_files,
@@ -41,35 +44,6 @@ class SoftwareGraphGenerationTask(
         "com.simiacryptus", "aicoder.actions"
     ) {
         override val includeMethods: Boolean get() = false
-    }
-    private val graphGenerationActor by lazy {
-        ParsedActor(
-            name = "SoftwareGraphGenerator",
-            resultClass = SoftwareNodeType.SoftwareGraph::class.java,
-            prompt = "Analyze the provided code files and generate a SoftwareGraph representation.\nThe graph should accurately represent the software architecture including:\n\nAvailable Node Types:\n" +
-                    SoftwareNodeType.values().joinToString("\n") {
-                        "* ${it.name}: ${it.description?.replace("\n", "\n  ")}\n    ${
-                            describer.describe(rawType = it.nodeClass).lineSequence()
-                                .map {
-                                    when {
-                                        it.isBlank() -> {
-                                            when {
-                                                it.length < "  ".length -> "  "
-                                                else -> it
-                                            }
-                                        }
-
-                                        else -> "  " + it
-                                    }
-                                }
-                                .joinToString("\n")
-                        }"
-                    } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
-            model = taskSettings.model?.let { planSettings.instance(it) } ?: planSettings.defaultChatter,
-            parsingModel = planSettings.parsingChatter,
-            temperature = planSettings.temperature,
-            describer = describer,
-        )
     }
 
     override fun promptSegment() = """
@@ -92,13 +66,40 @@ class SoftwareGraphGenerationTask(
     }
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
+        val graphGenerationActor = ParsedAgent<SoftwareNodeType.SoftwareGraph>(
+            name = "SoftwareGraphGenerator",
+            resultClass = SoftwareNodeType.SoftwareGraph::class.java,
+            prompt = "Analyze the provided code files and generate a SoftwareGraph representation.\nThe graph should accurately represent the software architecture including:\n\nAvailable Node Types:\n" +
+                    SoftwareNodeType.values().joinToString<SoftwareNodeType<out SoftwareNodeType.NodeBase<*>>>("\n") {
+                        "* ${it.name}: ${it.description?.replace("\n", "\n  ")}\n    ${
+                            describer.describe(rawType = it.nodeClass).lineSequence()
+                                .map<String, String> {
+                                    when {
+                                        it.isBlank() -> {
+                                            when {
+                                                it.length < "  ".length -> "  "
+                                                else -> it
+                                            }
+                                        }
 
+                                        else -> "  " + it
+                                    }
+                                }
+                                .joinToString<String>("\n")
+                        }"
+                    } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
+            model = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
+            parsingModel = this.orchestrationConfig.parsingChatter,
+            temperature = this.orchestrationConfig.temperature,
+            describer = describer,
+        )
         val chatMessages = graphGenerationActor.chatMessages(
             messages + listOf(
                 getInputFileCode(),
@@ -114,7 +115,7 @@ class SoftwareGraphGenerationTask(
             input = messages,
         )
 
-        val outputFile = File(planSettings.absoluteWorkingDir ?: ".").resolve(taskConfig?.output_file.let {
+        val outputFile = File(orchestrationConfig.absoluteWorkingDir ?: ".").resolve(taskConfig?.output_file.let {
             when {
                 it.isNullOrBlank() -> "software_graph.json"
                 else -> it
@@ -137,7 +138,7 @@ class SoftwareGraphGenerationTask(
                 }
             }
 
-            task.add(MarkdownUtil.renderMarkdown(summary, ui = agent.ui))
+            task.add(MarkdownUtil.renderMarkdown(summary, ui = task.manager))
             resultFn(summary)
         } catch (e: Exception) {
             task.error(e)

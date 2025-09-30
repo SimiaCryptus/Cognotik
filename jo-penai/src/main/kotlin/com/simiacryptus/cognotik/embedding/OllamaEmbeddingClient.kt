@@ -1,7 +1,9 @@
 package com.simiacryptus.cognotik.embedding
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.event.Level
@@ -15,14 +17,16 @@ class OllamaEmbeddingClient(
     apiBase: String = "http://localhost:11434",
     workPool: ExecutorService = Executors.newCachedThreadPool(),
     logLevel: Level = Level.INFO,
-    logStreams: MutableList<BufferedOutputStream> = mutableListOf()
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
 ) : SingleProviderEmbeddingClient(
     provider = APIProvider.valueOf("Ollama"),
     apiKey = apiKey,
     apiBase = apiBase,
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 ) {
 
     override fun authorize(
@@ -38,9 +42,9 @@ class OllamaEmbeddingClient(
     }
 
     override fun createEmbedding(
-        request: ApiModel.EmbeddingRequest,
+        request: ModelSchema.EmbeddingRequest,
         model: EmbeddingModel
-    ): ApiModel.EmbeddingResponse {
+    ): ModelSchema.EmbeddingResponse {
         validateEmbeddingRequest(request, model)
 
         return withReliability {
@@ -65,9 +69,9 @@ class OllamaEmbeddingClient(
                 val embeddings = ollamaResponse["embedding"] as? List<Double>
                     ?: throw IllegalStateException("No embeddings found in response")
 
-                val response = ApiModel.EmbeddingResponse(
+                val response = ModelSchema.EmbeddingResponse(
                     data = listOf(
-                        ApiModel.EmbeddingData(
+                        ModelSchema.EmbeddingData(
                             embedding = embeddings.toDoubleArray(),
                             index = 0,
                             `object` = "embedding"
@@ -75,7 +79,7 @@ class OllamaEmbeddingClient(
                     ),
                     model = request.model ?: model.modelName,
                     `object` = "list",
-                    usage = ApiModel.Usage(
+                    usage = ModelSchema.Usage(
                         prompt_tokens = estimateTokens(request.input.toString()).toLong(),
                         total_tokens = estimateTokens(request.input.toString()).toLong(),
                         completion_tokens = 0
@@ -91,7 +95,7 @@ class OllamaEmbeddingClient(
         }
     }
 
-    private fun validateEmbeddingRequest(request: ApiModel.EmbeddingRequest, model: EmbeddingModel) {
+    private fun validateEmbeddingRequest(request: ModelSchema.EmbeddingRequest, model: EmbeddingModel) {
         require(request.input.toString().isNotBlank()) { "Embedding request input cannot be blank" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
     }

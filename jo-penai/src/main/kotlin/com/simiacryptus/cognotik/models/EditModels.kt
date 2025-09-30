@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.models
 
-import com.simiacryptus.cognotik.models.ApiModel.Usage
+import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import org.slf4j.Logger
 import com.simiacryptus.cognotik.util.LoggerFactory
 

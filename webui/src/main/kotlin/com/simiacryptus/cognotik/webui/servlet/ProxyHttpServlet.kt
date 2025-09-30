@@ -65,7 +65,9 @@ open class ProxyHttpServlet(
         if (null != proxyKey) proxyRequest.addHeader("Authorization", "Bearer " + proxyKey.mappedKey)
         val user = ApplicationServices.authenticationManager.getUser(req.getCookie(AuthenticationInterface.AUTH_COOKIE))
         val totalUsage =
-            ApplicationServices.usageManager.getUserUsageSummary(user!!).values.sumOf { it.cost ?: 0.0 }
+            ApplicationServices.fileApplicationServices().usageManager.getUserUsageSummary(user!!).values.sumOf {
+                it.cost ?: 0.0
+            }
         if (totalUsage > (proxyKey?.budget ?: 0.0)) {
             resp.status = 402
             resp.contentType = "text/plain"
@@ -75,7 +77,6 @@ open class ProxyHttpServlet(
         }
         asyncClient.execute(proxyRequest, object : FutureCallback<SimpleHttpResponse> {
             override fun completed(proxyResponse: SimpleHttpResponse?) {
-                require(null != proxyRequest)
                 resp.status = proxyResponse?.code ?: 500
                 proxyResponse?.headers?.forEach { header ->
                     resp.addHeader(header.name, header.value)

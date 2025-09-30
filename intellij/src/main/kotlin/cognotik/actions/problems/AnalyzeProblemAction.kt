@@ -18,8 +18,8 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedActor
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
@@ -28,13 +28,10 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.text.SimpleDateFormat
-import java.util.concurrent.ExecutorService
 import javax.swing.JOptionPane
 
 class AnalyzeProblemAction : AnAction() {
@@ -148,22 +145,21 @@ class AnalyzeProblemAction : AnAction() {
 
         override fun newSession(user: User?, session: Session): SocketManager {
             val socketManager = super.newSession(user, session)
-            val ui = (socketManager as ApplicationSocketManager).applicationInterface
-            val task = ui.newTask()
+            val task = socketManager.newTask(cancelable = false)
             task.add("Analyzing problem and suggesting fixes...")
             Thread {
-                analyzeProblem(ui, task, AppSettingsState.workPool)
+                analyzeProblem(task, socketManager)
             }.start()
             return socketManager
         }
 
         private fun analyzeProblem(
-            ui: ApplicationInterface, task: SessionTask, pool: ExecutorService
+            task: SessionTask, socketManager: SocketManager
         ) {
             try {
-                Retryable(ui, task) {
-                    val task = ui.newTask(false)
-                    val plan = ParsedActor(
+                Retryable(task) {
+                    val task = socketManager.newTask(cancelable = false, root = false)
+                    val plan = ParsedAgent(
                         resultClass = ParsedErrors::class.java,
                         prompt = """
                         You are a helpful AI that helps people with coding.
@@ -186,8 +182,8 @@ class AnalyzeProblemAction : AnAction() {
                     )
 
                     plan.obj.errors?.forEach { error ->
-                        Retryable(ui, task) {
-                            val task = ui.newTask(false)
+                        Retryable(task) {
+                            val task = socketManager.newTask(cancelable = false, root = false)
                             val filesToFix = (error.fixFiles ?: emptyList()) + (error.relatedFiles ?: emptyList())
                             val summary = filesToFix.joinToString("\n\n") { filePath ->
                                 val file = gitRoot?.toFile?.resolve(filePath)
@@ -202,7 +198,7 @@ class AnalyzeProblemAction : AnAction() {
                                     "# $filePath\nFile not found"
                                 }
                             }
-                            task.add(generateAndAddResponse(ui, task, error, summary, pool))
+                            task.add(generateAndAddResponse(task, error, summary, socketManager))
                             task.placeholder
                         }
                     }
@@ -214,13 +210,12 @@ class AnalyzeProblemAction : AnAction() {
         }
 
         private fun generateAndAddResponse(
-            ui: ApplicationInterface,
             task: SessionTask,
             error: ParsedError,
             summary: String,
-            pool: ExecutorService
+            socketManager: SocketManager
         ): String {
-            val response = SimpleActor(
+            val response = ChatAgent(
                 prompt = """
             You are a helpful AI that helps people with coding.
             Suggest fixes for the following problem:
@@ -240,7 +235,7 @@ class AnalyzeProblemAction : AnAction() {
             return "<div>${
                 renderMarkdown(
                     AddApplyFileDiffLinks.instrumentFileDiffs(
-                        self = ui.socketManager!!,
+                        self = socketManager,
                         root = root.toPath(),
                         response = response,
                         handle = { newCodeMap ->
@@ -248,7 +243,6 @@ class AnalyzeProblemAction : AnAction() {
                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                             }
                         },
-                        ui = ui,
                     )
                 )
             }</div>"

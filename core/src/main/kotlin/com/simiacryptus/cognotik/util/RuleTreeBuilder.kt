@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.util
 import org.intellij.lang.annotations.Language
 import java.util.*
 import java.util.stream.Collectors
+import kotlin.math.ln
 
 object RuleTreeBuilder {
 
@@ -135,9 +136,9 @@ object RuleTreeBuilder {
             val totalCnt = goodCnt + badCnt
             val goodFactor = goodCnt.toDouble() / totalCnt
             val badFactor = badCnt.toDouble() / totalCnt
-            val entropy = goodFactor * Math.log(goodFactor) + badFactor * Math.log(badFactor)
+            val entropy = goodFactor * ln(goodFactor) + badFactor * ln(badFactor)
             prefix to entropy
-        }.reduce({ a, b -> if (a.second >= b.second) a else b }).orElse(null)?.first
+        }.reduce { a, b -> if (a.second >= b.second) a else b }.orElse(null)?.first
 
     fun prefixExpand(allowedPrefixes: Collection<String>) =
         allowedPrefixes.filter { allowedPrefixes.none { prefix -> prefix != it && prefix.startsWith(it) } }

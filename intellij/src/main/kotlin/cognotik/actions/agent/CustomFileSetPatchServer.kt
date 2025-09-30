@@ -1,17 +1,15 @@
 package cognotik.actions.agent
 
-import com.simiacryptus.cognotik.actors.SimpleActor
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.input.getReader
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.ApplicationSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
@@ -69,7 +67,7 @@ class CustomFileSetPatchServer(
         return _selectedDirectory
     }
 
-    private val mainActor: SimpleActor
+    private val mainActor: ChatAgent
         get() {
             val prompt = when (outputMode) {
                 CustomFileSetPatchAction.OutputMode.EDIT_FILES -> """
@@ -100,7 +98,7 @@ class CustomFileSetPatchServer(
 
             }
 
-            return SimpleActor(
+            return ChatAgent(
                 prompt = prompt,
                 model = AppSettingsState.instance.smartChatClient,
                 temperature = AppSettingsState.instance.temperature,
@@ -220,18 +218,19 @@ class CustomFileSetPatchServer(
         task.add(message)
     }
 
-    override fun newSession(user: User?, session: Session): SocketManager {
+    override fun newSession(
+        user: User?, session: Session
+    ): SocketManager {
         val socketManager = super.newSession(user, session)
-        val ui = (socketManager as ApplicationSocketManager).applicationInterface
         // Validate configuration early
         if (config.settings == null) {
-            val task = ui.newTask(true)
+            val task = socketManager.newTask(cancelable = false, root = true)
             task.error(IllegalStateException("Configuration settings are missing"))
             return socketManager
         }
 
 
-        val task = ui.newTask(true)
+        val task = socketManager.newTask(cancelable = false, root = true)
         val tabs: TabbedDisplay? = null //TabbedDisplay(task)
         val userMessage = config.settings.transformationMessage
         // Validate user message
@@ -319,12 +318,12 @@ class CustomFileSetPatchServer(
                                 fileSet = fileSet,
                                 contextSummary = contextSummary,
                                 userMessage = userMessage,
-                                ui = ui,
                                 tabs = null, // No tabs in big data mode
                                 task = subTask,
                                 session = session,
                                 singleOutputFile = singleOutputFile,
-                                useBigDataMode = true
+                                useBigDataMode = true,
+                                socketManager = socketManager
                             )
 
                             completedFileSets.offer(fileSetName)
@@ -412,12 +411,11 @@ class CustomFileSetPatchServer(
                         fileSet = fileSet,
                         contextSummary = contextSummary,
                         userMessage = userMessage,
-                        ui = ui,
                         tabs = tabs,
                         task = task,
                         session = session,
                         singleOutputFile = singleOutputFile,
-                        useBigDataMode = false
+                        socketManager = socketManager
                     )
                 }
             }.toMutableList()
@@ -559,12 +557,12 @@ class CustomFileSetPatchServer(
         fileSet: CustomFileSetPatchAction.FileSet,
         contextSummary: String,
         userMessage: String,
-        ui: ApplicationInterface,
         tabs: TabbedDisplay?,
         task: SessionTask,
         session: Session,
         singleOutputFile: Path?,
-        useBigDataMode: Boolean = false
+        useBigDataMode: Boolean = false,
+        socketManager: SocketManager
     ) {
         try {
             var status: StringBuilder? = null
@@ -582,16 +580,14 @@ class CustomFileSetPatchServer(
 
                 tabs != null -> {
                     status = task.add("Processing ${fileSet.name}...<br/>")!!
-                    ui.newTask(false).apply {
+                    socketManager.newTask(cancelable = false, root = false).apply {
                         tabs[fileSet.name] = placeholder
                     }
                 }
 
                 else -> {
                     val newSession = task.newSession()
-                    val link =
-                        """<a href="#${newSession.sessionId}" target="_blank" class="${"linked-task-link"}">${fileSet.name}</a>"""
-                    status = task.add("Processing ${link}...<br/>")!!
+                    status = task.add("""Processing <a href="#${newSession.sessionId}" target="_blank" class="linked-task-link">${fileSet.name}</a>...<br/>""")!!
                     newSession.newTask()
                 }
             }
@@ -600,9 +596,9 @@ class CustomFileSetPatchServer(
                 val toInput = { it: String -> listOf(fullContent, it) }
                 when {
                     outputMode == CustomFileSetPatchAction.OutputMode.EDIT_FILES -> if (autoApply) {
-                        handleAutoApplyMode(fileSet, userMessage, fileTask, ui, session, toInput)
+                        handleAutoApplyMode(fileSet, userMessage, fileTask, session, toInput, socketManager)
                     } else {
-                        handleInteractiveMode(fileSet, userMessage, fileTask, ui, session, toInput)
+                        handleInteractiveMode(fileSet, userMessage, fileTask, session, toInput, socketManager)
                     }
 
                     else -> {
@@ -726,15 +722,15 @@ class CustomFileSetPatchServer(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
         task: SessionTask,
-        ui: ApplicationInterface,
         session: Session,
-        toInput: (String) -> List<String>
+        toInput: (String) -> List<String>,
+        socketManager: SocketManager
     ) {
         val design = mainActor.answer(toInput(userMessage),).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
             task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(
-                    self = ui.socketManager!!,
+                    self = socketManager,
                     root = _root ?: throw IllegalStateException("Root directory is not set"),
                     response = design,
                     handle = { newCodeMap ->
@@ -742,7 +738,6 @@ class CustomFileSetPatchServer(
                             task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                         }
                     },
-                    ui = ui,
                     shouldAutoApply = { autoApply },
                     model = AppSettingsState.instance.fastChatClient,
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
@@ -791,9 +786,9 @@ class CustomFileSetPatchServer(
         fileSet: CustomFileSetPatchAction.FileSet,
         userMessage: String,
         task: SessionTask,
-        ui: ApplicationInterface,
         session: Session,
-        toInput: (String) -> List<String>
+        toInput: (String) -> List<String>,
+        socketManager: SocketManager
     ) {
         Discussable(
             task = task,
@@ -803,13 +798,12 @@ class CustomFileSetPatchServer(
                 mainActor.answer(toInput(it))
             },
             outputFn = { design: String ->
-                formatOutput(design, ui, session, fileSet, task)
+                formatOutput(design, session, fileSet, task, socketManager)
             },
-            ui = ui,
             reviseResponse = { userMessages ->
                 mainActor.respond(
                     messages = userMessages.map {
-                        ApiModel.ChatMessage(
+                        ModelSchema.ChatMessage(
                             it.second, it.first.toContentList()
                         )
                     }.toTypedArray(), input = toInput(userMessage)
@@ -823,17 +817,17 @@ class CustomFileSetPatchServer(
 
     private fun formatOutput(
         design: String,
-        ui: ApplicationInterface,
         session: Session,
         fileSet: CustomFileSetPatchAction.FileSet,
-        fileTask: SessionTask
+        fileTask: SessionTask,
+        socketManager: SocketManager
     ): String {
         return when (outputMode) {
             CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {
                 """<div>${
                     renderMarkdown(design) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            self = ui.socketManager!!,
+                            self = socketManager,
                             root = _root ?: throw IllegalStateException("Root directory is not set"),
                             response = design,
                             handle = { newCodeMap ->
@@ -841,7 +835,6 @@ class CustomFileSetPatchServer(
                                     fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
                             },
-                            ui = ui,
                             shouldAutoApply = { false },
                             model = AppSettingsState.instance.fastChatClient,
                             defaultFile = fileSet.files.firstOrNull()

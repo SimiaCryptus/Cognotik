@@ -42,11 +42,6 @@ class DiffMatchPatchTest {
     fun testPatchToText() {
         val text1 = "The quick brown\n fox jumps over\n the lazy dog.\n"
         val text2 = "The quick red\n fox jumps over\n the tired dog.\n"
-        if (text1 == null || text2 == null) {
-            throw IllegalArgumentException("Null inputs. (patch_make)")
-        }
-
-
         val deadline: Long
         if (DiffMatchPatch.Diff_Timeout <= 0) {
             deadline = Long.MAX_VALUE

@@ -7,8 +7,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 
 class SoftwareGraphPlanningTask(
-    planSettings: PlanSettings, planTask: GraphBasedPlanningTaskConfigData?
-) : AbstractTask<SoftwareGraphPlanningTask.GraphBasedPlanningTaskConfigData>(planSettings, planTask) {
+    orchestrationConfig: OrchestrationConfig, planTask: GraphBasedPlanningTaskConfigData?
+) : AbstractTask<SoftwareGraphPlanningTask.GraphBasedPlanningTaskConfigData>(orchestrationConfig, planTask) {
 
     class GraphBasedPlanningTaskConfigData(
         @Description("REQUIRED: The path to the input software graph JSON file") val input_graph_file: String? = null,
@@ -17,7 +17,7 @@ class SoftwareGraphPlanningTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskConfigBase(
-        task_type = TaskType.SoftwareGraphPlanningTask.name,
+        task_type = "SoftwareGraphPlanningTask",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -29,20 +29,20 @@ class SoftwareGraphPlanningTask(
     """.trimIndent()
 
     override fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings
+        orchestrationConfig: OrchestrationConfig
     ) {
-        val inputFile = (planSettings.absoluteWorkingDir?.let { File(it) } ?: File(".")).resolve(
+        val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File(".")).resolve(
             when {
                 !taskConfig?.input_graph_file.isNullOrBlank() -> taskConfig?.input_graph_file!!
                 else -> throw IllegalArgumentException("Input graph file not specified")
             }
         )
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
-        val response = planSettings.planningActor(agent.describer).answer(
+        val response = orchestrationConfig.planningActor(agent.describer).answer(
             (messages + listOf(
                 "Software Graph `${taskConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
                 "Instruction: ${taskConfig.instruction}"

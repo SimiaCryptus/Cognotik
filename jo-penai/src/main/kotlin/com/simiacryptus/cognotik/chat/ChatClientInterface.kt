@@ -1,10 +1,7 @@
 package com.simiacryptus.cognotik.chat
 
-import com.simiacryptus.cognotik.chat.ChatClientInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.Chatter
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -13,6 +10,8 @@ interface ChatClientInterface {
     var budget: Number?
     val logStreams: MutableList<BufferedOutputStream>
     val workPool : ExecutorService
+    val onUsageListeners: MutableList<(model: LLMModel, tokens: ModelSchema.Usage) -> Unit>
+    fun getModels(): List<ChatModel>? = null
 
     /**
      * Sends a chat request to the configured model and returns the response
@@ -24,10 +23,10 @@ interface ChatClientInterface {
      */
     @Deprecated("Use chat with messages parameter instead via preauthenticated chat models")
     fun chat(
-        chatRequest: ApiModel.ChatRequest,
+        chatRequest: ModelSchema.ChatRequest,
         model: ChatModel,
         logStreams: MutableList<BufferedOutputStream> = this.logStreams
-    ): ApiModel.ChatResponse
+    ): ModelSchema.ChatResponse
 
     /**
      * Moderates the given text for policy violations
@@ -36,18 +35,4 @@ interface ChatClientInterface {
      */
     fun moderate(text: String) {}
 
-    /**
-     * Called when API usage occurs to track tokens and costs
-     * @param model The model that was used
-     * @param tokens Usage information including token counts and cost
-     */
-    fun onUsage(
-        model: LLMModel,
-        tokens: ApiModel.Usage,
-        logStreams: MutableList<BufferedOutputStream> = this.logStreams.toTypedArray().toMutableList(),
-    )
-
-    fun getModel(modelName: String): Chatter? {
-        throw NotImplementedError("getModel not implemented")
-    }
 }

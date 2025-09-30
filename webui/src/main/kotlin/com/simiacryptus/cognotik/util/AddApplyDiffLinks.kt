@@ -6,9 +6,8 @@ import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManagerBase
+import com.simiacryptus.cognotik.webui.session.SocketManager
 
 class AddApplyDiffLinks {
     companion object {
@@ -17,24 +16,22 @@ class AddApplyDiffLinks {
         private val diffApplier = SimpleDiffApplier()
 
         fun addApplyDiffLinks(
-            self: SocketManagerBase,
+            self: SocketManager,
             code: () -> String,
             response: String,
             handle: (String) -> Unit,
             task: SessionTask,
-            ui: ApplicationInterface,
             shouldAutoApply: Boolean = false,
-        ) = AddApplyDiffLinks().apply(self, code, response, handle, task, ui, shouldAutoApply)
+        ) = AddApplyDiffLinks().apply(self, code, response, handle, task, shouldAutoApply)
 
     }
 
     fun apply(
-        socketManagerBase: SocketManagerBase,
+        socketManager: SocketManager,
         code: () -> String,
         response: String,
         handle: (String) -> Unit,
         task: SessionTask,
-        ui: ApplicationInterface,
         shouldAutoApply: Boolean = false,
     ): String {
         val matches = SimpleDiffApplier.DIFF_PATTERN.findAll(response).distinct()
@@ -80,10 +77,10 @@ class AddApplyDiffLinks {
                 }
             }
 
-            val buttons = ui.newTask(false)
+            val buttons = socketManager.newTask(cancelable = false, root = false)
             lateinit var hrefLink: StringBuilder
             var reverseHrefLink: StringBuilder? = null
-            hrefLink = buttons.complete(socketManagerBase.hrefLink("Apply Diff", classname = "href-link cmd-button") {
+            hrefLink = buttons.complete(socketManager.hrefLink("Apply Diff", classname = "href-link cmd-button") {
                 try {
                     val newCode = patch(code(), diffVal)
                     handle(newCode.newCode)
@@ -105,13 +102,14 @@ class AddApplyDiffLinks {
                 val test1 = IterativePatchUtil.generatePatch(code().replace("\r", ""), patch)
                 displayMapInTabs(
                     mapOf(
-                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = ui, tabs = true),
-                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = ui, tabs = true),
-                    ), ui = ui, split = true
+                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.manager, tabs = true),
+                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.manager, tabs = true),
+                    ), ui = task.manager, split = true
                 ) + "\n" + buttons.placeholder
             } else {
+                @Suppress("AssignedValueIsNeverRead")
                 reverseHrefLink =
-                    buttons.complete(socketManagerBase.hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
+                    buttons.complete(socketManager.hrefLink("(Bottom to Top)", classname = "href-link cmd-button") {
                         try {
                             val reversedCode = code().lines().reversed().joinToString("\n")
                             val reversedDiff = diffVal.lines().reversed().joinToString("\n")
@@ -134,10 +132,10 @@ class AddApplyDiffLinks {
                 )
                 displayMapInTabs(
                     mapOf(
-                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = ui, tabs = true),
-                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = ui, tabs = true),
-                        "Reverse" to renderMarkdown("```diff\n$test2\n```", ui = ui, tabs = true),
-                    ), ui = ui, split = true
+                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.manager, tabs = true),
+                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.manager, tabs = true),
+                        "Reverse" to renderMarkdown("```diff\n$test2\n```", ui = task.manager, tabs = true),
+                    ), ui = task.manager, split = true
                 ) + "\n" + buttons.placeholder
             }
             markdown.replace(diffBlock.value, newValue)

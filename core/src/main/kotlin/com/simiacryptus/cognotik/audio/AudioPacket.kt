@@ -247,4 +247,46 @@ data class AudioPacket(
         }
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as AudioPacket
+
+        if (createdOn != other.createdOn) return false
+        if (!samples.contentEquals(other.samples)) return false
+        if (audioFormat != other.audioFormat) return false
+        if (log != other.log) return false
+        if (duration != other.duration) return false
+        if (rms != other.rms) return false
+        if (size != other.size) return false
+        if (spectralEntropy != other.spectralEntropy) return false
+        if (iec61672 != other.iec61672) return false
+        if (spectralCentroid != other.spectralCentroid) return false
+        if (spectralFlatness != other.spectralFlatness) return false
+        if (zeroCrossings != other.zeroCrossings) return false
+        if (aWeighting != other.aWeighting) return false
+        if (!fft.contentEquals(other.fft)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = createdOn.hashCode()
+        result = 31 * result + samples.contentHashCode()
+        result = 31 * result + audioFormat.hashCode()
+        result = 31 * result + log.hashCode()
+        result = 31 * result + duration.hashCode()
+        result = 31 * result + rms.hashCode()
+        result = 31 * result + size
+        result = 31 * result + spectralEntropy.hashCode()
+        result = 31 * result + iec61672.hashCode()
+        result = 31 * result + spectralCentroid.hashCode()
+        result = 31 * result + spectralFlatness.hashCode()
+        result = 31 * result + zeroCrossings
+        result = 31 * result + aWeighting.hashCode()
+        result = 31 * result + fft.contentHashCode()
+        return result
+    }
+
 }

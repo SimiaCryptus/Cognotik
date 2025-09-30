@@ -8,13 +8,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -113,8 +112,8 @@ open class ModifyFilesAction(
 
     inner class PatchChatManager(
         session: Session,
-        model: Chatter,
-        parsingModel: Chatter,
+        model: ChatInterface,
+        parsingModel: ChatInterface,
         val root: File,
         private val files: Set<Path>,
         private val showLineNumbers: Boolean = false
@@ -124,7 +123,7 @@ open class ModifyFilesAction(
         parsingModel = parsingModel,
         systemPrompt = "",
         applicationClass = ApplicationServer::class.java,
-        storage = ApplicationServices.dataStorageFactory(ApplicationServicesConfig.dataStorageRoot),
+        storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
         budget = 2.0,
     ) {
         override val systemPrompt: String
@@ -177,7 +176,6 @@ open class ModifyFilesAction(
                         task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                     }
                 },
-                ui = ui,
                 defaultFile = if (files.size == 1) files.first().let {
                     root.toPath().resolve(it).toFile().absolutePath
                 } else null,
@@ -187,7 +185,7 @@ open class ModifyFilesAction(
         override fun respond(
             task: SessionTask,
             userMessage: String,
-            currentChatMessages: List<ApiModel.ChatMessage>,
+            currentChatMessages: List<ModelSchema.ChatMessage>,
             transcriptStream: OutputStream?
         ): String {
             val codex = GPT4Tokenizer()

@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -16,7 +15,7 @@ class SessionProxyServer : ApplicationServer(
 ) {
     override val inputCnt = 0
     override val stickyInput = false
-    override fun appInfo(session: Session): Map<String, Any> = ((chats.get(session)?.let { chatServer ->
+    override fun appInfo(session: Session): Map<String, Any> = ((chats[session]?.let { chatServer ->
         AppInfoData(
             applicationName = chatServer.applicationName,
             inputCnt = chatServer.inputCnt,
@@ -24,7 +23,7 @@ class SessionProxyServer : ApplicationServer(
             loadImages = false,
             showMenubar = showMenubar,
         )
-    }) ?: AppInfoData(
+    }) ?: appInfos[session] ?: AppInfoData(
         applicationName = "AI Coding Assistant",
         inputCnt = 0,
         stickyInput = false,
@@ -37,8 +36,9 @@ class SessionProxyServer : ApplicationServer(
         ?: throw IllegalStateException("No agent found for session $session")
 
     companion object {
-        val metadataStorage by lazy { ApplicationServices.metadataStorageFactory(dataStorageRoot.resolve("metadatadb")) }
+        val metadataStorage by lazy { ApplicationServices.fileApplicationServices().metadataStorageFactory }
         val agents = mutableMapOf<Session, SocketManager>()
         val chats = mutableMapOf<Session, ChatServer>()
+        val appInfos = mutableMapOf<Session, AppInfoData>()
     }
 }

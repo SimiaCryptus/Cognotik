@@ -1,5 +1,5 @@
 import com.simiacryptus.cognotik.chat.model.OpenAIModels
-import com.simiacryptus.cognotik.models.ApiModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.hsql.HSQLUsageManager
 import com.simiacryptus.cognotik.platform.model.UsageInterface
@@ -33,14 +33,14 @@ abstract class UsageTest(private val impl: UsageInterface) {
         log.debug("Starting test: incrementUsage should increment usage for session")
         val model = OpenAIModels.GPT4oMini
         val session = Session.newGlobalID()
-        val usage = ApiModel.Usage(
+        val usage = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
             cost = 30.0,
         )
         log.info("Incrementing usage for session {} with model {}", session, model)
         impl.incrementUsage(session, testUser, model, usage)
-        val usageSummary: Map<String, ApiModel.Usage> = impl.getSessionUsageSummary(session)
+        val usageSummary: Map<String, ModelSchema.Usage> = impl.getSessionUsageSummary(session)
         Assertions.assertEquals(usage, usageSummary[model.modelName])
         val userUsageSummary = impl.getUserUsageSummary(testUser)
         Assertions.assertEquals(usage, userUsageSummary[model.modelName])
@@ -51,14 +51,14 @@ abstract class UsageTest(private val impl: UsageInterface) {
         log.debug("Starting test: getUserUsageSummary should return correct usage summary")
         val model = OpenAIModels.GPT4oMini
         val session = Session.newGlobalID()
-        val usage = ApiModel.Usage(
+        val usage = ModelSchema.Usage(
             prompt_tokens = 15,
             completion_tokens = 25,
             cost = 35.0,
         )
         log.info("Incrementing usage for user {} with model {}", testUser.email, model)
         impl.incrementUsage(session, testUser, model, usage)
-        val userUsageSummary: Map<String, ApiModel.Usage> = impl.getUserUsageSummary(testUser)
+        val userUsageSummary: Map<String, ModelSchema.Usage> = impl.getUserUsageSummary(testUser)
         Assertions.assertEquals(usage, userUsageSummary[model.modelName])
     }
 
@@ -67,7 +67,7 @@ abstract class UsageTest(private val impl: UsageInterface) {
         log.debug("Starting test: clear should reset all usage data")
         val model = OpenAIModels.GPT4oMini
         val session = Session.newGlobalID()
-        val usage = ApiModel.Usage(
+        val usage = ModelSchema.Usage(
             prompt_tokens = 20,
             completion_tokens = 30,
             cost = 40.0,
@@ -88,12 +88,12 @@ abstract class UsageTest(private val impl: UsageInterface) {
         val model1 = OpenAIModels.GPT4oMini
         val model2 = OpenAIModels.GPT4Turbo
         val session = Session.newGlobalID()
-        val usage1 = ApiModel.Usage(
+        val usage1 = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
             cost = 30.0,
         )
-        val usage2 = ApiModel.Usage(
+        val usage2 = ModelSchema.Usage(
             prompt_tokens = 5,
             completion_tokens = 10,
             cost = 15.0,
@@ -102,10 +102,10 @@ abstract class UsageTest(private val impl: UsageInterface) {
         impl.incrementUsage(session, testUser, model1, usage1)
         impl.incrementUsage(session, testUser, model2, usage2)
         log.debug("Verifying usage summaries for session and user")
-        val usageSummary: Map<String, ApiModel.Usage> = impl.getSessionUsageSummary(session)
+        val usageSummary: Map<String, ModelSchema.Usage> = impl.getSessionUsageSummary(session)
         Assertions.assertEquals(usage1, usageSummary[model1.modelName])
         Assertions.assertEquals(usage2, usageSummary[model2.modelName])
-        val userUsageSummary: Map<String, ApiModel.Usage> = impl.getUserUsageSummary(testUser)
+        val userUsageSummary: Map<String, ModelSchema.Usage> = impl.getUserUsageSummary(testUser)
         Assertions.assertEquals(usage1, userUsageSummary[model1.modelName])
         Assertions.assertEquals(usage2, userUsageSummary[model2.modelName])
     }
@@ -115,12 +115,12 @@ abstract class UsageTest(private val impl: UsageInterface) {
         log.debug("Starting test: incrementUsage should accumulate usage for the same model")
         val model = OpenAIModels.GPT4oMini
         val session = Session.newGlobalID()
-        val usage1 = ApiModel.Usage(
+        val usage1 = ModelSchema.Usage(
             prompt_tokens = 10,
             completion_tokens = 20,
             cost = 30.0,
         )
-        val usage2 = ApiModel.Usage(
+        val usage2 = ModelSchema.Usage(
             prompt_tokens = 5,
             completion_tokens = 10,
             cost = 15.0,
@@ -129,14 +129,14 @@ abstract class UsageTest(private val impl: UsageInterface) {
         impl.incrementUsage(session, testUser, model, usage1)
         impl.incrementUsage(session, testUser, model, usage2)
         log.debug("Verifying accumulated usage")
-        val usageSummary: Map<String, ApiModel.Usage> = impl.getSessionUsageSummary(session)
-        val expectedUsage = ApiModel.Usage(
+        val usageSummary: Map<String, ModelSchema.Usage> = impl.getSessionUsageSummary(session)
+        val expectedUsage = ModelSchema.Usage(
             prompt_tokens = 15,
             completion_tokens = 30,
             cost = 45.0,
         )
         Assertions.assertEquals(expectedUsage, usageSummary[model.modelName])
-        val userUsageSummary: Map<String, ApiModel.Usage> = impl.getUserUsageSummary(testUser)
+        val userUsageSummary: Map<String, ModelSchema.Usage> = impl.getUserUsageSummary(testUser)
         Assertions.assertEquals(expectedUsage, userUsageSummary[model.modelName])
     }
 

@@ -1,8 +1,9 @@
 package com.simiacryptus.cognotik.chat
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel.Usage
+import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.models.LLMModel
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
@@ -11,32 +12,50 @@ import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import com.simiacryptus.cognotik.util.LoggerFactory
+import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutorService
 
-
 abstract class SingleProviderChatClient(
     protected val provider: APIProvider,
     val apiKey: String,
-    val apiBase: String = provider.base!!,
+    val apiBase: String = provider.base,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : ChatClientBase(
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
-)
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
+) {
+    protected fun get(url: String) = withClient { client ->
+        client.execute(HttpGet(url).let {
+            provider.authorize(
+                request = it,
+                key = apiKey,
+                apiBase = apiBase
+            )
+            it
+        }).use { response ->
+            val responseBody = response.entity?.content?.bufferedReader()?.readText() ?: ""
+            log(Level.DEBUG, "GET $url -> ${response.code}: $responseBody", logStreams)
+            responseBody
+        }
+    }
+}
 
 abstract class ChatClientBase(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(
-    logLevel = logLevel, logStreams = logStreams, workPool = workPool
+    logLevel = logLevel, logStreams = logStreams, workPool = workPool, scheduledPool = scheduledPool
 ), ChatClientInterface {
 
     var session: Any? = null
@@ -120,7 +139,6 @@ abstract class ChatClientBase(
         }
     }
 
-
     override fun onUsage(
         model: LLMModel,
         tokens: Usage,
@@ -140,10 +158,11 @@ abstract class ChatClientBase(
                 log(Level.INFO, "Remaining budget for session: $session, user: $user is $budget", logStreams)
             }
         }
+        super.onUsage(model, tokens, logStreams)
     }
 
     companion object {
-        val log = LoggerFactory.getLogger(ChatClientBase::class.java)
+        private val log = LoggerFactory.getLogger(ChatClientBase::class.java)
     }
 }
 

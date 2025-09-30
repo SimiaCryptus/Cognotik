@@ -2,24 +2,24 @@ package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.set
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Path
 
 abstract class AbstractTask<T : TaskConfigBase>(
-    val planSettings: PlanSettings,
+    val orchestrationConfig: OrchestrationConfig,
     val taskConfig: T?
 ) {
     var state: TaskState? = TaskState.Pending
     protected val codeFiles = mutableMapOf<Path, String>()
 
     protected open val root: Path
-        get() = planSettings.absoluteWorkingDir?.let { File(it).toPath() }
+        get() = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
             ?: throw IllegalStateException("Working directory not set")
 
     open val taskSettings: TaskSettingsBase
-        get() = planSettings.taskSettings.get(taskConfig?.task_type!!)!!
+        get() = orchestrationConfig.taskSettings[taskConfig?.task_type!!]!!
 
     enum class TaskState {
         Pending,
@@ -27,14 +27,15 @@ abstract class AbstractTask<T : TaskConfigBase>(
         Completed,
     }
 
-    open fun getPriorCode(planProcessingState: PlanProcessingState) =
+    open fun getPriorCode(executionState: ExecutionState) =
         taskConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
-            "# $dependency\n\n${planProcessingState.taskResult[dependency] ?: ""}"
+            "# $dependency\n\n${executionState.taskResult[dependency] ?: ""}"
         } ?: ""
 
-    protected fun acceptButtonFooter(ui: ApplicationInterface, fn: () -> Unit): String {
+    protected fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder
+        @Suppress("AssignedValueIsNeverRead")
         textHandle = footerTask.complete(ui.hrefLink("Accept", classname = "href-link cmd-button") {
             try {
                 textHandle.set("""<div class="cmd-button">Accepted</div>""")
@@ -50,11 +51,11 @@ abstract class AbstractTask<T : TaskConfigBase>(
     abstract fun promptSegment(): String
 
     abstract fun run(
-        agent: PlanCoordinator,
+        agent: TaskOrchestrator,
         messages: List<String> = listOf(),
         task: SessionTask,
         resultFn: (String) -> Unit,
-        planSettings: PlanSettings,
+        orchestrationConfig: OrchestrationConfig,
     )
 
     companion object {

@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.actors.CodingActor.Companion.indent
-import com.simiacryptus.cognotik.chat.model.Chatter
+import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.application.ApplicationInterface
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -17,8 +16,8 @@ class CmdPatchApp(
     root: Path,
     settings: Settings,
     val files: Array<out File>?,
-    model: Chatter,
-    parsingModel: Chatter,
+    model: ChatInterface,
+    parsingModel: ChatInterface,
 ) : PatchApp(root.toFile(), settings, model, parsingModel = parsingModel) {
 
     companion object {
@@ -68,7 +67,7 @@ class CmdPatchApp(
             .filter { root.toPath().resolve(it).toFile().exists() }
             .distinct().sorted()
             .joinToString("\n") { path ->
-                "* ${path} - ${
+                "* $path - ${
                     root.toPath().resolve(path).toFile().length()
                 } bytes".trim()
             }
@@ -79,7 +78,6 @@ class CmdPatchApp(
     override fun output(
         task: SessionTask,
         settings: Settings,
-        ui: ApplicationInterface,
         tabs: TabbedDisplay
     ): OutputResult {
         log.info("Starting command execution with ${settings.commands.size} commands")
@@ -96,11 +94,11 @@ class CmdPatchApp(
                     processBuilder.environment().putAll(System.getenv())
                     val cmdString = processBuilder.command().joinToString(" ")
                     log.debug("Full command string: $cmdString")
-                    log.debug("Working directory: ${cmdSettings.workingDirectory}")
-                    val task = ui.newTask(false).apply { tabs[cmdString] = placeholder }
+                    log.debug("Working directory: {}", cmdSettings.workingDirectory)
+                    val task = task.manager.newTask(false).apply { tabs[cmdString] = placeholder }
                     task.add("Working Directory: ${cmdSettings.workingDirectory}")
-                    task.add("Command: ${cmdString}")
-                    task.add("Model: ${model} / ${parsingModel}")
+                    task.add("Command: $cmdString")
+                    task.add("Model: $model / $parsingModel")
                     val process = processBuilder.start()
                     task.add("Started at: ${java.time.Instant.now()}")
                     val cancelButton = task.add(task.hrefLink("Stop") {

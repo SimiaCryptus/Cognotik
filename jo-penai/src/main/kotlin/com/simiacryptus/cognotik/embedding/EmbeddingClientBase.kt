@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.embedding
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ApiModel
-import com.simiacryptus.cognotik.models.ApiModel.Usage
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
@@ -19,9 +19,9 @@ import java.util.concurrent.ExecutorService
 interface EmbeddingClientInterface {
 
     fun createEmbedding(
-        request: ApiModel.EmbeddingRequest,
+        request: ModelSchema.EmbeddingRequest,
         model: EmbeddingModel
-    ): ApiModel.EmbeddingResponse
+    ): ModelSchema.EmbeddingResponse
 
 }
 
@@ -32,18 +32,21 @@ abstract class SingleProviderEmbeddingClient(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : EmbeddingClientBase(
     workPool = workPool,
     logLevel = logLevel,
-    logStreams = logStreams
+    logStreams = logStreams,
+    scheduledPool = scheduledPool
 )
 
 abstract class EmbeddingClientBase(
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(
-    logLevel = logLevel, logStreams = logStreams, workPool = workPool
+    logLevel = logLevel, logStreams = logStreams, workPool = workPool, scheduledPool = scheduledPool
 ), EmbeddingClientInterface {
 
     var session: Any? = null
@@ -135,6 +138,8 @@ abstract class EmbeddingClientBase(
     inner class ChildClient() : EmbeddingClientBase(
         logLevel = Level.INFO,
         workPool = workPool,
+        logStreams = logStreams,
+        scheduledPool = scheduledPool
     ) {
         init {
             session = this@EmbeddingClientBase.session
@@ -154,9 +159,9 @@ abstract class EmbeddingClientBase(
         }
 
         override fun createEmbedding(
-            request: ApiModel.EmbeddingRequest,
+            request: ModelSchema.EmbeddingRequest,
             model: EmbeddingModel
-        ): ApiModel.EmbeddingResponse {
+        ): ModelSchema.EmbeddingResponse {
             return this@EmbeddingClientBase.createEmbedding(request, model)
         }
 
