@@ -10,10 +10,10 @@ import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.apps.graph.DependencyGraphMode
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.*
@@ -102,19 +102,7 @@ class UnifiedPlanAction : BaseAction() {
             root,
             orchestrationConfig,
             cognitiveStrategy,
-            object : AbbrevWhitelistYamlDescriber(
-                "com.simiacryptus", "cognotik.actions"
-            ) {
-                override val includeMethods: Boolean get() = false
-
-                override fun getEnumValues(clazz: Class<*>): List<String> {
-                    return if (clazz == TaskType::class.java) {
-                        orchestrationConfig.taskSettings.filter { it.value.enabled }.map { it.key }
-                    } else {
-                        super.getEnumValues(clazz)
-                    }
-                }
-            })
+            TaskContextYamlDescriber(orchestrationConfig))
         progress.text = "Starting server..."
         val server = CognotikAppServer.getServer(e.project)
         openBrowser(server, session.toString())

@@ -81,16 +81,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 Given a detailed user request, break it down into smaller, actionable tasks suitable for software development.
                 Compile comprehensive information and insights on the specified topic.
                 Provide a comprehensive overview, including key concepts, relevant technologies, best practices, and any potential challenges or considerations.
-
                 Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
-
-                When generating insights, consider the existing project context and focus on information that is directly relevant and applicable.
-                Focus on generating insights and information that support the task types available in the system (${
-                this.orchestrationConfig.taskSettings.filter<String, TaskTypeConfig> { it.value.enabled }.keys.joinToString<String>(
-                    ", "
-                )
-            }).
-                This will ensure that the inquiries are tailored to assist in the planning and execution of tasks within the system's framework.
                 """.trimIndent(),
             model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                 ?: this.orchestrationConfig.defaultChatter).getChildClient(task),

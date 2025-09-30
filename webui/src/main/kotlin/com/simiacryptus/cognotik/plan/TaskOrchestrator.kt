@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
@@ -27,19 +26,7 @@ class TaskOrchestrator(
     val root: Path
 ) {
 
-    var describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "aicoder.actions"
-    ) {
-        override val includeMethods: Boolean get() = false
-
-        override fun getEnumValues(clazz: Class<*>): List<String> {
-            return if (clazz == TaskType::class.java) {
-                orchestrationConfig.taskSettings.filter { it.value.enabled }.map { it.key }
-            } else {
-                super.getEnumValues(clazz)
-            }
-        }
-    }
+    var describer: TypeDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
     val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
 
