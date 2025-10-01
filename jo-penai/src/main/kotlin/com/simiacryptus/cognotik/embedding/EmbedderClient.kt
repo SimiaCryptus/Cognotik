@@ -1,0 +1,26 @@
+package com.simiacryptus.cognotik.embedding
+
+import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
+
+class EmbedderClient(
+    private val embeddingClient: EmbeddingClientInterface,
+    val model: EmbeddingModel,
+    private val onUsage: (LLMModel, ModelSchema.Usage) -> Unit = { _, _ -> }
+) : Embedder {
+    override fun embed(input: String): DoubleArray {
+        val request = ModelSchema.EmbeddingRequest(
+            model = model.modelName,
+            input = input
+        )
+        val response = embeddingClient.createEmbedding(request, model)
+        if (response.data.isEmpty()) {
+            throw IllegalStateException("No embedding data returned")
+        }
+        response.usage?.let { usage ->
+            onUsage(model, usage.copy(cost = model.pricing(usage)))
+        }
+        EmbeddingModel.log.info("Generated embedding of size ${response.data[0].embedding?.size} for input of length ${input.length}")
+        return response.data[0].embedding ?: throw IllegalStateException("Embedding data is null")
+    }
+}

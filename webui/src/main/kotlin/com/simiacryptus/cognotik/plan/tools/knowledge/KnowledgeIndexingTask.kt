@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFi
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -15,17 +16,20 @@ import java.util.concurrent.TimeUnit
 class KnowledgeIndexingTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: KnowledgeIndexingTaskExecutionConfigData?
-) : AbstractTask<KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+) : AbstractTask<KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData, TaskTypeConfig>(
+    orchestrationConfig,
+    planTask
+) {
 
     class KnowledgeIndexingTaskExecutionConfigData(
         @Description("The file paths to process and index")
         val file_paths: List<String>,
-    @Description("The type of parsing to use: 'document' or 'code'")
-    val parsing_type: String? = "document",
-    @Description("The chunk size for splitting documents (0.0 to 1.0)")
-    val chunk_size: Double? = 0.1,
-    @Description("The embedding model to use for indexing")
-    val embedding_model: String? = "OllamaNomadic",
+        @Description("The type of parsing to use: 'document' or 'code'")
+        val parsing_type: String? = "document",
+        @Description("The chunk size for splitting documents (0.0 to 1.0)")
+        val chunk_size: Double? = 0.1,
+        @Description("The embedding model to use for indexing")
+        val embedding_model: String? = OllamaEmbeddingModels.NomicEmbedText.modelName,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -80,15 +84,9 @@ class KnowledgeIndexingTask(
         try {
             val progressState = ProgressState.progressBar(task)
             // Determine embedding model from configuration
-            val embeddingModel = when (executionConfig?.embedding_model?.lowercase()) {
-                "ollamanomadic", null -> EmbeddingModel.OllamaNomadic
-                // Add more model mappings as needed
-                else -> {
-                    log.warn("Unknown embedding model: ${executionConfig?.embedding_model}, using OllamaNomadic")
-                    EmbeddingModel.OllamaNomadic
-                }
-            }
-            
+            val embeddingModel = EmbeddingModel.values().toList().firstOrNull {
+                it.second.modelName.equals(executionConfig.embedding_model, ignoreCase = true)
+            }!!.second
             indexJsonFile(
                 pool = threadPool,
                 progressState = progressState,

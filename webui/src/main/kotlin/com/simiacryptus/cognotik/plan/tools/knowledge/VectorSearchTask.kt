@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.DistanceType
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -39,7 +40,7 @@ class VectorSearchTask(
         val min_length: Int = 0,
         @Description("List of regex patterns that must be present in the content")
         val required_regexes: List<String> = emptyList(),
-        val model: EmbeddingModel = EmbeddingModel.OllamaNomadic,
+        val model: String = OllamaEmbeddingModels.NomicEmbedText.modelName!!,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -96,7 +97,9 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
         fun createEmbeddingWithRetry(query: String, maxRetries: Int = 3): DoubleArray? {
             repeat(maxRetries) { attempt ->
                 try {
-                    return executionConfig.model.instance().embed(query)
+                    return executionConfig.model.let {
+                        EmbeddingModel.values()[it] ?: throw IllegalArgumentException("Unknown embedding model: $it")
+                    }.instance().embed(query)
                 } catch (e: Exception) {
                     if (attempt == maxRetries - 1) {
                         log.error("Failed to create embedding for query after $maxRetries attempts: $query", e)
