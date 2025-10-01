@@ -7,16 +7,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
-import com.simiacryptus.cognotik.apps.graph.DependencyGraphMode
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -34,7 +30,8 @@ class UnifiedPlanAction : BaseAction() {
     override fun handle(e: AnActionEvent) {
         val root: String = e.getRoot()
         val dialog = PlanConfigDialog(
-            e.project, object : OrchestrationConfig(
+            e.project,
+            OrchestrationConfig(
                 defaultModel = AppSettingsState.instance.smartModel
                     ?: throw IllegalStateException("Smart model not configured"),
                 parsingModel = AppSettingsState.instance.fastModel
@@ -45,26 +42,15 @@ class UnifiedPlanAction : BaseAction() {
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 env = mapOf(),
                 workingDir = root,
-            ) {
-                override fun instance(model: ApiChatModel) = model.instance()
-                    ?: throw IllegalStateException("Model or Provider not set")
-            },
+                instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+            ),
         )
 
         if (dialog.showAndGet()) {
             try {
                 val planSettings = dialog.settings
-                val selectedCognitiveMode = dialog.cognitiveModeCombo.selectedItem as String
-                val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
-                    "Chat" -> ConversationalMode
-                    "Waterfall" -> WaterfallMode
-                    "Graph" -> DependencyGraphMode
-                    "Adaptive" -> AdaptivePlanningMode
-                    "Hierarchical" -> HierarchicalPlanningMode
-                    else -> throw RuntimeException("Unknown plan mode: $selectedCognitiveMode")
-                }
                 UITools.runAsync(e.project, "Initializing Unified Plan", true) { progress ->
-                    initializeChat(e, progress, planSettings, cognitiveMode)
+                    initializeChat(e, progress, planSettings)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize unified plan", ex)
@@ -76,8 +62,7 @@ class UnifiedPlanAction : BaseAction() {
     private fun initializeChat(
         e: AnActionEvent,
         progress: ProgressIndicator,
-        orchestrationConfig: OrchestrationConfig,
-        cognitiveStrategy: CognitiveModeStrategy
+        orchestrationConfig: OrchestrationConfig
     ) {
         progress.text = "Setting up session..."
         val session = Session.newGlobalID()
@@ -87,7 +72,6 @@ class UnifiedPlanAction : BaseAction() {
             session,
             root,
             orchestrationConfig,
-            cognitiveStrategy,
             TaskContextYamlDescriber(orchestrationConfig))
         progress.text = "Starting server..."
         val server = CognotikAppServer.getServer(e.project)
@@ -105,7 +89,6 @@ class UnifiedPlanAction : BaseAction() {
         session: Session,
         root: File,
         orchestrationConfig: OrchestrationConfig,
-        cognitiveStrategy: CognitiveModeStrategy,
         describer: TypeDescriber
     ) {
         DataStorage.sessionPaths[session] = root
@@ -124,7 +107,6 @@ class UnifiedPlanAction : BaseAction() {
                 parsingModel = fastChatModel,
             ),
             showMenubar = false,
-            cognitiveStrategy = cognitiveStrategy,
             describer = describer
         ) {
             override fun instance(model: ApiChatModel) = model.instance()

@@ -1,12 +1,20 @@
 package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
@@ -14,14 +22,20 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import java.io.File
 
 
-open class OrchestrationConfig(
+class OrchestrationConfig(
+    @JsonSerialize(using = ApiChatModelSerializer::class)
+    @JsonDeserialize(using = ApiChatModelDeserializer::class)
     var defaultModel: ApiChatModel? = null,
+    @JsonSerialize(using = ApiChatModelSerializer::class)
+    @JsonDeserialize(using = ApiChatModelDeserializer::class)
     var parsingModel: ApiChatModel? = null,
+    var cognitiveMode: CognitiveModeStrategies? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
-    @JsonDeserialize(using = TaskSettingsMapDeserializer::class)
-    val taskSettings: MutableMap<String, TaskTypeConfig> = TaskType.values().associateWith { taskType ->
+    val taskSettings: MutableMap<String, TaskTypeConfig> = TaskType.values().filter {
+        false
+    }.associateWith { taskType ->
         TaskTypeConfig(
             taskType.name, taskType.description
         )
@@ -33,6 +47,7 @@ open class OrchestrationConfig(
     var maxTaskHistoryChars: Int = 10000,
     var maxTasksPerIteration: Int = 3,
     var maxIterations: Int = 10,
+    @JsonIgnore var instanceFn: ((ApiChatModel) -> ChatInterface)? = null,
 ) {
 
     @get:JsonIgnore
@@ -43,9 +58,8 @@ open class OrchestrationConfig(
         get() = instance(parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set"))
 
     @JsonIgnore
-    open fun instance(model: ApiChatModel): ChatInterface {
-        throw NotImplementedError("Must be implemented in subclass")
-    }
+    open fun instance(model: ApiChatModel) = instanceFn?.let { it(model) }
+        ?: throw IllegalStateException("Instance function not set")
 
     @get:JsonIgnore
     val absoluteWorkingDir
@@ -98,39 +112,11 @@ open class OrchestrationConfig(
         workingDir: String? = this.workingDir,
         language: String? = this.language,
         instanceFn: (ApiChatModel) -> ChatInterface = this::instance,
-    ): OrchestrationConfig = OrchestrationConfigCopy(
-        model,
-        parsingModel,
-        command,
-        temperature,
-        budget,
-        taskSettings,
-        autoFix,
-        env,
-        workingDir,
-        language,
-        instanceFn,
-        maxTaskHistoryChars,
-        maxTasksPerIteration,
-        maxIterations,
-    )
-
-    private class OrchestrationConfigCopy(
-        model: ApiChatModel?,
-        parsingModel: ApiChatModel?,
-        command: List<String>,
-        temperature: Double,
-        budget: Double,
-        taskSettings: MutableMap<String, TaskTypeConfig>,
-        autoFix: Boolean,
-        env: Map<String, String>?,
-        workingDir: String?,
-        language: String?,
-        @JsonIgnore val instanceFn: (ApiChatModel) -> ChatInterface,
-        maxTaskHistoryChars: Int,
-        maxTasksPerIteration: Int,
-        maxIterations: Int,
-    ) : OrchestrationConfig(
+        cognitiveMode: CognitiveModeStrategies? = this.cognitiveMode,
+        maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
+        maxTasksPerIteration: Int = this.maxTasksPerIteration,
+        maxIterations: Int = this.maxIterations,
+    ): OrchestrationConfig = OrchestrationConfig(
         defaultModel = model,
         parsingModel = parsingModel,
         shellCmd = command,
@@ -144,9 +130,10 @@ open class OrchestrationConfig(
         maxTaskHistoryChars = maxTaskHistoryChars,
         maxTasksPerIteration = maxTasksPerIteration,
         maxIterations = maxIterations,
-    ) {
-        override fun instance(model: ApiChatModel): ChatInterface = instanceFn(model)
-    }
+        instanceFn = instanceFn,
+        cognitiveMode = cognitiveMode,
+    )
+
 
 
     data class TaskBreakdownResult(
@@ -260,5 +247,40 @@ open class OrchestrationConfig(
         if (configToRemove != null) {
             taskSettings.remove(configToRemove.task_type)
         }
+    }
+}
+
+/**
+ * Custom serializer for ApiChatModel that only serializes the model name
+ */
+class ApiChatModelSerializer : JsonSerializer<ApiChatModel>() {
+    override fun serialize(value: ApiChatModel?, gen: JsonGenerator, serializers: SerializerProvider) {
+        if (value == null) {
+            gen.writeNull()
+        } else {
+            gen.writeString(value.model?.modelName ?: value.model?.name)
+        }
+    }
+}
+
+/**
+ * Custom deserializer for ApiChatModel that resolves the model from its name
+ */
+class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ApiChatModel? {
+        val modelName = p.readValueAs(String::class.java) ?: return null
+        val userSettings = com.simiacryptus.cognotik.platform.ApplicationServices
+            .fileApplicationServices()
+            .userSettingsManager
+            .getUserSettings()
+        val model = userSettings.apis.flatMap {
+            it.provider?.getChatModels(it.key ?: "", it.baseUrl) ?: listOf()
+        }.firstOrNull {
+            it.modelName == modelName || it.name == modelName
+        } ?: return null
+        val apiData = userSettings.apis.firstOrNull {
+            it.provider == model.provider
+        }
+        return ApiChatModel(model, apiData)
     }
 }

@@ -43,3 +43,59 @@ interface CognitiveModeStrategy {
         describer: TypeDescriber
     ): CognitiveMode
 }
+
+enum class CognitiveModeStrategies : CognitiveModeStrategy {
+    Chat {
+        override val inputCnt: Int get() = ConversationalMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?,
+            describer: TypeDescriber
+        ): CognitiveMode {
+            return ConversationalMode(ui, orchestrationConfig, session, user, describer)
+        }
+    },
+    Adaptive {
+        override val inputCnt: Int get() = AdaptivePlanningMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?,
+            describer: TypeDescriber
+        ): CognitiveMode {
+            return AdaptivePlanningMode(ui, orchestrationConfig, session, user, describer = describer)
+        }
+    },
+    Waterfall {
+        override val inputCnt: Int get() = WaterfallMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?,
+            describer: TypeDescriber
+        ): CognitiveMode {
+            return WaterfallMode(ui, orchestrationConfig, session, user, describer)
+        }
+    },
+    Hierarchical {
+        override val inputCnt: Int get() = HierarchicalPlanningMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?,
+            describer: TypeDescriber
+        ): CognitiveMode {
+            return HierarchicalPlanningMode(ui, orchestrationConfig, session, user, describer)
+        }
+    },
+    ;
+}

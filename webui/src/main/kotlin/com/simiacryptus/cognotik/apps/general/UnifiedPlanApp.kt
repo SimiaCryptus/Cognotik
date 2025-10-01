@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -34,7 +33,6 @@ abstract class UnifiedPlanApp(
     applicationName: String = "Unified Planning App",
     val orchestrationConfig: OrchestrationConfig,
     showMenubar: Boolean = true,
-    val cognitiveStrategy: CognitiveModeStrategy,
     val describer: TypeDescriber,
     val useExpansionSyntax: Boolean = true,
 ) : ApplicationServer(
@@ -56,7 +54,7 @@ abstract class UnifiedPlanApp(
     private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
-    override val inputCnt = cognitiveStrategy.inputCnt.let { if (it < 1) it + 2 else it + 3 }
+    override val inputCnt = orchestrationConfig.cognitiveMode?.inputCnt?.let { if (it < 1) it + 2 else it + 3 } ?: 4
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = orchestrationConfig as T
@@ -130,7 +128,7 @@ abstract class UnifiedPlanApp(
                         (settings.taskSettings[TaskType.SelfHealingTask.name] as? SelfHealingTask.SelfHealingTaskTypeConfig)
                             ?.commandAutoFixCommands?.addAll(this.localTools)
                     }
-                cognitiveStrategy.getCognitiveMode(
+                orchestrationConfig.cognitiveMode!!.getCognitiveMode(
                     ui = ui,
                     orchestrationConfig = settings,
                     session = session,
@@ -230,9 +228,10 @@ abstract class UnifiedPlanApp(
             return
         }
         val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-            cognitiveStrategy.getCognitiveMode(
+            orchestrationConfig.cognitiveMode!!.getCognitiveMode(
                 ui = ui,
-                orchestrationConfig = getSettings(session, user, OrchestrationConfig::class.java) ?: orchestrationConfig,
+                orchestrationConfig = getSettings(session, user, OrchestrationConfig::class.java)
+                    ?: orchestrationConfig,
                 session = session,
                 user = user,
                 describer = describer
