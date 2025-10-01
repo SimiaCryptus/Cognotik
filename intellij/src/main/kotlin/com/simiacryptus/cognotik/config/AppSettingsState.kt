@@ -21,8 +21,8 @@ import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -281,8 +281,8 @@ data class AppSettingsState(
 
 }
 
-fun String.imageModel(): ImageModels {
-    return ImageModels.entries.firstOrNull {
+fun String.imageModel(): ImageModel {
+    return ImageModels.values.values.toList().firstOrNull {
         it.modelName == this || it.name == this
     } ?: ImageModels.DallE3
 }

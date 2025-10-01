@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.StringUtil
 import org.apache.hc.client5.http.classic.methods.HttpGet
@@ -438,7 +439,7 @@ open class OpenAIClient(
             val response = post(httpRequest)
             checkError(response)
             log.info("Image creation response received")
-            val model = ImageModels.values().find { it.modelName.equals(request.model, true) }
+            val model = ImageModels.values.values.find { it.modelName.equals(request.model, true) }
             val dims = request.size?.split("x")
             onUsage(
                 model, Usage(

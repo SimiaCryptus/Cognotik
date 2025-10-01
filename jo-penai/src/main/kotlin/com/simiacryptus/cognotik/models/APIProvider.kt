@@ -6,6 +6,8 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.chat.*
 import com.simiacryptus.cognotik.chat.model.*
+import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -163,6 +165,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams = logStreams,
                 scheduledPool = scheduledPool
             )
+            fun getImageModels(key: String, baseUrl: String): List<ImageModel> {
+                return ImageModels.values.values.toList()
+            }
         }
         val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
             override fun authorize(

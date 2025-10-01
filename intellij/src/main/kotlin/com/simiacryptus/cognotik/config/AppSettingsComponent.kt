@@ -18,8 +18,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.*
@@ -524,7 +523,7 @@ class AppSettingsComponent : Disposable {
         }
         try {
 
-            ImageModels.entries.forEach {
+            ImageModels.values.values.forEach {
                 this.mainImageModel.addItem(it.name)
             }
             EmbeddingModel.values().keys.forEach {
