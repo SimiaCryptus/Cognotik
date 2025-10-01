@@ -49,7 +49,6 @@ class UnifiedPlanAction : BaseAction() {
                 override fun instance(model: ApiChatModel) = model.instance()
                     ?: throw IllegalStateException("Model or Provider not set")
             },
-            singleTaskMode = false,
         )
 
         if (dialog.showAndGet()) {
@@ -57,24 +56,11 @@ class UnifiedPlanAction : BaseAction() {
                 val planSettings = dialog.settings
                 val selectedCognitiveMode = dialog.cognitiveModeCombo.selectedItem as String
                 val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
-                    "Single Task" -> {
-                        val enabledTask = planSettings.taskSettings.values.firstOrNull()
-                        if (enabledTask != null) {
-                            TaskType.values().forEach { taskType ->
-                                // Disable all other tasks
-                                if (taskType != enabledTask) {
-                                    var taskSettings = planSettings.getTaskSettings(taskType)
-                                    taskSettings = TaskTypeConfig(taskType.name, taskType.name, taskSettings.model)
-                                    planSettings.setTaskSettings(taskType, taskSettings)
-                                }
-                            }
-                        }
-                        ConversationalMode
-                    }
-                    "Task Planning" -> WaterfallMode
+                    "Chat" -> ConversationalMode
+                    "Waterfall" -> WaterfallMode
                     "Graph" -> DependencyGraphMode
-                    "Iterative Loop" -> AdaptivePlanningMode
-                    "Goal Oriented" -> HierarchicalPlanningMode
+                    "Adaptive" -> AdaptivePlanningMode
+                    "Hierarchical" -> HierarchicalPlanningMode
                     else -> throw RuntimeException("Unknown plan mode: $selectedCognitiveMode")
                 }
                 UITools.runAsync(e.project, "Initializing Unified Plan", true) { progress ->

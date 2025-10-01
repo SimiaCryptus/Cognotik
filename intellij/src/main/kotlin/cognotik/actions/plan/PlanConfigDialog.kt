@@ -31,7 +31,6 @@ import java.awt.datatransfer.StringSelection
  class PlanConfigDialog(
     project: Project?,
     val settings: OrchestrationConfig,
-    val singleTaskMode: Boolean = false,
  ) : DialogWrapper(project) {
 
     private val maxTaskHistoryCharsField = JBTextField(settings.maxTaskHistoryChars.toString()).apply {
@@ -79,7 +78,7 @@ import java.awt.datatransfer.StringSelection
 
     val cognitiveModeCombo = ComboBox(
         arrayOf(
-            "Single Task", "Task Planning", "Iterative Loop", "Graph", "Goal Oriented"
+            "Chat", "Waterfall", "Adaptive", "Hierarchical"
         )
     ).apply {
         preferredSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
@@ -115,7 +114,6 @@ import java.awt.datatransfer.StringSelection
 
     private val temperatureLabel = JLabel(TEMPERATURE_LABEL.format(settings.temperature))
     private val autoFixCheckbox = JCheckBox("Auto-apply fixes", settings.autoFix)
-
 
     private val savedConfigsCombo = ComboBox<String>().apply {
         preferredSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
@@ -168,8 +166,8 @@ import java.awt.datatransfer.StringSelection
             val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
 
             if (component is JLabel && value is TaskConfigEntry) {
-                val modelName = value.config.model?.model?.modelName ?: "No model"
-                text = "${value.taskType.name} - ${value.config.name ?: "Default"} ($modelName)"
+                val modelName = value.config.model?.model?.modelName?.let { " ($it)" } ?: ""
+                text = "${value.taskType.name} - ${value.config.name ?: "Default"}"
                 toolTipText = """
                     <html>
                     <body style='width: 300px; padding: 5px;'>
@@ -240,36 +238,42 @@ import java.awt.datatransfer.StringSelection
     }
     private fun exportTaskConfigs() {
         try {
-            val configs = mutableListOf<TaskConfigEntry>()
-            for (i in 0 until taskConfigListModel.size()) {
-                configs.add(taskConfigListModel.getElementAt(i))
-            }
-            val exportData = configs.map { entry ->
-                mapOf(
-                    "taskType" to entry.taskType.name,
-                    "config" to mapOf(
-                        "task_type" to entry.config.task_type,
-                        "name" to entry.config.name,
-                        "model" to entry.config.model?.model?.modelName
-                    )
-                )
-            }
+            // Export entire orchestration configuration
+            val exportData = mapOf(
+                "temperature" to settings.temperature,
+                "autoFix" to settings.autoFix,
+                "maxTaskHistoryChars" to settings.maxTaskHistoryChars,
+                "maxTasksPerIteration" to settings.maxTasksPerIteration,
+                "maxIterations" to settings.maxIterations,
+                "defaultModel" to settings.defaultModel?.model?.modelName,
+                "parsingModel" to settings.parsingModel?.model?.modelName,
+                "taskConfigs" to TaskType.values().associate { taskType ->
+                    taskType.name to settings.getTaskConfigs(taskType).map { config ->
+                        mapOf(
+                            "task_type" to config.task_type,
+                            "name" to config.name,
+                            "model" to config.model?.model?.modelName
+                        )
+                    }
+                }
+            )
             val json = toJson(exportData)
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             clipboard.setContents(StringSelection(json), null)
             Messages.showInfoMessage(
-                "Task configurations exported to clipboard",
+                "Orchestration configuration exported to clipboard",
                 "Export Successful"
             )
         } catch (e: Exception) {
-            log.error("Failed to export task configurations", e)
+            log.error("Failed to export orchestration configuration", e)
             Messages.showErrorDialog(
                 "Failed to export configurations: ${e.message}",
                 "Export Error"
             )
         }
     }
-    private fun importTaskConfigs() {
+
+     private fun importTaskConfigs() {
         try {
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             val contents = clipboard.getContents(null)
@@ -281,17 +285,61 @@ import java.awt.datatransfer.StringSelection
                 return
             }
             val json = contents.getTransferData(DataFlavor.stringFlavor) as String
-            val importData = fromJson(json, List::class.java) as List<Map<String, Any>>
+            val importData = fromJson(json, Map::class.java) as Map<String, Any>
             val confirmResult = JOptionPane.showConfirmDialog(
                 null,
-                "Import will replace all current task configurations. Continue?",
+                "Import will replace all current orchestration settings. Continue?",
                 "Confirm Import",
                 JOptionPane.YES_NO_OPTION
             )
             if (confirmResult != JOptionPane.YES_OPTION) {
                 return
             }
-            // Clear existing configurations
+
+            // Import orchestration settings
+            (importData["temperature"] as? Number)?.toDouble()?.let { temp ->
+                val validatedTemp = temp.coerceIn(0.0, 1.0)
+                settings.temperature = validatedTemp
+                temperatureSlider.value = (validatedTemp * TEMPERATURE_SCALE).toInt()
+                temperatureLabel.text = TEMPERATURE_LABEL.format(validatedTemp)
+            }
+
+            (importData["autoFix"] as? Boolean)?.let { autoFix ->
+                settings.autoFix = autoFix
+                autoFixCheckbox.isSelected = autoFix
+            }
+
+            (importData["maxTaskHistoryChars"] as? Number)?.toInt()?.let {
+                settings.maxTaskHistoryChars = it
+                maxTaskHistoryCharsField.text = it.toString()
+            }
+
+            (importData["maxTasksPerIteration"] as? Number)?.toInt()?.let {
+                settings.maxTasksPerIteration = it
+                maxTasksPerIterationField.text = it.toString()
+            }
+
+            (importData["maxIterations"] as? Number)?.toInt()?.let {
+                settings.maxIterations = it
+                maxIterationsField.text = it.toString()
+            }
+
+            // Import model settings
+            (importData["defaultModel"] as? String)?.let { modelName ->
+                visibleModelsCache.find { it.modelName == modelName }?.let { model ->
+                    settings.defaultModel = model.toApiChatModel()
+                    globalModelCombo.selectedItem = modelName
+                }
+            }
+
+            (importData["parsingModel"] as? String)?.let { modelName ->
+                visibleModelsCache.find { it.modelName == modelName }?.let { model ->
+                    settings.parsingModel = model.toApiChatModel()
+                    parsingModelCombo.selectedItem = modelName
+                }
+            }
+
+            // Clear and import task configurations
             taskConfigListModel.clear()
             TaskType.values().forEach { taskType ->
                 settings.getTaskConfigs(taskType).forEach { config ->
@@ -300,28 +348,30 @@ import java.awt.datatransfer.StringSelection
             }
             // Import new configurations
             importData.forEach { entry ->
-                val taskTypeName = entry["taskType"] as? String ?: return@forEach
-                val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
-                val configMap = entry["config"] as? Map<String, Any> ?: return@forEach
-                val configName = configMap["name"] as? String
-                val modelName = configMap["model"] as? String
-                val model = if (modelName != null) {
-                    visibleModelsCache.find { it.modelName == modelName }?.toApiChatModel()
-                } else null
-                val config = TaskTypeConfig(
-                    task_type = taskTypeName,
-                    name = configName,
-                    model = model
-                )
-                settings.addTaskConfig(taskType, config)
-                taskConfigListModel.addElement(TaskConfigEntry(taskType, config))
+                (importData["taskConfigs"] as? Map<String, Any>)?.forEach { (taskTypeName, configsList) ->
+                    val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
+                    (configsList as? List<Map<String, Any>>)?.forEach { configMap ->
+                        val configName = configMap["name"] as? String
+                        val modelName = configMap["model"] as? String
+                        val model = if (modelName != null) {
+                            visibleModelsCache.find { it.modelName == modelName }?.toApiChatModel()
+                        } else null
+                        val config = TaskTypeConfig(
+                            task_type = taskTypeName,
+                            name = configName,
+                            model = model
+                        )
+                        settings.addTaskConfig(taskType, config)
+                        taskConfigListModel.addElement(TaskConfigEntry(taskType, config))
+                    }
+                }
             }
             Messages.showInfoMessage(
-                "Successfully imported ${importData.size} task configurations",
+                "Successfully imported orchestration configuration",
                 "Import Successful"
             )
         } catch (e: Exception) {
-            log.error("Failed to import task configurations", e)
+            log.error("Failed to import orchestration configuration", e)
             Messages.showErrorDialog(
                 "Failed to import configurations: ${e.message}",
                 "Import Error"
@@ -470,6 +520,13 @@ import java.awt.datatransfer.StringSelection
                 val taskType = TaskType.values().find { it.name == taskTypeName } ?: return@forEach
                 settings.setTaskSettings(taskType, serializedSettings)
             }
+            // Update combo boxes if models are saved in config
+            settings.defaultModel?.model?.modelName?.let { modelName ->
+                globalModelCombo.selectedItem = modelName
+            }
+            settings.parsingModel?.model?.modelName?.let { modelName ->
+                parsingModelCombo.selectedItem = modelName
+            }
         } catch (e: Exception) {
             log.error("Error loading configuration", e)
             Messages.showErrorDialog(
@@ -480,41 +537,45 @@ import java.awt.datatransfer.StringSelection
 
     override fun createCenterPanel(): JComponent = panel {
         group {
-            if (!singleTaskMode) {
-                row("Saved Configs:") {
-                    cell(savedConfigsCombo).align(Align.FILL)
-                        .comment("Select a saved configuration to load or save current settings")
-                    button("Save...") {
-                        saveCurrentConfig()
+            row("Saved Configs:") {
+                cell(savedConfigsCombo).align(Align.FILL)
+                    .comment("Select a saved configuration to load or save current settings")
+                button("Save...") {
+                    saveCurrentConfig()
+                }
+                button("Load") {
+                    val selected = savedConfigsCombo.selectedItem as? String
+                    if (selected != null) {
+                        loadConfig(selected)
+                    } else {
+                        Messages.showWarningDialog(
+                            "Please select a configuration to load", "No Configuration Selected"
+                        )
                     }
-                    button("Load") {
-                        val selected = savedConfigsCombo.selectedItem as? String
-                        if (selected != null) {
-                            loadConfig(selected)
-                        } else {
-                            Messages.showWarningDialog(
-                                "Please select a configuration to load", "No Configuration Selected"
-                            )
+                }
+                button("Delete") {
+                    val selected = savedConfigsCombo.selectedItem as? String
+                    if (selected != null) {
+                        val confirmResult = JOptionPane.showConfirmDialog(
+                            null, "Delete configuration '$selected'?", "Confirm Delete", JOptionPane.YES_NO_OPTION
+                        )
+                        if (confirmResult == Messages.YES) {
+                            val configs = AppSettingsState.instance.savedPlanConfigs ?: mutableMapOf()
+                            configs.remove(selected)
+                            AppSettingsState.instance.savedPlanConfigs = configs
+                            savedConfigsCombo.removeItem(selected)
                         }
+                    } else {
+                        Messages.showWarningDialog(
+                            "Please select a configuration to delete", "No Configuration Selected"
+                        )
                     }
-                    button("Delete") {
-                        val selected = savedConfigsCombo.selectedItem as? String
-                        if (selected != null) {
-                            val confirmResult = JOptionPane.showConfirmDialog(
-                                null, "Delete configuration '$selected'?", "Confirm Delete", JOptionPane.YES_NO_OPTION
-                            )
-                            if (confirmResult == Messages.YES) {
-                                val configs = AppSettingsState.instance.savedPlanConfigs ?: mutableMapOf()
-                                configs.remove(selected)
-                                AppSettingsState.instance.savedPlanConfigs = configs
-                                savedConfigsCombo.removeItem(selected)
-                            }
-                        } else {
-                            Messages.showWarningDialog(
-                                "Please select a configuration to delete", "No Configuration Selected"
-                            )
-                        }
-                    }
+                }
+                button("Copy") {
+                    exportTaskConfigs()
+                }
+                button("Paste") {
+                    importTaskConfigs()
                 }
             }
 
@@ -528,6 +589,15 @@ import java.awt.datatransfer.StringSelection
                     .comment("Adjust AI response creativity (higher = more creative)")
                 cell(temperatureLabel)
             }
+            row("Default Model:") {
+                cell(globalModelCombo).align(Align.FILL)
+                    .comment("Default AI model for all tasks")
+            }
+            row("Parsing Model:") {
+                cell(parsingModelCombo).align(Align.FILL)
+                    .comment("AI model for parsing and understanding tasks")
+            }
+
             group("Task Configurations") {
                 row {
                     scrollCell(taskConfigList)
@@ -560,12 +630,6 @@ import java.awt.datatransfer.StringSelection
                                 "No Selection"
                             )
                         }
-                    }
-                    button("Export to Clipboard") {
-                        exportTaskConfigs()
-                    }
-                    button("Import from Clipboard") {
-                        importTaskConfigs()
                     }
                 }
             }
@@ -601,6 +665,17 @@ import java.awt.datatransfer.StringSelection
         settings.maxTaskHistoryChars = maxTaskHistory
         settings.maxTasksPerIteration = maxTasksPerIter
         settings.maxIterations = maxIters
+        // Apply model selections
+        val selectedGlobalModel = globalModelCombo.selectedItem as? String
+        if (selectedGlobalModel != null) {
+            val model = visibleModelsCache.find { it.modelName == selectedGlobalModel }
+            settings.defaultModel = model?.toApiChatModel()
+        }
+        val selectedParsingModel = parsingModelCombo.selectedItem as? String
+        if (selectedParsingModel != null) {
+            val model = visibleModelsCache.find { it.modelName == selectedParsingModel }
+            settings.parsingModel = model?.toApiChatModel()
+        }
 
         super.doOKAction()
     }

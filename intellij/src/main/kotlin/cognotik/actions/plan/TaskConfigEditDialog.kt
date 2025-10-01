@@ -10,7 +10,6 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import java.awt.Dimension
 import javax.swing.JComponent
 
@@ -19,9 +18,9 @@ class TaskConfigEditDialog(
     private val taskType: TaskType<*, *>,
     private val config: TaskTypeConfig,
     private val availableModels: List<ChatModel>
-) : DialogWrapper(project) {
+ ) : DialogWrapper(project) {
 
-    private val configNameField = JBTextField(config.name ?: "").apply {
+    private val configNameField = JBTextField(config.name ?: taskType.name).apply {
         toolTipText = "Unique name for this task configuration"
     }
 
