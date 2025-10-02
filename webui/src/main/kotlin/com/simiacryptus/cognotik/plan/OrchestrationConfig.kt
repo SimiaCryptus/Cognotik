@@ -47,7 +47,6 @@ class OrchestrationConfig(
     var maxTaskHistoryChars: Int = 10000,
     var maxTasksPerIteration: Int = 3,
     var maxIterations: Int = 10,
-    @JsonIgnore var instanceFn: ((ApiChatModel) -> ChatInterface)? = null,
 ) {
 
     @get:JsonIgnore
@@ -58,7 +57,7 @@ class OrchestrationConfig(
         get() = instance(parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set"))
 
     @JsonIgnore
-    open fun instance(model: ApiChatModel) = instanceFn?.let { it(model) }
+    fun instance(model: ApiChatModel) = instanceFn?.let { it(model) }
         ?: throw IllegalStateException("Instance function not set")
 
     @get:JsonIgnore
@@ -130,7 +129,6 @@ class OrchestrationConfig(
         maxTaskHistoryChars = maxTaskHistoryChars,
         maxTasksPerIteration = maxTasksPerIteration,
         maxIterations = maxIterations,
-        instanceFn = instanceFn,
         cognitiveMode = cognitiveMode,
     )
 
@@ -205,6 +203,8 @@ class OrchestrationConfig(
                 }\n".trim()
             } + "\n")
         )
+
+        @JsonIgnore var instanceFn: ((ApiChatModel) -> ChatInterface)? = null
     }
 
     /**

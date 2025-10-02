@@ -63,8 +63,8 @@ class SelfHealingTask(
         Retryable(task = task) {
             val task = task.manager.newTask()
             agent.pool.submit {
-                val model = (typeConfig.model?.let { agent.orchestrationConfig.instance(it) }
-                    ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
+                val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+                    ?: orchestrationConfig.defaultChatter).getChildClient(task)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
@@ -88,12 +88,12 @@ class SelfHealingTask(
                                 additionalInstructions = ""
                             )
                         } ?: emptyList(),
-                        autoFix = agent.orchestrationConfig.autoFix,
+                        autoFix = orchestrationConfig.autoFix,
                         includeLineNumbers = false,
                     ),
                     files = agent.files,
                     model = model,
-                    parsingModel = agent.orchestrationConfig.parsingChatter,
+                    parsingModel = orchestrationConfig.parsingChatter,
                 ).run(
                     task = task, model = model
                 ).apply {

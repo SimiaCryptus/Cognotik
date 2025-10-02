@@ -1,8 +1,8 @@
-const apiProviders = API_PROVIDERS;
+// These will be populated from the API
+let apiProviders = [];
+let availableModels = {};
 
-const availableModels = AVAILABLE_MODELS;
-
- document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
 
     // --- Basic Chat Modal Setup ---
     const basicChatBtn = document.getElementById('open-basic-chat');
@@ -183,12 +183,21 @@ const availableModels = AVAILABLE_MODELS;
 });
 
 // Initialize sessionId globally - this will be used consistently throughout the app
-let sessionId = Utils.generateSessionId();
+ let sessionId = Utils.generateSessionId();
+// Map cognitive modes to their corresponding app paths
+const COGNITIVE_MODE_PATHS = {
+    'chat': '/taskChat',
+    'auto-plan': '/autoPlan',
+    'plan-ahead': '/planAhead',
+    'goal-oriented': '/goalOriented'
+};
 
-if (typeof module !== 'undefined' && module.exports) {
+
+ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         apiProviders,
         availableModels,
+        loadApiProviders
     };
 }
 
@@ -214,48 +223,105 @@ const validationService = new ValidationService({
     notificationService: notificationService
 });
 // Initialize model manager
- const modelManager = new ModelManager({
+const modelManager = new ModelManager({
     appState: appState,
     document: document,
-    availableModels: availableModels
+    getAvailableModels: () => availableModels
 });
 
 // Initialize UI components after DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize UI components
+document.addEventListener('DOMContentLoaded', function () {
+});
+
+// Load API providers and models first
+loadApiProviders().then(() => {
+    // Then initialize UI components
     uiManager.setupTooltips();
     // Load user settings
-    loadUserSettings();
+    return loadUserSettings();
+}).then(() => {
+    // After settings are loaded, populate model selections
+    modelManager.populateModelSelections();
     // Setup wizard navigation
     setupWizardNavigation();
     // Setup user settings modal
     setupUserSettingsModal();
+}).catch(error => {
+    console.error('[DOMContentLoaded] Error loading API providers:', error);
+    // Continue with initialization even if API providers fail to load
+    uiManager.setupTooltips();
+    loadUserSettings();
+    setupWizardNavigation();
+    setupUserSettingsModal();
 });
 
- function showNotification(message, type = 'info') {
+async function loadApiProviders() {
+    console.log('[loadApiProviders] Loading API providers from server...');
+    try {
+        const providers = await httpService.getApiProviders();
+        console.log('[loadApiProviders] Received providers:', providers);
+
+        // Transform the provider data into the format expected by the UI
+        apiProviders = providers.map(provider => ({
+            id: provider.name,
+            name: provider.name,
+            baseUrl: provider.baseUrl
+        }));
+
+        // Transform models into the expected format
+        availableModels = {};
+        providers.forEach(provider => {
+            if (provider.models && provider.models.length > 0) {
+                availableModels[provider.name] = provider.models.map(model => ({
+                    id: model.name,
+                    name: model.name,
+                    description: model.maxTokens ? `Max tokens: ${model.maxTokens}` : 'No token limit specified'
+                }));
+            }
+        });
+
+        console.log('[loadApiProviders] Transformed apiProviders:', apiProviders);
+        console.log('[loadApiProviders] Transformed availableModels:', availableModels);
+
+        // Update the global constants
+        if (typeof API_PROVIDERS !== 'undefined') {
+            API_PROVIDERS.length = 0;
+            API_PROVIDERS.push(...apiProviders);
+        }
+        if (typeof AVAILABLE_MODELS !== 'undefined') {
+            Object.keys(AVAILABLE_MODELS).forEach(key => delete AVAILABLE_MODELS[key]);
+            Object.assign(AVAILABLE_MODELS, availableModels);
+        }
+    } catch (error) {
+        console.error('[loadApiProviders] Error loading API providers:', error);
+        // Fall back to empty arrays if loading fails
+        apiProviders = [];
+        availableModels = {};
+        throw error;
+    }
+}
+
+function showNotification(message, type = 'info') {
     return uiManager.showNotification(message, type);
 }
 
 // Add missing functions
 function loadUserSettings() {
     console.log('[loadUserSettings] Loading user settings...');
-    httpService.getUserSettings()
+    return httpService.getUserSettings()
         .then(settingsText => {
             try {
                 const settings = JSON.parse(settingsText);
                 appState.apiSettings = settings;
                 console.log('[loadUserSettings] User settings loaded:', settings);
-                modelManager.populateModelSelections();
             } catch (error) {
                 console.error('[loadUserSettings] Error parsing settings:', error);
                 appState.apiSettings = {apiKeys: {}, apiBase: {}, localTools: []};
-                modelManager.populateModelSelections();
             }
         })
         .catch(error => {
             console.error('[loadUserSettings] Error loading settings:', error);
             appState.apiSettings = {apiKeys: {}, apiBase: {}, localTools: []};
-            modelManager.populateModelSelections();
         });
 }
 
@@ -432,7 +498,9 @@ function saveUserSettings() {
             document.getElementById('user-settings-modal').style.display = 'none';
             // Refresh model selections
             modelManager.populateModelSelections();
-            populateBasicChatModelSelections();
+            if (typeof populateBasicChatModelSelections === 'function') {
+                populateBasicChatModelSelections();
+            }
         })
         .catch(error => {
             console.error('[saveUserSettings] Error saving settings:', error);
@@ -488,7 +556,9 @@ function populateTaskSelection() {
         const taskToggle = document.createElement('div');
         taskToggle.className = 'task-toggle';
 
-        const isEnabled = appState.taskSettings.taskSettings[task.id]?.enabled || false;
+        const taskSettings = appState.taskSettings.taskSettings || {};
+        const isEnabled = taskSettings[task.id] || false;
+        console.log(`[populateTaskSelection] Task ${task.id} enabled:`, isEnabled);
 
         taskToggle.innerHTML = `
             <div>
@@ -503,11 +573,19 @@ function populateTaskSelection() {
         // Add event listener
         const checkbox = taskToggle.querySelector(`#${task.id}`);
         checkbox.addEventListener('change', function () {
-            if (!appState.taskSettings.taskSettings[task.id]) {
-                appState.taskSettings.taskSettings[task.id] = {};
+            const currentSettings = appState.taskSettings.taskSettings || {};
+            if(this.checked) {
+                if (!currentSettings[task.id]) {
+                    currentSettings[task.id] = {};
+                }
+                currentSettings[task.id].task_type = task.id;
+            } else {
+                if (currentSettings[task.id]) {
+                    delete currentSettings[task.id];
+                }
             }
-            appState.taskSettings.taskSettings[task.id].enabled = this.checked;
-            appState.saveTaskSelection(appState.taskSettings.taskSettings);
+            console.log(`[populateTaskSelection] Updated task ${task.id} to enabled`);
+            appState.saveTaskSettings(currentSettings);
         });
     });
 }
@@ -558,14 +636,18 @@ function resetUserSettings() {
 
 function launchSession() {
     console.log('[launchSession] Launching session...');
+    const cognitiveMode = appState.cognitiveMode || 'chat';
+    const appPath = COGNITIVE_MODE_PATHS[cognitiveMode] || '/taskChat';
+    
     const settings = {
         ...appState.taskSettings,
-        sessionId: appState.sessionId
+        sessionId: appState.sessionId,
+        cognitiveMode: cognitiveMode
     };
-    httpService.saveSessionSettings(appState.sessionId, settings, appState.cognitiveMode)
+    httpService.saveSessionSettings(appState.sessionId, settings)
         .then(() => {
-            console.log('[launchSession] Session settings saved, redirecting...');
-            window.location.href = `/taskChat/#${appState.sessionId}`;
+            console.log(`[launchSession] Session settings saved, redirecting to ${appPath}...`);
+            window.location.href = `${appPath}/#${appState.sessionId}`;
         })
         .catch(error => {
             console.error('[launchSession] Error launching session:', error);

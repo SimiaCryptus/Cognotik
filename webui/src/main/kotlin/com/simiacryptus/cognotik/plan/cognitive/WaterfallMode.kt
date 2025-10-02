@@ -25,8 +25,7 @@ open class WaterfallMode(
     override val ui: SocketManager,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
-    override val user: User?,
-    val describer: TypeDescriber
+    override val user: User?
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
 
@@ -51,8 +50,7 @@ open class WaterfallMode(
                     ?: ui.dataStorage?.getSessionDir(
                         user,
                         session
-                    )?.toPath() ?: File(".").toPath(),
-                orchestrationConfig = orchestrationConfig
+                    )?.toPath() ?: File(".").toPath()
             )
 
             val plan = initialPlan(
@@ -61,15 +59,16 @@ open class WaterfallMode(
                 root = coordinator.root,
                 task = task,
                 userMessage = userMessage,
-                orchestrationConfig = coordinator.orchestrationConfig,
+                orchestrationConfig = orchestrationConfig,
                 contextFn = { contextData() },
-                describer = describer
+                describer = TaskContextYamlDescriber(orchestrationConfig)
             )
 
             coordinator.executePlan(
                 plan = plan.plan,
                 task = task,
-                userMessage = userMessage
+                userMessage = userMessage,
+                orchestrationConfig = orchestrationConfig,
                 // Use the budgeted and task-specific client
             )
         } catch (e: Throwable) {
@@ -207,8 +206,7 @@ open class WaterfallMode(
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
-        ) = WaterfallMode(ui, orchestrationConfig, session, user, describer)
+            user: User?
+        ) = WaterfallMode(ui, orchestrationConfig, session, user)
     }
 }

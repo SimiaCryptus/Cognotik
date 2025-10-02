@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 // Register the new mode in the package
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -39,8 +38,7 @@ interface CognitiveModeStrategy {
         ui: SocketManager,
         orchestrationConfig: OrchestrationConfig,
         session: Session,
-        user: User?,
-        describer: TypeDescriber
+        user: User?
     ): CognitiveMode
 }
 
@@ -52,10 +50,9 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
+            user: User?
         ): CognitiveMode {
-            return ConversationalMode(ui, orchestrationConfig, session, user, describer)
+            return ConversationalMode(ui, orchestrationConfig, session, user)
         }
     },
     Adaptive {
@@ -65,10 +62,9 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
+            user: User?
         ): CognitiveMode {
-            return AdaptivePlanningMode(ui, orchestrationConfig, session, user, describer = describer)
+            return AdaptivePlanningMode(ui, orchestrationConfig, session, user)
         }
     },
     Waterfall {
@@ -78,10 +74,9 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
+            user: User?
         ): CognitiveMode {
-            return WaterfallMode(ui, orchestrationConfig, session, user, describer)
+            return WaterfallMode(ui, orchestrationConfig, session, user)
         }
     },
     Hierarchical {
@@ -91,10 +86,9 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
+            user: User?
         ): CognitiveMode {
-            return HierarchicalPlanningMode(ui, orchestrationConfig, session, user, describer)
+            return HierarchicalPlanningMode(ui, orchestrationConfig, session, user)
         }
     },
     ;

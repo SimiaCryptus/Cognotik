@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
 import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
@@ -22,11 +21,8 @@ class TaskOrchestrator(
     val user: User?,
     val session: Session,
     val dataStorage: StorageInterface,
-    val orchestrationConfig: OrchestrationConfig,
     val root: Path
 ) {
-
-    var describer: TypeDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
     val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
 
@@ -53,6 +49,7 @@ class TaskOrchestrator(
         plan: Map<String, TaskExecutionConfig>,
         task: SessionTask,
         userMessage: String,
+        orchestrationConfig: OrchestrationConfig,
     ): ExecutionState {
         val tabs = TabbedDisplay(task)
         val planProcessingState = newState(plan)
@@ -71,7 +68,8 @@ class TaskOrchestrator(
                 pool = pool,
                 userMessage = userMessage,
                 plan = plan,
-                tabs = tabs
+                tabs = tabs,
+                orchestrationConfig = orchestrationConfig
             )
         } catch (e: Throwable) {
             log.warn("Error during incremental code generation process", e)
@@ -96,6 +94,7 @@ class TaskOrchestrator(
         userMessage: String,
         plan: Map<String, TaskExecutionConfig>,
         tabs: TabbedDisplay,
+        orchestrationConfig: OrchestrationConfig,
     ) {
         val sessionTask = task.manager.newTask(false).apply { tabs["Session"] = placeholder }
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
@@ -209,13 +208,11 @@ class TaskOrchestrator(
         user: User? = this.user,
         session: Session = this.session,
         dataStorage: StorageInterface = this.dataStorage,
-        orchestrationConfig: OrchestrationConfig = this.orchestrationConfig,
-        root: Path = this.root
+       root: Path = this.root
     ) = TaskOrchestrator(
         user = user,
         session = session,
         dataStorage = dataStorage,
-        orchestrationConfig = orchestrationConfig,
         root = root
     )
 

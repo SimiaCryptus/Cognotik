@@ -74,7 +74,7 @@ class HttpService {
         return response;
     }
 
-    async saveSessionSettings(sessionId, settings, cognitiveMode) {
+    async saveSessionSettings(sessionId, settings) {
         const response = await this.fetch('/taskChat/settings', {
             method: 'POST',
             headers: {
@@ -85,7 +85,6 @@ class HttpService {
                 sessionId: sessionId,
                 action: 'save',
                 settings: JSON.stringify(settings),
-                cognitiveMode: cognitiveMode,
             })
         });
 
@@ -113,6 +112,22 @@ class HttpService {
             throw new Error(`Failed to save chat settings: ${response.status}`);
         }
         return response;
+    }
+    async getApiProviders() {
+        try {
+            const response = await this.fetch('/apiProviders/', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to get API providers: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('[getApiProviders] Error:', error);
+            throw error;
+        }
     }
 }
 

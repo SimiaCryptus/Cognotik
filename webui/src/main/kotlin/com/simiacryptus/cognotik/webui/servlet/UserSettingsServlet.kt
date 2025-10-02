@@ -31,7 +31,7 @@ class UserSettingsServlet : HttpServlet() {
                             },
                             baseUrl = apiData.baseUrl,
                             provider = apiData.provider
-                        ).validate()
+                        )//.validate()
                     }.toMutableList(),
                     tools = settings.tools.toMutableList(),
                     etc = settings.etc.toMutableMap()

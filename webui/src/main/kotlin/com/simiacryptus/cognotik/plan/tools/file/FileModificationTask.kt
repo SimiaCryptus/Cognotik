@@ -193,7 +193,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         executionConfig?.task_description ?: "",
                     )).filter { it.isNotBlank() }
                 )
-                if (agent.orchestrationConfig.autoFix) {
+                if (orchestrationConfig.autoFix) {
                     onComplete()
                     val markdown = renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -205,7 +205,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            shouldAutoApply = { agent.orchestrationConfig.autoFix },
+                            shouldAutoApply = { orchestrationConfig.autoFix },
                             model = chatInterface,
                             defaultFile = defaultFile
                         ) + "\n\n## Auto-applied changes"

@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.apps.graph
 
 import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
@@ -29,7 +29,6 @@ open class DependencyGraphMode(
     override val session: Session,
     override val user: User?,
     private val graphFile: String,
-    val describer: TypeDescriber,
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(DependencyGraphMode::class.java)
 
@@ -76,12 +75,12 @@ open class DependencyGraphMode(
                             ?: ui.dataStorage?.getSessionDir(
                                 user,
                                 session
-                            )?.toPath() ?: File(".").toPath(),
-                        orchestrationConfig = orchestrationConfig
+                            )?.toPath() ?: File(".").toPath()
                     ).executePlan(
                         plan = plan,
                         task = task,
-                        userMessage = userMessage
+                        userMessage = userMessage,
+                        orchestrationConfig = orchestrationConfig,
                     )).let(::renderMarkdown))
             task.add("Plan execution completed")
         } catch (e: Exception) {
@@ -265,7 +264,7 @@ open class DependencyGraphMode(
         }
         while (true) {
             try {
-                return orchestrationConfig.planningActor(describer).answer(
+                return orchestrationConfig.planningActor(TaskContextYamlDescriber(orchestrationConfig)).answer(
                     contextData() +
                             listOf(
                                 "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
@@ -325,10 +324,9 @@ open class DependencyGraphMode(
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
+            user: User?
         ): CognitiveMode {
-            return DependencyGraphMode(ui, orchestrationConfig, session, user, graphFile, describer)
+            return DependencyGraphMode(ui, orchestrationConfig, session, user, graphFile)
         }
     }
 }

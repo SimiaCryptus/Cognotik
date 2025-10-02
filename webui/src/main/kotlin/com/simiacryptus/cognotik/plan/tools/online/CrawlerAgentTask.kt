@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -512,8 +513,7 @@ class CrawlerAgentTask(
                                 transformContent(
                                     content,
                                     analysisGoal,
-                                    orchestrationConfig,
-                                    agent.describer
+                                    orchestrationConfig
                                 )
 
                             val parsedPage = analysis.obj
@@ -830,10 +830,9 @@ class CrawlerAgentTask(
     private fun transformContent(
         content: String,
         analysisGoal: String,
-        orchestrationConfig: OrchestrationConfig,
-        describer: TypeDescriber
+        orchestrationConfig: OrchestrationConfig
     ): ParsedResponse<ParsedPage> {
-
+        val describer = TaskContextYamlDescriber(orchestrationConfig)
         val maxChunkSize = 50000
         if (content.length <= maxChunkSize) {
             log.debug("Content size (${content.length}) within limit, processing as single chunk")

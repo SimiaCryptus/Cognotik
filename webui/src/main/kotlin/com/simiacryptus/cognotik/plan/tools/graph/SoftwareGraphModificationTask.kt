@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -64,7 +65,7 @@ class SoftwareGraphModificationTask(
             Node Types:
             """.trimIndent() + SoftwareNodeType.values().joinToString("\n") {
                 "* " + it.name + ": " + it.description?.prependIndent("  ") +
-                        "\n    " + agent.describer.describe(rawType = it.nodeClass).lineSequence()
+                        "\n    " + TaskContextYamlDescriber(orchestrationConfig).describe(rawType = it.nodeClass).lineSequence()
                     .map {
                         when {
                             it.isBlank() -> {
@@ -83,7 +84,7 @@ class SoftwareGraphModificationTask(
                 ?: orchestrationConfig.defaultChatter).getChildClient(task),
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = agent.describer,
+            describer = TaskContextYamlDescriber(orchestrationConfig),
         )
 
         val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))

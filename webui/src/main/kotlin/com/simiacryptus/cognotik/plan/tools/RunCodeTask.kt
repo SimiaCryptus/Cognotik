@@ -63,8 +63,8 @@ class RunCodeTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val model = (typeConfig.model?.let { agent.orchestrationConfig.instance(it) }
-            ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
+        val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+            ?: orchestrationConfig.defaultChatter).getChildClient(task)
 
 //        val taskSettings = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask)
         val taskSettings = typeConfig as? RunCodeTaskTypeConfig

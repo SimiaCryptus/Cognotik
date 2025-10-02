@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
@@ -42,7 +43,7 @@ class SoftwareGraphPlanningTask(
             }
         )
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
-        val response = orchestrationConfig.planningActor(agent.describer).answer(
+        val response = orchestrationConfig.planningActor(TaskContextYamlDescriber(orchestrationConfig)).answer(
             (messages + listOf(
                 "Software Graph `${executionConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
                 "Instruction: ${executionConfig.instruction}"
@@ -58,7 +59,10 @@ class SoftwareGraphPlanningTask(
             appendLine("```")
         }
         val planProcessingState = agent.executePlan(
-            plan = plan, task = task, userMessage = executionConfig.instruction
+            plan = plan,
+            task = task,
+            userMessage = executionConfig.instruction,
+            orchestrationConfig = orchestrationConfig,
         )
         val executionSummary = buildString {
             appendLine("## Plan Execution Summary")

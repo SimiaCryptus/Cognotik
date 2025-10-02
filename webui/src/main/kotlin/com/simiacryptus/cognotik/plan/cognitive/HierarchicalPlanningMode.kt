@@ -5,9 +5,9 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode.Tasks
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -28,7 +28,6 @@ open class HierarchicalPlanningMode(
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
-    val describer: TypeDescriber,
     maxConcurrency: Int = 4,
     private val maxIterations: Int = 200
 ) : CognitiveMode {
@@ -121,9 +120,8 @@ open class HierarchicalPlanningMode(
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage?.getSessionDir(
                 user,
                 session
-            )?.toPath() ?: File(".").toPath(),
-            orchestrationConfig = orchestrationConfig)
-        val planningChatter = coordinator.orchestrationConfig.defaultChatter.getChildClient(task)
+            )?.toPath() ?: File(".").toPath())
+        val planningChatter = orchestrationConfig.defaultChatter.getChildClient(task)
 
         try {
             val initialGoals = parseInitialGoals(userMessage, planningChatter)
@@ -543,7 +541,7 @@ open class HierarchicalPlanningMode(
     private fun getParsedActor(
         t: Task, coordinator: TaskOrchestrator, chatInterface: ChatInterface
     ): ParsedAgent<Tasks> {
-        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+        val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
         return ParsedAgent(
             name = "TaskTypeChooser",
             resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
@@ -561,10 +559,10 @@ open class HierarchicalPlanningMode(
             model = chatInterface,
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = describer,
+            describer = TaskContextYamlDescriber(orchestrationConfig),
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                 "${taskType.name}:\n  ${
-                    describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                    TaskContextYamlDescriber(orchestrationConfig).describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
                 }".trim()
             })
         )
@@ -664,7 +662,7 @@ open class HierarchicalPlanningMode(
             model = chatInterface,
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = describer
+            describer = TaskContextYamlDescriber(orchestrationConfig)
         )
         val answer = parsedActor.answer(listOf(userMessage))
         val goals = answer.obj.goals ?: emptyList()
@@ -724,7 +722,7 @@ open class HierarchicalPlanningMode(
             )
         ),
         prompt = run {
-            val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+            val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
                 .joinToString("\n                ") { "- ${it.name}" }
             val relatedTasksContext = goal.tasks?.mapNotNull { taskMap[it.id] }
                 ?.filter { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.FAILED }
@@ -750,9 +748,9 @@ open class HierarchicalPlanningMode(
             promptStr
         },
         model = chatInterface,
-        parsingModel = coordinator.orchestrationConfig.parsingChatter,
-        temperature = coordinator.orchestrationConfig.temperature,
-        describer = describer
+        parsingModel = orchestrationConfig.parsingChatter,
+        temperature = orchestrationConfig.temperature,
+        describer = TaskContextYamlDescriber(orchestrationConfig)
     )
 
 
@@ -1091,8 +1089,8 @@ open class HierarchicalPlanningMode(
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: SocketManager, orchestrationConfig: OrchestrationConfig, session: Session, user: User?, describer: TypeDescriber
-        ) = HierarchicalPlanningMode(ui, orchestrationConfig, session, user, describer)
+            ui: SocketManager, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
+        ) = HierarchicalPlanningMode(ui, orchestrationConfig, session, user)
 
         private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
     }

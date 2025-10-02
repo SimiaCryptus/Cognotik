@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
@@ -33,7 +32,6 @@ abstract class UnifiedPlanApp(
     applicationName: String = "Unified Planning App",
     val orchestrationConfig: OrchestrationConfig,
     showMenubar: Boolean = true,
-    val describer: TypeDescriber,
     val useExpansionSyntax: Boolean = true,
 ) : ApplicationServer(
     applicationName = applicationName,
@@ -132,8 +130,7 @@ abstract class UnifiedPlanApp(
                     ui = ui,
                     orchestrationConfig = settings,
                     session = session,
-                    user = user,
-                    describer = describer
+                    user = user
                 ).apply { initialize() }
             }
 
@@ -233,8 +230,7 @@ abstract class UnifiedPlanApp(
                 orchestrationConfig = getSettings(session, user, OrchestrationConfig::class.java)
                     ?: orchestrationConfig,
                 session = session,
-                user = user,
-                describer = describer
+                user = user
             ).apply { initialize() }
         }
         cognitiveMode.handleUserMessage(currentMessage, task)

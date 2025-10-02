@@ -9,10 +9,8 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
-import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -29,6 +27,7 @@ class UnifiedPlanAction : BaseAction() {
 
     override fun handle(e: AnActionEvent) {
         val root: String = e.getRoot()
+        OrchestrationConfig.instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         val dialog = PlanConfigDialog(
             e.project,
             OrchestrationConfig(
@@ -42,7 +41,6 @@ class UnifiedPlanAction : BaseAction() {
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 env = mapOf(),
                 workingDir = root,
-                instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
             ),
         )
 
@@ -71,8 +69,8 @@ class UnifiedPlanAction : BaseAction() {
         setupChatSession(
             session,
             root,
-            orchestrationConfig,
-            TaskContextYamlDescriber(orchestrationConfig))
+            orchestrationConfig
+        )
         progress.text = "Starting server..."
         val server = CognotikAppServer.getServer(e.project)
         openBrowser(server, session.toString())
@@ -88,8 +86,7 @@ class UnifiedPlanAction : BaseAction() {
     private fun setupChatSession(
         session: Session,
         root: File,
-        orchestrationConfig: OrchestrationConfig,
-        describer: TypeDescriber
+        orchestrationConfig: OrchestrationConfig
     ) {
         DataStorage.sessionPaths[session] = root
         val fastChatModel = (AppSettingsState.instance.fastModel
@@ -106,8 +103,7 @@ class UnifiedPlanAction : BaseAction() {
                 ),
                 parsingModel = fastChatModel,
             ),
-            showMenubar = false,
-            describer = describer
+            showMenubar = false
         ) {
             override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")

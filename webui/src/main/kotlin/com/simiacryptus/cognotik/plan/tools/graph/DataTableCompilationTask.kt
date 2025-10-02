@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
@@ -136,7 +137,7 @@ class DataTableCompilationTask(
             model = chatter,
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = agent.describer,
+            describer = TaskContextYamlDescriber(orchestrationConfig),
         ).answer(
             listOf(
                 fileContentString
@@ -179,7 +180,7 @@ class DataTableCompilationTask(
             model = chatter,
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = agent.describer,
+            describer = TaskContextYamlDescriber(orchestrationConfig),
         ).answer(
             listOf(
                 fileContentString,
@@ -221,7 +222,7 @@ class DataTableCompilationTask(
                 model = chatter,
                 parsingModel = orchestrationConfig.parsingChatter,
                 temperature = orchestrationConfig.temperature,
-                describer = agent.describer,
+                describer = TaskContextYamlDescriber(orchestrationConfig),
             ).answer(
                 listOf(
                     "Source Files:\n" + row.sourceFiles.mapNotNull { fileName ->

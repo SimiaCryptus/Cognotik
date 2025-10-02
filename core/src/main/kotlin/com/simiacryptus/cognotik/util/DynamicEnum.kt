@@ -25,13 +25,11 @@ open class DynamicEnum<T : DynamicEnum<T>>(val name: String) {
         }
 
         fun <T : DynamicEnum<T>> values(clazz: Class<T>): List<T> {
-
             return getRegistry(clazz).map { it.second }
         }
 
         @JvmStatic
         fun <T : DynamicEnum<T>> register(clazz: Class<T>, enumConstant: T) {
-
             getRegistry(clazz).add(enumConstant.name to enumConstant)
         }
     }

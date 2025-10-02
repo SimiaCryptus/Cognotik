@@ -4,8 +4,8 @@ import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
@@ -35,8 +35,7 @@ open class AdaptivePlanningMode(
     override val user: User?,
     private val maxTaskHistoryChars: Int = orchestrationConfig.maxTaskHistoryChars,
     private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration,
-    private val maxIterations: Int = orchestrationConfig.maxIterations,
-    val describer: TypeDescriber
+    private val maxIterations: Int = orchestrationConfig.maxIterations
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
 
@@ -89,8 +88,7 @@ open class AdaptivePlanningMode(
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: socketManager.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath(),
-                        orchestrationConfig = orchestrationConfig
+                            ?: socketManager.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
                 log.debug("Created plan coordinator")
@@ -260,7 +258,7 @@ $fullTaskDataJson
     ): String {
         val currentThinkingStatus =
             reasoningState.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
-        val taskImpl = TaskType.getImpl(coordinator.orchestrationConfig, currentTask)
+        val taskImpl = TaskType.getImpl(orchestrationConfig, currentTask)
         val result = StringBuilder()
 
         taskImpl.run(
@@ -283,7 +281,7 @@ $fullTaskDataJson
         reasoningState: ReasoningState,
         task: SessionTask
     ): List<TaskData>? {
-        val describer = coordinator.describer
+        val describer = TaskContextYamlDescriber(orchestrationConfig)
 
         val parsedActor = ParsedAgent(
             name = "TaskChooser",
@@ -302,13 +300,13 @@ $fullTaskDataJson
                 append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
                 append("Available task types:\n")
                 append(
-                    TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+                    TaskType.getAvailableTaskTypes(orchestrationConfig)
                     .flatMap { taskType ->
-                        val configs = coordinator.orchestrationConfig.getTaskConfigs(taskType)
+                        val configs = orchestrationConfig.getTaskConfigs(taskType)
                         configs.map { config ->
                             val configName = config.name?.let { " - Configuration: '$it'" } ?: ""
                             "* ${taskType.name}$configName:\n  ${
-                                TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim()
+                                TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim()
                                     .trimIndent()
                                     .indent("  ")
                             }"
@@ -316,7 +314,7 @@ $fullTaskDataJson
                     }
                     .joinToString("\n\n"))
                 append("\nChoose the most suitable task types and provide details of how they should be executed.")
-                val namedConfigs = coordinator.orchestrationConfig.taskSettings.values.filter { it.name != null }
+                val namedConfigs = orchestrationConfig.taskSettings.values.filter { it.name != null }
                 if (namedConfigs.isNotEmpty()) {
                     append("\n\nAvailable named configurations:")
                     namedConfigs.groupBy { it.task_type }.forEach { (taskType, configs) ->
@@ -325,11 +323,11 @@ $fullTaskDataJson
                     append("\nYou can specify which configuration to use by setting the task_config_name field.")
                 }
             },
-            model = coordinator.orchestrationConfig.defaultChatter.getChildClient(task),
-            parsingModel = coordinator.orchestrationConfig.parsingChatter,
-            temperature = coordinator.orchestrationConfig.temperature,
+            model = orchestrationConfig.defaultChatter.getChildClient(task),
+            parsingModel = orchestrationConfig.parsingChatter,
+            temperature = orchestrationConfig.temperature,
             describer = describer,
-            parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+            parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
                 .joinToString("\n\n") { taskType ->
                     "${taskType.name}:\n  ${
                         describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
@@ -366,7 +364,7 @@ $fullTaskDataJson
                 ) to (if (taskConfigBase.task_type == null) {
                     null
                 } else {
-                    TaskType.getImpl(coordinator.orchestrationConfig, taskConfigBase)
+                    TaskType.getImpl(orchestrationConfig, taskConfigBase)
                 })?.executionConfig
             } ?: emptyList()
         }.flatten()
@@ -473,7 +471,7 @@ $fullTaskDataJson
             model = orchestrationConfig.defaultChatter.getChildClient(task),
             parsingModel = orchestrationConfig.parsingChatter.getChildClient(task),
             temperature = orchestrationConfig.temperature,
-            describer = describer
+            describer = TaskContextYamlDescriber(orchestrationConfig)
         ).answer(listOf(userMessage) + contextData()).obj
     }
 
@@ -543,7 +541,7 @@ $fullTaskDataJson
         model = orchestrationConfig.defaultChatter.getChildClient(task),
         parsingModel = orchestrationConfig.parsingChatter,
         temperature = orchestrationConfig.temperature,
-        describer = describer
+        describer = TaskContextYamlDescriber(orchestrationConfig)
     ).answer(
         listOf("Current thinking status: ${formatThinkingStatus(reasoningState)}") +
                 contextData() +
@@ -711,8 +709,7 @@ $fullTaskDataJson
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
-        ) = AdaptivePlanningMode(ui, orchestrationConfig, session, user, describer = describer)
+            user: User?
+        ) = AdaptivePlanningMode(ui, orchestrationConfig, session, user)
     }
 }

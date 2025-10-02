@@ -56,6 +56,9 @@ abstract class ApplicationDirectory(
         .also { log.debug("Initialized UserInfoServlet") }
     open val userSettingsServlet: HttpServlet = UserSettingsServlet()
         .also { log.debug("Initialized UserSettingsServlet") }
+
+    open val apiProviderServlet: HttpServlet = ApiProviderServlet()
+        .also { log.debug("Initialized ApiProviderServlet") }
     open val logoutServlet: HttpServlet = LogoutServlet()
         .also { log.debug("Initialized LogoutServlet") }
     open val usageServlet: HttpServlet = UsageServlet()
@@ -131,6 +134,10 @@ abstract class ApplicationDirectory(
         newWebAppContext("/userSettings", userSettingsServlet).let {
             log.debug("Configuring userSettings context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
+        },
+        newWebAppContext("/apiProviders", apiProviderServlet).let {
+            log.debug("Configuring apiProviders context with authentication")
+            authenticatedWebsite()?.configure(it, false) ?: it
         },
         newWebAppContext("/usage", usageServlet).let {
             log.debug("Configuring usage context with authentication")
