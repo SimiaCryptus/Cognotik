@@ -77,8 +77,7 @@ open class ModifyFilesAction(
                 loadImages = false,
                 showMenubar = false
             )
-            val server = CognotikAppServer.getServer()
-            launchBrowser(session.toString(), server.server.uri)
+            launchBrowser(session.toString(), CognotikAppServer.getServer().server.uri)
         } catch (e: Exception) {
 
             log.error("Error in MultiDiffChatAction", e)

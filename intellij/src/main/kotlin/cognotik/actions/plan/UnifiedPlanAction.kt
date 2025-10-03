@@ -71,8 +71,16 @@ class UnifiedPlanAction : BaseAction() {
             orchestrationConfig
         )
         progress.text = "Starting server..."
-        val server = CognotikAppServer.getServer()
-        openBrowser(server, session.toString())
+        Thread {
+            Thread.sleep(500)
+            try {
+                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                log.info("Opening browser to $uri")
+                browse(uri)
+            } catch (e: Throwable) {
+                log.warn("Error opening browser", e)
+            }
+        }.start()
     }
 
     private fun getProjectRoot(e: AnActionEvent): File? {
@@ -112,16 +120,4 @@ class UnifiedPlanAction : BaseAction() {
         )
     }
 
-    private fun openBrowser(server: CognotikAppServer, session: String) {
-        Thread {
-            Thread.sleep(500)
-            try {
-                val uri = server.server.uri.resolve("/#$session")
-                log.info("Opening browser to $uri")
-                browse(uri)
-            } catch (e: Throwable) {
-                log.warn("Error opening browser", e)
-            }
-        }.start()
-    }
 }

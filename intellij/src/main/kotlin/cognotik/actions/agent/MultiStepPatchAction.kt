@@ -67,11 +67,10 @@ class MultiStepPatchAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer()
 
                 ApplicationManager.getApplication().invokeLater {
                     progress.text = "Opening browser..."
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                     BaseAction.log.info("Opening browser to $uri")
                     browse(uri)
                 }

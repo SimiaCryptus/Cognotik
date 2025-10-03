@@ -135,11 +135,10 @@ class CommandAutofixAction : BaseAction() {
                 val dateFormat = SimpleDateFormat("HH:mm:ss")
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
                 SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
-                val server = CognotikAppServer.getServer()
                 Thread {
                     Thread.sleep(500)
                     try {
-                        val uri = server.server.uri.resolve("/#$session")
+                        val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                         BaseAction.log.info("Opening browser to $uri")
                         browse(uri)
                     } catch (e: Throwable) {

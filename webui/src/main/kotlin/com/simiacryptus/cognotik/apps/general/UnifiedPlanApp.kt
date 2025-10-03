@@ -57,7 +57,7 @@ abstract class UnifiedPlanApp(
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
-        val settings = getSettings(session, user, OrchestrationConfig::class.java)!!
+        val settings = getSettings(session, user, OrchestrationConfig::class.java)
         if (useExpansionSyntax) {
             socketManager.newTask(cancelable = false, root = true).expandable(
                 "Query Expansion Syntax Guide", """
@@ -85,7 +85,7 @@ abstract class UnifiedPlanApp(
             "Session Info", """
                 Session ID: `${session}`
                 Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-                Root: `${settings.absoluteWorkingDir}`
+                Root: `${settings?.absoluteWorkingDir}`
                 Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
                 Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
                 Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
@@ -124,12 +124,12 @@ abstract class UnifiedPlanApp(
                 return
             }
 
-            val cognitiveMode = settings.cognitiveMode?.getCognitiveMode(
+            val cognitiveMode = (settings.cognitiveMode ?: throw IllegalStateException("Cognitive mode not configured")).getCognitiveMode(
                 ui = ui,
                 orchestrationConfig = settings,
                 session = session,
                 user = user
-            ) ?: throw IllegalStateException("Cognitive mode not configured")
+            )
             cognitiveMode.apply { initialize() }.handleUserMessage(expandedMessage, ui.newTask(true))
 
         } catch (e: Throwable) {

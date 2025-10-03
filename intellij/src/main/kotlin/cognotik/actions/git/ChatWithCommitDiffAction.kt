@@ -59,7 +59,6 @@ class ChatWithCommitDiffAction : BaseAction(
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
         val session = Session.newGlobalID()
-        val pool = ApplicationServices.threadPoolManager.getPool(session, null)
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = "diff",
@@ -82,12 +81,10 @@ class ChatWithCommitDiffAction : BaseAction(
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer()
-
         IntellijAppManager.getApplication().executeOnPooledThread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

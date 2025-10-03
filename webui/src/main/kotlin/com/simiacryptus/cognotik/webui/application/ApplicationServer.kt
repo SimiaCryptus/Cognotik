@@ -14,8 +14,6 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.util.SessionProxyServer.Companion.agents
-import com.simiacryptus.cognotik.util.SessionProxyServer.Companion.chats
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -65,7 +63,7 @@ abstract class ApplicationServer(
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
     override fun newSession(user: User?, session: Session): SocketManager {
-        (chats[session]?.newSession(user, session) ?: agents[session])?.apply { return this; }
+        (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session) ?: SessionProxyServer.agents[session])?.apply { return this; }
         logger.info(
             "Creating new session: {} for user: {} in application: {}",
             session,

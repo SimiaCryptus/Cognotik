@@ -87,12 +87,10 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
                 indicator.fraction = 1.0
                 indicator.text = "Opening browser..."
 
-                val server = CognotikAppServer.getServer()
-
                 ApplicationManager.getApplication().executeOnPooledThread {
                     Thread.sleep(500)
                     try {
-                        val uri = server.server.uri.resolve("/#${config.sessionId}")
+                        val uri = CognotikAppServer.getServer().server.uri.resolve("/#${config.sessionId}")
                         BaseAction.log.info("Opening browser to $uri")
                         browse(uri)
                     } catch (e: Throwable) {

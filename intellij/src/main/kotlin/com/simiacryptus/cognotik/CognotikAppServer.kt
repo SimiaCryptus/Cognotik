@@ -18,7 +18,6 @@ class CognotikAppServer(
     private val localName: String,
     private val port: Int
 ) {
-
     val server by lazy {
         try {
             log.info("Initializing server on $localName:$port")
@@ -37,7 +36,6 @@ class CognotikAppServer(
                     }
                 }.toMutableList().toTypedArray<WebAppContext>()
             }
-
             server
         } catch (e: Exception) {
             log.error("Failed to initialize server on $localName:$port", e)

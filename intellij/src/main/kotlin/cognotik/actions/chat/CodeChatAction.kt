@@ -23,12 +23,9 @@ class CodeChatAction : BaseAction() {
 
     override fun handle(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-
         val session = Session.newGlobalID()
         val language = LanguageUtils.getComputerLanguage(e)?.name ?: ""
         val filename = FileDocumentManager.getInstance().getFile(editor.document)?.name ?: return
-
-        val pool = ApplicationServices.threadPoolManager.getPool(session, null)
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = language,
@@ -51,12 +48,10 @@ class CodeChatAction : BaseAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer()
-
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                 BaseAction.log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

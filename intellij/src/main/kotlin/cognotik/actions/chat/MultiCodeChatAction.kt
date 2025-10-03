@@ -15,6 +15,7 @@ package cognotik.actions.chat
  import com.simiacryptus.cognotik.platform.ApplicationServices
  import com.simiacryptus.cognotik.platform.Session
  import com.simiacryptus.cognotik.util.*
+ import com.simiacryptus.cognotik.util.BrowseUtil
  import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
  import com.simiacryptus.cognotik.webui.application.AppInfoData
  import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -65,8 +66,16 @@ class MultiCodeChatAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer()
-                launchBrowser(server, session.toString())
+                Thread {
+                    Thread.sleep(500)
+                    try {
+                        val uri = CognotikAppServer.getServer().server.uri.resolve("/#${session.toString()}")
+                        BaseAction.log.info("Opening browser to $uri")
+                        BrowseUtil.browse(uri)
+                    } catch (e: Throwable) {
+                        log.warn("Error opening browser", e)
+                    }
+                }.start()
             }
         } catch (e: Throwable) {
             UITools.error(log, "Failed to initialize chat session", e)
@@ -80,19 +89,6 @@ class MultiCodeChatAction : BaseAction() {
         } else {
             getModuleRootForFile(event.getSelectedFile()?.parent?.toFile ?: return null).toPath()
         }
-    }
-
-    private fun launchBrowser(server: CognotikAppServer, session: String) {
-        Thread {
-            Thread.sleep(500)
-            try {
-                val uri = server.server.uri.resolve("/#$session")
-                BaseAction.log.info("Opening browser to $uri")
-                BrowseUtil.browse(uri)
-            } catch (e: Throwable) {
-                log.warn("Error opening browser", e)
-            }
-        }.start()
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
