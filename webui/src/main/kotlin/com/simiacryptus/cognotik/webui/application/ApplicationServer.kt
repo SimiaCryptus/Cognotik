@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
@@ -128,7 +129,7 @@ abstract class ApplicationServer(
             userId?.email ?: "anonymous",
             clazz.simpleName
         )
-        val settingsFile = getSettingsFile(session, userId)
+        val settingsFile = getSettingsFile(session, userId ?: UserSettingsManager.defaultUser)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
         if(settingsFile.exists()) try {
             val text = settingsFile.readText()
@@ -160,9 +161,9 @@ abstract class ApplicationServer(
 
     fun getSettingsFile(
         session: Session,
-        userId: User?
+        userId: User = UserSettingsManager.defaultUser
     ): File {
-        logger.debug("Getting settings file for session: {} user: {}", session, userId?.email ?: "anonymous")
+        logger.debug("Getting settings file for session: {} user: {}", session, userId.email)
         val settingsFile =
             dataStorage.getDataDir(userId, session).resolve("settings.json")
                 .apply { parentFile.mkdirs() }

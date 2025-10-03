@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -96,8 +97,6 @@ class UnifiedPlanAction : BaseAction() {
         orchestrationConfig: OrchestrationConfig
     ) {
         DataStorage.sessionPaths[session] = root
-        val fastChatModel = (AppSettingsState.instance.fastModel
-            ?: throw IllegalStateException("Fast model not configured"))
         val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
@@ -106,6 +105,7 @@ class UnifiedPlanAction : BaseAction() {
             override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")
         }
+        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
