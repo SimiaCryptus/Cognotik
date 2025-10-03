@@ -98,7 +98,8 @@ open class WaterfallMode(
                     newPlan(
                         orchestrationConfig,
                         toInput(userMessage) + contextFn(),
-                        describer
+                        describer,
+                        task
                     )
                 },
                 outputFn = {
@@ -120,13 +121,14 @@ open class WaterfallMode(
                     newPlan(
                         orchestrationConfig,
                         userMessages.map { it.first },
-                        describer
+                        describer,
+                        task
                     )
                 },
             ).call().let {
                 TaskBreakdownWithPrompt(
                     prompt = userMessage,
-                    plan = PlanUtil.filterPlan { it?.obj } ?: emptyMap(),
+                    plan = filterPlan { it?.obj } ?: emptyMap(),
                     planText = it?.text ?: "(no plan generated)"
                 )
             }
@@ -134,11 +136,12 @@ open class WaterfallMode(
             newPlan(
                 orchestrationConfig,
                 toInput(userMessage) + contextFn(),
-                describer
+                describer,
+                task
             ).let {
                 TaskBreakdownWithPrompt(
                     prompt = userMessage,
-                    plan = PlanUtil.filterPlan { it.obj } ?: emptyMap(),
+                    plan = filterPlan { it.obj } ?: emptyMap(),
                     planText = it.text
                 )
             }
@@ -168,10 +171,11 @@ open class WaterfallMode(
     open fun newPlan(
         orchestrationConfig: OrchestrationConfig,
         inStrings: List<String>,
-        describer: TypeDescriber
+        describer: TypeDescriber,
+        task: SessionTask
     ): ParsedResponse<Map<String, TaskExecutionConfig>> {
         orchestrationConfig.absoluteWorkingDir?.apply { File(this).mkdirs() }
-        val planningActor = orchestrationConfig.planningActor(describer)
+        val planningActor = orchestrationConfig.planningActor(describer, task)
         return planningActor.respond(
             messages = planningActor.chatMessages(inStrings),
             input = inStrings,

@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -94,15 +93,6 @@ class UnifiedPlanAction : BaseAction() {
         val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
-            orchestrationConfig = orchestrationConfig.copy(
-                env = mapOf(),
-                workingDir = root.absolutePath,
-                language = if (isWindows) "powershell" else "bash",
-                command = listOf(
-                    if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
-                ),
-                parsingModel = fastChatModel,
-            ),
             showMenubar = false
         ) {
             override fun instance(model: ApiChatModel) = model.instance()

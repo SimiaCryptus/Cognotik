@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.Operation
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
@@ -130,14 +131,14 @@ abstract class ApplicationServer(
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
         if(settingsFile.exists()) try {
             val text = settingsFile.readText()
-            logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
             var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
+            logger.debug("Settings file content (class {}):\nRAW:{}\nPARSED:{}", clazz, text.indent("    "), toJson(settings).indent("    "))
             if (null == settings) {
                 logger.debug("No existing settings found, initializing default settings")
                 val initSettings = initSettings<T>(session)
                 if (null != initSettings) {
                     logger.debug("Writing initial settings to file")
-                    settingsFile.writeText(JsonUtil.toJson(initSettings))
+                    settingsFile.writeText(toJson(initSettings))
                 }
                 if (settingsFile.exists()) {
                     settings = JsonUtil.fromJson(text, clazz)

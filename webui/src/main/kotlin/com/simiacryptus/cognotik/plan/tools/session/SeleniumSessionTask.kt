@@ -71,14 +71,14 @@ class SeleniumSessionTask(
         @Description("Whether to preserve whitespace in text nodes")
         val preserveWhitespace: Boolean = false,
     ) : TaskExecutionConfig(
-        task_type = TaskType.SeleniumSessionTask.name,
+        task_type = TaskType.SeleniumSession.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-      SeleniumSessionTask - Create and manage a stateful Selenium browser session
+      SeleniumSession - Create and manage a stateful Selenium browser session
         * Specify the URL to navigate to
         * Provide JavaScript commands to execute in sequence through Selenium's executeScript method
         * Can be used for web scraping, testing, or automation

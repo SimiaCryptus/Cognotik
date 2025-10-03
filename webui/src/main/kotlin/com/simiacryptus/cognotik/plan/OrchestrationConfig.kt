@@ -19,6 +19,8 @@ import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 
 
@@ -77,12 +79,9 @@ class OrchestrationConfig(
     fun getTaskSettings(taskType: TaskType<*, *>): TaskTypeConfig =
         taskSettings[taskType.name] ?: TaskTypeConfig(taskType.name)
 
-    fun setTaskSettings(taskType: TaskType<*, *>, settings: TaskTypeConfig) {
-        taskSettings[taskType.name] = settings
-    }
-
-    open fun planningActor(
-        describer: TypeDescriber
+    fun planningActor(
+        describer: TypeDescriber,
+        task: SessionTask
     ): ParsedAgent<TaskBreakdownResult> {
         val availableTaskTypes = TaskType.Companion.getAvailableTaskTypes(this)
         return planningActor(
@@ -90,8 +89,8 @@ class OrchestrationConfig(
                 val impl = TaskType.Companion.getImpl(this, taskType)
                 "* ${impl.promptSegment()}"
             },
-            model = defaultChatter,
-            parsingModel = parsingChatter,
+            model = defaultChatter.getChildClient(task),
+            parsingModel = parsingChatter.getChildClient(task),
             temperature = temperature,
             describer = describer,
             availableTaskTypes = availableTaskTypes
@@ -110,7 +109,6 @@ class OrchestrationConfig(
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-        instanceFn: (ApiChatModel) -> ChatInterface = this::instance,
         cognitiveMode: CognitiveModeStrategies? = this.cognitiveMode,
         maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
         maxTasksPerIteration: Int = this.maxTasksPerIteration,
@@ -224,13 +222,6 @@ class OrchestrationConfig(
         } else {
             configs.firstOrNull()
         }
-    }
-
-    /**
-     * Check if a task type is available (has at least one configuration)
-     */
-    fun isTaskTypeAvailable(taskType: TaskType<*, *>): Boolean {
-        return getTaskConfigs(taskType).isNotEmpty()
     }
 
     fun addTaskConfig(taskType: TaskType<*, *>, newConfig: TaskTypeConfig) {

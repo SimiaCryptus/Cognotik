@@ -36,20 +36,20 @@ class AnalysisTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = AnalysisTaskType.name,
+        task_type = Analysis.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = (if (!orchestrationConfig.autoFix) """
-InsightTask - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+Analysis - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
   * Specify the questions and the goal of the inquiry.
   * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
   * User response/feedback and iteration are supported.
   * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
 """ else """
-InsightTask - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+Analysis - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
   * Specify the questions and the goal of the inquiry.
   * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
   * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
@@ -205,8 +205,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
     companion object {
         private val log = LoggerFactory.getLogger(AnalysisTask::class.java)
-        val AnalysisTaskType = TaskType(
-            "AnalysisTask",
+        val Analysis = TaskType(
+            "Analysis",
             AnalysisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",

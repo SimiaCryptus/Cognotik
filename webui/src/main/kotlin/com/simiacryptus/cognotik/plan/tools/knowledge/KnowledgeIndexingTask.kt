@@ -34,14 +34,14 @@ class KnowledgeIndexingTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = TaskType.KnowledgeIndexingTask.name,
+        task_type = TaskType.KnowledgeIndexing.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-      KnowledgeIndexingTask - Process and index files for semantic search
+      KnowledgeIndexing - Process and index files for semantic search
         ** Specify the file paths to process
         ** Specify the parsing type (document or code)
         ** Optionally specify the chunk size (default 0.1)

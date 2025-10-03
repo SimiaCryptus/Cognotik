@@ -27,14 +27,14 @@ class SoftwareGraphModificationTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = "SoftwareGraphModificationTask",
+        task_type = "SoftwareGraphModification",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-     SoftwareGraphModificationTask - Load, modify and save software graph representations
+     SoftwareGraphModification - Load, modify and save software graph representations
        ** Specify the input graph file path
        ** Specify the output graph file path (optional, defaults to input file)
        ** Describe the desired modifications to the graph

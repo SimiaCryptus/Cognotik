@@ -183,21 +183,13 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Initialize sessionId globally - this will be used consistently throughout the app
- let sessionId = Utils.generateSessionId();
-// Map cognitive modes to their corresponding app paths
-const COGNITIVE_MODE_PATHS = {
-    'chat': '/taskChat',
-    'auto-plan': '/autoPlan',
-    'plan-ahead': '/planAhead',
-    'goal-oriented': '/goalOriented'
-};
+let sessionId = Utils.generateSessionId();
 
 
- if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         apiProviders,
         availableModels,
-        loadApiProviders
     };
 }
 
@@ -541,15 +533,18 @@ function populateTaskSelection() {
     taskToggles.innerHTML = '';
 
     const taskTypes = [
-        {id: 'InsightTask', name: 'Insight Task', description: 'Analyze code and provide detailed explanations'},
-        {
-            id: 'FileModificationTask',
-            name: 'File Modification Task',
-            description: 'Create or modify files with AI assistance'
-        },
-        {id: 'DocumentationTask', name: 'Documentation Task', description: 'Generate comprehensive documentation'},
-        {id: 'TestGenerationTask', name: 'Test Generation Task', description: 'Generate unit and integration tests'},
-        {id: 'CodeReviewTask', name: 'Code Review Task', description: 'Perform automated code reviews'}
+        {id: 'Analysis', name: 'Analysis Task', description: 'Analyze code and provide detailed explanations'},
+        {id: 'CommandSession', name: 'Command Session Task', description: 'Execute a series of commands in a session'},
+        {id: 'CrawlerAgent', name: 'Web Crawler Task', description: 'Crawl and extract information from websites'},
+        {id: 'FileModification', name: 'File Modification Task', description: 'Create or modify files with AI assistance'},
+        {id: 'FileSearch', name: 'File Search Task', description: 'Search and analyze files in the project'},
+        {id: 'SelfHealing', name: 'Self-Healing Task', description: 'Automatically fix issues in code based on AI suggestions'},
+        {id: 'RunShellCommand', name: 'Run Shell Command Task', description: 'Execute shell commands and process the output'},
+        {id: 'RunCode', name: 'Run Code Task', description: 'Execute code snippets and return the results'},
+        {id: 'SeleniumSession', name: 'Selenium Session Task', description: 'Automate web browser interactions using Selenium'},
+        {id: 'SelfHealing', name: 'Self-Healing Task', description: 'Automatically fix build errors based on AI suggestions'},
+        {id: 'KnowledgeIndexing', name: 'Knowledge Indexing Task', description: 'Index and search knowledge bases for information retrieval'},
+        {id: 'VectorSearch', name: 'Vector Search Task', description: 'Perform vector-based searches for similar items or documents'},
     ];
 
     taskTypes.forEach(task => {
@@ -574,7 +569,7 @@ function populateTaskSelection() {
         const checkbox = taskToggle.querySelector(`#${task.id}`);
         checkbox.addEventListener('change', function () {
             const currentSettings = appState.taskSettings.taskSettings || {};
-            if(this.checked) {
+            if (this.checked) {
                 if (!currentSettings[task.id]) {
                     currentSettings[task.id] = {};
                 }
@@ -637,8 +632,8 @@ function resetUserSettings() {
 function launchSession() {
     console.log('[launchSession] Launching session...');
     const cognitiveMode = appState.cognitiveMode || 'chat';
-    const appPath = COGNITIVE_MODE_PATHS[cognitiveMode] || '/taskChat';
-    
+    const appPath = '/taskChat';
+
     const settings = {
         ...appState.taskSettings,
         sessionId: appState.sessionId,

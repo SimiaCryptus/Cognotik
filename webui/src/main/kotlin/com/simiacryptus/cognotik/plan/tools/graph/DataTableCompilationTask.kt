@@ -46,7 +46,7 @@ class DataTableCompilationTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = "DataTableCompilationTask",
+        task_type = "DataTableCompilation",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -60,7 +60,7 @@ class DataTableCompilationTask(
     data class TableData(val rows: List<Map<String, Any>>, val columns: List<Column>)
 
     override fun promptSegment() = """
-        DataTableCompilationTask - Compile structured data tables from multiple files
+        DataTableCompilation - Compile structured data tables from multiple files
           ** Specify file glob patterns to include in the compilation
           ** Define instructions for identifying rows in the data
           ** Define instructions for identifying columns in the data

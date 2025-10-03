@@ -33,7 +33,7 @@ class FileSearchTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = FileSearchTaskType.name,
+        task_type = FileSearch.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -41,7 +41,7 @@ class FileSearchTask(
     // promptSegment remains the same
 
     override fun promptSegment() = """
-FileSearchTask - Search for patterns in files and provide results with context
+FileSearch - Search for patterns in files and provide results with context
 * Specify the search pattern (substring or regex)
 * Specify whether the pattern is a regex or a substring
 * Specify the number of context lines to include
@@ -322,8 +322,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             }
         }
 
-        val FileSearchTaskType = TaskType(
-            "FileSearchTask",
+        val FileSearch = TaskType(
+            "FileSearch",
             com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search project files using patterns with contextual results",

@@ -52,7 +52,7 @@ class VectorSearchTask(
     )
 
     override fun promptSegment() = """
-EmbeddingSearchTask - Search for similar embeddings in index files and provide top results
+VectorSearch - Search for similar embeddings in index files and provide top results
     ** Specify the positive search queries
     ** Optionally specify negative search queries
     ** Specify the distance type (Euclidean, Manhattan, or Cosine)

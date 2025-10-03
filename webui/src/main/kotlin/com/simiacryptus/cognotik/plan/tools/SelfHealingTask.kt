@@ -29,7 +29,7 @@ class SelfHealingTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = TaskType.SelfHealingTask.name,
+        task_type = TaskType.SelfHealing.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -41,7 +41,7 @@ class SelfHealingTask(
     )
 
     override fun promptSegment() = ("""
-  CommandAutoFixTask - Run a command and automatically fix any issues that arise
+  SelfHealing - Run a command and automatically fix any issues that arise
   * Specify the commands to be executed along with their working directories
   * Each command's working directory should be specified relative to the root directory
   * Provide the commands and their arguments in the 'commands' field

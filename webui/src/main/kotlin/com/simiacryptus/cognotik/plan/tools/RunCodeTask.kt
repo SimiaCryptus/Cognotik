@@ -23,7 +23,7 @@ class RunCodeTask(
 ) : AbstractTask<RunCodeTask.RunCodeTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
     class RunCodeTaskTypeConfig(
-        task_type : String = TaskType.RunCodeTask.name,
+        task_type : String = TaskType.RunCode.name,
         val codeRuntime: CodeRuntimes? = null,
         model: ApiChatModel? = null,
         name: String? = task_type,
@@ -42,14 +42,14 @@ class RunCodeTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = TaskType.RunCodeTask.name,
+        task_type = TaskType.RunCode.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-    RunCodeTask - Use a code interpreter to solve and complete the user's request.
+    RunCode - Use a code interpreter to solve and complete the user's request.
       * Do not directly write code (yet)
       * Include detailed technical requirements for the needed solution
     """.trimIndent()

@@ -18,14 +18,14 @@ class SoftwareGraphPlanningTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = "SoftwareGraphPlanningTask",
+        task_type = "SoftwareGraphPlanning",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-     GraphBasedPlanningTask - Use a software graph to generate an actionable sub-plan.
+     SoftwareGraphPlanning - Use a software graph to generate an actionable sub-plan.
        ** Include the file path to the input graph file and the instruction.
     """.trimIndent()
 
@@ -38,12 +38,12 @@ class SoftwareGraphPlanningTask(
     ) {
         val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File(".")).resolve(
             when {
-                !executionConfig?.input_graph_file.isNullOrBlank() -> executionConfig?.input_graph_file!!
+                !executionConfig?.input_graph_file.isNullOrBlank() -> executionConfig.input_graph_file
                 else -> throw IllegalArgumentException("Input graph file not specified")
             }
         )
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
-        val response = orchestrationConfig.planningActor(TaskContextYamlDescriber(orchestrationConfig)).answer(
+        val response = orchestrationConfig.planningActor(TaskContextYamlDescriber(orchestrationConfig),task).answer(
             (messages + listOf(
                 "Software Graph `${executionConfig.input_graph_file}`:\n```json\n${inputFile.readText()}\n```",
                 "Instruction: ${executionConfig.instruction}"

@@ -40,7 +40,7 @@ open class ConversationalMode(
 
     override fun initialize() {
         val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
-        log.debug("ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
+        log.debug("ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}", RuntimeException())
         log.debug(
             "Task configurations: ${
                 orchestrationConfig.taskSettings.values.joinToString(", ") {
@@ -81,15 +81,14 @@ open class ConversationalMode(
     private fun execute(task: SessionTask, userMessage: String) {
 
         try {
-            val defaultChatter = orchestrationConfig.defaultChatter
-            val parsingModel = orchestrationConfig.parsingChatter
             val describer = TaskContextYamlDescriber(orchestrationConfig)
+            val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
             val parsedActor = ParsedAgent(
                 name = "TaskChooser",
                 resultClass = AdaptivePlanningMode.Tasks::class.java,
                 exampleInstance = AdaptivePlanningMode.Tasks(
                     listOfNotNull(
-                        TaskType.getAvailableTaskTypes(orchestrationConfig).firstOrNull()?.let {
+                        availableTaskTypes.firstOrNull()?.let {
                             TaskType.getImpl(orchestrationConfig, it).executionConfig
                         }
                     ).toMutableList()
@@ -111,11 +110,11 @@ open class ConversationalMode(
                         append("\nNote: Some task types have multiple configurations available. You can specify which configuration to use by setting the task_config_name field.")
                     }
                 },
-                model = defaultChatter.getChildClient(task),
-                parsingModel = parsingModel.getChildClient(task),
+                model = orchestrationConfig.defaultChatter.getChildClient(task),
+                parsingModel = orchestrationConfig.parsingChatter.getChildClient(task),
                 temperature = orchestrationConfig.temperature,
                 describer = describer,
-                parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
+                parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes
                     .joinToString("\n\n") { taskType ->
                         "${taskType.name}:\n  ${
                             describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")

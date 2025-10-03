@@ -30,14 +30,14 @@ class RunShellCommandTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = TaskType.RunShellCommandTask.name,
+        task_type = TaskType.RunShellCommand.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-    RunShellCommandTask - Execute ${orchestrationConfig.language ?: "bash"} shell commands and provide the output
+    RunShellCommand - Execute ${orchestrationConfig.language ?: "bash"} shell commands and provide the output
       ** Specify the command to be executed, or describe the task to be performed
       ** Optionally specify a working directory for the command execution
       ** Optionally specify a timeout in minutes (default: 15)

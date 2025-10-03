@@ -2,10 +2,6 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -30,17 +26,15 @@ import java.util.concurrent.Executors
 abstract class UnifiedPlanApp(
     path: String,
     applicationName: String = "Unified Planning App",
-    val orchestrationConfig: OrchestrationConfig,
     showMenubar: Boolean = true,
     val useExpansionSyntax: Boolean = true,
 ) : ApplicationServer(
     applicationName = applicationName,
     path = path,
     showMenubar = showMenubar,
-    root = orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: dataStorageRoot,
+    root = dataStorageRoot,
 ) {
     private val log = LoggerFactory.getLogger(UnifiedPlanApp::class.java)
-    private val cognitiveModes = ConcurrentHashMap<String, CognitiveMode>()
 
     // Updated expansion patterns to match ChatSocketManager
     private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+"""
@@ -52,10 +46,9 @@ abstract class UnifiedPlanApp(
     private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
-    override val inputCnt = orchestrationConfig.cognitiveMode?.inputCnt?.let { if (it < 1) it + 2 else it + 3 } ?: 4
-
+    override val inputCnt = 4
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T = orchestrationConfig as T
+    override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig() as T
 
     abstract fun instance(model: ApiChatModel): ChatInterface
 
@@ -64,7 +57,7 @@ abstract class UnifiedPlanApp(
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
-        val settings = getSettings(session, user, OrchestrationConfig::class.java) ?: orchestrationConfig
+        val settings = getSettings(session, user, OrchestrationConfig::class.java)!!
         if (useExpansionSyntax) {
             socketManager.newTask(cancelable = false, root = true).expandable(
                 "Query Expansion Syntax Guide", """
@@ -108,33 +101,36 @@ abstract class UnifiedPlanApp(
         ui: SocketManager
     ) {
         try {
-            val settings = getSettings(session, user, OrchestrationConfig::class.java) ?: orchestrationConfig
+            val settings: OrchestrationConfig = try {
+                getSettings(session, user, OrchestrationConfig::class.java) ?: OrchestrationConfig()
+            } catch (e: Exception) {
+                log.error("Error retrieving orchestration config, using default", e)
+                OrchestrationConfig()
+            }
+
             settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             log.debug("Received user message: $userMessage")
 
             val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
 
             if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
-                processMessageWithExpansions(session, user, expandedMessage, ui)
+                processMessageWithExpansions(
+                    session,
+                    user,
+                    expandedMessage,
+                    ui,
+                    settings
+                )
                 return
             }
 
-            val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-                // Per-type custom initialization
-                user?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
-                    ?.apply {
-                        (settings.taskSettings[TaskType.SelfHealingTask.name] as? SelfHealingTask.SelfHealingTaskTypeConfig)
-                            ?.commandAutoFixCommands?.addAll(this.localTools)
-                    }
-                orchestrationConfig.cognitiveMode!!.getCognitiveMode(
-                    ui = ui,
-                    orchestrationConfig = settings,
-                    session = session,
-                    user = user
-                ).apply { initialize() }
-            }
-
-            cognitiveMode.handleUserMessage(expandedMessage, ui.newTask(true))
+            val cognitiveMode = settings.cognitiveMode?.getCognitiveMode(
+                ui = ui,
+                orchestrationConfig = settings,
+                session = session,
+                user = user
+            ) ?: throw IllegalStateException("Cognitive mode not configured")
+            cognitiveMode.apply { initialize() }.handleUserMessage(expandedMessage, ui.newTask(true))
 
         } catch (e: Throwable) {
             log.error("Error processing user message", e)
@@ -177,7 +173,8 @@ abstract class UnifiedPlanApp(
         session: Session,
         user: User?,
         userMessage: String,
-        ui: SocketManager
+        ui: SocketManager,
+        orchestrationConfig: OrchestrationConfig
     ) {
         val task = ui.newTask()
         val processor = FixedConcurrencyProcessor(expansionPool, 4)
@@ -187,7 +184,8 @@ abstract class UnifiedPlanApp(
             currentMessage = userMessage,
             ui = ui,
             task = task,
-            processor = processor
+            processor = processor,
+            orchestrationConfig = orchestrationConfig
         )
     }
 
@@ -201,7 +199,8 @@ abstract class UnifiedPlanApp(
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
-        processor: FixedConcurrencyProcessor
+        processor: FixedConcurrencyProcessor,
+        orchestrationConfig: OrchestrationConfig
     ) {
 
         // Check for range expansion first
@@ -221,18 +220,15 @@ abstract class UnifiedPlanApp(
         // Check for parallel expansion
         val parallelMatch = expansionExpressionPattern.find(currentMessage)
         if (parallelMatch != null && parallelMatch.groupValues[1].split('|', ',').size > 1) {
-            expandParallel(session, user, currentMessage, ui, task, processor, parallelMatch)
+            expandParallel(session, user, currentMessage, ui, task, processor, parallelMatch, orchestrationConfig)
             return
         }
-        val cognitiveMode = cognitiveModes.computeIfAbsent(session.sessionId) {
-            orchestrationConfig.cognitiveMode!!.getCognitiveMode(
-                ui = ui,
-                orchestrationConfig = getSettings(session, user, OrchestrationConfig::class.java)
-                    ?: orchestrationConfig,
-                session = session,
-                user = user
-            ).apply { initialize() }
-        }
+        val cognitiveMode = orchestrationConfig.cognitiveMode?.getCognitiveMode(
+            ui = ui,
+            orchestrationConfig = orchestrationConfig,
+            session = session,
+            user = user
+        )?.apply { initialize() } ?: throw IllegalStateException("Cognitive mode not configured")
         cognitiveMode.handleUserMessage(currentMessage, task)
     }
 
@@ -257,7 +253,17 @@ abstract class UnifiedPlanApp(
             .toList()
             .map { it.toString() }
 
-        expandSequenceItems(session, user, currentMessage, ui, task, processor, rangeMatch.value, items)
+        expandSequenceItems(
+            session,
+            user,
+            currentMessage,
+            ui,
+            task,
+            processor,
+            rangeMatch.value,
+            items,
+            this@UnifiedPlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+        )
     }
 
     /**
@@ -273,7 +279,17 @@ abstract class UnifiedPlanApp(
         sequenceMatch: MatchResult
     ) {
         val items = sequenceMatch.groupValues[1].split(Regex("""\s*->\s*"""))
-        expandSequenceItems(session, user, currentMessage, ui, task, processor, sequenceMatch.value, items)
+        expandSequenceItems(
+            session,
+            user,
+            currentMessage,
+            ui,
+            task,
+            processor,
+            sequenceMatch.value,
+            items,
+            this@UnifiedPlanApp.getSettings(session, user, OrchestrationConfig::class.java)!!
+        )
     }
 
     /**
@@ -286,7 +302,8 @@ abstract class UnifiedPlanApp(
         ui: SocketManager,
         task: SessionTask,
         processor: FixedConcurrencyProcessor,
-        parallelMatch: MatchResult
+        parallelMatch: MatchResult,
+        orchestrationConfig: OrchestrationConfig
     ) {
         val options = parallelMatch.groupValues[1].split('|', ',')
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
@@ -302,7 +319,8 @@ abstract class UnifiedPlanApp(
                     currentMessage = nextMessage,
                     ui = ui,
                     task = subTask,
-                    processor = processor
+                    processor = processor,
+                    orchestrationConfig = orchestrationConfig
                 )
             }
         }.forEach { it.get() }
@@ -321,7 +339,8 @@ abstract class UnifiedPlanApp(
         task: SessionTask,
         processor: FixedConcurrencyProcessor,
         expression: String,
-        items: List<String>
+        items: List<String>,
+        orchestrationConfig: OrchestrationConfig
     ) {
         val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
 
@@ -335,7 +354,8 @@ abstract class UnifiedPlanApp(
                 currentMessage = nextMessage,
                 ui = ui,
                 task = subTask,
-                processor = processor
+                processor = processor,
+                orchestrationConfig = orchestrationConfig
             )
         }
 

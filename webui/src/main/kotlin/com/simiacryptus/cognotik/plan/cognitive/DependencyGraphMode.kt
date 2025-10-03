@@ -58,7 +58,7 @@ open class DependencyGraphMode(
             task.add("Successfully loaded graph with ${softwareGraph.nodes.size} nodes")
             val orderedNodes = orderGraphNodes(softwareGraph.nodes)
             task.add("Ordered ${orderedNodes.size} nodes by priority")
-            val cumulativeTasks = transformNodesToPlan(orderedNodes, orchestrationConfig, userMessage, graphFile)
+            val cumulativeTasks = transformNodesToPlan(orderedNodes, orchestrationConfig, userMessage, graphFile, task)
             addDependencies(cumulativeTasks, graphFileContent, userMessage, task)
             val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { cumulativeTasks } ?: emptyMap()
             log.info("Ordered plan built successfully. Proceeding to execute DAG.")
@@ -229,7 +229,8 @@ open class DependencyGraphMode(
         nodes: List<SoftwareNodeType.NodeBase<*>>,
         orchestrationConfig: OrchestrationConfig,
         userMessage: String,
-        graphFile: String
+        graphFile: String,
+        task: SessionTask
     ): MutableMap<String, TaskExecutionConfig> {
         val tasks = mutableMapOf<String, TaskExecutionConfig>()
         nodes.forEach {
@@ -240,7 +241,8 @@ open class DependencyGraphMode(
                     graphFile = graphFile,
                     graphTxt = readGraphFile(orchestrationConfig),
                     node = it,
-                    userMessage = userMessage
+                    userMessage = userMessage,
+                    task
                 ) ?: emptyMap()
             )
         }
@@ -253,7 +255,8 @@ open class DependencyGraphMode(
         graphFile: String,
         graphTxt: String,
         node: SoftwareNodeType.NodeBase<*>,
-        userMessage: String
+        userMessage: String,
+        task: SessionTask
     ): Map<String, TaskExecutionConfig>? {
         val maxRetries = 3
         val retryDelayMillis = 1000L
@@ -264,7 +267,7 @@ open class DependencyGraphMode(
         }
         while (true) {
             try {
-                return orchestrationConfig.planningActor(TaskContextYamlDescriber(orchestrationConfig)).answer(
+                return orchestrationConfig.planningActor(TaskContextYamlDescriber(orchestrationConfig), task).answer(
                     contextData() +
                             listOf(
                                 "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",

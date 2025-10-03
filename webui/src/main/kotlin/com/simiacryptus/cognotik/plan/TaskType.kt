@@ -2,11 +2,20 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.plan.tools.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.AnalysisTaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearchTaskType
+import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
+import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask.RunShellCommandTaskExecutionConfigData
@@ -26,9 +35,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 ) : DynamicEnum<TaskType<*, *>>(name) {
 
     companion object {
-        val VectorSearchTask = TaskType(
-            "VectorSearchTask",
-            com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.VectorSearchTaskExecutionConfigData::class.java,
+        val VectorSearch = TaskType(
+            "VectorSearch",
+            VectorSearchTask.VectorSearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Perform semantic search using AI embeddings",
             """
@@ -43,8 +52,8 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                     """
         )
 
-        val RunShellCommandTask = TaskType(
-            "RunShellCommandTask",
+        val RunShellCommand = TaskType(
+            "RunShellCommand",
             RunShellCommandTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Execute shell commands safely",
@@ -59,8 +68,8 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
-        val RunCodeTask = TaskType(
-            "RunCodeTask",
+        val RunCode = TaskType(
+            "RunCode",
             RunCodeTaskExecutionConfigData::class.java,
             RunCodeTaskTypeConfig::class.java,
             "Execute code snippets safely",
@@ -75,10 +84,10 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
-        val SelfHealingTask = TaskType(
-            "SelfHealingTask",
-            com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskExecutionConfigData::class.java,
-            com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskTypeConfig::class.java,
+        val SelfHealing = TaskType(
+            "SelfHealing",
+            SelfHealingTask.SelfHealingTaskExecutionConfigData::class.java,
+            SelfHealingTask.SelfHealingTaskTypeConfig::class.java,
             "Run a command and automatically fix any issues that arise",
             """
           Executes a command and automatically fixes any issues that arise.
@@ -90,9 +99,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
-        val GitHubSearchTask = TaskType(
-            "GitHubSearchTask",
-            com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask.GitHubSearchTaskExecutionConfigData::class.java,
+        val GitHubSearch = TaskType(
+            "GitHubSearch",
+            GitHubSearchTask.GitHubSearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search GitHub repositories, code, issues and users",
             """
@@ -106,9 +115,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
-        val KnowledgeIndexingTask = TaskType( // TODO: This should be automatically done as needed during embedding search
-                "KnowledgeIndexingTask",
-                com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData::class.java,
+        val KnowledgeIndexing = TaskType( // TODO: This should be automatically done as needed during embedding search
+            "KnowledgeIndexing",
+            KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData::class.java,
                 TaskTypeConfig::class.java,
                 "Index content for semantic search capabilities",
                 """
@@ -122,9 +131,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
             )
-        val SeleniumSessionTask = TaskType(
-            "SeleniumSessionTask",
-            com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData::class.java,
+        val SeleniumSession = TaskType(
+            "SeleniumSession",
+            SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Automate browser interactions with Selenium",
             """
@@ -138,9 +147,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
-        val CommandSessionTask = TaskType(
-            "CommandSessionTask",
-            com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask.CommandSessionTaskExecutionConfigData::class.java,
+        val CommandSession = TaskType(
+            "CommandSession",
+            CommandSessionTask.CommandSessionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Manage interactive command-line sessions",
             """
@@ -154,10 +163,10 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
-        val CrawlerAgentTask = TaskType(
-            "CrawlerAgentTask",
-            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskExecutionConfigData::class.java,
-            com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskTypeConfig::class.java,
+        val CrawlerAgent = TaskType(
+            "CrawlerAgent",
+            CrawlerAgentTask.CrawlerTaskExecutionConfigData::class.java,
+            CrawlerAgentTask.CrawlerTaskTypeConfig::class.java,
             "Search Google, fetch top results, and analyze content",
             """
           Searches Google for specified queries and analyzes the top results.
@@ -169,75 +178,76 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
+
         init {
-            registerConstructor(SelfHealingTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.SelfHealingTask(
+            registerConstructor(Analysis) { settings, task ->
+                AnalysisTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(AnalysisTaskType) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.file.AnalysisTask(
+            registerConstructor(CommandSession) { settings, task ->
+                CommandSessionTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(FileSearchTaskType) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.file.FileSearchTask(
+            registerConstructor(CrawlerAgent) { settings, task ->
+                CrawlerAgentTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(CrawlerAgentTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask(
+            registerConstructor(FileModification) { settings, task ->
+                FileModificationTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(VectorSearchTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask(
+            registerConstructor(FileSearch) { settings, task ->
+                FileSearchTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(FileModificationTaskType) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.file.FileModificationTask(
+            registerConstructor(KnowledgeIndexing) { settings, task ->
+                KnowledgeIndexingTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(RunShellCommandTask) { settings, task ->
+            registerConstructor(GitHubSearch) { settings, task ->
+                GitHubSearchTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(RunShellCommand) { settings, task ->
                 RunShellCommandTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(RunCodeTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.RunCodeTask(
+            registerConstructor(RunCode) { settings, task ->
+                RunCodeTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(GitHubSearchTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask(
-                    settings,
-                    task
-                )
-            }
-            registerConstructor(KnowledgeIndexingTask) { settings, task ->
-                com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask(
-                    settings,
-                    task
-                )
-            }
-            registerConstructor(SeleniumSessionTask) { settings, task ->
+            registerConstructor(SeleniumSession) { settings, task ->
                 SeleniumSessionTask(
                     settings,
                     task
                 )
             }
-            registerConstructor(CommandSessionTask) { settings, task ->
-                CommandSessionTask(
+            registerConstructor(SelfHealing) { settings, task ->
+                SelfHealingTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(VectorSearch) { settings, task ->
+                VectorSearchTask(
                     settings,
                     task
                 )
@@ -269,7 +279,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             planTask: TaskExecutionConfig? = null,
             strict: Boolean = true
         ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
-            if (strict && !orchestrationConfig.isTaskTypeAvailable(taskType)) {
+            if (strict && !orchestrationConfig.getTaskConfigs(taskType).isNotEmpty()) {
                 throw DisabledTaskException(taskType)
             }
             // Get the specific configuration for this task
@@ -288,9 +298,8 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             return task
         }
 
-        fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig) = values().filter {
-            orchestrationConfig.isTaskTypeAvailable(it)
-        }
+        fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig) = orchestrationConfig.taskSettings
+            .mapNotNull { x -> valueOf(x.value.task_type ?: return@mapNotNull null) }
 
         fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)
 

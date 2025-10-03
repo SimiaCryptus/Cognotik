@@ -4,9 +4,7 @@ import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -248,52 +246,12 @@ open class CognotikApps(
             ChildWebApp(
                 "/taskChat", object : UnifiedPlanApp(
                     path = "/taskChat",
-                    applicationName = "Task-Runner",
-                    orchestrationConfig = orchestrationConfig.copy(
-                        cognitiveMode = CognitiveModeStrategies.Chat,
-
-                        )
+                    applicationName = "Task-Runner"
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
                         ?: throw IllegalStateException("Model or provider not set")
                 }
             ),
-            ChildWebApp(
-                "/autoPlan", object : UnifiedPlanApp(
-                    path = "/autoPlan",
-                    applicationName = "Auto-Plan",
-                    orchestrationConfig = orchestrationConfig.copy(
-                        cognitiveMode = CognitiveModeStrategies.Adaptive,
-                    )
-                ) {
-                    override fun instance(model: ApiChatModel) = model.instance()
-                        ?: throw IllegalStateException("Model or provider not set")
-                }
-            ),
-            ChildWebApp(
-                "/planAhead", object : UnifiedPlanApp(
-                    path = "/planAhead",
-                    applicationName = "Plan-Ahead",
-                    orchestrationConfig = orchestrationConfig.copy(
-                        cognitiveMode = CognitiveModeStrategies.Waterfall,
-                    )
-                ) {
-                    override fun instance(model: ApiChatModel) = model.instance()
-                        ?: throw IllegalStateException("Model or provider not set")
-                }
-            ),
-            ChildWebApp(
-                "/goalOriented", object : UnifiedPlanApp(
-                    path = "/goalOriented",
-                    applicationName = "Goal-Oriented",
-                    orchestrationConfig = orchestrationConfig.copy(
-                        cognitiveMode = CognitiveModeStrategies.Hierarchical
-                    )
-                ) {
-                    override fun instance(model: ApiChatModel) = model.instance()
-                        ?: throw IllegalStateException("Model or provider not set")
-                }
-            )
         )
     }
 

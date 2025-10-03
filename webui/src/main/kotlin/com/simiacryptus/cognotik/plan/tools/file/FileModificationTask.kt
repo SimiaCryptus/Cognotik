@@ -36,7 +36,7 @@ class FileModificationTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : FileTaskExecutionConfig(
-        task_type = FileModificationTaskType.name,
+        task_type = FileModification.name,
         task_description = task_description,
         task_dependencies = task_dependencies,
         related_files = related_files,
@@ -86,7 +86,7 @@ class FileModificationTask(
     }
 
     override fun promptSegment() = """
-FileModificationTask - Modify existing files or create new files
+FileModification - Modify existing files or create new files
   * For each file, specify the relative file path and the goal of the modification or creation
   * List input files/tasks to be examined when designing the modifications or new files
 Available files:
@@ -244,8 +244,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     companion object {
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
 
-        val FileModificationTaskType = TaskType(
-            "FileModificationTask",
+        val FileModification = TaskType(
+            "FileModification",
             FileModificationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create new files or modify existing code with AI-powered assistance",

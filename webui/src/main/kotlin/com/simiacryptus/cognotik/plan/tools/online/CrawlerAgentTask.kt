@@ -40,7 +40,7 @@ class CrawlerAgentTask(
     class CrawlerTaskTypeConfig(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
-        task_type: String = "CrawlerAgentTask",
+        task_type: String = "CrawlerAgent",
         model: ApiChatModel? = null,
         name: String? = task_type,
     ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
@@ -57,7 +57,7 @@ class CrawlerAgentTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = TaskType.CrawlerAgentTask.name,
+        task_type = TaskType.CrawlerAgent.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -68,7 +68,7 @@ class CrawlerAgentTask(
     val urlContentCache = ConcurrentHashMap<String, String>()
 
     override fun promptSegment() = """
-    CrawlerAgentTask - Search Google, fetch top results, and analyze content
+    CrawlerAgent - Search Google, fetch top results, and analyze content
     ** Specify the search query
     ** Or provide direct URLs to analyze
     ** Specify the analysis goal or focus
