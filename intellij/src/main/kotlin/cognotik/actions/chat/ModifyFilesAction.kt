@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.io.OutputStream
+import java.net.URI
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import kotlin.io.path.relativeTo
@@ -76,8 +77,8 @@ open class ModifyFilesAction(
                 loadImages = false,
                 showMenubar = false
             )
-            val server = CognotikAppServer.getServer(e.project)
-            launchBrowser(server, session.toString())
+            val server = CognotikAppServer.getServer()
+            launchBrowser(session.toString(), server.server.uri)
         } catch (e: Exception) {
 
             log.error("Error in MultiDiffChatAction", e)
@@ -97,11 +98,11 @@ open class ModifyFilesAction(
         }
     }
 
-    private fun launchBrowser(server: CognotikAppServer, session: String) {
+    private fun launchBrowser(session: String, uri: URI) {
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = uri.resolve("/#$session")
                 BaseAction.log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

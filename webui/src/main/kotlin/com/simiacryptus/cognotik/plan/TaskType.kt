@@ -270,32 +270,19 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         ) = getImpl(
             orchestrationConfig = orchestrationConfig,
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
-            planTask = planTask,
-            strict = strict)
+            planTask = planTask
+        )
 
         fun getImpl(
             orchestrationConfig: OrchestrationConfig,
             taskType: TaskType<*, *>,
-            planTask: TaskExecutionConfig? = null,
-            strict: Boolean = true
+            planTask: TaskExecutionConfig? = null
         ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
-            if (strict && !orchestrationConfig.getTaskConfigs(taskType).isNotEmpty()) {
-                throw DisabledTaskException(taskType)
-            }
-            // Get the specific configuration for this task
-            val taskConfig = orchestrationConfig.getTaskConfig(
-                taskType,
-                planTask?.task_config_name
-            )
-
             val constructor = taskConstructors[taskType]
             if (constructor == null) {
                 throw RuntimeException("Unknown task type: ${taskType.name}")
             }
-
-            val task = constructor(orchestrationConfig, planTask)
-
-            return task
+            return constructor(orchestrationConfig, planTask)
         }
 
         fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig) = orchestrationConfig.taskSettings

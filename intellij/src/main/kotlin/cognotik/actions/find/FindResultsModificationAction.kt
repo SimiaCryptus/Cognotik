@@ -77,7 +77,7 @@ class FindResultsModificationAction(
                 loadImages = false,
                 showMenubar = false
             )
-            val server = CognotikAppServer.getServer(event.project)
+            val server = CognotikAppServer.getServer()
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {

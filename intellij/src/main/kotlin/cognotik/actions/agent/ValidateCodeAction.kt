@@ -67,7 +67,7 @@ class ValidateCodeAction : BaseAction() {
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
                 SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
 
-                val server = CognotikAppServer.getServer(event.project)
+                val server = CognotikAppServer.getServer()
                 Thread {
                     Thread.sleep(500)
                     try {

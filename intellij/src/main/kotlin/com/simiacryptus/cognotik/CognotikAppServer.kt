@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik
 
- import com.simiacryptus.cognotik.util.SessionProxyServer
- import com.intellij.openapi.project.Project
 import com.intellij.openapi.diagnostic.Logger
- import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.util.SessionProxyServer
  import com.simiacryptus.cognotik.webui.chat.ChatServer
  import com.simiacryptus.cognotik.webui.servlet.CorsFilter
  import jakarta.servlet.DispatcherType
@@ -15,7 +14,7 @@ import com.intellij.openapi.diagnostic.Logger
  import java.net.InetSocketAddress
  import java.util.*
 
- class CognotikAppServer(
+class CognotikAppServer(
     private val localName: String,
     private val port: Int
 ) {
@@ -24,32 +23,26 @@ import com.intellij.openapi.diagnostic.Logger
         try {
             log.info("Initializing server on $localName:$port")
             val server = Server(InetSocketAddress(localName, port))
-            server.handler = contexts
+            server.handler = ContextHandlerCollection().apply {
+                this.handlers = arrayOf(
+                    newWebAppContext(SessionProxyServer(), "/")
+                ).map {
+                    try {
+                        it.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
+                        log.debug("Added CORS filter to context: ${it.contextPath}")
+                        it
+                    } catch (e: Exception) {
+                        log.error("Failed to add CORS filter to context", e)
+                        throw e
+                    }
+                }.toMutableList().toTypedArray<WebAppContext>()
+            }
+
             server
         } catch (e: Exception) {
             log.error("Failed to initialize server on $localName:$port", e)
             throw e
         }
-    }
-
-    private val handlers = arrayOf(
-        newWebAppContext(SessionProxyServer(), "/")
-    ).map {
-        try {
-            it.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
-            log.debug("Added CORS filter to context: ${it.contextPath}")
-            it
-        } catch (e: Exception) {
-            log.error("Failed to add CORS filter to context", e)
-            throw e
-        }
-    }.toMutableList()
-
-    private val contexts by lazy {
-        val contexts = ContextHandlerCollection()
-        contexts.handlers = handlers.toTypedArray()
-        log.debug("Created context handler collection with ${handlers.size} handlers")
-        contexts
     }
 
     private fun newWebAppContext(server: ChatServer, path: String): WebAppContext {
@@ -97,7 +90,7 @@ import com.intellij.openapi.diagnostic.Logger
             return running
         }
 
-        fun getServer(project: Project?): CognotikAppServer {
+        fun getServer(): CognotikAppServer {
             try {
                 if (null == server || !server!!.server.isRunning) {
                     val endpoint = AppSettingsState.instance.listeningEndpoint

@@ -111,7 +111,7 @@ class AnalyzeProblemAction : AnAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer(project)
+        val server = CognotikAppServer.getServer()
 
         Thread {
             Thread.sleep(500)

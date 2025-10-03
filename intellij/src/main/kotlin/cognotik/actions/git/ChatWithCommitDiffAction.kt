@@ -82,7 +82,7 @@ class ChatWithCommitDiffAction : BaseAction(
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer()
 
         IntellijAppManager.getApplication().executeOnPooledThread {
             Thread.sleep(500)

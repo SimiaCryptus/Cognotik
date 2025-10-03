@@ -179,13 +179,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             stopButton.isEnabled = CognotikAppServer.isRunning()
 
             startButton.addActionListener {
-                CognotikAppServer.getServer(project)
+                CognotikAppServer.getServer()
                 startButton.isEnabled = false
                 stopButton.isEnabled = true
                 updateSessionsList()
             }
             stopButton.addActionListener {
-                CognotikAppServer.getServer(project).server.stop()
+                CognotikAppServer.getServer().server.stop()
                 startButton.isEnabled = true
                 stopButton.isEnabled = false
                 updateSessionsList()

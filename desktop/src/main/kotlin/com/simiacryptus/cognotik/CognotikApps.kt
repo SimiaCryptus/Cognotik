@@ -236,11 +236,6 @@ open class CognotikApps(
 
     override val childWebApps by lazy {
         OrchestrationConfig.instanceFn = { m -> m.instance() ?: throw IllegalStateException("Model or provider not set") }
-        val orchestrationConfig =  OrchestrationConfig(
-            defaultModel = model.toApiChatModel(),
-            parsingModel = model.toApiChatModel(),
-            workingDir = ".",
-        )
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(

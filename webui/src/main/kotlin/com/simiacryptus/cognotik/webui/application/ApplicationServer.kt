@@ -13,6 +13,9 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.SessionProxyServer.Companion.agents
+import com.simiacryptus.cognotik.util.SessionProxyServer.Companion.chats
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -46,7 +49,6 @@ abstract class ApplicationServer(
     final override val dataStorage: StorageInterface by lazy {
         ApplicationServices.fileApplicationServices().dataStorageFactory
     }
-
     protected open val appInfoServlet by lazy {
         ServletHolder("appInfo", AppInfoServlet { session ->
             appInfo(Session(session!!))
@@ -63,6 +65,7 @@ abstract class ApplicationServer(
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
     override fun newSession(user: User?, session: Session): SocketManager {
+        (chats[session]?.newSession(user, session) ?: agents[session])?.apply { return this; }
         logger.info(
             "Creating new session: {} for user: {} in application: {}",
             session,
@@ -175,7 +178,6 @@ abstract class ApplicationServer(
     override fun configure(webAppContext: WebAppContext) {
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
-
         webAppContext.addFilter(
             FilterHolder { request, response, chain ->
                 val requestPath = (request as HttpServletRequest).requestURI
@@ -232,7 +234,6 @@ abstract class ApplicationServer(
         logger.debug("Added deleteSession servlet")
         webAppContext.addServlet(cancelSessionServlet, "/cancel")
         logger.debug("Added cancelSession servlet")
-        logger.info("Web application context configuration completed for: {}", applicationName)
     }
 
     companion object {

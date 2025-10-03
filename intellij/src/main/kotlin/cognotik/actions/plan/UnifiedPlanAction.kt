@@ -71,7 +71,7 @@ class UnifiedPlanAction : BaseAction() {
             orchestrationConfig
         )
         progress.text = "Starting server..."
-        val server = CognotikAppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer()
         openBrowser(server, session.toString())
     }
 

@@ -65,7 +65,7 @@ class MultiCodeChatAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer(event.project)
+                val server = CognotikAppServer.getServer()
                 launchBrowser(server, session.toString())
             }
         } catch (e: Throwable) {

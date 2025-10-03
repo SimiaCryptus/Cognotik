@@ -289,7 +289,7 @@ class KnowledgeIndexingAction : BaseAction() {
                             )
 
                             indicator.text = "Opening browser..."
-                            val server = CognotikAppServer.getServer(project)
+                            val server = CognotikAppServer.getServer()
                             CompletableFuture.runAsync({
                                 Thread.sleep(500)
                                 try {

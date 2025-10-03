@@ -133,9 +133,9 @@ abstract class PatchApp(
     override val inputCnt = 1
     override val stickyInput = false
     override fun newSession(user: User?, session: Session): SocketManager {
+        val socketManager = super.newSession(user, session)
         log.info("Creating new session for user: ${user?.id ?: "anonymous"}")
         var retries: Int = -1
-        val socketManager = super.newSession(user, session)
         val ui = socketManager
         val task = ui.newTask()
         var retryOnOffButton: StringBuilder? = null

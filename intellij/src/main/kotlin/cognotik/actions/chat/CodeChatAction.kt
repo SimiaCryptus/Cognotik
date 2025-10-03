@@ -51,7 +51,7 @@ class CodeChatAction : BaseAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer()
 
         Thread {
             Thread.sleep(500)

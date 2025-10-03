@@ -149,7 +149,7 @@ class TestResultAutofixAction : BaseAction() {
             showMenubar = false
         )
 
-        val server = CognotikAppServer.getServer(e.project)
+        val server = CognotikAppServer.getServer()
 
         Thread {
             Thread.sleep(500)

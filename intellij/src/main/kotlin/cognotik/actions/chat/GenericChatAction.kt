@@ -53,7 +53,7 @@ class GenericChatAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer(project)
+                val server = CognotikAppServer.getServer()
 
                 val uri = server.server.uri.resolve("/#$session")
                 ApplicationManager.getApplication().executeOnPooledThread {

@@ -67,7 +67,7 @@ class MultiStepPatchAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer(e.project)
+                val server = CognotikAppServer.getServer()
 
                 ApplicationManager.getApplication().invokeLater {
                     progress.text = "Opening browser..."

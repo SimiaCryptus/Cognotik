@@ -87,7 +87,7 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
                 indicator.fraction = 1.0
                 indicator.text = "Opening browser..."
 
-                val server = CognotikAppServer.getServer(e.project)
+                val server = CognotikAppServer.getServer()
 
                 ApplicationManager.getApplication().executeOnPooledThread {
                     Thread.sleep(500)

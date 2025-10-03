@@ -114,7 +114,7 @@ class ReplicateCommitAction : BaseAction() {
             ApplicationManager.getApplication().executeOnPooledThread {
                 Thread.sleep(500)
                 try {
-                    val server = CognotikAppServer.getServer(project)
+                    val server = CognotikAppServer.getServer()
                     val uri = server.server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)

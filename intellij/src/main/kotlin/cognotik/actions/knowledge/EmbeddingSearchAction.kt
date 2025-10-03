@@ -11,7 +11,6 @@ import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.embedding.DistanceType
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -205,7 +204,7 @@ class EmbeddingSearchAction : BaseAction() {
                         showMenubar = false
                     )
 
-                    val server = CognotikAppServer.getServer(event.project)
+                    val server = CognotikAppServer.getServer()
                     CompletableFuture.runAsync({
                         Thread.sleep(500)
                         try {

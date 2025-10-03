@@ -997,7 +997,7 @@ class CustomFileSetPatchAction : BaseAction() {
                         showMenubar = false
                     )
 
-                    val server = CognotikAppServer.getServer(e.project)
+                    val server = CognotikAppServer.getServer()
                     CompletableFuture.runAsync({
                         Thread.sleep(500)
                         try {

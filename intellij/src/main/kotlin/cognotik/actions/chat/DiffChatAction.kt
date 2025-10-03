@@ -149,7 +149,7 @@ class DiffChatAction : BaseAction() {
 
     private fun openBrowserWindow(e: AnActionEvent, session: Session) {
         IntellijAppManager.getApplication().executeOnPooledThread {
-            val server = CognotikAppServer.getServer(e.project)
+            val server = CognotikAppServer.getServer()
             val uri = server.server.uri.resolve("/#$session")
             BaseAction.log.info("Opening browser to $uri")
             browse(uri)
