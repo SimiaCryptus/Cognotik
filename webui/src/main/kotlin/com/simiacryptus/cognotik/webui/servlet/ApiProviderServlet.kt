@@ -10,7 +10,17 @@ import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 
 class ApiProviderServlet : HttpServlet() {
-    
+   data class ApiProvidersResponse(
+       val configuredProviders: List<ProviderInfo>,
+       val availableProviders: List<AvailableProviderInfo>
+   )
+   data class AvailableProviderInfo(
+       val id: String,
+       val name: String,
+       val baseUrl: String,
+       val isConfigured: Boolean
+   )
+   
     data class ProviderInfo(
         val name: String,
         val baseUrl: String,
@@ -35,7 +45,20 @@ class ApiProviderServlet : HttpServlet() {
             
             val userSettings = ApplicationServices.fileApplicationServices()
                 .userSettingsManager.getUserSettings(userinfo)
+           // Get all available providers (including unconfigured)
+           val availableProviders = APIProvider.values().map { provider ->
+               val isConfigured = userSettings.apis.any { 
+                   it.provider?.name == provider.name && !it.key.isNullOrEmpty()
+               }
+               AvailableProviderInfo(
+                   id = provider.name,
+                   name = provider.name,
+                   baseUrl = provider.base,
+                   isConfigured = isConfigured
+               )
+           }
             
+           
             val providers = mutableListOf<ProviderInfo>()
             
             // Get all registered API providers
@@ -93,16 +116,21 @@ class ApiProviderServlet : HttpServlet() {
                     log.error("Error processing provider ${provider.name}", e)
                 }
             }
+           val response = ApiProvidersResponse(
+               configuredProviders = providers,
+               availableProviders = availableProviders
+           )
             
+           
             resp.status = HttpServletResponse.SC_OK
             val acceptHeader = req.getHeader("Accept") ?: ""
             
             if (acceptHeader.contains("application/json")) {
                 resp.contentType = "application/json"
-                resp.writer.write(JsonUtil.toJson(providers))
+               resp.writer.write(JsonUtil.toJson(response))
             } else {
                 resp.contentType = "text/html"
-                resp.writer.write(generateHtmlResponse(providers))
+               resp.writer.write(generateHtmlResponse(response))
             }
             
         } catch (e: Exception) {
@@ -113,8 +141,18 @@ class ApiProviderServlet : HttpServlet() {
         }
     }
     
-    private fun generateHtmlResponse(providers: List<ProviderInfo>): String {
-        val providersHtml = providers.joinToString("\n") { provider ->
+   private fun generateHtmlResponse(response: ApiProvidersResponse): String {
+       val availableProvidersHtml = response.availableProviders.joinToString("\n") { provider ->
+           """
+           <tr>
+               <td>${provider.name}</td>
+               <td>${provider.baseUrl}</td>
+               <td>${if (provider.isConfigured) "✓ Yes" else "✗ No"}</td>
+           </tr>
+           """.trimIndent()
+       }
+       
+       val providersHtml = response.configuredProviders.joinToString("\n") { provider ->
             val modelsHtml = provider.models.joinToString("\n") { model ->
                 """
                 <li>
@@ -156,6 +194,50 @@ class ApiProviderServlet : HttpServlet() {
                     border-radius: 8px;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 }
+               table {
+                   width: 100%;
+                   border-collapse: collapse;
+                   background-color: white;
+                   margin-bottom: 20px;
+                   border-radius: 8px;
+                   overflow: hidden;
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+               }
+               th, td {
+                   padding: 12px;
+                   text-align: left;
+                   border-bottom: 1px solid #eee;
+               }
+               th {
+                   background-color: #0066cc;
+                   color: white;
+                   font-weight: bold;
+               }
+               tr:last-child td {
+                   border-bottom: none;
+               }
+               table {
+                   width: 100%;
+                   border-collapse: collapse;
+                   background-color: white;
+                   margin-bottom: 20px;
+                   border-radius: 8px;
+                   overflow: hidden;
+                   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+               }
+               th, td {
+                   padding: 12px;
+                   text-align: left;
+                   border-bottom: 1px solid #eee;
+               }
+               th {
+                   background-color: #0066cc;
+                   color: white;
+                   font-weight: bold;
+               }
+               tr:last-child td {
+                   border-bottom: none;
+               }
                 h1 {
                     color: #333;
                 }
@@ -181,6 +263,34 @@ class ApiProviderServlet : HttpServlet() {
         </head>
         <body>
             <h1>Available API Providers</h1>
+           <h2>All Available Providers</h2>
+           <table>
+               <thead>
+                   <tr>
+                       <th>Provider Name</th>
+                       <th>Base URL</th>
+                       <th>Configured</th>
+                   </tr>
+               </thead>
+               <tbody>
+                   $availableProvidersHtml
+               </tbody>
+           </table>
+           <h2>Configured Providers with Models</h2>
+           <h2>All Available Providers</h2>
+           <table>
+               <thead>
+                   <tr>
+                       <th>Provider Name</th>
+                       <th>Base URL</th>
+                       <th>Configured</th>
+                   </tr>
+               </thead>
+               <tbody>
+                   $availableProvidersHtml
+               </tbody>
+           </table>
+           <h2>Configured Providers with Models</h2>
             $providersHtml
         </body>
         </html>

@@ -326,6 +326,33 @@ body {
 }
 .remove-tool:hover {
     background-color: #c0392b;
+.custom-providers-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+.custom-provider-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+}
+.custom-provider-group > div {
+    display: flex;
+    flex-direction: column;
+}
+.custom-provider-group label {
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+.custom-provider-group input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.custom-provider-group button {
+    white-space: nowrap;
+}
 }
 
 

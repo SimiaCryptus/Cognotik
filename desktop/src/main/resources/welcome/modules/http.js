@@ -31,7 +31,8 @@ class HttpService {
                     const transformed = {
                         apiKeys: {},
                         apiBase: {},
-                        localTools: parsed.tools || []
+                        localTools: parsed.tools || [],
+                        configuredApis: parsed.apis || []
                     };
                     // Convert apis array to apiKeys object
                     if (Array.isArray(parsed.apis)) {
@@ -113,6 +114,7 @@ class HttpService {
         }
         return response;
     }
+
     async getApiProviders() {
         try {
             const response = await this.fetch('/apiProviders/', {

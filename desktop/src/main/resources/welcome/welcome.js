@@ -250,8 +250,11 @@ loadApiProviders().then(() => {
 async function loadApiProviders() {
     console.log('[loadApiProviders] Loading API providers from server...');
     try {
-        const providers = await httpService.getApiProviders();
-        console.log('[loadApiProviders] Received providers:', providers);
+        const providersResponse = await httpService.getApiProviders();
+        console.log('[loadApiProviders] Received response:', providersResponse);
+
+        const providers = providersResponse.configuredProviders || [];
+        const availableProviders = providersResponse.availableProviders || [];
 
         // Transform the provider data into the format expected by the UI
         apiProviders = providers.map(provider => ({
@@ -274,6 +277,7 @@ async function loadApiProviders() {
 
         console.log('[loadApiProviders] Transformed apiProviders:', apiProviders);
         console.log('[loadApiProviders] Transformed availableModels:', availableModels);
+        console.log('[loadApiProviders] Available providers (all):', availableProviders);
 
         // Update the global constants
         if (typeof API_PROVIDERS !== 'undefined') {
@@ -284,11 +288,17 @@ async function loadApiProviders() {
             Object.keys(AVAILABLE_MODELS).forEach(key => delete AVAILABLE_MODELS[key]);
             Object.assign(AVAILABLE_MODELS, availableModels);
         }
+        // Store available providers globally for use in settings UI
+        window.allAvailableProviders = availableProviders;
+
+
+
     } catch (error) {
         console.error('[loadApiProviders] Error loading API providers:', error);
         // Fall back to empty arrays if loading fails
         apiProviders = [];
         availableModels = {};
+        window.allAvailableProviders = [];
         throw error;
     }
 }
@@ -306,6 +316,28 @@ function loadUserSettings() {
                 const settings = JSON.parse(settingsText);
                 appState.apiSettings = settings;
                 console.log('[loadUserSettings] User settings loaded:', settings);
+                // Ensure all configured APIs from user settings are available in the UI
+                // even if they don't have models in the /apiProviders response
+                if (settings.configuredApis && Array.isArray(settings.configuredApis)) {
+                    settings.configuredApis.forEach(api => {
+                        // Add to apiProviders if not already present
+                        if (!apiProviders.find(p => p.id === api.provider)) {
+                            apiProviders.push({
+                                id: api.provider,
+                                name: api.provider,
+                                baseUrl: api.baseUrl
+                            });
+                            console.log(`[loadUserSettings] Added provider from user settings: ${api.provider}`);
+                        }
+                        // Ensure apiBase is populated
+                        if (!settings.apiBase) {
+                            settings.apiBase = {};
+                        }
+                        if (api.baseUrl) {
+                            settings.apiBase[api.provider] = api.baseUrl;
+                        }
+                    });
+                }
             } catch (error) {
                 console.error('[loadUserSettings] Error parsing settings:', error);
                 appState.apiSettings = {apiKeys: {}, apiBase: {}, localTools: []};
@@ -444,28 +476,156 @@ function populateUserSettings() {
     if (apiKeysContainer) {
         apiKeysContainer.innerHTML = '';
 
-        apiProviders.forEach(provider => {
-            const keyGroup = document.createElement('div');
-            keyGroup.className = 'form-group';
+        // Create a single section for all API providers
+        const apiProvidersTitle = document.createElement('h4');
+        apiProvidersTitle.textContent = 'Configure your API keys for different AI providers:';
+        apiProvidersTitle.style.marginBottom = '15px';
+        apiKeysContainer.appendChild(apiProvidersTitle);
 
-            const label = document.createElement('label');
-            label.textContent = `${provider.name} API Key:`;
-            label.setAttribute('for', `api-key-${provider.id}`);
+        const apiProvidersDescription = document.createElement('p');
+        apiProvidersDescription.textContent = 'Add API keys for the providers you want to use. You can add multiple providers from the available list.';
+        apiProvidersDescription.style.fontSize = '0.9em';
+        apiProvidersDescription.style.color = '#666';
+        apiProvidersDescription.style.marginBottom = '15px';
+        apiKeysContainer.appendChild(apiProvidersDescription);
 
-            const input = document.createElement('input');
-            input.type = 'password';
-            input.id = `api-key-${provider.id}`;
-            input.placeholder = `Enter ${provider.name} API key`;
-            input.value = (appState.apiSettings.apiKeys && appState.apiSettings.apiKeys[provider.id]) || '';
+        const apiProvidersList = document.createElement('div');
+        apiProvidersList.id = 'api-providers-list';
 
-            keyGroup.appendChild(label);
-            keyGroup.appendChild(input);
-            apiKeysContainer.appendChild(keyGroup);
+        // Show existing API keys from appState (includes providers without models)
+        if (appState.apiSettings.apiKeys) {
+            Object.keys(appState.apiSettings.apiKeys).forEach(providerId => {
+                const apiKey = appState.apiSettings.apiKeys[providerId];
+                const providerGroup = createProviderInput(providerId, apiKey || '');
+                apiProvidersList.appendChild(providerGroup);
+            });
+        }
+        // Also show providers from apiBase that might not be in apiKeys yet
+        if (appState.apiSettings.apiBase) {
+            Object.keys(appState.apiSettings.apiBase).forEach(providerId => {
+                // Only add if not already shown from apiKeys
+                if (!appState.apiSettings.apiKeys || !appState.apiSettings.apiKeys[providerId]) {
+                    const providerGroup = createProviderInput(providerId, '');
+                    apiProvidersList.appendChild(providerGroup);
+                }
+            });
+        }
+
+        apiKeysContainer.appendChild(apiProvidersList);
+
+        // Add button to add new provider
+        const addProviderBtn = document.createElement('button');
+        addProviderBtn.className = 'button secondary';
+        addProviderBtn.textContent = '+ Add API Provider';
+        addProviderBtn.style.marginTop = '10px';
+        addProviderBtn.addEventListener('click', () => {
+            const newProviderGroup = createProviderInput('', '');
+            apiProvidersList.appendChild(newProviderGroup);
         });
+        apiKeysContainer.appendChild(addProviderBtn);
     }
 
     // Populate local tools
     populateLocalTools();
+
+    function createProviderInput(providerId, apiKey) {
+        const keyGroup = document.createElement('div');
+        keyGroup.className = 'form-group provider-group';
+        keyGroup.style.display = 'flex';
+        keyGroup.style.gap = '10px';
+        keyGroup.style.alignItems = 'flex-end';
+        keyGroup.style.marginBottom = '10px';
+        const providerSelectGroup = document.createElement('div');
+        providerSelectGroup.style.flex = '1';
+        const providerSelectLabel = document.createElement('label');
+        providerSelectLabel.textContent = 'Provider:';
+        const providerSelect = document.createElement('select');
+        providerSelect.className = 'provider-select';
+        // Add empty option
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = 'Select a provider...';
+        providerSelect.appendChild(emptyOption);
+
+        // Build a comprehensive list of all providers from multiple sources
+        const providersToShow = window.allAvailableProviders || apiProviders;
+        const providerMap = new Map();
+        
+        // Add all available providers
+        providersToShow.forEach(provider => {
+            providerMap.set(provider.id, provider.name);
+        });
+        // Add providers from configuredApis (from user settings)
+        if (appState.apiSettings.configuredApis && Array.isArray(appState.apiSettings.configuredApis)) {
+            appState.apiSettings.configuredApis.forEach(api => {
+                if (!providerMap.has(api.provider)) {
+                    providerMap.set(api.provider, api.provider);
+                }
+            });
+        }
+        
+        
+        // Add providers from saved API keys that might not be in available providers
+        if (appState.apiSettings.apiKeys) {
+            Object.keys(appState.apiSettings.apiKeys).forEach(savedProviderId => {
+                if (!providerMap.has(savedProviderId)) {
+                    providerMap.set(savedProviderId, savedProviderId);
+                }
+            });
+        }
+        // Add providers from apiBase that might not be in available providers
+        if (appState.apiSettings.apiBase) {
+            Object.keys(appState.apiSettings.apiBase).forEach(savedProviderId => {
+                if (!providerMap.has(savedProviderId)) {
+                    providerMap.set(savedProviderId, savedProviderId);
+                }
+            });
+        }
+        // Add providers from configured providers (from /apiProviders response)
+        if (apiProviders && Array.isArray(apiProviders)) {
+            apiProviders.forEach(provider => {
+                if (!providerMap.has(provider.id)) {
+                    providerMap.set(provider.id, provider.name);
+                }
+            });
+        }
+        
+        // Create options from the merged provider map
+        Array.from(providerMap.entries()).sort((a, b) => a[1].localeCompare(b[1])).forEach(([id, name]) => {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = name;
+            if (id === providerId) {
+                option.selected = true;
+            }
+            providerSelect.appendChild(option);
+        });
+
+        providerSelectGroup.appendChild(providerSelectLabel);
+        providerSelectGroup.appendChild(providerSelect);
+        const apiKeyGroup = document.createElement('div');
+        apiKeyGroup.style.flex = '2';
+        const apiKeyLabel = document.createElement('label');
+        apiKeyLabel.textContent = 'API Key:';
+        const apiKeyInput = document.createElement('input');
+        apiKeyInput.type = 'password';
+        apiKeyInput.className = 'provider-key';
+        apiKeyInput.placeholder = 'Enter API key';
+        apiKeyInput.value = apiKey;
+        apiKeyGroup.appendChild(apiKeyLabel);
+        apiKeyGroup.appendChild(apiKeyInput);
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'button secondary';
+        removeBtn.textContent = 'Remove';
+        removeBtn.style.marginBottom = '0';
+        removeBtn.addEventListener('click', () => {
+            keyGroup.remove();
+        });
+        keyGroup.appendChild(providerSelectGroup);
+        keyGroup.appendChild(apiKeyGroup);
+        keyGroup.appendChild(removeBtn);
+        return keyGroup;
+    }
 }
 
 function saveUserSettings() {
@@ -473,10 +633,15 @@ function saveUserSettings() {
 
     // Collect API keys
     const apiKeys = {};
-    apiProviders.forEach(provider => {
-        const input = document.getElementById(`api-key-${provider.id}`);
-        if (input && input.value) {
-            apiKeys[provider.id] = input.value;
+
+    // Collect all provider API keys
+    const providerGroups = document.querySelectorAll('.provider-group');
+    providerGroups.forEach(group => {
+        const selectInput = group.querySelector('.provider-select');
+        const keyInput = group.querySelector('.provider-key');
+        if (selectInput && keyInput && selectInput.value) {
+            // Save even empty keys to preserve provider configuration
+            apiKeys[selectInput.value] = keyInput.value;
         }
     });
 
@@ -536,15 +701,43 @@ function populateTaskSelection() {
         {id: 'Analysis', name: 'Analysis Task', description: 'Analyze code and provide detailed explanations'},
         {id: 'CommandSession', name: 'Command Session Task', description: 'Execute a series of commands in a session'},
         {id: 'CrawlerAgent', name: 'Web Crawler Task', description: 'Crawl and extract information from websites'},
-        {id: 'FileModification', name: 'File Modification Task', description: 'Create or modify files with AI assistance'},
+        {
+            id: 'FileModification',
+            name: 'File Modification Task',
+            description: 'Create or modify files with AI assistance'
+        },
         {id: 'FileSearch', name: 'File Search Task', description: 'Search and analyze files in the project'},
-        {id: 'SelfHealing', name: 'Self-Healing Task', description: 'Automatically fix issues in code based on AI suggestions'},
-        {id: 'RunShellCommand', name: 'Run Shell Command Task', description: 'Execute shell commands and process the output'},
+        {
+            id: 'SelfHealing',
+            name: 'Self-Healing Task',
+            description: 'Automatically fix issues in code based on AI suggestions'
+        },
+        {
+            id: 'RunShellCommand',
+            name: 'Run Shell Command Task',
+            description: 'Execute shell commands and process the output'
+        },
         {id: 'RunCode', name: 'Run Code Task', description: 'Execute code snippets and return the results'},
-        {id: 'SeleniumSession', name: 'Selenium Session Task', description: 'Automate web browser interactions using Selenium'},
-        {id: 'SelfHealing', name: 'Self-Healing Task', description: 'Automatically fix build errors based on AI suggestions'},
-        {id: 'KnowledgeIndexing', name: 'Knowledge Indexing Task', description: 'Index and search knowledge bases for information retrieval'},
-        {id: 'VectorSearch', name: 'Vector Search Task', description: 'Perform vector-based searches for similar items or documents'},
+        {
+            id: 'SeleniumSession',
+            name: 'Selenium Session Task',
+            description: 'Automate web browser interactions using Selenium'
+        },
+        {
+            id: 'SelfHealing',
+            name: 'Self-Healing Task',
+            description: 'Automatically fix build errors based on AI suggestions'
+        },
+        {
+            id: 'KnowledgeIndexing',
+            name: 'Knowledge Indexing Task',
+            description: 'Index and search knowledge bases for information retrieval'
+        },
+        {
+            id: 'VectorSearch',
+            name: 'Vector Search Task',
+            description: 'Perform vector-based searches for similar items or documents'
+        },
     ];
 
     taskTypes.forEach(task => {
