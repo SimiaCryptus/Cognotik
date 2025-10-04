@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -74,7 +75,8 @@ class DocumentedMassPatchAction : BaseAction() {
         )
         SessionProxyServer.chats[session] = DocumentedMassPatchServer(
             config = config,
-            autoApply = config.settings?.autoApply ?: false
+            autoApply = config.settings?.autoApply ?: false,
+            processor = AppSettingsState.instance.processor
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Documented Code Patch",

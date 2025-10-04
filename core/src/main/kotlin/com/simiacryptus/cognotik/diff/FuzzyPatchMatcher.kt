@@ -1,12 +1,10 @@
 package com.simiacryptus.cognotik.diff
 
- import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.ADD
- import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.CONTEXT
- import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.DELETE
- import com.simiacryptus.cognotik.util.LoggerFactory
- import org.apache.commons.text.similarity.LevenshteinDistance
- import kotlin.math.floor
- import kotlin.math.max
+import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher.Companion.LineType.*
+import com.simiacryptus.cognotik.util.LoggerFactory
+import org.apache.commons.text.similarity.LevenshteinDistance
+import kotlin.math.floor
+import kotlin.math.max
 
 open class FuzzyPatchMatcher(
     private val contextSize: Int = DEFAULT_CONTEXT_SIZE,
@@ -16,9 +14,17 @@ open class FuzzyPatchMatcher(
     private val enableFuzzyMatching: Boolean = true,
     private val enableSnippetPatching: Boolean = true,
     private val snippetMatchThreshold: Double = 0.8,
-    private val requireAnchorMatch: Boolean = true
+    private val requireAnchorMatch: Boolean = true,
+    private val enableBracketMatching: Boolean = true,
+    private val bracketPairs: Map<Char, Char> = mapOf('(' to ')', '[' to ']', '{' to '}'),
+    private val bracketChars: Set<Char> = bracketPairs.keys + bracketPairs.values,
+    private val bracketWeights: Map<Char, Int> = mapOf(
+        '(' to 1, ')' to 1,
+        '[' to 1, ']' to 1,
+        '{' to 2, '}' to 2
+    ),
 ) : PatchProcessor {
-
+    override val label: String = "Fuzzy Patch Matcher"
     override val patchFormatPrompt = """
       Response should use one or more code patches in diff format within ```diff code blocks.
       Each diff should be preceded by a header that identifies the file being modified.
@@ -572,14 +578,6 @@ open class FuzzyPatchMatcher(
         if (normalizedSource.isEmpty() && normalizedPatch.isEmpty()) return true
         if (normalizedSource.isEmpty() || normalizedPatch.isEmpty()) return false
 
-        // Check if bracket/paren depths match - important for code structure
-        if (sourcePrev.metrics.parenthesesDepth != patchPrev.metrics.parenthesesDepth ||
-            sourcePrev.metrics.squareBracketsDepth != patchPrev.metrics.squareBracketsDepth ||
-            sourcePrev.metrics.curlyBracesDepth != patchPrev.metrics.curlyBracesDepth
-        ) {
-            return false
-        }
-
         // For markdown, be more strict about matching to avoid false positives
         // Check if lines have similar structure (e.g., both are list items, headers, etc.)
         val sourceIsListItem = sourcePrev.line?.trimStart()?.matches(Regex("^[-*+\\d]+\\.?\\s+.*")) ?: false
@@ -734,26 +732,42 @@ open class FuzzyPatchMatcher(
         log.debug("Starting to calculate line metrics for ${lines.size} lines")
         if (lines.isEmpty()) return
 
-        var currentMetrics = LineMetrics(0, 0, 0)
+        var currentMetrics = LineMetrics(0, 0, 0, 0)
 
         for (lineRecord in lines) {
             // Start from previous line's ending depth
             var parenDepth = currentMetrics.parenthesesDepth
             var squareDepth = currentMetrics.squareBracketsDepth
             var curlyDepth = currentMetrics.curlyBracesDepth
+            var weightedDepth = currentMetrics.weightedBracketDepth
 
-            (lineRecord.line ?: "").forEach { char ->
-                when (char) {
-                    '(' -> parenDepth++
-                    ')' -> parenDepth = max(0, parenDepth - 1)
-                    '[' -> squareDepth++
-                    ']' -> squareDepth = max(0, squareDepth - 1)
-                    '{' -> curlyDepth++
-                    '}' -> curlyDepth = max(0, curlyDepth - 1)
+            if (enableBracketMatching) {
+                (lineRecord.line ?: "").forEach { char ->
+                    if (bracketChars.contains(char)) {
+                        val weight = bracketWeights[char] ?: 1
+                        val isOpening = bracketPairs.containsKey(char)
+                        val isClosing = bracketPairs.containsValue(char)
+
+                        if (isOpening) {
+                            weightedDepth += weight
+                            when (char) {
+                                '(' -> parenDepth++
+                                '[' -> squareDepth++
+                                '{' -> curlyDepth++
+                            }
+                        } else if (isClosing) {
+                            weightedDepth = max(0, weightedDepth - weight)
+                            when (char) {
+                                ')' -> parenDepth = max(0, parenDepth - 1)
+                                ']' -> squareDepth = max(0, squareDepth - 1)
+                                '}' -> curlyDepth = max(0, curlyDepth - 1)
+                            }
+                        }
+                    }
                 }
             }
 
-            currentMetrics = LineMetrics(parenDepth, squareDepth, curlyDepth)
+            currentMetrics = LineMetrics(parenDepth, squareDepth, curlyDepth, weightedDepth)
             lineRecord.metrics = currentMetrics
         }
         log.debug("Finished calculating line metrics")
@@ -906,6 +920,7 @@ open class FuzzyPatchMatcher(
         newSource.addAll(sourceLines.subList(endIndex + 1, sourceLines.size))
         return newSource.joinToString("\n")
     }
+
     companion object : FuzzyPatchMatcher() {
         enum class LineType { CONTEXT, ADD, DELETE }
 
@@ -915,11 +930,37 @@ open class FuzzyPatchMatcher(
         const val LEVENSHTEIN_THRESHOLD_DIVISOR = 4
         const val MIN_LINE_LENGTH_FOR_FUZZY_MATCH = 5
         const val MAX_ITERATION_MULTIPLIER = 10
+        val DEFAULT_BRACKET_CHARS = setOf('(', ')', '[', ']', '{', '}')
+        val DEFAULT_BRACKET_PAIRS = mapOf('(' to ')', '[' to ']', '{' to '}')
+        val DEFAULT_BRACKET_WEIGHTS = mapOf(
+            '(' to 1, ')' to 1,
+            '[' to 1, ']' to 1,
+            '{' to 2, '}' to 2
+        )
+
+        // Preset configurations for different language types
+        val CURLY_BRACE_LANGUAGE_CONFIG = Triple(
+            DEFAULT_BRACKET_CHARS,
+            DEFAULT_BRACKET_PAIRS,
+            DEFAULT_BRACKET_WEIGHTS
+        )
+        val INDENTATION_LANGUAGE_CONFIG = Triple(
+            setOf('(', ')', '[', ']'),  // No curly braces
+            mapOf('(' to ')', '[' to ']'),
+            mapOf('(' to 1, ')' to 1, '[' to 1, ']' to 1)
+        )
+        val NO_BRACKET_CONFIG = Triple(
+            emptySet<Char>(),
+            emptyMap<Char, Char>(),
+            emptyMap<Char, Int>()
+        )
+
 
         data class LineMetrics(
             var parenthesesDepth: Int = 0,
             var squareBracketsDepth: Int = 0,
-            var curlyBracesDepth: Int = 0
+            var curlyBracesDepth: Int = 0,
+            var weightedBracketDepth: Int = 0
         )
 
         data class LineRecord(
@@ -929,7 +970,7 @@ open class FuzzyPatchMatcher(
             var nextLine: LineRecord? = null,
             var matchingLine: LineRecord? = null,
             var type: LineType = CONTEXT,
-            var metrics: LineMetrics = LineMetrics()
+            var metrics: LineMetrics = LineMetrics(0, 0, 0, 0)
         ) {
             override fun toString(): String {
                 val sb = StringBuilder()
@@ -941,7 +982,7 @@ open class FuzzyPatchMatcher(
                 }
                 sb.append(" ")
                 sb.append(line)
-                sb.append(" (${metrics.parenthesesDepth})[${metrics.squareBracketsDepth}]{${metrics.curlyBracesDepth}}")
+                sb.append(" (${metrics.parenthesesDepth})[${metrics.squareBracketsDepth}]{${metrics.curlyBracesDepth}} w:${metrics.weightedBracketDepth}")
                 return sb.toString()
             }
 

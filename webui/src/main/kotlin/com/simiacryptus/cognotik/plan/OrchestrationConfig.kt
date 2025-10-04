@@ -13,6 +13,8 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
@@ -50,6 +52,9 @@ class OrchestrationConfig(
     var maxTasksPerIteration: Int = 3,
     var maxIterations: Int = 10,
 ) {
+
+    @get:JsonIgnore
+    var processor: PatchProcessor = PatchProcessors.Fuzzy
 
     @get:JsonIgnore
     val defaultChatter get() = instance(defaultModel ?: throw IllegalStateException("Default model not set"))

@@ -3,6 +3,7 @@ package cognotik.actions.agent
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
@@ -28,7 +29,8 @@ import kotlin.concurrent.write
 class CustomFileSetPatchServer(
     val config: CustomFileSetPatchAction.Settings,
     val autoApply: Boolean,
-    val outputMode: CustomFileSetPatchAction.OutputMode
+    val outputMode: CustomFileSetPatchAction.OutputMode,
+    val processor: PatchProcessor
 ) : ApplicationServer(
     applicationName = "Custom File Set Patch",
     path = "/customFileSetPatch",
@@ -741,7 +743,8 @@ class CustomFileSetPatchServer(
                     shouldAutoApply = { autoApply },
                     model = AppSettingsState.instance.fastChatClient,
                     defaultFile = fileSet.files.firstOrNull()?.let { (_root?.relativize(it) ?: it).toString() }
-                        ?: "").renderMarkdown)
+                        ?: "",
+                    processor = processor).renderMarkdown)
         } else {
             task.complete("No changes suggested.")
         }
@@ -835,10 +838,10 @@ class CustomFileSetPatchServer(
                                     fileTask.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
                             },
-                            shouldAutoApply = { false },
                             model = AppSettingsState.instance.fastChatClient,
                             defaultFile = fileSet.files.firstOrNull()
-                                ?.let { (_root?.relativize(it) ?: it).toString() } ?: "")
+                                ?.let { (_root?.relativize(it) ?: it).toString() } ?: "",
+                            processor = processor)
                     }
                 }</div>"""
             }

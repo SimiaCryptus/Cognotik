@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -110,6 +110,7 @@ class MultiStepPatchAction : BaseAction() {
                 model = settings.model!!,
                 parsingModel = AppSettingsState.instance.fastChatClient,
                 event = event,
+                processor = AppSettingsState.instance.processor,
             ).start(
                 userMessage = userMessage,
             )
@@ -134,6 +135,7 @@ class MultiStepPatchAction : BaseAction() {
         val model: ChatInterface,
         val parsingModel: ChatInterface,
         val event: AnActionEvent,
+        val processor: PatchProcessor,
     ) {
         val actors = mapOf(
             ActorTypes.DesignActor to ParsedAgent(
@@ -147,7 +149,7 @@ class MultiStepPatchAction : BaseAction() {
                 parsingModel = parsingModel,
             ),
             ActorTypes.TaskCodingActor to ChatAgent(
-                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + PatchProcessors.Fuzzy.patchFormatPrompt,
+                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + processor.patchFormatPrompt,
                 model = model
             ),
         ).map { it.key.name to it.value }.toMap()
@@ -257,6 +259,7 @@ class MultiStepPatchAction : BaseAction() {
                                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                             }
                                         },
+                                        processor = processor,
                                     )
                                 )
                             } catch (e: Exception) {

@@ -5,13 +5,15 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.dsl.builder.*
-import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -38,7 +40,7 @@ class ApplyPatchAction : BaseAction(
 
         virtualFiles.forEach { virtualFile ->
             try {
-                applyPatch(virtualFile, patchContent, project)
+                applyPatch(virtualFile, patchContent, project, AppSettingsState.instance.processor)
             } catch (e: Exception) {
                 Messages.showErrorDialog(
                     project,
@@ -97,10 +99,12 @@ class ApplyPatchAction : BaseAction(
      * @param project The current project
      */
 
-    private fun applyPatch(file: VirtualFile, patchContent: String, project: com.intellij.openapi.project.Project) {
+    private fun applyPatch(
+        file: VirtualFile, patchContent: String, project: Project, processor: PatchProcessor
+    ) {
         WriteCommandAction.runWriteCommandAction(project) {
             val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runWriteCommandAction
-            val newContent = PatchProcessors.Fuzzy.applyPatch(psiFile.text, patchContent)
+            val newContent = processor.applyPatch(psiFile.text, patchContent)
             if (newContent == psiFile.text) {
                 Messages.showWarningDialog(project, "Patch made no changes to ${file.name}", "No Changes")
                 return@runWriteCommandAction

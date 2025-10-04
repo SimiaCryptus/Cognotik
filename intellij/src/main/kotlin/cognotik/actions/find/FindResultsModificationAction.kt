@@ -16,7 +16,6 @@ import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -136,7 +135,7 @@ class FindResultsModificationAction(
                     Your task is to suggest appropriate modifications based on the replacement text provided.
                     Usage locations:
                     """.trimIndent() + usages.joinToString("\n") { "* `${it.presentation.plainText}`" } +
-                            "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + PatchProcessors.Fuzzy.patchFormatPrompt
+                            "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + AppSettingsState.instance.processor.patchFormatPrompt
                 }
                 socketManager.pool.submit {
                     //val api = api.getChildClient(task)
@@ -159,7 +158,8 @@ class FindResultsModificationAction(
                             }
                         },
                         shouldAutoApply = { modificationParams.autoApply },
-                        defaultFile = file?.toFile?.path
+                        defaultFile = file?.toFile?.path,
+                        processor = AppSettingsState.instance.processor
                     )?.apply {
                         task.complete(renderMarkdown(this))
                     }

@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools
 import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -94,6 +95,7 @@ class SelfHealingTask(
                     files = agent.files,
                     model = model,
                     parsingModel = orchestrationConfig.parsingChatter,
+                    processor = orchestrationConfig.processor,
                 ).run(
                     task = task, model = model
                 ).apply {

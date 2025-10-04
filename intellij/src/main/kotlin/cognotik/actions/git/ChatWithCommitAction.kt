@@ -9,7 +9,6 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -55,7 +54,7 @@ class ChatWithCommitAction : AnAction() {
                             "\n",
                             "\n  "
                         )
-                        val diff = PatchProcessors.Fuzzy.generatePatch(before, after)
+                        val diff = AppSettingsState.instance.processor.generatePatch(before, after)
                         "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
                     }
 

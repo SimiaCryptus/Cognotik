@@ -121,7 +121,8 @@ class CommandAutofixAction : BaseAction() {
                     },
                     parsingModel = AppSettingsState.instance.fastChatClient.getChildClient().apply {
                         budget = settingsUI.apiBudgetField.value as Double
-                    }
+                    },
+                    processor = AppSettingsState.instance.processor
                 )
                 val session = Session.newGlobalID()
                 SessionProxyServer.chats[session] = patchApp

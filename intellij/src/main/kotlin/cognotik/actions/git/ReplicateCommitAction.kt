@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -162,7 +161,7 @@ class ReplicateCommitAction : BaseAction() {
                     "\n",
                     "\n  "
                 )
-                val diff = PatchProcessors.Fuzzy.generatePatch(before, after)
+                val diff = AppSettingsState.instance.processor.generatePatch(before, after)
                 "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
             } ?: "No changes found"
     }
@@ -257,7 +256,7 @@ class ReplicateCommitAction : BaseAction() {
 
                   You will be answering questions about the following code:
 
-                  """.trimIndent() + codeSummary + "\n" + { PatchProcessors.Fuzzy.patchFormatPrompt } +
+                  """.trimIndent() + codeSummary + "\n" + { AppSettingsState.instance.processor.patchFormatPrompt } +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
                             model = AppSettingsState.instance.smartChatClient
                         ).answer(
@@ -282,6 +281,7 @@ class ReplicateCommitAction : BaseAction() {
                                     task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
                             },
+                            processor = AppSettingsState.instance.processor,
                         )
                         task.add(renderMarkdown(markdown))
                         task.placeholder

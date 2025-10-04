@@ -2,6 +2,8 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -18,7 +20,14 @@ class CmdPatchApp(
     val files: Array<out File>?,
     model: ChatInterface,
     parsingModel: ChatInterface,
-) : PatchApp(root.toFile(), settings, model, parsingModel = parsingModel) {
+    processor: PatchProcessor,
+) : PatchApp(
+    root.toFile(),
+    settings,
+    model,
+    parsingModel = parsingModel,
+    processor = processor,
+) {
 
     companion object {
         private val log = LoggerFactory.getLogger(CmdPatchApp::class.java)

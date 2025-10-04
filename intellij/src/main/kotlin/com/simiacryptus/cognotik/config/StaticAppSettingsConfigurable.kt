@@ -1,9 +1,11 @@
 package com.simiacryptus.cognotik.config
 
-import com.intellij.util.xmlb.XmlSerializerUtil
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.platform.ApplicationServices
+ import com.intellij.util.xmlb.XmlSerializerUtil
+ import com.simiacryptus.cognotik.diff.PatchProcessor
+ import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.diff.PatchProcessors
+ import com.simiacryptus.cognotik.models.APIProvider
+ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -50,6 +52,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Embedding Model:"))
                         add(component.embeddingModel)
+                    })
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("Patch Processor:"))
+                        add(component.patchProcessor)
                     })
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Temperature:"))
@@ -437,6 +443,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.embeddingModel.selectedItem = settings.embeddingModel
             component.shellCommand.text = settings.shellCommand
             component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
+            component.patchProcessor.selectedItem = settings.processor.label
             component.setExecutables(settings.executables ?: emptySet())
             log.debug("Successfully wrote settings to UI components")
         } catch (e: Exception) {
@@ -493,6 +500,18 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             }
             settings.shellCommand = component.shellCommand.text
             settings.showWelcomeScreen = component.showWelcomeScreen.isSelected
+            settings.processor = component.patchProcessor.selectedItem?.let {
+                when (it) {
+                    is String -> try {
+                        PatchProcessors.valueOf(it)
+                    } catch (e: IllegalArgumentException) {
+                        log.warn("Unknown patch processor: $it, defaulting to Fuzzy")
+                        PatchProcessors.Fuzzy
+                    }
+                    is PatchProcessor -> it
+                    else -> PatchProcessors.Fuzzy
+                } as? PatchProcessors ?: PatchProcessors.Fuzzy
+            } ?: PatchProcessors.Fuzzy
 
             val tableModel = component.apis.model as DefaultTableModel
             log.debug("Reading API keys from table with ${tableModel.rowCount} rows")

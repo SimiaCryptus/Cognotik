@@ -51,7 +51,8 @@ class ValidateCodeAction : BaseAction() {
                     settings = settings,
                     files = files.map { it.toFile }.toTypedArray(),
                     model = AppSettingsState.instance.smartChatClient,
-                    parsingModel = AppSettingsState.instance.fastChatClient
+                    parsingModel = AppSettingsState.instance.fastChatClient,
+                    processor = AppSettingsState.instance.processor
                 )
 
                 SessionProxyServer.chats[session] = patchApp

@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -15,7 +16,8 @@ class ValidationPatchApp(
     val files: Array<out File>?,
     model: ChatInterface,
     parsingModel: ChatInterface,
-) : PatchApp(root, settings, model, parsingModel) {
+    processor: PatchProcessor,
+) : PatchApp(root, settings, model, parsingModel, processor = processor) {
 
     companion object {
         private val log = LoggerFactory.getLogger(ValidationPatchApp::class.java)

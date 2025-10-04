@@ -15,7 +15,6 @@ package cognotik.actions.chat
  import com.simiacryptus.cognotik.platform.ApplicationServices
  import com.simiacryptus.cognotik.platform.Session
  import com.simiacryptus.cognotik.util.*
- import com.simiacryptus.cognotik.util.BrowseUtil
  import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
  import com.simiacryptus.cognotik.webui.application.AppInfoData
  import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -154,6 +153,7 @@ class MultiCodeChatAction : BaseAction() {
                             task.complete("<a href='${"fileIndex/$sessionId/$path"}'>$path</a> Updated")
                         }
                     },
+                    processor = AppSettingsState.instance.processor,
                 )
             }
         }</div>"""

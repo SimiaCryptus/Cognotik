@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -28,7 +29,8 @@ abstract class PatchApp(
     val model: ChatInterface,
     val parsingModel: ChatInterface,
     private val promptPrefix: String = """The following command was run and produced an error:""",
-) : ApplicationServer(
+    val processor: PatchProcessor,
+    ) : ApplicationServer(
     applicationName = "Magic Code Fixer",
     path = "/fixCmd",
     showMenubar = false,
@@ -514,7 +516,7 @@ abstract class PatchApp(
         You are a helpful AI that helps people with coding.
         You will be answering questions about the following code:
         $summary
-        ${PatchProcessors.Fuzzy.patchFormatPrompt}
+        ${processor.patchFormatPrompt}
         If needed, new files can be created by using code blocks labeled with the filename in the same manner.
         Note: Ignore any "/* Error: ... */" comments when generating patches - these are just for reference.
         """.trimIndent(),
@@ -531,6 +533,7 @@ abstract class PatchApp(
         }
         log.info("Received fix response (${fixResponse.length} chars)")
         val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
+            self = task.manager,
             root = root.toPath(),
             response = fixResponse,
             shouldAutoApply = { path ->
@@ -551,7 +554,7 @@ abstract class PatchApp(
                 }
             },
             model = model,
-            self = task.manager
+            processor = processor
         )
         log.info("Instrumented file diffs with apply links")
         task.verbose(

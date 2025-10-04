@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -206,7 +206,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             },
                             shouldAutoApply = { orchestrationConfig.autoFix },
                             model = chatInterface,
-                            defaultFile = defaultFile
+                            defaultFile = defaultFile,
+                            orchestrationConfig.processor
                         ) + "\n\n## Auto-applied changes"
                     }
                     task.complete(markdown)
@@ -224,6 +225,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             },
                             model = chatInterface,
                             defaultFile = defaultFile,
+                            processor = orchestrationConfig.processor,
                         ) + acceptButtonFooter(task.manager) {
                             task.complete()
                             semaphore.release()

@@ -18,8 +18,8 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
@@ -241,6 +241,7 @@ class AnalyzeProblemAction : AnAction() {
                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                             }
                         },
+                        processor = AppSettingsState.instance.processor,
                     )
                 )
             }</div>"

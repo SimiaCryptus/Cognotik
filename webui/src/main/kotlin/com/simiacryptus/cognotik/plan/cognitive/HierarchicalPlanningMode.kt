@@ -212,7 +212,7 @@ open class HierarchicalPlanningMode(
                 val future = processor.submit {
                     executeTask(
                         t.id, t, executionUiTask, coordinator, this@HierarchicalPlanningMode.getParsedActor(
-                            t, coordinator, planningChatInterface
+                            t, planningChatInterface
                         )
                     )
                 }
@@ -488,7 +488,6 @@ open class HierarchicalPlanningMode(
                     t.parentGoalId, t.id
                 ), // Pass focused context
             ).obj
-            val result1 = StringBuilder()
             val planTask = answer.tasks?.firstOrNull()
             logToSession("Resolved task for Task ID ${t.id}\n```json\n${planTask?.toJson() ?: "None"}\n```\n")
             if (planTask == null) {
@@ -506,8 +505,7 @@ open class HierarchicalPlanningMode(
                 task = task,
                 resultFn = {
                     logToSession("Completed task for Task ID ${t.id}")
-                    result1.append(it)
-                    t.result = result1.toString()
+                    t.result = it
                     t.status = TaskStatus.COMPLETED
                     semaphore.release()
                 }, // Capture task output
@@ -539,7 +537,7 @@ open class HierarchicalPlanningMode(
     }
 
     private fun getParsedActor(
-        t: Task, coordinator: TaskOrchestrator, chatInterface: ChatInterface
+        t: Task, chatInterface: ChatInterface
     ): ParsedAgent<Tasks> {
         val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
         return ParsedAgent(
@@ -755,8 +753,38 @@ open class HierarchicalPlanningMode(
     )
 
 
-    private fun updateAllStatuses() {
-        var changed: Boolean
+private fun updateAllStatuses() {
+        var changed: Boolean = false
+        val circularDependencies = detectCircularDependencies()
+        if (circularDependencies.isNotEmpty()) {
+            logToSession("Circular dependencies detected. Marking affected items as completed to break deadlock.")
+            circularDependencies.forEach { id ->
+                when {
+                    goalTree.containsKey(id) -> {
+                        val goal = goalTree[id]!!
+                        if (goal.status != GoalStatus.COMPLETED && goal.status != GoalStatus.BLOCKED) {
+                            goal.status = GoalStatus.COMPLETED
+                            goal.result = "Marked as completed due to circular dependency deadlock"
+                            logToSession("Goal ${goal.id} (${goal.description}) marked as completed due to circular dependency")
+                            changed = true
+                        }
+                    }
+                    taskMap.containsKey(id) -> {
+                        val task = taskMap[id]!!
+                        if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.FAILED) {
+                            task.status = TaskStatus.COMPLETED
+                            task.result = "Marked as completed due to circular dependency deadlock"
+                            logToSession("Task ${task.id} (${task.description}) marked as completed due to circular dependency")
+                            changed = true
+                        }
+                    }
+                }
+            }
+            if (changed) {
+                debouncedUpdateGoalTreeUI()
+            }
+        }
+        
         do {
             val initialTaskStatuses = taskMap.mapValues { it.value.status }
             val initialGoalStatuses = goalTree.mapValues { it.value.status }
@@ -837,11 +865,46 @@ open class HierarchicalPlanningMode(
         }
     }
 
-    private fun areDependenciesMet(item: Task): Boolean {
+private fun areDependenciesMet(item: Task): Boolean {
         if (item.dependencies?.isEmpty() != false) return true
         return item.dependencies.all { depId ->
             (goalTree[depId]?.status == GoalStatus.COMPLETED) || (taskMap[depId]?.status == TaskStatus.COMPLETED) // Dependency can be a Goal or a Task
         }
+    }
+    private fun detectCircularDependencies(): Set<String> {
+        val circularItems = mutableSetOf<String>()
+        val allItems = goalTree.keys + taskMap.keys
+        fun hasCycle(id: String, visited: MutableSet<String>, recursionStack: MutableSet<String>): Boolean {
+            if (recursionStack.contains(id)) {
+                // Found a cycle - add all items in the recursion stack
+                circularItems.addAll(recursionStack)
+                return true
+            }
+            if (visited.contains(id)) {
+                return false
+            }
+            visited.add(id)
+            recursionStack.add(id)
+            val dependencies = when {
+                goalTree.containsKey(id) -> goalTree[id]?.dependencies ?: emptyList()
+                taskMap.containsKey(id) -> taskMap[id]?.dependencies ?: emptyList()
+                else -> emptyList()
+            }
+            for (depId in dependencies) {
+                if (hasCycle(depId, visited, recursionStack)) {
+                    return true
+                }
+            }
+            recursionStack.remove(id)
+            return false
+        }
+        val visited = mutableSetOf<String>()
+        for (id in allItems) {
+            if (!visited.contains(id)) {
+                hasCycle(id, visited, mutableSetOf())
+            }
+        }
+        return circularItems
     }
 
 
@@ -969,7 +1032,7 @@ open class HierarchicalPlanningMode(
         return contextLines
     }
 
-    fun contextData(focusGoalId: String?, focusTaskId: String?): List<String> {
+fun contextData(focusGoalId: String?, focusTaskId: String?): List<String> {
         val contextLines = mutableListOf<String>()
         contextLines.add("Current Goal-Oriented Plan State:")
         if (focusGoalId != null || focusTaskId != null) {
@@ -980,7 +1043,12 @@ open class HierarchicalPlanningMode(
         }
 
         val llmContextSb = StringBuilder()
-        fun renderNodeForLlm(goal: Goal, indent: Int) {
+        fun renderNodeForLlm(goal: Goal, indent: Int, visited: MutableSet<String>) {
+            if (!visited.add(goal.id)) {
+                // Already visited this goal, prevent infinite recursion
+                llmContextSb.append("${"  ".repeat(indent)}- G(${goal.id}): ... (cycle detected or already rendered)\n")
+                return
+            }
             val goalDeps = goal.dependencies?.joinToString(",")?.let {
                 when (it) {
                     "" -> ""
@@ -1001,13 +1069,13 @@ open class HierarchicalPlanningMode(
                 llmContextSb.append("${"  ".repeat(indent + 1)}- T(${t.id}): ${t.description ?: "N/A"} [${t.status}] $taskDeps\n")
             }
             goal.subgoals?.mapNotNull { goalTree[it.id] }?.forEach { subGoal ->
-                renderNodeForLlm(subGoal, indent + 1)
+                renderNodeForLlm(subGoal, indent + 1, visited)
             }
         }
 
         val rootsForLlm = goalTree.values.filter { it.parentGoalId == null || !goalTree.containsKey(it.parentGoalId) }
             .sortedBy { it.id } // Consider nodes without known parents as roots
-        rootsForLlm.forEach { renderNodeForLlm(it, 0) }
+        rootsForLlm.forEach { renderNodeForLlm(it, 0, mutableSetOf()) }
         contextLines.add(llmContextSb.toString())
         return contextLines
     }

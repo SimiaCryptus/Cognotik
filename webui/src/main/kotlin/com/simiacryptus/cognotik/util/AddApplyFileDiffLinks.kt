@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
@@ -15,7 +16,7 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.io.path.readText
 
-open class AddApplyFileDiffLinks {
+open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
 
     companion object {
         var loggingEnabled = { false }
@@ -76,9 +77,10 @@ open class AddApplyFileDiffLinks {
             shouldAutoApply: (Path) -> Boolean = { false },
             model: ChatInterface? = null,
             defaultFile: String? = null,
+            processor: PatchProcessor,
         ): String {
             log.debug("Instrumenting file diffs for root: {}", root)
-            return AddApplyFileDiffLinks().instrument(
+            return AddApplyFileDiffLinks(processor).instrument(
                 self = self,
                 root = root,
                 response = response,
@@ -335,10 +337,10 @@ open class AddApplyFileDiffLinks {
         val applydiffTask = ui.newTask(false)
         lateinit var hrefLink: StringBuilder
 
-        val apply = diffApplier.apply(prevCode, "```diff\n$diffVal\n```", filename)
+        val apply = diffApplier.apply(prevCode, "```diff\n$diffVal\n```", filename, processor)
         var newCode = apply.patchResult
         val echoDiff = try {
-            PatchProcessors.Fuzzy.generatePatch(prevCode, newCode.newCode)
+            processor.generatePatch(prevCode, newCode.newCode)
         } catch (e: Throwable) {
             "\n```\n${e.stackTraceToString()}\n```\n".renderMarkdown()
         }
@@ -406,7 +408,7 @@ open class AddApplyFileDiffLinks {
                 isApplied = true
                 val startTime = Instant.now()
                 originalCode = load(filepath)
-                newCode = diffApplier.apply(originalCode, "```diff\n$diffVal\n```", null).patchResult
+                newCode = diffApplier.apply(originalCode, "```diff\n$diffVal\n```", processor = processor).patchResult
                 filepath.toFile().writeText(newCode.newCode, Charsets.UTF_8)
                 handle(mapOf(relativize to newCode.newCode))
                 logFileOperation(
