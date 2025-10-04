@@ -107,11 +107,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).distinct().size == 1) {
             ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
         } else {
+            resultFn("CONFIGURATION ERROR: No input files specified")
             null
         }
 
         val semaphore = Semaphore(0)
-        val onComplete = { semaphore.release() }
         val completionNotes = mutableListOf<String>()
         Retryable(task = task) {
             val task = task.manager.newTask(false)
@@ -194,7 +194,6 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     )).filter { it.isNotBlank() }
                 )
                 if (orchestrationConfig.autoFix) {
-                    onComplete()
                     val markdown = renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
                             task.manager,
@@ -211,6 +210,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         ) + "\n\n## Auto-applied changes"
                     }
                     task.complete(markdown)
+                    semaphore.release()
                 } else {
                     task.complete(renderMarkdown(codeResult, ui = task.manager) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
@@ -226,7 +226,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             defaultFile = defaultFile,
                         ) + acceptButtonFooter(task.manager) {
                             task.complete()
-                            onComplete()
+                            semaphore.release()
                         }
                     })
                 }

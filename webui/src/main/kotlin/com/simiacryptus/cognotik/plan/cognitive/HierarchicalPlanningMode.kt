@@ -50,8 +50,7 @@ open class HierarchicalPlanningMode(
         sessionLogTask?.complete(message.renderMarkdown())
     }
 
-    val executor: ImmediateExecutorService = ui.pool ?: throw IllegalStateException("SocketManager or its pool is null")
-    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(executor, maxConcurrency)
+    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(ui.pool, maxConcurrency)
 
     override fun initialize() {
         log.debug("Initializing GoalOrientedMode")
@@ -483,6 +482,7 @@ open class HierarchicalPlanningMode(
         return try {
             log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
             task.add("Starting execution of task: ${t.description}".renderMarkdown())
+            task.verbose("Task Details:\n```json\n${t.toJson()}\n```\n".renderMarkdown())
             val answer = actor.answer(
                 listOf(t.description ?: "") + contextData(
                     t.parentGoalId, t.id
@@ -562,7 +562,8 @@ open class HierarchicalPlanningMode(
             describer = TaskContextYamlDescriber(orchestrationConfig),
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                 "${taskType.name}:\n  ${
-                    TaskContextYamlDescriber(orchestrationConfig).describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                    TaskContextYamlDescriber(orchestrationConfig).describe(taskType.taskDataClass).trim().trimIndent()
+                        .indent("  ")
                 }".trim()
             })
         )
@@ -843,54 +844,67 @@ open class HierarchicalPlanningMode(
         }
     }
 
+
     private fun renderNode(goal: Goal, visited: MutableSet<String>): String {
-        val nodeSb = StringBuilder()
-        val statusEmoji = when (goal.status) {
-            GoalStatus.ACTIVE -> "🟢 Active"
-            GoalStatus.BLOCKED -> "🧱 Blocked"
-            GoalStatus.COMPLETED -> "✅ Completed"
-            GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
-            null -> "❓ Unknown"
+        val threadVisited = renderingInProgress.get()
+        if (goal.id in threadVisited) {
+            // Already rendering this goal in the current call stack, return a reference to avoid infinite recursion
+            return "- ⚠️ **Circular reference detected: ${goal.description ?: "N/A"} (ID: ${goal.id})**\n"
         }
-        val depsString =
-            (if (goal.dependencies?.isEmpty() == true) "none" else goal.dependencies?.joinToString(", ") { "Goal ${it}" }).let {
-                when (it) {
-                    "" -> ""
-                    else -> "Deps: $it"
-                }
-            }
-        nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let { it ->
-            goalTasks[goal.id]?.manager?.linkToSession(
-                it
-            ) ?: it
-        } + "   " + depsString)
-        nodeSb.append("\n")
-        goal.tasks?.mapNotNull { taskMap[it.id] }?.forEach { t ->
-            val taskStatusEmoji = when (t.status) {
-                TaskStatus.PENDING -> "📝 Pending"
-                TaskStatus.RUNNING -> "🏃 Running"
-                TaskStatus.COMPLETED -> "✔️ Completed"
-                TaskStatus.FAILED -> "❌ Failed"
-                TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
+        threadVisited.add(goal.id)
+        try {
+            val nodeSb = StringBuilder()
+            val statusEmoji = when (goal.status) {
+                GoalStatus.ACTIVE -> "🟢 Active"
+                GoalStatus.BLOCKED -> "🧱 Blocked"
+                GoalStatus.COMPLETED -> "✅ Completed"
+                GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
                 null -> "❓ Unknown"
             }
-            val string = if (t.dependencies?.isEmpty() == true) "none" else t.dependencies?.joinToString(", ") { dep ->
-                idToString(dep)
-            }
-            val text = "Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id})"
-            nodeSb.append(
-                "  - ${taskTasks[t.id]?.manager?.linkToSession(text) ?: text}" + "    " + when (string) {
-                    "" -> ""
-                    null -> ""
-                    else -> "Deps: $string"
+            val depsString =
+                (if (goal.dependencies?.isEmpty() == true) "none" else goal.dependencies?.joinToString(", ") { "Goal ${it}" }).let {
+                    when (it) {
+                        "" -> ""
+                        else -> "Deps: $it"
+                    }
                 }
-            )
+            nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let { it ->
+                goalTasks[goal.id]?.manager?.linkToSession(
+                    it
+                ) ?: it
+            } + "   " + depsString)
             nodeSb.append("\n")
+            goal.tasks?.mapNotNull { taskMap[it.id] }?.forEach { t ->
+                val taskStatusEmoji = when (t.status) {
+                    TaskStatus.PENDING -> "📝 Pending"
+                    TaskStatus.RUNNING -> "🏃 Running"
+                    TaskStatus.COMPLETED -> "✔️ Completed"
+                    TaskStatus.FAILED -> "❌ Failed"
+                    TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
+                    null -> "❓ Unknown"
+                }
+                val string =
+                    if (t.dependencies?.isEmpty() == true) "none" else t.dependencies?.joinToString(", ") { dep ->
+                        idToString(dep)
+                    }
+                val text = "Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id})"
+                nodeSb.append(
+                    "  - ${taskTasks[t.id]?.manager?.linkToSession(text) ?: text}" + "    " + when (string) {
+                        "" -> ""
+                        null -> ""
+                        else -> "Deps: $string"
+                    }
+                )
+                nodeSb.append("\n")
+            }
+            goal.subgoals?.mapNotNull { goalTree[it.id] }?.joinToString("\n") { subGoal ->
+                renderNode(subGoal, visited).trim().indent("  ")
+            }.apply { nodeSb.append(this + "\n") }
+            return nodeSb.toString()
+        } finally {
+            // Remove from thread-local set when done rendering this node to allow it to be rendered in other branches
+            threadVisited.remove(goal.id)
         }
-        goal.subgoals?.mapNotNull { goalTree[it.id] }?.joinToString("\n") { subGoal ->
-            renderNode(subGoal, visited).trim().indent("  ")
-        }.apply { nodeSb.append(this + "\n") }
-        return nodeSb.toString()
     }
 
     private fun idToString(dep: String): CharSequence =
@@ -898,8 +912,9 @@ open class HierarchicalPlanningMode(
         else "Task ${taskTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
 
     private fun renderGoalTreeText(goals: List<Goal>): String {
+
         val sb = StringBuilder("### Goal Tree Status\n")
-        val rootGoalIds = goals.mapNotNull { it.id }.toSet()
+        val rootGoalIds = goals.map { it.id }.toSet()
         val roots =
             goals.filter { it.parentGoalId == null || !rootGoalIds.contains(it.parentGoalId) }.sortedBy { it.id }
         if (roots.isEmpty() && goals.isNotEmpty()) {
@@ -909,10 +924,10 @@ open class HierarchicalPlanningMode(
                         it, mutableSetOf()
                     )
                 )
-            } // Start new traversal for each potential root in fallback
+            }
         } else {
             roots.sortedBy { it.id }
-                .forEach { sb.append(renderNode(it, mutableSetOf())) } // Start new traversal for each root
+                .forEach { sb.append(renderNode(it, mutableSetOf())) }
         }
         return sb.toString()
     }
@@ -1093,5 +1108,8 @@ open class HierarchicalPlanningMode(
         ) = HierarchicalPlanningMode(ui, orchestrationConfig, session, user)
 
         private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
+
+        // ThreadLocal to track visited nodes during rendering to prevent infinite recursion
+        private val renderingInProgress = ThreadLocal.withInitial { mutableSetOf<String>() }
     }
 }
