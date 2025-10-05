@@ -38,11 +38,12 @@ class OrchestrationConfig(
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
     val taskSettings: MutableMap<String, TaskTypeConfig> = TaskType.values().filter {
-        false
+        false // Do not auto-enable any tasks
     }.associateWith { taskType ->
-        TaskTypeConfig(
-            taskType.name, taskType.description
-        )
+        taskType.newSettings()?.let {
+            it.name = taskType.description
+            it
+        } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
     }.mapKeys { it.key.name }.toMutableMap(),
     var autoFix: Boolean = false,
     val env: Map<String, String>? = mapOf(),
@@ -82,7 +83,10 @@ class OrchestrationConfig(
         }
 
     fun getTaskSettings(taskType: TaskType<*, *>): TaskTypeConfig =
-        taskSettings[taskType.name] ?: TaskTypeConfig(taskType.name)
+        taskSettings[taskType.name] ?: taskType.newSettings() ?.also {
+            it.name = taskType.description
+            taskSettings[taskType.name] = it
+        } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
 
     fun planningActor(
         describer: TypeDescriber,
@@ -134,7 +138,6 @@ class OrchestrationConfig(
         maxIterations = maxIterations,
         cognitiveMode = cognitiveMode,
     )
-
 
 
     data class TaskBreakdownResult(
@@ -207,7 +210,8 @@ class OrchestrationConfig(
             } + "\n")
         )
 
-        @JsonIgnore var instanceFn: ((ApiChatModel) -> ChatInterface)? = null
+        @JsonIgnore
+        var instanceFn: ((ApiChatModel) -> ChatInterface)? = null
     }
 
     /**

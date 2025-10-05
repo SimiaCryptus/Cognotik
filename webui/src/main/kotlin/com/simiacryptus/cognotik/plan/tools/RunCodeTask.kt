@@ -83,7 +83,7 @@ class RunCodeTask(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
-            ui = task.manager,
+            ui = task.ui,
             interpreter = codeRuntime::class as KClass<CodeRuntime>,
             symbols = mapOf<String, Any>(
                 "env" to (orchestrationConfig.env ?: emptyMap()),

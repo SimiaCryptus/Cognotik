@@ -12,6 +12,7 @@ import com.intellij.ui.components.JBTextArea
  import com.simiacryptus.cognotik.interpreter.CodeRuntimes
  import com.simiacryptus.cognotik.plan.TaskType
  import com.simiacryptus.cognotik.plan.TaskTypeConfig
+ import com.simiacryptus.cognotik.plan.newSettings
  import com.simiacryptus.cognotik.plan.tools.RunCodeTask
  import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
  import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
@@ -295,12 +296,12 @@ import javax.swing.JCheckBox
     fun getConfig(): TaskTypeConfig {
         val selectedModelName = modelCombo.selectedItem as? String
         val selectedModel = availableModels.find { it.modelName == selectedModelName }
-        
-        val baseConfig = TaskTypeConfig(
-            task_type = taskType.name,
-            name = configNameField.text.trim(),
-            model = selectedModel?.toApiChatModel()
-        )
+        val baseConfig = taskType.newSettings().let {
+            it?.task_type = taskType.name
+            it?.name = configNameField.text.trim()
+            it?.model = selectedModel?.toApiChatModel()
+            it
+        } ?: throw IllegalStateException("Failed to create base config for task type ${taskType.name}")
         // Apply task-specific configuration
         return applyTaskSpecificConfig(baseConfig)
     }

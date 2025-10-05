@@ -201,7 +201,7 @@ class DataTableCompilationTask(
             task.add(
                 MarkdownUtil.renderMarkdown(
                     "Processing row ${progressCurrent}/${progressTotal}: ${row.id}",
-                    ui = task.manager
+                    ui = task.ui
                 )
             )
             val rowDataResponse = ParsedAgent(

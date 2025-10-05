@@ -18,7 +18,7 @@ open class SessionTask(
     val messageID: String,
     private var buffer: MutableList<StringBuilder> = mutableListOf(),
     private val spinner: String = SessionTask.spinner,
-    val manager: SocketManager
+    val ui: SocketManager
 ) {
 
     val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
@@ -43,7 +43,7 @@ open class SessionTask(
 
     protected open fun send(
         html: String = currentText
-    ) = manager.send(html)
+    ) = ui.send(html)
 
     @Description("Saves the given data to a file and returns the url of the file.")
     open fun saveFile(
@@ -61,7 +61,7 @@ open class SessionTask(
 
         log.debug("Saving file at path: {}", relativePath)
 
-        manager.dataStorage?.getSessionDir(manager.owner, manager.sessionId)?.let { dir ->
+        ui.dataStorage?.getSessionDir(ui.owner, ui.sessionId)?.let { dir ->
             if (!dir.exists() && !dir.mkdirs()) {
                 throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
             }
@@ -74,7 +74,7 @@ open class SessionTask(
             resolve.writeBytes(data)
             log.info("Successfully saved file: {} ({} bytes)", relativePath, data.size)
         }
-        return "fileIndex/${manager.sessionId}/$relativePath"
+        return "fileIndex/${ui.sessionId}/$relativePath"
     }
 
     @Description("Adds a message to the task output.")
@@ -251,7 +251,7 @@ open class SessionTask(
 
             else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
 
-        }.renderMarkdown(), showSpinner, tag, "error", manager
+        }.renderMarkdown(), showSpinner, tag, "error", ui
     )
 
     @Description("Displays a final message in the task output. This will hide the spinner.")
@@ -275,7 +275,7 @@ open class SessionTask(
     ) = add("""<img src="${saveFile("images/${Session.long64()}.png", image.toPng())}" />""")
 
     fun newSession(session: Session = Session.newGlobalID(), appname: String = session.toString()): SocketManager {
-        val linkedManager = manager.createLinkedManager(session)
+        val linkedManager = ui.createLinkedManager(session)
         SessionProxyServer.agents[session] = linkedManager
         SessionProxyServer.appInfos[session] = AppInfoData(
             applicationName = appname,
@@ -292,7 +292,7 @@ open class SessionTask(
         renderFn: (String) -> String = { """Processing ${it}...<br/>""" },
     ): SessionTask {
         val task = newSession(appname = label).newTask()
-        add(renderFn(task.manager.linkToSession(label)))!!
+        add(renderFn(task.ui.linkToSession(label)))!!
         return task
     }
 
@@ -315,9 +315,9 @@ open class SessionTask(
         require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
         log.debug("Creating file at path: {}", relativePath)
         return Pair(
-            "fileIndex/${manager.sessionId}/$relativePath", manager.dataStorage?.getSessionDir(
-                manager.owner,
-                manager.sessionId
+            "fileIndex/${ui.sessionId}/$relativePath", ui.dataStorage?.getSessionDir(
+                ui.owner,
+                ui.sessionId
             )?.let { dir ->
                 if (!dir.exists() && !dir.mkdirs()) {
                     throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
@@ -343,7 +343,7 @@ open class SessionTask(
     ): String {
         log.debug("Creating href link with text: {}", linkText)
         val operationID = randomID()
-        manager.linkTriggers[operationID] = handler
+        ui.linkTriggers[operationID] = handler
         return """<a class="$classname" data-id="$operationID"${
             when {
                 id != null -> """ id="$id""""

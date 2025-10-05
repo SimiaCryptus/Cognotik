@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.actors.ParsedResponse
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -273,7 +272,7 @@ abstract class PatchApp(
             return outputResult
         }
 
-        val fixTask = task.manager.newTask(false).apply { tabs["Fix"] = placeholder }
+        val fixTask = task.ui.newTask(false).apply { tabs["Fix"] = placeholder }
         try {
             log.info("Creating child API client for fix task")
             val plan = if (outputResult.errors == null) {
@@ -353,8 +352,8 @@ abstract class PatchApp(
         filteredErrors.groupBy { it.message }
             .map { (msg, errors) ->
                 log.info("Processing error group: $msg with ${errors.size} instances")
-                task.manager.pool.submit {
-                    val task = task.manager.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
+                task.ui.pool.submit {
+                    val task = task.ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
                     errors.forEach { error ->
                         log.info("Processing individual error: ${error.message}")
                         task.header("Processing error: $msg", 3)
@@ -362,14 +361,14 @@ abstract class PatchApp(
                             renderMarkdown(
                                 "```json\n${JsonUtil.toJson(error)}\n```",
                                 tabs = false,
-                                ui = task.manager
+                                ui = task.ui
                             )
                         )
                         task.verbose(
                             renderMarkdown(
                                 "[Extra Details] Error processed at: ${Instant.now()}",
                                 tabs = false,
-                                ui = task.manager
+                                ui = task.ui
                             )
                         )
 
@@ -390,7 +389,7 @@ abstract class PatchApp(
                                 renderMarkdown(
                                     "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}",
                                     tabs = false,
-                                    ui = task.manager
+                                    ui = task.ui
                                 )
                             )
                         }
@@ -533,7 +532,7 @@ abstract class PatchApp(
         }
         log.info("Received fix response (${fixResponse.length} chars)")
         val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
-            self = task.manager,
+            self = task.ui,
             root = root.toPath(),
             response = fixResponse,
             shouldAutoApply = { path ->
@@ -560,7 +559,7 @@ abstract class PatchApp(
         task.verbose(
             renderMarkdown("Previous occurrences of this error:\n\n" + previousErrorOccurances.joinToString("\n") {
                 "* " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(it.timestamp)
-            } + "\nNon-matching instances: ${others.size}", tabs = false, ui = task.manager))
+            } + "\nNon-matching instances: ${others.size}", tabs = false, ui = task.ui))
         task.verbose(
             renderMarkdown(
                 "Files identified for modification:\n\n${
@@ -569,7 +568,7 @@ abstract class PatchApp(
                             root.toPath().resolve(it).toFile().length()
                         } bytes)"
                     }
-                }", tabs = false, ui = task.manager))
+                }", tabs = false, ui = task.ui))
         log.info("Fix process completed for error: ${error.message}")
         task.complete("<div>${renderMarkdown(markdown)}</div>")
     }

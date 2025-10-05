@@ -215,7 +215,7 @@ class MultiStepPatchAction : BaseAction() {
                     while (description.startsWith("#")) {
                         description = description.substring(1)
                     }
-                    description = renderMarkdown(description, ui = task.manager, tabs = false)
+                    description = renderMarkdown(description, ui = task.ui, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
                     ApplicationServices.threadPoolManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)

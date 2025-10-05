@@ -80,7 +80,7 @@ class RunShellCommandTask(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
-            ui = task.manager,
+            ui = task.ui,
             interpreter = shellCommandActor.codeRuntimeClass as KClass<ProcessCodeRuntime>,
             symbols = shellCommandActor.symbols,
             temperature = shellCommandActor.temperature,

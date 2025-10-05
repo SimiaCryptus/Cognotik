@@ -272,7 +272,7 @@ class CrawlerTaskTypeConfig(
                     analysisResults
                 }
             try {
-                task.manager.newTask(false).apply {
+                task.ui.newTask(false).apply {
                     tabs["Final Summary"] = placeholder
                     add(finalOutput.renderMarkdown())
                     task.update()
@@ -429,7 +429,7 @@ class CrawlerTaskTypeConfig(
         log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
         val subTask = try {
-            task.manager.newTask(false).apply {
+            task.ui.newTask(false).apply {
                 tabs[page.link] = placeholder
                 task.update()
             }

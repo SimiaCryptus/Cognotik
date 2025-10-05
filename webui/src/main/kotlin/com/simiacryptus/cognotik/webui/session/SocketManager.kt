@@ -117,7 +117,7 @@ abstract class SocketManager(
                 messageID = operationID,
                 buffer = mutableListOf(StringBuilder(responseContents)),
                 spinner = SessionTask.spinner,
-                manager = this,
+                ui = this,
             ).apply {
                 add("")
             }

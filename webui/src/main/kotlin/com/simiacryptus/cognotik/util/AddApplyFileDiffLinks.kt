@@ -4,11 +4,10 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
-import com.simiacryptus.cognotik.util.FileSelectionUtils.fuzzyResolveToRelativePath
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
+import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Path
@@ -134,6 +133,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         shouldAutoApply: (Path) -> Boolean = { false },
         model: ChatInterface? = null,
         defaultFile: String? = null,
+        resolver : ((Path, String) -> String?) = ::resolveToRelativePath,
     ): String {
         self.apply {
 
@@ -173,7 +173,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
 
             val codeblocks = resolvedMatches.filter { (header, block) ->
                 try {
-                    val resolvedPath = fuzzyResolveToRelativePath(root, header ?: return@filter false)
+                    val resolvedPath = resolver(root, header ?: return@filter false)
                     resolvedPath == null || !root.resolve(resolvedPath).toFile().exists()
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
@@ -182,7 +182,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             }.flatMap { it.second }.map { it.range to it }.toList()
             val patchBlocks = resolvedMatches.filter { (header, block) ->
                 try {
-                    val resolvedPath = fuzzyResolveToRelativePath(root, header ?: return@filter false)
+                    val resolvedPath = resolver(root, header ?: return@filter false)
                     resolvedPath != null && root.resolve(resolvedPath).toFile().exists()
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
@@ -194,7 +194,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                 val diffValue = diffBlock.second.groupValues[2].trim()
                 val header =
                     headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
-                val filename = fuzzyResolveToRelativePath(root, normalizeFilename(header))
+                val filename = resolver(root, normalizeFilename(header))
                 if (filename.isNullOrBlank()) return@foldIndexed markdown
                 val newValue = renderDiffBlock(root, filename, diffValue, handle, self, shouldAutoApply)
                 markdown.replace(diffBlock.second.value, newValue)

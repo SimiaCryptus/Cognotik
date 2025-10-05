@@ -138,7 +138,7 @@ class SoftwareGraphGenerationTask(
                 }
             }
 
-            task.add(MarkdownUtil.renderMarkdown(summary, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
             resultFn(summary)
         } catch (e: Exception) {
             task.error(e)

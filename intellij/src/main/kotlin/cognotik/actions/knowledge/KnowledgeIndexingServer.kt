@@ -87,7 +87,7 @@ class KnowledgeIndexingServer(
                     appendLine("* $path")
                 }
             }
-            task.add(MarkdownUtil.renderMarkdown(result, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(result, ui = task.ui))
             task.complete(result)
             return
         }
@@ -104,14 +104,14 @@ class KnowledgeIndexingServer(
                 }
                 appendLine()
                 appendLine("Large files will be processed in chunks to avoid memory issues.")
-            }, ui = task.manager))
+            }, ui = task.ui))
         }
 
         val totalSizeKB = files.sumOf { it.length() } / 1024
         val totalSizeMB = totalSizeKB / 1024
         val sizeDisplay = if (totalSizeMB > 1) "${totalSizeMB} MB" else "${totalSizeKB} KB"
 
-        task.add(MarkdownUtil.renderMarkdown("# Knowledge Indexing", ui = task.manager))
+        task.add(MarkdownUtil.renderMarkdown("# Knowledge Indexing", ui = task.ui))
         task.add(MarkdownUtil.renderMarkdown(buildString {
             this.appendLine("## Indexing Overview")
             this.appendLine("- **Files to process:** ${files.size}")
@@ -140,7 +140,7 @@ class KnowledgeIndexingServer(
             }
             this.appendLine()
             this.appendLine("---")
-        }, ui = task.manager))
+        }, ui = task.ui))
 
         try {
             val progressState = ProgressState.progressBar(task)
@@ -152,7 +152,7 @@ class KnowledgeIndexingServer(
             val smallResults = mutableListOf<String?>()
             smallFiles.chunked(BATCH_SIZE).forEach { batch ->
                 if (isCancelled) {
-                    task.add(MarkdownUtil.renderMarkdown("⚠️ Indexing cancelled by user", ui = task.manager))
+                    task.add(MarkdownUtil.renderMarkdown("⚠️ Indexing cancelled by user", ui = task.ui))
                     return
                 }
 
@@ -175,7 +175,7 @@ class KnowledgeIndexingServer(
             // Process large files one by one with chunking
             val largeResults = largeFiles.mapNotNull { file ->
                 try {
-                    task.add(MarkdownUtil.renderMarkdown("Processing large file: ${file.name}...", ui = task.manager))
+                    task.add(MarkdownUtil.renderMarkdown("Processing large file: ${file.name}...", ui = task.ui))
                     val result = indexTextFiles(
                         pool = threadPool,
                         parsingModel = RawTextParsingModel(settings.splitRegex),
@@ -233,7 +233,7 @@ class KnowledgeIndexingServer(
                 appendLine("The indexed knowledge base is now available for use in other Cognotik features.")
             }
 
-            task.add(MarkdownUtil.renderMarkdown(completionResult, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(completionResult, ui = task.ui))
 
         } catch (e: Exception) {
             log.error("Error during indexing process", e)
@@ -247,7 +247,7 @@ class KnowledgeIndexingServer(
                 appendLine()
                 appendLine("Please check the logs for more details and try again.")
             }
-            task.add(MarkdownUtil.renderMarkdown(errorResult, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(errorResult, ui = task.ui))
             task.error(e)
         }
     }

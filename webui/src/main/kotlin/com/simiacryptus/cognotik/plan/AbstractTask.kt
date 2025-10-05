@@ -20,7 +20,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     open val typeConfig: U
         get() = executionConfig?.task_type
-            ?.let { orchestrationConfig.taskSettings[it] as? U }
+            ?.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
             ?: throw IllegalStateException("No task type config for ${executionConfig?.task_type}")
 
     enum class TaskState {

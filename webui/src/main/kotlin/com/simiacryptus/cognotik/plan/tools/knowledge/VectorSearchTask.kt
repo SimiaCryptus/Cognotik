@@ -73,7 +73,7 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
             val searchResults = performEmbeddingSearch(
             )
             val formattedResults = formatSearchResults(searchResults)
-            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
             resultFn(formattedResults)
         } finally {
             threadPool.shutdown()

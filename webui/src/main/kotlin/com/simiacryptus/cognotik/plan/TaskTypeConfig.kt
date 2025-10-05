@@ -41,3 +41,13 @@ open class TaskTypeConfig(
         }
     }
 }
+
+fun TaskType<*, *>.newSettings(): TaskTypeConfig? =
+    taskSettingsClass.declaredConstructors.firstOrNull { it.parameters.isEmpty() }?.let {
+        it.isAccessible = true
+        val defaultConfig = it.newInstance() as TaskTypeConfig
+        defaultConfig.task_type = name
+        defaultConfig.name = null
+        defaultConfig.model = null
+        defaultConfig
+    }

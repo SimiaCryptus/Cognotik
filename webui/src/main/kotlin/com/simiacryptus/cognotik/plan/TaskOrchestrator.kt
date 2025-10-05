@@ -55,7 +55,7 @@ class TaskOrchestrator(
         val planProcessingState = newState(plan)
         this.executionState = planProcessingState
         try {
-            val diagramTask = task.manager.newTask(false).apply { tabs["Plan"] = (placeholder) }
+            val diagramTask = task.ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
                 diagramBuffer = diagramTask.add(
                     "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
@@ -96,7 +96,7 @@ class TaskOrchestrator(
         tabs: TabbedDisplay,
         orchestrationConfig: OrchestrationConfig,
     ) {
-        val sessionTask = task.manager.newTask(false).apply { tabs["Session"] = placeholder }
+        val sessionTask = task.ui.newTask(false).apply { tabs["Session"] = placeholder }
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
@@ -125,7 +125,7 @@ class TaskOrchestrator(
             }
         }
         taskIdProcessingQueue.forEach { taskId ->
-            val newTask = task.manager.newTask(false)
+            val newTask = task.ui.newTask(false)
             executionState.uitaskMap[taskId] = newTask
             val subtask: TaskExecutionConfig? = executionState.subTasks[taskId]
             val description = subtask?.task_description
@@ -151,7 +151,7 @@ class TaskOrchestrator(
                 subTask.state = AbstractTask.TaskState.InProgress
                 taskTabs.update()
                 log.debug("Running task: ${System.identityHashCode(subTask)} ${subTask.task_description}")
-                val task1 = executionState.uitaskMap.get(taskId) ?: task.manager.newTask(false).apply {
+                val task1 = executionState.uitaskMap.get(taskId) ?: task.ui.newTask(false).apply {
                     taskTabs[taskId] = placeholder
                 }
                 try {

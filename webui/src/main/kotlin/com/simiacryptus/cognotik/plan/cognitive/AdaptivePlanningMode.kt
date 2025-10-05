@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -68,27 +69,19 @@ open class AdaptivePlanningMode(
         task.echo(renderMarkdown(userMessage))
 
         val continueLoop = true
-        val executor = ui.pool ?: throw IllegalStateException("SocketManager or its pool is null")
-
         val tabbedDisplay = TabbedDisplay(task)
-        executor.execute {
-            val socketManager = ui ?: run {
-                log.error("SocketManager is null, cannot proceed.")
-                task.error(IllegalStateException("SocketManager is null"))
-                return@execute
-            }
+        ui.pool.execute {
             try {
                 log.debug("Starting main execution loop")
-                tabbedDisplay.update()
                 task.complete()
 
-                val coordinator = socketManager.dataStorage?.let {
+                val coordinator = ui.dataStorage?.let {
                     TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: socketManager.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                            ?: ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
                 log.debug("Created plan coordinator")
@@ -104,8 +97,10 @@ open class AdaptivePlanningMode(
                     task.complete()
                     val currentThinkingStatus = reasoningState.get()
                         ?: throw IllegalStateException("ThinkingStatus is null at iteration $iteration")
-                    val iterationTask = ui.newTask(false).apply { tabbedDisplay["Iteration $iteration"] = placeholder }
-                    val iterationTabbedDisplay = TabbedDisplay(iterationTask, additionalClasses = "iteration")
+
+                    val task = task.linkedTask("Iteration $iteration")
+                    val ui = task.ui
+                    val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
                     ui.newTask(false).apply {
                         iterationTabbedDisplay["Inputs"] = placeholder
@@ -115,6 +110,7 @@ open class AdaptivePlanningMode(
                             contextData().forEach {
                                 complete(renderMarkdown(it, tabs = false))
                             }
+                            complete()
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
                             ui.newTask(false).apply {
@@ -132,7 +128,7 @@ open class AdaptivePlanningMode(
                     val nextTask = try {
                         log.debug("Getting next task")
                         if (coordinator != null) {
-                            getNextTask(coordinator, userMessage, currentThinkingStatus, iterationTask)
+                            getNextTask(userMessage, currentThinkingStatus, task)
                         } else {
                             log.error("Coordinator is null, cannot get next task")
                             null
@@ -145,7 +141,7 @@ open class AdaptivePlanningMode(
 
                     if (nextTask?.isEmpty() != false) {
                         log.debug("No more tasks to execute")
-                        iterationTask.add(renderMarkdown("No more tasks to execute. Finishing Auto Plan Chat."))
+                        task.add(renderMarkdown("No more tasks to execute. Finishing Auto Plan Chat."))
                         break
                     }
                     log.debug("Retrieved next tasks: ${nextTask.size}")
@@ -158,29 +154,28 @@ open class AdaptivePlanningMode(
                         val taskConfig = currentTask.task.tasks?.get(index)
                         val taskDescription =
                             taskConfig?.task_description ?: "No description provided for this task item."
-                        taskExecutionTask.add(currentTask.actorResponse.renderMarkdown)
-                        val fullTaskDataJson = JsonUtil.toJson(currentTask)
+                        taskExecutionTask.add("\n```json\n${taskConfig?.toJson()}\n```\n".renderMarkdown)
                         taskExecutionTask.verbose(
                             renderMarkdown(
                                 """
 Executing task: `$currentTaskId` - $taskDescription
 Full TaskData JSON:
 ```json
-$fullTaskDataJson
+${JsonUtil.toJson(taskConfig)}
 ```
 """.trimIndent(), tabs = false
                             )
                         )
                         iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
-                        val future = executor.submit<String> {
+                        val future = ui.pool.submit<String> {
                             try {
                                 if (coordinator != null) {
                                     runTask(
-                                        coordinator,
-                                        currentTask.task.tasks?.get(index)!!,
-                                        userMessage,
-                                        taskExecutionTask
+                                        coordinator = coordinator,
+                                        currentTask = taskConfig!!,
+                                        userMessage = userMessage,
+                                        task = taskExecutionTask
                                     )
                                 } else {
                                     log.error("Coordinator is null, cannot run task")
@@ -278,13 +273,11 @@ $fullTaskDataJson
     }
 
     private fun getNextTask(
-        coordinator: TaskOrchestrator,
         userMessage: String,
         reasoningState: ReasoningState,
         task: SessionTask
     ): List<TaskData>? {
         val describer = TaskContextYamlDescriber(orchestrationConfig)
-
         val parsedActor = ParsedAgent(
             name = "TaskChooser",
             resultClass = Tasks::class.java,

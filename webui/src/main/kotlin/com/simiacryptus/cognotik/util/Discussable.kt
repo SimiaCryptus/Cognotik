@@ -30,8 +30,8 @@ ${
             }
         }
 ${
-            task.manager.hrefLink("♻") {
-                val newTask = task.manager.newTask(blocking)
+            task.ui.hrefLink("♻") {
+                val newTask = task.ui.newTask(blocking)
                 val header = newTask.header("Retrying...", 4)
                 val idx: Int = size
                 this.set(label(idx), newTask.placeholder)
@@ -66,7 +66,7 @@ ${
         } catch (e: Throwable) {
             log.error("Error in discussable", e)
             task.error(e)
-            task.complete(task.manager.hrefLink("🔄 Retry") {
+            task.complete(task.ui.hrefLink("🔄 Retry") {
                 main(tabIndex = tabIndex, task = task)
             })
         }
@@ -78,7 +78,7 @@ ${
         design: T,
         history: List<Pair<String, Role>>,
         task: SessionTask,
-    ) = task.manager.newTask(blocking).apply {
+    ) = task.ui.newTask(blocking).apply {
         log.info("Creating feedback form for tabIndex: $tabIndex")
         val feedbackSB = add("<div />")!!
         feedbackSB.clear()
@@ -99,7 +99,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
         design: T,
         feedbackSB: StringBuilder,
         feedbackTask: SessionTask,
-    ) = task.manager.hrefLink("Accept", classname = "href-link cmd-button") {
+    ) = task.ui.hrefLink("Accept", classname = "href-link cmd-button") {
         log.info("Accept link clicked for tabIndex: $tabIndex")
         feedbackSB.clear()
         feedbackTask.complete()
@@ -114,7 +114,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
         feedbackTask: SessionTask,
     ): String {
         val feedbackGuard = AtomicBoolean(blocking)
-        return task.manager.textInput { userResponse ->
+        return task.ui.textInput { userResponse ->
             log.info("User response received: $userResponse")
             if (feedbackGuard.getAndSet(true)) return@textInput
             val prev = feedbackSB.toString()
@@ -152,7 +152,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
         tabs.update()
         val newDesign = reviseResponse(history)
         log.info("Revised design: $newDesign")
-        val newTask = task.manager.newTask(root = blocking)
+        val newTask = task.ui.newTask(root = blocking)
         tabContent.set(newValue + "\n" + newTask.placeholder)
         tabs.update()
         stringBuilder?.clear()
@@ -195,7 +195,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
 
             if (heading.isNotBlank()) task.echo(heading)
             val idx = tabs.size
-            val newTask = task.manager.newTask(blocking)
+            val newTask = task.ui.newTask(blocking)
             val header = newTask.header("Processing...", 4)
             tabs[tabs.label(idx)] = newTask.placeholder
             try {

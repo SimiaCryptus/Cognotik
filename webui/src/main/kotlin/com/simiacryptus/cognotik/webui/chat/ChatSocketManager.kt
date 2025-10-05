@@ -103,7 +103,7 @@ open class ChatSocketManager(
                 }
                 task.complete()
             } else {
-                retryable(task.manager, pool, task) { task ->
+                retryable(task.ui, pool, task) { task ->
                     chatMessages.takeLastWhile { it.role == ModelSchema.Role.assistant }
                         .forEach { chatMessages.remove(it) }
                     val currentChatMessages = chatMessages()

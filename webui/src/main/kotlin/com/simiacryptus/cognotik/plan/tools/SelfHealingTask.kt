@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan.tools
 import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -62,7 +61,7 @@ class SelfHealingTask(
     ) {
         val semaphore = Semaphore(0)
         Retryable(task = task) {
-            val task = task.manager.newTask()
+            val task = task.ui.newTask()
             agent.pool.submit {
                 val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
                     ?: orchestrationConfig.defaultChatter).getChildClient(task)
@@ -107,7 +106,7 @@ class SelfHealingTask(
 
                         else -> {
                             task.add(
-                                task.manager.hrefLink("Ignore Error", "href-link cmd-button") {
+                                task.ui.hrefLink("Ignore Error", "href-link cmd-button") {
                                     resultFn("Error: ${this.exitCode}")
                                     semaphore.release()
                                 }

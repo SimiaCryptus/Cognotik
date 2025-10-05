@@ -61,7 +61,7 @@ GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or
                 ?: throw RuntimeException("GitHub API token is required")
         )
         val actorAnswerText = formatSearchResults(searchResults)
-        task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.manager))
+        task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.ui))
         resultFn(actorAnswerText)
     }
 

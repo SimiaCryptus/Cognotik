@@ -104,9 +104,9 @@ class AddApplyDiffLinks {
                 val test1 = processor.generatePatch(code().replace("\r", ""), patch)
                 displayMapInTabs(
                     mapOf(
-                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.manager, tabs = true),
-                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.manager, tabs = true),
-                    ), ui = task.manager, split = true
+                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.ui, tabs = true),
+                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.ui, tabs = true),
+                    ), ui = task.ui, split = true
                 ) + "\n" + buttons.placeholder
             } else {
                 @Suppress("AssignedValueIsNeverRead")
@@ -134,10 +134,10 @@ class AddApplyDiffLinks {
                 )
                 displayMapInTabs(
                     mapOf(
-                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.manager, tabs = true),
-                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.manager, tabs = true),
-                        "Reverse" to renderMarkdown("```diff\n$test2\n```", ui = task.manager, tabs = true),
-                    ), ui = task.manager, split = true
+                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.ui, tabs = true),
+                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.ui, tabs = true),
+                        "Reverse" to renderMarkdown("```diff\n$test2\n```", ui = task.ui, tabs = true),
+                    ), ui = task.ui, split = true
                 ) + "\n" + buttons.placeholder
             }
             markdown.replace(diffBlock.value, newValue)

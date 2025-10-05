@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.newSettings
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -221,15 +222,7 @@ class PlanConfigDialog(
         )
         if (selectedType != null) {
             val taskType = TaskType.values().find { it.name == selectedType } ?: return
-            val newConfig =
-                taskType.taskSettingsClass.declaredConstructors.firstOrNull { it.parameters.isEmpty() }?.let {
-                    it.isAccessible = true
-                    val defaultConfig = it.newInstance() as TaskTypeConfig
-                    defaultConfig.task_type = taskType.name
-                    defaultConfig.name = null
-                    defaultConfig.model = null
-                    defaultConfig
-                } ?: run {
+            val newConfig = taskType.newSettings() ?: run {
                     Messages.showErrorDialog(
                         "Failed to create default configuration for ${taskType.name}",
                         "Error"

@@ -114,8 +114,8 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
         Retryable(task = task) {
-            val task = task.manager.newTask(false)
-            task.manager.pool.submit {
+            val task = task.ui.newTask(false)
+            task.ui.pool.submit {
                 val chatInterface = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                     ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
                 val chatAgent = ChatAgent(
@@ -194,9 +194,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     )).filter { it.isNotBlank() }
                 )
                 if (orchestrationConfig.autoFix) {
-                    val markdown = renderMarkdown(codeResult, ui = task.manager) {
+                    val markdown = renderMarkdown(codeResult, ui = task.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            task.manager,
+                            task.ui,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->
@@ -213,9 +213,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     task.complete(markdown)
                     semaphore.release()
                 } else {
-                    task.complete(renderMarkdown(codeResult, ui = task.manager) {
+                    task.complete(renderMarkdown(codeResult, ui = task.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            task.manager,
+                            task.ui,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->
@@ -226,7 +226,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             model = chatInterface,
                             defaultFile = defaultFile,
                             processor = orchestrationConfig.processor,
-                        ) + acceptButtonFooter(task.manager) {
+                        ) + acceptButtonFooter(task.ui) {
                             task.complete()
                             semaphore.release()
                         }

@@ -33,7 +33,7 @@ class ValidationPatchApp(
 
         val filePaths = getFiles(files)
         filePaths.forEach { file ->
-            val fileTask = task.manager.newTask(false).apply { tabs[file.toString()] = placeholder }
+            val fileTask = task.ui.newTask(false).apply { tabs[file.toString()] = placeholder }
             try {
                 val validator = SimpleDiffApplier.getValidator(file.toFile().toString()) ?: return@forEach
                 val content = file.toFile().readText()
