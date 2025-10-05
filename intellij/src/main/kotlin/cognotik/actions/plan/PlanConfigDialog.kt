@@ -118,6 +118,7 @@ class PlanConfigDialog(
         preferredSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
         AppSettingsState.instance.savedPlanConfigs?.keys?.sorted()?.forEach { addItem(it) }
     }
+
     // Task configuration list
     private val taskConfigListModel = DefaultListModel<TaskConfigEntry>()
     private val taskConfigList = JBList(taskConfigListModel).apply {
@@ -135,7 +136,7 @@ class PlanConfigDialog(
                 taskConfigListModel.addElement(TaskConfigEntry(taskType, config))
             }
         }
-        
+
         // Double-click to edit task configuration
         taskConfigList.addMouseListener(object : java.awt.event.MouseAdapter() {
             override fun mouseClicked(e: java.awt.event.MouseEvent) {
@@ -220,11 +221,21 @@ class PlanConfigDialog(
         )
         if (selectedType != null) {
             val taskType = TaskType.values().find { it.name == selectedType } ?: return
-            val newConfig = TaskTypeConfig(
-                task_type = taskType.name,
-                name = null,
-                model = null
-            )
+            val newConfig =
+                taskType.taskSettingsClass.declaredConstructors.firstOrNull { it.parameters.isEmpty() }?.let {
+                    it.isAccessible = true
+                    val defaultConfig = it.newInstance() as TaskTypeConfig
+                    defaultConfig.task_type = taskType.name
+                    defaultConfig.name = null
+                    defaultConfig.model = null
+                    defaultConfig
+                } ?: run {
+                    Messages.showErrorDialog(
+                        "Failed to create default configuration for ${taskType.name}",
+                        "Error"
+                    )
+                    return
+                }
             val dialog = TaskConfigEditDialog(null, taskType, newConfig, visibleModelsCache)
             if (dialog.showAndGet()) {
                 val config = dialog.getConfig()
@@ -249,6 +260,7 @@ class PlanConfigDialog(
             taskConfigListModel.removeElement(entry)
         }
     }
+
     private fun exportTaskConfigs() {
         try {
             // Export entire orchestration configuration
@@ -268,7 +280,7 @@ class PlanConfigDialog(
         }
     }
 
-     private fun importTaskConfigs() {
+    private fun importTaskConfigs() {
         try {
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             val contents = clipboard.getContents(null)
@@ -645,7 +657,7 @@ class PlanConfigDialog(
             settings.parsingModel = model?.toApiChatModel()
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
-        settings.cognitiveMode = CognitiveModeStrategies.valueOf (selectedCognitiveMode)
+        settings.cognitiveMode = CognitiveModeStrategies.valueOf(selectedCognitiveMode)
         return settings
     }
 

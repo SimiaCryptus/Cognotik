@@ -1,29 +1,29 @@
 package cognotik.actions.chat
 
- import cognotik.actions.BaseAction
- import cognotik.actions.agent.toFile
- import com.intellij.openapi.actionSystem.ActionUpdateThread
- import com.intellij.openapi.actionSystem.AnActionEvent
- import com.intellij.openapi.actionSystem.PlatformDataKeys
- import com.intellij.openapi.vfs.VirtualFile
- import com.simiacryptus.cognotik.CognotikAppServer
- import com.simiacryptus.cognotik.apps.general.renderMarkdown
- import com.simiacryptus.cognotik.chat.model.ChatInterface
- import com.simiacryptus.cognotik.config.AppSettingsState
- import com.simiacryptus.cognotik.input.getReader
- import com.simiacryptus.cognotik.models.ModelSchema
- import com.simiacryptus.cognotik.platform.ApplicationServices
- import com.simiacryptus.cognotik.platform.Session
- import com.simiacryptus.cognotik.util.*
- import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
- import com.simiacryptus.cognotik.webui.application.AppInfoData
- import com.simiacryptus.cognotik.webui.application.ApplicationServer
- import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
- import com.simiacryptus.cognotik.webui.session.SessionTask
- import java.io.File
- import java.io.OutputStream
- import java.nio.file.Path
- import java.text.SimpleDateFormat
+import cognotik.actions.BaseAction
+import cognotik.actions.agent.toFile
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.vfs.VirtualFile
+import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import java.io.File
+import java.io.OutputStream
+import java.nio.file.Path
+import java.text.SimpleDateFormat
 
 /**
  * Action that enables multi-file code chat functionality.
@@ -128,7 +128,7 @@ class MultiCodeChatAction : BaseAction() {
                 val exists = file.exists()
                 if (!exists) log.warn("File does not exist: $file")
                 if (!exists) return@mapNotNull null
-                
+
                 val content = try {
                     readFileContent(file)
                 } catch (e: Exception) {
@@ -137,9 +137,9 @@ class MultiCodeChatAction : BaseAction() {
                 }
                 path to content
             }.joinToString("\n\n") { (path, content) ->
-                    val extension = path.toString().split('.').lastOrNull()?.let { it }
-                    "# $path\n```$extension\n$content\n```"
-                }
+                val extension = path.toString().split('.').lastOrNull()?.let { it }
+                "# $path\n```$extension\n$content\n```"
+            }
         }
 
         override fun renderResponse(response: String, task: SessionTask) = """<div>${
@@ -171,17 +171,17 @@ class MultiCodeChatAction : BaseAction() {
                     log.warn("File does not exist: $file")
                     return@mapNotNull null
                 }
-                
+
                 val content = try {
                     readFileContent(file)
                 } catch (e: Exception) {
                     log.warn("Failed to read file: $file", e)
                     return@mapNotNull null
                 }
-                
+
                 "* $path - ${codex.estimateTokenCount(content)} tokens"
             }.joinToString("\n")).renderMarkdown())
-            return super.respond( task, userMessage, currentChatMessages, transcriptStream)
+            return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 
@@ -201,6 +201,7 @@ class MultiCodeChatAction : BaseAction() {
                 setOf(root.relativize(file.toNioPath()))
             }
         }?.toSet() ?: emptySet()
+
         fun isSupportedFile(file: VirtualFile): Boolean {
             val name = file.name.lowercase()
             return name.endsWith(".pdf") ||
@@ -214,6 +215,7 @@ class MultiCodeChatAction : BaseAction() {
                     // Common code file extensions
                     name.endsWith(".kt") || name.endsWith(".java") ||
                     name.endsWith(".js") || name.endsWith(".ts") ||
+                    name.endsWith(".lua") ||name.endsWith(".luau") ||
                     name.endsWith(".py") || name.endsWith(".cpp") ||
                     name.endsWith(".c") || name.endsWith(".h") ||
                     name.endsWith(".cs") || name.endsWith(".go") ||
@@ -226,6 +228,7 @@ class MultiCodeChatAction : BaseAction() {
                     name.endsWith(".sql") || name.endsWith(".sh") ||
                     name.endsWith(".bat") || name.endsWith(".ps1")
         }
+
         fun readFileContent(file: File): String {
             return try {
                 file.getReader().use { reader ->

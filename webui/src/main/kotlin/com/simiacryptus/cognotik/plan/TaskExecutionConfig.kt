@@ -39,7 +39,7 @@ open class TaskExecutionConfig(
 
         override fun typeFromId(context: DatabindContext, id: String): JavaType {
             val taskType = TaskType.valueOf(id.replace(" ", ""))
-            val subType = context.constructType(taskType.taskDataClass)
+            val subType = context.constructType(taskType.executionConfigClass)
             return subType
         }
 

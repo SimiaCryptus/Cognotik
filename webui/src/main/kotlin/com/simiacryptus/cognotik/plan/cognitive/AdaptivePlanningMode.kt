@@ -112,18 +112,20 @@ open class AdaptivePlanningMode(
                         val inputTabs = TabbedDisplay(this)
                         ui.newTask(false).apply {
                             inputTabs["Project Info"] = placeholder
-                            contextData().forEach { add(renderMarkdown(it)) }
+                            contextData().forEach {
+                                complete(renderMarkdown(it, tabs = false))
+                            }
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
                             ui.newTask(false).apply {
                                 inputTabs["Task ${index + 1}"] = placeholder
-                                add(renderMarkdown(it))
+                                complete(renderMarkdown(it))
                             }
-                            add(renderMarkdown(it))
+                            complete(renderMarkdown(it))
                         }
                         ui.newTask(false).apply {
                             inputTabs["Thinking Status"] = placeholder
-                            add(renderMarkdown(formatThinkingStatus(currentThinkingStatus)))
+                            complete(renderMarkdown(formatThinkingStatus(currentThinkingStatus)))
                         }
                     }
 
@@ -330,7 +332,7 @@ $fullTaskDataJson
             parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
                 .joinToString("\n\n") { taskType ->
                     "${taskType.name}:\n  ${
-                        describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                        describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
                     }".trim()
                 })
         )

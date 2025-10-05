@@ -189,7 +189,7 @@ class OrchestrationConfig(
             describer = describer,
             parserPrompt = ("\nTask Subtype Schema:\n\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                 "\n${taskType.name}:\n  ${
-                    describer.describe(taskType.taskDataClass).lineSequence()
+                    describer.describe(taskType.executionConfigClass).lineSequence()
                         .map {
                             when {
                                 it.isBlank() -> {

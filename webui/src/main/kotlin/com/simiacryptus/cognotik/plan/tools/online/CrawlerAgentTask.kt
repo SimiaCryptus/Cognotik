@@ -37,9 +37,16 @@ class CrawlerAgentTask(
     val min_content_length: Int = 100,
 ) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class CrawlerTaskTypeConfig(
+class CrawlerTaskTypeConfig(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
+        @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = null,
+        @Description("Number of pages to process concurrently") val concurrent_page_processing: Int? = null,
+        @Description("Maximum characters in final summary") val max_final_output_size: Int? = null,
+        @Description("Minimum content length to process") val min_content_length: Int? = null,
+        @Description("Automatically follow links found in analyzed pages") val follow_links: Boolean? = null,
+        @Description("Allow crawling the same page multiple times") val allow_revisit_pages: Boolean? = null,
+        @Description("Generate a comprehensive summary of all results") val create_final_summary: Boolean? = null,
         task_type: String = "CrawlerAgent",
         model: ApiChatModel? = null,
         name: String? = task_type,

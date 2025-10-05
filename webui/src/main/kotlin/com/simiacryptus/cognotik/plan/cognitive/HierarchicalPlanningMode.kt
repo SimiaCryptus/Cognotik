@@ -560,7 +560,7 @@ open class HierarchicalPlanningMode(
             describer = TaskContextYamlDescriber(orchestrationConfig),
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                 "${taskType.name}:\n  ${
-                    TaskContextYamlDescriber(orchestrationConfig).describe(taskType.taskDataClass).trim().trimIndent()
+                    TaskContextYamlDescriber(orchestrationConfig).describe(taskType.executionConfigClass).trim().trimIndent()
                         .indent("  ")
                 }".trim()
             })

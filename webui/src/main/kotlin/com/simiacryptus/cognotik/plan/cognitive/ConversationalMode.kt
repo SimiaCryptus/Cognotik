@@ -117,7 +117,7 @@ open class ConversationalMode(
                 parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes
                     .joinToString("\n\n") { taskType ->
                         "${taskType.name}:\n  ${
-                            describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                            describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
                         }".trim()
                     })
             )
