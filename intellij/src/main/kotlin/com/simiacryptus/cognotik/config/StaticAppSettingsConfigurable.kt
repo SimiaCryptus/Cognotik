@@ -26,7 +26,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun apply() {
         super.apply()
         AppSettingsState.auxiliaryLog = null
-        log.debug("Applied settings, cleared auxiliary log")
+        AppSettingsState.notifySettingsLoaded()
     }
 
     private val password = JPasswordField()

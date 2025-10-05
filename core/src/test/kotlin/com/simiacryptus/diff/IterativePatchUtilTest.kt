@@ -188,30 +188,30 @@ class IterativePatchUtilTest {
         });
         """.trimIndent()
         val expected = """
-        function updateTabs() {
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', (event) => {
-
-                    event.stopPropagation();
-                    const forTab = button.getAttribute('data-for-tab');
-                    let tabsParent = button.closest('.tabs-container');
-                    tabsParent.querySelectorAll('.tab-content').forEach(content => {
-                        const contentParent = content.closest('.tabs-container');
-                        if (contentParent === tabsParent) {
-                            if (content.getAttribute('data-tab') === forTab) {
-                                content.classList.add('active');
-                   button.classList.add('active');
-                            } else if (content.classList.contains('active')) {
-                                content.classList.remove('active')
-                   button.classList.remove('active');
+            function updateTabs() {
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', (event) => {
+        
+                        event.stopPropagation();
+                        const forTab = button.getAttribute('data-for-tab');
+                        let tabsParent = button.closest('.tabs-container');
+            tabsParent.querySelectorAll('.tab-content').forEach(content => {
+                            const contentParent = content.closest('.tabs-container');
+                            if (contentParent === tabsParent) {
+                                if (content.getAttribute('data-tab') === forTab) {
+                                    content.classList.add('active');
+                       button.classList.add('active');
+                                } else if (content.classList.contains('active')) {
+                                    content.classList.remove('active')
+                       button.classList.remove('active');
+                                }
                             }
-                        }
-                    });
-                })
-            });
-        }
+                        });
+                    })
+                });
+            }
         """.trimIndent()
-        val result = FuzzyPatchMatcher.applyPatch(source, patch)
+        val result = FuzzyPatchMatcher().applyPatch(source, patch)
         Assertions.assertEquals(normalize(expected), normalize(result))
     }
 

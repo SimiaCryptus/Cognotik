@@ -39,7 +39,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private var statusBar: StatusBar? = null
         private var smartModelTree: Tree? = null
         private var fastModelTree: Tree? = null
-        private var project: Project? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
         private fun getSmartModelTree(): Tree {

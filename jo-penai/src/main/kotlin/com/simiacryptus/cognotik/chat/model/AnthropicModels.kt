@@ -9,8 +9,8 @@ object AnthropicModels {
         maxTotalTokens = 200000,
         maxOutTokens = 32000,
         provider = APIProvider.Companion.Anthropic,
-        inputTokenPricePerK = 30.0 / 1000.0,
-        outputTokenPricePerK = 120.0 / 1000.0,
+        inputTokenPricePerK = 15.0 / 1000.0,
+        outputTokenPricePerK = 75.0 / 1000.0,
     )
     val Claude4Sonnet = ChatModel(
         name = "Claude4Sonnet",
@@ -18,8 +18,18 @@ object AnthropicModels {
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
         provider = APIProvider.Companion.Anthropic,
-        inputTokenPricePerK = 6.0 / 1000.0,
-        outputTokenPricePerK = 24.0 / 1000.0,
+        inputTokenPricePerK = 3.0 / 1000.0,
+        outputTokenPricePerK = 15.0 / 1000.0,
+    )
+
+    val Claude45Sonnet = ChatModel(
+        name = "Claude45Sonnet",
+        modelName = "claude-sonnet-4-5-20250929",
+        maxTotalTokens = 200000,
+        maxOutTokens = 64000,
+        provider = APIProvider.Companion.Anthropic,
+        inputTokenPricePerK = 3.0 / 1000.0,
+        outputTokenPricePerK = 15.0 / 1000.0,
     )
 
     val Claude35Haiku = ChatModel(
@@ -28,12 +38,13 @@ object AnthropicModels {
         maxTotalTokens = 200000,
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Anthropic,
-        inputTokenPricePerK = 1.0 / 1000.0,
+        inputTokenPricePerK = 0.80 / 1000.0,
         outputTokenPricePerK = 4.0 / 1000.0,
     )
     val values = mapOf(
         "Claude41Opus" to Claude41Opus,
         "Claude4Sonnet" to Claude4Sonnet,
+        "Claude45Sonnet" to Claude45Sonnet,
         "Claude35Haiku" to Claude35Haiku,
     )
 

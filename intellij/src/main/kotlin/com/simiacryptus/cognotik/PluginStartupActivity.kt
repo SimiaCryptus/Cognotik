@@ -55,7 +55,7 @@ class PluginStartupActivity : ProjectActivity {
                         import(configContent)
                         write(AppSettingsState.instance, AppSettingsComponent())
                     }
-                    AppSettingsState.Companion.notifySettingsLoaded()
+                    AppSettingsState.notifySettingsLoaded()
                     log.info("Loaded config from $configFile")
                 } else {
                     log.warn("Config file $configFile does not exist")

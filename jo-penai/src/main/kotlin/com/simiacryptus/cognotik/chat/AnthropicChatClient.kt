@@ -57,9 +57,9 @@ import java.util.concurrent.ConcurrentHashMap
                         ChatModel(
                             name = modelInfo.display_name,
                             modelName = modelInfo.id,
-                            maxOutTokens = 4096, // Default value, adjust as needed
                             provider = APIProvider.Anthropic,
-                            maxTotalTokens = 8192, // Default value, adjust as needed
+                            maxTotalTokens = 200000,
+                            maxOutTokens = 64000,
                             inputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
                             outputTokenPricePerK = 0.0 // TODO: Set actual pricing if known
                         )

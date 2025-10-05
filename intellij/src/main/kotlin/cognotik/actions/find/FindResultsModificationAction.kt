@@ -160,7 +160,7 @@ class FindResultsModificationAction(
                         shouldAutoApply = { modificationParams.autoApply },
                         defaultFile = file?.toFile?.path,
                         processor = AppSettingsState.instance.processor
-                    )?.apply {
+                    ).apply {
                         task.complete(renderMarkdown(this))
                     }
                 }
