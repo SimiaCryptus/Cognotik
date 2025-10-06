@@ -110,7 +110,7 @@ import java.util.concurrent.TimeoutException
             if (typeConfig.auto_retry && shouldRetry(e)) {
                 handleRetry(agent, messages, task, resultFn, orchestrationConfig, e)
             } else {
-                state = TaskState.Failed
+                state = TaskState.Completed
                 task.error(e)
                 throw e
             }
@@ -164,7 +164,7 @@ import java.util.concurrent.TimeoutException
                 "server" to serverName,
                 "tool" to toolName,
                 "arguments" to arguments,
-                "result" to result,
+                "result" to result!!,
                 "execution_time_ms" to executionTime,
                 "timestamp" to System.currentTimeMillis()
             )
@@ -220,7 +220,7 @@ import java.util.concurrent.TimeoutException
             }
         }
         task.add("All retry attempts exhausted")
-        state = TaskState.Failed
+        state = TaskState.Completed
         
         task.error(lastException)
         throw lastException
