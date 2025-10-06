@@ -15,9 +15,10 @@ import com.intellij.ui.components.JBTextArea
  import com.simiacryptus.cognotik.plan.newSettings
  import com.simiacryptus.cognotik.plan.tools.RunCodeTask
  import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
- import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
  import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
  import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
+import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
  import java.awt.Dimension
  import javax.swing.JComponent
  import javax.swing.JScrollPane
@@ -76,11 +77,12 @@ import javax.swing.JCheckBox
         preferredSize = Dimension(600, 500)
     }
 
-    private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
+private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
         when (config) {
             is RunCodeTask.RunCodeTaskTypeConfig -> createRunCodeFields(config)
             is SelfHealingTask.SelfHealingTaskTypeConfig -> createSelfHealingFields(config)
             is CrawlerAgentTask.CrawlerTaskTypeConfig -> createCrawlerFields(config)
+            is MCPToolTask.MCPToolTaskTypeConfig -> createMCPToolFields(config)
             // Add more task types as needed
         }
     }
@@ -112,6 +114,40 @@ import javax.swing.JCheckBox
             }
         }
     }
+    private fun com.intellij.ui.dsl.builder.Panel.createMCPToolFields(config: MCPToolTask.MCPToolTaskTypeConfig) {
+        group("MCP Tool Settings") {
+            row("Default Server:") {
+                val field = JBTextField(config.default_server ?: "")
+                field.toolTipText = "Default MCP server name to use if not specified in execution"
+                cell(field)
+                    .align(Align.FILL)
+                    .comment("Name of the default MCP server to connect to")
+                configFields["default_server"] = field
+            }
+            row("Default Timeout (seconds):") {
+                val field = JBTextField(config.default_timeout.toString())
+                field.toolTipText = "Default timeout in seconds for tool execution (1-300)"
+                cell(field)
+                    .comment("Maximum time to wait for tool execution")
+                configFields["default_timeout"] = field
+            }
+            row {
+                val autoRetryCheckbox = JCheckBox("Auto Retry on Failure", config.auto_retry)
+                autoRetryCheckbox.toolTipText = "Automatically retry failed tool executions"
+                cell(autoRetryCheckbox)
+                    .comment("Enable automatic retry for transient failures")
+                configFields["auto_retry"] = autoRetryCheckbox
+            }
+            row("Max Retries:") {
+                val field = JBTextField(config.max_retries.toString())
+                field.toolTipText = "Maximum number of retry attempts (1-10)"
+                cell(field)
+                    .comment("Number of times to retry failed executions")
+                configFields["max_retries"] = field
+            }
+        }
+    }
+
 
     private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
         group("Web Crawler Settings") {
@@ -211,7 +247,35 @@ import javax.swing.JCheckBox
         super.doOKAction()
     }
     
-    private fun validateTaskSpecificFields(): Boolean {
+private fun validateTaskSpecificFields(): Boolean {
+        // Validate MCPTool numeric fields
+        if (config is MCPToolTask.MCPToolTaskTypeConfig) {
+            val timeout = (configFields["default_timeout"] as? JBTextField)?.text?.trim()
+            if (!timeout.isNullOrEmpty()) {
+                val value = timeout.toIntOrNull()
+                if (value == null || value !in 1..300) {
+                    Messages.showWarningDialog(
+                        "Default Timeout must be between 1 and 300 seconds",
+                        "Invalid Value"
+                    )
+                    configFields["default_timeout"]?.requestFocusInWindow()
+                    return false
+                }
+            }
+            val maxRetries = (configFields["max_retries"] as? JBTextField)?.text?.trim()
+            if (!maxRetries.isNullOrEmpty()) {
+                val value = maxRetries.toIntOrNull()
+                if (value == null || value !in 1..10) {
+                    Messages.showWarningDialog(
+                        "Max Retries must be between 1 and 10",
+                        "Invalid Value"
+                    )
+                    configFields["max_retries"]?.requestFocusInWindow()
+                    return false
+                }
+            }
+        }
+        
         // Validate CrawlerAgent numeric fields
         if (config is CrawlerAgentTask.CrawlerTaskTypeConfig) {
             val maxPages = (configFields["max_pages_per_task"] as? JBTextField)?.text?.trim()
@@ -306,7 +370,7 @@ import javax.swing.JCheckBox
         return applyTaskSpecificConfig(baseConfig)
     }
     
-    private fun applyTaskSpecificConfig(baseConfig: TaskTypeConfig): TaskTypeConfig {
+private fun applyTaskSpecificConfig(baseConfig: TaskTypeConfig): TaskTypeConfig {
         return when (config) {
             is RunCodeTask.RunCodeTaskTypeConfig -> {
                 RunCodeTask.RunCodeTaskTypeConfig(
@@ -332,6 +396,18 @@ import javax.swing.JCheckBox
                         ?: emptyList()).toMutableList()
                 )
             }
+            is MCPToolTask.MCPToolTaskTypeConfig -> {
+                MCPToolTask.MCPToolTaskTypeConfig(
+                    task_type = baseConfig.task_type!!,
+                    name = baseConfig.name,
+                    default_server = (configFields["default_server"] as? JBTextField)?.text?.trim()
+                        ?.takeIf { it.isNotEmpty() },
+                    default_timeout = (configFields["default_timeout"] as? JBTextField)?.text?.toIntOrNull() ?: 30,
+                    auto_retry = (configFields["auto_retry"] as? JCheckBox)?.isSelected ?: false,
+                    max_retries = (configFields["max_retries"] as? JBTextField)?.text?.toIntOrNull() ?: 3
+                )
+            }
+
 
             is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
                 CrawlerAgentTask.CrawlerTaskTypeConfig(

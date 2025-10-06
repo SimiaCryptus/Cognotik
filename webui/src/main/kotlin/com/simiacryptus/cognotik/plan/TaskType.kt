@@ -11,12 +11,14 @@ import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
-import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
-import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
-import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
-import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
+ import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+ import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
+ import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
+import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
+import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask.Companion.MCPTool
+ import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+ import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
+ import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask.RunShellCommandTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
@@ -175,8 +177,24 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             <li>Fetches top search results</li>
             <li>Analyzes content for specific goals</li>
             <li>Generates detailed analysis reports</li>
-          </ul>
+</ul>
         """
+        )
+        val MCPTool = TaskType(
+            "MCPTool",
+            MCPToolTask.MCPToolTaskExecutionConfigData::class.java,
+            MCPToolTask.MCPToolTaskTypeConfig::class.java,
+            "Execute tools from Model Context Protocol servers",
+            """
+              Executes tools from MCP (Model Context Protocol) servers.
+              <ul>
+                <li>Connect to MCP servers via various transports</li>
+                <li>Execute tools with custom arguments</li>
+                <li>Configurable timeouts and retry logic</li>
+                <li>Support for multiple MCP server integrations</li>
+                <li>Structured result handling</li>
+              </ul>
+            """
         )
 
         init {
@@ -246,8 +264,14 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                     task
                 )
             }
-            registerConstructor(VectorSearch) { settings, task ->
+registerConstructor(VectorSearch) { settings, task ->
                 VectorSearchTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(MCPTool) { settings, task ->
+                MCPToolTask(
                     settings,
                     task
                 )
