@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.webui.test
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.ChatClientInterface
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
@@ -44,6 +45,7 @@ open class FilePatchTestApp(
             socketManager,
             root = sourceFile.toPath().parent,
             response = patch,
+            processor = PatchProcessors.Fuzzy,
         )
         task.complete(newPatch.renderMarkdown)
 

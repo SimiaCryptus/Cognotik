@@ -5,13 +5,16 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -45,7 +48,6 @@ abstract class ApplicationServer(
     final override val dataStorage: StorageInterface by lazy {
         ApplicationServices.fileApplicationServices().dataStorageFactory
     }
-
     protected open val appInfoServlet by lazy {
         ServletHolder("appInfo", AppInfoServlet { session ->
             appInfo(Session(session!!))
@@ -62,6 +64,7 @@ abstract class ApplicationServer(
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
     override fun newSession(user: User?, session: Session): SocketManager {
+        (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session) ?: SessionProxyServer.agents[session])?.apply { return this; }
         logger.info(
             "Creating new session: {} for user: {} in application: {}",
             session,
@@ -126,18 +129,18 @@ abstract class ApplicationServer(
             userId?.email ?: "anonymous",
             clazz.simpleName
         )
-        val settingsFile = getSettingsFile(session, userId)
+        val settingsFile = getSettingsFile(session, userId ?: UserSettingsManager.defaultUser)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
         if(settingsFile.exists()) try {
             val text = settingsFile.readText()
-            logger.debug("Settings file content (class {}): {}", clazz, text.indent("    "))
             var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
+            logger.debug("Settings file content (class {}):\nRAW:{}\nPARSED:{}", clazz, text.indent("    "), toJson(settings).indent("    "))
             if (null == settings) {
                 logger.debug("No existing settings found, initializing default settings")
                 val initSettings = initSettings<T>(session)
                 if (null != initSettings) {
                     logger.debug("Writing initial settings to file")
-                    settingsFile.writeText(JsonUtil.toJson(initSettings))
+                    settingsFile.writeText(toJson(initSettings))
                 }
                 if (settingsFile.exists()) {
                     settings = JsonUtil.fromJson(text, clazz)
@@ -158,9 +161,9 @@ abstract class ApplicationServer(
 
     fun getSettingsFile(
         session: Session,
-        userId: User?
+        userId: User = UserSettingsManager.defaultUser
     ): File {
-        logger.debug("Getting settings file for session: {} user: {}", session, userId?.email ?: "anonymous")
+        logger.debug("Getting settings file for session: {} user: {}", session, userId.email)
         val settingsFile =
             dataStorage.getDataDir(userId, session).resolve("settings.json")
                 .apply { parentFile.mkdirs() }
@@ -174,7 +177,6 @@ abstract class ApplicationServer(
     override fun configure(webAppContext: WebAppContext) {
         logger.info("Configuring web application context for: {}", applicationName)
         super.configure(webAppContext)
-
         webAppContext.addFilter(
             FilterHolder { request, response, chain ->
                 val requestPath = (request as HttpServletRequest).requestURI
@@ -231,7 +233,6 @@ abstract class ApplicationServer(
         logger.debug("Added deleteSession servlet")
         webAppContext.addServlet(cancelSessionServlet, "/cancel")
         logger.debug("Added cancelSession servlet")
-        logger.info("Web application context configuration completed for: {}", applicationName)
     }
 
     companion object {

@@ -7,9 +7,9 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Path
 
-abstract class AbstractTask<T : TaskConfigBase>(
+abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val orchestrationConfig: OrchestrationConfig,
-    val taskConfig: T?
+    val executionConfig: T?
 ) {
     var state: TaskState? = TaskState.Pending
     protected val codeFiles = mutableMapOf<Path, String>()
@@ -18,8 +18,10 @@ abstract class AbstractTask<T : TaskConfigBase>(
         get() = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
             ?: throw IllegalStateException("Working directory not set")
 
-    open val taskSettings: TaskSettingsBase
-        get() = orchestrationConfig.taskSettings[taskConfig?.task_type!!]!!
+    open val typeConfig: U
+        get() = executionConfig?.task_type
+            ?.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
+            ?: throw IllegalStateException("No task type config for ${executionConfig?.task_type}")
 
     enum class TaskState {
         Pending,
@@ -28,7 +30,7 @@ abstract class AbstractTask<T : TaskConfigBase>(
     }
 
     open fun getPriorCode(executionState: ExecutionState) =
-        taskConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
+        executionConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
             "# $dependency\n\n${executionState.taskResult[dependency] ?: ""}"
         } ?: ""
 

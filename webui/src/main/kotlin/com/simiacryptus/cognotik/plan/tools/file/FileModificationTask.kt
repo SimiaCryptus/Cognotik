@@ -3,11 +3,11 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit
 
 class FileModificationTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: FileModificationTaskConfigData?
-) : AbstractFileTask<FileModificationTaskConfigData>(orchestrationConfig, planTask) {
-    class FileModificationTaskConfigData(
+    planTask: FileModificationTaskExecutionConfigData?
+) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
+    class FileModificationTaskExecutionConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
         extractContent: Boolean = false,
@@ -35,8 +35,8 @@ class FileModificationTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : FileTaskConfigBase(
-        task_type = FileModificationTaskType.name,
+    ) : FileTaskExecutionConfig(
+        task_type = FileModification.name,
         task_description = task_description,
         task_dependencies = task_dependencies,
         related_files = related_files,
@@ -64,9 +64,9 @@ class FileModificationTask(
     }
 
     private fun getInputFileWithDiff(): String {
-        if (!taskConfig?.includeGitDiff!!) return getInputFileCode()
+        if (!executionConfig?.includeGitDiff!!) return getInputFileCode()
         val fileContent = getInputFileCode()
-        val gitDiffs = (taskConfig?.related_files ?: listOf())
+        val gitDiffs = (executionConfig?.related_files ?: listOf())
             .mapNotNull { file ->
                 getGitDiff(file)?.let { diff ->
                     "Git diff for $file:\n$diff"
@@ -86,7 +86,7 @@ class FileModificationTask(
     }
 
     override fun promptSegment() = """
-FileModificationTask - Modify existing files or create new files
+FileModification - Modify existing files or create new files
   * For each file, specify the relative file path and the goal of the modification or creation
   * List input files/tasks to be examined when designing the modifications or new files
 Available files:
@@ -100,23 +100,23 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val defaultFile = if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).isEmpty()) {
+        val defaultFile = if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).isEmpty()) {
             task.complete("CONFIGURATION ERROR: No input files specified")
             resultFn("CONFIGURATION ERROR: No input files specified")
             return
-        } else if (((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).distinct().size == 1) {
-            ((taskConfig?.related_files ?: listOf()) + (taskConfig?.files ?: listOf())).first()
+        } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).distinct().size == 1) {
+            ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
         } else {
+            resultFn("CONFIGURATION ERROR: No input files specified")
             null
         }
 
         val semaphore = Semaphore(0)
-        val onComplete = { semaphore.release() }
         val completionNotes = mutableListOf<String>()
         Retryable(task = task) {
-            val task = task.manager.newTask(false)
-            task.manager.pool.submit {
-                val chatInterface = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+            val task = task.ui.newTask(false)
+            task.ui.pool.submit {
+                val chatInterface = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                     ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
                 val chatAgent = ChatAgent(
                     name = "FileModification",
@@ -177,9 +177,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 val codeResult = chatAgent.answer(
                     (messages + listOf(
                         agent.executionState?.tasksByDescription?.filter {
-                            taskConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskConfigData
+                            executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
                         }?.entries?.joinToString("\n\n") {
-                            (it.value as FileModificationTaskConfigData).files?.joinToString("\n") {
+                            (it.value as FileModificationTaskExecutionConfigData).files?.joinToString("\n") {
                                 val file = root.resolve(it).toFile()
                                 if (file.exists()) {
                                     val relativePath = root.relativize(file.toPath())
@@ -190,14 +190,13 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             } ?: ""
                         } ?: "",
                         getInputFileWithDiff(),
-                        taskConfig?.task_description ?: "",
+                        executionConfig?.task_description ?: "",
                     )).filter { it.isNotBlank() }
                 )
-                if (agent.orchestrationConfig.autoFix) {
-                    onComplete()
-                    val markdown = renderMarkdown(codeResult, ui = task.manager) {
+                if (orchestrationConfig.autoFix) {
+                    val markdown = renderMarkdown(codeResult, ui = task.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            task.manager,
+                            task.ui,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->
@@ -205,16 +204,18 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                                     completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                                 }
                             },
-                            shouldAutoApply = { agent.orchestrationConfig.autoFix },
+                            shouldAutoApply = { orchestrationConfig.autoFix },
                             model = chatInterface,
-                            defaultFile = defaultFile
+                            defaultFile = defaultFile,
+                            orchestrationConfig.processor
                         ) + "\n\n## Auto-applied changes"
                     }
                     task.complete(markdown)
+                    semaphore.release()
                 } else {
-                    task.complete(renderMarkdown(codeResult, ui = task.manager) {
+                    task.complete(renderMarkdown(codeResult, ui = task.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
-                            task.manager,
+                            task.ui,
                             root = agent.root,
                             response = it,
                             handle = { newCodeMap ->
@@ -224,9 +225,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             },
                             model = chatInterface,
                             defaultFile = defaultFile,
-                        ) + acceptButtonFooter(task.manager) {
+                            processor = orchestrationConfig.processor,
+                        ) + acceptButtonFooter(task.ui) {
                             task.complete()
-                            onComplete()
+                            semaphore.release()
                         }
                     })
                 }
@@ -244,10 +246,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     companion object {
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
 
-        val FileModificationTaskType = TaskType(
-            "FileModificationTask",
-            FileModificationTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
+        val FileModification = TaskType(
+            "FileModification",
+            FileModificationTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
             "Create new files or modify existing code with AI-powered assistance",
             """
                       Creates or modifies source files with AI assistance while maintaining code quality.

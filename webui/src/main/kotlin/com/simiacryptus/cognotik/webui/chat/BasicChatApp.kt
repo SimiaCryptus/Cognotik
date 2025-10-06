@@ -1,12 +1,14 @@
 package com.simiacryptus.cognotik.webui.chat
 
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 
 class BasicChatApp(
@@ -39,7 +41,10 @@ class BasicChatApp(
         parsingModel = parsingModel,
     ) as T
 
-    override fun newSession(user: User?, session: Session): ChatSocketManager {
+    override fun newSession(user: User?, session: Session): SocketManager {
+        (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session) ?: SessionProxyServer.agents[session])?.apply {
+            return this;
+        }
         val user = user ?: throw IllegalArgumentException("User must be provided for chat session")
         val settings = this.settings ?: getSettings(session, user)!!
         fun instance(model: ChatModel): ChatInterface? {

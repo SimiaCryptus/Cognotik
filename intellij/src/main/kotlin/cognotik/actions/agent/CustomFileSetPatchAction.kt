@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -986,7 +987,8 @@ class CustomFileSetPatchAction : BaseAction() {
                     SessionProxyServer.chats[session] = CustomFileSetPatchServer(
                         config = Settings(userSettings, project),
                         autoApply = userSettings.autoApply,
-                        outputMode = userSettings.outputMode
+                        outputMode = userSettings.outputMode,
+                        processor = AppSettingsState.instance.processor
                     )
 
                     ApplicationServer.appInfoMap[session] = AppInfoData(
@@ -997,11 +999,10 @@ class CustomFileSetPatchAction : BaseAction() {
                         showMenubar = false
                     )
 
-                    val server = CognotikAppServer.getServer(e.project)
                     CompletableFuture.runAsync({
                         Thread.sleep(500)
                         try {
-                            val uri = server.server.uri.resolve("/#$session")
+                            val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                             log.info("Opening browser to $uri")
                             browse(uri)
                         } catch (e: Throwable) {

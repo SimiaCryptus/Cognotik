@@ -31,7 +31,7 @@ class PluginStartupActivity : ProjectActivity {
         setLogInfo("org.eclipse.jetty")
         setLogInfo("com.simiacryptus")
 //        setLogDebug("com.simiacryptus.cognotik.plan")
-//        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask")
+//        setLogInfo("com.simiacryptus.cognotik.plan.tools.online.CrawlerAgent)
 //        setLogDebug("com.simiacryptus.cognotik.util.FileSelectionUtils")
 //        setLogDebug("com.simiacryptus.cognotik.util.FixedConcurrencyProcessor")
 //        setLogDebug("com.simiacryptus.cognotik.chat")
@@ -55,7 +55,7 @@ class PluginStartupActivity : ProjectActivity {
                         import(configContent)
                         write(AppSettingsState.instance, AppSettingsComponent())
                     }
-                    AppSettingsState.Companion.notifySettingsLoaded()
+                    AppSettingsState.notifySettingsLoaded()
                     log.info("Loaded config from $configFile")
                 } else {
                     log.warn("Config file $configFile does not exist")

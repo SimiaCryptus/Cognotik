@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -18,7 +19,14 @@ class CmdPatchApp(
     val files: Array<out File>?,
     model: ChatInterface,
     parsingModel: ChatInterface,
-) : PatchApp(root.toFile(), settings, model, parsingModel = parsingModel) {
+    processor: PatchProcessor,
+) : PatchApp(
+    root.toFile(),
+    settings,
+    model,
+    parsingModel = parsingModel,
+    processor = processor,
+) {
 
     companion object {
         private val log = LoggerFactory.getLogger(CmdPatchApp::class.java)
@@ -95,7 +103,7 @@ class CmdPatchApp(
                     val cmdString = processBuilder.command().joinToString(" ")
                     log.debug("Full command string: $cmdString")
                     log.debug("Working directory: {}", cmdSettings.workingDirectory)
-                    val task = task.manager.newTask(false).apply { tabs[cmdString] = placeholder }
+                    val task = task.ui.newTask(false).apply { tabs[cmdString] = placeholder }
                     task.add("Working Directory: ${cmdSettings.workingDirectory}")
                     task.add("Command: $cmdString")
                     task.add("Model: $model / $parsingModel")

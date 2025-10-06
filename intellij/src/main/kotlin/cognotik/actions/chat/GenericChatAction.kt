@@ -36,7 +36,6 @@ class GenericChatAction : BaseAction() {
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                val pool = ApplicationServices.threadPoolManager.getPool(session, null)
                 SessionProxyServer.agents[session] = ChatSocketManager(
                     session = session,
                     model = AppSettingsState.instance.smartChatClient,
@@ -53,9 +52,8 @@ class GenericChatAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer(project)
 
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                 ApplicationManager.getApplication().executeOnPooledThread {
                     try {
                         BaseAction.log.info("Opening browser to $uri")

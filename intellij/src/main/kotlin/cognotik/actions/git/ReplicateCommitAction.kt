@@ -13,13 +13,11 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.IterativePatchUtil
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -115,8 +113,7 @@ class ReplicateCommitAction : BaseAction() {
             ApplicationManager.getApplication().executeOnPooledThread {
                 Thread.sleep(500)
                 try {
-                    val server = CognotikAppServer.getServer(project)
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {
@@ -164,7 +161,7 @@ class ReplicateCommitAction : BaseAction() {
                     "\n",
                     "\n  "
                 )
-                val diff = IterativePatchUtil.generatePatch(before, after)
+                val diff = AppSettingsState.instance.processor.generatePatch(before, after)
                 "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
             } ?: "No changes found"
     }
@@ -259,7 +256,7 @@ class ReplicateCommitAction : BaseAction() {
 
                   You will be answering questions about the following code:
 
-                  """.trimIndent() + codeSummary + "\n" + patchFormatPrompt +
+                  """.trimIndent() + codeSummary + "\n" + { AppSettingsState.instance.processor.patchFormatPrompt } +
                                     "\nIf needed, new files can be created by using code blocks labeled with the filename in the same manner.",
                             model = AppSettingsState.instance.smartChatClient
                         ).answer(
@@ -284,6 +281,7 @@ class ReplicateCommitAction : BaseAction() {
                                     task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                 }
                             },
+                            processor = AppSettingsState.instance.processor,
                         )
                         task.add(renderMarkdown(markdown))
                         task.placeholder

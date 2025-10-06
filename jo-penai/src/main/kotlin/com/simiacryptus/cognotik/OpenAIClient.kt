@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.StringUtil
 import org.apache.hc.client5.http.classic.methods.HttpGet
@@ -23,13 +24,10 @@ import org.apache.hc.core5.http.io.entity.StringEntity
 import org.slf4j.Logger
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
-import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.io.IOException
-import java.net.URL
 import java.util.*
 import java.util.concurrent.ExecutorService
-import javax.imageio.ImageIO
 
 open class OpenAIClient(
     protected var key: String,
@@ -44,12 +42,10 @@ open class OpenAIClient(
     workPool = workPool,
     scheduledPool = scheduledPool
 ) {
-    private val log: Logger = LoggerFactory.getLogger(OpenAIClient::class.java).apply {
-        info("OpenAIClient initialized with log level: $logLevel")
-    }
 
     var user: Any? = null
     var session: Any? = null
+    open val provider = APIProvider.OpenAI
 
     open fun onUsage(model: AIModel?, tokens: Usage) {
     }
@@ -76,8 +72,6 @@ open class OpenAIClient(
         apiProvider.authorize(request, key, apiBase)
         EntityUtils.toString(it.execute(request).entity)
     }
-
-    open val provider = APIProvider.OpenAI
 
     open fun complete(
         request: CompletionRequest, model: LLMModel
@@ -180,7 +174,6 @@ open class OpenAIClient(
             response
         }
     }
-
     open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
         withReliability {
             withPerformanceLogging {
@@ -210,7 +203,6 @@ open class OpenAIClient(
                 }
             }
         }
-
     open fun createSpeech(request: ModelSchema.SpeechRequest): ByteArray? = withReliability {
         withPerformanceLogging {
             val httpRequest = HttpPost("${apiBase}/audio/speech")
@@ -238,51 +230,6 @@ open class OpenAIClient(
             }
         }
     }
-
-    open fun render(prompt: String = "", resolution: Int = 1024, count: Int = 1): List<BufferedImage> =
-        withReliability {
-            withPerformanceLogging {
-                val url = "${apiBase}/images/generations"
-                val request = HttpPost(url)
-                request.addHeader("Accept", "application/json")
-                request.addHeader("Content-Type", "application/json")
-                provider.authorize(request, key, apiBase)
-                val jsonObject = JsonObject()
-                jsonObject.addProperty("prompt", prompt)
-                jsonObject.addProperty("n", count)
-                jsonObject.addProperty("size", "${resolution}x$resolution")
-                request.entity = StringEntity(jsonObject.toString(), Charsets.UTF_8, false)
-                val response = post(request)
-                log.info("Image generation response received")
-                val jsonObject2 = Gson().fromJson(response, JsonObject::class.java)
-                if (jsonObject2.has("error")) {
-                    val errorObject = jsonObject2.getAsJsonObject("error")
-                    throw RuntimeException(IOException(errorObject["message"].asString))
-                }
-                val dataArray = jsonObject2.getAsJsonArray("data")
-                val images = ArrayList<BufferedImage>()
-                for (i in 0 until dataArray.size()) {
-                    images.add(ImageIO.read(URL(dataArray[i].asJsonObject.get("url").asString)))
-                }
-                images
-            }
-        }
-
-    data class Content(
-        val role: String? = null,
-        val parts: List<Part>? = null
-    )
-
-    data class Part(
-        val inlineData: Blob? = null,
-        val text: String? = null
-    )
-
-    data class Blob(
-        val mimeType: String? = null,
-        val data: String? = null
-    )
-
     open fun moderate(text: String) = withReliability {
         when {
             provider == APIProvider.Groq -> return@withReliability
@@ -319,111 +266,14 @@ open class OpenAIClient(
                 throw RuntimeException(
                     ModerationException(
                         "Moderation flagged this request due to " + categoriesObj.keySet()
-                        .stream().filter { c: String? ->
-                            categoriesObj[c].asBoolean
-                        }.reduce { a: String, b: String -> "$a, $b" }.orElse("???")
+                            .stream().filter { c: String? ->
+                                categoriesObj[c].asBoolean
+                            }.reduce { a: String, b: String -> "$a, $b" }.orElse("???")
                     )
                 )
             }
         }
     }
-
-    open fun edit(
-        editRequest: EditRequest
-    ): CompletionResponse = withReliability {
-        withPerformanceLogging {
-            if (editRequest.input == null) {
-                log(
-                    msg = String.format(
-                        "Text Edit Request\nInstruction:\n\t%s\n", editRequest.instruction.lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    )
-                )
-            } else {
-                log(
-                    msg = String.format(
-                        "Text Edit Request\nInstruction:\n\t%s\nInput:\n\t%s\n",
-                        editRequest.instruction.lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n"),
-                        editRequest.input.lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    )
-                )
-            }
-            val request: String = StringUtil.restrictCharacterSet(
-                JsonUtil.objectMapper().writeValueAsString(editRequest), allowedCharset
-            )
-            val result = post("${apiBase}/edits", request, provider)
-            log.info("Edit response received")
-            checkError(result)
-            val response = JsonUtil.objectMapper().readValue(
-                result, CompletionResponse::class.java
-            )
-            if (response.usage != null) {
-                val model = EditModels.values().values.find { it.modelName.equals(editRequest.model, true) }
-                onUsage(
-                    model, response.usage.copy(cost = model?.pricing(response.usage))
-                )
-            }
-            log(
-                msg = String.format(
-                    "Edit Completion:\n\t%s",
-                    response.firstChoice.orElse("").toString().trim { it <= ' ' }.lineSequence()
-                        .map {
-                            when {
-                                it.isBlank() -> {
-                                    when {
-                                        it.length < "  ".length -> "  "
-                                        else -> it
-                                    }
-                                }
-
-                                else -> "  " + it
-                            }
-                        }
-                        .joinToString("\n")
-                )
-            )
-            response
-        }
-    }
-
     open fun createImage(request: ImageGenerationRequest): ImageGenerationResponse = withReliability {
         withPerformanceLogging {
             val url = "${apiBase}/images/generations"
@@ -438,7 +288,7 @@ open class OpenAIClient(
             val response = post(httpRequest)
             checkError(response)
             log.info("Image creation response received")
-            val model = ImageModels.values().find { it.modelName.equals(request.model, true) }
+            val model = ImageModels.values.values.find { it.modelName.equals(request.model, true) }
             val dims = request.size?.split("x")
             onUsage(
                 model, Usage(
@@ -451,6 +301,10 @@ open class OpenAIClient(
 
             JsonUtil.objectMapper().readValue(response, ImageGenerationResponse::class.java)
         }
+    }
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(OpenAIClient::class.java)
     }
 
 }

@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -20,10 +20,10 @@ import java.io.File
 
 class SoftwareGraphGenerationTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: SoftwareGraphGenerationTaskConfigData?
-) : AbstractTask<SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: SoftwareGraphGenerationTaskExecutionConfigData?
+) : AbstractTask<SoftwareGraphGenerationTask.SoftwareGraphGenerationTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class SoftwareGraphGenerationTaskConfigData(
+    class SoftwareGraphGenerationTaskExecutionConfigData(
         @Description("The output file path where the software graph will be saved")
         val output_file: String = "software_graph.json",
         @Description("The type of nodes to focus on generating (e.g., CodeFile, CodePackage, etc.)")
@@ -32,8 +32,8 @@ class SoftwareGraphGenerationTask(
         task_dependencies: List<String>? = null,
         input_files: List<String>? = null,
         state: TaskState? = null
-    ) : AbstractFileTask.FileTaskConfigBase(
-        task_type = "SoftwareGraphGenerationTask",
+    ) : AbstractFileTask.FileTaskExecutionConfig(
+        task_type = "SoftwareGraphGeneration",
         task_description = task_description,
         task_dependencies = task_dependencies,
         related_files = input_files,
@@ -47,14 +47,14 @@ class SoftwareGraphGenerationTask(
     }
 
     override fun promptSegment() = """
-    SoftwareGraphGenerationTask - Generate a SoftwareGraph representation of the codebase
+    SoftwareGraphGeneration - Generate a SoftwareGraph representation of the codebase
       ** Specify the output file path for the generated graph
       ** Optionally specify node types to focus on
       ** List input files to analyze for graph generation
   """.trimIndent()
 
     fun getInputFileCode(): String {
-        val inputFiles = taskConfig?.related_files ?: return ""
+        val inputFiles = executionConfig?.related_files ?: return ""
         return inputFiles.joinToString("\n\n") { filePath ->
             val file = File(filePath)
             if (file.exists()) {
@@ -94,7 +94,7 @@ class SoftwareGraphGenerationTask(
                                 .joinToString<String>("\n")
                         }"
                     } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
-            model = (taskSettings.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+            model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                 ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
             parsingModel = this.orchestrationConfig.parsingChatter,
             temperature = this.orchestrationConfig.temperature,
@@ -104,7 +104,7 @@ class SoftwareGraphGenerationTask(
             messages + listOf(
                 getInputFileCode(),
                 "Generate a SoftwareGraph for the above code focusing on these node types: ${
-                    taskConfig?.node_types?.joinToString(
+                    executionConfig?.node_types?.joinToString(
                         ", "
                     )
                 }"
@@ -115,7 +115,7 @@ class SoftwareGraphGenerationTask(
             input = messages,
         )
 
-        val outputFile = File(orchestrationConfig.absoluteWorkingDir ?: ".").resolve(taskConfig?.output_file.let {
+        val outputFile = File(orchestrationConfig.absoluteWorkingDir ?: ".").resolve(executionConfig?.output_file.let {
             when {
                 it.isNullOrBlank() -> "software_graph.json"
                 else -> it
@@ -138,7 +138,7 @@ class SoftwareGraphGenerationTask(
                 }
             }
 
-            task.add(MarkdownUtil.renderMarkdown(summary, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
             resultFn(summary)
         } catch (e: Exception) {
             task.error(e)

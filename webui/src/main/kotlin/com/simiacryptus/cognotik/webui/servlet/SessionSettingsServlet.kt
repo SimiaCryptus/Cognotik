@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -110,7 +111,7 @@ class SessionSettingsServlet(
                     val user = authenticationManager.getUser(cookie)
                     logger.debug("User identified for settings update: ${user?.id ?: "anonymous"}")
 
-                    val settingsFile = server.getSettingsFile(session, user)
+                    val settingsFile = server.getSettingsFile(session, user  ?: UserSettingsManager.defaultUser)
                     settingsFile.parentFile.mkdirs()
                     logger.debug("Saving settings to file: ${settingsFile.absolutePath}")
 

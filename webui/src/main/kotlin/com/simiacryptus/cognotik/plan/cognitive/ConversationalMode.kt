@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -25,8 +25,7 @@ open class ConversationalMode(
     override val ui: SocketManager,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
-    override val user: User?,
-    val describer: TypeDescriber
+    override val user: User?
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(ConversationalMode::class.java)
 
@@ -41,7 +40,13 @@ open class ConversationalMode(
 
     override fun initialize() {
         val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
-        log.debug("TaskChatMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
+        log.debug("ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}", RuntimeException())
+        log.debug(
+            "Task configurations: ${
+                orchestrationConfig.taskSettings.values.joinToString(", ") {
+                    "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
+                }
+        }")
         synchronized(messagesLock) {
             messages.add(ModelSchema.ChatMessage(ModelSchema.Role.system, systemPrompt.toContentList()))
         }
@@ -66,7 +71,7 @@ open class ConversationalMode(
         task.echo(renderMarkdown(userMessage))
         Retryable(task) {
             val subtask = ui.newTask(false)
-            ui.pool?.submit {
+            ui.pool.submit {
                 execute(subtask, userMessage)
             }
             subtask.placeholder
@@ -74,50 +79,45 @@ open class ConversationalMode(
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-        val coordinator = TaskOrchestrator(
-            user = user,
-            session = session,
-            dataStorage = ui.dataStorage!!,
-            root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: ui.dataStorage?.getSessionDir(
-                    user,
-                    session
-                )?.toPath() ?: File(".").toPath(),
-            orchestrationConfig = orchestrationConfig
-        )
 
         try {
-            val defaultChatter = coordinator.orchestrationConfig.defaultChatter
-            val parsingModel = coordinator.orchestrationConfig.parsingChatter
+            val describer = TaskContextYamlDescriber(orchestrationConfig)
+            val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
             val parsedActor = ParsedAgent(
                 name = "TaskChooser",
                 resultClass = AdaptivePlanningMode.Tasks::class.java,
                 exampleInstance = AdaptivePlanningMode.Tasks(
                     listOfNotNull(
-                        TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).firstOrNull()?.let {
-                            TaskType.getImpl(coordinator.orchestrationConfig, it).taskConfig
+                        availableTaskTypes.firstOrNull()?.let {
+                            TaskType.getImpl(orchestrationConfig, it).executionConfig
                         }
                     ).toMutableList()
                 ),
                 prompt = buildString {
                     append("Given the following input, choose ONE task to execute. Select the most appropriate task type for the given input and provide all required details.\n")
                     append("Available task types:\n")
-                    append(TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).joinToString("\n\n") { taskType ->
-                        "* ${
-                            TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim().trimIndent()
+                    append(orchestrationConfig.taskSettings.values.joinToString("\n\n") { config ->
+                        val taskType = TaskType.valueOf(config.task_type ?: return@joinToString "")
+                        val configName = config.name?.let { " ($it)" } ?: ""
+                        "* ${taskType.name}$configName:\n  ${
+                            TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim()
+                                .trimIndent()
                                 .indent("  ")
                         }"
                     })
                     append("\nChoose the most suitable task type and provide details of how it should be executed.")
+                    if (orchestrationConfig.taskSettings.values.any { it.name != null }) {
+                        append("\nNote: Some task types have multiple configurations available. You can specify which configuration to use by setting the task_config_name field.")
+                    }
                 },
-                model = defaultChatter.getChildClient(task),
-                parsingModel = parsingModel,
-                temperature = coordinator.orchestrationConfig.temperature,
+                model = orchestrationConfig.defaultChatter.getChildClient(task),
+                parsingModel = orchestrationConfig.parsingChatter.getChildClient(task),
+                temperature = orchestrationConfig.temperature,
                 describer = describer,
-                parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+                parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes
                     .joinToString("\n\n") { taskType ->
                         "${taskType.name}:\n  ${
-                            describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                            describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
                         }".trim()
                     })
             )
@@ -142,7 +142,16 @@ open class ConversationalMode(
             ui.newTask(false).apply {
                 tabs["Run"] = placeholder
                 TaskType.getImpl(orchestrationConfig, chosenTasks).run(
-                    agent = coordinator,
+                    agent = TaskOrchestrator(
+                        user = user,
+                        session = session,
+                        dataStorage = ui.dataStorage!!,
+                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                            ?: ui.dataStorage?.getSessionDir(
+                                user,
+                                session
+                            )?.toPath() ?: File(".").toPath()
+                    ),
                     messages = listOf(userMessage),
                     task = this,
                     resultFn = {
@@ -226,8 +235,7 @@ open class ConversationalMode(
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
-        ) = ConversationalMode(ui, orchestrationConfig, session, user, describer)
+            user: User?
+        ) = ConversationalMode(ui, orchestrationConfig, session, user)
     }
 }

@@ -16,7 +16,7 @@ data class SeedItem(
 
 interface SeedStrategy : EnabledStrategy {
     fun getSeedItems(
-        taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+        taskConfig: CrawlerAgentTask.CrawlerTaskExecutionConfigData?,
         orchestrationConfig: OrchestrationConfig
     ): List<SeedItem>?
 }
@@ -49,6 +49,10 @@ enum class SeedMethod : SeedMethodFactory {
     SearchIO_Google_News {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
             SearchAPISearch("google_news", "organic_results").createStrategy(task, user)
+    },
+    SearchIO_Google_Jobs {
+        override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =
+            SearchAPISearch("google_jobs", "jobs").createStrategy(task, user)
     },
     SearchIO_Amazon {
         override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy =

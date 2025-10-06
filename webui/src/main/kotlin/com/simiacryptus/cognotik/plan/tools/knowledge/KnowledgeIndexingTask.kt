@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.apps.parse.DocumentRecord.Companion.indexJsonFi
 import com.simiacryptus.cognotik.apps.parse.ProgressState
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -14,30 +15,33 @@ import java.util.concurrent.TimeUnit
 
 class KnowledgeIndexingTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: KnowledgeIndexingTaskConfigData?
-) : AbstractTask<KnowledgeIndexingTask.KnowledgeIndexingTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: KnowledgeIndexingTaskExecutionConfigData?
+) : AbstractTask<KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData, TaskTypeConfig>(
+    orchestrationConfig,
+    planTask
+) {
 
-    class KnowledgeIndexingTaskConfigData(
+    class KnowledgeIndexingTaskExecutionConfigData(
         @Description("The file paths to process and index")
         val file_paths: List<String>,
-    @Description("The type of parsing to use: 'document' or 'code'")
-    val parsing_type: String? = "document",
-    @Description("The chunk size for splitting documents (0.0 to 1.0)")
-    val chunk_size: Double? = 0.1,
-    @Description("The embedding model to use for indexing")
-    val embedding_model: String? = "OllamaNomadic",
+        @Description("The type of parsing to use: 'document' or 'code'")
+        val parsing_type: String? = "document",
+        @Description("The chunk size for splitting documents (0.0 to 1.0)")
+        val chunk_size: Double? = 0.1,
+        @Description("The embedding model to use for indexing")
+        val embedding_model: String? = OllamaEmbeddingModels.NomicEmbedText.modelName,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskConfigBase(
-        task_type = TaskType.KnowledgeIndexingTask.name,
+    ) : TaskExecutionConfig(
+        task_type = TaskType.KnowledgeIndexing.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-      KnowledgeIndexingTask - Process and index files for semantic search
+      KnowledgeIndexing - Process and index files for semantic search
         ** Specify the file paths to process
         ** Specify the parsing type (document or code)
         ** Optionally specify the chunk size (default 0.1)
@@ -51,7 +55,7 @@ class KnowledgeIndexingTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val filePaths = taskConfig?.file_paths ?: return
+        val filePaths = executionConfig?.file_paths ?: return
         val files = filePaths.map { path ->
             File(path).also { file ->
                 if (!file.exists()) {
@@ -69,7 +73,7 @@ class KnowledgeIndexingTask(
                     appendLine("* $path")
                 }
             }
-            task.add(MarkdownUtil.renderMarkdown(result, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(result, ui = task.ui))
             resultFn(result)
             return
         }
@@ -80,15 +84,9 @@ class KnowledgeIndexingTask(
         try {
             val progressState = ProgressState.progressBar(task)
             // Determine embedding model from configuration
-            val embeddingModel = when (taskConfig?.embedding_model?.lowercase()) {
-                "ollamanomadic", null -> EmbeddingModel.OllamaNomadic
-                // Add more model mappings as needed
-                else -> {
-                    log.warn("Unknown embedding model: ${taskConfig?.embedding_model}, using OllamaNomadic")
-                    EmbeddingModel.OllamaNomadic
-                }
-            }
-            
+            val embeddingModel = EmbeddingModel.values().toList().firstOrNull {
+                it.second.modelName.equals(executionConfig.embedding_model, ignoreCase = true)
+            }!!.second
             indexJsonFile(
                 pool = threadPool,
                 progressState = progressState,
@@ -100,16 +98,16 @@ class KnowledgeIndexingTask(
                 appendLine("# Knowledge Indexing Complete")
                 appendLine()
                 appendLine("## Configuration")
-                appendLine("* Embedding Model: ${taskConfig?.embedding_model ?: "OllamaNomadic"}")
-                appendLine("* Parsing Type: ${taskConfig?.parsing_type ?: "document"}")
-                appendLine("* Chunk Size: ${taskConfig?.chunk_size ?: 0.1}")
+                appendLine("* Embedding Model: ${executionConfig?.embedding_model ?: "OllamaNomadic"}")
+                appendLine("* Parsing Type: ${executionConfig?.parsing_type ?: "document"}")
+                appendLine("* Chunk Size: ${executionConfig?.chunk_size ?: 0.1}")
                 appendLine()
                 appendLine("Processed ${files.size} files:")
                 files.forEach { file ->
                     appendLine("* ${file.name}")
                 }
             }
-            task.add(MarkdownUtil.renderMarkdown(result, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(result, ui = task.ui))
             resultFn(result)
         } finally {
             threadPool.shutdown()

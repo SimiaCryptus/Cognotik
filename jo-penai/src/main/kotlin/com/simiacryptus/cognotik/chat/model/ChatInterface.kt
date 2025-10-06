@@ -10,7 +10,7 @@ import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
-open class ChatInterface(
+class ChatInterface(
     val logStreams: MutableList<BufferedOutputStream>,
     private val key: String,
     private val base: String,
@@ -27,7 +27,7 @@ open class ChatInterface(
         require(base.isNotBlank()) { "Base URL must be provided" }
         require(temperature in 0.0..2.0) { "Temperature must be in range [0.0, 2.0]" }
     }
-    open fun chat(
+    fun chat(
         messages: List<ChatMessage>,
         streams: MutableList<BufferedOutputStream> = logStreams
     ) = provider.getChatClient(
@@ -54,23 +54,40 @@ open class ChatInterface(
         set(value) {}
 
     @JsonIgnore
-    fun getChildClient(): ChatInterface = ChildChatInterface(
-        parent = this,
+    fun getChildClient(): ChatInterface = ChatInterface(
+        logStreams = this.logStreams.toTypedArray().toMutableList(),
+        key = this.key,
+        base = this.base,
+        logLevel = this.logLevel,
+        temperature = this.temperature,
+        provider = this.provider,
+        modelType = this.modelType,
+        workPool = this.workPool,
+        scheduledPool = this.scheduledPool,
+        onUsage = this.onUsage,
     )
 
-    class ChildChatInterface(
-        val parent: ChatInterface,
-        logStreams: MutableList<BufferedOutputStream> = parent.logStreams.toTypedArray().toMutableList(),
-    ) : ChatInterface(
+    fun copy(
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams,
+        key: String = this.key,
+        base: String = this.base,
+        logLevel: Level = this.logLevel,
+        temperature: Double = this.temperature,
+        provider: APIProvider = this.provider,
+        modelType: ChatModel = this.modelType,
+        workPool: ExecutorService = this.workPool,
+        scheduledPool: ListeningScheduledExecutorService = this.scheduledPool,
+        onUsage: (model: LLMModel, tokens: ModelSchema.Usage) -> Unit = this.onUsage,
+    ) = ChatInterface(
         logStreams = logStreams,
-        key = parent.key,
-        base = parent.base,
-        logLevel = parent.logLevel,
-        temperature = parent.temperature,
-        provider = parent.provider,
-        modelType = parent.modelType,
-        workPool = parent.workPool,
-        scheduledPool = parent.scheduledPool,
-        onUsage = parent.onUsage,
+        key = key,
+        base = base,
+        logLevel = logLevel,
+        temperature = temperature,
+        provider = provider,
+        modelType = modelType,
+        workPool = workPool,
+        scheduledPool = scheduledPool,
+        onUsage = onUsage,
     )
 }

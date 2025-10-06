@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.plan.tools
 import com.simiacryptus.cognotik.actors.CodeAgent
 import com.simiacryptus.cognotik.apps.code.CodingTask
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -19,21 +19,21 @@ import kotlin.reflect.KClass
 
 class RunCodeTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: RunCodeTaskConfigData?,
-) : AbstractTask<RunCodeTask.RunCodeTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: RunCodeTaskExecutionConfigData?,
+) : AbstractTask<RunCodeTask.RunCodeTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class RunCodeTaskSettings(
-        task_type : String = TaskType.RunCodeTask.name,
+    class RunCodeTaskTypeConfig(
+        task_type : String = TaskType.RunCode.name,
         val codeRuntime: CodeRuntimes? = null,
-        enabled: Boolean = true,
         model: ApiChatModel? = null,
-    ) : TaskSettingsBase(
+        name: String? = task_type,
+    ) : TaskTypeConfig(
         task_type = task_type,
-        enabled = enabled,
+        name = name,
         model = model,
     )
 
-    class RunCodeTaskConfigData(
+    class RunCodeTaskExecutionConfigData(
         @Description("The task or goal to be accomplished")
         val goal: String? = null,
         @Description("The relative file path of the working directory")
@@ -41,15 +41,15 @@ class RunCodeTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
-        task_type = TaskType.RunCodeTask.name,
+    ) : TaskExecutionConfig(
+        task_type = TaskType.RunCode.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-    RunCodeTask - Use a code interpreter to solve and complete the user's request.
+    RunCode - Use a code interpreter to solve and complete the user's request.
       * Do not directly write code (yet)
       * Include detailed technical requirements for the needed solution
     """.trimIndent()
@@ -63,11 +63,11 @@ class RunCodeTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
-        val model = (taskSettings.model?.let { agent.orchestrationConfig.instance(it) }
-            ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
+        val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+            ?: orchestrationConfig.defaultChatter).getChildClient(task)
 
 //        val taskSettings = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask)
-        val taskSettings = taskSettings as? RunCodeTaskSettings
+        val taskSettings = typeConfig as? RunCodeTaskTypeConfig
         val runtime = taskSettings?.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
         val defs = mapOf(
             "env" to (orchestrationConfig.env ?: emptyMap()),
@@ -83,7 +83,7 @@ class RunCodeTask(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
-            ui = task.manager,
+            ui = task.ui,
             interpreter = codeRuntime::class as KClass<CodeRuntime>,
             symbols = mapOf<String, Any>(
                 "env" to (orchestrationConfig.env ?: emptyMap()),
@@ -153,7 +153,7 @@ class RunCodeTask(
         codingAgent.start(
             codingAgent.codeRequest(
                 messages.map { it to ModelSchema.Role.user } + listOf(
-                    (this.taskConfig?.goal ?: "") to ModelSchema.Role.user,
+                    (this.executionConfig?.goal ?: "") to ModelSchema.Role.user,
                 )
             )
         )

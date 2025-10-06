@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.apps.general
 
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -28,7 +28,8 @@ abstract class PatchApp(
     val model: ChatInterface,
     val parsingModel: ChatInterface,
     private val promptPrefix: String = """The following command was run and produced an error:""",
-) : ApplicationServer(
+    val processor: PatchProcessor,
+    ) : ApplicationServer(
     applicationName = "Magic Code Fixer",
     path = "/fixCmd",
     showMenubar = false,
@@ -133,9 +134,9 @@ abstract class PatchApp(
     override val inputCnt = 1
     override val stickyInput = false
     override fun newSession(user: User?, session: Session): SocketManager {
+        val socketManager = super.newSession(user, session)
         log.info("Creating new session for user: ${user?.id ?: "anonymous"}")
         var retries: Int = -1
-        val socketManager = super.newSession(user, session)
         val ui = socketManager
         val task = ui.newTask()
         var retryOnOffButton: StringBuilder? = null
@@ -271,7 +272,7 @@ abstract class PatchApp(
             return outputResult
         }
 
-        val fixTask = task.manager.newTask(false).apply { tabs["Fix"] = placeholder }
+        val fixTask = task.ui.newTask(false).apply { tabs["Fix"] = placeholder }
         try {
             log.info("Creating child API client for fix task")
             val plan = if (outputResult.errors == null) {
@@ -351,8 +352,8 @@ abstract class PatchApp(
         filteredErrors.groupBy { it.message }
             .map { (msg, errors) ->
                 log.info("Processing error group: $msg with ${errors.size} instances")
-                task.manager.pool.submit {
-                    val task = task.manager.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
+                task.ui.pool.submit {
+                    val task = task.ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
                     errors.forEach { error ->
                         log.info("Processing individual error: ${error.message}")
                         task.header("Processing error: $msg", 3)
@@ -360,14 +361,14 @@ abstract class PatchApp(
                             renderMarkdown(
                                 "```json\n${JsonUtil.toJson(error)}\n```",
                                 tabs = false,
-                                ui = task.manager
+                                ui = task.ui
                             )
                         )
                         task.verbose(
                             renderMarkdown(
                                 "[Extra Details] Error processed at: ${Instant.now()}",
                                 tabs = false,
-                                ui = task.manager
+                                ui = task.ui
                             )
                         )
 
@@ -388,7 +389,7 @@ abstract class PatchApp(
                                 renderMarkdown(
                                     "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}",
                                     tabs = false,
-                                    ui = task.manager
+                                    ui = task.ui
                                 )
                             )
                         }
@@ -514,7 +515,7 @@ abstract class PatchApp(
         You are a helpful AI that helps people with coding.
         You will be answering questions about the following code:
         $summary
-        $patchFormatPrompt
+        ${processor.patchFormatPrompt}
         If needed, new files can be created by using code blocks labeled with the filename in the same manner.
         Note: Ignore any "/* Error: ... */" comments when generating patches - these are just for reference.
         """.trimIndent(),
@@ -531,6 +532,7 @@ abstract class PatchApp(
         }
         log.info("Received fix response (${fixResponse.length} chars)")
         val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
+            self = task.ui,
             root = root.toPath(),
             response = fixResponse,
             shouldAutoApply = { path ->
@@ -551,13 +553,13 @@ abstract class PatchApp(
                 }
             },
             model = model,
-            self = task.manager
+            processor = processor
         )
         log.info("Instrumented file diffs with apply links")
         task.verbose(
             renderMarkdown("Previous occurrences of this error:\n\n" + previousErrorOccurances.joinToString("\n") {
                 "* " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(it.timestamp)
-            } + "\nNon-matching instances: ${others.size}", tabs = false, ui = task.manager))
+            } + "\nNon-matching instances: ${others.size}", tabs = false, ui = task.ui))
         task.verbose(
             renderMarkdown(
                 "Files identified for modification:\n\n${
@@ -566,7 +568,7 @@ abstract class PatchApp(
                             root.toPath().resolve(it).toFile().length()
                         } bytes)"
                     }
-                }", tabs = false, ui = task.manager))
+                }", tabs = false, ui = task.ui))
         log.info("Fix process completed for error: ${error.message}")
         task.complete("<div>${renderMarkdown(markdown)}</div>")
     }

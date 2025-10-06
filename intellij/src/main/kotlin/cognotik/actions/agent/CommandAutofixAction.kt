@@ -121,7 +121,8 @@ class CommandAutofixAction : BaseAction() {
                     },
                     parsingModel = AppSettingsState.instance.fastChatClient.getChildClient().apply {
                         budget = settingsUI.apiBudgetField.value as Double
-                    }
+                    },
+                    processor = AppSettingsState.instance.processor
                 )
                 val session = Session.newGlobalID()
                 SessionProxyServer.chats[session] = patchApp
@@ -135,11 +136,10 @@ class CommandAutofixAction : BaseAction() {
                 val dateFormat = SimpleDateFormat("HH:mm:ss")
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
                 SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
-                val server = CognotikAppServer.getServer(e.project)
                 Thread {
                     Thread.sleep(500)
                     try {
-                        val uri = server.server.uri.resolve("/#$session")
+                        val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                         BaseAction.log.info("Opening browser to $uri")
                         browse(uri)
                     } catch (e: Throwable) {

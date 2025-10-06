@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -23,6 +22,7 @@ import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.io.OutputStream
+import java.net.URI
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import kotlin.io.path.relativeTo
@@ -76,8 +76,7 @@ open class ModifyFilesAction(
                 loadImages = false,
                 showMenubar = false
             )
-            val server = CognotikAppServer.getServer(e.project)
-            launchBrowser(server, session.toString())
+            launchBrowser(session.toString(), CognotikAppServer.getServer().server.uri)
         } catch (e: Exception) {
 
             log.error("Error in MultiDiffChatAction", e)
@@ -97,11 +96,11 @@ open class ModifyFilesAction(
         }
     }
 
-    private fun launchBrowser(server: CognotikAppServer, session: String) {
+    private fun launchBrowser(session: String, uri: URI) {
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = uri.resolve("/#$session")
                 BaseAction.log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {
@@ -132,7 +131,7 @@ open class ModifyFilesAction(
         You will be answering questions about the following code:
         ${codeSummary()}
         ${if (showLineNumbers) "\nNote: Line numbers are shown at the beginning of each line in the format 'NUMBER | CODE'. These are for reference only and should not be included in any patches or code modifications.\n" else ""}
-        ${patchFormatPrompt}
+        ${AppSettingsState.instance.processor.patchFormatPrompt}
       """.trimIndent()
 
         private fun getCodeFiles(): Set<Path> {
@@ -179,6 +178,7 @@ open class ModifyFilesAction(
                 defaultFile = if (files.size == 1) files.first().let {
                     root.toPath().resolve(it).toFile().absolutePath
                 } else null,
+                processor = AppSettingsState.instance.processor,
             )
         }
 

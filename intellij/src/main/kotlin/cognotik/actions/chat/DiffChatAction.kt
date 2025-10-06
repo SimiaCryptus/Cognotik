@@ -11,10 +11,8 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.AddApplyDiffLinks.Companion.addApplyDiffLinks
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -30,6 +28,7 @@ class DiffChatAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     val path = "/diffChat"
+
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return false
@@ -112,7 +111,6 @@ class DiffChatAction : BaseAction() {
             parsingModel = AppSettingsState.instance.fastChatClient,
             storage = ApplicationServices.fileApplicationServices().dataStorageFactory
         ) {
-
             override val systemPrompt: String
                 @Language("Markdown")
                 get() = super.systemPrompt + """
@@ -125,7 +123,7 @@ class DiffChatAction : BaseAction() {
                   - If a line is part of the original code and hasn't been modified, simply include it without '+' or '-'.
                   - Lines starting with "@@" or "---" or "+++" are treated as headers and are ignored.
 
-                """.trimIndent() + patchFormatPrompt
+                """.trimIndent() + AppSettingsState.instance.processor.patchFormatPrompt
 
             override fun renderResponse(response: String, task: SessionTask): String = """<div>${
                 renderMarkdown(
@@ -141,7 +139,8 @@ class DiffChatAction : BaseAction() {
                                 document.replaceString(selectionStart, selectionStart + rawText.length, newCode)
                             }
                         },
-                        task = task
+                        task = task,
+                        processor = AppSettingsState.instance.processor
                     )
                 )
             }</div>"""
@@ -150,8 +149,7 @@ class DiffChatAction : BaseAction() {
 
     private fun openBrowserWindow(e: AnActionEvent, session: Session) {
         IntellijAppManager.getApplication().executeOnPooledThread {
-            val server = CognotikAppServer.getServer(e.project)
-            val uri = server.server.uri.resolve("/#$session")
+            val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
             BaseAction.log.info("Opening browser to $uri")
             browse(uri)
         }

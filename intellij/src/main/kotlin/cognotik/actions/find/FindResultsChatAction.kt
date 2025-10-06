@@ -74,11 +74,10 @@ class FindResultsChatAction(
                 showMenubar = false
             )
 
-            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {

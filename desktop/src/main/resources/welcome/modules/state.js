@@ -24,12 +24,14 @@ class AppState {
     }
 
     loadTaskSettings() {
-        const saved = this.localStorage.getItem('enabledTasks');
+        const saved = this.localStorage.getItem('taskSettings');
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                // Ensure it's an object
+                return typeof parsed === 'object' && parsed !== null ? parsed : {};
             } catch (e) {
-                console.error('Error parsing enabledTasks:', e);
+                console.error('Error parsing taskSettings:', e);
                 return {};
             }
         }
@@ -62,16 +64,16 @@ class AppState {
         }
     }
 
-    saveTaskSelection(enabledTasks) {
-        if (!enabledTasks || typeof enabledTasks !== 'object') {
-            console.warn('[saveTaskSelection] Invalid enabledTasks:', enabledTasks);
+    saveTaskSettings(taskSettingsObj) {
+        if (typeof taskSettingsObj !== 'object' || taskSettingsObj === null) {
+            console.warn('[saveTaskSettings] Invalid taskSettings:', taskSettingsObj);
             return;
         }
-        this.taskSettings.taskSettings = enabledTasks;
+        this.taskSettings.taskSettings = taskSettingsObj;
         try {
-            this.localStorage.setItem('enabledTasks', JSON.stringify(enabledTasks));
+            this.localStorage.setItem('taskSettings', JSON.stringify(taskSettingsObj));
         } catch (error) {
-            console.error('[saveTaskSelection] Error saving to localStorage:', error);
+            console.error('[saveTaskSettings] Error saving to localStorage:', error);
         }
     }
 

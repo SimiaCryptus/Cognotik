@@ -57,11 +57,10 @@ class UIManager {
     updateLaunchSummaries() {
         const mode = this.appState.cognitiveMode;
         const modeMap = {
-            'single-task': 'Chat',
-            'auto-plan': 'Autonomous',
-            'plan-ahead': 'Plan Ahead',
-            'goal-oriented': 'Goal Oriented',
-            'graph': 'Graph Mode'
+            'Chat': 'Chat',
+            'Adaptive': 'Adaptive',
+            'Hierarchical': 'Hierarchical',
+            'Waterfall': 'Waterfall',
         };
 
         const cognitiveModeSummary = this.document.getElementById('cognitive-mode-summary');

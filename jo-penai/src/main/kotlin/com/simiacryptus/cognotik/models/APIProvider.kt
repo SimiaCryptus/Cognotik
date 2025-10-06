@@ -6,6 +6,8 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.chat.*
 import com.simiacryptus.cognotik.chat.model.*
+import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -36,6 +38,16 @@ abstract class APIProvider private constructor(name: String, val base: String) :
 
     open fun authorize(request: HttpRequest, key: String, apiBase: String) {
         request.addHeader("Authorization", "Bearer ${key}")
+    }
+    open fun getEmbeddingClient(
+        key: String,
+        base: String,
+        workPool: ExecutorService,
+        logLevel: Level = Level.INFO,
+        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+        scheduledPool: ListeningScheduledExecutorService
+    ): com.simiacryptus.cognotik.embedding.EmbeddingClientInterface {
+        throw UnsupportedOperationException("${this.name} does not support embedding functionality")
     }
 
     companion object {
@@ -130,7 +142,22 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logLevel: Level,
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
-            ) = GeminiChatClient(
+            ) = OpenAIChatClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                scheduledPool = scheduledPool
+            )
+
+
+            override fun getEmbeddingClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
+            ) = com.simiacryptus.cognotik.embedding.OpenAIEmbeddingClient(
                 apiKey = key,
                 apiBase = base,
                 workPool = workPool,
@@ -138,6 +165,9 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams = logStreams,
                 scheduledPool = scheduledPool
             )
+            fun getImageModels(key: String, baseUrl: String): List<ImageModel> {
+                return ImageModels.values.values.toList()
+            }
         }
         val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
             override fun authorize(
@@ -200,6 +230,16 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams = logStreams,
                 scheduledPool = scheduledPool
             )
+            override fun getEmbeddingClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
+            ): com.simiacryptus.cognotik.embedding.EmbeddingClientInterface {
+                throw UnsupportedOperationException("AWS does not support embedding functionality yet")
+            }
         }
         val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
 

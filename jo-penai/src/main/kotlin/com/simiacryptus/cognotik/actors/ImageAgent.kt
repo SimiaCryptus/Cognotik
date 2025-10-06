@@ -2,10 +2,11 @@ package com.simiacryptus.cognotik.actors
 
 import com.simiacryptus.cognotik.OpenAIClient
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.ModelSchema.ImageGenerationRequest
-import com.simiacryptus.cognotik.models.ImageModels
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.util.toChatMessage
 import com.simiacryptus.cognotik.util.toContentList
 import java.awt.image.BufferedImage
@@ -16,7 +17,7 @@ open class ImageAgent(
     prompt: String = "Transform the user request into an image generation prompt that the user will like",
     name: String? = null,
     textModel: ChatInterface,
-    val imageModel: ImageModels = ImageModels.DallE2,
+    val imageModel: ImageModel = ImageModels.DallE2,
     temperature: Double = 0.3,
     val width: Int = 1024,
     val height: Int = 1024,

@@ -103,7 +103,7 @@ open class ChatSocketManager(
                 }
                 task.complete()
             } else {
-                retryable(task.manager, pool, task) { task ->
+                retryable(task.ui, pool, task) { task ->
                     chatMessages.takeLastWhile { it.role == ModelSchema.Role.assistant }
                         .forEach { chatMessages.remove(it) }
                     val currentChatMessages = chatMessages()
@@ -260,10 +260,12 @@ open class ChatSocketManager(
     )
 
     protected open fun expandTopics(userMessage: String): String {
+        // Matches both @TopicType and @{Topic Type With Spaces}
         val topicReferencePattern =
-            Regex("""@([A-Z][a-zA-Z0-9_]*)""") // Matches @TopicType (must start with capital letter)
+            Regex("""@\{([A-Z][a-zA-Z0-9_ ]+)\}|@([A-Z][a-zA-Z0-9_]*)""")
         return topicReferencePattern.replace(userMessage) { matchResult -> // Read access needs synchronization
-            val topicType = matchResult.groupValues[1] // Synchronize read access to aggregateTopics
+            // Group 1 is for delimited format @{Topic Type}, Group 2 is for simple format @TopicType
+            val topicType = matchResult.groupValues[1].ifEmpty { matchResult.groupValues[2] }
             val topicList = aggregateTopics[topicType]
             val entities = synchronized(topicList ?: Any()) { // Synchronize on the list if it exists, or a dummy object
                 topicList?.toList() // Create copy while holding lock

@@ -15,10 +15,10 @@ import kotlin.math.max
 
 class FileSearchTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: SearchTaskConfigData?
-) : AbstractTask<FileSearchTask.SearchTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: SearchTaskExecutionConfigData?
+) : AbstractTask<FileSearchTask.SearchTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
     // SearchTaskConfigData remains the same
-    class SearchTaskConfigData(
+    class SearchTaskExecutionConfigData(
         @Description("The search pattern (substring or regex) to look for in the files")
         val search_pattern: String = "",
         @Description("Whether the search pattern is a regex (true) or a substring (false)")
@@ -32,8 +32,8 @@ class FileSearchTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskConfigBase(
-        task_type = FileSearchTaskType.name,
+    ) : TaskExecutionConfig(
+        task_type = FileSearch.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -41,7 +41,7 @@ class FileSearchTask(
     // promptSegment remains the same
 
     override fun promptSegment() = """
-FileSearchTask - Search for patterns in files and provide results with context
+FileSearch - Search for patterns in files and provide results with context
 * Specify the search pattern (substring or regex)
 * Specify whether the pattern is a regex or a substring
 * Specify the number of context lines to include
@@ -60,7 +60,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     ) {
         val searchResults = performSearch()
         val formattedResults = formatSearchResults(searchResults)
-        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
+        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
         resultFn(formattedResults)
     }
 
@@ -82,7 +82,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     )
 
     private fun performSearch(): List<DisplayBlock> {
-        val currentConfig = taskConfig
+        val currentConfig = executionConfig
         if (currentConfig == null) {
             log.warn("FileSearchTask taskConfig is null. Cannot perform search.")
             return emptyList()
@@ -322,10 +322,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             }
         }
 
-        val FileSearchTaskType = TaskType(
-            "FileSearchTask",
-            com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskConfigData::class.java,
-            TaskSettingsBase::class.java,
+        val FileSearch = TaskType(
+            "FileSearch",
+            com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
             "Search project files using patterns with contextual results",
             """
                       Performs pattern-based searches across project files with context.

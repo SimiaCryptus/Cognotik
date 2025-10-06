@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
 import com.simiacryptus.cognotik.describe.Description
 
-@JsonTypeIdResolver(TaskConfigBase.PlanTaskTypeIdResolver::class)
+@JsonTypeIdResolver(TaskExecutionConfig.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")
-open class TaskConfigBase(
+open class TaskExecutionConfig(
     @Description("An enumeration indicating the type of task to be executed. Must be a single value from the TaskType enum.")
     val task_type: String? = null,
     @Description("A brief user-facing description of the task")
@@ -22,7 +22,7 @@ open class TaskConfigBase(
 
     class PlanTaskTypeIdResolver : TypeIdResolverBase() {
         override fun idFromValue(value: Any) = when (value) {
-            is TaskConfigBase -> if (value.task_type != null) {
+            is TaskExecutionConfig -> if (value.task_type != null) {
                 value.task_type
             } else {
                 throw IllegalArgumentException("Unknown task type")
@@ -39,7 +39,7 @@ open class TaskConfigBase(
 
         override fun typeFromId(context: DatabindContext, id: String): JavaType {
             val taskType = TaskType.valueOf(id.replace(" ", ""))
-            val subType = context.constructType(taskType.taskDataClass)
+            val subType = context.constructType(taskType.executionConfigClass)
             return subType
         }
 

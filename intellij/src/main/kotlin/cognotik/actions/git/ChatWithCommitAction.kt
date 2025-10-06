@@ -9,7 +9,6 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.IterativePatchUtil
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -55,7 +54,7 @@ class ChatWithCommitAction : AnAction() {
                             "\n",
                             "\n  "
                         )
-                        val diff = IterativePatchUtil.generatePatch(before, after)
+                        val diff = AppSettingsState.instance.processor.generatePatch(before, after)
                         "# Change: ${change.beforeRevision?.file}\n$diff".prependIndent("  ")
                     }
 
@@ -68,7 +67,6 @@ class ChatWithCommitAction : AnAction() {
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
         val session = Session.newGlobalID()
-        val pool = ApplicationServices.threadPoolManager.getPool(session, null)
         SessionProxyServer.agents[session] = CodeChatSocketManager(
             session = session,
             language = "diff",
@@ -91,12 +89,10 @@ class ChatWithCommitAction : AnAction() {
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
 
-        val server = CognotikAppServer.getServer(e.project)
-
         Thread {
             Thread.sleep(500)
             try {
-                val uri = server.server.uri.resolve("/#$session")
+                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

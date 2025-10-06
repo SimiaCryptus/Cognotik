@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -12,10 +13,10 @@ import java.io.File
 
 class SoftwareGraphModificationTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: SoftwareGraphModificationTaskConfigData?
-) : AbstractTask<SoftwareGraphModificationTask.SoftwareGraphModificationTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: SoftwareGraphModificationTaskExecutionConfigData?
+) : AbstractTask<SoftwareGraphModificationTask.SoftwareGraphModificationTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    class SoftwareGraphModificationTaskConfigData(
+    class SoftwareGraphModificationTaskExecutionConfigData(
         @Description("The path to the input software graph JSON file")
         val input_graph_file: String? = null,
         @Description("The path where the modified graph will be saved")
@@ -25,15 +26,15 @@ class SoftwareGraphModificationTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
-        task_type = "SoftwareGraphModificationTask",
+    ) : TaskExecutionConfig(
+        task_type = "SoftwareGraphModification",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-     SoftwareGraphModificationTask - Load, modify and save software graph representations
+     SoftwareGraphModification - Load, modify and save software graph representations
        ** Specify the input graph file path
        ** Specify the output graph file path (optional, defaults to input file)
        ** Describe the desired modifications to the graph
@@ -64,7 +65,7 @@ class SoftwareGraphModificationTask(
             Node Types:
             """.trimIndent() + SoftwareNodeType.values().joinToString("\n") {
                 "* " + it.name + ": " + it.description?.prependIndent("  ") +
-                        "\n    " + agent.describer.describe(rawType = it.nodeClass).lineSequence()
+                        "\n    " + TaskContextYamlDescriber(orchestrationConfig).describe(rawType = it.nodeClass).lineSequence()
                     .map {
                         when {
                             it.isBlank() -> {
@@ -79,15 +80,15 @@ class SoftwareGraphModificationTask(
                     }
                     .joinToString("\n")
             },
-            model = (taskSettings.model?.let { orchestrationConfig.instance(it) }
+            model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
                 ?: orchestrationConfig.defaultChatter).getChildClient(task),
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = agent.describer,
+            describer = TaskContextYamlDescriber(orchestrationConfig),
         )
 
         val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
-            .resolve(taskConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
+            .resolve(executionConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
         val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
             inputFile.readText(),
@@ -97,7 +98,7 @@ class SoftwareGraphModificationTask(
         val response = graphModificationActor.answer(
             messages + listOf(
                 "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
-                "Modification goal: ${taskConfig.modification_goal}"
+                "Modification goal: ${executionConfig.modification_goal}"
             ),
         )
 
@@ -107,8 +108,8 @@ class SoftwareGraphModificationTask(
         val outputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(
                 when {
-                    !taskConfig.output_graph_file.isNullOrBlank() -> taskConfig.output_graph_file
-                    taskConfig.input_graph_file.isNotBlank() -> taskConfig.input_graph_file
+                    !executionConfig.output_graph_file.isNullOrBlank() -> executionConfig.output_graph_file
+                    executionConfig.input_graph_file.isNotBlank() -> executionConfig.input_graph_file
                     else -> "modified_graph.json"
                 }
             )

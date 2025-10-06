@@ -17,12 +17,12 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
-import com.simiacryptus.cognotik.util.LoggerFactory
-import java.awt.*
+ import com.simiacryptus.cognotik.models.APIProvider
+ import com.simiacryptus.cognotik.image.ImageModels
+import com.simiacryptus.cognotik.diff.PatchProcessors
+ import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+ import com.simiacryptus.cognotik.util.LoggerFactory
+ import java.awt.*
 import java.awt.event.ActionEvent
 import javax.swing.*
 import javax.swing.event.ListSelectionEvent
@@ -179,6 +179,8 @@ class AppSettingsComponent : Disposable {
 
     @Name("Embedding Model")
     val embeddingModel = ComboBox<String>()
+    @Name("Patch Processor")
+    val patchProcessor = ComboBox<String>()
 
 
     @Suppress("unused")
@@ -524,11 +526,14 @@ class AppSettingsComponent : Disposable {
         }
         try {
 
-            ImageModels.entries.forEach {
+            ImageModels.values.values.forEach {
                 this.mainImageModel.addItem(it.name)
             }
             EmbeddingModel.values().keys.forEach {
                 this.embeddingModel.addItem(it)
+            }
+            PatchProcessors.values().forEach {
+            this.patchProcessor.addItem(it.name)
             }
         } catch (e: Exception) {
             log.error("Error loading image and embedding models: ${e.message}", e)
@@ -580,6 +585,8 @@ class AppSettingsComponent : Disposable {
         this.mainImageModel.renderer = getImageModelRenderer()
         this.embeddingModel.isEditable = true
         this.embeddingModel.renderer = getEmbeddingModelRenderer()
+        this.patchProcessor.isEditable = false
+        this.patchProcessor.renderer = getPatchProcessorRenderer()
         // Set current selections
         AppSettingsState.instance.smartModel?.model?.let { model ->
             this.smartModel.selectedItem = model.modelName
@@ -589,6 +596,9 @@ class AppSettingsComponent : Disposable {
         }
         AppSettingsState.instance.embeddingModel?.let { model ->
             this.embeddingModel.selectedItem = model
+        }
+        AppSettingsState.instance.processor.let { processor ->
+            this.patchProcessor.selectedItem = processor.label
         }
         log.debug("AppSettingsComponent initialization completed")
     }
@@ -656,6 +666,22 @@ class AppSettingsComponent : Disposable {
                 text = "${model?.provider?.name} - $value"
             } else {
                 text = "None"
+            }
+        }
+    }
+    private fun getPatchProcessorRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
+        override fun customize(
+            list: JList<out String>, value: String?, index: Int, selected: Boolean, hasFocus: Boolean
+        ) {
+            if (value != null) {
+                try {
+                    val processor = PatchProcessors.valueOf(value)
+                    text = processor.label
+                } catch (e: IllegalArgumentException) {
+                    text = value
+                }
+            } else {
+                text = "Fuzzy Mode (Balanced)"
             }
         }
     }

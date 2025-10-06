@@ -17,8 +17,8 @@ import java.util.concurrent.ExecutorService
 
 class SeleniumSessionTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: SeleniumSessionTaskConfigData?
-) : AbstractTask<SeleniumSessionTask.SeleniumSessionTaskConfigData>(orchestrationConfig, planTask) {
+    planTask: SeleniumSessionTaskExecutionConfigData?
+) : AbstractTask<SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
     companion object {
         private val log = LoggerFactory.getLogger(SeleniumSessionTask::class.java)
         private val activeSessions = ConcurrentHashMap<String, Selenium>()
@@ -48,7 +48,7 @@ class SeleniumSessionTask(
         }
     }
 
-    class SeleniumSessionTaskConfigData(
+    class SeleniumSessionTaskExecutionConfigData(
         @Description("The URL to navigate to (optional if reusing existing session)")
         val url: String = "",
         @Description("JavaScript commands to execute")
@@ -70,15 +70,15 @@ class SeleniumSessionTask(
         val keepObjectIds: Boolean = false,
         @Description("Whether to preserve whitespace in text nodes")
         val preserveWhitespace: Boolean = false,
-    ) : TaskConfigBase(
-        task_type = TaskType.SeleniumSessionTask.name,
+    ) : TaskExecutionConfig(
+        task_type = TaskType.SeleniumSession.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     )
 
     override fun promptSegment() = """
-      SeleniumSessionTask - Create and manage a stateful Selenium browser session
+      SeleniumSession - Create and manage a stateful Selenium browser session
         * Specify the URL to navigate to
         * Provide JavaScript commands to execute in sequence through Selenium's executeScript method
         * Can be used for web scraping, testing, or automation
@@ -135,28 +135,28 @@ class SeleniumSessionTask(
                     throw IllegalStateException("Failed to initialize Selenium", e)
                 }
             }
-        requireNotNull(taskConfig) { "SeleniumSessionTaskData is required" }
+        requireNotNull(executionConfig) { "SeleniumSessionTaskData is required" }
         var selenium: Selenium? = null
         try {
 
             cleanupInactiveSessions()
 
-            if (activeSessions.size >= MAX_SESSIONS && taskConfig.sessionId == null) {
+            if (activeSessions.size >= MAX_SESSIONS && executionConfig.sessionId == null) {
                 throw IllegalStateException("Maximum number of concurrent sessions ($MAX_SESSIONS) reached")
             }
-            selenium = taskConfig.sessionId?.let { id -> activeSessions[id] }
+            selenium = executionConfig.sessionId?.let { id -> activeSessions[id] }
                 ?: seleniumFactory(agent.pool, null).also { newSession ->
-                    taskConfig.sessionId?.let { id -> activeSessions[id] = newSession }
+                    executionConfig.sessionId?.let { id -> activeSessions[id] = newSession }
                 }
-            log.info("Starting Selenium session ${taskConfig.sessionId ?: "temporary"} for URL: ${taskConfig.url} with timeout ${taskConfig.timeout}ms")
-            selenium.setScriptTimeout(taskConfig.timeout)
+            log.info("Starting Selenium session ${executionConfig.sessionId ?: "temporary"} for URL: ${executionConfig.url} with timeout ${executionConfig.timeout}ms")
+            selenium.setScriptTimeout(executionConfig.timeout)
 
 
-            if (taskConfig.url.isNotBlank()) {
-                selenium.navigate(taskConfig.url)
+            if (executionConfig.url.isNotBlank()) {
+                selenium.navigate(executionConfig.url)
             }
 
-            val results = taskConfig.commands.map { command ->
+            val results = executionConfig.commands.map { command ->
                 try {
                     log.debug("Executing command: $command")
                     val startTime = System.currentTimeMillis()
@@ -170,23 +170,23 @@ class SeleniumSessionTask(
                     e.message ?: "Error executing command"
                 }
             }
-            val result = formatResults(taskConfig, selenium, results)
+            val result = formatResults(executionConfig, selenium, results)
             task.add(MarkdownUtil.renderMarkdown(result))
             resultFn(result)
         } finally {
 
-            if ((taskConfig.sessionId == null || taskConfig.closeSession) && selenium != null) {
+            if ((executionConfig.sessionId == null || executionConfig.closeSession) && selenium != null) {
                 log.info("Closing temporary session")
                 try {
                     selenium.quit()
-                    if (taskConfig.sessionId != null) {
-                        activeSessions.remove(taskConfig.sessionId)
+                    if (executionConfig.sessionId != null) {
+                        activeSessions.remove(executionConfig.sessionId)
                     }
                 } catch (e: Exception) {
                     log.error("Error closing temporary session", e)
                     selenium.forceQuit()
-                    if (taskConfig.sessionId != null) {
-                        activeSessions.remove(taskConfig.sessionId)
+                    if (executionConfig.sessionId != null) {
+                        activeSessions.remove(executionConfig.sessionId)
                     }
                 }
             }
@@ -219,7 +219,7 @@ class SeleniumSessionTask(
     }
 
     private fun formatResults(
-        planTask: SeleniumSessionTaskConfigData,
+        planTask: SeleniumSessionTaskExecutionConfigData,
         selenium: Selenium,
         results: List<String>
     ): String = buildString(capacity = 163840) {
@@ -253,10 +253,10 @@ class SeleniumSessionTask(
                 HtmlSimplifier.scrubHtml(
                     str = selenium.getPageSource(),
                     baseUrl = selenium.getCurrentUrl(),
-                    includeCssData = taskConfig?.includeCssData ?: false,
-                    simplifyStructure = taskConfig?.simplifyStructure ?: true,
-                    keepObjectIds = taskConfig?.keepObjectIds ?: false,
-                    preserveWhitespace = taskConfig?.preserveWhitespace ?: false
+                    includeCssData = executionConfig?.includeCssData ?: false,
+                    simplifyStructure = executionConfig?.simplifyStructure ?: true,
+                    keepObjectIds = executionConfig?.keepObjectIds ?: false,
+                    preserveWhitespace = executionConfig?.preserveWhitespace ?: false
                 )
             )
 

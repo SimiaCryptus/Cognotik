@@ -38,7 +38,7 @@ class SimpleDiffApplier {
     }
 
     fun apply(
-        originalCode: String, response: String, filename: String? = null
+        originalCode: String, response: String, filename: String? = null, processor: PatchProcessor
     ): DiffApplicationResult {
         val matches = DIFF_PATTERN.findAll(response).distinct()
         var currentCode = originalCode
@@ -51,8 +51,7 @@ class SimpleDiffApplier {
                 if (!validateDiffSize(diffVal)) {
                     throw IllegalArgumentException("Diff size exceeds maximum limit")
                 }
-                val newCode = IterativePatchUtil.applyPatch(currentCode, diffVal).replace("\r", "")
-
+                val newCode = processor.applyPatch(currentCode, diffVal).replace("\r", "")
                 val validationErrors = validator.validateGrammar(newCode)
                 currentCode = newCode
                 return@flatMap validationErrors

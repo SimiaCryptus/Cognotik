@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.apps.graph
 
 import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.ExecutionState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskConfigBase
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.platform.Session
@@ -29,7 +29,6 @@ open class DependencyGraphMode(
     override val session: Session,
     override val user: User?,
     private val graphFile: String,
-    val describer: TypeDescriber,
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(DependencyGraphMode::class.java)
 
@@ -59,7 +58,7 @@ open class DependencyGraphMode(
             task.add("Successfully loaded graph with ${softwareGraph.nodes.size} nodes")
             val orderedNodes = orderGraphNodes(softwareGraph.nodes)
             task.add("Ordered ${orderedNodes.size} nodes by priority")
-            val cumulativeTasks = transformNodesToPlan(orderedNodes, orchestrationConfig, userMessage, graphFile)
+            val cumulativeTasks = transformNodesToPlan(orderedNodes, orchestrationConfig, userMessage, graphFile, task)
             addDependencies(cumulativeTasks, graphFileContent, userMessage, task)
             val plan = com.simiacryptus.cognotik.plan.PlanUtil.filterPlan { cumulativeTasks } ?: emptyMap()
             log.info("Ordered plan built successfully. Proceeding to execute DAG.")
@@ -76,12 +75,12 @@ open class DependencyGraphMode(
                             ?: ui.dataStorage?.getSessionDir(
                                 user,
                                 session
-                            )?.toPath() ?: File(".").toPath(),
-                        orchestrationConfig = orchestrationConfig
+                            )?.toPath() ?: File(".").toPath()
                     ).executePlan(
                         plan = plan,
                         task = task,
-                        userMessage = userMessage
+                        userMessage = userMessage,
+                        orchestrationConfig = orchestrationConfig,
                     )).let(::renderMarkdown))
             task.add("Plan execution completed")
         } catch (e: Exception) {
@@ -92,7 +91,7 @@ open class DependencyGraphMode(
     }
 
     private fun addDependencies(
-        cumulativeTasks: MutableMap<String, TaskConfigBase>,
+        cumulativeTasks: MutableMap<String, TaskExecutionConfig>,
         graphFileContent: String,
         userMessage: String,
         task: SessionTask
@@ -182,7 +181,7 @@ open class DependencyGraphMode(
     private fun wouldCreateCycle(
         taskId: String,
         newDependencyId: String,
-        tasks: Map<String, TaskConfigBase>,
+        tasks: Map<String, TaskExecutionConfig>,
         visited: MutableSet<String> = mutableSetOf()
     ): Boolean {
         if (taskId == newDependencyId) return true
@@ -230,9 +229,10 @@ open class DependencyGraphMode(
         nodes: List<SoftwareNodeType.NodeBase<*>>,
         orchestrationConfig: OrchestrationConfig,
         userMessage: String,
-        graphFile: String
-    ): MutableMap<String, TaskConfigBase> {
-        val tasks = mutableMapOf<String, TaskConfigBase>()
+        graphFile: String,
+        task: SessionTask
+    ): MutableMap<String, TaskExecutionConfig> {
+        val tasks = mutableMapOf<String, TaskExecutionConfig>()
         nodes.forEach {
             tasks.putAll(
                 getNodePlan(
@@ -241,7 +241,8 @@ open class DependencyGraphMode(
                     graphFile = graphFile,
                     graphTxt = readGraphFile(orchestrationConfig),
                     node = it,
-                    userMessage = userMessage
+                    userMessage = userMessage,
+                    task
                 ) ?: emptyMap()
             )
         }
@@ -250,12 +251,13 @@ open class DependencyGraphMode(
 
     private fun getNodePlan(
         orchestrationConfig: OrchestrationConfig,
-        tasks: MutableMap<String, TaskConfigBase>,
+        tasks: MutableMap<String, TaskExecutionConfig>,
         graphFile: String,
         graphTxt: String,
         node: SoftwareNodeType.NodeBase<*>,
-        userMessage: String
-    ): Map<String, TaskConfigBase>? {
+        userMessage: String,
+        task: SessionTask
+    ): Map<String, TaskExecutionConfig>? {
         val maxRetries = 3
         val retryDelayMillis = 1000L
         var attempt = 0
@@ -265,7 +267,7 @@ open class DependencyGraphMode(
         }
         while (true) {
             try {
-                return orchestrationConfig.planningActor(describer).answer(
+                return orchestrationConfig.planningActor(TaskContextYamlDescriber(orchestrationConfig), task).answer(
                     contextData() +
                             listOf(
                                 "You are a software planning assistant. Your goal is to analyze the current plan context and the provided software graph, then focus on generating or refining an instruction (patch/subplan) for the specific node provided.",
@@ -290,7 +292,7 @@ open class DependencyGraphMode(
     /**
      * Build a plan summary string for UI display.
      */
-    private fun buildPlanSummary(plan: Map<String, TaskConfigBase>): String = buildString {
+    private fun buildPlanSummary(plan: Map<String, TaskExecutionConfig>): String = buildString {
         appendLine("# Graph-Based Planning Result")
         appendLine()
         appendLine("## Generated Plan (DAG)")
@@ -325,10 +327,9 @@ open class DependencyGraphMode(
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
+            user: User?
         ): CognitiveMode {
-            return DependencyGraphMode(ui, orchestrationConfig, session, user, graphFile, describer)
+            return DependencyGraphMode(ui, orchestrationConfig, session, user, graphFile)
         }
     }
 }

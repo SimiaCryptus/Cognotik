@@ -6,10 +6,12 @@ import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.DistanceType
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskConfigBase
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -23,9 +25,9 @@ import kotlin.streams.asSequence
 
 class VectorSearchTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: VectorSearchTaskConfigData?
-) : AbstractTask<VectorSearchTask.VectorSearchTaskConfigData>(orchestrationConfig, planTask) {
-    class VectorSearchTaskConfigData(
+    planTask: VectorSearchTaskExecutionConfigData?
+) : AbstractTask<VectorSearchTask.VectorSearchTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+    class VectorSearchTaskExecutionConfigData(
         @Description("The positive search queries to look for in the embeddings")
         val positive_queries: List<String>,
         @Description("The negative search queries to avoid in the embeddings")
@@ -38,11 +40,11 @@ class VectorSearchTask(
         val min_length: Int = 0,
         @Description("List of regex patterns that must be present in the content")
         val required_regexes: List<String> = emptyList(),
-        val model: EmbeddingModel = EmbeddingModel.OllamaNomadic,
+        val model: String = OllamaEmbeddingModels.NomicEmbedText.modelName!!,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskConfigBase(
+    ) : TaskExecutionConfig(
         task_type = "EmbeddingSearch",
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
@@ -50,7 +52,7 @@ class VectorSearchTask(
     )
 
     override fun promptSegment() = """
-EmbeddingSearchTask - Search for similar embeddings in index files and provide top results
+VectorSearch - Search for similar embeddings in index files and provide top results
     ** Specify the positive search queries
     ** Optionally specify negative search queries
     ** Specify the distance type (Euclidean, Manhattan, or Cosine)
@@ -71,7 +73,7 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             val searchResults = performEmbeddingSearch(
             )
             val formattedResults = formatSearchResults(searchResults)
-            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
             resultFn(formattedResults)
         } finally {
             threadPool.shutdown()
@@ -88,14 +90,16 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
 
     private fun performEmbeddingSearch(): List<EmbeddingSearchResult> {
         // Validate queries first
-        if (taskConfig?.positive_queries?.isEmpty() != false) {
+        if (executionConfig?.positive_queries?.isEmpty() != false) {
             throw IllegalArgumentException("At least one positive query is required")
         }
         // Create embeddings with retry logic
         fun createEmbeddingWithRetry(query: String, maxRetries: Int = 3): DoubleArray? {
             repeat(maxRetries) { attempt ->
                 try {
-                    return taskConfig.model.instance().embed(query)
+                    return executionConfig.model.let {
+                        EmbeddingModel.values()[it] ?: throw IllegalArgumentException("Unknown embedding model: $it")
+                    }.instance().embed(query)
                 } catch (e: Exception) {
                     if (attempt == maxRetries - 1) {
                         log.error("Failed to create embedding for query after $maxRetries attempts: $query", e)
@@ -107,11 +111,11 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             return null
         }
 
-        val positiveEmbeddings = taskConfig.positive_queries.map { query ->
+        val positiveEmbeddings = executionConfig.positive_queries.map { query ->
             createEmbeddingWithRetry(query)
         }
 
-        val negativeEmbeddings = taskConfig.negative_queries.map { query ->
+        val negativeEmbeddings = executionConfig.negative_queries.map { query ->
             createEmbeddingWithRetry(query)
         }
 
@@ -122,8 +126,8 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             .filter { path ->
                 path.toString().endsWith(".index.data")
             }.toList().toTypedArray()
-        val minLength = taskConfig.min_length
-        val requiredRegexes = taskConfig.required_regexes.map { Pattern.compile(it) }
+        val minLength = executionConfig.min_length
+        val requiredRegexes = executionConfig.required_regexes.map { Pattern.compile(it) }
         fun String.matchesAllRegexes(): Boolean {
             return requiredRegexes.all { regex -> regex.matcher(this).find() }
         }
@@ -135,10 +139,10 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
                     DocumentRecord.readBinaryStream(path.toString()) { record ->
                         record.vector?.let { vector ->
                             val positiveDistances = positiveEmbeddings.filterNotNull().map { embedding ->
-                                taskConfig.distance_type.distance(vector, embedding)
+                                executionConfig.distance_type.distance(vector, embedding)
                             }
                             val negativeDistances = negativeEmbeddings.filterNotNull().map { embedding ->
-                                taskConfig.distance_type.distance(vector, embedding)
+                                executionConfig.distance_type.distance(vector, embedding)
                             }
                             val overallDistance = if (negativeDistances.isEmpty()) {
                                 positiveDistances.minOrNull() ?: Double.MAX_VALUE
@@ -166,7 +170,7 @@ EmbeddingSearchTask - Search for similar embeddings in index files and provide t
             .toList()
         return searchResults
             .sortedBy { it.distance }
-            .take(taskConfig.count)
+            .take(executionConfig.count)
     }
 
     private fun formatSearchResults(results: List<EmbeddingSearchResult>): String {

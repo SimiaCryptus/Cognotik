@@ -66,13 +66,13 @@ open class ParsedAgent<T : Any>(
         val exceptions = mutableListOf<Exception>()
         val prompt = "Parse the user's message into a json object described by:\n\n```yaml\n${
             describe.replace(
-                "\n",
+                "\n",   
                 "\n  "
             )
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = model.chat(
+                val content = parsingModel.copy(temperature = 0.0).chat(
                     listOf(
                         ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
                         ModelSchema.ChatMessage(

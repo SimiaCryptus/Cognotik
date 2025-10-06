@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class Retryable(
     task: SessionTask,
-    val socketManager: SocketManager = task.manager,
+    val socketManager: SocketManager = task.ui,
     val process: (StringBuilder) -> String
 ) : TabbedDisplay(task) {
 

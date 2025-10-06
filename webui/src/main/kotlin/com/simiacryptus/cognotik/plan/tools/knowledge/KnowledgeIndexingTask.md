@@ -45,7 +45,7 @@ val config = KnowledgeIndexingTaskConfigData(
 When using this task in an orchestration context, the following prompt segment is provided:
 
 ```
-KnowledgeIndexingTask - Process and index files for semantic search
+KnowledgeIndexing - Process and index files for semantic search
   ** Specify the file paths to process
   ** Specify the parsing type (document or code)
   ** Optionally specify the chunk size (default 0.1)

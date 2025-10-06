@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -17,7 +18,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 class DocumentedMassPatchServer(
     val config: DocumentedMassPatchAction.Settings,
-    val autoApply: Boolean
+    val autoApply: Boolean,
+    val processor: PatchProcessor
 ) : ApplicationServer(
     applicationName = "Documented Code Patch",
     path = "/patchChat",
@@ -107,7 +109,8 @@ class DocumentedMassPatchServer(
                                     },
                                     shouldAutoApply = { autoApply },
                                     model = AppSettingsState.instance.fastChatClient,
-                                    defaultFile = path.toString()
+                                    defaultFile = path.toString(),
+                                    processor = processor
                                 ).renderMarkdown
                             )
                         } else {
@@ -135,7 +138,8 @@ class DocumentedMassPatchServer(
                                             },
                                             shouldAutoApply = { autoApply },
                                             model = AppSettingsState.instance.fastChatClient,
-                                            defaultFile = path.toString()
+                                            defaultFile = path.toString(),
+                                            processor = processor
                                         )
                                     }
                                 }</div>"""

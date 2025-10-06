@@ -72,8 +72,8 @@ class EmbeddingSearchServer(
     }
 
     private fun executeSearch(task: SessionTask) {
-        task.add(MarkdownUtil.renderMarkdown("# Embedding Search", ui = task.manager))
-        task.add(MarkdownUtil.renderMarkdown("## Search Parameters", ui = task.manager))
+        task.add(MarkdownUtil.renderMarkdown("# Embedding Search", ui = task.ui))
+        task.add(MarkdownUtil.renderMarkdown("## Search Parameters", ui = task.ui))
         task.add(MarkdownUtil.renderMarkdown("""
             - **Positive queries:** ${settings.positiveQueries.joinToString(", ")}
             - **Negative queries:** ${settings.negativeQueries.joinToString(", ")}
@@ -81,7 +81,7 @@ class EmbeddingSearchServer(
             - **Results count:** ${settings.count}
             - **Min length:** ${settings.minLength}
             - **Required patterns:** ${settings.requiredRegexes.joinToString(", ")}
-        """.trimIndent(), ui = task.manager))
+        """.trimIndent(), ui = task.ui))
         
         val indexFiles = files.filter { it?.name?.endsWith(".index.data") == true }
         if (indexFiles.isEmpty()) {
@@ -90,7 +90,7 @@ class EmbeddingSearchServer(
                 
                 No `.index.data` files were found in the selected location.
                 Please run Knowledge Indexing first to create searchable embeddings.
-            """.trimIndent(), ui = task.manager))
+            """.trimIndent(), ui = task.ui))
             task.complete("No index files found")
             return
         }
@@ -99,12 +99,12 @@ class EmbeddingSearchServer(
             ## Searching ${indexFiles.size} index files...
             
             Creating query embeddings and searching for similar content...
-        """.trimIndent(), ui = task.manager))
+        """.trimIndent(), ui = task.ui))
 
         try {
             val searchResults = performEmbeddingSearch(indexFiles)
             val formattedResults = formatSearchResults(searchResults)
-            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.manager))
+            task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
             task.complete("Search completed successfully")
         } catch (e: Exception) {
             log.error("Error during search process", e)
@@ -114,7 +114,7 @@ class EmbeddingSearchServer(
                 ```
                 ${e.message}
                 ```
-            """.trimIndent(), ui = task.manager))
+            """.trimIndent(), ui = task.ui))
             task.error(e)
         }
     }

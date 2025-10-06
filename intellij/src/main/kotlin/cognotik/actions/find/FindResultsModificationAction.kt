@@ -16,7 +16,6 @@ import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -77,11 +76,10 @@ class FindResultsModificationAction(
                 loadImages = false,
                 showMenubar = false
             )
-            val server = CognotikAppServer.getServer(event.project)
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {
@@ -137,7 +135,7 @@ class FindResultsModificationAction(
                     Your task is to suggest appropriate modifications based on the replacement text provided.
                     Usage locations:
                     """.trimIndent() + usages.joinToString("\n") { "* `${it.presentation.plainText}`" } +
-                            "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + patchFormatPrompt
+                            "\n\nRequested modification: " + modificationParams.replacementText + "\n\n" + AppSettingsState.instance.processor.patchFormatPrompt
                 }
                 socketManager.pool.submit {
                     //val api = api.getChildClient(task)
@@ -160,8 +158,9 @@ class FindResultsModificationAction(
                             }
                         },
                         shouldAutoApply = { modificationParams.autoApply },
-                        defaultFile = file?.toFile?.path
-                    )?.apply {
+                        defaultFile = file?.toFile?.path,
+                        processor = AppSettingsState.instance.processor
+                    ).apply {
                         task.complete(renderMarkdown(this))
                     }
                 }

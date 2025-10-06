@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 // Register the new mode in the package
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -39,7 +38,58 @@ interface CognitiveModeStrategy {
         ui: SocketManager,
         orchestrationConfig: OrchestrationConfig,
         session: Session,
-        user: User?,
-        describer: TypeDescriber
+        user: User?
     ): CognitiveMode
+}
+
+enum class CognitiveModeStrategies : CognitiveModeStrategy {
+    Chat {
+        override val inputCnt: Int get() = ConversationalMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?
+        ): CognitiveMode {
+            return ConversationalMode(ui, orchestrationConfig, session, user)
+        }
+    },
+    Adaptive {
+        override val inputCnt: Int get() = AdaptivePlanningMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?
+        ): CognitiveMode {
+            return AdaptivePlanningMode(ui, orchestrationConfig, session, user)
+        }
+    },
+    Waterfall {
+        override val inputCnt: Int get() = WaterfallMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?
+        ): CognitiveMode {
+            return WaterfallMode(ui, orchestrationConfig, session, user)
+        }
+    },
+    Hierarchical {
+        override val inputCnt: Int get() = HierarchicalPlanningMode.inputCnt
+
+        override fun getCognitiveMode(
+            ui: SocketManager,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User?
+        ): CognitiveMode {
+            return HierarchicalPlanningMode(ui, orchestrationConfig, session, user)
+        }
+    },
+    ;
 }

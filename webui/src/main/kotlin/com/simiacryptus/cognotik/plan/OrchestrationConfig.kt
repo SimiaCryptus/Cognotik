@@ -1,88 +1,49 @@
 package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
-import com.simiacryptus.cognotik.plan.TaskType.Companion.getAvailableTaskTypes
-import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskConfigData
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModificationTaskType
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskConfigData
+import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 
-class TaskSettingsMapDeserializer : JsonDeserializer<MutableMap<String, TaskSettingsBase>>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): MutableMap<String, TaskSettingsBase> {
-        val codec = p.codec as ObjectMapper
-        val node: JsonNode = codec.readTree(p)
-        val result = mutableMapOf<String, TaskSettingsBase>()
-        if (node.isObject) {
-            node.fields().forEach { (key, valueNode) ->
-                if (valueNode.isObject) {
-                    // Add/overwrite the task_type field in the value node
-                    // This ensures the PlanTaskTypeIdResolver in TaskSettingsBase can find the type ID
-                    (valueNode as ObjectNode).put("task_type", key)
-                    try {
-                        val taskSettingsEntry = codec.treeToValue(valueNode, TaskSettingsBase::class.java)
-                        if (taskSettingsEntry != null) {
-                            result[key] = taskSettingsEntry
-                        } else {
-                            // Log or handle error: Deserialization returned null
-                            ctxt.reportInputMismatch(
-                                TaskSettingsBase::class.java,
-                                "Failed to deserialize TaskSettingsBase for key '$key', got null"
-                            )
-                        }
-                    } catch (e: Exception) {
-                        // Log or handle error: Deserialization threw an exception
-                        ctxt.reportInputMismatch(
-                            TaskSettingsBase::class.java,
-                            "Failed to deserialize TaskSettingsBase for key '$key': ${e.message}"
-                        )
-                    }
-                } else {
-                    // Log or handle error: Value is not an object
-                    ctxt.reportInputMismatch(
-                        Map::class.java,
-                        "Value for key '$key' in taskSettings is not a JSON object, but ${valueNode.nodeType}"
-                    )
-                }
-            }
-        } else {
-            // Log or handle error: taskSettings is not a JSON object
-            ctxt.reportInputMismatch(Map::class.java, "taskSettings is not a JSON object, but ${node.nodeType}")
-        }
-        return result
-    }
-}
 
-
-open class OrchestrationConfig(
+class OrchestrationConfig(
+    @JsonSerialize(using = ApiChatModelSerializer::class)
+    @JsonDeserialize(using = ApiChatModelDeserializer::class)
     var defaultModel: ApiChatModel? = null,
+    @JsonSerialize(using = ApiChatModelSerializer::class)
+    @JsonDeserialize(using = ApiChatModelDeserializer::class)
     var parsingModel: ApiChatModel? = null,
+    var cognitiveMode: CognitiveModeStrategies? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
-    @JsonDeserialize(using = TaskSettingsMapDeserializer::class)
-    val taskSettings: MutableMap<String, TaskSettingsBase> = TaskType.values().associateWith { taskType ->
-        TaskSettingsBase(
-            taskType.name, when (taskType) {
-                FileModificationTaskType, AnalysisTask.AnalysisTaskType -> true
-                else -> false
-            }
-        )
+    val taskSettings: MutableMap<String, TaskTypeConfig> = TaskType.values().filter {
+        false // Do not auto-enable any tasks
+    }.associateWith { taskType ->
+        taskType.newSettings()?.let {
+            it.name = taskType.description
+            it
+        } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
     }.mapKeys { it.key.name }.toMutableMap(),
     var autoFix: Boolean = false,
     val env: Map<String, String>? = mapOf(),
@@ -91,22 +52,21 @@ open class OrchestrationConfig(
     var maxTaskHistoryChars: Int = 10000,
     var maxTasksPerIteration: Int = 3,
     var maxIterations: Int = 10,
+) {
 
-    ) {
+    @get:JsonIgnore
+    var processor: PatchProcessor = PatchProcessors.Fuzzy
 
     @get:JsonIgnore
     val defaultChatter get() = instance(defaultModel ?: throw IllegalStateException("Default model not set"))
 
     @get:JsonIgnore
     val parsingChatter
-        get() = instance(
-            parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set")
-        )
+        get() = instance(parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set"))
 
     @JsonIgnore
-    open fun instance(model: ApiChatModel): ChatInterface {
-        throw NotImplementedError("Must be implemented in subclass")
-    }
+    fun instance(model: ApiChatModel) = instanceFn?.let { it(model) }
+        ?: throw IllegalStateException("Instance function not set")
 
     @get:JsonIgnore
     val absoluteWorkingDir
@@ -122,11 +82,28 @@ open class OrchestrationConfig(
             else -> File(this.workingDir).absolutePath
         }
 
-    fun getTaskSettings(taskType: TaskType<*, *>): TaskSettingsBase =
-        taskSettings[taskType.name] ?: TaskSettingsBase(taskType.name)
+    fun getTaskSettings(taskType: TaskType<*, *>): TaskTypeConfig =
+        taskSettings[taskType.name] ?: taskType.newSettings() ?.also {
+            it.name = taskType.description
+            taskSettings[taskType.name] = it
+        } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
 
-    fun setTaskSettings(taskType: TaskType<*, *>, settings: TaskSettingsBase) {
-        taskSettings[taskType.name] = settings
+    fun planningActor(
+        describer: TypeDescriber,
+        task: SessionTask
+    ): ParsedAgent<TaskBreakdownResult> {
+        val availableTaskTypes = TaskType.Companion.getAvailableTaskTypes(this)
+        return planningActor(
+            taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
+                val impl = TaskType.Companion.getImpl(this, taskType)
+                "* ${impl.promptSegment()}"
+            },
+            model = defaultChatter.getChildClient(task),
+            parsingModel = parsingChatter.getChildClient(task),
+            temperature = temperature,
+            describer = describer,
+            availableTaskTypes = availableTaskTypes
+        )
     }
 
     @JsonIgnore
@@ -136,48 +113,86 @@ open class OrchestrationConfig(
         command: List<String> = this.shellCmd,
         temperature: Double = this.temperature,
         budget: Double = this.budget,
-        taskSettings: MutableMap<String, TaskSettingsBase> = this.taskSettings,
+        taskSettings: MutableMap<String, TaskTypeConfig> = this.taskSettings,
         autoFix: Boolean = this.autoFix,
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-        instanceFn: (ApiChatModel) -> ChatInterface = this::instance,
-    ): OrchestrationConfig = OrchestrationConfigCopy(
-        model,
-        parsingModel,
-        command,
-        temperature,
-        budget,
-        taskSettings,
-        autoFix,
-        env,
-        workingDir,
-        language,
-        instanceFn,
-        maxTaskHistoryChars,
-        maxTasksPerIteration,
-        maxIterations,
+        cognitiveMode: CognitiveModeStrategies? = this.cognitiveMode,
+        maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
+        maxTasksPerIteration: Int = this.maxTasksPerIteration,
+        maxIterations: Int = this.maxIterations,
+    ): OrchestrationConfig = OrchestrationConfig(
+        defaultModel = model,
+        parsingModel = parsingModel,
+        shellCmd = command,
+        temperature = temperature,
+        budget = budget,
+        taskSettings = taskSettings,
+        autoFix = autoFix,
+        env = env,
+        workingDir = workingDir,
+        language = language,
+        maxTaskHistoryChars = maxTaskHistoryChars,
+        maxTasksPerIteration = maxTasksPerIteration,
+        maxIterations = maxIterations,
+        cognitiveMode = cognitiveMode,
     )
 
-    fun planningActor(describer: TypeDescriber): ParsedAgent<TaskBreakdownResult> {
-        val prompt = """
-                      Given a user request, identify and list smaller, actionable tasks that can be directly implemented in code.
-                      (Do not repeat or ask for the JSON content since the platform already handles reading the software graph.)
-                      For each task:
-                      * Provide input/output file names if applicable
-                      * Describe any execution dependencies and the order in which tasks should be run
-                      * Write a brief description of the task and its role
-                      * Mention any important interface or integration details
-                      The available task types are:
-                      """.trimIndent() + "\n  " + getAvailableTaskTypes(this).joinToString("\n") { taskType ->
-            "* ${getImpl(this, taskType).promptSegment()}"
-        } + """
-                      (Remember: the JSON file content is already loaded by the platform.)
-                      """.trimIndent()
-        val parserPrompt =
-            ("\nTask Subtype Schema:\n\n" + getAvailableTaskTypes(this).joinToString("\n\n") { taskType ->
+
+    data class TaskBreakdownResult(
+        @Description("A map where each task ID is associated with its corresponding PlanTask object. Crucial for defining task relationships and information flow.")
+        val tasksByID: Map<String, TaskExecutionConfig>? = null,
+    )
+
+    companion object {
+        var exampleInstance = TaskBreakdownResult(
+            tasksByID = mapOf(
+                "1" to SelfHealingTaskExecutionConfigData(
+                    task_description = "Task 1", task_dependencies = listOf(), commands = listOf(
+                        SelfHealingTask.CommandWithWorkingDir(
+                            command = listOf("echo", "Hello, World!"), workingDir = "."
+                        )
+                    )
+                ), "2" to FileModificationTaskExecutionConfigData(
+                    task_description = "Task 2",
+                    task_dependencies = listOf("1"),
+                    related_files = listOf("input2.txt"),
+                    files = listOf("output2.txt"),
+                )
+            ),
+        )
+
+        fun planningActor(
+            taskDescriptions: String,
+            model: ChatInterface,
+            parsingModel: ChatInterface,
+            temperature: Double,
+            describer: TypeDescriber,
+            availableTaskTypes: List<TaskType<*, *>>
+        ): ParsedAgent<TaskBreakdownResult> = ParsedAgent(
+            name = "TaskBreakdown",
+            resultClass = TaskBreakdownResult::class.java,
+            exampleInstance = exampleInstance,
+            prompt = """
+                                          Given a user request, identify and list smaller, actionable tasks that can be directly implemented in code.
+                                          (Do not repeat or ask for the JSON content since the platform already handles reading the software graph.)
+                                          For each task:
+                                          * Provide input/output file names if applicable
+                                          * Describe any execution dependencies and the order in which tasks should be run
+                                          * Write a brief description of the task and its role
+                                          * Mention any important interface or integration details
+                                          The available task types are:
+                                          """.trimIndent() + "\n  " + taskDescriptions + """
+                                          (Remember: the JSON file content is already loaded by the platform.)
+                                          """.trimIndent(),
+            model = model,
+            parsingModel = parsingModel,
+            temperature = temperature,
+            describer = describer,
+            parserPrompt = ("\nTask Subtype Schema:\n\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                 "\n${taskType.name}:\n  ${
-                    describer.describe(taskType.taskDataClass).lineSequence()
+                    describer.describe(taskType.executionConfigClass).lineSequence()
                         .map {
                             when {
                                 it.isBlank() -> {
@@ -193,74 +208,79 @@ open class OrchestrationConfig(
                         .joinToString("\n")
                 }\n".trim()
             } + "\n")
-        return ParsedAgent(
-            name = "TaskBreakdown",
-            resultClass = TaskBreakdownResult::class.java,
-            exampleInstance = exampleInstance,
-            prompt = prompt,
-            model = defaultModel?.let { instance(it) } ?: throw IllegalStateException("No model configured"),
-            parsingModel = this.parsingChatter,
-            temperature = this.temperature,
-            describer = describer,
-            parserPrompt = parserPrompt
         )
+
+        @JsonIgnore
+        var instanceFn: ((ApiChatModel) -> ChatInterface)? = null
     }
 
-    companion object {
-        var exampleInstance = TaskBreakdownResult(
-            tasksByID = mapOf(
-                "1" to SelfHealingTaskConfigData(
-                    task_description = "Task 1", task_dependencies = listOf(), commands = listOf(
-                        SelfHealingTask.CommandWithWorkingDir(
-                            command = listOf("echo", "Hello, World!"), workingDir = "."
-                        )
-                    )
-                ), "2" to FileModificationTaskConfigData(
-                    task_description = "Task 2",
-                    task_dependencies = listOf("1"),
-                    related_files = listOf("input2.txt"),
-                    files = listOf("output2.txt"),
-                )
-            ),
-        )
+    /**
+     * Get all available task configurations for a given task type
+     */
+    fun getTaskConfigs(taskType: TaskType<*, *>): List<TaskTypeConfig> {
+        return taskSettings.filter { it.value.task_type == taskType.name }.values.toList()
+    }
+
+    /**
+     * Get a specific task configuration by task type and name
+     */
+    fun getTaskConfig(taskType: TaskType<*, *>, configName: String?): TaskTypeConfig? {
+        val configs = getTaskConfigs(taskType)
+        return if (configName != null) {
+            configs.firstOrNull { it.name == configName }
+        } else {
+            configs.firstOrNull()
+        }
+    }
+
+    fun addTaskConfig(taskType: TaskType<*, *>, newConfig: TaskTypeConfig) {
+        val configs = getTaskConfigs(taskType)
+        if (configs.any { it.name == newConfig.name }) {
+            throw IllegalArgumentException("A configuration with the name '${newConfig.name}' already exists for task type '${taskType.name}'")
+        }
+        taskSettings[newConfig.task_type!!] = newConfig
+    }
+
+    fun removeTaskConfig(taskType: TaskType<*, *>, selectedConfig: String) {
+        val configs = getTaskConfigs(taskType)
+        val configToRemove = configs.firstOrNull { it.name == selectedConfig }
+        if (configToRemove != null) {
+            taskSettings.remove(configToRemove.task_type)
+        }
     }
 }
 
-private class OrchestrationConfigCopy(
-    model: ApiChatModel?,
-    parsingModel: ApiChatModel?,
-    command: List<String>,
-    temperature: Double,
-    budget: Double,
-    taskSettings: MutableMap<String, TaskSettingsBase>,
-    autoFix: Boolean,
-    env: Map<String, String>?,
-    workingDir: String?,
-    language: String?,
-    @JsonIgnore val instanceFn: (ApiChatModel) -> ChatInterface,
-    maxTaskHistoryChars: Int,
-    maxTasksPerIteration: Int,
-    maxIterations: Int,
-) : OrchestrationConfig(
-    defaultModel = model,
-    parsingModel = parsingModel,
-    shellCmd = command,
-    temperature = temperature,
-    budget = budget,
-    taskSettings = taskSettings,
-    autoFix = autoFix,
-    env = env,
-    workingDir = workingDir,
-    language = language,
-    maxTaskHistoryChars = maxTaskHistoryChars,
-    maxTasksPerIteration = maxTasksPerIteration,
-    maxIterations = maxIterations,
-) {
-    override fun instance(model: ApiChatModel): ChatInterface = instanceFn(model)
+/**
+ * Custom serializer for ApiChatModel that only serializes the model name
+ */
+class ApiChatModelSerializer : JsonSerializer<ApiChatModel>() {
+    override fun serialize(value: ApiChatModel?, gen: JsonGenerator, serializers: SerializerProvider) {
+        if (value == null) {
+            gen.writeNull()
+        } else {
+            gen.writeString(value.model?.modelName ?: value.model?.name)
+        }
+    }
 }
 
-
-data class TaskBreakdownResult(
-    @Description("A map where each task ID is associated with its corresponding PlanTask object. Crucial for defining task relationships and information flow.")
-    val tasksByID: Map<String, TaskConfigBase>? = null,
-)
+/**
+ * Custom deserializer for ApiChatModel that resolves the model from its name
+ */
+class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ApiChatModel? {
+        val modelName = p.readValueAs(String::class.java) ?: return null
+        val userSettings = com.simiacryptus.cognotik.platform.ApplicationServices
+            .fileApplicationServices()
+            .userSettingsManager
+            .getUserSettings()
+        val model = userSettings.apis.flatMap {
+            it.provider?.getChatModels(it.key ?: "", it.baseUrl) ?: listOf()
+        }.firstOrNull {
+            it.modelName == modelName || it.name == modelName
+        } ?: return null
+        val apiData = userSettings.apis.firstOrNull {
+            it.provider == model.provider
+        }
+        return ApiChatModel(model, apiData)
+    }
+}

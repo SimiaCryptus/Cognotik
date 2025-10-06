@@ -11,7 +11,6 @@ import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.embedding.DistanceType
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.SessionProxyServer
@@ -205,11 +204,10 @@ class EmbeddingSearchAction : BaseAction() {
                         showMenubar = false
                     )
 
-                    val server = CognotikAppServer.getServer(event.project)
                     CompletableFuture.runAsync({
                         Thread.sleep(500)
                         try {
-                            val uri = server.server.uri.resolve("/#$session")
+                            val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                             log.info("Opening browser to $uri")
                             browse(uri)
                         } catch (e: Throwable) {

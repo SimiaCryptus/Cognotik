@@ -1,8 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
 import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
@@ -23,23 +21,8 @@ class TaskOrchestrator(
     val user: User?,
     val session: Session,
     val dataStorage: StorageInterface,
-    val orchestrationConfig: OrchestrationConfig,
     val root: Path
 ) {
-
-    var describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "aicoder.actions"
-    ) {
-        override val includeMethods: Boolean get() = false
-
-        override fun getEnumValues(clazz: Class<*>): List<String> {
-            return if (clazz == TaskType::class.java) {
-                orchestrationConfig.taskSettings.filter { it.value.enabled }.map { it.key }
-            } else {
-                super.getEnumValues(clazz)
-            }
-        }
-    }
 
     val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
 
@@ -63,15 +46,16 @@ class TaskOrchestrator(
     var executionState: ExecutionState? = null
 
     fun executePlan(
-        plan: Map<String, TaskConfigBase>,
+        plan: Map<String, TaskExecutionConfig>,
         task: SessionTask,
         userMessage: String,
+        orchestrationConfig: OrchestrationConfig,
     ): ExecutionState {
         val tabs = TabbedDisplay(task)
         val planProcessingState = newState(plan)
         this.executionState = planProcessingState
         try {
-            val diagramTask = task.manager.newTask(false).apply { tabs["Plan"] = (placeholder) }
+            val diagramTask = task.ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
             executePlan(
                 diagramBuffer = diagramTask.add(
                     "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
@@ -84,7 +68,8 @@ class TaskOrchestrator(
                 pool = pool,
                 userMessage = userMessage,
                 plan = plan,
-                tabs = tabs
+                tabs = tabs,
+                orchestrationConfig = orchestrationConfig
             )
         } catch (e: Throwable) {
             log.warn("Error during incremental code generation process", e)
@@ -93,24 +78,25 @@ class TaskOrchestrator(
         return planProcessingState
     }
 
-    private fun newState(plan: Map<String, TaskConfigBase>) =
+    private fun newState(plan: Map<String, TaskExecutionConfig>) =
         ExecutionState(
-            subTasks = (filterPlan { plan }?.entries?.toTypedArray<Map.Entry<String, TaskConfigBase>>()
+            subTasks = (filterPlan { plan }?.entries?.toTypedArray<Map.Entry<String, TaskExecutionConfig>>()
                 ?.associate { it.key to it.value } ?: mapOf()).toMutableMap()
         )
 
     fun executePlan(
         diagramBuffer: StringBuilder?,
-        subTasks: Map<String, TaskConfigBase>,
+        subTasks: Map<String, TaskExecutionConfig>,
         task: SessionTask,
         executionState: ExecutionState,
         taskIdProcessingQueue: MutableList<String>,
         pool: ExecutorService,
         userMessage: String,
-        plan: Map<String, TaskConfigBase>,
+        plan: Map<String, TaskExecutionConfig>,
         tabs: TabbedDisplay,
+        orchestrationConfig: OrchestrationConfig,
     ) {
-        val sessionTask = task.manager.newTask(false).apply { tabs["Session"] = placeholder }
+        val sessionTask = task.ui.newTask(false).apply { tabs["Session"] = placeholder }
         val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
@@ -139,9 +125,9 @@ class TaskOrchestrator(
             }
         }
         taskIdProcessingQueue.forEach { taskId ->
-            val newTask = task.manager.newTask(false)
+            val newTask = task.ui.newTask(false)
             executionState.uitaskMap[taskId] = newTask
-            val subtask: TaskConfigBase? = executionState.subTasks[taskId]
+            val subtask: TaskExecutionConfig? = executionState.subTasks[taskId]
             val description = subtask?.task_description
             log.debug("Creating task tab: $taskId ${System.identityHashCode(subtask)} $description")
             taskTabs[description ?: taskId] = newTask.placeholder
@@ -165,7 +151,7 @@ class TaskOrchestrator(
                 subTask.state = AbstractTask.TaskState.InProgress
                 taskTabs.update()
                 log.debug("Running task: ${System.identityHashCode(subTask)} ${subTask.task_description}")
-                val task1 = executionState.uitaskMap.get(taskId) ?: task.manager.newTask(false).apply {
+                val task1 = executionState.uitaskMap.get(taskId) ?: task.ui.newTask(false).apply {
                     taskTabs[taskId] = placeholder
                 }
                 try {
@@ -222,17 +208,15 @@ class TaskOrchestrator(
         user: User? = this.user,
         session: Session = this.session,
         dataStorage: StorageInterface = this.dataStorage,
-        orchestrationConfig: OrchestrationConfig = this.orchestrationConfig,
-        root: Path = this.root
+       root: Path = this.root
     ) = TaskOrchestrator(
         user = user,
         session = session,
         dataStorage = dataStorage,
-        orchestrationConfig = orchestrationConfig,
         root = root
     )
 
-    companion object : Planner() {
+    companion object {
         private val log = LoggerFactory.getLogger(TaskOrchestrator::class.java)
     }
 }

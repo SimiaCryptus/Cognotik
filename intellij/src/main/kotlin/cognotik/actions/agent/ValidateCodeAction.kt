@@ -51,7 +51,8 @@ class ValidateCodeAction : BaseAction() {
                     settings = settings,
                     files = files.map { it.toFile }.toTypedArray(),
                     model = AppSettingsState.instance.smartChatClient,
-                    parsingModel = AppSettingsState.instance.fastChatClient
+                    parsingModel = AppSettingsState.instance.fastChatClient,
+                    processor = AppSettingsState.instance.processor
                 )
 
                 SessionProxyServer.chats[session] = patchApp
@@ -67,11 +68,10 @@ class ValidateCodeAction : BaseAction() {
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
                 SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
 
-                val server = CognotikAppServer.getServer(event.project)
                 Thread {
                     Thread.sleep(500)
                     try {
-                        val uri = server.server.uri.resolve("/#$session")
+                        val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                         log.info("Opening browser to $uri")
                         browse(uri)
                     } catch (e: Throwable) {

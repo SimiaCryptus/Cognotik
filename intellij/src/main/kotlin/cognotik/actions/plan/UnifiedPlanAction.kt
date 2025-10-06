@@ -7,18 +7,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
-import com.simiacryptus.cognotik.apps.graph.DependencyGraphMode
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.cognitive.*
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -33,8 +27,10 @@ class UnifiedPlanAction : BaseAction() {
 
     override fun handle(e: AnActionEvent) {
         val root: String = e.getRoot()
+        OrchestrationConfig.instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         val dialog = PlanConfigDialog(
-            e.project, object : OrchestrationConfig(
+            e.project,
+            OrchestrationConfig(
                 defaultModel = AppSettingsState.instance.smartModel
                     ?: throw IllegalStateException("Smart model not configured"),
                 parsingModel = AppSettingsState.instance.fastModel
@@ -45,40 +41,14 @@ class UnifiedPlanAction : BaseAction() {
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 env = mapOf(),
                 workingDir = root,
-            ) {
-                override fun instance(model: ApiChatModel) = model.instance()
-                    ?: throw IllegalStateException("Model or Provider not set")
-            },
-            singleTaskMode = false,
+            ),
         )
 
         if (dialog.showAndGet()) {
             try {
                 val planSettings = dialog.settings
-                val selectedCognitiveMode = dialog.cognitiveModeCombo.selectedItem as String
-                val cognitiveMode: CognitiveModeStrategy = when (selectedCognitiveMode) {
-                    "Single Task" -> {
-                        val enabledTask = TaskType.values().find { planSettings.getTaskSettings(it).enabled }
-                        if (enabledTask != null) {
-                            TaskType.values().forEach { taskType ->
-                                // Disable all other tasks
-                                if (taskType != enabledTask) {
-                                    var taskSettings = planSettings.getTaskSettings(taskType)
-                                    taskSettings = TaskSettingsBase(taskType.name, false, taskSettings.model)
-                                    planSettings.setTaskSettings(taskType, taskSettings)
-                                }
-                            }
-                        }
-                        ConversationalMode
-                    }
-                    "Task Planning" -> WaterfallMode
-                    "Graph" -> DependencyGraphMode
-                    "Iterative Loop" -> AdaptivePlanningMode
-                    "Goal Oriented" -> HierarchicalPlanningMode
-                    else -> throw RuntimeException("Unknown plan mode: $selectedCognitiveMode")
-                }
                 UITools.runAsync(e.project, "Initializing Unified Plan", true) { progress ->
-                    initializeChat(e, progress, planSettings, cognitiveMode)
+                    initializeChat(e, progress, planSettings)
                 }
             } catch (ex: Exception) {
                 log.error("Failed to initialize unified plan", ex)
@@ -90,8 +60,7 @@ class UnifiedPlanAction : BaseAction() {
     private fun initializeChat(
         e: AnActionEvent,
         progress: ProgressIndicator,
-        orchestrationConfig: OrchestrationConfig,
-        cognitiveStrategy: CognitiveModeStrategy
+        orchestrationConfig: OrchestrationConfig
     ) {
         progress.text = "Setting up session..."
         val session = Session.newGlobalID()
@@ -100,24 +69,19 @@ class UnifiedPlanAction : BaseAction() {
         setupChatSession(
             session,
             root,
-            orchestrationConfig,
-            cognitiveStrategy,
-            object : AbbrevWhitelistYamlDescriber(
-                "com.simiacryptus", "cognotik.actions"
-            ) {
-                override val includeMethods: Boolean get() = false
-
-                override fun getEnumValues(clazz: Class<*>): List<String> {
-                    return if (clazz == TaskType::class.java) {
-                        orchestrationConfig.taskSettings.filter { it.value.enabled }.map { it.key }
-                    } else {
-                        super.getEnumValues(clazz)
-                    }
-                }
-            })
+            orchestrationConfig
+        )
         progress.text = "Starting server..."
-        val server = CognotikAppServer.getServer(e.project)
-        openBrowser(server, session.toString())
+        Thread {
+            Thread.sleep(500)
+            try {
+                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                log.info("Opening browser to $uri")
+                browse(uri)
+            } catch (e: Throwable) {
+                log.warn("Error opening browser", e)
+            }
+        }.start()
     }
 
     private fun getProjectRoot(e: AnActionEvent): File? {
@@ -130,32 +94,18 @@ class UnifiedPlanAction : BaseAction() {
     private fun setupChatSession(
         session: Session,
         root: File,
-        orchestrationConfig: OrchestrationConfig,
-        cognitiveStrategy: CognitiveModeStrategy,
-        describer: TypeDescriber
+        orchestrationConfig: OrchestrationConfig
     ) {
         DataStorage.sessionPaths[session] = root
-        val fastChatModel = (AppSettingsState.instance.fastModel
-            ?: throw IllegalStateException("Fast model not configured"))
         val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",
-            orchestrationConfig = orchestrationConfig.copy(
-                env = mapOf(),
-                workingDir = root.absolutePath,
-                language = if (isWindows) "powershell" else "bash",
-                command = listOf(
-                    if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
-                ),
-                parsingModel = fastChatModel,
-            ),
-            showMenubar = false,
-            cognitiveStrategy = cognitiveStrategy,
-            describer = describer
+            showMenubar = false
         ) {
             override fun instance(model: ApiChatModel) = model.instance()
                 ?: throw IllegalStateException("Model or Provider not set")
         }
+        app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
@@ -170,16 +120,4 @@ class UnifiedPlanAction : BaseAction() {
         )
     }
 
-    private fun openBrowser(server: CognotikAppServer, session: String) {
-        Thread {
-            Thread.sleep(500)
-            try {
-                val uri = server.server.uri.resolve("/#$session")
-                log.info("Opening browser to $uri")
-                browse(uri)
-            } catch (e: Throwable) {
-                log.warn("Error opening browser", e)
-            }
-        }.start()
-    }
 }

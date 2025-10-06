@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.diff.DiffUtil
-import com.simiacryptus.cognotik.diff.IterativePatchUtil
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchResult
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.AgentPatterns.displayMapInTabs
@@ -22,7 +22,8 @@ class AddApplyDiffLinks {
             handle: (String) -> Unit,
             task: SessionTask,
             shouldAutoApply: Boolean = false,
-        ) = AddApplyDiffLinks().apply(self, code, response, handle, task, shouldAutoApply)
+            processor: PatchProcessor,
+        ) = AddApplyDiffLinks().apply(self, code, response, handle, task, shouldAutoApply, processor)
 
     }
 
@@ -33,11 +34,12 @@ class AddApplyDiffLinks {
         handle: (String) -> Unit,
         task: SessionTask,
         shouldAutoApply: Boolean = false,
+        processor: PatchProcessor,
     ): String {
         val matches = SimpleDiffApplier.DIFF_PATTERN.findAll(response).distinct()
 
         val patch = { code: String, diff: String ->
-            val result = diffApplier.apply(code, "```diff\n$diff\n```")
+            val result = diffApplier.apply(code, "```diff\n$diff\n```", processor = processor)
             PatchResult(result.newCode, result.isValid, null)
         }
 
@@ -99,12 +101,12 @@ class AddApplyDiffLinks {
                 diffVal.lines().reversed().joinToString("\n")
             ).newCode
             val newValue = if (patchRev == patch) {
-                val test1 = IterativePatchUtil.generatePatch(code().replace("\r", ""), patch)
+                val test1 = processor.generatePatch(code().replace("\r", ""), patch)
                 displayMapInTabs(
                     mapOf(
-                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.manager, tabs = true),
-                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.manager, tabs = true),
-                    ), ui = task.manager, split = true
+                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.ui, tabs = true),
+                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.ui, tabs = true),
+                    ), ui = task.ui, split = true
                 ) + "\n" + buttons.placeholder
             } else {
                 @Suppress("AssignedValueIsNeverRead")
@@ -123,7 +125,7 @@ class AddApplyDiffLinks {
                             task.error(e)
                         }
                     })!!
-                val test1 = IterativePatchUtil.generatePatch(code().replace("\r", ""), patch)
+                val test1 = processor.generatePatch(code().replace("\r", ""), patch)
                 val test2 = DiffUtil.formatDiff(
                     DiffUtil.generateDiff(
                         code().lines(),
@@ -132,10 +134,10 @@ class AddApplyDiffLinks {
                 )
                 displayMapInTabs(
                     mapOf(
-                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.manager, tabs = true),
-                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.manager, tabs = true),
-                        "Reverse" to renderMarkdown("```diff\n$test2\n```", ui = task.manager, tabs = true),
-                    ), ui = task.manager, split = true
+                        "Diff" to renderMarkdown("```diff\n$diffVal\n```", ui = task.ui, tabs = true),
+                        "Verify" to renderMarkdown("```diff\n$test1\n```", ui = task.ui, tabs = true),
+                        "Reverse" to renderMarkdown("```diff\n$test2\n```", ui = task.ui, tabs = true),
+                    ), ui = task.ui, split = true
                 ) + "\n" + buttons.placeholder
             }
             markdown.replace(diffBlock.value, newValue)

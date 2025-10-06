@@ -390,6 +390,55 @@ object FileSelectionUtils {
         return extension in setOf("pdf", "html", "htm")
     }
 
+    fun resolveToRelativePath(root: Path, filename: String): String? {
+        log.debug("Resolving filename '{}' relative to root '{}'", filename, root)
+        if (!root.toFile().exists() || !root.toFile().isDirectory) {
+            log.debug("Root path does not exist or is not a directory: {}", root)
+            return null
+        }
+
+        var returnValue = prefilterFilename(filename) ?: return null
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
+
+        // Handle absolute paths
+        try {
+            val path = File(returnValue).toPath()
+            if (path.startsWith(root)) {
+                returnValue = path.toString().relativizeFrom(root)
+                log.debug("Relativized path to: {}", returnValue)
+            }
+        } catch (e: Throwable) {
+            log.debug("Error resolving filename '{}': {}", returnValue, e.message)
+        }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
+
+        // Recursive search with better performance
+        try {
+            val resolvedPath = root.resolve(returnValue)
+            if (!resolvedPath.toFile().exists() || !resolvedPath.toFile().isFile) {
+                log.debug("File not found directly under root, searching recursively")
+                val targetFileName = File(returnValue).name
+                val foundFile = root.toFile().listFilesRecursively()
+                    .asSequence()
+                    .filter { it.isFile }
+                    .find {
+                        val normalizedPath = it.toString().replace("\\", "/")
+                        val normalizedTarget = returnValue.replace("\\", "/")
+                        normalizedPath.endsWith(normalizedTarget) ||
+                                it.name.equals(targetFileName, ignoreCase = true)
+                    }
+                if (foundFile != null) {
+                    returnValue = foundFile.toString().relativizeFrom(root)
+                    log.debug("Found file recursively at: {}", returnValue)
+                }
+            }
+        } catch (e: Throwable) {
+            log.debug("Error searching for file '{}' recursively: {}", returnValue, e.message)
+        }
+        if (root.resolve(returnValue).toFile().exists()) return returnValue
+
+        return null
+    }
 
     fun fuzzyResolveToRelativePath(root: Path, filename: String): String? {
         log.debug("Resolving filename '{}' relative to root '{}'", filename, root)

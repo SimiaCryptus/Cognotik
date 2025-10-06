@@ -5,9 +5,9 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode.Tasks
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -28,7 +28,6 @@ open class HierarchicalPlanningMode(
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
-    val describer: TypeDescriber,
     maxConcurrency: Int = 4,
     private val maxIterations: Int = 200
 ) : CognitiveMode {
@@ -51,8 +50,7 @@ open class HierarchicalPlanningMode(
         sessionLogTask?.complete(message.renderMarkdown())
     }
 
-    val executor: ImmediateExecutorService = ui.pool ?: throw IllegalStateException("SocketManager or its pool is null")
-    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(executor, maxConcurrency)
+    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(ui.pool, maxConcurrency)
 
     override fun initialize() {
         log.debug("Initializing GoalOrientedMode")
@@ -121,9 +119,8 @@ open class HierarchicalPlanningMode(
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage?.getSessionDir(
                 user,
                 session
-            )?.toPath() ?: File(".").toPath(),
-            orchestrationConfig = orchestrationConfig)
-        val planningChatter = coordinator.orchestrationConfig.defaultChatter.getChildClient(task)
+            )?.toPath() ?: File(".").toPath())
+        val planningChatter = orchestrationConfig.defaultChatter.getChildClient(task)
 
         try {
             val initialGoals = parseInitialGoals(userMessage, planningChatter)
@@ -215,7 +212,7 @@ open class HierarchicalPlanningMode(
                 val future = processor.submit {
                     executeTask(
                         t.id, t, executionUiTask, coordinator, this@HierarchicalPlanningMode.getParsedActor(
-                            t, coordinator, planningChatInterface
+                            t, planningChatInterface
                         )
                     )
                 }
@@ -306,7 +303,7 @@ open class HierarchicalPlanningMode(
                         subgoalsList.append(
                             "- ${subgoal.description} (ID: ${
                                 subgoal.id.let {
-                                    goalTasks[subgoal.id]?.manager?.linkToSession(
+                                    goalTasks[subgoal.id]?.ui?.linkToSession(
                                         it
                                     ) ?: it
                                 }
@@ -318,7 +315,7 @@ open class HierarchicalPlanningMode(
                         subgoalsList.append(
                             "- ${subgoal.description} (ID: ${
                                 subgoal.id.let {
-                                    goalTasks[subgoal.id]?.manager?.linkToSession(
+                                    goalTasks[subgoal.id]?.ui?.linkToSession(
                                         it
                                     ) ?: it
                                 }
@@ -335,7 +332,7 @@ open class HierarchicalPlanningMode(
                         tasksList.append(
                             "- ${t.description} (ID: ${
                                 t.id.let {
-                                    goalTasks[t.id]?.manager?.linkToSession(
+                                    goalTasks[t.id]?.ui?.linkToSession(
                                         it
                                     ) ?: it
                                 }
@@ -384,28 +381,28 @@ open class HierarchicalPlanningMode(
                 GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳"
                 null -> "❓"
             }
-            val goalLink = goalsTask.manager.linkToSession(goal.id)
+            val goalLink = goalsTask.ui.linkToSession(goal.id)
             goalsSummary.append("$statusEmoji **$goalLink**: ${goal.description}\n")
             if (goal.parentGoalId != null) {
                 val parentGoal = goalTree[goal.parentGoalId]
-                val parentLink = goalsTask.manager.linkToSession(goal.parentGoalId)
+                val parentLink = goalsTask.ui.linkToSession(goal.parentGoalId)
                 goalsSummary.append("  - Parent: $parentLink - ${parentGoal?.description ?: "Unknown"}\n")
             }
             if (!goal.subgoals.isNullOrEmpty()) {
                 val subgoalLinks = goal.subgoals.joinToString(", ") { subgoalId ->
-                    goalsTask.manager.linkToSession(subgoalId.id)
+                    goalsTask.ui.linkToSession(subgoalId.id)
                 }
                 goalsSummary.append("  - Subgoals: $subgoalLinks\n")
             }
             if (!goal.tasks.isNullOrEmpty()) {
                 val taskLinks = goal.tasks.joinToString(", ") { taskId ->
-                    tasksTask.manager.linkToSession(taskId.id)
+                    tasksTask.ui.linkToSession(taskId.id)
                 }
                 goalsSummary.append("  - Tasks: $taskLinks\n")
             }
             if (!goal.dependencies.isNullOrEmpty()) {
                 val depLinks = goal.dependencies.joinToString(", ") { depId ->
-                    goalsTask.manager.linkToSession(depId)
+                    goalsTask.ui.linkToSession(depId)
                 }
                 goalsSummary.append("  - Dependencies: $depLinks\n")
             }
@@ -430,11 +427,11 @@ open class HierarchicalPlanningMode(
                 TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳"
                 null -> "❓"
             }
-            val taskLink = tasksTask.manager.linkToSession(task.id)
+            val taskLink = tasksTask.ui.linkToSession(task.id)
             tasksSummary.append("$statusEmoji **$taskLink**: ${task.description}\n")
             if (task.parentGoalId != null) {
                 val parentGoal = goalTree[task.parentGoalId]
-                val parentLink = goalTasks[task.parentGoalId]?.manager?.linkToSession(task.parentGoalId)
+                val parentLink = goalTasks[task.parentGoalId]?.ui?.linkToSession(task.parentGoalId)
                 tasksSummary.append("  - Parent Goal: $parentLink - ${parentGoal?.description ?: "Unknown"}\n")
             }
             if (!task.dependencies.isNullOrEmpty()) {
@@ -442,10 +439,10 @@ open class HierarchicalPlanningMode(
                     val depGoal = goalTree[depId]
                     val depTask = taskMap[depId]
                     when {
-                        depGoal != null -> goalTasks[task.parentGoalId]?.manager?.linkToSession(depId)
+                        depGoal != null -> goalTasks[task.parentGoalId]?.ui?.linkToSession(depId)
                             ?: "Unknown ${depId}"
 
-                        depTask != null -> tasksTask.manager.linkToSession(depId)
+                        depTask != null -> tasksTask.ui.linkToSession(depId)
                         else -> "Unknown ${depId}"
                     }
                 }
@@ -485,12 +482,12 @@ open class HierarchicalPlanningMode(
         return try {
             log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
             task.add("Starting execution of task: ${t.description}".renderMarkdown())
+            task.verbose("Task Details:\n```json\n${t.toJson()}\n```\n".renderMarkdown())
             val answer = actor.answer(
                 listOf(t.description ?: "") + contextData(
                     t.parentGoalId, t.id
                 ), // Pass focused context
             ).obj
-            val result1 = StringBuilder()
             val planTask = answer.tasks?.firstOrNull()
             logToSession("Resolved task for Task ID ${t.id}\n```json\n${planTask?.toJson() ?: "None"}\n```\n")
             if (planTask == null) {
@@ -508,8 +505,7 @@ open class HierarchicalPlanningMode(
                 task = task,
                 resultFn = {
                     logToSession("Completed task for Task ID ${t.id}")
-                    result1.append(it)
-                    t.result = result1.toString()
+                    t.result = it
                     t.status = TaskStatus.COMPLETED
                     semaphore.release()
                 }, // Capture task output
@@ -541,15 +537,15 @@ open class HierarchicalPlanningMode(
     }
 
     private fun getParsedActor(
-        t: Task, coordinator: TaskOrchestrator, chatInterface: ChatInterface
+        t: Task, chatInterface: ChatInterface
     ): ParsedAgent<Tasks> {
-        val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+        val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
         return ParsedAgent(
             name = "TaskTypeChooser",
             resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
             exampleInstance = Tasks(
                 mutableListOf(TaskType.getAvailableTaskTypes(orchestrationConfig).firstOrNull()?.let {
-                    TaskType.getImpl(orchestrationConfig, it).taskConfig
+                    TaskType.getImpl(orchestrationConfig, it).executionConfig
                 }).filterNotNull().toMutableList()
             ),
             prompt = """
@@ -561,10 +557,11 @@ open class HierarchicalPlanningMode(
             model = chatInterface,
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = describer,
+            describer = TaskContextYamlDescriber(orchestrationConfig),
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
                 "${taskType.name}:\n  ${
-                    describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                    TaskContextYamlDescriber(orchestrationConfig).describe(taskType.executionConfigClass).trim().trimIndent()
+                        .indent("  ")
                 }".trim()
             })
         )
@@ -664,7 +661,7 @@ open class HierarchicalPlanningMode(
             model = chatInterface,
             parsingModel = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
-            describer = describer
+            describer = TaskContextYamlDescriber(orchestrationConfig)
         )
         val answer = parsedActor.answer(listOf(userMessage))
         val goals = answer.obj.goals ?: emptyList()
@@ -724,7 +721,7 @@ open class HierarchicalPlanningMode(
             )
         ),
         prompt = run {
-            val availableTaskTypes = TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+            val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
                 .joinToString("\n                ") { "- ${it.name}" }
             val relatedTasksContext = goal.tasks?.mapNotNull { taskMap[it.id] }
                 ?.filter { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.FAILED }
@@ -750,14 +747,44 @@ open class HierarchicalPlanningMode(
             promptStr
         },
         model = chatInterface,
-        parsingModel = coordinator.orchestrationConfig.parsingChatter,
-        temperature = coordinator.orchestrationConfig.temperature,
-        describer = describer
+        parsingModel = orchestrationConfig.parsingChatter,
+        temperature = orchestrationConfig.temperature,
+        describer = TaskContextYamlDescriber(orchestrationConfig)
     )
 
 
-    private fun updateAllStatuses() {
-        var changed: Boolean
+private fun updateAllStatuses() {
+        var changed: Boolean = false
+        val circularDependencies = detectCircularDependencies()
+        if (circularDependencies.isNotEmpty()) {
+            logToSession("Circular dependencies detected. Marking affected items as completed to break deadlock.")
+            circularDependencies.forEach { id ->
+                when {
+                    goalTree.containsKey(id) -> {
+                        val goal = goalTree[id]!!
+                        if (goal.status != GoalStatus.COMPLETED && goal.status != GoalStatus.BLOCKED) {
+                            goal.status = GoalStatus.COMPLETED
+                            goal.result = "Marked as completed due to circular dependency deadlock"
+                            logToSession("Goal ${goal.id} (${goal.description}) marked as completed due to circular dependency")
+                            changed = true
+                        }
+                    }
+                    taskMap.containsKey(id) -> {
+                        val task = taskMap[id]!!
+                        if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.FAILED) {
+                            task.status = TaskStatus.COMPLETED
+                            task.result = "Marked as completed due to circular dependency deadlock"
+                            logToSession("Task ${task.id} (${task.description}) marked as completed due to circular dependency")
+                            changed = true
+                        }
+                    }
+                }
+            }
+            if (changed) {
+                debouncedUpdateGoalTreeUI()
+            }
+        }
+        
         do {
             val initialTaskStatuses = taskMap.mapValues { it.value.status }
             val initialGoalStatuses = goalTree.mapValues { it.value.status }
@@ -838,70 +865,119 @@ open class HierarchicalPlanningMode(
         }
     }
 
-    private fun areDependenciesMet(item: Task): Boolean {
+private fun areDependenciesMet(item: Task): Boolean {
         if (item.dependencies?.isEmpty() != false) return true
         return item.dependencies.all { depId ->
             (goalTree[depId]?.status == GoalStatus.COMPLETED) || (taskMap[depId]?.status == TaskStatus.COMPLETED) // Dependency can be a Goal or a Task
         }
     }
+    private fun detectCircularDependencies(): Set<String> {
+        val circularItems = mutableSetOf<String>()
+        val allItems = goalTree.keys + taskMap.keys
+        fun hasCycle(id: String, visited: MutableSet<String>, recursionStack: MutableSet<String>): Boolean {
+            if (recursionStack.contains(id)) {
+                // Found a cycle - add all items in the recursion stack
+                circularItems.addAll(recursionStack)
+                return true
+            }
+            if (visited.contains(id)) {
+                return false
+            }
+            visited.add(id)
+            recursionStack.add(id)
+            val dependencies = when {
+                goalTree.containsKey(id) -> goalTree[id]?.dependencies ?: emptyList()
+                taskMap.containsKey(id) -> taskMap[id]?.dependencies ?: emptyList()
+                else -> emptyList()
+            }
+            for (depId in dependencies) {
+                if (hasCycle(depId, visited, recursionStack)) {
+                    return true
+                }
+            }
+            recursionStack.remove(id)
+            return false
+        }
+        val visited = mutableSetOf<String>()
+        for (id in allItems) {
+            if (!visited.contains(id)) {
+                hasCycle(id, visited, mutableSetOf())
+            }
+        }
+        return circularItems
+    }
+
 
     private fun renderNode(goal: Goal, visited: MutableSet<String>): String {
-        val nodeSb = StringBuilder()
-        val statusEmoji = when (goal.status) {
-            GoalStatus.ACTIVE -> "🟢 Active"
-            GoalStatus.BLOCKED -> "🧱 Blocked"
-            GoalStatus.COMPLETED -> "✅ Completed"
-            GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
-            null -> "❓ Unknown"
+        val threadVisited = renderingInProgress.get()
+        if (goal.id in threadVisited) {
+            // Already rendering this goal in the current call stack, return a reference to avoid infinite recursion
+            return "- ⚠️ **Circular reference detected: ${goal.description ?: "N/A"} (ID: ${goal.id})**\n"
         }
-        val depsString =
-            (if (goal.dependencies?.isEmpty() == true) "none" else goal.dependencies?.joinToString(", ") { "Goal ${it}" }).let {
-                when (it) {
-                    "" -> ""
-                    else -> "Deps: $it"
-                }
-            }
-        nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let { it ->
-            goalTasks[goal.id]?.manager?.linkToSession(
-                it
-            ) ?: it
-        } + "   " + depsString)
-        nodeSb.append("\n")
-        goal.tasks?.mapNotNull { taskMap[it.id] }?.forEach { t ->
-            val taskStatusEmoji = when (t.status) {
-                TaskStatus.PENDING -> "📝 Pending"
-                TaskStatus.RUNNING -> "🏃 Running"
-                TaskStatus.COMPLETED -> "✔️ Completed"
-                TaskStatus.FAILED -> "❌ Failed"
-                TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
+        threadVisited.add(goal.id)
+        try {
+            val nodeSb = StringBuilder()
+            val statusEmoji = when (goal.status) {
+                GoalStatus.ACTIVE -> "🟢 Active"
+                GoalStatus.BLOCKED -> "🧱 Blocked"
+                GoalStatus.COMPLETED -> "✅ Completed"
+                GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
                 null -> "❓ Unknown"
             }
-            val string = if (t.dependencies?.isEmpty() == true) "none" else t.dependencies?.joinToString(", ") { dep ->
-                idToString(dep)
-            }
-            val text = "Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id})"
-            nodeSb.append(
-                "  - ${taskTasks[t.id]?.manager?.linkToSession(text) ?: text}" + "    " + when (string) {
-                    "" -> ""
-                    null -> ""
-                    else -> "Deps: $string"
+            val depsString =
+                (if (goal.dependencies?.isEmpty() == true) "none" else goal.dependencies?.joinToString(", ") { "Goal ${it}" }).let {
+                    when (it) {
+                        "" -> ""
+                        else -> "Deps: $it"
+                    }
                 }
-            )
+            nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let { it ->
+                goalTasks[goal.id]?.ui?.linkToSession(
+                    it
+                ) ?: it
+            } + "   " + depsString)
             nodeSb.append("\n")
+            goal.tasks?.mapNotNull { taskMap[it.id] }?.forEach { t ->
+                val taskStatusEmoji = when (t.status) {
+                    TaskStatus.PENDING -> "📝 Pending"
+                    TaskStatus.RUNNING -> "🏃 Running"
+                    TaskStatus.COMPLETED -> "✔️ Completed"
+                    TaskStatus.FAILED -> "❌ Failed"
+                    TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
+                    null -> "❓ Unknown"
+                }
+                val string =
+                    if (t.dependencies?.isEmpty() == true) "none" else t.dependencies?.joinToString(", ") { dep ->
+                        idToString(dep)
+                    }
+                val text = "Task $taskStatusEmoji ${t.description ?: "N/A"} (ID: ${t.id})"
+                nodeSb.append(
+                    "  - ${taskTasks[t.id]?.ui?.linkToSession(text) ?: text}" + "    " + when (string) {
+                        "" -> ""
+                        null -> ""
+                        else -> "Deps: $string"
+                    }
+                )
+                nodeSb.append("\n")
+            }
+            goal.subgoals?.mapNotNull { goalTree[it.id] }?.joinToString("\n") { subGoal ->
+                renderNode(subGoal, visited).trim().indent("  ")
+            }.apply { nodeSb.append(this + "\n") }
+            return nodeSb.toString()
+        } finally {
+            // Remove from thread-local set when done rendering this node to allow it to be rendered in other branches
+            threadVisited.remove(goal.id)
         }
-        goal.subgoals?.mapNotNull { goalTree[it.id] }?.joinToString("\n") { subGoal ->
-            renderNode(subGoal, visited).trim().indent("  ")
-        }.apply { nodeSb.append(this + "\n") }
-        return nodeSb.toString()
     }
 
     private fun idToString(dep: String): CharSequence =
-        if (goalTree.containsKey(dep)) "Goal ${goalTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
-        else "Task ${taskTasks.get(dep)?.manager?.linkToSession(dep) ?: dep}"
+        if (goalTree.containsKey(dep)) "Goal ${goalTasks.get(dep)?.ui?.linkToSession(dep) ?: dep}"
+        else "Task ${taskTasks.get(dep)?.ui?.linkToSession(dep) ?: dep}"
 
     private fun renderGoalTreeText(goals: List<Goal>): String {
+
         val sb = StringBuilder("### Goal Tree Status\n")
-        val rootGoalIds = goals.mapNotNull { it.id }.toSet()
+        val rootGoalIds = goals.map { it.id }.toSet()
         val roots =
             goals.filter { it.parentGoalId == null || !rootGoalIds.contains(it.parentGoalId) }.sortedBy { it.id }
         if (roots.isEmpty() && goals.isNotEmpty()) {
@@ -911,10 +987,10 @@ open class HierarchicalPlanningMode(
                         it, mutableSetOf()
                     )
                 )
-            } // Start new traversal for each potential root in fallback
+            }
         } else {
             roots.sortedBy { it.id }
-                .forEach { sb.append(renderNode(it, mutableSetOf())) } // Start new traversal for each root
+                .forEach { sb.append(renderNode(it, mutableSetOf())) }
         }
         return sb.toString()
     }
@@ -956,7 +1032,7 @@ open class HierarchicalPlanningMode(
         return contextLines
     }
 
-    fun contextData(focusGoalId: String?, focusTaskId: String?): List<String> {
+fun contextData(focusGoalId: String?, focusTaskId: String?): List<String> {
         val contextLines = mutableListOf<String>()
         contextLines.add("Current Goal-Oriented Plan State:")
         if (focusGoalId != null || focusTaskId != null) {
@@ -967,7 +1043,12 @@ open class HierarchicalPlanningMode(
         }
 
         val llmContextSb = StringBuilder()
-        fun renderNodeForLlm(goal: Goal, indent: Int) {
+        fun renderNodeForLlm(goal: Goal, indent: Int, visited: MutableSet<String>) {
+            if (!visited.add(goal.id)) {
+                // Already visited this goal, prevent infinite recursion
+                llmContextSb.append("${"  ".repeat(indent)}- G(${goal.id}): ... (cycle detected or already rendered)\n")
+                return
+            }
             val goalDeps = goal.dependencies?.joinToString(",")?.let {
                 when (it) {
                     "" -> ""
@@ -988,13 +1069,13 @@ open class HierarchicalPlanningMode(
                 llmContextSb.append("${"  ".repeat(indent + 1)}- T(${t.id}): ${t.description ?: "N/A"} [${t.status}] $taskDeps\n")
             }
             goal.subgoals?.mapNotNull { goalTree[it.id] }?.forEach { subGoal ->
-                renderNodeForLlm(subGoal, indent + 1)
+                renderNodeForLlm(subGoal, indent + 1, visited)
             }
         }
 
         val rootsForLlm = goalTree.values.filter { it.parentGoalId == null || !goalTree.containsKey(it.parentGoalId) }
             .sortedBy { it.id } // Consider nodes without known parents as roots
-        rootsForLlm.forEach { renderNodeForLlm(it, 0) }
+        rootsForLlm.forEach { renderNodeForLlm(it, 0, mutableSetOf()) }
         contextLines.add(llmContextSb.toString())
         return contextLines
     }
@@ -1091,9 +1172,12 @@ open class HierarchicalPlanningMode(
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: SocketManager, orchestrationConfig: OrchestrationConfig, session: Session, user: User?, describer: TypeDescriber
-        ) = HierarchicalPlanningMode(ui, orchestrationConfig, session, user, describer)
+            ui: SocketManager, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
+        ) = HierarchicalPlanningMode(ui, orchestrationConfig, session, user)
 
         private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
+
+        // ThreadLocal to track visited nodes during rendering to prevent infinite recursion
+        private val renderingInProgress = ThreadLocal.withInitial { mutableSetOf<String>() }
     }
 }

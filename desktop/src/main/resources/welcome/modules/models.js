@@ -3,7 +3,8 @@ class ModelManager {
     constructor(dependencies = {}) {
         this.appState = dependencies.appState;
         this.document = dependencies.document || document;
-        this.availableModels = dependencies.availableModels || {};
+        // Reference the global availableModels object
+        this.getAvailableModels = dependencies.getAvailableModels || (() => availableModels);
     }
 
 
@@ -18,7 +19,8 @@ class ModelManager {
             return;
         }
         // Ensure we have appState and availableModels
-        if (!this.appState || !this.availableModels) {
+        const currentModels = this.getAvailableModels();
+        if (!this.appState || !currentModels) {
             console.warn('[populateModelSelections] Missing required dependencies.');
             return;
         }
@@ -39,11 +41,13 @@ class ModelManager {
 
     addAvailableModels(modelSelect, parsingModelSelect) {
         const addedModels = new Set();
+        const currentModels = this.getAvailableModels();
 
         if (this.appState.apiSettings && this.appState.apiSettings.apiKeys) {
             for (const [provider, key] of Object.entries(this.appState.apiSettings.apiKeys)) {
-                if (key && this.availableModels[provider]) {
-                    this.availableModels[provider].forEach(model => {
+                console.log(`[addAvailableModels] Checking provider: ${provider}, has key: ${!!key}, has models: ${!!currentModels[provider]}`);
+                if (key && currentModels[provider]) {
+                    currentModels[provider].forEach(model => {
                         if (!addedModels.has(model.id)) {
                             this.addModelOption(modelSelect, parsingModelSelect, model, provider);
                             addedModels.add(model.id);

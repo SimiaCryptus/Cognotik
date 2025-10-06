@@ -18,7 +18,7 @@ import kotlin.math.min
 class GoogleSearch : SeedMethodFactory {
     override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
         override fun getSeedItems(
-            taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+            taskConfig: CrawlerAgentTask.CrawlerTaskExecutionConfigData?,
             orchestrationConfig: OrchestrationConfig
         ): List<SeedItem>? {
             SeedMethod.Companion.log.info("Starting Google Search seed method with query: ${taskConfig?.search_query}")

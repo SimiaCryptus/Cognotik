@@ -4,8 +4,11 @@ import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -14,6 +17,7 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -32,8 +36,7 @@ open class AdaptivePlanningMode(
     override val user: User?,
     private val maxTaskHistoryChars: Int = orchestrationConfig.maxTaskHistoryChars,
     private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration,
-    private val maxIterations: Int = orchestrationConfig.maxIterations,
-    val describer: TypeDescriber
+    private val maxIterations: Int = orchestrationConfig.maxIterations
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
 
@@ -66,28 +69,19 @@ open class AdaptivePlanningMode(
         task.echo(renderMarkdown(userMessage))
 
         val continueLoop = true
-        val executor = ui.pool ?: throw IllegalStateException("SocketManager or its pool is null")
-
         val tabbedDisplay = TabbedDisplay(task)
-        executor.execute {
-            val socketManager = ui ?: run {
-                log.error("SocketManager is null, cannot proceed.")
-                task.error(IllegalStateException("SocketManager is null"))
-                return@execute
-            }
+        ui.pool.execute {
             try {
                 log.debug("Starting main execution loop")
-                tabbedDisplay.update()
                 task.complete()
 
-                val coordinator = socketManager.dataStorage?.let {
+                val coordinator = ui.dataStorage?.let {
                     TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: socketManager.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath(),
-                        orchestrationConfig = orchestrationConfig
+                            ?: ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
                 log.debug("Created plan coordinator")
@@ -103,33 +97,38 @@ open class AdaptivePlanningMode(
                     task.complete()
                     val currentThinkingStatus = reasoningState.get()
                         ?: throw IllegalStateException("ThinkingStatus is null at iteration $iteration")
-                    val iterationTask = ui.newTask(false).apply { tabbedDisplay["Iteration $iteration"] = placeholder }
-                    val iterationTabbedDisplay = TabbedDisplay(iterationTask, additionalClasses = "iteration")
+
+                    val task = task.linkedTask("Iteration $iteration")
+                    val ui = task.ui
+                    val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
                     ui.newTask(false).apply {
                         iterationTabbedDisplay["Inputs"] = placeholder
                         val inputTabs = TabbedDisplay(this)
                         ui.newTask(false).apply {
                             inputTabs["Project Info"] = placeholder
-                            contextData().forEach { add(renderMarkdown(it)) }
+                            contextData().forEach {
+                                complete(renderMarkdown(it, tabs = false))
+                            }
+                            complete()
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
                             ui.newTask(false).apply {
                                 inputTabs["Task ${index + 1}"] = placeholder
-                                add(renderMarkdown(it))
+                                complete(renderMarkdown(it))
                             }
-                            add(renderMarkdown(it))
+                            complete(renderMarkdown(it))
                         }
                         ui.newTask(false).apply {
                             inputTabs["Thinking Status"] = placeholder
-                            add(renderMarkdown(formatThinkingStatus(currentThinkingStatus)))
+                            complete(renderMarkdown(formatThinkingStatus(currentThinkingStatus)))
                         }
                     }
 
                     val nextTask = try {
                         log.debug("Getting next task")
                         if (coordinator != null) {
-                            getNextTask(coordinator, userMessage, currentThinkingStatus, iterationTask)
+                            getNextTask(userMessage, currentThinkingStatus, task)
                         } else {
                             log.error("Coordinator is null, cannot get next task")
                             null
@@ -142,12 +141,12 @@ open class AdaptivePlanningMode(
 
                     if (nextTask?.isEmpty() != false) {
                         log.debug("No more tasks to execute")
-                        iterationTask.add(renderMarkdown("No more tasks to execute. Finishing Auto Plan Chat."))
+                        task.add(renderMarkdown("No more tasks to execute. Finishing Auto Plan Chat."))
                         break
                     }
                     log.debug("Retrieved next tasks: ${nextTask.size}")
 
-                    val taskResults = mutableListOf<Pair<TaskConfigBase, Future<String>>>()
+                    val taskResults = mutableListOf<Pair<TaskExecutionConfig, Future<String>>>()
                     for ((index, currentTask: TaskData) in nextTask.withIndex()) {
                         val currentTaskId = "task_${index + 1}"
                         log.debug("Executing task $currentTaskId")
@@ -155,29 +154,28 @@ open class AdaptivePlanningMode(
                         val taskConfig = currentTask.task.tasks?.get(index)
                         val taskDescription =
                             taskConfig?.task_description ?: "No description provided for this task item."
-                        taskExecutionTask.add(currentTask.actorResponse.renderMarkdown)
-                        val fullTaskDataJson = JsonUtil.toJson(currentTask)
+                        taskExecutionTask.add("\n```json\n${taskConfig?.toJson()}\n```\n".renderMarkdown)
                         taskExecutionTask.verbose(
                             renderMarkdown(
                                 """
 Executing task: `$currentTaskId` - $taskDescription
 Full TaskData JSON:
 ```json
-$fullTaskDataJson
+${JsonUtil.toJson(taskConfig)}
 ```
 """.trimIndent(), tabs = false
                             )
                         )
                         iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
-                        val future = executor.submit<String> {
+                        val future = ui.pool.submit<String> {
                             try {
                                 if (coordinator != null) {
                                     runTask(
-                                        coordinator,
-                                        currentTask.task.tasks?.get(index)!!,
-                                        userMessage,
-                                        taskExecutionTask
+                                        coordinator = coordinator,
+                                        currentTask = taskConfig!!,
+                                        userMessage = userMessage,
+                                        task = taskExecutionTask
                                     )
                                 } else {
                                     log.error("Coordinator is null, cannot run task")
@@ -251,13 +249,13 @@ $fullTaskDataJson
 
     private fun runTask(
         coordinator: TaskOrchestrator,
-        currentTask: TaskConfigBase,
+        currentTask: TaskExecutionConfig,
         userMessage: String,
         task: SessionTask
     ): String {
         val currentThinkingStatus =
             reasoningState.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
-        val taskImpl = TaskType.getImpl(coordinator.orchestrationConfig, currentTask)
+        val taskImpl = TaskType.getImpl(orchestrationConfig, currentTask)
         val result = StringBuilder()
 
         taskImpl.run(
@@ -275,19 +273,17 @@ $fullTaskDataJson
     }
 
     private fun getNextTask(
-        coordinator: TaskOrchestrator,
         userMessage: String,
         reasoningState: ReasoningState,
         task: SessionTask
     ): List<TaskData>? {
-        val describer = coordinator.describer
-
+        val describer = TaskContextYamlDescriber(orchestrationConfig)
         val parsedActor = ParsedAgent(
             name = "TaskChooser",
             resultClass = Tasks::class.java,
             exampleInstance = Tasks(
                 listOf(
-                    FileModificationTask.FileModificationTaskConfigData(
+                    FileModificationTask.FileModificationTaskExecutionConfigData(
                         task_description = "Modify the file 'example.txt' to include the given input."
                     )
                 ).toMutableList()
@@ -298,22 +294,38 @@ $fullTaskDataJson
                 append(" tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
                 append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
                 append("Available task types:\n")
-                append(TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig).joinToString("\n\n") { taskType ->
-                    "* ${
-                        TaskType.getImpl(coordinator.orchestrationConfig, taskType).promptSegment().trim().trimIndent()
-                            .indent("  ")
-                    }"
-                })
+                append(
+                    TaskType.getAvailableTaskTypes(orchestrationConfig)
+                    .flatMap { taskType ->
+                        val configs = orchestrationConfig.getTaskConfigs(taskType)
+                        configs.map { config ->
+                            val configName = config.name?.let { " - Configuration: '$it'" } ?: ""
+                            "* ${taskType.name}$configName:\n  ${
+                                TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim()
+                                    .trimIndent()
+                                    .indent("  ")
+                            }"
+                        }
+                    }
+                    .joinToString("\n\n"))
                 append("\nChoose the most suitable task types and provide details of how they should be executed.")
+                val namedConfigs = orchestrationConfig.taskSettings.values.filter { it.name != null }
+                if (namedConfigs.isNotEmpty()) {
+                    append("\n\nAvailable named configurations:")
+                    namedConfigs.groupBy { it.task_type }.forEach { (taskType, configs) ->
+                        append("\n* $taskType: ${configs.mapNotNull { it.name }.joinToString(", ")}")
+                    }
+                    append("\nYou can specify which configuration to use by setting the task_config_name field.")
+                }
             },
-            model = coordinator.orchestrationConfig.defaultChatter.getChildClient(task),
-            parsingModel = coordinator.orchestrationConfig.parsingChatter,
-            temperature = coordinator.orchestrationConfig.temperature,
+            model = orchestrationConfig.defaultChatter.getChildClient(task),
+            parsingModel = orchestrationConfig.parsingChatter,
+            temperature = orchestrationConfig.temperature,
             describer = describer,
-            parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(coordinator.orchestrationConfig)
+            parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
                 .joinToString("\n\n") { taskType ->
                     "${taskType.name}:\n  ${
-                        describer.describe(taskType.taskDataClass).trim().trimIndent().indent("  ")
+                        describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
                     }".trim()
                 })
         )
@@ -347,8 +359,8 @@ $fullTaskDataJson
                 ) to (if (taskConfigBase.task_type == null) {
                     null
                 } else {
-                    TaskType.getImpl(coordinator.orchestrationConfig, taskConfigBase)
-                })?.taskConfig
+                    TaskType.getImpl(orchestrationConfig, taskConfigBase)
+                })?.executionConfig
             } ?: emptyList()
         }.flatten()
 
@@ -454,7 +466,7 @@ $fullTaskDataJson
             model = orchestrationConfig.defaultChatter.getChildClient(task),
             parsingModel = orchestrationConfig.parsingChatter.getChildClient(task),
             temperature = orchestrationConfig.temperature,
-            describer = describer
+            describer = TaskContextYamlDescriber(orchestrationConfig)
         ).answer(listOf(userMessage) + contextData()).obj
     }
 
@@ -524,12 +536,12 @@ $fullTaskDataJson
         model = orchestrationConfig.defaultChatter.getChildClient(task),
         parsingModel = orchestrationConfig.parsingChatter,
         temperature = orchestrationConfig.temperature,
-        describer = describer
+        describer = TaskContextYamlDescriber(orchestrationConfig)
     ).answer(
         listOf("Current thinking status: ${formatThinkingStatus(reasoningState)}") +
                 contextData() +
                 completedTasks.flatMap { record ->
-                    val task: TaskConfigBase? = record.task
+                    val task: TaskExecutionConfig? = record.task
                     listOf(
                         "Completed task: ${task?.task_description}",
                         "Task result: ${record.result}",
@@ -615,7 +627,7 @@ $fullTaskDataJson
     data class ExecutionRecord(
         val time: Date? = Date(),
         val iteration: Int = 0,
-        val task: TaskConfigBase? = null,
+        val task: TaskExecutionConfig? = null,
         val result: String? = null,
         @Description("Meta-cognitive reflection about the task execution.")
         val reflections: Reflection? = null
@@ -683,7 +695,7 @@ $fullTaskDataJson
     )
 
     data class Tasks(
-        val tasks: MutableList<TaskConfigBase>? = null
+        val tasks: MutableList<TaskExecutionConfig>? = null
     )
 
     companion object : CognitiveModeStrategy {
@@ -692,8 +704,7 @@ $fullTaskDataJson
             ui: SocketManager,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?,
-            describer: TypeDescriber
-        ) = AdaptivePlanningMode(ui, orchestrationConfig, session, user, describer = describer)
+            user: User?
+        ) = AdaptivePlanningMode(ui, orchestrationConfig, session, user)
     }
 }

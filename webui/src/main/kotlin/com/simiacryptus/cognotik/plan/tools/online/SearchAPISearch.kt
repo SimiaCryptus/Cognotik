@@ -23,7 +23,7 @@ open class SearchAPISearch(
         user: User?,
     ): SeedStrategy = object : SeedStrategy {
         override fun getSeedItems(
-            taskConfig: CrawlerAgentTask.CrawlerTaskConfigData?,
+            taskConfig: CrawlerAgentTask.CrawlerTaskExecutionConfigData?,
             orchestrationConfig: OrchestrationConfig,
         ): List<SeedItem>? {
             log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
@@ -70,13 +70,25 @@ open class SearchAPISearch(
             )
             results = results.take(searchLimit)
             return results.mapNotNull { result ->
-                val link = (result["link"] ?: result["url"] ?: result["website"] ?: result["pdf"]) as? String
+                val link = (result["link"]
+                    ?: result["url"]
+                    ?: result["website"]
+                    ?: result["pdf"]
+                    ?: result["apply_link"]
+                ) as? String
                 val title = (result["title"]) as? String
                 if (link?.isNotBlank() == true && title?.isNotBlank() == true) {
                     SeedItem(
                         link = link,
                         title = title,
-                        additionalData = result.filterKeys { it != "link" && it != "url" && it != "title" && it != "website" && it != "pdf" }
+                        additionalData = result.filterKeys {
+                            it != "link" &&
+                                    it != "url" &&
+                                    it != "title" &&
+                                    it != "website" &&
+                                    it != "pdf" &&
+                                    it != "apply_link"
+                        }
                     )
                 } else {
                     log.warn("Skipping invalid search result missing link or title: $result")
@@ -98,7 +110,7 @@ open class SearchAPISearch(
         JsonUtil.fromJson<Map<String, Any>>(
             body,
             Map::class.java
-        ).let {  rawData ->
+        ).let { rawData ->
             try {
                 if (!rawData.containsKey(mainResultField)) {
                     log.warn("Expected field '$mainResultField' not found in SearchAPI.io response for query: $query")

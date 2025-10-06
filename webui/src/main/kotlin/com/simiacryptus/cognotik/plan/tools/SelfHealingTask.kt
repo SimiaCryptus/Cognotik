@@ -14,22 +14,22 @@ import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
 
 class SelfHealingTask(
-    orchestrationConfig: OrchestrationConfig, planTask: SelfHealingTaskConfigData?
-) : AbstractTask<SelfHealingTask.SelfHealingTaskConfigData>(orchestrationConfig, planTask) {
-    class SelfHealingTaskSettings(
+    orchestrationConfig: OrchestrationConfig, planTask: SelfHealingTaskExecutionConfigData?
+) : AbstractTask<SelfHealingTask.SelfHealingTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+    class SelfHealingTaskTypeConfig(
         task_type: String? = null,
-        enabled: Boolean = false,
         model: ApiChatModel? = null,
-        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf()
-    ) : TaskSettingsBase(task_type, enabled, model)
+        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf(),
+        name: String? = task_type,
+    ) : TaskTypeConfig(task_type, name, model)
 
-    class SelfHealingTaskConfigData(
+    class SelfHealingTaskExecutionConfigData(
         @Description("The commands to be executed with their respective working directories") val commands: List<CommandWithWorkingDir>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskConfigBase(
-        task_type = TaskType.SelfHealingTask.name,
+    ) : TaskExecutionConfig(
+        task_type = TaskType.SelfHealing.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -40,20 +40,17 @@ class SelfHealingTask(
         @Description("The relative path of the working directory") val workingDir: String? = null
     )
 
-    override fun promptSegment(): String {
-        val settings = orchestrationConfig.getTaskSettings(TaskType.SelfHealingTask) as SelfHealingTaskSettings
-        return ("""
-      CommandAutoFixTask - Run a command and automatically fix any issues that arise
-      * Specify the commands to be executed along with their working directories
-      * Each command's working directory should be specified relative to the root directory
-      * Provide the commands and their arguments in the 'commands' field
-      * Each command should be a list of strings
-      * Available commands:
-      """.trimIndent() + settings.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}" }).trim()
-    }
+    override fun promptSegment() = ("""
+  SelfHealing - Run a command and automatically fix any issues that arise
+  * Specify the commands to be executed along with their working directories
+  * Each command's working directory should be specified relative to the root directory
+  * Provide the commands and their arguments in the 'commands' field
+  * Each command should be a list of strings
+  * Available commands:
+  """.trimIndent() + typeConfig.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}" }).trim()
 
-    override val taskSettings: SelfHealingTaskSettings
-        get() = super.taskSettings as SelfHealingTaskSettings
+    override val typeConfig: SelfHealingTaskTypeConfig
+        get() = super.typeConfig as SelfHealingTaskTypeConfig
 
     override fun run(
         agent: TaskOrchestrator,
@@ -64,18 +61,18 @@ class SelfHealingTask(
     ) {
         val semaphore = Semaphore(0)
         Retryable(task = task) {
-            val task = task.manager.newTask()
+            val task = task.ui.newTask()
             agent.pool.submit {
-                val model = (taskSettings.model?.let { agent.orchestrationConfig.instance(it) }
-                    ?: agent.orchestrationConfig.defaultChatter).getChildClient(task)
+                val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+                    ?: orchestrationConfig.defaultChatter).getChildClient(task)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
-                        commands = this.taskConfig?.commands?.map { commandWithDir ->
+                        commands = this.executionConfig?.commands?.map { commandWithDir ->
                             val alias = commandWithDir.command.firstOrNull()
-                            val cmds = taskConfig.commands.map {
+                            val cmds = executionConfig.commands.map {
                                 val cmd = it.command.firstOrNull()
-                                taskSettings.commandAutoFixCommands?.firstOrNull { it.endsWith(cmd ?: "") } ?: cmd
+                                typeConfig.commandAutoFixCommands?.firstOrNull { it.endsWith(cmd ?: "") } ?: cmd
                             }.map { File(it!!) }.associateBy { it.name }.filterKeys { it.startsWith(alias ?: "") }
                             PatchApp.CommandSettings(
                                 executable = when {
@@ -91,12 +88,13 @@ class SelfHealingTask(
                                 additionalInstructions = ""
                             )
                         } ?: emptyList(),
-                        autoFix = agent.orchestrationConfig.autoFix,
+                        autoFix = orchestrationConfig.autoFix,
                         includeLineNumbers = false,
                     ),
                     files = agent.files,
                     model = model,
-                    parsingModel = agent.orchestrationConfig.parsingChatter,
+                    parsingModel = orchestrationConfig.parsingChatter,
+                    processor = orchestrationConfig.processor,
                 ).run(
                     task = task, model = model
                 ).apply {
@@ -108,7 +106,7 @@ class SelfHealingTask(
 
                         else -> {
                             task.add(
-                                task.manager.hrefLink("Ignore Error", "href-link cmd-button") {
+                                task.ui.hrefLink("Ignore Error", "href-link cmd-button") {
                                     resultFn("Error: ${this.exitCode}")
                                     semaphore.release()
                                 }

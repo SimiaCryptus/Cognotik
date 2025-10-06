@@ -7,14 +7,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.actors.ParsedResponse
-import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.diff.IterativePatchUtil.patchFormatPrompt
+import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -67,11 +67,10 @@ class MultiStepPatchAction : BaseAction() {
                     loadImages = false,
                     showMenubar = false
                 )
-                val server = CognotikAppServer.getServer(e.project)
 
                 ApplicationManager.getApplication().invokeLater {
                     progress.text = "Opening browser..."
-                    val uri = server.server.uri.resolve("/#$session")
+                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
                     BaseAction.log.info("Opening browser to $uri")
                     browse(uri)
                 }
@@ -111,6 +110,7 @@ class MultiStepPatchAction : BaseAction() {
                 model = settings.model!!,
                 parsingModel = AppSettingsState.instance.fastChatClient,
                 event = event,
+                processor = AppSettingsState.instance.processor,
             ).start(
                 userMessage = userMessage,
             )
@@ -135,6 +135,7 @@ class MultiStepPatchAction : BaseAction() {
         val model: ChatInterface,
         val parsingModel: ChatInterface,
         val event: AnActionEvent,
+        val processor: PatchProcessor,
     ) {
         val actors = mapOf(
             ActorTypes.DesignActor to ParsedAgent(
@@ -148,7 +149,7 @@ class MultiStepPatchAction : BaseAction() {
                 parsingModel = parsingModel,
             ),
             ActorTypes.TaskCodingActor to ChatAgent(
-                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + patchFormatPrompt,
+                prompt = "Implement the changes to the codebase as described in the task list.\n\n" + processor.patchFormatPrompt,
                 model = model
             ),
         ).map { it.key.name to it.value }.toMap()
@@ -214,7 +215,7 @@ class MultiStepPatchAction : BaseAction() {
                     while (description.startsWith("#")) {
                         description = description.substring(1)
                     }
-                    description = renderMarkdown(description, ui = task.manager, tabs = false)
+                    description = renderMarkdown(description, ui = task.ui, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
                     ApplicationServices.threadPoolManager.getPool(session, user).submit {
                         task.header("Task: $description", 2)
@@ -258,6 +259,7 @@ class MultiStepPatchAction : BaseAction() {
                                                 task.complete("<a href='${"fileIndex/$session/$path"}'>$path</a> Updated")
                                             }
                                         },
+                                        processor = processor,
                                     )
                                 )
                             } catch (e: Exception) {

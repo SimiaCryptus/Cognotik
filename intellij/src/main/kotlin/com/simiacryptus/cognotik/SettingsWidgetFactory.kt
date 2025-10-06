@@ -39,7 +39,6 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private var statusBar: StatusBar? = null
         private var smartModelTree: Tree? = null
         private var fastModelTree: Tree? = null
-        private var project: Project? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
         private fun getSmartModelTree(): Tree {
@@ -179,13 +178,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             stopButton.isEnabled = CognotikAppServer.isRunning()
 
             startButton.addActionListener {
-                CognotikAppServer.getServer(project)
+                CognotikAppServer.getServer()
                 startButton.isEnabled = false
                 stopButton.isEnabled = true
                 updateSessionsList()
             }
             stopButton.addActionListener {
-                CognotikAppServer.getServer(project).server.stop()
+                CognotikAppServer.getServer().server.stop()
                 startButton.isEnabled = true
                 stopButton.isEnabled = false
                 updateSessionsList()
@@ -236,7 +235,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         fun updateSessionsList() {
             sessionsListModel.clear()
-            (SessionProxyServer.Companion.chats.keys + SessionProxyServer.Companion.agents.keys).distinct().forEach {
+            (SessionProxyServer.chats.keys + SessionProxyServer.agents.keys).distinct().forEach {
                 sessionsListModel.addElement(it)
             }
         }
@@ -411,19 +410,18 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             return AppSettingsState.instance.smartModel?.model?.modelName ?: "Uninitialized"
         }
 
-        override fun getTooltipText(): String {
-            val serverStatus = if (CognotikAppServer.isRunning()) {
+        override fun getTooltipText() = """
+    Smart Model: ${AppSettingsState.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
+    Fast Model: ${AppSettingsState.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
+    Temperature: ${AppSettingsState.instance.temperature}<br/>
+    ${
+            if (CognotikAppServer.isRunning()) {
                 "Server running on ${AppSettingsState.instance.listeningEndpoint}:${AppSettingsState.instance.listeningPort}"
             } else {
                 "Server stopped"
             }
-            return """
-        Smart Model: ${AppSettingsState.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
-        Fast Model: ${AppSettingsState.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
-        Temperature: ${AppSettingsState.instance.temperature}<br/>
-        $serverStatus
-        """.trimIndent().trim()
         }
+    """.trimIndent().trim()
 
         companion object {
             private val messages = ResourceBundle.getBundle("messages.SettingsWidget")

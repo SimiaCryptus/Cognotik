@@ -19,10 +19,12 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.diff.PatchProcessor
+import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ImageModels
-import com.simiacryptus.cognotik.plan.TaskSettingsBase
+import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -71,7 +73,7 @@ data class AppSettingsState(
     var mainImageModel: String = "",
     /* Embedding Model Settings */
     var embeddingModel: EmbeddingModel? = null,
-
+    var processor: PatchProcessors = PatchProcessors.Fuzzy,
 
     /* AWS Settings */
     var awsProfile: String? = null,
@@ -114,73 +116,6 @@ data class AppSettingsState(
 
     @JsonIgnore
     override fun getState() = SimpleEnvelope(toJson(this))
-
-//    private fun handleLegacyKeys(
-//        jsonNode: JsonNode
-//    ) {
-//        // Migrate legacy API keys to UserSettingsManager
-//        val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
-//        var needsUpdate = false
-//
-//        // Handle old apiKey field
-//        if (jsonNode.has("apiKey")) {
-//            val apiKeyNode = jsonNode.get("apiKey")
-//            if (apiKeyNode.isObject) {
-//                apiKeyNode.fields().forEach { (providerName, keyValue) ->
-//                    try {
-//                        val provider = APIProvider.valueOf(providerName)
-//                        val existingApi = userSettings.apis.find { it.provider == provider }
-//                        if (existingApi == null) {
-//                            userSettings.apis.add(
-//                                ApiData(
-//                                    key = keyValue.asText(),
-//                                    provider = provider,
-//                                    baseUrl = provider.base
-//                                ).validate()
-//                            )
-//                            needsUpdate = true
-//                        }
-//                    } catch (e: Exception) {
-//                        log.warn("Unknown provider in legacy config: $providerName", e)
-//                    }
-//                }
-//            }
-//        }
-//
-//        // Handle apiKeys and apiBase fields
-//        if (jsonNode.has("apiKeys") || jsonNode.has("apiBase")) {
-//            val apiKeysNode = jsonNode.get("apiKeys")
-//            val apiBaseNode = jsonNode.get("apiBase")
-//
-//            if (apiKeysNode != null && apiKeysNode.isObject) {
-//                apiKeysNode.fields().forEach { (providerName, keyValue) ->
-//                    try {
-//                        val provider = APIProvider.valueOf(providerName)
-//                        val baseUrl = apiBaseNode?.get(providerName)?.asText() ?: provider.base
-//                        val existingApi = userSettings.apis.find { it.provider == provider }
-//                        if (existingApi == null) {
-//                            userSettings.apis.add(
-//                                ApiData(
-//                                    key = keyValue.asText(),
-//                                    provider = provider,
-//                                    baseUrl = baseUrl
-//                                ).validate()
-//                            )
-//                            needsUpdate = true
-//                        }
-//                    } catch (e: Exception) {
-//                        log.warn("Unknown provider in legacy config: $providerName", e)
-//                    }
-//                }
-//            }
-//        }
-//        if (needsUpdate) {
-//            ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(
-//                UserSettingsManager.defaultUser,
-//                userSettings
-//            )
-//        }
-//    }
 
     @JsonIgnore
     fun getRecentCommands(id: String) = recentCommandsJson?.get(id)?.let {
@@ -346,16 +281,10 @@ data class AppSettingsState(
         }
     }
 
-    data class SavedPlanConfig(
-        val name: String,
-        val temperature: Double,
-        val autoFix: Boolean,
-        val taskSettings: Map<String, TaskSettingsBase>
-    )
 }
 
-fun String.imageModel(): ImageModels {
-    return ImageModels.entries.firstOrNull {
+fun String.imageModel(): ImageModel {
+    return ImageModels.values.values.toList().firstOrNull {
         it.modelName == this || it.name == this
     } ?: ImageModels.DallE3
 }

@@ -4,12 +4,7 @@ import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode
-import com.simiacryptus.cognotik.plan.cognitive.HierarchicalPlanningMode
-import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
-import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -36,7 +31,6 @@ import kotlin.system.exitProcess
 
 val globalID = Session.newGlobalID()
 val model = AnthropicModels.Claude35Haiku
-val describer = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
 open class CognotikApps(
     localName: String, publicName: String, port: Int
@@ -240,68 +234,19 @@ open class CognotikApps(
         }
     }
 
-
-
     override val childWebApps by lazy {
-        val orchestrationConfig = object : OrchestrationConfig(
-            defaultModel = model.toApiChatModel(),
-            parsingModel = model.toApiChatModel(),
-            workingDir = "."
-        ) {
-            override fun instance(model: ApiChatModel) = model.instance()
-                ?: throw IllegalStateException("Model or provider not set")
-
-        }
+        OrchestrationConfig.instanceFn = { m -> m.instance() ?: throw IllegalStateException("Model or provider not set") }
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(
                 "/taskChat", object : UnifiedPlanApp(
                     path = "/taskChat",
-                    applicationName = "Task-Runner",
-                    orchestrationConfig = orchestrationConfig,
-                    cognitiveStrategy = ConversationalMode,
-                    describer = describer
+                    applicationName = "Task-Runner"
                 ) {
                     override fun instance(model: ApiChatModel) = model.instance()
                         ?: throw IllegalStateException("Model or provider not set")
                 }
             ),
-            ChildWebApp(
-                "/autoPlan", object : UnifiedPlanApp(
-                    path = "/autoPlan",
-                    applicationName = "Auto-Plan",
-                    orchestrationConfig = orchestrationConfig,
-                    cognitiveStrategy = AdaptivePlanningMode,
-                    describer = describer
-                ) {
-                    override fun instance(model: ApiChatModel) = model.instance()
-                        ?: throw IllegalStateException("Model or provider not set")
-                }
-            ),
-            ChildWebApp(
-                "/planAhead", object : UnifiedPlanApp(
-                    path = "/planAhead",
-                    applicationName = "Plan-Ahead",
-                    orchestrationConfig = orchestrationConfig,
-                    cognitiveStrategy = WaterfallMode,
-                    describer = describer
-                ) {
-                    override fun instance(model: ApiChatModel) = model.instance()
-                        ?: throw IllegalStateException("Model or provider not set")
-                }
-            ),
-            ChildWebApp(
-                "/goalOriented", object : UnifiedPlanApp(
-                    path = "/goalOriented",
-                    applicationName = "Goal-Oriented",
-                    orchestrationConfig = orchestrationConfig,
-                    cognitiveStrategy = HierarchicalPlanningMode,
-                    describer = describer
-                ) {
-                    override fun instance(model: ApiChatModel) = model.instance()
-                        ?: throw IllegalStateException("Model or provider not set")
-                }
-            )
         )
     }
 
@@ -434,14 +379,14 @@ fun ApiChatModel.instance(
     key = when(provider?.key){
         null -> null
         "NONE" -> null
-        else -> provider!!.key
+        else -> provider?.key
     } ?: ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
         it.firstOrNull { it.provider == this.provider }?.key
             ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
             ?: throw IllegalStateException("No API key configured for model $model")
     },
     base = provider?.provider?.base ?: model?.provider?.base
-    ?: throw IllegalStateException("No API base configured for model $model"),
+        ?: throw IllegalStateException("No API base configured for model $model"),
     workPool = service,
     temperature = temperature,
     scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
