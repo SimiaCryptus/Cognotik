@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 
 class WriteHtmlTask(
@@ -84,7 +85,8 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
         val contextFiles = getInputFileCode()
         val priorCode = getPriorCode(agent.executionState)
 
-        val prompt = """
+        // Step 1: Generate HTML structure with classes
+        val htmlPrompt = """
 You are an expert web developer tasked with creating a complete, self-contained HTML file.
 
 ## Requirements:
@@ -97,21 +99,28 @@ $contextFiles
 $priorCode
 
 ## Instructions:
-1. Create a complete HTML5 document with proper structure
-2. Embed all CSS within <style> tags in the <head> section
-3. Embed all JavaScript within <script> tags (preferably before </body>)
-4. Use modern HTML5 semantic elements where appropriate
-5. Ensure the page is responsive and follows best practices
-6. Include appropriate meta tags (viewport, charset, etc.)
-7. Add comments to explain complex sections
-8. Make the page visually appealing and functional
+1. Create a complete HTML5 document structure with proper semantic elements
+2. Include appropriate meta tags (viewport, charset, etc.)
+3. Add class names to elements that will need styling or JavaScript interaction
+4. Use descriptive, semantic class names (e.g., "nav-menu", "hero-section", "card-container")
+5. Include placeholder comments for where CSS and JavaScript will be added
+6. Do NOT include any CSS or JavaScript yet - just the HTML structure with classes
+7. Add comments to explain the purpose of major sections
 
 ## Output Format:
-Provide the complete HTML file content within a code block:
-<script>
-    // JavaScript code here
-</script>
-Generate the complete HTML file now:
+Provide the HTML structure within a code block:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- CSS will be added here -->
+</head>
+<body>
+    <!-- HTML structure with classes -->
+</body>
+<!-- JavaScript will be added here -->
+</html>
+```
         """.trimIndent()
 
         val chatAgent = ChatAgent(
@@ -119,70 +128,116 @@ Generate the complete HTML file now:
             model = api,
         )
 
-        var answer: String? = null
-        val htmlContent = Retryable(newTask) {
-            answer = chatAgent.answer(toInput(prompt))
-            answer
+        newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating HTML Structure", ui = ui))
+
+        val htmlStructureRetryable = Retryable(newTask) {
+            val answer = chatAgent.answer(toInput(htmlPrompt))
+            extractCodeFromResponse(answer!!, "html")
+        }
+        val htmlStructure = htmlStructureRetryable.tabs.lastOrNull()?.second?.toString() ?: ""
+
+        if (htmlStructure.isEmpty()) {
+            resultFn("ERROR: Failed to generate HTML structure")
+            return
         }
 
-        val extractedHtml = extractHtmlFromResponse(answer!!)
+        // Step 2: Generate JavaScript
+        val jsPrompt = """
+Based on the following HTML structure, generate the JavaScript code needed for interactivity.
 
-        if (extractedHtml.isEmpty()) {
+## HTML Structure:
+```html
+$htmlStructure
+```
+
+## Requirements:
+${executionConfig?.task_description ?: "Add appropriate JavaScript functionality"}
+
+## Instructions:
+1. Generate JavaScript that adds interactivity to the HTML elements
+2. Use modern JavaScript (ES6+) features
+3. Add event listeners for user interactions
+4. Include any necessary DOM manipulation
+5. Add comments to explain the functionality
+6. Ensure the code is efficient and follows best practices
+
+## Output Format:
+Provide only the JavaScript code within a code block:
+```javascript
+// JavaScript code here
+```
+        """.trimIndent()
+
+        newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating JavaScript", ui = ui))
+
+        val jsCodeRetryable = Retryable(newTask) {
+            val answer = chatAgent.answer(toInput(jsPrompt))
+            extractCodeFromResponse(answer!!, "javascript", "js")
+        }
+        val jsCode = jsCodeRetryable.tabs.lastOrNull()?.second?.toString() ?: ""
+
+        // Step 3: Generate CSS
+        val cssPrompt = """
+Based on the following HTML structure, generate the CSS styling.
+
+## HTML Structure:
+```html
+$htmlStructure
+```
+
+## Requirements:
+${executionConfig?.task_description ?: "Create appropriate styling"}
+
+## Instructions:
+1. Generate CSS that styles all the HTML elements
+2. Create a visually appealing, modern design
+3. Ensure responsive design (mobile-first approach)
+4. Use CSS Grid and/or Flexbox for layouts
+5. Include hover effects and transitions where appropriate
+6. Use a consistent color scheme and typography
+7. Add comments to organize the CSS sections
+8. Follow CSS best practices and naming conventions
+
+## Output Format:
+Provide only the CSS code within a code block:
+```css
+/* CSS code here */
+```
+        """.trimIndent()
+
+        newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating CSS", ui = ui))
+
+        val cssCodeRetryable = Retryable(newTask) {
+            val answer = chatAgent.answer(toInput(cssPrompt))
+            extractCodeFromResponse(answer!!, "css")
+        }
+        val cssCode = cssCodeRetryable.tabs.lastOrNull()?.second?.toString() ?: ""
+
+        // Step 4: Combine everything into a complete HTML file
+        val completeHtml = combineHtmlComponents(htmlStructure, cssCode, jsCode)
+
+        if (completeHtml.isEmpty()) {
             resultFn("ERROR: Failed to generate valid HTML content")
             return
         }
 
         val outputPath = root.resolve(htmlFile)
 
-        newTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
-                |## Generated HTML Preview
-                |
-                |File: `$htmlFile`
-                |
-                |```html
-                |${extractedHtml.take(1000)}${if (extractedHtml.length > 1000) "\n... (truncated)" else ""}
-                |```
-                """.trimMargin(),
-                ui = ui
-            )
-        )
 
         if (orchestrationConfig.autoFix) {
             outputPath.toFile().parentFile?.mkdirs()
-            outputPath.toFile().writeText(extractedHtml)
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "HTML file automatically written to `$htmlFile`",
-                    ui = ui
-                )
-            )
-            val htmlLink = ui.hrefLink("View HTML", "file:///$outputPath") { }
-            newTask.complete(
-                """
-                |<div>
-                |HTML file created: $htmlLink
-                |</div>
-                """.trimMargin()
-            )
-            resultFn(extractedHtml)
+            outputPath.toFile().writeText(completeHtml)
+            newTask.complete("Successfully wrote $htmlFile")
+            resultFn("Successfully wrote $htmlFile")
         } else {
             newTask.add(
                 MarkdownUtil.renderMarkdown(
                     acceptButtonFooter(ui) {
                         try {
                             outputPath.toFile().parentFile?.mkdirs()
-                            outputPath.toFile().writeText(extractedHtml)
-                            val htmlLink = ui.hrefLink("View HTML", "file:///$outputPath") { }
-                            newTask.complete(
-                                """
-                                |<div>
-                                |HTML file created: $htmlLink
-                                |</div>
-                                """.trimMargin()
-                            )
-                            resultFn(extractedHtml)
+                            outputPath.toFile().writeText(completeHtml)
+                            newTask.complete("Successfully wrote $htmlFile")
+                            resultFn("Successfully wrote $htmlFile")
                         } catch (e: Exception) {
                             log.error("Error writing HTML file", e)
                             newTask.error(e)
@@ -195,23 +250,67 @@ Generate the complete HTML file now:
         }
     }
 
-    private fun extractHtmlFromResponse(response: String): String {
-        // Try to extract HTML from code blocks
-        val htmlBlockRegex = "```html\\s*([\\s\\S]*?)```".toRegex()
-        val match = htmlBlockRegex.find(response)
-
-        return if (match != null) {
-            match.groupValues[1].trim()
-        } else {
-            // If no code block, check if the response itself is HTML
-            val trimmed = response.trim()
-            if (trimmed.startsWith("<!DOCTYPE", ignoreCase = true) ||
-                trimmed.startsWith("<html", ignoreCase = true)) {
-                trimmed
-            } else {
-                ""
+    private fun extractCodeFromResponse(response: String, vararg languages: String): String {
+        // Try to extract code from code blocks with specified languages
+        for (lang in languages) {
+            val codeBlockRegex = "```$lang\\s*([\\s\\S]*?)```".toRegex()
+            val match = codeBlockRegex.find(response)
+            if (match != null) {
+                return match.groupValues[1].trim()
             }
         }
+
+        // Try generic code block
+        val genericBlockRegex = "```\\s*([\\s\\S]*?)```".toRegex()
+        val genericMatch = genericBlockRegex.find(response)
+        if (genericMatch != null) {
+            return genericMatch.groupValues[1].trim()
+        }
+
+        return ""
+    }
+
+    private fun combineHtmlComponents(htmlStructure: String, cssCode: String, jsCode: String): String {
+        // Parse the HTML structure and insert CSS and JavaScript
+        val headEndIndex = htmlStructure.indexOf("</head>", ignoreCase = true)
+        val bodyEndIndex = htmlStructure.indexOf("</body>", ignoreCase = true)
+
+        if (headEndIndex == -1 || bodyEndIndex == -1) {
+            log.error("Invalid HTML structure: missing </head> or </body> tags")
+            return ""
+        }
+
+        val beforeHead = htmlStructure.substring(0, headEndIndex)
+        val afterHeadBeforeBody = htmlStructure.substring(headEndIndex, bodyEndIndex)
+        val afterBody = htmlStructure.substring(bodyEndIndex)
+
+        return buildString {
+            append(beforeHead)
+            if (cssCode.isNotEmpty()) {
+                append("\n    <style>\n")
+                append(cssCode.prependIndent("        "))
+                append("\n    </style>\n")
+            }
+            append(afterHeadBeforeBody)
+            if (jsCode.isNotEmpty()) {
+                append("\n    <script>\n")
+                append(jsCode.prependIndent("        "))
+                append("\n    </script>\n")
+            }
+            append(afterBody)
+        }
+    }
+
+    override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+        val acceptLink = ui.hrefLink("Accept and Write File") {
+            fn()
+        }
+        return """
+        |
+        |---
+        |
+        |$acceptLink
+        """.trimMargin()
     }
 
     companion object {

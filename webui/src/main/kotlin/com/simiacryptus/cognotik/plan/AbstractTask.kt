@@ -34,7 +34,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             "# $dependency\n\n${executionState?.taskResult[dependency] ?: ""}"
         } ?: ""
 
-    protected fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+    protected open fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder
         @Suppress("AssignedValueIsNeverRead")
