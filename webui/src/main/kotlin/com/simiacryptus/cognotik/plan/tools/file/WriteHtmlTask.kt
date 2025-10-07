@@ -82,7 +82,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
         newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
 
         val contextFiles = getInputFileCode()
-        val priorCode = getPriorCode(agent.executionState!!)
+        val priorCode = getPriorCode(agent.executionState)
 
         val prompt = """
 You are an expert web developer tasked with creating a complete, self-contained HTML file.

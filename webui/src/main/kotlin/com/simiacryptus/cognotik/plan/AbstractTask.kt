@@ -29,9 +29,9 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         Completed,
     }
 
-    open fun getPriorCode(executionState: ExecutionState) =
+    open fun getPriorCode(executionState: ExecutionState?) =
         executionConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
-            "# $dependency\n\n${executionState.taskResult[dependency] ?: ""}"
+            "# $dependency\n\n${executionState?.taskResult[dependency] ?: ""}"
         } ?: ""
 
     protected fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {

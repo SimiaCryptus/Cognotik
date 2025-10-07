@@ -392,7 +392,6 @@ import javax.swing.tree.TreeSelectionModel
 
         try {
             val configs = AppSettingsState.instance.savedPlanConfigs ?: mutableMapOf()
-
             configs[configName!!] = toJson(updateSettings())
             AppSettingsState.instance.savedPlanConfigs = configs
         } catch (e: Exception) {

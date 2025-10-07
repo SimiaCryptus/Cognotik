@@ -84,7 +84,7 @@ GeneratePresentation - Create a complete Reveal.js presentation with narration
         newTask.add(MarkdownUtil.renderMarkdown("## Creating Presentation: `$presentationFile`", ui = ui))
 
         val contextFiles = getInputFileCode()
-        val priorCode = getPriorCode(agent.executionState!!)
+        val priorCode = getPriorCode(agent.executionState)
 
         val prompt = """
 You are an expert presentation designer tasked with creating a complete Reveal.js presentation.
