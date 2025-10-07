@@ -3,34 +3,40 @@ package cognotik.actions.plan
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.Messages
-import com.intellij.ui.components.JBList
-import com.intellij.ui.components.JBTextField
-import com.intellij.ui.dsl.builder.Align
-import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
- import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
- import com.simiacryptus.cognotik.plan.newSettings
-import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
- import com.simiacryptus.cognotik.platform.ApplicationServices
- import com.simiacryptus.cognotik.platform.model.ApiChatModel
- import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.util.JsonUtil.fromJson
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
-import org.slf4j.LoggerFactory
-import java.awt.Component
-import java.awt.Dimension
-import java.awt.Font
-import java.awt.Toolkit
-import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.StringSelection
-import javax.swing.*
+ import com.intellij.openapi.ui.Messages
+ import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBScrollPane
+ import com.intellij.ui.components.JBTextField
+ import com.intellij.ui.dsl.builder.Align
+ import com.intellij.ui.dsl.builder.panel
+ import com.simiacryptus.cognotik.chat.model.ChatModel
+ import com.simiacryptus.cognotik.config.AppSettingsState
+ import com.simiacryptus.cognotik.plan.OrchestrationConfig
+ import com.simiacryptus.cognotik.plan.TaskType
+ import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.newSettings
+ import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
+ import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+ import com.simiacryptus.cognotik.util.JsonUtil.toJson
+ import org.slf4j.LoggerFactory
+ import java.awt.Component
+ import java.awt.Dimension
+ import java.awt.Font
+ import java.awt.Toolkit
+ import java.awt.datatransfer.DataFlavor
+ import java.awt.datatransfer.StringSelection
+ import javax.swing.*
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.DefaultTreeCellRenderer
+import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreePath
+import javax.swing.tree.TreeSelectionModel
 
-class PlanConfigDialog(
+ class PlanConfigDialog(
     project: Project?,
     var settings: OrchestrationConfig,
 ) : DialogWrapper(project) {
@@ -211,18 +217,9 @@ class PlanConfigDialog(
     }
 
     private fun addTaskConfig() {
-        // Show dialog to select task type
-        val taskTypes = TaskType.values().map { it.name }.sorted().toTypedArray()
-        val selectedType = Messages.showEditableChooseDialog(
-            "Select Task Type",
-            "Add Task Configuration",
-            Messages.getQuestionIcon(),
-            taskTypes,
-            taskTypes[0],
-            null
-        )
-        if (selectedType != null) {
-            val taskType = TaskType.values().find { it.name == selectedType } ?: return
+        val dialog = TaskTypeSelectionDialog(null)
+        if (dialog.showAndGet()) {
+            val taskType = dialog.getSelectedTaskType() ?: return
             val newConfig = taskType.newSettings() ?: run {
                     Messages.showErrorDialog(
                         "Failed to create default configuration for ${taskType.name}",

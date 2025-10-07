@@ -61,6 +61,6 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     )
 
     companion object {
-        private val log = LoggerFactory.getLogger(AbstractTask::class.java)
+        val log = LoggerFactory.getLogger(AbstractTask::class.java)
     }
 }

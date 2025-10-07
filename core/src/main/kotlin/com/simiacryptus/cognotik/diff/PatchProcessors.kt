@@ -1,6 +1,12 @@
 package com.simiacryptus.cognotik.diff
 
-enum class PatchProcessors : PatchProcessor {
+ enum class PatchProcessors : PatchProcessor {
+    // Full replacement - no patching, just replace entire content
+    FullReplacement {
+        override val label = "FullReplacement"
+        override val matcher = FullReplacementProcessor()
+    },
+
     // C-style languages (Java, JavaScript, C++, C#, etc.)
     CStyle {
         override val label = "CStyle"
