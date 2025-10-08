@@ -2,30 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Cognotik: Open source AI coding tool built by developers, for developers. Zero lock-in, zero extraction."
+          name="description">
     <title>Cognotik Introduction - What Is Cognotik and Why Does It Exist?</title>
+    <!-- Preconnect to CDN -->
+    <link href="https://cdnjs.cloudflare.com" rel="preconnect">
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css" rel="stylesheet">
     <!-- Theme used for syntax highlighted code -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/monokai.min.css"
           rel="stylesheet">
-    <link rel="stylesheet" href="presentation.css">
-    <link rel="stylesheet" href="style_1.css">
+    <link href="presentation.css" rel="stylesheet">
+    <link href="style_1.css" rel="stylesheet">
 
- </head>
+</head>
 <body>
+<div aria-label="Presentation controls" id="controlsContainer" role="toolbar">
+    <button aria-label="Toggle autoplay" aria-pressed="false" id="autoplayButton">Autoplay: Off</button>
+    <label class="sr-only" for="voiceSelect">Select voice</label>
+    <select aria-label="Voice selection" id="voiceSelect"></select>
+</div>
 <div class="reveal">
     <div class="slides">
         <!-- Title Slide -->
         <section data-auto-animate>
             <h1>What Is Cognotik and Why Does It Exist?</h1>
             <p class="subtitle">An Act of Resistance Against Corporate AI Extraction</p>
-            <div class="fade-in-text" style="margin-top: 4em; font-size: 0.9em; color: #8892b0; line-height: 2;">
+            <div class="fade-in-text intro-points">
                 <p>🚀 Built by developers, for developers</p>
                 <p>🔓 Open source, zero lock-in, zero extraction</p>
                 <p>⚡ AI that amplifies, not replaces</p>
             </div>
+            <aside class="notes">
+                Welcome to Cognotik. This is not just another AI coding tool. It is an act of resistance against
+                corporate AI extraction.
+                Cognotik is built by developers, for developers. It is completely open source with zero lock in and zero
+                extraction of your data.
+                This is AI that amplifies your skills, not replaces them. Let us dive into why this exists and why it
+                matters.
+            </aside>
         </section>
 
         <!-- Part A: The Problem -->
@@ -33,14 +51,20 @@
             <section class="section-intro" data-auto-animate data-transition="zoom">
                 <h2>Part A: The Problem</h2>
                 <p class="subtitle">Understanding the Corporate AI Trap</p>
+                <aside class="notes">
+                    First, let's talk about the problem. To understand why Cognotik exists, we need to understand the
+                    corporate AI trap that developers are facing today.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
                 <h3>The Corporate AI Narrative</h3>
                 <div class="warning-box">
-                    <ul>
-                        <li class="fragment fade-up"><span class="emoji">🎭</span><strong>"AI will replace
-                            developers"</strong></li>
+                    <ul role="list">
+                        <li class="fragment fade-up">
+                            <span aria-hidden="true" class="emoji">🎭</span>
+                            <strong>"AI will replace developers"</strong>
+                        </li>
                         <li class="fragment fade-up"><span class="emoji">📈</span><strong>"10x productivity with our
                             proprietary platform"</strong></li>
                         <li class="fragment fade-up"><span class="emoji">💰</span>Venture-funded tools designed for
@@ -51,6 +75,14 @@
                         </li>
                     </ul>
                 </div>
+                <aside class="notes">
+                    You have heard the narrative. AI will replace developers. Get 10 X productivity with our proprietary
+                    platform.
+                    But here is what they are not telling you. These venture funded tools are designed for market
+                    capture, not developer empowerment.
+                    They want to lock you into their cloud, feed on your data, and extract rent from your labor.
+                    This is not about making you better. It is about making you dependent.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -68,10 +100,13 @@
                     <li class="fragment fade-in"><span class="emoji">💸</span>Maximum disruption = <strong>maximum
                         profit</strong> for them, maximum precarity for you
                     </li>
-                    <li class="fragment fade-in"><span class="emoji">📉</span>Marketplace systems <strong>punish
-                        principles</strong> - I learned this the hard way
-                    </li>
                 </ul>
+                <aside class="notes">
+                    The real threat is not the technology itself. It is who controls it. Corporate AI tools are designed
+                    to replace workers and centralize power.
+                    They want you dependent and locked in, constantly feeding their training data flywheel.
+                    Maximum disruption equals maximum profit for them, but maximum precarity for you.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -89,14 +124,112 @@
                         </li>
                     </ul>
                 </div>
+                <aside class="notes">
+                    So what is missing? We need tools built for developers, not to replace them.
+                    We need zero extraction, zero lock in, and zero vendor control.
+                    We need AI that amplifies your skills instead of making them obsolete.
+                    That is the gap Cognotik fills.
+                </aside>
             </section>
         </section>
+        <!-- New Section: Understanding the 'Free' Trap -->
+        <section>
+            <section data-auto-animate data-transition="slide">
+                <h3>Why Competitors Seem "Free"</h3>
+                <div style="text-align: left; max-width: 900px; ">
+                    <p style="font-size: 1.1em; ">
+                        You've been trained by blitzscalers to expect free-or-cheap tools with enterprise polish
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2em; ">
+                        <div style=" background: rgba(255, 107, 107, 0.1); border-left: 4px solid #ff6b6b;">
+                            <h4 style="color: #ff6b6b;">VC-Subsidized Tools</h4>
+                            <ul style="font-size: 0.85em; line-height: 2;">
+                                <li>$0-20/month upfront</li>
+                                <li>Polished UX, hand-holding</li>
+                                <li>"Free" tier to capture you</li>
+                            </ul>
+                            <p style=" font-weight: bold;">Hidden Costs:</p>
+                            <ul style="font-size: 0.85em; line-height: 2;">
+                                <li>Your code trains their moat</li>
+                                <li>Locked into their infrastructure</li>
+                                <li>Rug-pull when funding dries up</li>
+                                <li>Designed to deskill you</li>
+                            </ul>
+                        </div>
+                        <div style=" background: rgba(100, 255, 218, 0.1); border-left: 4px solid #64ffda;">
+                            <h4 style="color: #64ffda;">Cognotik</h4>
+                            <ul style="font-size: 0.85em; line-height: 2;">
+                                <li>Time to learn + BYOK costs</li>
+                                <li>Rough edges, experimentation</li>
+                                <li>No "free" tier trap</li>
+                            </ul>
+                            <p style=" font-weight: bold;">Visible Costs:</p>
+                            <ul style="font-size: 0.85em; line-height: 2;">
+                                <li>Your effort and LLM API costs</li>
+                                <li>Learning curve</li>
+                                <li>Catching failures in output</li>
+                            </ul>
+                            <p style=" font-weight: bold;">Hidden Costs: ZERO</p>
+                        </div>
+                    </div>
+                </div>
+                <aside class="notes">
+                    You've been trained by blitzscalers - Uber, Slack, GitHub, OpenAI - to expect free or nearly-free
+                    services with enterprise polish. That only works because venture capital subsidizes losses.
+                    They're betting they can extract from you later through lock-in, data harvesting, or rug-pulls.
+                    Look at the real cost comparison. VC-subsidized tools are cheap upfront but have hidden costs -
+                    your code trains their competitive moat, you're locked into their infrastructure, they can rug-pull
+                    when funding dries up, and they're designed to deskill you so you become dependent.
+                    Cognotik has visible costs upfront - your time to learn, LLM API costs if you use cloud providers,
+                    the learning curve, catching failures in output. But hidden costs? Zero. No extraction,
+                    no lock-in, no rug-pull risk. You pay real costs upfront, you keep sovereignty forever.
+                </aside>
+            </section>
+            <section data-auto-animate data-transition="slide">
+                <h3>If You Want "Free" - Go Get It</h3>
+                <div style="text-align: left; max-width: 800px; ">
+                    <p style="font-size: 1.1em; ">
+                        Seriously. We're not competing with VC-subsidized tools.
+                    </p>
+                    <div style="background: rgba(100, 255, 218, 0.1);  border-left: 4px solid #64ffda;">
+                        <p style="">If you want subsidized services:</p>
+                        <ul style="font-size: 0.9em; line-height: 2;">
+                            <li>GitHub Copilot - great for autocomplete</li>
+                            <li>Cursor - polished IDE experience</li>
+                            <li>Replit - browser-based, hand-holding</li>
+                        </ul>
+                        <p style=" font-style: italic;">
+                            They're betting they can extract from you later. Use them if that trade works for you.
+                        </p>
+                    </div>
+                    <p style=" font-size: 1.1em; color: #64ffda;">
+                        This tool is for people who understand there's no free lunch, and who prefer paying
+                        real costs upfront over hidden extraction later.
+                    </p>
+                </div>
+                <aside class="notes">
+                    We're not going to pretend competitors don't exist or that they're not cheaper upfront.
+                    If you want subsidized services, go get them. GitHub Copilot is great for autocomplete.
+                    Cursor has a polished IDE experience. Replit is browser-based with hand-holding.
+                    They're betting they can extract from you later through lock-in or data harvesting.
+                    If that trade works for you, use them. We're not competing on those terms.
+                    This tool is for people who understand there's no free lunch. Who prefer paying real costs
+                    upfront - time, effort, LLM API fees - over hidden extraction costs later. If that's you,
+                    welcome. If not, go use the subsidized tools. They're optimized for different users.
+                </aside>
+            </section>
+        </section>
+
 
         <!-- Part B: What Cognotik Is -->
         <section>
             <section class="section-intro" data-auto-animate data-transition="zoom">
                 <h2>Part B: What Cognotik Is</h2>
                 <p class="subtitle">A Complete AI Agent Platform</p>
+                <aside class="notes">
+                    Now let us talk about what Cognotik actually is. It is a complete AI agent platform designed to work
+                    the way you work.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -111,14 +244,21 @@
                         <p>Complex workflows and multi-file operations</p>
                     </div>
                 </div>
-                <div class="card fragment fade-in" style="margin-top: 2em;">
+                <div class="card fragment fade-in" style="">
                     <h4>🌐 Web Interface</h4>
                     <p>Consistent experience across all platforms</p>
                 </div>
                 <p class="fragment fade-up"
-                   style="text-align: center; margin-top: 2.5em; color: #64ffda; font-size: 1.1em;">
+                   style="text-align: center;  color: #64ffda; font-size: 1.1em;">
                     <strong>Built for professionals who know their craft</strong>
                 </p>
+                <aside class="notes">
+                    Cognotik gives you three ways to work. There is an IDE plugin with JetBrains integration for
+                    seamless coding right in your editor.
+                    There is a desktop app for complex workflows and multi file operations.
+                    And there is a web interface that gives you a consistent experience across all platforms.
+                    This is built for professionals who know their craft and want tools that respect that.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -139,21 +279,38 @@
                         </li>
                     </ul>
                 </div>
+                <div class="callout fragment fade-up" style="">
+                    <p style="text-align: center;  font-size: 0.9em; color: #8892b0;">
+                        <strong>Note:</strong> For autocomplete and inline suggestions, we recommend GitHub Copilot or
+                        similar tools. Cognotik focuses on complex, multi-file workflows.
+                    </p>
+                </div>
+                <aside class="notes">
+                    What can it do? Multi file operations. Code generation and refactoring across your entire codebase.
+                    Planning workflows that think before executing and let you review before applying changes.
+                    Self-healing loops that iteratively refine until things work.
+                    And cognitive modes that let you set different trust levels for different tasks.
+                    You stay in control.
+                    One thing to note. Cognotik does not do autocomplete or inline suggestions. For that, we recommend
+                    GitHub Copilot or similar tools.
+                    Cognotik focuses on complex, multi file workflows where you are building features, not just
+                    completing lines.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
                 <h3>Built Differently</h3>
                 <div class="grid-2 fragment fade-in">
-                    <div style="text-align: center; padding: 2em;">
+                    <div style="text-align: center; ">
                         <span class="big-number">1</span>
                         <p style="font-size: 1.1em; color: #a8b2d1;">Person building this</p>
                     </div>
-                    <div style="text-align: center; padding: 2em;">
+                    <div style="text-align: center; ">
                         <span class="big-number">$0</span>
                         <p style="font-size: 1.1em; color: #a8b2d1;">Venture funding</p>
                     </div>
                 </div>
-                <div class="success-box fragment fade-up" style="margin-top: 2em;">
+                <div class="success-box fragment fade-up" style="">
                     <ul>
                         <li><span class="emoji">⏰</span>Built before ChatGPT existed</li>
                         <li><span class="emoji">🚫</span>No team, no funding, no board meetings</li>
@@ -163,6 +320,14 @@
                             teams move faster</strong></li>
                     </ul>
                 </div>
+                <aside class="notes">
+                    Here is what makes Cognotik different. It is built by one person with zero venture funding.
+                    I started building this before ChatGPT even existed. No team, no funding, no board meetings.
+                    Just solving a real problem without the blitzscaling playbook.
+                    If this seems more sophisticated than tools built by funded teams, that is because small teams move
+                    faster.
+                    We are not optimized for investor returns. We are optimized for actually working.
+                </aside>
             </section>
         </section>
 
@@ -171,6 +336,9 @@
             <section class="section-intro" data-auto-animate data-transition="zoom">
                 <h2>Part C: Why This Exists</h2>
                 <p class="subtitle">An Act of Resistance</p>
+                <aside class="notes">
+                    Now let us talk about why this exists. This is not just another AI tool. It is an act of resistance.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -189,6 +357,13 @@
                         developers deserve better
                     </li>
                 </ul>
+                <aside class="notes">
+                    This is AI for workers, not against them. It is built to empower developers, not extract value from
+                    them.
+                    Using this tool is an act of resistance against the extraction model.
+                    Every line of code in Cognotik is a statement. Developers deserve better than what corporate AI is
+                    offering.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -211,32 +386,20 @@
                         <p>Cloud, enterprise, or local - your choice</p>
                     </div>
                 </div>
-                <div class="success-box fragment fade-up" style="margin-top: 2em;">
+                <div class="success-box fragment fade-up" style="">
                     <p style="text-align: center; font-size: 1.2em;">
                         <strong>⚡ Amplification not replacement:</strong> You stay in control, make all decisions
                     </p>
                 </div>
+                <aside class="notes">
+                    How does it resist? Your data stays yours. Use local models or bring your own API keys.
+                    It cannot be rug pulled because it is open source under Apache 2.0 and completely forkable.
+                    Zero extraction. You are not training their moat. Zero lock in. Cloud, enterprise, or local, your
+                    choice.
+                    This is about amplification, not replacement. You stay in control and make all the decisions.
+                </aside>
             </section>
 
-            <section data-auto-animate data-transition="slide">
-                <h3>Taking Tools From the Disruptors</h3>
-                <div class="highlight-box">
-                    <ul>
-                        <li class="fragment fade-up"><span class="emoji">⚔️</span>The real job threat comes from people
-                            who profit from maximal disruption
-                        </li>
-                        <li class="fragment fade-up"><span class="emoji">🎁</span>This takes the technology away from
-                            them and gives it to you
-                        </li>
-                        <li class="fragment fade-up"><span class="emoji">🤯</span>One person built this - that shouldn't
-                            be possible according to their model
-                        </li>
-                        <li class="fragment fade-up"><span class="emoji">😰</span>But it is possible, and that's why
-                            they're nervous
-                        </li>
-                    </ul>
-                </div>
-            </section>
         </section>
 
         <!-- Part D: Who This Is For -->
@@ -244,6 +407,9 @@
             <section class="section-intro" data-auto-animate data-transition="zoom">
                 <h2>Part D: Who This Is For</h2>
                 <p class="subtitle">(And Who It's NOT For)</p>
+                <aside class="notes">
+                    Let us talk about who this is for, and just as importantly, who it is not for.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -258,51 +424,99 @@
                         </li>
                         <li class="fragment fade-up"><span class="emoji">🧠</span>Your debugging intuition, architectural
                             thinking, and pattern recognition are <strong>more valuable now, not less</strong></li>
-                        <li class="fragment fade-up"><span class="emoji">🏖️</span>The juniors using AI without your
-                            foundation are building careers on sand
-                        </li>
                     </ul>
                     <p class="quote fragment fade-in"
-                       style="border-left-color: #64ffda; margin-top: 1em; color: #ccd6f6;">
+                       style="border-left-color: #64ffda;  color: #ccd6f6;">
                         "You + AI isn't about staying relevant. It's about becoming unstoppable."
                     </p>
-                    <div class="callout fragment fade-up" style="margin-top: 1.5em;">
-                        <p class="callout-title" style="text-align: center; margin: 0; font-size: 1.05em;">
-                            <strong>Your anxiety about being obsoleted? The market is gaslighting you. Your experience
-                                is the actual moat.</strong>
-                        </p>
-                    </div>
                 </div>
+                <aside class="notes">
+                    First, this is for experienced developers. You have survived technology shifts before. Mainframes,
+                    client server, web, mobile, cloud.
+                    You know the pattern. New tech does not replace fundamentals, it requires them more.
+                    Your debugging intuition, architectural thinking, and pattern recognition are more valuable now, not
+                    less.
+                    You plus AI is not about staying relevant. It is about becoming unstoppable.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
-                <h3>For Newer Developers Who Feel Left Behind</h3>
+                <h3>For Professionals New to AI Agents</h3>
                 <div class="highlight-box">
                     <ul>
-                        <li class="fragment fade-up"><span class="emoji">🎓</span>If you learned via bootcamps,
-                            tutorials, or AI assistance and now can't pass technical interviews - <strong>you're not
-                                alone</strong></li>
+                        <li class="fragment fade-up"><span class="emoji">🎓</span>Whether you're a developer who learned
+                            via tutorials, or a lawyer/accountant/researcher exploring AI automation - if you recognize
+                            you're in over your head, <strong>that's fixable</strong></li>
                         <li class="fragment fade-up"><span class="emoji">🐛</span>If you can ship features but can't
-                            debug them when they break - <strong>that's fixable</strong></li>
-                        <li class="fragment fade-up"><span class="emoji">⚠️</span>The vibe coding trap is real, but
-                            you're recognizing it early
+                            debug them when they break, or produce reports but can't verify their accuracy - <strong>that's
+                                the gap to close</strong></li>
+                        <li class="fragment fade-up"><span class="emoji">⚠️</span>The competence trap is real - using AI
+                            without domain expertise to catch failures
                         </li>
-                        <li class="fragment fade-up"><span class="emoji">💪</span>This tool requires competence - let
-                            that requirement teach you
+                        <li class="fragment fade-up"><span class="emoji">💪</span>This tool requires competence in YOUR
+                            domain - let that requirement guide your learning
                         </li>
-                        <li class="fragment fade-up"><span class="emoji">📚</span>Use AI to learn fundamentals faster,
-                            not skip them
+                        <li class="fragment fade-up"><span class="emoji">📚</span>Use the tool within your competence
+                            zone. Understand what it produces in YOUR domain.
                         </li>
-                        <li class="fragment fade-up"><span class="emoji">🎯</span>The path: understand what the AI
-                            generates, catch its mistakes, build real skills
+                        <li class="fragment fade-up"><span class="emoji">🎯</span>The path: Catch its mistakes using YOUR
+                            professional judgment. Build real skills.
                         </li>
                     </ul>
                     <p class="quote fragment fade-in"
-                       style="border-left-color: #64ffda; margin-top: 1em; color: #ccd6f6;">
-                        "You're not unemployable. You're in tutorial hell. Here's the exit."
+                       style="border-left-color: #64ffda;  color: #ccd6f6;">
+                        "You're not incompetent. You're learning to work with alien cognition. Here's the path."
                     </p>
                 </div>
+                <aside class="notes">
+                    This is also for professionals new to AI agents. Whether you're a developer who learned via
+                    tutorials, or a lawyer, accountant, or researcher exploring AI automation - if you recognize you're
+                    in over your head, that's fixable.
+                    If you can ship features but can't debug them, or produce reports but can't verify their accuracy -
+                    that's the gap to close.
+                    The competence trap is real - using AI without domain expertise to catch failures.
+                    This tool requires competence in YOUR domain. Let that requirement guide your learning.
+                    Use the tool within your competence zone. Understand what it produces in your domain.
+                    The path forward: Catch its mistakes using your professional judgment. Build real skills.
+                    You're not incompetent. You're learning to work with alien cognition. Here's the path.
+                </aside>
             </section>
+            <section data-auto-animate data-transition="slide">
+                <h3>Three Ways to Use Cognotik</h3>
+                <div style="text-align: left; max-width: 900px; ">
+                    <div style="">
+                        <h4 style="color: #64ffda;">🔌 IDE Plugin - For Developers</h4>
+                        <p style="margin-left: 2em; font-size: 0.9em;">
+                            Integrate with your development workflow. Requires: software development competence,
+                            ability to recognize code quality and architectural problems.
+                        </p>
+                    </div>
+                    <div style="">
+                        <h4 style="color: #64ffda;">💻 Desktop App - For All Professionals</h4>
+                        <p style="margin-left: 2em; font-size: 0.9em;">
+                            Automate professional work without coding. Lawyers processing contracts, accountants
+                            analyzing data, researchers processing information. Requires: professional competence
+                            in YOUR field to recognize when output quality is poor.
+                        </p>
+                    </div>
+                    <p style=" font-size: 1.1em; color: #ffd43b;">
+                        You don't need to be a developer. You need professional competence in the domain you're applying
+                        it to.
+                    </p>
+                </div>
+                <aside class="notes">
+                    Let's be clear about the ways to use Cognotik and what competence means for each.
+                    The IDE plugin is for developers. It integrates with your development workflow. You need
+                    software development competence - ability to recognize code quality, architectural problems,
+                    subtle bugs.
+                    The desktop app is for all professionals, not just developers. Lawyers processing contracts,
+                    accountants analyzing financial data, researchers processing information. You don't need to
+                    code. You need professional competence in YOUR field to recognize when the output quality is
+                    poor. Can you tell when a contract summary misses key clauses? When a financial analysis is
+                    wrong? When data processing corrupted your dataset? That's the bar.
+                </aside>
+            </section>
+
 
             <section data-auto-animate data-transition="slide">
                 <h3>This Is NOT For</h3>
@@ -311,8 +525,8 @@
                         <li class="fragment fade-in"><span class="emoji">🚫</span>People who want AI to do their job for
                             them
                         </li>
-                        <li class="fragment fade-in"><span class="emoji">🚫</span>Those seeking hand-holding through
-                            basic programming
+                        <li class="fragment fade-in"><span class="emoji">🚫</span>Those who can't tolerate failures,
+                            debug when things break, and experiment to figure things out
                         </li>
                         <li class="fragment fade-in"><span class="emoji">🚫</span>Get-rich-quick schemes with no
                             knowledge or effort
@@ -322,6 +536,15 @@
                         </li>
                     </ul>
                 </div>
+                <aside class="notes">
+                    But let us be clear about who this is not for.
+                    It is not for people who want AI to do their job for them.
+                    Not for those who can't tolerate failures, debug when things break, and experiment to figure things
+                    out - this will hurt you.
+                    Not for get rich quick schemes with no knowledge or effort.
+                    And not for anyone just looking for the next hype cycle to chase.
+                    This is a tool for people who want to build real things and develop real skills.
+                </aside>
             </section>
         </section>
 
@@ -330,6 +553,9 @@
             <section class="section-intro" data-auto-animate data-transition="zoom">
                 <h2>Part E: What's Next</h2>
                 <p class="subtitle">Join the Resistance</p>
+                <aside class="notes">
+                    So what is next? It is time to join the resistance.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -350,6 +576,14 @@
                             doom and just want to build - <strong>you're in the right place</strong></li>
                     </ul>
                 </div>
+                <aside class="notes">
+                    First, know that you are not alone. If you feel gaslit by corporate AI promises, you are.
+                    If you are anxious about AI threatening your career, that is valid.
+                    If you're tired of tools that extract your data and lock you in - we are too.
+                    If you are worried you are not using AI enough or using it wrong, we get it.
+                    If you want to build without becoming dependent, that is exactly why this exists.
+                    And if you are exhausted by the hype and doom and just want to build, you are in the right place.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -357,7 +591,7 @@
                 <div class="highlight-box">
                     <p class="quote" style="color: #ccd6f6;">"Not as users, as a community resisting the same
                         bullshit"</p>
-                    <ul style="margin-top: 1em;">
+                    <ul style="">
                         <li class="fragment fade-in"><span class="emoji">🤝</span>Every person using this tool chose
                             <strong>sovereignty over extraction</strong></li>
                         <li class="fragment fade-in"><span class="emoji">💪</span>We're on your side. We're building this
@@ -365,6 +599,11 @@
                         </li>
                     </ul>
                 </div>
+                <aside class="notes">
+                    This tool is for you. Not as users, but as a community resisting the same bullshit.
+                    Every person using Cognotik chose sovereignty over extraction.
+                    We are on your side. We are building this together.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -387,11 +626,20 @@
                         <p>Philosophy and architecture</p>
                     </div>
                 </div>
-                <div class="callout fragment fade-up" style="margin-top: 2em;">
-                    <p style="text-align: center; font-size: 1.1em; margin: 0;">
+                <div class="callout fragment fade-up" style="">
+                    <p style="text-align: center; font-size: 1.1em; ">
                         <strong>Watch in Any Order:</strong> Videos are standalone - pick what's relevant to your needs
                     </p>
                 </div>
+                <aside class="notes">
+                    I have created a video series to help you get started. There are setup guides for the plugin and
+                    desktop installation.
+                    Feature tours showing workflows and capabilities. Real projects - building apps, games, even
+                    contributing to Cognotik itself.
+                    Real projects. Building apps, games, even contributing to Cognotik itself.
+                    And deep dives into the philosophy and architecture.
+                    You can watch these in any order. Each video is standalone, so pick what is relevant to your needs.
+                </aside>
             </section>
 
             <section data-auto-animate data-transition="slide">
@@ -403,23 +651,34 @@
                         <p class="fragment fade-up"><span class="emoji">🚀</span> Start building</p>
                     </div>
                 </div>
+                <aside class="notes">
+                    Getting started is simple. Clone the repo and read the code. It is all open source.
+                    Install the plugin or desktop app. Then start building.
+                    That is it. No sign up walls, no credit card required, no vendor lock in.
+                </aside>
             </section>
 
         </section>
 
         <!-- Closing -->
         <section data-auto-animate data-transition="zoom" style="text-align: center;">
-            <h2 style="font-size: 4em; margin-bottom: 0.8em; line-height: 1.2;">Let's Ship 🚀</h2>
+            <h2 style="font-size: 4em;  line-height: 1.2;">Let's Ship 🚀</h2>
             <div class="highlight-box fragment fade-in"
-                 style="font-size: 1.2em; margin: 2em auto; max-width: 850px; padding: 2.5em;">
-                <p style="margin-bottom: 1.5em; line-height: 1.8;">This is a tool for people who get stuff done.</p>
-                <p style="margin: 0; line-height: 1.8;">If you want to build without vendor lock-in, without feeding the
+                 style="font-size: 1.2em;  max-width: 850px; ">
+                <p style=" line-height: 1.8;">This is a tool for people who get stuff done.</p>
+                <p style=" line-height: 1.8;">If you want to build without vendor lock-in, without feeding the
                     extraction machine, and without getting replaced - <strong style="color: #64ffda;">welcome</strong>.
                 </p>
             </div>
-            <p class="fragment fade-up" style="font-size: 2.2em; color: #64ffda; margin-top: 3em; line-height: 1.4;">
+            <p class="fragment fade-up" style="font-size: 2.2em; color: #64ffda;  line-height: 1.4;">
                 <strong>You're one of us. Let's ship.</strong>
             </p>
+            <aside class="notes">
+                This is a tool for people who get stuff done.
+                If you want to build without vendor lock in, without feeding the extraction machine, and without getting
+                replaced, welcome.
+                You are one of us. Let us ship.
+            </aside>
         </section>
     </div>
 </div>
