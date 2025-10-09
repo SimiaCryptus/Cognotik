@@ -8,265 +8,331 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
-import java.io.File
 
 class GeneratePresentationTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: GeneratePresentationTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: GeneratePresentationTaskExecutionConfigData?
 ) : AbstractFileTask<GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
-    class GeneratePresentationTaskExecutionConfigData(
-        @Description("The HTML presentation file to be created (relative path, must end with .html)")
-        files: List<String>? = null,
-        @Description("Additional files for context (e.g., existing presentations, content sources)")
-        related_files: List<String>? = null,
-        @Description("Detailed description of the presentation including: topic, target audience, key points, desired style, and number of slides")
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : FileTaskExecutionConfig(
-        task_type = GeneratePresentation.name,
-        task_description = task_description,
-        files = files,
-        related_files = related_files,
-        task_dependencies = task_dependencies,
-        state = state
-    )
+  class GeneratePresentationTaskExecutionConfigData(
+    @Description("The HTML presentation file to be created (relative path, must end with .html)")
+    files: List<String>? = null,
+    @Description("Additional files for context (e.g., existing presentations, reference materials)")
+    related_files: List<String>? = null,
+    @Description("Detailed description of the presentation including topic, key points, target audience, and desired style")
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : FileTaskExecutionConfig(
+    task_type = GeneratePresentation.name,
+    task_description = task_description,
+    files = files,
+    related_files = related_files,
+    task_dependencies = task_dependencies,
+    state = state
+  )
 
-    override fun promptSegment(): String {
-        return """
-GeneratePresentation - Create a complete Reveal.js presentation with narration
-  ** Specify the HTML file path in the files array (must end with .html)
+  override fun promptSegment(): String {
+    return """
+GeneratePresentation - Create a Reveal.js presentation with custom styling
+  ** Specify the HTML presentation file path in the files array (must end with .html)
   ** Provide a detailed description including:
-     - Presentation topic and objectives
-     - Target audience
-     - Key points to cover
-     - Desired visual style and tone
-     - Approximate number of slides
+     - Presentation topic and title
+     - Key points and sections to cover
+     - Target audience and tone (professional, casual, technical, etc.)
+     - Number of slides desired
+     - Any specific visual style preferences
   ** The generated presentation will include:
-     - Complete Reveal.js HTML structure
-     - Styled slides with content
-     - Speaker notes for each slide
-     - Optional audio narration support
-     - Navigation and progress indicators
-  ** Related files can include existing presentations or source materials
+     - Complete HTML structure using Reveal.js framework
+     - Multiple slides with proper structure and speaker notes
+     - Custom CSS file (presentation.css) for styling
+     - Autoplay controls and voice selection UI
+     - Proper accessibility features
+  ** Related files can include reference materials or existing presentations
   ** Output will be presented for review before being written to disk
         """.trimIndent()
+  }
+
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val htmlFiles = executionConfig?.files ?: emptyList()
+    if (htmlFiles.isEmpty()) {
+      resultFn("CONFIGURATION ERROR: No presentation file specified")
+      return
     }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val presentationFiles = executionConfig?.files ?: emptyList()
-        if (presentationFiles.isEmpty()) {
-            resultFn("CONFIGURATION ERROR: No presentation file specified")
-            return
-        }
+    val htmlFile = htmlFiles.first()
+    if (!htmlFile.endsWith(".html", ignoreCase = true)) {
+      resultFn("CONFIGURATION ERROR: File must have .html extension: $htmlFile")
+      return
+    }
 
-        val presentationFile = presentationFiles.first()
-        if (!presentationFile.endsWith(".html", ignoreCase = true)) {
-            resultFn("CONFIGURATION ERROR: File must have .html extension: $presentationFile")
-            return
-        }
 
-        val newTask = task.ui.newTask(false)
-        val toInput = { it: String -> listOf(it) }
-        val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
+    val filesToWrite = mutableListOf<Pair<String, String>>()
+    val standardCss = this::class.java.getResource("/presentations/presentation.css")?.readText() ?: ""
 
-        newTask.add(MarkdownUtil.renderMarkdown("## Creating Presentation: `$presentationFile`", ui = ui))
+    val standardJs = this::class.java.getResource("/presentations/presentation.js")?.readText() ?: ""
+    filesToWrite.add("presentation.js" to standardJs)
 
-        val contextFiles = getInputFileCode()
-        val priorCode = getPriorCode(agent.executionState)
+    val revealInitCode = this::class.java.getResource("/presentations/reveal_init.js")?.readText() ?: ""
+    filesToWrite.add("reveal_init.js" to revealInitCode)
 
-        val prompt = """
-You are an expert presentation designer tasked with creating a complete Reveal.js presentation.
+    val newTask = task.ui.newTask(false)
+    val toInput = { it: String -> listOf(it) }
+    val ui = task.ui
+    val api = orchestrationConfig.defaultChatter
 
-## Requirements:
-${executionConfig?.task_description ?: "Create a presentation as specified"}
+    newTask.add(MarkdownUtil.renderMarkdown("## Creating Presentation: `$htmlFile`", ui = ui))
 
-## Context from Related Files:
-$contextFiles
+    val contextFiles = getInputFileCode()
+    val priorCode = getPriorCode(agent.executionState)
 
-## Previous Task Results:
-$priorCode
+    val chatAgent = ChatAgent(
+      prompt = promptSegment(),
+      model = api,
+    )
 
-## Instructions:
-1. Create a complete HTML5 document using Reveal.js framework
-2. Structure the presentation with clear sections and slides
-3. Include engaging content with appropriate headings and bullet points
-4. Add speaker notes in <aside class="notes"> tags for each slide
-5. Use appropriate Reveal.js features (fragments, transitions, etc.)
-6. Include proper meta tags and title
-7. Ensure responsive design and accessibility
-8. Add visual styling using CSS (embedded or linked)
-9. Include navigation controls and progress indicators
-10. Make the presentation visually appealing and professional
+    // Step 1: Generate slide content only
+    val outlinePrompt = """
+ You are an expert presentation designer tasked with creating a Reveal.js presentation.
 
-## Reveal.js Structure:
+ ## Requirements:
+ ${executionConfig?.task_description ?: "Create a presentation as specified"}
 
-Generate the complete presentation HTML now:
+ ## Context from Related Files:
+ $contextFiles
+
+ ## Previous Task Results:
+ $priorCode
+
+ ## Instructions:
+1. Generate ONLY the slide content as a sequence of HTML <section> tags:
+   - A compelling title slide
+   - 5-10 content slides covering the main points
+   - Logical flow and transitions between topics
+2. Each <section> tag should contain:
+   - A clear heading
+   - 2-4 key points or visual elements
+   - An <aside class="notes"> element with detailed speaker notes (2-3 sentences)
+ 3. Use appropriate Reveal.js features:
+   - data-auto-animate for smooth transitions
+   - Fragments for progressive disclosure
+4. Include emojis or icons where appropriate for visual interest
+
+## Output Format:
+Provide ONLY the slide sections within a code block (no DOCTYPE, html, head, or body tags):
+```html
+<section>
+    <h1>Title</h1>
+    <p class="subtitle">Subtitle</p>
+    <aside class="notes">
+        Speaker notes for this slide go here.
+    </aside>
+</section>
+
+<section>
+    <h2>Slide Title</h2>
+    <ul>
+        <li class="fragment">Point 1</li>
+        <li class="fragment">Point 2</li>
+    </ul>
+    <aside class="notes">
+        Detailed speaker notes explaining the content.
+    </aside>
+</section>
+```
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
+    newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating Presentation Structure", ui = ui))
 
-        var answer: String? = null
-        val htmlContent = Retryable(newTask) {
-            answer = chatAgent.answer(toInput(prompt))
-            answer
-        }
+    val slideContent = extractCodeFromResponse(chatAgent.answer(toInput(outlinePrompt)), "html")
 
-        val extractedHtml = extractHtmlFromResponse(answer!!)
+    if (slideContent.isEmpty()) {
+      resultFn("ERROR: Failed to generate presentation structure")
+      return
+    }
+    // Extract title from first slide for the HTML template
+    val titleMatch = "<h1>(.*?)</h1>".toRegex().find(slideContent)
+    val presentationTitle = titleMatch?.groupValues?.get(1) ?: "Presentation"
+    // Wrap slides in the HTML template
+    val htmlStructure = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="$presentationTitle" name="description">
+    <title>$presentationTitle</title>
+    <link href="https://cdnjs.cloudflare.com" rel="preconnect">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/monokai.min.css" rel="stylesheet">
+    <link href="presentation.css" rel="stylesheet">
+</head>
+<body>
+<div aria-label="Presentation controls" id="controlsContainer" role="toolbar">
+    <button aria-label="Toggle autoplay" aria-pressed="false" id="autoplayButton">Autoplay: Off</button>
+    <label class="sr-only" for="voiceSelect">Select voice</label>
+    <select aria-label="Voice selection" id="voiceSelect"></select>
+</div>
+<div class="reveal">
+    <div class="slides">
+$slideContent
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/notes/notes.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/zoom/zoom.min.js"></script>
+<script src="presentation.js"></script>
+<script src="reveal_init.js"></script>
+</body>
+</html>
+    """.trimIndent()
 
-        if (extractedHtml.isEmpty()) {
-            resultFn("ERROR: Failed to generate valid presentation HTML")
-            return
-        }
 
-        val outputPath = root.resolve(presentationFile)
+    // Step 2: Generate custom CSS
+    val cssPrompt = """
+ Based on the following Reveal.js presentation HTML, generate custom CSS styling.
 
-        newTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
-                |## Generated Presentation Preview
-                |
-                |File: `$presentationFile`
-                |
-                |```html
-                |${extractedHtml.take(1000)}${if (extractedHtml.length > 1000) "\n... (truncated)" else ""}
-                |```
-                """.trimMargin(),
-                ui = ui
-            )
-        )
+## Slide Content:
+```html
+$slideContent
+```
 
-        if (orchestrationConfig.autoFix) {
-            outputPath.toFile().parentFile?.mkdirs()
-            outputPath.toFile().writeText(extractedHtml)
+## Requirements:
+${executionConfig?.task_description ?: "Create appropriate styling for the presentation"}
 
-            // Copy support files if they don't exist
-            copySupportFiles(outputPath.toFile().parentFile)
+## Instructions:
+1. Create CSS that enhances the Reveal.js black theme with custom styling
+2. Style the control container (#controlsContainer) with:
+   - Fixed positioning at the top
+   - Professional appearance
+   - Responsive design
+3. Add custom styles for:
+   - .subtitle class for subtitle text
+   - .fade-in-text for animated text
+   - .intro-points for bullet point lists
+   - Custom slide transitions and animations
+4. Ensure readability with appropriate:
+   - Font sizes and weights
+   - Color contrasts
+   - Spacing and padding
+5. Add hover effects for interactive elements
+6. Include responsive design for mobile devices
+7. Use CSS variables for easy theme customization
 
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "Presentation automatically written to `$presentationFile`",
-                    ui = ui
-                )
-            )
-            val htmlLink = ui.hrefLink("View Presentation", "file:///$outputPath") { }
-            newTask.complete(
-                """
-                |<div>
-                |Presentation created: $htmlLink
-                |</div>
-                """.trimMargin()
-            )
-            resultFn(extractedHtml)
-        } else {
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    acceptButtonFooter(ui) {
-                        try {
-                            outputPath.toFile().parentFile?.mkdirs()
-                            outputPath.toFile().writeText(extractedHtml)
+## Output Format:
+Provide only the CSS code within a code block:
+```css
+/* Custom Presentation Styles */
+```
+        """.trimIndent()
 
-                            // Copy support files if they don't exist
-                            copySupportFiles(outputPath.toFile().parentFile)
+    newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating Custom CSS", ui = ui))
 
-                            val htmlLink = ui.hrefLink("View Presentation", "file:///$outputPath") { }
-                            newTask.complete(
-                                """
-                                |<div>
-                                |Presentation created: $htmlLink
-                                |</div>
-                                """.trimMargin()
-                            )
-                            resultFn(extractedHtml)
-                        } catch (e: Exception) {
-                            log.error("Error writing presentation file", e)
-                            newTask.error(e)
-                            resultFn("ERROR: ${e.message}")
-                        }
-                    },
-                    ui = ui
-                )
-            )
-        }
+    val cssCode = extractCodeFromResponse(chatAgent.answer(toInput(cssPrompt)), "css")
+
+    if (cssCode.isEmpty()) {
+      resultFn("ERROR: Failed to generate CSS styling")
+      return
     }
 
-    private fun copySupportFiles(targetDir: File) {
-        val supportFiles = listOf(
-            "presentation.css",
-            "presentation.js",
-            "reveal_init.js"
-        )
+    newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating Presentation JavaScript", ui = ui))
+    filesToWrite.add(htmlFile to htmlStructure)
+    filesToWrite.add("presentation.css" to (standardCss + "\n\n" + cssCode))
 
-        supportFiles.forEach { fileName ->
-            val targetFile = File(targetDir, fileName)
-            if (!targetFile.exists()) {
-                try {
-                    val resourceStream = javaClass.classLoader.getResourceAsStream("presentations/$fileName")
-                    if (resourceStream != null) {
-                        targetFile.writeBytes(resourceStream.readBytes())
-                        log.info("Copied support file: $fileName")
-                    } else {
-                        log.warn("Support file not found in resources: $fileName")
-                    }
-                } catch (e: Exception) {
-                    log.error("Error copying support file $fileName", e)
-                }
-            }
+
+    // Display preview
+    newTask.add(MarkdownUtil.renderMarkdown("### Generated Files Preview", ui = ui))
+    filesToWrite.forEach { (filename, content) ->
+      newTask.add(MarkdownUtil.renderMarkdown("#### $filename", ui = ui))
+      newTask.add(MarkdownUtil.renderMarkdown("```${getFileExtension(filename)}\n$content\n```", ui = ui))
+    }
+
+    try {
+      val outputPath = root.resolve(htmlFile)
+      outputPath.toFile().parentFile?.mkdirs()
+      val writtenFiles = mutableListOf<String>()
+
+      filesToWrite.forEach { (filename, content) ->
+        val path = when (filename) {
+          executionConfig?.files?.firstOrNull() -> outputPath
+          else -> outputPath.resolveSibling(filename)
         }
+        path.toFile().parentFile?.mkdirs()
+        path.toFile().writeText(content)
+        writtenFiles.add(filename)
+        task.add("""<a href="${task.linkTo(filename)}">${filename}</a> created""")
+      }
+
+      val summary = "Successfully wrote ${writtenFiles.joinToString(", ")}"
+      newTask.complete(summary)
+      resultFn(summary)
+    } catch (e: Exception) {
+      log.error("Error writing presentation files", e)
+      newTask.error(e)
+      resultFn("ERROR: ${e.message}")
+    }
+  }
+
+  private fun getFileExtension(filename: String): String {
+    return when {
+      filename.endsWith(".html") -> "html"
+      filename.endsWith(".css") -> "css"
+      filename.endsWith(".js") -> "javascript"
+      else -> ""
+    }
+  }
+
+  private fun extractCodeFromResponse(response: String, vararg languages: String): String {
+    // Try to extract code from code blocks with specified languages
+    for (lang in languages) {
+      val codeBlockRegex = "```$lang\\s*([\\s\\S]*?)```".toRegex()
+      val match = codeBlockRegex.find(response)
+      if (match != null) {
+        return match.groupValues[1].trim()
+      }
     }
 
-    private fun extractHtmlFromResponse(response: String): String {
-        // Try to extract HTML from code blocks
-        val htmlBlockRegex = "```html\\s*([\\s\\S]*?)```".toRegex()
-        val match = htmlBlockRegex.find(response)
-
-        return if (match != null) {
-            match.groupValues[1].trim()
-        } else {
-            // If no code block, check if the response itself is HTML
-            val trimmed = response.trim()
-            if (trimmed.startsWith("<!DOCTYPE", ignoreCase = true) ||
-                trimmed.startsWith("<html", ignoreCase = true)) {
-                trimmed
-            } else {
-                ""
-            }
-        }
+    // Try generic code block
+    val genericBlockRegex = "```\\s*([\\s\\S]*?)```".toRegex()
+    val genericMatch = genericBlockRegex.find(response)
+    if (genericMatch != null) {
+      return genericMatch.groupValues[1].trim()
     }
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(GeneratePresentationTask::class.java)
-        val GeneratePresentation = TaskType(
-            "GeneratePresentation",
-            GeneratePresentationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create complete Reveal.js presentations with narration support",
-            """
-              Creates professional Reveal.js presentations with speaker notes.
-              <ul>
-                <li>Generates complete, self-contained HTML presentations</li>
-                <li>Includes Reveal.js framework integration</li>
-                <li>Adds speaker notes for each slide</li>
-                <li>Supports custom styling and themes</li>
-                <li>Interactive approval or auto-apply mode</li>
-                <li>Includes navigation and progress indicators</li>
-                <li>Optional audio narration support</li>
-              </ul>
-            """
-        )
+    return ""
+  }
+
+  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+    val acceptLink = ui.hrefLink("Accept and Write Files") {
+      fn()
     }
+    return """
+        |
+        |---
+        |
+        |$acceptLink
+        """.trimMargin()
+  }
+
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(GeneratePresentationTask::class.java)
+    val GeneratePresentation = TaskType(
+      "GeneratePresentation",
+      GeneratePresentationTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java
+    )
+  }
 }

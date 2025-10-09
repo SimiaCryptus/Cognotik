@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
@@ -130,11 +129,7 @@ Provide the HTML structure within a code block:
 
         newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating HTML Structure", ui = ui))
 
-        val htmlStructureRetryable = Retryable(newTask) {
-            val answer = chatAgent.answer(toInput(htmlPrompt))
-            extractCodeFromResponse(answer!!, "html")
-        }
-        val htmlStructure = htmlStructureRetryable.tabs.lastOrNull()?.second?.toString() ?: ""
+      val htmlStructure = extractCodeFromResponse(chatAgent.answer(toInput(htmlPrompt)), "html")
 
         if (htmlStructure.isEmpty()) {
             resultFn("ERROR: Failed to generate HTML structure")
@@ -170,11 +165,7 @@ Provide only the JavaScript code within a code block:
 
         newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating JavaScript", ui = ui))
 
-        val jsCodeRetryable = Retryable(newTask) {
-            val answer = chatAgent.answer(toInput(jsPrompt))
-            extractCodeFromResponse(answer!!, "javascript", "js")
-        }
-        val jsCode = jsCodeRetryable.tabs.lastOrNull()?.second?.toString() ?: ""
+      val jsCode = extractCodeFromResponse(chatAgent.answer(toInput(jsPrompt)), "javascript", "js")
 
         // Step 3: Generate CSS
         val cssPrompt = """
@@ -207,12 +198,7 @@ Provide only the CSS code within a code block:
 
         newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating CSS", ui = ui))
 
-        val cssCodeRetryable = Retryable(newTask) {
-            val answer = chatAgent.answer(toInput(cssPrompt))
-            extractCodeFromResponse(answer!!, "css")
-        }
-        val cssCode = cssCodeRetryable.tabs.lastOrNull()?.second?.toString() ?: ""
-
+      val cssCode = extractCodeFromResponse(chatAgent.answer(toInput(cssPrompt)), "css")
         // Step 4: Combine everything into a complete HTML file
         val completeHtml = combineHtmlComponents(htmlStructure, cssCode, jsCode)
 
@@ -221,6 +207,7 @@ Provide only the CSS code within a code block:
             return
         }
 
+      task.add("""<a href="${task.linkTo(htmlFile)}">${htmlFile}</a> created""")
         val outputPath = root.resolve(htmlFile)
 
 
