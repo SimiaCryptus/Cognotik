@@ -1,0 +1,527 @@
+--- /home/andrew/code/Cognotik/demo/presentations/demo_philosophy.html
++++ /home/andrew/code/Cognotik/demo/presentations/demo_philosophy.html
+@@ -26,8 +26,12 @@
+                 <p>⚡ AI that amplifies, not replaces</p>
+             </div>
+             <aside class="notes">
+-                Welcome to the design philosophy behind Cognotik. This is about why this tool exists,
+-                who it's for, and why it matters. Duration: 12-15 minutes.
++                Welcome everyone. Today we're going to talk about the design philosophy behind Cognotik.
++                This isn't just another feature demo or technical walkthrough. This is about why this tool exists,
++                who it's really for, and why it matters in the current landscape of AI development tools.
++                
++                We'll cover three main parts: what problem Cognotik solves, why it exists as an act of resistance,
++                and the specific design principles that make it different. This should take about 12-15 minutes.
+             </aside>
+         </section>
+ 
+@@ -37,7 +41,10 @@
+                 <h2>Part A: What Problem Does Cognotik Solve?</h2>
+                 <p class="subtitle">The real challenges of professional development</p>
+                 <aside class="notes">
+-                    Part A: 3-4 minutes. Let's talk about the actual problems developers face.
++                    Let's start with Part A, which should take about 3 to 4 minutes.
++                    Before we dive into what Cognotik is, we need to talk about what problems it actually solves.
++                    And I want to be really clear here - the problems it solves are NOT the ones that most AI coding
++                    tools are marketing themselves around.
+                 </aside>
+             </section>
+ 
+@@ -62,9 +69,16 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    The problem isn't writing individual lines of code. It's planning and executing
+-                    complex changes across entire codebases while maintaining sovereignty over your work.
++                    Look at the left side - this is what most AI coding tools focus on. Autocomplete suggestions,
++                    single-line completions, spoon-fed code snippets. These are training wheels for basics.
++                    And honestly? If that's what you need, there are plenty of tools out there for you.
++                    
++                    But the REAL problems that professional developers face are on the right side.
++                    Shipping complex features that span multiple files. Making architectural changes across your entire codebase.
++                    Iterating on design before you even start coding. Working with YOUR infrastructure, not some vendor's cloud.
++                    And increasingly important - resisting the labor extraction model that corporate AI tools are built on.
++                    
++                    The problem isn't writing individual lines of code. It's planning and executing complex changes
++                    across entire codebases while maintaining sovereignty over your work.
+                 </aside>
+             </section>
+ 
+@@ -82,9 +96,16 @@
+                     </p>
+                 </div>
+                 <aside class="notes">
+-                    Three components working together: plugin for IDE integration, desktop app for
+-                    standalone use, and web interface for flexibility. All designed for actual work.
++                    So what IS Cognotik? It's a complete AI agent platform for professionals who know what they're doing.
++                    
++                    It comes in three forms: First, there's a plugin that integrates with your IDE - IntelliJ, VS Code,
++                    and others. Second, there's a standalone desktop application for when you want to work outside your IDE.
++                    And third, there's a web-based interface for maximum flexibility.
++                    
++                    These three components work together seamlessly. But here's the key thing - this isn't built for demos
++                    or marketing materials. This is built for real development work. The kind of work where you're shipping
++                    features, not just showing off autocomplete.
+                 </aside>
+             </section>
+ 
+@@ -100,10 +121,17 @@
+                     </ul>
+                 </div>
+                 <aside class="notes">
+-                    This is for professionals who want to amplify their capabilities, teams that need
+-                    control over their infrastructure, and anyone who sees the difference between
+-                    augmentation and replacement.
++                    Let me be very clear about who this is for.
++                    
++                    First, it's for developers who want productivity tools, not training wheels. You already know how to code.
++                    You want something that makes you MORE powerful, not something that holds your hand.
++                    
++                    Second, it's for teams that need sovereignty over their tooling and data. You don't want to be locked
++                    into some vendor's ecosystem where they can change the rules or pull the rug out from under you.
++                    
++                    Third, it's for people who understand the difference between assistance and replacement. AI should amplify
++                    your capabilities, not replace you.
++                    
++                    And finally, it's for anyone resisting the corporate AI extraction model. If you're tired of being the
++                    product, of training someone else's models with your code, this is for you.
+                 </aside>
+             </section>
+ 
+@@ -122,9 +150,18 @@
+                     </p>
+                 </div>
+                 <aside class="notes">
+-                    Being explicit: this isn't for people looking for shortcuts or magic solutions.
+-                    It's for people who want to work smarter while staying in control.
++                    Now let me be equally clear about who this is NOT for. Because I'd rather be honest up front
++                    than waste anyone's time.
++                    
++                    If you want AI to do your job for you - this isn't it. This tool amplifies your skills, it doesn't
++                    replace them. You still need to know what you're doing.
++                    
++                    If you need hand-holding through basic programming concepts - look elsewhere. There are great tools
++                    for learning to code. This isn't one of them. This is for people who already know their craft.
++                    
++                    And if you want to get rich quick with no effort - go chase the next hype cycle. This is a power tool
++                    for professionals, not a magic money-making machine.
++                    
++                    This is a power tool for professionals, not a replacement for learning your craft.
+                 </aside>
+             </section>
+         </section>
+@@ -135,7 +172,11 @@
+                 <h2>Part B: Why This Exists</h2>
+                 <p class="subtitle">Resistance Through Technology</p>
+                 <aside class="notes">
+-                    Part B: 2-3 minutes. Now let's talk about why this tool exists and what it resists.
++                    Now let's move to Part B, which should take about 2 to 3 minutes.
++                    This is where we talk about WHY this tool exists. And I want to be very direct here -
++                    this is fundamentally about resistance through technology.
++                    
++                    Let's talk about the threat model.
+                 </aside>
+             </section>
+ 
+@@ -156,9 +197,21 @@
+                     </ul>
+                 </div>
+                 <aside class="notes">
+-                    The fear of AI replacing jobs is valid. But the real threat is corporate control
+-                    over AI tools designed to extract value and create dependency.
++                    Many people fear AI because of job threats. And you know what? They're rightfully afraid.
++                    The threat is real. But here's the thing - the threat isn't the technology itself.
++                    The threat is WHO CONTROLS IT.
++                    
++                    Look at how corporate AI tools are designed. They're designed to replace workers and extract value.
++                    That's not a bug, that's the feature. They WANT you dependent. They WANT you locked in.
++                    They WANT you feeding their training data with every line of code you write.
++                    
++                    Because maximum disruption equals maximum profit for them. And maximum disruption means
++                    maximum precarity for you. They profit when your job becomes uncertain. They profit when
++                    you have no alternatives. They profit when they own the tools you depend on.
++                    
++                    The fear of AI replacing jobs is absolutely valid. But the real threat isn't AI itself -
++                    it's corporate control over AI tools that are designed from the ground up to extract value
++                    and create dependency.
+                 </aside>
+             </section>
+ 
+@@ -172,8 +225,17 @@
+                     </ul>
+                 </div>
+                 <aside class="notes">
+-                    This tool is fundamentally different. It's designed to make you more powerful,
+-                    not to replace you or extract value from your work.
++                    But this tool is fundamentally different. This is AI FOR workers, not AI to replace workers.
++                    
++                    First, it's built to AMPLIFY developers, not replace them. You stay in control. You make the decisions.
++                    The AI handles the mechanical work so you can focus on the thinking.
++                    
++                    Second, you keep your data. You choose your infrastructure. You can run this completely locally if you want.
++                    No vendor can rug-pull you because you're not dependent on their servers or their business model.
++                    
++                    And third - and this is important - using this tool is itself an act of resistance against the
++                    blitzscaling playbook. Every person who uses this instead of a corporate extraction tool is
++                    someone who's NOT feeding that machine.
+                 </aside>
+             </section>
+ 
+@@ -196,10 +258,24 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    Four key ways this tool resists extraction: data sovereignty, no vendor lock-in,
+-                    no training data extraction, and you always stay in control.
++                    Let me break down exactly how this tool resists the extraction model.
++                    
++                    First: Your data stays yours. You can use local models, or bring your own keys to cloud providers.
++                    Zero extraction. Your code never goes to train someone else's model unless you explicitly choose that.
++                    
++                    Second: You can't be rug-pulled. This is open source. Apache 2.0 license. You can fork it.
++                    You can modify it. No vendor can ever change the terms on you or shut down the service you depend on.
++                    
++                    Third: You're not training their moat. Corporate AI tools want your code because it makes their
++                    models better, which makes their business more valuable. Your labor becomes their competitive advantage.
++                    This tool doesn't do that. Your code doesn't feed someone else's business.
++                    
++                    And fourth: You stay in control. This is augmentation, not replacement. The AI suggests, you decide.
++                    You're not training yourself out of a job - you're making yourself more capable.
++                    
++                    These four things together - data sovereignty, no vendor lock-in, no training data extraction,
++                    and you always staying in control - that's how this tool resists extraction.
+                 </aside>
+             </section>
+ 
+@@ -220,11 +296,23 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    This is about taking powerful technology away from those who would use it for
+-                    extraction and putting it in the hands of workers. The fact that one person
+-                    can build this challenges the entire corporate AI narrative.
++                    Here's the thing about the real job threat. It doesn't come from the technology.
++                    It comes from people who profit from maximal disruption. The more chaos they create,
++                    the more money they make. Your job insecurity is their business model.
++                    
++                    This tool takes the technology away from them and gives it to you. It takes the power
++                    of AI agents and puts it in the hands of workers instead of in the hands of people
++                    trying to replace workers.
++                    
++                    And here's what really threatens their narrative: One person built this. For free.
++                    That shouldn't be possible according to their model. They'll tell you that you need
++                    massive VC funding, huge teams, proprietary infrastructure. But you don't.
++                    
++                    The fact that one person can build a complete AI agent platform and give it away for free -
++                    that's a threat to their entire narrative. It proves that the technology doesn't have to be
++                    controlled by corporations. It can belong to the people who actually do the work.
+                 </aside>
+             </section>
+         </section>
+ 
+@@ -234,9 +322,13 @@
+                 <h2>Part C: Design Principles</h2>
+                 <p class="subtitle">How these values translate into architecture</p>
+                 <aside class="notes">
+-                    Part C: 8-10 minutes. Now let's dive into the specific design principles
+-                    that make this tool different.
++                    Now let's move to Part C, which is the longest section at about 8 to 10 minutes.
++                    We've talked about what problem this solves and why it exists. Now let's dive into
++                    the specific design principles that make this tool different.
++                    
++                    These aren't just abstract values - these are concrete architectural decisions that
++                    translate those values into actual code.
+                 </aside>
+             </section>
+ 
+@@ -260,9 +352,23 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    You choose your infrastructure. Cloud, enterprise, or fully local. Switch anytime.
+-                    No vendor can ever lock you in or pull the rug out from under you.
++                    First principle: Zero lock-in. Your infrastructure, your rules.
++                    
++                    Want to use cloud APIs? Great. OpenAI, Anthropic, Google, DeepSeek - bring your own keys.
++                    You're not locked into any single provider.
++                    
++                    Working in an enterprise environment? No problem. AWS Bedrock, API proxies for team deployments.
++                    You can run this behind your corporate firewall with your own infrastructure.
++                    
++                    Want complete sovereignty? Run it fully local with Ollama. Zero costs, zero data leaving your machine.
++                    
++                    And here's the key: You can switch between these anytime. Your choice, always. No vendor can
++                    rug-pull you because you're not dependent on any single one. If OpenAI raises prices or changes
++                    terms, you switch to Anthropic. If you want to go local, you switch to Ollama. Your choice.
++                    
++                    This is what zero lock-in actually means. Not just in theory, but in practice.
+                 </aside>
+             </section>
+ 
+@@ -282,9 +388,22 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    Apache 2.0 license. Inspect, modify, fork. No black boxes, no gatekeepers.
+-                    Quality is in the code itself, not in marketplace metrics.
++                    Second principle: Open source. Apache 2.0 license.
++                    
++                    You can inspect every line of code. No black boxes. No proprietary magic that you have to trust.
++                    You can see exactly what it's doing.
++                    
++                    You can modify it to fit your workflow. Don't like how something works? Change it.
++                    Need a feature that doesn't exist? Add it.
++                    
++                    Community contributions are welcome. This gets better when people contribute back.
++                    
++                    And if you really disagree with the direction? Fork it. That's the point. That's the power
++                    of open source.
++                    
++                    And here's something important: No marketplace gatekeepers who can punish you for principles.
++                    No star ratings that can be weaponized. Quality is verifiable in the code itself, not in
++                    gameable marketplace metrics.
+                 </aside>
+             </section>
+ 
+@@ -307,9 +426,24 @@
+                     </ul>
+                 </div>
+                 <aside class="notes">
+-                    Loosely coupled architecture. Plugin is just a bridge. Web UI updates independently.
+-                    Same interface everywhere. No waiting for IDE vendor approval.
++                    Third principle: Loosely-coupled architecture.
++                    
++                    Look at this diagram. The plugin is just a bridge between your IDE and the embedded server.
++                    It's not the whole system. The actual UI is web-based, served from an embedded webserver.
++                    
++                    Why does this matter? Because it means you get the same interface across all IDEs and platforms.
++                    IntelliJ, VS Code, whatever - same experience.
++                    
++                    It also means updates ship via the web without needing to republish the plugin. I can push
++                    improvements to the UI and you get them immediately. No waiting for IDE vendor approval cycles.
++                    
++                    This architecture escapes the constraints of IDE vendor approval processes. I don't have to
++                    wait weeks for JetBrains or Microsoft to approve every update. I can ship improvements when
++                    they're ready.
++                    
++                    That's what loosely-coupled means in practice.
+                 </aside>
+             </section>
+ 
+@@ -328,9 +462,18 @@
+                     </p>
+                 </div>
+                 <aside class="notes">
+-                    There's a trade-off: non-standard UX. But this gives us flexibility and velocity
+-                    that native toolwindows can't match. It's a deliberate choice.
++                    Now, there IS a trade-off here. And I want to be honest about it.
++                    
++                    The trade-off is non-standard UX. This doesn't look like native IDE toolwindows.
++                    It's a web interface embedded in your IDE. If you need everything to look and feel
++                    like native IDE components, this isn't for you.
++                    
++                    But here's what you get in exchange: Flexibility. Velocity. Independence.
++                    I can ship features faster. I can make the UI work the same way everywhere.
++                    I'm not constrained by what the IDE platform allows.
++                    
++                    This architecture prioritizes flexibility, velocity, and independence over native
++                    integration patterns. That's a deliberate choice.
+                 </aside>
+             </section>
+ 
+@@ -347,9 +490,21 @@
+                     </p>
+                 </div>
+                 <aside class="notes">
+-                    Built for professionals. Assumes competence. Explicit control. No magic.
+-                    Power-user features. Customizable and extensible.
++                    Fourth principle: This is for professionals who know their craft.
++                    
++                    It assumes you understand what you're building. It doesn't try to hide complexity
++                    or dumb things down for a mass market.
++                    
++                    You get explicit control over operations. You tell it what to do, it does it.
++                    No hidden "magic" where you're not sure what's happening.
++                    
++                    You can see what it's doing. Transparency is built in.
++                    
++                    It has power-user features, not mass-market dumbing-down. This is built for people
++                    who want more capability, not less complexity.
++                    
++                    And customization and extensibility are built-in. You can make this work the way you work.
++                    
++                    This is a professional tool for professionals.
+                 </aside>
+             </section>
+ 
+@@ -369,9 +524,24 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    Code is the documentation. Docs describe intent. Use the AI to understand the code.
+-                    Early Linux energy - for experimenters who read source code.
++                    Fifth principle: Documentation philosophy. Code is ground truth.
++                    
++                    The code IS the documentation. That's not laziness, that's a philosophy.
++                    Documentation describes intent. Code describes reality. When they conflict, code wins.
++                    
++                    Can't parse the implementation? Use the AI to explain it to you. That's what it's for.
++                    Load the codebase into the AI and ask it questions. That's a valid way to learn the system.
++                    
++                    This is for experimenters and adventurers. People who are comfortable reading source code
++                    and figuring things out.
++                    
++                    This has early Linux energy. Pre-corporate, pre-hand-holding. When Linux was for people
++                    who read man pages and source code.
++                    
++                    Read the source, understand the tool, contribute back. That's the model.
++                    
++                    And if you can't read code? You're not the target audience yet. Maybe you will be someday.
++                    But right now, this is for people who can read and understand code.
+                 </aside>
+             </section>
+ 
+@@ -393,9 +563,27 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    Free software, zero support obligation. Community support via GitHub. Want direct
+-                    access? That's consulting. No marketplace games. Quality is in the code.
++                    Sixth principle: Support model.
++                    
++                    This is free software under Apache 2.0. That means zero support obligation.
++                    I'm not obligated to help you. I'm not obligated to fix your problems.
++                    
++                    Want support? Read the code. Ask the AI. Use the community on GitHub issues.
++                    Those are your free support options.
++                    
++                    Want direct access to the maintainer? That's paid consulting. Just like early Linux.
++                    The software is free, expertise costs money.
++                    
++                    No enterprise support theater. No documentation debt. No pretending that free software
++                    comes with enterprise support.
++                    
++                    If you need hand-holding, hire someone who does that. That's a legitimate service.
++                    But it's not included in the free software.
++                    
++                    And here's the key: No marketplace metrics to game or weaponize. No star ratings that
++                    punish principles or course correction. Quality is in the code. If you disagree,
++                    fork it and make it better.
+                 </aside>
+             </section>
+ 
+@@ -412,9 +600,19 @@
+                     </p>
+                 </div>
+                 <aside class="notes">
+-                    Research-focused. Experimental features. Continuous evolution. For people who
+-                    want to push boundaries, not just use what's safe.
++                    Seventh principle: Research-focused and cutting-edge.
++                    
++                    This has experimental features alongside production tools. You get access to
++                    cutting-edge techniques, not just what's been proven safe for enterprise.
++                    
++                    It's continuously evolving with the latest techniques. As new research comes out,
++                    it gets integrated. You're not stuck with last year's technology.
++                    
++                    This is built for people who want to push boundaries. Not just ship what's safe,
++                    but explore what's possible.
++                    
++                    This is a research platform that happens to be production-ready, not a product
++                    that happens to have some research features. That's an important distinction.
+                 </aside>
+             </section>
+ 
+@@ -433,9 +631,23 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    AI handles mechanical work, you handle thinking. Eliminates tedium. Seniors ship
+-                    faster, juniors learn better. You stay in control. Amplification, not replacement.
++                    Eighth principle: Productivity multiplier, not replacement.
++                    
++                    The AI handles mechanical translation. You handle thinking. That's the division of labor.
++                    The AI is good at translating your intent into code. You're good at figuring out what
++                    needs to be built and why.
++                    
++                    It eliminates tedious work so you can focus on architecture. Less time on boilerplate,
++                    more time on design.
++                    
++                    Senior developers ship more ambitious features faster. You can tackle bigger problems
++                    because the mechanical work is handled.
++                    
++                    Junior developers learn by seeing how complex problems decompose. They see the thinking
++                    process, not just the final code.
++                    
++                    And you stay in control, always making decisions. The AI suggests, you decide.
++                    
++                    This is about getting more done, not about replacing you.
+                 </aside>
+             </section>
+ 
+@@ -454,9 +666,20 @@
+                     </div>
+                 </div>
+                 <aside class="notes">
+-                    Automation is a spectrum. Different modes for different trust levels. You choose
+-                    the level of autonomy. Progressive enhancement based on complexity.
++                    Ninth and final principle: Automation is a spectrum.
++                    
++                    It ranges from simple completions to full task automation. Not everything needs
++                    the same level of AI involvement.
++                    
++                    There are multiple cognitive modes for different trust levels. Sometimes you want
++                    the AI to just suggest. Sometimes you want it to execute. You choose.
++                    
++                    You choose how much autonomy to delegate based on the task and your comfort level.
++                    
++                    Progressive enhancement based on task complexity. Simple tasks get simple automation.
++                    Complex tasks get more sophisticated approaches.
++                    
++                    If you want to study this deeper, look into human-computer interaction research,
++                    automation transparency, trust calibration in AI systems, and levels of autonomy frameworks.
+                 </aside>
+             </section>
+         </section>
+@@ -485,9 +708,20 @@
+                     </div>
+                 </div>
+             </div>
+             <aside class="notes">
+-                Summary: Zero lock-in, open source, for professionals. Amplifies capabilities,
+-                resists extraction, maintains sovereignty. Built by developers, for developers.
++                Let me summarize the design philosophy.
++                
++                What it is: Zero lock-in infrastructure. Open source under Apache 2.0. Loosely-coupled architecture.
++                For professionals. Code as documentation.
++                
++                What it does: Amplifies, not replaces. Resists extraction. Maintains sovereignty.
++                Enables experimentation. Multiplies productivity.
++                
++                This is built by developers, for developers. It's an act of resistance through technology.
++                
++                It takes powerful AI agent technology and puts it in the hands of workers instead of
++                in the hands of corporations trying to extract value from workers.
++                
++                That's the design philosophy.
+             </aside>
+         </section>
+ 
+@@ -503,9 +737,15 @@
+                 <p>✊ Resist extraction</p>
+             </div>
+             <aside class="notes">
+-                That's the design philosophy. Next up: installation and setup so you can start
+-                using Cognotik in your workflow.
++                So, ready to get started?
++                
++                Next up is installation and setup. We'll walk through how to actually get Cognotik
++                running in your environment.
++                
++                Read the code. Fork and customize it. Ship ambitious features. And resist extraction.
++                
++                That's what this tool is for. Let's get you set up to use it.
++                
++                Thank you.
+             </aside>
+         </section>

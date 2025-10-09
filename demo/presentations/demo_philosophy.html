@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Cognotik design philosophy: AI for workers, not against them. Open source, zero lock-in, built for professionals."
+          name="description">
+    <title>Cognotik Design Philosophy - For People Who Get Stuff Done</title>
+    <!-- Preconnect to CDN -->
+    <link href="https://cdnjs.cloudflare.com" rel="preconnect">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/monokai.min.css"
+          rel="stylesheet">
+    <link href="presentation.css" rel="stylesheet">
+    <link href="style_1.css" rel="stylesheet">
+</head>
+<body>
+<div id="controlsContainer">
+    <button id="autoplayButton">Autoplay: Off</button>
+    <select id="voiceSelect"></select>
+</div>
+<div class="reveal">
+    <div class="slides">
+
+        <!-- Title Slide -->
+        <section data-auto-animate>
+            <h1>Design Philosophy</h1>
+            <h2>For People Who Get Stuff Done</h2>
+            <p class="subtitle">An Act of Resistance Against Corporate AI Extraction</p>
+            <div class="fade-in-text" style="margin-top: 3em; font-size: 0.9em; color: #8892b0; line-height: 2;">
+                <p>🚀 Built by developers, for developers</p>
+                <p>🔓 Open source, zero lock-in, zero extraction</p>
+                <p>⚡ AI that amplifies, not replaces</p>
+            </div>
+            <aside class="notes">
+
+                Welcome everyone. Today we're going to talk about the design philosophy behind Cognotik.
+                This isn't just another feature demo or technical walkthrough. This is about why this tool exists,
+                who it's really for, and why it matters in the current landscape of A I development tools.
+
+                We'll cover three main parts. What problem Cognotik solves. Why it exists as an act of resistance.
+                And the specific design principles that make it different.
+            </aside>
+        </section>
+
+        <!-- Part A: What Problem Does Cognotik Solve? -->
+        <section>
+            <section data-auto-animate>
+                <h2>Part A: What Problem Does Cognotik Solve?</h2>
+                <p class="subtitle">The real challenges of professional development</p>
+                <aside class="notes">
+                    Let's start with Part A.
+                    Before we dive into what Cognotik is, we need to talk about what problems it actually solves.
+                    And I want to be really clear here. The problems it solves are NOT the ones that most A I coding
+                    tools are marketing themselves around.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>The Real Problem</h3>
+                <div class="two-column">
+                    <div>
+                        <h4>❌ Not This:</h4>
+                        <ul style="font-size: 0.85em; color: #ff6b6b;">
+                            <li>Inline autocomplete</li>
+                            <li>Single-line suggestions</li>
+                            <li>Basic code snippets</li>
+                            <li>Training wheels for basics</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>✅ This:</h4>
+                        <ul style="font-size: 0.85em; color: #51cf66;">
+                            <li>Shipping complex features</li>
+                            <li>Multi-file architectural changes</li>
+                            <li>Iterating on design before coding</li>
+                            <li>Working with YOUR infrastructure</li>
+                            <li>Resisting labor extraction</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="callout fragment fade-up" style="margin-top: 1.5em;">
+                    <p style="text-align: center; margin: 0; font-size: 0.85em; color: #8892b0;">
+                        <strong>Note:</strong> For autocomplete, we recommend GitHub Copilot or similar tools.
+                        Cognotik focuses on complex workflows.
+                    </p>
+                </div>
+                <aside class="notes">
+                    Look at the left side. Inline autocomplete, single line suggestions, basic code snippets.
+                    These are training wheels for basics. And honestly, if that's what you need, there are plenty of
+                    tools out there.
+                    We recommend GitHub Copilot or similar tools for autocomplete. They're great at that.
+
+                    But the REAL problems that professional developers face are on the right side.
+                    Shipping complex features that span multiple files. Making architectural changes across your entire
+                    codebase.
+                    Iterating on design before you even start coding. Working with YOUR infrastructure. Not some
+                    vendor's cloud.
+                    And increasingly important. Resisting the labor extraction model that corporate A I tools are built
+                    on.
+
+                    Cognotik doesn't do autocomplete. It focuses on planning and executing complex changes
+                    across entire codebases while maintaining sovereignty over your work.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>What is Cognotik?</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto;">
+                    <p style="font-size: 1.1em; margin-bottom: 1.5em;">
+                        A complete AI agent platform that meets you where you are
+                    </p>
+                    <ul style="font-size: 0.9em; line-height: 2;">
+                        <li><strong>Plugin</strong> - IDE integration (IntelliJ, with more coming)</li>
+                        <li><strong>Desktop</strong> - Standalone application for non-coders and independence</li>
+                        <li><strong>Web</strong> - Browser-based interface</li>
+                    </ul>
+                    <p style="margin-top: 2em; font-size: 0.95em; color: #8892b0;">
+                        You don't need to be a coder - you need to be willing to experiment, learn, and tolerate rough
+                        edges
+                    </p>
+                </div>
+                <aside class="notes">
+                    So what IS Cognotik? It's a complete AI agent platform that meets you where you are.
+                    It's a complete A I agent platform that meets you where you are.
+
+                    It comes in three forms. First, there's a plugin that integrates with your I D E. Currently
+                    IntelliJ,
+                    with more coming. Second, there's a standalone desktop application. This is important. The desktop
+                    version is for non coders and to demonstrate independence. You don't NEED to be a coder to use this.
+                    You DO need to be willing to experiment, learn, and tolerate rough edges.
+                    And third, there's a web based interface for maximum flexibility.
+
+                    These three components work together seamlessly. The desktop version is particularly important
+                    because it shows that you're not locked into being a developer to use this tool. If you're willing
+                    to experiment and learn, you can use this. That's part of the resistance model - democratizing
+                    access to A I agents, not just for professional developers.
+                </aside>
+            </section>
+            <section data-auto-animate>
+                <h3>Who This Is For</h3>
+                <div class="two-column" style="text-align: left; max-width: 900px; margin: 0 auto;">
+                    <div style="margin-bottom: 2em;">
+                        <h4 style="color: #51cf66;">✅ You're in the right place if:</h4>
+                        <ul style="font-size: 0.9em; line-height: 2;">
+                            <li>You ship complex features across multiple files</li>
+                            <li>You want to iterate on design before coding</li>
+                            <li>You're willing to experiment and learn</li>
+                            <li>You can tolerate rough edges and evolving tools</li>
+                            <li>You want sovereignty over your infrastructure</li>
+                            <li>You resist corporate extraction models</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: #ff6b6b;">❌ This might not be for you if:</h4>
+                        <ul style="font-size: 0.9em; line-height: 2;">
+                            <li>You want inline autocomplete (use Copilot instead)</li>
+                            <li>You need enterprise support and hand-holding</li>
+                            <li>You want a polished, finished product</li>
+                            <li>You're not comfortable with experimentation</li>
+                        </ul>
+                    </div>
+                </div>
+                <aside class="notes">
+                    Let's be really clear about who this is for.
+                    You're in the right place if you ship complex features across multiple files. If you want to
+                    iterate on design before coding. If you're willing to experiment and learn. If you can tolerate
+                    rough edges and evolving tools. If you want sovereignty over your infrastructure. If you resist
+                    corporate extraction models.
+                    Notice what's NOT on that list. You need to be a professional developer. The desktop version
+                    is specifically designed so non coders can use this. You need to be willing to learn and experiment,
+                    but you don't need to already be a coder.
+                    This might not be for you if you want inline autocomplete. Seriously, use Copilot for that.
+                    If you need enterprise support and hand-holding. If you want a polished, finished product.
+                    If you're not comfortable with experimentation.
+                    This is for experimenters and adventurers, whether you're a professional developer or someone
+                    who's willing to learn.
+                </aside>
+            </section>
+
+        </section>
+
+        <!-- Part B: Why This Exists - Resistance Through Technology -->
+        <section>
+            <section data-auto-animate>
+                <h2>Part B: Why This Exists</h2>
+                <p class="subtitle">Resistance Through Technology</p>
+                <aside class="notes">
+                    Now let's move to Part B.
+                    This is where we talk about WHY this tool exists. And I want to be very direct here.
+                    this is fundamentally about resistance through technology.
+
+                    Let's talk about the threat model.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>The Threat Model</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto;">
+                    <p style="font-size: 1em; margin-bottom: 1.5em;">
+                        Many people fear AI because of job threats - <strong>rightfully so</strong>
+                    </p>
+                    <div class="fragment">
+                        <p style="font-size: 1.1em; color: #ffd43b; margin-bottom: 1em;">
+                            But the threat isn't the technology, it's <strong>who controls it</strong>
+                        </p>
+                    </div>
+                    <ul class="fragment" style="font-size: 0.85em; line-height: 2;">
+                        <li>Corporate AI tools are designed to <strong>replace workers and extract value</strong></li>
+                        <li>They want you <strong>dependent, locked-in</strong>, feeding their training data</li>
+                        <li>Maximum disruption = maximum profit for them, <strong>maximum precarity for you</strong>
+                        </li>
+                    </ul>
+                </div>
+                <aside class="notes">
+                    Many people fear A I because of job threats. And you know what? They're rightfully afraid.
+                    The threat is real. But here's the thing. The threat isn't the technology itself.
+                    The threat is WHO CONTROLS IT.
+
+                    Look at how corporate A I tools are designed. They're designed to replace workers and extract value.
+                    That's not a bug, that's the feature. They WANT you dependent. They WANT you locked in.
+                    They WANT you feeding their training data with every line of code you write.
+
+                    Because maximum disruption equals maximum profit for them. And maximum disruption means
+                    maximum precarity for you. They profit when your job becomes uncertain. They profit when
+                    you have no alternatives. They profit when they own the tools you depend on.
+
+                    The fear of A I replacing jobs is absolutely valid. But the real threat isn't A I itself.
+                    It's corporate control over A I tools that are designed from the ground up to extract value
+                    and create dependency.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>This Is Different - AI For Workers</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto;">
+                    <ul style="font-size: 0.95em; line-height: 2.2;">
+                        <li>✅ Built to <strong>amplify developers</strong>, not replace them</li>
+                        <li>✅ You keep your data, you choose your infrastructure, <strong>you can't be
+                            rug-pulled</strong></li>
+                        <li>✅ Using this tool is <strong>resistance</strong> against the blitzscaling playbook</li>
+                    </ul>
+                </div>
+                <aside class="notes">
+                    But this tool is fundamentally different. This is A I FOR workers. Not A I to replace workers.
+
+                    First, it's built to amplify developers, not replace them. You stay in control. You make the
+                    decisions.
+                    The A I handles the mechanical work so you can focus on the thinking.
+
+                    Second, you keep your data. You choose your infrastructure. You can run this completely locally if
+                    you want.
+                    No vendor can rug-pull you because you're not dependent on their servers or their business model.
+
+                    And third. And this is important. Using this tool is itself an act of resistance against the
+                    blitzscaling playbook. Every person who uses this instead of a corporate extraction tool is
+                    someone who's NOT feeding that machine.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>How It Resists</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto; font-size: 0.9em;">
+                    <div style="margin-bottom: 1.5em;">
+                        <p><strong>🔒 Your data stays yours:</strong></p>
+                        <p style="margin-left: 2em; color: #8892b0;">Local models or BYOK - zero extraction</p>
+                    </div>
+                    <div style="margin-bottom: 1.5em;">
+                        <p><strong>🚫 You can't be rug-pulled:</strong></p>
+                        <p style="margin-left: 2em; color: #8892b0;">Open source, forkable, no vendor control</p>
+                    </div>
+                    <div style="margin-bottom: 1.5em;">
+                        <p><strong>🛡️ You're not training their moat:</strong></p>
+                        <p style="margin-left: 2em; color: #8892b0;">Your code doesn't feed someone else's business</p>
+                    </div>
+                    <div>
+                        <p><strong>⚡ You stay in control:</strong></p>
+                        <p style="margin-left: 2em; color: #8892b0;">Augmentation, not replacement - you make all
+                            decisions</p>
+                    </div>
+                </div>
+                <aside class="notes">
+                    Let me break down exactly how this tool resists the extraction model.
+
+                    First. Your data stays yours. You can use local models, or bring your own keys to cloud providers.
+                    Zero extraction. Your code never goes to train someone else's model unless you explicitly choose
+                    that.
+
+                    Second. You can't be rug pulled. This is open source. Apache 2 point 0 license. You can fork it.
+                    You can modify it. No vendor can ever change the terms on you or shut down the service you depend
+                    on.
+
+                    Third. You're not training their moat. Corporate A I tools want your code because it makes their
+                    models better, which makes their business more valuable. Your labor becomes their competitive
+                    advantage.
+                    This tool doesn't do that. Your code doesn't feed someone else's business.
+
+                    And fourth. You stay in control. This is augmentation, not replacement. The A I suggests, you
+                    decide.
+                    You're not training yourself out of a job - you're making yourself more capable.
+
+                    These four things together. Data sovereignty. No vendor lock in. No training data extraction.
+                    And you always staying in control. That's how this tool resists extraction.
+                </aside>
+            </section>
+
+        </section>
+
+        <!-- Part C: Design Principles -->
+        <section>
+            <section data-auto-animate>
+                <h2>Part C: Design Principles</h2>
+                <p class="subtitle">How these values translate into architecture</p>
+                <aside class="notes">
+                    Now let's move to Part C.
+                    We've talked about what problem this solves and why it exists. Now let's dive into
+                    the specific design principles that make this tool different.
+
+                    These aren't just abstract values. These are concrete architectural decisions that
+                    translate those values into actual code.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Zero Lock-in - Your Infrastructure, Your Rules</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto; font-size: 0.85em;">
+                    <div style="margin-bottom: 1.2em;">
+                        <p><strong>☁️ Cloud APIs:</strong></p>
+                        <p style="margin-left: 2em; color: #8892b0;">OpenAI, Anthropic, Google, DeepSeek - bring your
+                            own keys</p>
+                    </div>
+                    <div style="margin-bottom: 1.2em;">
+                        <p><strong>🏢 Enterprise:</strong></p>
+                        <p style="margin-left: 2em; color: #8892b0;">AWS Bedrock, API proxies for team deployments</p>
+                    </div>
+                    <div style="margin-bottom: 1.2em;">
+                        <p><strong>💻 Fully Local:</strong></p>
+                        <p style="margin-left: 2em; color: #8892b0;">Ollama for complete sovereignty, zero costs</p>
+                    </div>
+                    <div style="background: rgba(81, 207, 102, 0.1); padding: 1em; border-left: 4px solid #51cf66; margin-top: 1.5em;">
+                        <p style="margin: 0;">✅ Switch providers anytime - your choice, always</p>
+                        <p style="margin: 0.5em 0 0 0;">✅ No vendor can rug-pull you, ever</p>
+                    </div>
+                </div>
+                <aside class="notes">
+                    First principle. Zero lock in. Your infrastructure, your rules.
+
+                    Want to use cloud A P Is? Great. Open A I, Anthropic, Google, Deep Seek. Bring your own keys.
+                    You're not locked into any single provider.
+
+                    Working in an enterprise environment? No problem. AWS Bedrock, API proxies for team deployments.
+                    You can run this behind your corporate firewall with your own infrastructure.
+
+                    Want complete sovereignty? Run it fully local with Ollama. Zero costs, zero data leaving your
+                    machine.
+
+                    And here's the key. You can switch between these anytime. Your choice, always. No vendor can
+                    rug pull you because you're not dependent on any single one. If Open A I raises prices or changes
+                    terms, you switch to Anthropic. If you want to go local, you switch to Ollama. Your choice.
+
+                    This is what zero lock in actually means. Not just in theory, but in practice.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Open Source (Apache 2.0)</h3>
+                <div style="text-align: left; max-width: 850px; margin: 0 auto;">
+                    <ul style="font-size: 0.9em; line-height: 2.2;">
+                        <li>🔍 <strong>Inspect</strong> every line of code</li>
+                        <li>🔧 <strong>Modify</strong> to fit your workflow</li>
+                        <li>🚫 No proprietary black boxes</li>
+                        <li>🤝 Community contributions welcome</li>
+                        <li>🍴 <strong>Fork it if you want</strong> - that's the point</li>
+                    </ul>
+                </div>
+                <aside class="notes">
+                    Second principle. Open source. Apache 2 point 0 license.
+
+                    You can inspect every line of code. No black boxes. No proprietary magic that you have to trust.
+                    You can see exactly what it's doing.
+
+                    You can modify it to fit your workflow. Don't like how something works? Change it.
+                    Need a feature that doesn't exist? Add it.
+
+                    Community contributions are welcome. This gets better when people contribute back.
+
+                    And if you really disagree with the direction? Fork it. That's the point. That's the power
+                    of open source.
+
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Loosely-Coupled Architecture</h3>
+                <div style="text-align: center; margin: 2em 0;">
+                    <div style="font-family: monospace; font-size: 0.9em; background: rgba(255, 255, 255, 0.05); padding: 1.5em; border-radius: 8px;">
+                        <span style="color: #51cf66;">IDE</span>
+                        <span style="color: #8892b0;"> ↔ </span>
+                        <span style="color: #ffd43b;">Plugin</span>
+                        <span style="color: #8892b0;"> ↔ </span>
+                        <span style="color: #ff6b6b;">Embedded Server</span>
+                        <span style="color: #8892b0;"> ↔ </span>
+                        <span style="color: #4dabf7;">Browser UI</span>
+                        <span style="color: #8892b0;"> ↔ </span>
+                        <span style="color: #b197fc;">AI APIs</span>
+                    </div>
+                </div>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto; font-size: 0.85em;">
+                    <ul style="line-height: 2;">
+                        <li>Plugin is a <strong>bridge</strong>, not the whole system</li>
+                        <li>Web-based UI served from embedded webserver</li>
+                        <li>Same interface across all IDEs and platforms</li>
+                        <li>Desktop app demonstrates complete independence from IDEs</li>
+                        <li>You can use this without being a developer</li>
+                    </ul>
+                </div>
+                <aside class="notes">
+                    Third principle. Loosely coupled architecture.
+
+                    Look at this diagram. The plugin is just a bridge between your I D E and the embedded server.
+                    It's not the whole system. The actual UI is web-based, served from an embedded webserver.
+                    The actual U I is web based, served from an embedded web server.
+
+                    Why does this matter? Because it means you get the same interface across all I D Es and platforms.
+                    Currently IntelliJ, with more coming. Same experience everywhere.
+
+
+                    But more importantly, the desktop app demonstrates complete independence from I D Es. You don't
+                    need to be a developer to use this. You don't need an I D E. The desktop version is for anyone
+                    willing to experiment and learn.
+
+                    That's what loosely coupled means in practice.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>For Professionals Who Know Their Craft</h3>
+                <div style="text-align: left; max-width: 850px; margin: 0 auto;">
+                    <ul style="font-size: 0.9em; line-height: 2.2;">
+                        <li>🎯 Assumes you understand what you're building</li>
+                        <li>🎛️ Explicit control over operations</li>
+                        <li>🔍 No hidden "magic" - you see what it's doing</li>
+                        <li>⚡ Power-user features, not mass-market dumbing-down</li>
+                        <li>🔧 Customization and extensibility built-in</li>
+                    </ul>
+                    <p style="margin-top: 2em; font-size: 0.85em; color: #8892b0; font-style: italic;">
+                        This is a professional tool for professionals
+                    </p>
+                </div>
+                <aside class="notes">
+                    Fourth principle. This is for professionals who know their craft.
+
+                    It assumes you understand what you're building. It doesn't try to hide complexity
+                    or dumb things down for a mass market.
+
+                    You get explicit control over operations. You tell it what to do, it does it.
+                    No hidden "magic" where you're not sure what's happening.
+
+                    You can see what it's doing. Transparency is built in.
+
+                    It has power user features, not mass market dumbing down. This is built for people
+                    who want more capability, not less complexity.
+
+                    And customization and extensibility are built-in. You can make this work the way you work.
+
+                    This is a professional tool for professionals.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Documentation Philosophy - Code is Ground Truth</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto; font-size: 0.9em;">
+                    <ul style="line-height: 2.2; margin-bottom: 2em;">
+                        <li>📝 The <strong>code is the documentation</strong></li>
+                        <li>💭 Docs describe intent, code describes reality</li>
+                        <li>🤖 Can't parse the implementation? <strong>Use the AI to explain it to you</strong></li>
+                        <li>🧪 This is for experimenters and adventurers</li>
+                        <li>🐧 Early Linux energy - pre-corporate, pre-hand-holding</li>
+                        <li>📖 Read the source, understand the tool, contribute back</li>
+                    </ul>
+                    <div style="background: rgba(255, 212, 59, 0.1); padding: 1.2em; border-left: 4px solid #ffd43b;">
+                        <p style="margin: 0 0 1em 0; font-size: 0.9em;">
+                            <strong>If you're using the desktop app for non-coding work:</strong> You don't need to read
+                            the implementation code - but you DO need to understand how to evaluate output quality in
+                            your domain.
+                        </p>
+                        <p style="margin: 0; font-size: 0.9em;">
+                            <strong>If you're using the plugin for development work:</strong> Reading the source code is
+                            expected - this is a developer tool with developer expectations.
+                        </p>
+                    </div>
+                </div>
+                <aside class="notes">
+                    Fifth principle. Documentation philosophy. Code is ground truth.
+
+                    The code IS the documentation. That's not laziness, that's a philosophy.
+                    Documentation describes intent. Code describes reality. When they conflict, code wins.
+
+                    Can't parse the implementation? Use the AI to explain it to you. That's what it's for.
+                    Can't parse the implementation? Use the A I to explain it to you. That's what it's for.
+                    Load the codebase into the AI and ask it questions. That's a valid way to learn the system.
+                    Load the codebase into the A I and ask it questions. That's a valid way to learn the system.
+
+                    This is for experimenters and adventurers. People who are comfortable reading source code
+                    and figuring things out.
+
+                    This has early Linux energy. Pre-corporate, pre-hand-holding. When Linux was for people
+                    who read man pages and source code.
+
+                    Read the source, understand the tool, contribute back. That's the model.
+
+                    Now, there's an important distinction here. If you're using the desktop app for non-coding work -
+                    lawyers, accountants, researchers - you don't need to read the implementation code. But you DO need
+                    to understand how to evaluate output quality in your domain. Can you tell when a contract summary is
+                    wrong? When financial analysis has errors? That's your bar.
+
+                    If you're using the plugin for development work, reading the source code is expected. This is a
+                    developer tool with developer expectations. Different audiences, different bars.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Support Model</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto; font-size: 0.85em;">
+                    <ul style="line-height: 2.2; margin-bottom: 2em;">
+                        <li>🆓 Free software (Apache 2.0), <strong>zero support obligation</strong></li>
+                        <li>📖 Read the code, ask the AI, use the community (GitHub issues)</li>
+                        <li>💼 Want direct access to the maintainer? <strong>That's paid consulting</strong></li>
+                        <li>🐧 Early Linux model - software is free, expertise costs money</li>
+                        <li>🚫 No enterprise support theater, no documentation debt</li>
+                        <li>🤝 If you need hand-holding, hire someone who does that</li>
+                    </ul>
+                </div>
+                <aside class="notes">
+                    Sixth principle. Support model.
+
+                    This is free software under Apache 2 point 0. That means zero support obligation.
+                    I'm not obligated to help you. I'm not obligated to fix your problems.
+
+                    Want support? Read the code. Ask the AI. Use the community on GitHub issues.
+                    Want support? Read the code. Ask the A I. Use the community on GitHub issues.
+                    Those are your free support options.
+
+                    Want direct access to the maintainer? That's paid consulting. Just like early Linux.
+                    The software is free, expertise costs money.
+
+                    No enterprise support theater. No documentation debt. No pretending that free software
+                    comes with enterprise support.
+
+                    If you need hand-holding, hire someone who does that. That's a legitimate service.
+                    But it's not included in the free software.
+
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Research-Focused & Cutting-Edge</h3>
+                <div style="text-align: left; max-width: 850px; margin: 0 auto;">
+                    <ul style="font-size: 0.9em; line-height: 2.2;">
+                        <li>🔬 Experimental features alongside production tools</li>
+                        <li>🚀 Continuous evolution with latest techniques</li>
+                        <li>🎯 Built for people who want to push boundaries</li>
+                        <li>⚡ Not just shipping what's "safe"</li>
+                    </ul>
+                    <p style="margin-top: 2em; font-size: 0.85em; color: #8892b0; font-style: italic;">
+                        This is a research platform that happens to be production-ready,
+                        not a product that happens to have some research features
+                    </p>
+                </div>
+                <aside class="notes">
+                    Seventh principle. Research focused and cutting edge.
+
+                    This has experimental features alongside production tools. You get access to
+                    cutting edge techniques, not just what's been proven safe for enterprise.
+
+                    It's continuously evolving with the latest techniques. As new research comes out,
+                    it gets integrated. You're not stuck with last year's technology.
+
+                    This is built for people who want to push boundaries. Not just ship what's safe,
+                    but explore what's possible.
+
+                    This is a research platform that happens to be production-ready, not a product
+                    that happens to have some research features. That's an important distinction.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Productivity Multiplier, Not Replacement</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto; font-size: 0.85em;">
+                    <ul style="line-height: 2.2; margin-bottom: 2em;">
+                        <li>🤖 AI handles <strong>mechanical translation</strong> - you handle <strong>thinking</strong>
+                        </li>
+                        <li>⚡ Eliminates tedious work so you focus on architecture</li>
+                        <li>🎯 Senior developers ship more ambitious features faster</li>
+                        <li>📚 Junior developers learn by seeing how complex problems decompose</li>
+                        <li>🎛️ You stay in control, always making decisions</li>
+                    </ul>
+                    <div style="background: rgba(81, 207, 102, 0.1); padding: 1.5em; border-left: 4px solid #51cf66;">
+                        <p style="margin: 0; font-size: 1em;">
+                            This is about <strong>getting more done</strong>, not about <strong>replacing you</strong>
+                        </p>
+                    </div>
+                </div>
+                <aside class="notes">
+                    Eighth principle. Productivity multiplier, not replacement.
+
+                    The A I handles mechanical translation. You handle thinking. That's the division of labor.
+                    The A I is good at translating your intent into code.
+                    You're good at figuring out what needs to be built and why.
+
+                    It eliminates tedious work so you can focus on architecture. Less time on boilerplate,
+                    more time on design.
+
+                    Senior developers ship more ambitious features faster. You can tackle bigger problems
+                    because the mechanical work is handled.
+
+                    Junior developers learn by seeing how complex problems decompose. They see the thinking
+                    process, not just the final code.
+
+                    And you stay in control, always making decisions. The A I suggests, you decide.
+
+                    This is about getting more done, not about replacing you.
+                </aside>
+            </section>
+
+            <section data-auto-animate>
+                <h3>Automation is a Spectrum</h3>
+                <div style="text-align: left; max-width: 900px; margin: 0 auto;">
+                    <ul style="font-size: 0.9em; line-height: 2.2; margin-bottom: 2em;">
+                        <li>📊 From simple suggestions to full task automation</li>
+                        <li>🧠 Multiple cognitive modes for different trust levels</li>
+                        <li>🎛️ You choose how much autonomy to delegate</li>
+                        <li>📈 Progressive enhancement based on task complexity</li>
+                    </ul>
+                </div>
+                <aside class="notes">
+                    Ninth and final principle. Automation is a spectrum.
+
+                    It ranges from simple suggestions to full task automation. Not everything needs
+                    the same level of A I involvement.
+
+                    There are multiple cognitive modes for different trust levels. Sometimes you want
+                    the A I to just suggest. Sometimes you want it to execute. You choose.
+
+                    You choose how much autonomy to delegate based on the task and your comfort level.
+
+                    Progressive enhancement based on task complexity. Simple tasks get simple automation.
+                    Complex tasks get more sophisticated approaches.
+                </aside>
+            </section>
+        </section>
+
+        <!-- Closing Slide -->
+        <section data-auto-animate>
+            <h2>Design Philosophy Summary</h2>
+            <div style="text-align: left; max-width: 900px; margin: 0 auto; font-size: 0.8em;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em;">
+                    <div>
+                        <h4 style="color: #51cf66;">What It Is:</h4>
+                        <ul style="line-height: 1.8;">
+                            <li>Zero lock-in infrastructure</li>
+                            <li>Open source (Apache 2.0)</li>
+                            <li>Loosely-coupled architecture</li>
+                            <li>For experimenters & learners</li>
+                            <li>Code as documentation</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: #4dabf7;">What It Does:</h4>
+                        <ul style="line-height: 1.8;">
+                            <li>Amplifies, not replaces</li>
+                            <li>Resists extraction</li>
+                            <li>Maintains sovereignty</li>
+                            <li>Enables experimentation</li>
+                            <li>Multiplies productivity</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="background: rgba(255, 212, 59, 0.1); padding: 1.5em; border-left: 4px solid #ffd43b; margin-top: 2em;">
+                    <p style="margin: 0; font-size: 1.1em;">
+                        <strong>Built by developers, for anyone willing to learn</strong> - an act of resistance through
+                        technology
+                    </p>
+                </div>
+            </div>
+            <aside class="notes">
+                Let me summarize the design philosophy.
+
+                What it is. Zero lock in infrastructure. Open source under Apache 2 point 0. Loosely coupled
+                architecture.
+                For experimenters and learners. Code as documentation.
+
+                What it does. Amplifies, not replaces. Resists extraction. Maintains sovereignty.
+                Enables experimentation. Multiplies productivity.
+
+                This is built by developers, for anyone willing to learn. It's an act of resistance through technology.
+
+                It takes powerful A I agent technology and puts it in the hands of workers instead of
+                in the hands of corporations trying to extract value from workers.
+                You don't need to be a coder to use this. You need to be willing to experiment, learn, and tolerate
+                rough edges. That's the bar.
+
+                That's the design philosophy.
+            </aside>
+        </section>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/notes/notes.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/zoom/zoom.min.js"></script>
+<script src="presentation.js"></script>
+<script src="reveal_init.js"></script>
+</body>
+</html>

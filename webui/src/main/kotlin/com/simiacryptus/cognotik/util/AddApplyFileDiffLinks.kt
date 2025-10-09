@@ -97,7 +97,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             handle: (Map<Path, String>) -> Unit
         ) {
             val startTime = Instant.now()
-            filepath.parent?.toFile()?.mkdirs()
+            filepath.toFile().parentFile?.mkdirs()
             filepath.toFile().writeText(content, Charsets.UTF_8)
             logFileOperation(filepath, "", null, content, "NEW_FILE", startTime)
             handle(mapOf(File(filename).toPath() to content))

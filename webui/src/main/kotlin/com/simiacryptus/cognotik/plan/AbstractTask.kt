@@ -29,12 +29,12 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         Completed,
     }
 
-    open fun getPriorCode(executionState: ExecutionState) =
+    open fun getPriorCode(executionState: ExecutionState?) =
         executionConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
-            "# $dependency\n\n${executionState.taskResult[dependency] ?: ""}"
+            "# $dependency\n\n${executionState?.taskResult[dependency] ?: ""}"
         } ?: ""
 
-    protected fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+    protected open fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder
         @Suppress("AssignedValueIsNeverRead")
@@ -61,6 +61,6 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     )
 
     companion object {
-        private val log = LoggerFactory.getLogger(AbstractTask::class.java)
+        val log = LoggerFactory.getLogger(AbstractTask::class.java)
     }
 }

@@ -2,23 +2,35 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.plan.tools.RunCodeTask
+import com.simiacryptus.cognotik.plan.tools.*
+import com.simiacryptus.cognotik.plan.tools.reasoning.ConstraintSatisfactionTask.ConstraintSatisfactionTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask.RunCodeTaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.CausalInferenceTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.CausalInferenceTask.CausalInferenceTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.reasoning.CounterfactualAnalysisTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.CounterfactualAnalysisTask.CounterfactualAnalysisTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.reasoning.MultiPerspectiveAnalysisTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysisTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
-import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask
- import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
- import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
- import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask.WriteHtmlTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
+import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
-import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask.Companion.MCPTool
- import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
- import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
- import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.AbstractionLadderTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.AnalogicalReasoningTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.ConstraintSatisfactionTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.DecompositionSynthesisTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.MetaCognitiveReflectionTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask
+import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask.RunShellCommandTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
@@ -37,6 +49,22 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 ) : DynamicEnum<TaskType<*, *>>(name) {
 
     companion object {
+        val ChainOfThought = TaskType(
+            "ChainOfThought",
+            ChainOfThoughtTask.ChainOfThoughtTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Break down complex problems into explicit reasoning steps",
+            """
+              Performs step-by-step reasoning with validation:
+              <ul>
+                <li>Breaks complex problems into logical steps</li>
+                <li>Validates each step before proceeding</li>
+                <li>Provides reasoning transparency</li>
+                <li>Can backtrack if validation fails</li>
+                <li>Generates comprehensive reasoning chains</li>
+              </ul>
+            """
+        )
         val VectorSearch = TaskType(
             "VectorSearch",
             VectorSearchTask.VectorSearchTaskExecutionConfigData::class.java,
@@ -120,9 +148,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         val KnowledgeIndexing = TaskType( // TODO: This should be automatically done as needed during embedding search
             "KnowledgeIndexing",
             KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData::class.java,
-                TaskTypeConfig::class.java,
-                "Index content for semantic search capabilities",
-                """
+            TaskTypeConfig::class.java,
+            "Index content for semantic search capabilities",
+            """
           Indexes documents and code for semantic search capabilities.
           <ul>
             <li>Processes both documentation and source code</li>
@@ -132,7 +160,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             <li>Progress tracking and reporting</li>
           </ul>
         """
-            )
+        )
         val SeleniumSession = TaskType(
             "SeleniumSession",
             SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData::class.java,
@@ -196,8 +224,206 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
               </ul>
             """
         )
+        val WriteHtml = TaskType(
+            "WriteHtml",
+            WriteHtmlTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Create complete HTML files with embedded CSS and JavaScript",
+            """
+              Creates standalone HTML files with embedded CSS and JavaScript.
+              <ul>
+                <li>Generates complete, self-contained HTML documents</li>
+                <li>Embeds CSS styles within &lt;style&gt; tags</li>
+                <li>Embeds JavaScript within &lt;script&gt; tags</li>
+                <li>Supports modern HTML5 features</li>
+                <li>Interactive approval or auto-apply mode</li>
+                <li>Proper HTML structure and formatting</li>
+              </ul>
+            """
+        )
+        val GeneratePresentation = TaskType(
+            "GeneratePresentation",
+            GeneratePresentationTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Create complete Reveal.js presentations with narration support",
+            """
+              Creates professional Reveal.js presentations with speaker notes.
+              <ul>
+                <li>Generates complete, self-contained HTML presentations</li>
+                <li>Includes Reveal.js framework integration</li>
+                <li>Adds speaker notes for each slide</li>
+                <li>Supports custom styling and themes</li>
+                <li>Interactive approval or auto-apply mode</li>
+                <li>Includes navigation and progress indicators</li>
+                <li>Optional audio narration support</li>
+              </ul>
+            """
+        )
+        val MetaCognitiveReflection = TaskType(
+            "MetaCognitiveReflection",
+            MetaCognitiveReflectionTask.MetaCognitiveReflectionTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Reflect on and critique reasoning processes",
+            """
+              Performs meta-cognitive reflection on task reasoning and solutions.
+              <ul>
+                <li>Analyzes assumptions and identifies biases</li>
+                <li>Evaluates alternative approaches</li>
+                <li>Assesses confidence and certainty levels</li>
+                <li>Identifies knowledge gaps and uncertainties</li>
+                <li>Suggests improvements to reasoning quality</li>
+                <li>Checks logical consistency and completeness</li>
+              </ul>
+            """
+        )
+        val MultiPerspectiveAnalysis = TaskType(
+            "MultiPerspectiveAnalysis",
+            MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Analyze problems from multiple viewpoints with synthesis",
+            """
+              Analyzes topics from multiple perspectives and synthesizes findings.
+              <ul>
+                <li>Examines subject from specified viewpoints</li>
+                <li>Generates detailed analysis for each perspective</li>
+                <li>Identifies agreements and conflicts</li>
+                <li>Synthesizes perspectives into unified conclusion</li>
+                <li>Configurable consensus threshold</li>
+                <li>Useful for architectural decisions and code reviews</li>
+                <li>Supports context from related files</li>
+              </ul>
+            """
+        )
+        val SocraticDialogue = TaskType(
+            "SocraticDialogue",
+            SocraticDialogueTask.SocraticDialogueTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Explore ideas through Socratic questioning",
+            """
+              Uses Socratic questioning methodology to deeply explore ideas.
+              <ul>
+                <li>Creates dialogue between questioner and responder agents</li>
+                <li>Challenges assumptions and definitions</li>
+                <li>Explores implications and consequences</li>
+                <li>Identifies contradictions and tensions</li>
+                <li>Configurable dialogue depth and constraints</li>
+                <li>Generates synthesis of insights discovered</li>
+              </ul>
+            """
+        )
+        val AnalogicalReasoning = TaskType(
+            "AnalogicalReasoning",
+            AnalogicalReasoningTask.AnalogicalReasoningTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Solve problems by finding and applying analogies from different domains",
+            """
+              Performs creative problem-solving through analogical reasoning.
+              <ul>
+                <li>Draws analogies from specified source domains</li>
+                <li>Maps structural relationships to target problems</li>
+                <li>Generates multiple perspectives and insights</li>
+                <li>Validates mapping coherence and consistency</li>
+                <li>Synthesizes findings across analogies</li>
+                <li>Suggests concrete solutions based on analogies</li>
+                <li>Useful for design thinking and novel approaches</li>
+              </ul>
+            """
+        )
+        val CounterfactualAnalysis = TaskType(
+            "CounterfactualAnalysis",
+            CounterfactualAnalysisTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Explore what-if scenarios to understand causal relationships and decision impacts",
+            """
+              Performs counterfactual analysis to explore alternative scenarios and outcomes.
+              <ul>
+                <li>Analyzes actual scenarios and alternative conditions</li>
+                <li>Compares outcomes across different scenarios</li>
+                <li>Identifies causal relationships and key factors</li>
+                <li>Supports controlled comparison with constant factors</li>
+                <li>Provides insights for risk analysis and decision validation</li>
+                <li>Useful for retrospective analysis and strategic planning</li>
+              </ul>
+            """
+        )
+        val AbstractionLadder = TaskType(
+            "AbstractionLadder",
+            AbstractionLadderTask.AbstractionLadderTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Traverse abstraction levels to identify patterns and design insights",
+            """
+              Analyzes concepts by moving up and down abstraction levels.
+              <ul>
+                <li>Move up to find generalizations and patterns</li>
+                <li>Move down to find specific implementations</li>
+                <li>Identify design patterns at each level</li>
+                <li>Discover refactoring opportunities</li>
+                <li>Analyze architectural patterns</li>
+                <li>Find code smells and anti-patterns</li>
+                <li>Generate actionable recommendations</li>
+              </ul>
+            """
+        )
+        val ConstraintSatisfaction = TaskType(
+            "ConstraintSatisfaction",
+            ConstraintSatisfactionTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Solve problems with multiple competing constraints",
+            """
+              Solves constraint satisfaction problems with hard and soft constraints.
+              <ul>
+                <li>Handles hard constraints that must be satisfied</li>
+                <li>Optimizes soft constraints with configurable weights</li>
+                <li>Supports multiple search strategies (backtracking, forward, local)</li>
+                <li>Provides detailed reasoning and trade-off analysis</li>
+                <li>Suggests alternative solutions when applicable</li>
+                <li>Useful for architectural decisions, resource allocation, and optimization</li>
+              </ul>
+            """
+        )
+        val CausalInference = TaskType(
+            "CausalInference",
+            CausalInferenceTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Identify causal relationships and root causes",
+            """
+              Performs causal inference analysis to identify true causal relationships.
+              <ul>
+                <li>Distinguishes causation from correlation</li>
+                <li>Identifies root causes vs intermediate factors</li>
+                <li>Builds causal graphs showing relationships</li>
+                <li>Identifies confounding variables</li>
+                <li>Provides evidence-based causal reasoning</li>
+                <li>Useful for debugging and root cause analysis</li>
+              </ul>
+            """
+        )
+        val DecompositionSynthesis = TaskType(
+            "DecompositionSynthesis",
+            DecompositionSynthesisTask.DecompositionSynthesisTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Decompose complex problems and synthesize solutions",
+            """
+              Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.
+              <ul>
+                <li>Multiple decomposition strategies (functional, temporal, spatial, hierarchical)</li>
+                <li>Configurable decomposition depth</li>
+                <li>Dependency-aware subproblem solving</li>
+                <li>Solution synthesis with coherence validation</li>
+                <li>Confidence tracking at each level</li>
+                <li>Implements divide-and-conquer reasoning</li>
+              </ul>
+            """
+        )
+
 
         init {
+            registerConstructor(ChainOfThought) { settings, task ->
+                ChainOfThoughtTask(
+                    settings,
+                    task
+                )
+            }
             registerConstructor(Analysis) { settings, task ->
                 AnalysisTask(
                     settings,
@@ -264,7 +490,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                     task
                 )
             }
-registerConstructor(VectorSearch) { settings, task ->
+            registerConstructor(VectorSearch) { settings, task ->
                 VectorSearchTask(
                     settings,
                     task
@@ -276,10 +502,76 @@ registerConstructor(VectorSearch) { settings, task ->
                     task
                 )
             }
+            registerConstructor(WriteHtml) { settings, task ->
+                WriteHtmlTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(GeneratePresentation) { settings, task ->
+                GeneratePresentationTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(MetaCognitiveReflection) { settings, task ->
+                MetaCognitiveReflectionTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(CausalInference) { settings, task ->
+                CausalInferenceTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(AbstractionLadder) { settings, task ->
+                AbstractionLadderTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(CounterfactualAnalysis) { settings, task ->
+                CounterfactualAnalysisTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(AnalogicalReasoning) { settings, task ->
+                AnalogicalReasoningTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(SocraticDialogue) { settings, task ->
+                SocraticDialogueTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(MultiPerspectiveAnalysis) { settings, task ->
+                MultiPerspectiveAnalysisTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(ConstraintSatisfaction) { settings, task ->
+                ConstraintSatisfactionTask(
+                    settings,
+                    task
+                )
+            }
+            registerConstructor(DecompositionSynthesis) { settings, task ->
+                DecompositionSynthesisTask(
+                    settings,
+                    task
+                )
+            }
         }
 
         fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
-            taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T,U>
+            taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T, U>
         ) {
             taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
                 constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
@@ -322,5 +614,6 @@ registerConstructor(VectorSearch) { settings, task ->
 class TaskTypeSerializer : DynamicEnumSerializer<TaskType<*, *>>(TaskType::class.java)
 
 class TaskTypeDeserializer : DynamicEnumDeserializer<TaskType<*, *>>(TaskType::class.java)
+
 private val taskConstructors =
     mutableMapOf<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>>()

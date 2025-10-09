@@ -10,8 +10,7 @@ package com.simiacryptus.cognotik.plan.tools.mcp
  import com.simiacryptus.cognotik.util.JsonUtil
  import com.simiacryptus.cognotik.util.LoggerFactory
  import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.mcp.MCPClient
-import com.simiacryptus.cognotik.mcp.MCPServerRegistry
+ import com.simiacryptus.cognotik.mcp.MCPServerRegistry
  import org.slf4j.Logger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -226,10 +225,10 @@ import java.util.concurrent.TimeoutException
         throw lastException
     }
 
-    override fun getPriorCode(executionState: ExecutionState): String {
+    override fun getPriorCode(executionState: ExecutionState?): String {
         val priorResults = executionConfig?.task_dependencies
             ?.mapNotNull { dependency ->
-                executionState.taskResult[dependency]?.let { result ->
+                executionState?.taskResult[dependency]?.let { result ->
                     "## Results from $dependency\n$result"
                 }
             }

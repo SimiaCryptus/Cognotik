@@ -74,7 +74,7 @@ open class SessionTask(
             resolve.writeBytes(data)
             log.info("Successfully saved file: {} ({} bytes)", relativePath, data.size)
         }
-        return "fileIndex/${ui.sessionId}/$relativePath"
+      return linkTo(relativePath)
     }
 
     @Description("Adds a message to the task output.")
@@ -310,30 +310,35 @@ open class SessionTask(
         }
     }
 
-    open fun createFile(relativePath: String): Pair<String, File?> {
-        require(relativePath.isNotBlank()) { "File path cannot be blank" }
-        require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-        log.debug("Creating file at path: {}", relativePath)
-        return Pair(
-            "fileIndex/${ui.sessionId}/$relativePath", ui.dataStorage?.getSessionDir(
-                ui.owner,
-                ui.sessionId
-            )?.let { dir ->
-                if (!dir.exists() && !dir.mkdirs()) {
-                    throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
-                }
-                val resolve = dir.resolve(relativePath)
-                resolve.parentFile?.let { parent ->
-                    if (!parent.exists() && !parent.mkdirs()) {
-                        throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
-                    }
-                }
-                log.debug("Successfully created file path: {}", resolve.absolutePath)
-                resolve
-            })
-    }
+  fun createFile(relativePath: String) = Pair(linkTo(relativePath), resolve(relativePath))
 
-    fun update() = send()
+  fun linkTo(relativePath: String): String {
+    require(relativePath.isNotBlank()) { "File path cannot be blank" }
+    return "fileIndex/${ui.sessionId}/$relativePath"
+  }
+
+  fun resolve(relativePath: String): File? {
+    require(relativePath.isNotBlank()) { "File path cannot be blank" }
+    require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+    return ui.dataStorage?.getSessionDir(
+      ui.owner,
+      ui.sessionId
+    )?.let { dir ->
+      if (!dir.exists() && !dir.mkdirs()) {
+        throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
+      }
+      val resolve = dir.resolve(relativePath)
+      resolve.parentFile?.let { parent ->
+        if (!parent.exists() && !parent.mkdirs()) {
+          throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+        }
+      }
+      log.debug("Successfully created file path: {}", resolve.absolutePath)
+      resolve
+    }
+  }
+
+  fun update() = send()
 
     open fun hrefLink(
         linkText: String,

@@ -342,10 +342,8 @@ abstract class PatchApp(
         val filteredErrors = errors.filter {
             if (hasErrors) {
                 !settings.ignoreWarnings || (it.isWarning != true)
-
             } else {
                 true
-
             }
         }
         log.info("After filtering: ${filteredErrors.size} errors to fix")
