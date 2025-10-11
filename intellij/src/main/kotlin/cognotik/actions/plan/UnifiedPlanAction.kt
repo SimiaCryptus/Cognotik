@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -109,7 +110,10 @@ class UnifiedPlanAction : BaseAction() {
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
-            inputCnt = app.inputCnt,
+            inputCnt = when(orchestrationConfig.cognitiveMode) {
+              CognitiveModeStrategies.Chat -> 0
+              else -> 4
+            },
             stickyInput = app.stickyInput,
             showMenubar = app.showMenubar
         )

@@ -46,8 +46,13 @@ abstract class UnifiedPlanApp(
     private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
-    override val inputCnt = 4
-    @Suppress("UNCHECKED_CAST")
+    override val inputCnt: Int
+      get() {
+
+        return 4
+      }
+
+  @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig() as T
 
     abstract fun instance(model: ApiChatModel): ChatInterface
