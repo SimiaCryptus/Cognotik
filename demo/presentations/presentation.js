@@ -2,11 +2,12 @@ let synth = window.speechSynthesis;
 let isAutoPlaying = false;
 let utterances = [];
 let currentUtteranceIndex = 0;
-const autoplayButton = document.getElementById('autoplayButton');
-const voiceSelect = document.getElementById('voiceSelect');
-const debugLog = [];
+ const autoplayButton = document.getElementById('autoplayButton');
+ const voiceSelect = document.getElementById('voiceSelect');
+ const debugLog = [];
+const VOICE_STORAGE_KEY = 'cognotik-selected-voice';
 
-function handleVideoElements(callback) {
+ function handleVideoElements(callback) {
     const currentSlide = Reveal.getCurrentSlide();
     const video = currentSlide.querySelector('video');
     if (video) {
@@ -115,6 +116,9 @@ function initSpeech() {
         listVoices();
         synth.onvoiceschanged = listVoices;
         voiceSelect.addEventListener('change', () => {
+            // Save the selected voice to localStorage
+            localStorage.setItem(VOICE_STORAGE_KEY, voiceSelect.value);
+            log(`Voice selection saved: ${voiceSelect.value}`);
             if (isAutoPlaying) {
                 stopSpeaking();
                 speakNotes();
@@ -130,6 +134,10 @@ window.addEventListener('load', initSpeech);
 function listVoices() {
     let voices = synth.getVoices();
     log(`Available voices: ${voices.length}`);
+    // Store current selection before rebuilding
+    const previousSelection = voiceSelect.value;
+    const savedVoice = localStorage.getItem(VOICE_STORAGE_KEY);
+    
     voiceSelect.innerHTML = '';
     voices.forEach((voice, index) => {
         log(`Voice ${index}: ${voice.name} (${voice.lang})`);
@@ -138,8 +146,19 @@ function listVoices() {
         option.textContent = `${voice.name} (${voice.lang})`;
         voiceSelect.appendChild(option);
     });
+    // Restore voice selection with priority: saved > previous > default
     if (voices.length > 0) {
-        voiceSelect.value = voices.find(voice => voice.lang.startsWith('en-'))?.name || voices[0].name;
+        if (savedVoice && voices.find(voice => voice.name === savedVoice)) {
+            voiceSelect.value = savedVoice;
+            log(`Restored saved voice: ${savedVoice}`);
+        } else if (previousSelection && voices.find(voice => voice.name === previousSelection)) {
+            voiceSelect.value = previousSelection;
+            log(`Restored previous voice: ${previousSelection}`);
+        } else {
+            const defaultVoice = voices.find(voice => voice.lang.startsWith('en-'))?.name || voices[0].name;
+            voiceSelect.value = defaultVoice;
+            log(`Set default voice: ${defaultVoice}`);
+        }
     }
 }
 
