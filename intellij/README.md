@@ -1,8 +1,8 @@
 # 🚀 AI Coding Assistant: Open Source Generative & Agentic Tools for IntelliJ 🌟
 
-[![Build](https://github.com/SimiaCryptus/intellij-aicoder/workflows/Build/badge.svg)](https://github.com/SimiaCryptus/intellij-aicoder/actions)
-[![Version](https://img.shields.io/jetbrains/plugin/v/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/20724-ai-coding-assistant.svg)](https://plugins.jetbrains.com/plugin/20724-ai-coding-assistant)
+[![Build](https://github.com/SimiaCryptus/Cognotik/workflows/Build/badge.svg)](https://github.com/SimiaCryptus/Cognotik/actions)
+[![Version](https://img.shields.io/jetbrains/plugin/v/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/27289-cognotik.svg)](https://plugins.jetbrains.com/plugin/27289-cognotik)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <!-- Plugin description -->
