@@ -139,7 +139,7 @@ class TaskConfigManager {
                         label: 'Fetch Method',
                         type: 'select',
                         options: ['HttpClient', 'Selenium'],
-                        default: 'HttpClient', ../
+                        default: 'HttpClient',
                         tooltip: 'Method used to fetch content from URLs'
                     },
                     {
