@@ -220,6 +220,15 @@ const modelManager = new ModelManager({
     document: document,
     getAvailableModels: () => availableModels
 });
+// Initialize task config manager
+const taskConfigManager = new TaskConfigManager({
+    appState: appState,
+    document: document,
+    httpService: httpService,
+    notificationService: notificationService,
+    modelManager: modelManager,
+    getAvailableModels: () => availableModels
+});
 
 // Initialize UI components after DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
@@ -697,84 +706,197 @@ function populateTaskSelection() {
 
     taskToggles.innerHTML = '';
 
-    const taskTypes = [
-        {id: 'Analysis', name: 'Analysis Task', description: 'Analyze code and provide detailed explanations'},
-        {id: 'CommandSession', name: 'Command Session Task', description: 'Execute a series of commands in a session'},
-        {id: 'CrawlerAgent', name: 'Web Crawler Task', description: 'Crawl and extract information from websites'},
-        {
-            id: 'FileModification',
-            name: 'File Modification Task',
-            description: 'Create or modify files with AI assistance'
-        },
-        {id: 'FileSearch', name: 'File Search Task', description: 'Search and analyze files in the project'},
-        {
-            id: 'SelfHealing',
-            name: 'Self-Healing Task',
-            description: 'Automatically fix issues in code based on AI suggestions'
-        },
-        {
-            id: 'RunShellCommand',
-            name: 'Run Shell Command Task',
-            description: 'Execute shell commands and process the output'
-        },
-        {id: 'RunCode', name: 'Run Code Task', description: 'Execute code snippets and return the results'},
-        {
-            id: 'SeleniumSession',
-            name: 'Selenium Session Task',
-            description: 'Automate web browser interactions using Selenium'
-        },
-        {
-            id: 'SelfHealing',
-            name: 'Self-Healing Task',
-            description: 'Automatically fix build errors based on AI suggestions'
-        },
-        {
-            id: 'KnowledgeIndexing',
-            name: 'Knowledge Indexing Task',
-            description: 'Index and search knowledge bases for information retrieval'
-        },
-        {
-            id: 'VectorSearch',
-            name: 'Vector Search Task',
-            description: 'Perform vector-based searches for similar items or documents'
-        },
-    ];
+    // Group tasks by category
+    const categories = taskConfigManager.getTaskCategories();
+    
+    categories.forEach(category => {
+        const categorySection = document.createElement('div');
+        categorySection.className = 'task-category-section';
+        
+        const categoryHeader = document.createElement('h4');
+        categoryHeader.textContent = category;
+        categoryHeader.style.marginTop = '20px';
+        categoryHeader.style.marginBottom = '10px';
+        categoryHeader.style.color = '#2c3e50';
+        categorySection.appendChild(categoryHeader);
+        
+        const tasksInCategory = taskConfigManager.getTasksByCategory(category);
+        
+        tasksInCategory.forEach(task => {
+            const taskToggle = document.createElement('div');
+            taskToggle.className = 'task-toggle';
+            taskToggle.style.display = 'flex';
+            taskToggle.style.justifyContent = 'space-between';
+            taskToggle.style.alignItems = 'center';
+            taskToggle.style.padding = '10px';
+            taskToggle.style.marginBottom = '5px';
+            taskToggle.style.backgroundColor = '#f8f9fa';
+            taskToggle.style.borderRadius = '4px';
 
-    taskTypes.forEach(task => {
-        const taskToggle = document.createElement('div');
-        taskToggle.className = 'task-toggle';
+            const taskSettings = appState.taskSettings.taskSettings || {};
+            const isEnabled = taskSettings[task.id] || false;
+            const hasConfigs = appState.hasTaskConfigs(task.id);
 
-        const taskSettings = appState.taskSettings.taskSettings || {};
-        const isEnabled = taskSettings[task.id] || false;
-        console.log(`[populateTaskSelection] Task ${task.id} enabled:`, isEnabled);
+            taskToggle.innerHTML = `
+                <div style="flex: 1;">
+                    <input type="checkbox" id="${task.id}" ${isEnabled ? 'checked' : ''}>
+                    <label for="${task.id}" style="margin-left: 5px;">${task.name}</label>
+                    <span class="tooltip">?<span class="tooltiptext">${task.description}</span></span>
+                    ${hasConfigs ? '<span style="margin-left: 10px; color: #28a745; font-size: 0.9em;">✓ Configured</span>' : ''}
+                </div>
+                <div>
+                    <button class="button secondary small configure-task-btn" data-task-id="${task.id}" 
+                            style="margin-left: 10px; padding: 5px 10px; font-size: 0.9em;">
+                        Configure
+                    </button>
+                </div>
+            `;
 
-        taskToggle.innerHTML = `
-            <div>
-                <input type="checkbox" id="${task.id}" ${isEnabled ? 'checked' : ''}>
-                <label for="${task.id}">${task.name}</label>
-                <span class="tooltip">?<span class="tooltiptext">${task.description}</span></span>
-            </div>
-        `;
+            categorySection.appendChild(taskToggle);
 
-        taskToggles.appendChild(taskToggle);
-
-        // Add event listener
-        const checkbox = taskToggle.querySelector(`#${task.id}`);
-        checkbox.addEventListener('change', function () {
-            const currentSettings = appState.taskSettings.taskSettings || {};
-            if (this.checked) {
-                if (!currentSettings[task.id]) {
-                    currentSettings[task.id] = {};
+            // Add event listener for checkbox
+            const checkbox = taskToggle.querySelector(`#${task.id}`);
+            checkbox.addEventListener('change', function () {
+                const currentSettings = appState.taskSettings.taskSettings || {};
+                if (this.checked) {
+                    if (!currentSettings[task.id]) {
+                        currentSettings[task.id] = {};
+                    }
+                    currentSettings[task.id].task_type = task.id;
+                } else {
+                    if (currentSettings[task.id]) {
+                        delete currentSettings[task.id];
+                    }
                 }
-                currentSettings[task.id].task_type = task.id;
-            } else {
-                if (currentSettings[task.id]) {
-                    delete currentSettings[task.id];
-                }
-            }
-            console.log(`[populateTaskSelection] Updated task ${task.id} to enabled`);
-            appState.saveTaskSettings(currentSettings);
+                console.log(`[populateTaskSelection] Updated task ${task.id} enabled:`, this.checked);
+                appState.saveTaskSettings(currentSettings);
+            });
+
+            // Add event listener for configure button
+            const configureBtn = taskToggle.querySelector('.configure-task-btn');
+            configureBtn.addEventListener('click', () => {
+                showTaskConfigurationDialog(task.id);
+            });
         });
+        
+        taskToggles.appendChild(categorySection);
+    });
+}
+
+function showTaskConfigurationDialog(taskId) {
+    console.log('[showTaskConfigurationDialog] Opening configuration for task:', taskId);
+    
+    // Get existing configurations for this task
+    const existingConfigs = appState.getTaskConfigs(taskId);
+    
+    // Create a dialog to manage configurations
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    
+    let configListHtml = '';
+    if (existingConfigs.length > 0) {
+        configListHtml = '<div class="config-list" style="margin-bottom: 20px;">';
+        configListHtml += '<h4>Existing Configurations:</h4>';
+        existingConfigs.forEach(config => {
+            const modelInfo = config.model ? ` (${config.model})` : '';
+            configListHtml += `
+                <div class="config-item" style="display: flex; justify-content: space-between; align-items: center; 
+                     padding: 10px; margin-bottom: 5px; background: #f8f9fa; border-radius: 4px;">
+                    <span><strong>${config.name}</strong>${modelInfo}</span>
+                    <div>
+                        <button class="button secondary small edit-config-btn" data-config-name="${config.name}">Edit</button>
+                        <button class="button secondary small delete-config-btn" data-config-name="${config.name}" 
+                                style="margin-left: 5px;">Delete</button>
+                    </div>
+                </div>
+            `;
+        });
+        configListHtml += '</div>';
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Configure ${taskConfigManager.getTaskType(taskId).name}</h3>
+                <span class="close-config-list-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                ${configListHtml}
+                <button class="button primary add-new-config-btn">+ Add New Configuration</button>
+            </div>
+            <div class="modal-footer">
+                <button class="button secondary close-config-list-btn">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Setup event listeners
+    const closeModal = () => {
+        modal.remove();
+        // Refresh task selection to show updated config status
+        populateTaskSelection();
+    };
+    
+    modal.querySelector('.close-config-list-modal').addEventListener('click', closeModal);
+    modal.querySelector('.close-config-list-btn').addEventListener('click', closeModal);
+    
+    modal.querySelector('.add-new-config-btn').addEventListener('click', () => {
+        modal.remove();
+        taskConfigManager.showTaskConfigDialog(taskId)
+            .then(config => {
+                appState.addTaskConfig(taskId, config);
+                notificationService.showNotification('Configuration saved successfully', 'success');
+                showTaskConfigurationDialog(taskId); // Reopen to show updated list
+            })
+            .catch(error => {
+                if (error.message !== 'Cancelled') {
+                    console.error('[showTaskConfigurationDialog] Error saving config:', error);
+                }
+                showTaskConfigurationDialog(taskId); // Reopen even if cancelled
+            });
+    });
+    
+    // Edit config buttons
+    modal.querySelectorAll('.edit-config-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const configName = btn.getAttribute('data-config-name');
+            const existingConfig = appState.getTaskConfig(taskId, configName);
+            modal.remove();
+            taskConfigManager.showTaskConfigDialog(taskId, existingConfig)
+                .then(config => {
+                    appState.addTaskConfig(taskId, config);
+                    notificationService.showNotification('Configuration updated successfully', 'success');
+                    showTaskConfigurationDialog(taskId);
+                })
+                .catch(error => {
+                    if (error.message !== 'Cancelled') {
+                        console.error('[showTaskConfigurationDialog] Error updating config:', error);
+                    }
+                    showTaskConfigurationDialog(taskId);
+                });
+        });
+    });
+    
+    // Delete config buttons
+    modal.querySelectorAll('.delete-config-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const configName = btn.getAttribute('data-config-name');
+            if (confirm(`Delete configuration "${configName}"?`)) {
+                appState.removeTaskConfig(taskId, configName);
+                notificationService.showNotification('Configuration deleted', 'success');
+                showTaskConfigurationDialog(taskId);
+            }
+        });
+    });
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
     });
 }
 

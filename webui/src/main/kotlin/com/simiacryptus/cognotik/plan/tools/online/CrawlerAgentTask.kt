@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -75,13 +76,13 @@ class CrawlerTaskTypeConfig(
     val urlContentCache = ConcurrentHashMap<String, String>()
 
     override fun promptSegment() = """
-    CrawlerAgent - Search Google, fetch top results, and analyze content
-    ** Specify the search query
-    ** Or provide direct URLs to analyze
-    ** Specify the analysis goal or focus
-    ** Results will be saved to .websearch directory for future reference
-    ** Links found in analysis can be automatically followed for deeper research
-  """.trimIndent()
+        CrawlerAgent - Search Google, fetch top results, and analyze content
+        ** Specify the search query
+        ** Or provide direct URLs to analyze
+        ** Specify the analysis goal or focus
+        ** Results will be saved to .websearch directory for future reference
+        ** Links found in analysis can be automatically followed for deeper research
+      """.trimIndent()
 
     fun cleanup() {
         try {
@@ -177,7 +178,6 @@ class CrawlerTaskTypeConfig(
                 return "Warning: No seed items found to start crawling"
             }
 
-
             val pageQueue = mutableListOf<LinkData>().apply {
                 seedItems.forEach { item ->
                     LinkData(
@@ -261,7 +261,7 @@ class CrawlerTaskTypeConfig(
                 if (create_final_summary != false && analysisResults.length > max_final_output_size) {
                     log.info("Creating final summary: original_size=${analysisResults.length}, max_size=$max_final_output_size")
                     try {
-                        createFinalSummary(analysisResults)
+                        createFinalSummary(analysisResults, task)
                     } catch (e: Exception) {
                         log.error("Failed to create final summary, using truncated results", e)
                         analysisResults.substring(0, minOf(analysisResults.length, max_final_output_size)) +
@@ -520,7 +520,8 @@ class CrawlerTaskTypeConfig(
                                 transformContent(
                                     content,
                                     analysisGoal,
-                                    orchestrationConfig
+                                    orchestrationConfig,
+                                    task
                                 )
 
                             val parsedPage = analysis.obj
@@ -642,7 +643,7 @@ class CrawlerTaskTypeConfig(
         }
     }
 
-    private fun createFinalSummary(analysisResults: String): String {
+    private fun createFinalSummary(analysisResults: String, task: SessionTask): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
         val maxSize = /*taskConfig?.max_final_output_size ?:*/ max_final_output_size
 
@@ -674,7 +675,7 @@ class CrawlerTaskTypeConfig(
                 "Include the most important links that should be followed up on.",
                 "Keep your response under ${maxSize / 1000}K characters."
             ).joinToString("\n\n"),
-            model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
+            model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter).getChildClient(task),
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
@@ -837,13 +838,14 @@ class CrawlerTaskTypeConfig(
     private fun transformContent(
         content: String,
         analysisGoal: String,
-        orchestrationConfig: OrchestrationConfig
+        orchestrationConfig: OrchestrationConfig,
+        task: SessionTask
     ): ParsedResponse<ParsedPage> {
         val describer = TaskContextYamlDescriber(orchestrationConfig)
         val maxChunkSize = 50000
         if (content.length <= maxChunkSize) {
             log.debug("Content size (${content.length}) within limit, processing as single chunk")
-            return pageParsedResponse(orchestrationConfig, analysisGoal, content, describer)
+            return pageParsedResponse(orchestrationConfig, analysisGoal, content, describer, task)
         }
 
         log.debug("Content size (${content.length}) exceeds limit, splitting into chunks")
@@ -852,7 +854,7 @@ class CrawlerTaskTypeConfig(
         val chunkResults = chunks.mapIndexed { index, chunk ->
             log.debug("Processing chunk ${index + 1}/${chunks.size} (size: ${chunk.length})")
             val chunkGoal = "$analysisGoal (Part ${index + 1}/${chunks.size})"
-            pageParsedResponse(orchestrationConfig, chunkGoal, chunk, describer)
+            pageParsedResponse(orchestrationConfig, chunkGoal, chunk, describer, task)
         }
         if (chunkResults.size == 1) {
             log.debug("Only one chunk result, returning directly")
@@ -860,15 +862,18 @@ class CrawlerTaskTypeConfig(
         }
         log.debug("Combining ${chunkResults.size} chunk results into final analysis")
         val combinedAnalysis = chunkResults.joinToString("\n\n---\n\n") { it.text }
-        return pageParsedResponse(orchestrationConfig, analysisGoal, combinedAnalysis, describer)
+        return pageParsedResponse(orchestrationConfig, analysisGoal, combinedAnalysis, describer, task)
     }
 
     private fun pageParsedResponse(
         orchestrationConfig: OrchestrationConfig,
         analysisGoal: String,
         content: String,
-        describer: TypeDescriber
+        describer: TypeDescriber,
+        task: SessionTask
     ) = try {
+        val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+            ?: orchestrationConfig.parsingChatter).getChildClient(task)
         ParsedAgent(
             prompt = listOf(
                 "Below are analyses of different parts of a web page related to this goal: $analysisGoal",
@@ -877,9 +882,9 @@ class CrawlerTaskTypeConfig(
                 "Identify the most important links that should be followed up on according to the goal."
             ).joinToString("\n\n"),
             resultClass = ParsedPage::class.java,
-            model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter),
+            model = model,
             describer = describer,
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingModel = model,
         ).answer(listOf(content))
     } catch (e: Exception) {
         log.error("Error during content transformation", e)

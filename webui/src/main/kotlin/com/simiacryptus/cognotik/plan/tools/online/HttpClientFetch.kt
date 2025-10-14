@@ -9,7 +9,6 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
@@ -183,33 +182,6 @@ class HttpClientFetch : FetchMethodFactory {
             task.urlContentCache[url] = content
             FetchMethod.Companion.log.info("Successfully processed URL: $url, content length: ${content.length}")
             return content
-        }
-
-        private fun detectCharset(bytes: ByteArray, contentType: String): Charset {
-            // First try to extract charset from Content-Type header
-            val charsetRegex = Regex("charset=([^;\\s]+)", RegexOption.IGNORE_CASE)
-            val charsetMatch = charsetRegex.find(contentType)
-            if (charsetMatch != null) {
-                try {
-                    return Charset.forName(charsetMatch.groupValues[1])
-                } catch (e: Exception) {
-                    FetchMethod.Companion.log.warn("Invalid charset in Content-Type: ${charsetMatch.groupValues[1]}")
-                }
-            }
-            // Try to detect charset from HTML meta tags
-            val htmlStart = String(bytes.take(2048).toByteArray(), StandardCharsets.ISO_8859_1)
-            val metaCharsetRegex =
-                Regex("<meta[^>]+charset[\\s]*=[\\s]*[\"']?([^\"'\\s>]+)", RegexOption.IGNORE_CASE)
-            val metaMatch = metaCharsetRegex.find(htmlStart)
-            if (metaMatch != null) {
-                try {
-                    return Charset.forName(metaMatch.groupValues[1])
-                } catch (e: Exception) {
-                    FetchMethod.Companion.log.warn("Invalid charset in meta tag: ${metaMatch.groupValues[1]}")
-                }
-            }
-            // Fallback to UTF-8
-            return StandardCharsets.UTF_8
         }
 
         private fun processHtmlContent(
