@@ -676,7 +676,7 @@ class CrawlerTaskTypeConfig(
             model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter).getChildClient(task),
         ).answer(
             listOf(
-                "Here are summaries of each analyzed page:\n${urlSections.joinToString("\n\n")}"
+                "Here are summaries of each analyzed page:\n${analysisResults}"
             ),
         )
         return header + summary
