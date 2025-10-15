@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -19,9 +18,10 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.CompletionService
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -29,19 +29,17 @@ import kotlin.math.min
 class CrawlerAgentTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: CrawlerTaskExecutionConfigData?,
-    val follow_links: Boolean = true,
-    val max_pages_per_task: Int = 50,
-    val max_final_output_size: Int = 10000,
-    val concurrent_page_processing: Int = 3,
-    val allow_revisit_pages: Boolean = false,
-    val create_final_summary: Boolean? = true,
-    val min_content_length: Int = 100,
-) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(orchestrationConfig, planTask) {
+) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
+    orchestrationConfig,
+    planTask
+) {
 
-class CrawlerTaskTypeConfig(
+    class CrawlerTaskTypeConfig(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = null,
+        @Description("Maximum depth to crawl from seed pages") val max_depth: Int? = null,
+        @Description("Maximum queue size to prevent memory issues") val max_queue_size: Int? = null,
         @Description("Number of pages to process concurrently") val concurrent_page_processing: Int? = null,
         @Description("Maximum characters in final summary") val max_final_output_size: Int? = null,
         @Description("Minimum content length to process") val min_content_length: Int? = null,
@@ -60,7 +58,6 @@ class CrawlerTaskTypeConfig(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: List<String>? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
-        @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -74,6 +71,7 @@ class CrawlerTaskTypeConfig(
     var selenium: Selenium2S3? = null
 
     val urlContentCache = ConcurrentHashMap<String, String>()
+    private val pageQueueLock = Any()
 
     override fun promptSegment() = """
         CrawlerAgent - Search Google, fetch top results, and analyze content
@@ -112,6 +110,8 @@ class CrawlerTaskTypeConfig(
         var depth: Int = 0
         var error: String? = null
         var processingTimeMs: Long = 0
+        var retryCount: Int = 0
+        var lastRetryTime: Long = 0
     }
 
     enum class PageType {
@@ -154,7 +154,13 @@ class CrawlerTaskTypeConfig(
     ): String {
         try {
             val startTime = System.currentTimeMillis()
-            log.info("Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query}', direct_urls='${executionConfig?.direct_urls?.joinToString(", ") ?: ""}', max_pages=${executionConfig?.max_pages_per_task ?: max_pages_per_task}")
+            log.info(
+                "Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query}', direct_urls='${
+                    executionConfig?.direct_urls?.joinToString(
+                        ", "
+                    ) ?: ""
+                }', max_pages=${typeConfig.max_pages_per_task ?: (typeConfig.max_pages_per_task ?: 30)}"
+            )
             val webSearchDir = File(agent.root.toFile(), ".websearch")
             if (!webSearchDir.exists()) {
                 if (!webSearchDir.mkdirs()) {
@@ -187,7 +193,12 @@ class CrawlerTaskTypeConfig(
                         relevance_score = item.relevance_score
                     ).let { linkData ->
                         log.debug("Adding seed item to page queue: {}", linkData)
-                        this.add(linkData)
+                        addToQueue(
+                            this,
+                            linkData,
+                            typeConfig.max_depth ?: (typeConfig.max_depth ?: 3),
+                            typeConfig.max_queue_size ?: (typeConfig.max_queue_size ?: 100)
+                        )
                         if (this.isEmpty()) {
                             log.warn("No valid seed items found after processing")
                         }
@@ -201,13 +212,14 @@ class CrawlerTaskTypeConfig(
             }
 
             val analysisResultsMap = ConcurrentHashMap<Int, String>()
-            val maxPages = executionConfig?.max_pages_per_task ?: max_pages_per_task
-            val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/ concurrent_page_processing
+            val maxPages = typeConfig.max_pages_per_task ?: (typeConfig.max_pages_per_task ?: 30)
+            val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/
+                typeConfig.concurrent_page_processing ?: 3
             log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
 
             val tabs = TabbedDisplay(task)
-            val exeManager = FixedConcurrencyProcessor(agent.pool, concurrentProcessing)
-            val futureMap = mutableMapOf<String, Future<*>>()
+            val completionService: CompletionService<Unit> = ExecutorCompletionService(agent.pool)
+            val activeTasks = ConcurrentHashMap.newKeySet<String>()
             val processedCount = AtomicInteger(0)
             val errorCount = AtomicInteger(0)
             val maxErrors = maxPages / 2 // Stop if too many errors
@@ -219,25 +231,72 @@ class CrawlerTaskTypeConfig(
 
             try {
                 val loopIterations = AtomicInteger(0)
-                val maxIterations = 1000
-                extracted2(
-                    pageQueue,
-                    maxPages,
-                    errorCount,
-                    maxErrors,
-                    loopIterations,
-                    maxIterations,
-                    futureMap,
-                    task,
-                    tabs,
-                    exeManager,
-                    processedCount,
-                    webSearchDir,
-                    agent,
-                    fetchStrategy,
-                    orchestrationConfig,
-                    analysisResultsMap
-                )
+                val maxDepthConfig = typeConfig.max_depth ?: (typeConfig.max_depth ?: 3)
+                val maxQueueSizeConfig = typeConfig.max_queue_size ?: (typeConfig.max_queue_size ?: 100)
+                log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=${1000}")
+                while (shouldContinue(pageQueue, maxPages, errorCount, maxErrors, loopIterations, activeTasks)) {
+                    if (loopIterations.get() % 10 == 0) {
+                        synchronized(pageQueueLock) {
+                            log.info("Loop iteration ${loopIterations.get()}: completed=${pageQueue.count { it.completed }}, active=${activeTasks.size}, errors=${errorCount.get()}")
+                        }
+                    }
+                    val queueStats = synchronized(pageQueueLock) {
+                        "total=${pageQueue.size}, completed=${pageQueue.count { it.completed }}, started=${pageQueue.count { it.started }}, active=${activeTasks.size}"
+                    }
+                    // Queue new tasks while we have capacity and unstarted pages
+                    while (
+                        activeTasks.size < concurrentProcessing && // Limit concurrent tasks
+                        synchronized(pageQueueLock) { pageQueue.count { !it.started } > 0 } && // There are still unstarted pages
+                        errorCount.get() < maxErrors && // Not too many errors
+                        pageQueue.count { it.completed } < maxPages // Haven't hit max pages yet
+                    ) {
+                        addCrawlTask(
+                            queueStats = queueStats,
+                            completionService = completionService,
+                            activeTasks = activeTasks,
+                            errorCount = errorCount,
+                            maxErrors = maxErrors,
+                            pageQueue = pageQueue,
+                            task = task,
+                            tabs = tabs,
+                            processedCount = processedCount,
+                            maxPages = maxPages,
+                            maxDepth = maxDepthConfig,
+                            maxQueueSize = maxQueueSizeConfig,
+                            webSearchDir = webSearchDir,
+                            agent = agent,
+                            fetchStrategy = fetchStrategy,
+                            orchestrationConfig = orchestrationConfig,
+                            analysisResultsMap = analysisResultsMap
+                        )
+                    }
+
+                    // Wait for at least one task to complete before checking the queue again
+                    // This allows in-progress tasks to add new links to the queue
+                    if (activeTasks.isNotEmpty()) {
+                        try {
+                            val future = completionService.poll(1, java.util.concurrent.TimeUnit.SECONDS)
+                            if (future != null) {
+                                future.get() // This will throw if the task failed
+                            }
+                        } catch (e: Exception) {
+                            log.error("Task execution failed", e)
+                        }
+                    } else {
+                        // No active tasks, check if there are unstarted pages we missed
+                        val unstartedCount = synchronized(pageQueueLock) { pageQueue.count { !it.started } }
+                        if (unstartedCount > 0) {
+                            log.warn("No active tasks but $unstartedCount unstarted pages remain - continuing")
+                            continue
+                        }
+                    }
+
+                    val completedCount = synchronized(pageQueueLock) { pageQueue.count { it.completed } }
+                    log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
+                }
+                if (loopIterations.get() >= 1000) {
+                    log.warn("Reached maximum iteration limit: ${1000}")
+                }
             } catch (e: Exception) {
                 log.error("Error during processing", e)
                 task.error(e)
@@ -246,6 +305,7 @@ class CrawlerTaskTypeConfig(
             }
             val totalTime = System.currentTimeMillis() - startTime
             log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
+            task.complete("Completed in ${totalTime / 1000} seconds, processed ${processedCount.get()} pages with ${errorCount.get()} errors.")
 
             val analysisResults = (1..processedCount.get()).asSequence().mapNotNull {
                 analysisResultsMap[it]
@@ -260,13 +320,18 @@ class CrawlerTaskTypeConfig(
             val summaryTask = task.ui.newTask(false)
             tabs["Final Summary"] = summaryTask.placeholder
             val finalOutput =
-                if (create_final_summary != false && analysisResults.length > max_final_output_size) {
-                    log.info("Creating final summary: original_size=${analysisResults.length}, max_size=$max_final_output_size")
+                if (typeConfig.create_final_summary != false && analysisResults.length > typeConfig.max_final_output_size ?: 15000) {
+                    log.info("Creating final summary: original_size=${analysisResults.length}, max_size=${typeConfig.max_final_output_size ?: 15000}")
                     try {
                         createFinalSummary(analysisResults, summaryTask)
                     } catch (e: Exception) {
                         log.error("Failed to create final summary, using truncated results", e)
-                        analysisResults.substring(0, minOf(analysisResults.length, max_final_output_size)) +
+                        analysisResults.substring(
+                            0, minOf(
+                                analysisResults.length,
+                                typeConfig.max_final_output_size ?: 15000
+                            )
+                        ) +
                                 "\n\n---\n\n*Note: Summary generation failed, showing truncated results*"
                     }
                 } else {
@@ -288,142 +353,100 @@ class CrawlerTaskTypeConfig(
         }
     }
 
-    private fun extracted2(
+    fun addToQueue(
+        pageQueue: MutableList<LinkData>,
+        newLink: LinkData,
+        maxDepth: Int,
+        maxQueueSize: Int
+    ): Boolean = synchronized(pageQueueLock) {
+        if (newLink.link.isNullOrBlank()) {
+            log.warn("Attempted to add invalid or empty URL to queue: $newLink")
+            return false
+        }
+        if (pageQueue.size >= maxQueueSize) {
+            log.warn("Page queue has reached maximum size of $maxQueueSize, cannot add more links")
+            return false
+        }
+        if (newLink.depth > maxDepth) {
+            log.debug("Skipping link due to depth limit (depth=${newLink.depth} > maxDepth=$maxDepth): ${newLink.link}")
+            return false
+        }
+        if (pageQueue.any { it.link == newLink.link }) {
+            log.debug("Skipping duplicate link already in queue: ${newLink.link}")
+            return false
+        }
+        pageQueue.add(newLink)
+        log.debug("Added new link to queue: ${newLink.link} (depth=${newLink.depth})")
+        true
+    }
+
+    fun getNextPage(pageQueue: MutableList<LinkData>): LinkData? = synchronized(pageQueueLock) {
+        val nextPage = pageQueue.firstOrNull { !it.started && !it.completed }
+        nextPage?.let {
+            it.started = true
+        }
+        nextPage
+    }
+
+    private fun shouldContinue(
         pageQueue: MutableList<LinkData>,
         maxPages: Int,
         errorCount: AtomicInteger,
         maxErrors: Int,
         loopIterations: AtomicInteger,
-        maxIterations: Int,
-        futureMap: MutableMap<String, Future<*>>,
-        task: SessionTask,
-        tabs: TabbedDisplay,
-        exeManager: FixedConcurrencyProcessor,
-        processedCount: AtomicInteger,
-        webSearchDir: File,
-        agent: TaskOrchestrator,
-        fetchStrategy: FetchStrategy,
-        orchestrationConfig: OrchestrationConfig,
-        analysisResultsMap: ConcurrentHashMap<Int, String>
-    ) {
-        log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=$maxIterations")
-        while (
-            pageQueue.count { !it.completed } > 0 &&
-            pageQueue.count { it.completed } < maxPages &&
-            errorCount.get() < maxErrors &&
-            loopIterations.getAndIncrement() < maxIterations
-        ) {
-            if (loopIterations.get() % 10 == 0) {
-                log.info("Loop iteration ${loopIterations.get()}: completed=${pageQueue.count { it.completed }}, errors=${errorCount.get()}")
-            }
-            extracted1(
-                pageQueue,
-                maxPages,
-                errorCount,
-                maxErrors,
-                futureMap,
-                task,
-                tabs,
-                exeManager,
-                processedCount,
-                webSearchDir,
-                agent,
-                fetchStrategy,
-                orchestrationConfig,
-                analysisResultsMap
-            )
+        activeTasks: MutableSet<String>
+    ): Boolean = synchronized(pageQueueLock) {
+        val completed = pageQueue.count { it.completed }
+        val unstarted = pageQueue.count { !it.started }
+        val hasActiveTasks = activeTasks.isNotEmpty()
+
+        // Continue if:
+        // 1. We have active tasks (they might add more links), OR
+        // 2. We have unstarted pages in the queue
+        // AND we haven't hit our limits
+        val shouldContinue = (hasActiveTasks || unstarted > 0) &&
+                completed < maxPages &&
+                errorCount.get() < maxErrors &&
+                loopIterations.getAndIncrement() < 1000
+
+        if (!shouldContinue) {
+            log.info("Stopping crawl: completed=$completed/$maxPages, unstarted=$unstarted, active=$hasActiveTasks, errors=${errorCount.get()}/$maxErrors")
         }
-        if (loopIterations.get() >= maxIterations) {
-            log.warn("Reached maximum iteration limit: $maxIterations")
-        }
+
+        shouldContinue
     }
 
-    private fun extracted1(
-        pageQueue: MutableList<LinkData>,
-        maxPages: Int,
-        errorCount: AtomicInteger,
-        maxErrors: Int,
-        futureMap: MutableMap<String, Future<*>>,
-        task: SessionTask,
-        tabs: TabbedDisplay,
-        exeManager: FixedConcurrencyProcessor,
-        processedCount: AtomicInteger,
-        webSearchDir: File,
-        agent: TaskOrchestrator,
-        fetchStrategy: FetchStrategy,
-        orchestrationConfig: OrchestrationConfig,
-        analysisResultsMap: ConcurrentHashMap<Int, String>
-    ) {
-        val queueStats =
-            "total=${pageQueue.size} , completed=${pageQueue.count { it.completed }}, started=${pageQueue.count { it.started }}"
-        while (
-            pageQueue.count { it.started } < maxPages && // Do not start more than maxPages
-            pageQueue.count { !it.started } > 0 && // There are still unstarted pages
-            errorCount.get() < maxErrors // Not too many errors
-        ) {
-            if (extracted3(
-                    queueStats,
-                    futureMap,
-                    errorCount,
-                    maxErrors,
-                    pageQueue,
-                    task,
-                    tabs,
-                    exeManager,
-                    processedCount,
-                    maxPages,
-                    webSearchDir,
-                    agent,
-                    fetchStrategy,
-                    orchestrationConfig,
-                    analysisResultsMap
-                )
-            ) break
-        }
-        val completedCount = pageQueue.count { it.completed }
-        val queuedCount = pageQueue.count { !it.completed }
-        val wasEmpty = futureMap.isEmpty()
-        while (futureMap.values.any { !it.isDone }) {
-            Thread.sleep(5000)
-            futureMap.filter { it.value.isDone }.forEach {
-                log.debug("Cleaning up completed task for URL: ${it.key}")
-                futureMap.remove(it.key)
-            }
-            log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, queued=$queuedCount, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
-        }
-        if (!wasEmpty) log.info("Crawling iteration completed: $queueStats, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
-    }
-
-    private fun extracted3(
+    private fun addCrawlTask(
         queueStats: String,
-        futureMap: MutableMap<String, Future<*>>,
+        completionService: CompletionService<Unit>,
+        activeTasks: MutableSet<String>,
         errorCount: AtomicInteger,
         maxErrors: Int,
         pageQueue: MutableList<LinkData>,
         task: SessionTask,
         tabs: TabbedDisplay,
-        exeManager: FixedConcurrencyProcessor,
         processedCount: AtomicInteger,
         maxPages: Int,
+        maxDepth: Int,
+        maxQueueSize: Int,
         webSearchDir: File,
         agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
         orchestrationConfig: OrchestrationConfig,
         analysisResultsMap: ConcurrentHashMap<Int, String>
     ): Boolean {
-        log.info("Status before queuing next page: $queueStats, active_tasks=${futureMap.size}, errors=${errorCount.get()}/$maxErrors")
-        val page = synchronized(pageQueue) {
-            pageQueue.filter { !it.started }
-                .maxByOrNull { it.relevance_score }
-                ?.apply { started = true }
-        } ?: return true
+        log.info("Status before queuing next page: $queueStats, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
+        val page = getNextPage(pageQueue) ?: return true
         if (page.link.isNullOrBlank()) {
             log.error("Invalid page link encountered: $page")
             errorCount.incrementAndGet()
-            page.completed = true
-            page.error = "Invalid or empty URL"
+            synchronized(pageQueueLock) {
+                page.completed = true
+                page.error = "Invalid or empty URL"
+            }
             return false
         }
+        activeTasks.add(page.link)
 
         log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
@@ -435,18 +458,22 @@ class CrawlerTaskTypeConfig(
         } catch (e: Exception) {
             log.error("Failed to create subtask for URL: ${page.link}", e)
             errorCount.incrementAndGet()
-            page.completed = true
-            page.error = "Failed to create subtask: ${e.message}"
+            synchronized(pageQueueLock) {
+                page.completed = true
+                page.error = "Failed to create subtask: ${e.message}"
+            }
             return false
         }
 
-        futureMap[page.link] = exeManager.submit {
+        completionService.submit({
             try {
-                extracted(
+                crawlPage(
                     processedCount,
                     page.link,
                     page,
                     maxPages,
+                    maxDepth,
+                    maxQueueSize,
                     webSearchDir,
                     agent,
                     fetchStrategy,
@@ -459,18 +486,24 @@ class CrawlerTaskTypeConfig(
             } catch (e: Exception) {
                 log.error("Uncaught exception in page processing task for: ${page.link}", e)
                 errorCount.incrementAndGet()
-                page.completed = true
-                page.error = "Uncaught exception: ${e.message}"
+                synchronized(pageQueueLock) {
+                    page.completed = true
+                    page.error = "Uncaught exception: ${e.message}"
+                }
+            } finally {
+                activeTasks.remove(page.link)
             }
-        }
+        })
         return false
     }
 
-    private fun extracted(
+    private fun crawlPage(
         processedCount: AtomicInteger,
         link: String,
         page: LinkData,
         maxPages: Int,
+        maxDepth: Int,
+        maxQueueSize: Int,
         webSearchDir: File,
         agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
@@ -502,8 +535,8 @@ class CrawlerTaskTypeConfig(
                                 fetchStrategy = fetchStrategy
                             )
                             log.debug("Fetched content for '$url': ${content.length} characters")
-                            if (content.length < min_content_length) {
-                                log.info("Content too short for '$url': ${content.length} < ${min_content_length} chars, skipping")
+                            if (content.length < typeConfig.min_content_length ?: 500) {
+                                log.info("Content too short for '$url': ${content.length} < ${typeConfig.min_content_length ?: 500} chars, skipping")
                                 this.appendLine("*Content too short (${content.length} chars), skipping this result*")
                                 this.appendLine()
                                 return@buildString
@@ -563,11 +596,11 @@ class CrawlerTaskTypeConfig(
                             this.appendLine(analysis.text)
                             this.appendLine()
 
-                            if (/*taskConfig?.follow_links ?:*/ follow_links) {
+                            if (/*taskConfig?.follow_links ?:*/ typeConfig.follow_links == true) {
 
                                 var linkData = parsedPage.link_data
                                 val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/
-                                    allow_revisit_pages
+                                    typeConfig.allow_revisit_pages == true
                                 if (linkData.isNullOrEmpty()) {
                                     linkData = extractLinksFromMarkdown(analysis.text)
                                     log.debug("Extracted ${linkData.size} links from markdown for '$url'")
@@ -581,25 +614,28 @@ class CrawlerTaskTypeConfig(
                                                 !isBlacklistedDomain(link.link) &&
                                                 (allowRevisit || pageQueue.none { it.link == link.link })
                                     }
-                                log.info("Adding ${filteredLinks.size} new links to queue from '$url' (filtered from ${linkData.size} total)")
+
+                                var addedCount = 0
                                 linkData
                                     .take(10)
                                     .filter { link ->
                                         VALID_URL_PATTERN.matcher(link.link ?: "").matches() &&
-                                                !isBlacklistedDomain(link.link!!) &&
-                                                (allowRevisit || pageQueue.none { it.link == link.link })
+                                                !isBlacklistedDomain(link.link!!)
                                     }
                                     .forEach { link ->
-                                        log.debug("Adding link to queue: url='${link.link}', title='${link.title}', relevance=${link.relevance_score}")
-                                        pageQueue.add(
-                                            link.apply { depth = page.depth + 1 }
-                                        )
+                                        val newLink = link.apply { depth = page.depth + 1 }
+                                        if (addToQueue(pageQueue, newLink, maxDepth, maxQueueSize)) {
+                                            addedCount++
+                                        }
                                     }
+                                log.info("Added $addedCount new links to queue from '$url' (filtered from ${linkData.size} total)")
                             }
                         } catch (e: Exception) {
                             log.error("Error processing URL: $url", e)
                             errorCount.incrementAndGet()
-                            page.error = e.message
+                            synchronized(pageQueueLock) {
+                                page.error = e.message
+                            }
                             this.appendLine("*Error processing this result: ${e.message}*")
                             this.appendLine()
                         }
@@ -611,12 +647,16 @@ class CrawlerTaskTypeConfig(
                 task.error(e)
                 log.error("Error processing page: ${link}", e)
                 errorCount.incrementAndGet()
-                page.error = e.message
+                synchronized(pageQueueLock) {
+                    page.error = e.message
+                }
                 analysisResultsMap[currentIndex] =
                     "## ${currentIndex}. [${page.title}](${link})\n\n*Error processing this result: ${e.message}*\n\n"
             } finally {
-                page.processingTimeMs = System.currentTimeMillis() - pageStartTime
-                page.completed = true
+                synchronized(pageQueueLock) {
+                    page.processingTimeMs = System.currentTimeMillis() - pageStartTime
+                    page.completed = true
+                }
                 log.debug("Page processing completed: url='${link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
             }
         }
@@ -645,11 +685,11 @@ class CrawlerTaskTypeConfig(
     private fun createFinalSummary(analysisResults: String, task: SessionTask): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
 
-        if (analysisResults.length < max_final_output_size * 1.2) {
+        if (analysisResults.length < (typeConfig.max_final_output_size ?: 15000) * 1.2) {
             log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
             return analysisResults.substring(
                 0,
-                min(analysisResults.length, max_final_output_size)
+                min(analysisResults.length, typeConfig.max_final_output_size ?: 15000)
             ) + "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
         }
 
@@ -671,9 +711,10 @@ class CrawlerTaskTypeConfig(
                 "Organize information by themes rather than by source when possible.",
                 "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
                 "Include the most important links that should be followed up on.",
-                "Keep your response under ${max_final_output_size / 1000}K characters."
+                "Keep your response under ${(typeConfig.max_final_output_size ?: 15000) / 1000}K characters."
             ).joinToString("\n\n"),
-            model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter).getChildClient(task),
+            model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
+                ?: orchestrationConfig.parsingChatter).getChildClient(task),
         ).answer(
             listOf(
                 "Here are summaries of each analyzed page:\n${analysisResults}"
@@ -713,7 +754,7 @@ class CrawlerTaskTypeConfig(
         }
 
 
-        if (!allow_revisit_pages && urlContentCache.containsKey(url)) {
+        if (!(typeConfig.allow_revisit_pages == true) && urlContentCache.containsKey(url)) {
             log.debug("Using cached content for URL: $url (cache size: ${urlContentCache.size})")
             return urlContentCache[url]!!
         }
