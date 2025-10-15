@@ -9,9 +9,10 @@ enum class AudioModels(
     override val modelName: String,
     val type: AudioModelType,
 ) : AIModel {
-    GPT4oTranscribe("gpt-4o-transcribe", AudioModelType.Transcription),
-    GPT4oMiniTranscribe("gpt-4o-mini-transcribe", AudioModelType.Transcription),
-    Whisper("whisper-1", AudioModelType.Transcription),
+//    GPT4oTranscribe("gpt-4o-transcribe", AudioModelType.Transcription),
+//    GPT4oMiniTranscribe("gpt-4o-mini-transcribe", AudioModelType.Transcription),
+    Whisper("whisper-large-v3", AudioModelType.Transcription),
+    WhisperTurbo("whisper-large-v3-turbo", AudioModelType.Transcription),
     TTS("tts-1", AudioModelType.TextToSpeech),
     TTS_HD("tts-1-hd", AudioModelType.TextToSpeech),
     GPT4oMiniTTS("gpt-4o-mini-tts", AudioModelType.TextToSpeech)
@@ -32,12 +33,13 @@ enum class AudioModels(
 
         TTS_HD -> (30.0 / 1000000) * length
 
-        GPT4oTranscribe -> 0.006 * length
-
-        GPT4oMiniTranscribe -> 0.003 * length
+//        GPT4oTranscribe -> 0.006 * length
+//
+//        GPT4oMiniTranscribe -> 0.003 * length
 
         GPT4oMiniTTS -> (0.60 / 1000000) * length
 
+        AudioModels.WhisperTurbo -> 0.006 * length
     }
         .also { log.info("Calculated price: {}", it) }
 

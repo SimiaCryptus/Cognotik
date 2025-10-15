@@ -16,9 +16,6 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.StringUtil
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
-import org.apache.hc.client5.http.entity.mime.HttpMultipartMode
-import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder
-import org.apache.hc.core5.http.ContentType
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import org.slf4j.Logger
@@ -26,7 +23,6 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
-import java.util.*
 import java.util.concurrent.ExecutorService
 
 open class OpenAIClient(
@@ -174,36 +170,8 @@ open class OpenAIClient(
             response
         }
     }
-    open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
-        withReliability {
-            withPerformanceLogging {
-                val url = "${apiBase}/audio/transcriptions"
-                val request = HttpPost(url)
-                request.addHeader("Accept", "application/json")
-                provider.authorize(request, key, apiBase)
-                val entity = MultipartEntityBuilder.create()
-                entity.setMode(HttpMultipartMode.EXTENDED)
-                entity.addBinaryBody("file", wavAudio, ContentType.create("audio/x-wav"), "audio.wav")
-                entity.addTextBody("model", audioModel.modelName)
-                entity.addTextBody("response_format", "json")
-                if (prompt.isNotEmpty()) entity.addTextBody("prompt", prompt)
-                request.entity = entity.build()
-                val response = post(request)
-                log.info("Transcription response received")
-                val jsonObject = Gson().fromJson(response, JsonObject::class.java)
-                if (jsonObject.has("error")) {
-                    val errorObject = jsonObject.getAsJsonObject("error")
-                    throw RuntimeException(IOException(errorObject["message"].asString))
-                }
-                try {
-                    val result = JsonUtil.objectMapper().readValue(response, TranscriptionResult::class.java)
-                    result.text ?: ""
-                } catch (e: Exception) {
-                    jsonObject.get("text").asString ?: ""
-                }
-            }
-        }
-    open fun createSpeech(request: ModelSchema.SpeechRequest): ByteArray? = withReliability {
+
+    open fun createSpeech(request: SpeechRequest): ByteArray? = withReliability {
         withPerformanceLogging {
             val httpRequest = HttpPost("${apiBase}/audio/speech")
             provider.authorize(httpRequest, key, apiBase)
@@ -230,6 +198,7 @@ open class OpenAIClient(
             }
         }
     }
+
     open fun moderate(text: String) = withReliability {
         when {
             provider == APIProvider.Groq -> return@withReliability
@@ -274,6 +243,7 @@ open class OpenAIClient(
             }
         }
     }
+
     open fun createImage(request: ImageGenerationRequest): ImageGenerationResponse = withReliability {
         withPerformanceLogging {
             val url = "${apiBase}/images/generations"
@@ -306,5 +276,4 @@ open class OpenAIClient(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(OpenAIClient::class.java)
     }
-
 }

@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.audio
 
 import com.simiacryptus.cognotik.OpenAIClient
+import com.simiacryptus.cognotik.TranscriptionClient
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.*
 
 open class TranscriptionProcessor(
-    var client: OpenAIClient,
+    var client: TranscriptionClient,
     private var audioBuffer: Queue<AudioPacket>,
     var model: AudioModels = AudioModels.Whisper,
     var continueFn: () -> Boolean,

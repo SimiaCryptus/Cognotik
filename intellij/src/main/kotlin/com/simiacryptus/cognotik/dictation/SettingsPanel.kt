@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.audio.DictationManager
+import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JPanel
@@ -19,7 +20,7 @@ class SettingsPanel(
 
     private val biasSlider = JSlider(
         JSlider.HORIZONTAL, -100, 100,
-        (DictationManager.discriminator.bias * 100).toInt()
+        (dictationManager.discriminator.bias * 100).toInt()
     ).apply {
         paintTicks = true
         paintLabels = true
@@ -27,26 +28,26 @@ class SettingsPanel(
         minorTickSpacing = 10
         border = JBUI.Borders.emptyRight(5)
         addChangeListener {
-            DictationManager.discriminator.bias = value.toDouble() / 100.0
+            dictationManager.discriminator.bias = value.toDouble() / 100.0
             updateBiasLabel()
         }
     }
     private val biasLabel = JBLabel("Bias: ${biasSlider.value / 100.0}")
-    private val msPerPacketSlider = JSlider(JSlider.HORIZONTAL, 10, 500, DictationManager.msPerPacket.toInt()).apply {
+    private val msPerPacketSlider = JSlider(JSlider.HORIZONTAL, 10, 500, dictationManager.msPerPacket.toInt()).apply {
         paintTicks = true
         paintLabels = true
         majorTickSpacing = 100
         minorTickSpacing = 50
         border = JBUI.Borders.emptyRight(5)
         addChangeListener {
-            DictationManager.msPerPacket = value.toLong()
+            dictationManager.msPerPacket = value.toLong()
             updateMsPerPacketLabel()
         }
     }
-    private val msPerPacketLabel = JBLabel("Packet Size: ${DictationManager.msPerPacket}ms")
+    private val msPerPacketLabel = JBLabel("Packet Size: ${dictationManager.msPerPacket}ms")
     private val minTalkTimeSlider = JSlider(
         JSlider.HORIZONTAL, 0, 10000,
-        (DictationManager.discriminator.minTalkTime * 1000).toInt()
+        (dictationManager.discriminator.minTalkTime * 1000).toInt()
     ).apply {
         paintTicks = true
         paintLabels = true
@@ -54,14 +55,14 @@ class SettingsPanel(
         minorTickSpacing = 500
         border = JBUI.Borders.emptyRight(5)
         addChangeListener {
-            DictationManager.discriminator.minTalkTime = value.toDouble() / 1000.0
+            dictationManager.discriminator.minTalkTime = value.toDouble() / 1000.0
             updateMinTalkTimeLabel()
         }
     }
-    private val minTalkTimeLabel = JBLabel("Min Talk Time: ${DictationManager.discriminator.minTalkTime}s")
+    private val minTalkTimeLabel = JBLabel("Min Talk Time: ${dictationManager.discriminator.minTalkTime}s")
     private val quietWindowsSlider = JSlider(
         JSlider.HORIZONTAL, 1, 20,
-        DictationManager.discriminator.requiredQuietWindowsForTransition
+        dictationManager.discriminator.requiredQuietWindowsForTransition
     ).apply {
         paintTicks = true
         paintLabels = true
@@ -69,15 +70,15 @@ class SettingsPanel(
         minorTickSpacing = 1
         border = JBUI.Borders.emptyRight(5)
         addChangeListener {
-            DictationManager.discriminator.requiredQuietWindowsForTransition = value
+            dictationManager.discriminator.requiredQuietWindowsForTransition = value
             updateQuietWindowsLabel()
         }
     }
     private val quietWindowsLabel =
-        JBLabel("Required Quiet Windows: ${DictationManager.discriminator.requiredQuietWindowsForTransition}")
+        JBLabel("Required Quiet Windows: ${dictationManager.discriminator.requiredQuietWindowsForTransition}")
     private val talkWindowsSlider = JSlider(
         JSlider.HORIZONTAL, 1, 20,
-        DictationManager.discriminator.requiredTalkWindowsForTransition
+        dictationManager.discriminator.requiredTalkWindowsForTransition
     ).apply {
         paintTicks = true
         paintLabels = true
@@ -85,12 +86,12 @@ class SettingsPanel(
         minorTickSpacing = 1
         border = JBUI.Borders.emptyRight(5)
         addChangeListener {
-            DictationManager.discriminator.requiredTalkWindowsForTransition = value
+            dictationManager.discriminator.requiredTalkWindowsForTransition = value
             updateTalkWindowsLabel()
         }
     }
     private val talkWindowsLabel =
-        JBLabel("Required Talk Windows: ${DictationManager.discriminator.requiredTalkWindowsForTransition}")
+        JBLabel("Required Talk Windows: ${dictationManager.discriminator.requiredTalkWindowsForTransition}")
 
     init {
         layout = GridBagLayout()

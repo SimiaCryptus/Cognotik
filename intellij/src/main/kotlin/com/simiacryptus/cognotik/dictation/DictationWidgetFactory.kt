@@ -6,11 +6,20 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.util.Consumer
+import com.simiacryptus.cognotik.TranscriptionClient
 import com.simiacryptus.cognotik.audio.AudioState
 import com.simiacryptus.cognotik.audio.DictationManager
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSession
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
+import org.slf4j.event.Level
 import java.awt.event.MouseEvent
+import java.io.IOException
 
 class DictationWidgetFactory : StatusBarWidgetFactory {
     override fun getId(): String = SpeechToTextWidget.ID
@@ -28,19 +37,19 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
             fun toggleRecording() {
                 if (DictationState.isRecording) {
                     DictationState.setRecordingState(false)
-                    DictationManager.stopRecording()
+                    dictationManager.stopRecording()
                 } else {
                     DictationState.setRecordingState(true)
                     DictationState.resetState()
-                    DictationManager.startRecording()
+                    dictationManager.startRecording()
                 }
                 statusBar?.updateWidget(ID)
             }
         }
 
         override fun install(statusBar: StatusBar) {
-            DictationManager.onTranscriptionUpdate = DictationState.onTranscriptionUpdate
-            DictationManager.handlePacket = DictationState.onPacket
+            dictationManager.onTranscriptionUpdate = DictationState.onTranscriptionUpdate
+            dictationManager.handlePacket = DictationState.onPacket
             Companion.statusBar = statusBar
             val project = statusBar.project ?: return
             DictationState.project = project
@@ -90,7 +99,7 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
 
         override fun ID(): String = ID
         override fun getPresentation() = this
-        override fun getIcon() = when (DictationManager.discriminator.currentState) {
+        override fun getIcon() = when (dictationManager.discriminator.currentState) {
             AudioState.QUIET -> when {
                 DictationState.isRecording -> MyIcons.micActive
                 else -> MyIcons.micInactive
@@ -109,6 +118,27 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
             ApplicationManager.getApplication().invokeLater { toggleRecording() }
         }
 
+    }
+
+    companion object {
+        val dictationManager = object : DictationManager() {
+            override fun transcriptionClient(): TranscriptionClient {
+                val settings = AppSettingsState.instance.transcriptionModel
+                val provider = APIProvider.Groq
+                val apiData =
+                    fileApplicationServices().userSettingsManager.getUserSettings().apis.find { it.provider == provider }
+                return TranscriptionClient(
+                    key = apiData?.key ?: throw IOException("API key for $provider not configured"),
+                    apiBase = apiData.baseUrl,
+                    logLevel = Level.INFO,
+                    logStreams = mutableListOf(),
+                    workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser),
+                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(currentSession, UserSettingsManager.defaultUser),
+                    provider = provider
+                )
+            }
+
+        }
     }
 }
 

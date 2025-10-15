@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.audio.AudioPacket
 import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
 import com.simiacryptus.cognotik.util.EventDispatcher
 import javax.sound.sampled.AudioFormat
 
@@ -80,21 +81,21 @@ open class DictationState {
         iec61672Max = it.iec61672.coerceAtLeast(iec61672Max)
         iec61672Level = (((it.iec61672 / iec61672Max) * 100).toInt())
         rmsLevel = (((it.rms / rmsMax) * 100).toInt())
-        talkTime = DictationManager.discriminator.talkTime
+        talkTime = dictationManager.discriminator.talkTime
         configuration.notifyListeners()
     }
 
     fun resetState() {
         rmsMax = 0.0
         iec61672Max = 0.0
-        DictationManager.audioFormat = AudioFormat(
+        dictationManager.audioFormat = AudioFormat(
             /* sampleRate = */ sampleRate.toFloat(),
             /* sampleSizeInBits = */ sampleSize,
             /* channels = */ channels,
             /* signed = */ true,
             /* bigEndian = */ false
         )
-        DictationManager.transcriptionModel = transcriptionModel
+        dictationManager.transcriptionModel = transcriptionModel
     }
 
     fun setRecordingState(isRecording: Boolean) {
@@ -128,7 +129,7 @@ open class DictationState {
         if (value == selectedMicLine) return
         selectedMicLine = value
         AppSettingsState.instance.selectedMicLine = value
-        DictationManager.selectedMicLine = value
+        dictationManager.selectedMicLine = value
         configuration.notifyListeners()
     }
 
@@ -136,7 +137,7 @@ open class DictationState {
         if (model == transcriptionModel) return
         transcriptionModel = model
         AppSettingsState.instance.transcriptionModel = model.modelName
-        DictationManager.transcriptionModel = model
+        dictationManager.transcriptionModel = model
         configuration.notifyListeners()
     }
 }
