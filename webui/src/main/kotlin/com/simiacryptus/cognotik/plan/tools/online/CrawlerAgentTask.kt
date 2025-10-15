@@ -58,7 +58,7 @@ class CrawlerTaskTypeConfig(
 
     class CrawlerTaskExecutionConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
-        @Description("Direct URLs to analyze (comma-separated)") val direct_urls: String? = null,
+        @Description("Direct URLs to analyze (comma-separated)") val direct_urls: List<String>? = null,
         @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = 30,
         task_description: String? = null,
@@ -154,7 +154,7 @@ class CrawlerTaskTypeConfig(
     ): String {
         try {
             val startTime = System.currentTimeMillis()
-            log.info("Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query}', direct_urls='${executionConfig?.direct_urls}', max_pages=${executionConfig?.max_pages_per_task ?: max_pages_per_task}")
+            log.info("Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query}', direct_urls='${executionConfig?.direct_urls?.joinToString(", ") ?: ""}', max_pages=${executionConfig?.max_pages_per_task ?: max_pages_per_task}")
             val webSearchDir = File(agent.root.toFile(), ".websearch")
             if (!webSearchDir.exists()) {
                 if (!webSearchDir.mkdirs()) {
@@ -657,7 +657,7 @@ class CrawlerTaskTypeConfig(
         val header = if (headerEndIndex > 0) {
             analysisResults.substring(0, headerEndIndex)
         } else {
-            "# Web Search: ${executionConfig?.search_query ?: executionConfig?.direct_urls ?: ""}\n\n"
+            "# Web Search: ${executionConfig?.search_query ?: executionConfig?.direct_urls?.joinToString(", ") ?: ""}\n\n"
         }
 
         val urlSections = extractUrlSections(analysisResults)
