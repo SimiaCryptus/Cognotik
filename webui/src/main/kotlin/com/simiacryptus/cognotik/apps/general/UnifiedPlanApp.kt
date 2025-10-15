@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -107,13 +108,21 @@ abstract class UnifiedPlanApp(
     ) {
         try {
             val settings: OrchestrationConfig = try {
-                getSettings(session, user, OrchestrationConfig::class.java) ?: OrchestrationConfig()
+                getSettings(session, user, OrchestrationConfig::class.java)
             } catch (e: Exception) {
                 log.error("Error retrieving orchestration config, using default", e)
-                OrchestrationConfig()
-            }
+                null
+            }?.apply {
+                absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
+            } ?: OrchestrationConfig()
 
-            settings.absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
+            val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeStrategies.Chat).getCognitiveMode(
+                ui = ui,
+                orchestrationConfig = settings,
+                session = session,
+                user = user
+            )
+
             log.debug("Received user message: $userMessage")
 
             val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
@@ -129,12 +138,6 @@ abstract class UnifiedPlanApp(
                 return
             }
 
-            val cognitiveMode = (settings.cognitiveMode ?: throw IllegalStateException("Cognitive mode not configured")).getCognitiveMode(
-                ui = ui,
-                orchestrationConfig = settings,
-                session = session,
-                user = user
-            )
             cognitiveMode.apply { initialize() }.handleUserMessage(expandedMessage, ui.newTask(true))
 
         } catch (e: Throwable) {

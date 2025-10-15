@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.lang.Thread.sleep
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
@@ -278,6 +279,8 @@ class CrawlerAgentTask(
                             val future = completionService.poll(1, java.util.concurrent.TimeUnit.SECONDS)
                             if (future != null) {
                                 future.get() // This will throw if the task failed
+                            } else {
+                                while (activeTasks.isNotEmpty()) sleep(1000)
                             }
                         } catch (e: Exception) {
                             log.error("Task execution failed", e)
@@ -293,6 +296,7 @@ class CrawlerAgentTask(
 
                     val completedCount = synchronized(pageQueueLock) { pageQueue.count { it.completed } }
                     log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
+                    //while (activeTasks.isNotEmpty()) sleep(1000)
                 }
                 if (loopIterations.get() >= 1000) {
                     log.warn("Reached maximum iteration limit: ${1000}")
