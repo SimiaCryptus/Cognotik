@@ -109,7 +109,7 @@ class ControlPanel(
     }
     private val transcriptionModelComboBox = ComboBox<AudioModels>().apply {
         border = JBUI.Borders.emptyRight(5)
-        AudioModels.entries.filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
+        audioModels().filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
         selectedItem = settings.transcriptionModel
         setRenderer { _, value, _, _, _ -> JBLabel(value?.modelName ?: "N/A") }
         addActionListener {

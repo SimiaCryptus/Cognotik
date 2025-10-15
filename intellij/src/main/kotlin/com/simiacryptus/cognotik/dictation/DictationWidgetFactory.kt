@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.audio.AudioState
 import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSession
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -123,18 +122,19 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
     companion object {
         val dictationManager = object : DictationManager() {
             override fun transcriptionClient(): TranscriptionClient {
-                val settings = AppSettingsState.instance.transcriptionModel
-                val provider = APIProvider.Groq
+                val model = AppSettingsState.instance.transcriptionModel.let {
+                    findAudioModel(it)
+                } ?: throw IOException("Transcription model not configured")
                 val apiData =
-                    fileApplicationServices().userSettingsManager.getUserSettings().apis.find { it.provider == provider }
+                    fileApplicationServices().userSettingsManager.getUserSettings().apis.find { it.provider == model.provider }
                 return TranscriptionClient(
-                    key = apiData?.key ?: throw IOException("API key for $provider not configured"),
+                    key = apiData?.key ?: throw IOException("API key for ${model.provider} not configured"),
                     apiBase = apiData.baseUrl,
                     logLevel = Level.INFO,
                     logStreams = mutableListOf(),
                     workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser),
                     scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(currentSession, UserSettingsManager.defaultUser),
-                    provider = provider
+                    provider = model.provider
                 )
             }
 

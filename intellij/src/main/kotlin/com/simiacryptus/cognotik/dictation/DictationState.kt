@@ -10,6 +10,8 @@ import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.EventDispatcher
 import javax.sound.sampled.AudioFormat
 
@@ -73,7 +75,11 @@ open class DictationState {
         channels = AppSettingsState.instance.channels
         selectedMicLine = AppSettingsState.instance.selectedMicLine
         talkTime = AppSettingsState.instance.talkTime
-        transcriptionModel = AudioModels.find(AppSettingsState.instance.transcriptionModel) ?: AudioModels.Whisper
+        transcriptionModel = findAudioModel(AppSettingsState.instance.transcriptionModel) ?: AudioModels(
+            "whisper-1",
+            AudioModels.AudioModelType.Transcription,
+            APIProvider.Groq
+        )
     }
 
     val onPacket: (AudioPacket) -> Unit = {
@@ -141,6 +147,13 @@ open class DictationState {
         configuration.notifyListeners()
     }
 }
+
+fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelName == model }
+
+fun audioModels(): List<AudioModels> =
+    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap {
+        it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.baseUrl) ?: listOf()
+    }
 
 private fun Project.currentEditor() = FileEditorManager
     .getInstance(this)

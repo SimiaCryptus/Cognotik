@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
+import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.chat.*
 import com.simiacryptus.cognotik.chat.model.*
 import com.simiacryptus.cognotik.image.ImageModel
@@ -35,6 +36,8 @@ abstract class APIProvider private constructor(name: String, val base: String) :
     ): ChatClientInterface
 
     abstract fun getChatModels(key: String, baseUrl: String): List<ChatModel>
+
+    open fun getTranscriptionModels(key: String, baseUrl: String): List<AudioModels> = emptyList()
 
     open fun authorize(request: HttpRequest, key: String, apiBase: String) {
         request.addHeader("Authorization", "Bearer ${key}")
@@ -168,6 +171,17 @@ abstract class APIProvider private constructor(name: String, val base: String) :
             fun getImageModels(key: String, baseUrl: String): List<ImageModel> {
                 return ImageModels.values.values.toList()
             }
+
+            override fun getTranscriptionModels(
+                key: String,
+                baseUrl: String
+            ): List<AudioModels> {
+                return listOf(
+                    AudioModels(modelName = "gpt-4o-transcribe", provider = this,),
+                    AudioModels(modelName = "gpt-4o-mini-transcribe", provider = this,),
+                    AudioModels(modelName = "whisper-1", provider = this,)
+                )
+            }
         }
         val Anthropic: APIProvider = object : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
             override fun authorize(
@@ -267,6 +281,15 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams = logStreams,
                 scheduledPool = scheduledPool
             )
+            override fun getTranscriptionModels(
+                key: String,
+                baseUrl: String
+            ): List<AudioModels> {
+                return listOf(
+                    AudioModels(modelName = "whisper-large-v3", provider = this,),
+                    AudioModels(modelName = "whisper-large-v3-turbo", provider = this,),
+                )
+            }
         }
         val Perplexity: APIProvider = object : APIProvider("Perplexity", "https://api.perplexity.ai") {
 

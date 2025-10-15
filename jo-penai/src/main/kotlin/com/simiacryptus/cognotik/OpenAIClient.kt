@@ -187,13 +187,13 @@ open class OpenAIClient(
                 checkError(bytes.toString(Charsets.UTF_8))
                 null
             } else {
-                val model = AudioModels.entries.find { it.modelName.equals(request.model, true) }
-                onUsage(
-                    model, Usage(
-                        prompt_tokens = request.input.length.toLong(),
-                        cost = model?.pricing(request.input.length)
-                    )
-                )
+//                val model = AudioModels.entries.find { it.modelName.equals(request.model, true) }
+//                onUsage(
+//                    model, Usage(
+//                        prompt_tokens = request.input.length.toLong(),
+//                        cost = model?.pricing(request.input.length)
+//                    )
+//                )
                 bytes
             }
         }

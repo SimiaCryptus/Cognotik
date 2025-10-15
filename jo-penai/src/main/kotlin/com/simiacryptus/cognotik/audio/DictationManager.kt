@@ -22,7 +22,7 @@ abstract class DictationManager {
 
     var selectedMicLine: String? = null
     var transcriptionProcessor: TranscriptionProcessor? = null
-    var transcriptionModel: AudioModels = AudioModels.Whisper
+    var transcriptionModel: AudioModels? = null
 
     var audioFormat: AudioFormat = AudioFormat(16000f, 16, 1, true, false)
         set(value) {
@@ -83,7 +83,7 @@ abstract class DictationManager {
                 transcriptionProcessor = TranscriptionProcessor(
                     client = transcriptionClient(),
                     audioBuffer = processedBuffer,
-                    model = transcriptionModel,
+                    model = transcriptionModel!!,
                     continueFn = { isRecording },
                     prompt = "",
                     onTranscriptionUpdate = onTranscriptionUpdate

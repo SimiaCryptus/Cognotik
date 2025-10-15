@@ -257,11 +257,13 @@ class CrawlerTaskTypeConfig(
                 return errorMessage
             }
 
+            val summaryTask = task.ui.newTask(false)
+            tabs["Final Summary"] = summaryTask.placeholder
             val finalOutput =
                 if (create_final_summary != false && analysisResults.length > max_final_output_size) {
                     log.info("Creating final summary: original_size=${analysisResults.length}, max_size=$max_final_output_size")
                     try {
-                        createFinalSummary(analysisResults, task)
+                        createFinalSummary(analysisResults, summaryTask)
                     } catch (e: Exception) {
                         log.error("Failed to create final summary, using truncated results", e)
                         analysisResults.substring(0, minOf(analysisResults.length, max_final_output_size)) +
@@ -272,11 +274,8 @@ class CrawlerTaskTypeConfig(
                     analysisResults
                 }
             try {
-                task.ui.newTask(false).apply {
-                    tabs["Final Summary"] = placeholder
-                    add(finalOutput.renderMarkdown())
-                    task.update()
-                }
+                summaryTask.add(finalOutput.renderMarkdown())
+                task.update()
             } catch (e: Exception) {
                 log.error("Failed to update task with final summary", e)
             }
@@ -645,13 +644,12 @@ class CrawlerTaskTypeConfig(
 
     private fun createFinalSummary(analysisResults: String, task: SessionTask): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
-        val maxSize = /*taskConfig?.max_final_output_size ?:*/ max_final_output_size
 
-        if (analysisResults.length < maxSize * 1.2) {
+        if (analysisResults.length < max_final_output_size * 1.2) {
             log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
             return analysisResults.substring(
                 0,
-                min(analysisResults.length, maxSize)
+                min(analysisResults.length, max_final_output_size)
             ) + "\n\n---\n\n*Note: Some content has been truncated due to length limitations.*"
         }
 
@@ -673,7 +671,7 @@ class CrawlerTaskTypeConfig(
                 "Organize information by themes rather than by source when possible.",
                 "Use markdown formatting with headers, bullet points, and emphasis where appropriate.",
                 "Include the most important links that should be followed up on.",
-                "Keep your response under ${maxSize / 1000}K characters."
+                "Keep your response under ${max_final_output_size / 1000}K characters."
             ).joinToString("\n\n"),
             model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.parsingChatter).getChildClient(task),
         ).answer(

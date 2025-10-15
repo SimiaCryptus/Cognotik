@@ -9,7 +9,7 @@ import java.util.*
 open class TranscriptionProcessor(
     var client: TranscriptionClient,
     private var audioBuffer: Queue<AudioPacket>,
-    var model: AudioModels = AudioModels.Whisper,
+    var model: AudioModels,
     var continueFn: () -> Boolean,
     var prompt: String = "",
     var onTranscriptionUpdate: (TranscriptionResult) -> Unit,
