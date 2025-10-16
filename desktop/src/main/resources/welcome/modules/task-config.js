@@ -382,13 +382,14 @@ class TaskConfigManager {
         });
     }
 
-    // Create modal HTML
+// Create modal HTML
     createTaskConfigModal(taskType, existingConfig) {
         const modal = this.document.createElement('div');
         modal.className = 'modal';
         modal.id = 'task-config-modal';
 
-        const configName = existingConfig?.name || '';
+        // Default config name to task type name if not provided
+        const configName = existingConfig?.name || taskType.id;
         const configModel = existingConfig?.model || '';
 
         let fieldsHtml = '';
@@ -410,14 +411,14 @@ class TaskConfigManager {
                     <p class="task-description">${taskType.description}</p>
                     
                     <div class="form-section">
-                        <div class="form-group">
+<div class="form-group">
                             <label for="task-config-name">Configuration Name:</label>
                             <input type="text" id="task-config-name" class="form-control" 
                                    value="${configName}" 
-                                   placeholder="Enter a unique name for this configuration"
+                                   placeholder="${taskType.id}"
                                    pattern="[a-zA-Z0-9_-]+"
                                    title="Only letters, numbers, underscores and hyphens allowed">
-                            <small>Enter a unique name for this configuration</small>
+                            <small>Enter a unique name for this configuration (defaults to task type name)</small>
                         </div>
                         
                         <div class="form-group">
@@ -516,11 +517,13 @@ class TaskConfigManager {
         }
     }
 
-    // Collect configuration from modal
+// Collect configuration from modal
     collectTaskConfig(modal, taskType) {
+        const nameInput = modal.querySelector('#task-config-name').value.trim();
         const config = {
             task_type: taskType.id,
-            name: modal.querySelector('#task-config-name').value.trim(),
+            // Default to task type name if empty
+            name: nameInput || taskType.id,
             model: modal.querySelector('#task-config-model').value || null
         };
 
@@ -549,7 +552,7 @@ class TaskConfigManager {
         return config;
     }
 
-    // Validate task configuration
+// Validate task configuration
     validateTaskConfig(config, taskType) {
         // Validate name
         if (!config.name) {

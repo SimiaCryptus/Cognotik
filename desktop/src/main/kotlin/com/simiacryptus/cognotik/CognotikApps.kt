@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -77,6 +78,10 @@ open class CognotikApps(
         }
 
         private var server: CognotikApps? = null
+
+        init {
+            require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+        }
 
         private fun handleServer(vararg args: String) {
             log.info("Parsing server options...")

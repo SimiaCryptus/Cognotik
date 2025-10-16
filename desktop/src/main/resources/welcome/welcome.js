@@ -733,16 +733,14 @@ function populateTaskSelection() {
             taskToggle.style.backgroundColor = '#f8f9fa';
             taskToggle.style.borderRadius = '4px';
 
-            const taskSettings = appState.taskSettings.taskSettings || {};
-            const isEnabled = taskSettings[task.id] || false;
             const hasConfigs = appState.hasTaskConfigs(task.id);
+            const configCount = Object.keys(appState.getTaskConfigs(task.id)).length;
 
             taskToggle.innerHTML = `
                 <div style="flex: 1;">
-                    <input type="checkbox" id="${task.id}" ${isEnabled ? 'checked' : ''}>
-                    <label for="${task.id}" style="margin-left: 5px;">${task.name}</label>
+                    <label style="font-weight: 500;">${task.name}</label>
                     <span class="tooltip">?<span class="tooltiptext">${task.description}</span></span>
-                    ${hasConfigs ? '<span style="margin-left: 10px; color: #28a745; font-size: 0.9em;">✓ Configured</span>' : ''}
+                    ${hasConfigs ? `<span style="margin-left: 10px; color: #28a745; font-size: 0.9em;">✓ ${configCount} config${configCount > 1 ? 's' : ''}</span>` : '<span style="margin-left: 10px; color: #999; font-size: 0.9em;">Not configured</span>'}
                 </div>
                 <div>
                     <button class="button secondary small configure-task-btn" data-task-id="${task.id}" 
@@ -753,24 +751,6 @@ function populateTaskSelection() {
             `;
 
             categorySection.appendChild(taskToggle);
-
-            // Add event listener for checkbox
-            const checkbox = taskToggle.querySelector(`#${task.id}`);
-            checkbox.addEventListener('change', function () {
-                const currentSettings = appState.taskSettings.taskSettings || {};
-                if (this.checked) {
-                    if (!currentSettings[task.id]) {
-                        currentSettings[task.id] = {};
-                    }
-                    currentSettings[task.id].task_type = task.id;
-                } else {
-                    if (currentSettings[task.id]) {
-                        delete currentSettings[task.id];
-                    }
-                }
-                console.log(`[populateTaskSelection] Updated task ${task.id} enabled:`, this.checked);
-                appState.saveTaskSettings(currentSettings);
-            });
 
             // Add event listener for configure button
             const configureBtn = taskToggle.querySelector('.configure-task-btn');
@@ -795,18 +775,19 @@ function showTaskConfigurationDialog(taskId) {
     modal.style.display = 'block';
     
     let configListHtml = '';
-    if (existingConfigs.length > 0) {
+    const configEntries = Object.entries(existingConfigs);
+    if (configEntries.length > 0) {
         configListHtml = '<div class="config-list" style="margin-bottom: 20px;">';
         configListHtml += '<h4>Existing Configurations:</h4>';
-        existingConfigs.forEach(config => {
+        configEntries.forEach(([configName, config]) => {
             const modelInfo = config.model ? ` (${config.model})` : '';
             configListHtml += `
                 <div class="config-item" style="display: flex; justify-content: space-between; align-items: center; 
                      padding: 10px; margin-bottom: 5px; background: #f8f9fa; border-radius: 4px;">
-                    <span><strong>${config.name}</strong>${modelInfo}</span>
+                    <span><strong>${configName}</strong>${modelInfo}</span>
                     <div>
-                        <button class="button secondary small edit-config-btn" data-config-name="${config.name}">Edit</button>
-                        <button class="button secondary small delete-config-btn" data-config-name="${config.name}" 
+                        <button class="button secondary small edit-config-btn" data-config-name="${configName}">Edit</button>
+                        <button class="button secondary small delete-config-btn" data-config-name="${configName}" 
                                 style="margin-left: 5px;">Delete</button>
                     </div>
                 </div>

@@ -114,7 +114,7 @@ abstract class UnifiedPlanApp(
                 null
             }?.apply {
                 absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
-            } ?: OrchestrationConfig()
+            } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeStrategies.Chat).getCognitiveMode(
                 ui = ui,

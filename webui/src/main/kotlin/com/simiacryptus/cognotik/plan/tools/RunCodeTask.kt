@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
 class RunCodeTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: RunCodeTaskExecutionConfigData?,
-) : AbstractTask<RunCodeTask.RunCodeTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+) : AbstractTask<RunCodeTask.RunCodeTaskExecutionConfigData, RunCodeTask.RunCodeTaskTypeConfig>(orchestrationConfig, planTask) {
 
     class RunCodeTaskTypeConfig(
         task_type : String = TaskType.RunCode.name,

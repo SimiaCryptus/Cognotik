@@ -44,7 +44,7 @@ class ValidationService {
 
     validateEnabledTasks() {
         let hasEnabledTask = false;
-        const taskSettings = this.appState.taskSettings.taskSettings;
+        const taskSettings = this.appState.taskSettings;
         if (typeof taskSettings === 'object' && taskSettings !== null) {
             console.log('[validateConfiguration] Checking enabled tasks:', taskSettings);
             for (const [taskId, settings] of Object.entries(taskSettings)) {

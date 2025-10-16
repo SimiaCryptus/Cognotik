@@ -277,9 +277,15 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
             it.provider?.getChatModels(it.key ?: "", it.baseUrl) ?: listOf()
         }.firstOrNull {
             it.modelName == modelName || it.name == modelName
-        } ?: return null
+        }
+        if (model == null) {
+            throw IllegalStateException("No API model found for model $modelName")
+        }
         val apiData = userSettings.apis.firstOrNull {
             it.provider == model.provider
+        }
+        if (apiData == null) {
+            throw IllegalStateException("No API data found for model $modelName")
         }
         return ApiChatModel(model, apiData)
     }

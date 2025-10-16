@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.interpreter
 
+ import com.fasterxml.jackson.core.JsonParser
+ import com.fasterxml.jackson.databind.DeserializationContext
  import com.fasterxml.jackson.databind.annotation.JsonDeserialize
  import com.fasterxml.jackson.databind.annotation.JsonSerialize
  import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
@@ -139,4 +141,11 @@ import java.util.Locale
 }
 
 class CodeRuntimesSerializer : DynamicEnumSerializer<CodeRuntimes>(CodeRuntimes::class.java)
-class CodeRuntimesDeserializer : DynamicEnumDeserializer<CodeRuntimes>(CodeRuntimes::class.java)
+class CodeRuntimesDeserializer : DynamicEnumDeserializer<CodeRuntimes>(CodeRuntimes::class.java) {
+    override fun deserialize(
+        p: JsonParser,
+        ctxt: DeserializationContext
+    ): CodeRuntimes {
+        return super.deserialize(p, ctxt)
+    }
+}
