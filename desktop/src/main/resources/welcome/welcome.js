@@ -323,12 +323,33 @@ function loadUserSettings() {
         .then(settingsText => {
             try {
                 const settings = JSON.parse(settingsText);
-                appState.apiSettings = settings;
+                // Transform new format to old format for backward compatibility
+                if (settings.apis && Array.isArray(settings.apis)) {
+                    const apiKeys = {};
+                    const apiBase = {};
+                    settings.apis.forEach(api => {
+                        if (api.provider) {
+                            apiKeys[api.provider] = api.key || '';
+                            if (api.baseUrl) {
+                                apiBase[api.provider] = api.baseUrl;
+                            }
+                        }
+                    });
+                    appState.apiSettings = {
+                        apiKeys: apiKeys,
+                        apiBase: apiBase,
+                        localTools: settings.tools || [],
+                        configuredApis: settings.apis
+                    };
+                } else {
+                    // Fallback to old format
+                    appState.apiSettings = settings;
+                }
                 console.log('[loadUserSettings] User settings loaded:', settings);
                 // Ensure all configured APIs from user settings are available in the UI
                 // even if they don't have models in the /apiProviders response
-                if (settings.configuredApis && Array.isArray(settings.configuredApis)) {
-                    settings.configuredApis.forEach(api => {
+                if (appState.apiSettings.configuredApis && Array.isArray(appState.apiSettings.configuredApis)) {
+                    appState.apiSettings.configuredApis.forEach(api => {
                         // Add to apiProviders if not already present
                         if (!apiProviders.find(p => p.id === api.provider)) {
                             apiProviders.push({
@@ -339,11 +360,11 @@ function loadUserSettings() {
                             console.log(`[loadUserSettings] Added provider from user settings: ${api.provider}`);
                         }
                         // Ensure apiBase is populated
-                        if (!settings.apiBase) {
-                            settings.apiBase = {};
+                        if (!appState.apiSettings.apiBase) {
+                            appState.apiSettings.apiBase = {};
                         }
                         if (api.baseUrl) {
-                            settings.apiBase[api.provider] = api.baseUrl;
+                            appState.apiSettings.apiBase[api.provider] = api.baseUrl;
                         }
                     });
                 }
@@ -505,7 +526,8 @@ function populateUserSettings() {
         if (appState.apiSettings.apiKeys) {
             Object.keys(appState.apiSettings.apiKeys).forEach(providerId => {
                 const apiKey = appState.apiSettings.apiKeys[providerId];
-                const providerGroup = createProviderInput(providerId, apiKey || '');
+                const baseUrl = appState.apiSettings.apiBase ? appState.apiSettings.apiBase[providerId] : '';
+                const providerGroup = createProviderInput(providerId, apiKey || '', baseUrl || '');
                 apiProvidersList.appendChild(providerGroup);
             });
         }
@@ -514,7 +536,8 @@ function populateUserSettings() {
             Object.keys(appState.apiSettings.apiBase).forEach(providerId => {
                 // Only add if not already shown from apiKeys
                 if (!appState.apiSettings.apiKeys || !appState.apiSettings.apiKeys[providerId]) {
-                    const providerGroup = createProviderInput(providerId, '');
+                    const baseUrl = appState.apiSettings.apiBase[providerId];
+                    const providerGroup = createProviderInput(providerId, '', baseUrl || '');
                     apiProvidersList.appendChild(providerGroup);
                 }
             });
@@ -528,7 +551,7 @@ function populateUserSettings() {
         addProviderBtn.textContent = '+ Add API Provider';
         addProviderBtn.style.marginTop = '10px';
         addProviderBtn.addEventListener('click', () => {
-            const newProviderGroup = createProviderInput('', '');
+            const newProviderGroup = createProviderInput('', '', '');
             apiProvidersList.appendChild(newProviderGroup);
         });
         apiKeysContainer.appendChild(addProviderBtn);
@@ -537,15 +560,18 @@ function populateUserSettings() {
     // Populate local tools
     populateLocalTools();
 
-    function createProviderInput(providerId, apiKey) {
+    function createProviderInput(providerId, apiKey, baseUrl) {
         const keyGroup = document.createElement('div');
         keyGroup.className = 'form-group provider-group';
         keyGroup.style.display = 'flex';
         keyGroup.style.gap = '10px';
         keyGroup.style.alignItems = 'flex-end';
         keyGroup.style.marginBottom = '10px';
+        keyGroup.style.flexWrap = 'wrap';
+        
         const providerSelectGroup = document.createElement('div');
-        providerSelectGroup.style.flex = '1';
+        providerSelectGroup.style.flex = '1 1 200px';
+        providerSelectGroup.style.minWidth = '150px';
         const providerSelectLabel = document.createElement('label');
         providerSelectLabel.textContent = 'Provider:';
         const providerSelect = document.createElement('select');
@@ -610,10 +636,12 @@ function populateUserSettings() {
             providerSelect.appendChild(option);
         });
 
-        providerSelectGroup.appendChild(providerSelectLabel);
+providerSelectGroup.appendChild(providerSelectLabel);
         providerSelectGroup.appendChild(providerSelect);
+        
         const apiKeyGroup = document.createElement('div');
-        apiKeyGroup.style.flex = '2';
+        apiKeyGroup.style.flex = '2 1 300px';
+        apiKeyGroup.style.minWidth = '200px';
         const apiKeyLabel = document.createElement('label');
         apiKeyLabel.textContent = 'API Key:';
         const apiKeyInput = document.createElement('input');
@@ -623,15 +651,30 @@ function populateUserSettings() {
         apiKeyInput.value = apiKey;
         apiKeyGroup.appendChild(apiKeyLabel);
         apiKeyGroup.appendChild(apiKeyInput);
+        const baseUrlGroup = document.createElement('div');
+        baseUrlGroup.style.flex = '2 1 300px';
+        baseUrlGroup.style.minWidth = '200px';
+        const baseUrlLabel = document.createElement('label');
+        baseUrlLabel.textContent = 'Base URL (optional):';
+        const baseUrlInput = document.createElement('input');
+        baseUrlInput.type = 'text';
+        baseUrlInput.className = 'provider-base-url';
+        baseUrlInput.placeholder = 'Enter base URL';
+        baseUrlInput.value = baseUrl || '';
+        baseUrlGroup.appendChild(baseUrlLabel);
+        baseUrlGroup.appendChild(baseUrlInput);
+        
         const removeBtn = document.createElement('button');
         removeBtn.className = 'button secondary';
         removeBtn.textContent = 'Remove';
         removeBtn.style.marginBottom = '0';
+        removeBtn.style.flex = '0 0 auto';
         removeBtn.addEventListener('click', () => {
             keyGroup.remove();
         });
         keyGroup.appendChild(providerSelectGroup);
         keyGroup.appendChild(apiKeyGroup);
+        keyGroup.appendChild(baseUrlGroup);
         keyGroup.appendChild(removeBtn);
         return keyGroup;
     }
@@ -642,23 +685,40 @@ function saveUserSettings() {
 
     // Collect API keys
     const apiKeys = {};
+    const apiBase = {};
 
     // Collect all provider API keys
     const providerGroups = document.querySelectorAll('.provider-group');
     providerGroups.forEach(group => {
         const selectInput = group.querySelector('.provider-select');
         const keyInput = group.querySelector('.provider-key');
+        const baseUrlInput = group.querySelector('.provider-base-url');
         if (selectInput && keyInput && selectInput.value) {
             // Save even empty keys to preserve provider configuration
             apiKeys[selectInput.value] = keyInput.value;
+            if (baseUrlInput && baseUrlInput.value) {
+                apiBase[selectInput.value] = baseUrlInput.value;
+            }
         }
     });
 
     // Update app state
     appState.apiSettings.apiKeys = apiKeys;
+    appState.apiSettings.apiBase = apiBase;
+    // Transform to new format for server
+    const apisArray = Object.keys(apiKeys).map(provider => ({
+        provider: provider,
+        key: apiKeys[provider],
+        baseUrl: apiBase[provider] || ''
+    }));
+    const settingsToSave = {
+        apis: apisArray,
+        tools: appState.apiSettings.localTools || [],
+        etc: {}
+    };
 
     // Save to server
-    httpService.saveUserSettings(appState.apiSettings)
+    httpService.saveUserSettings(settingsToSave)
         .then(() => {
             notificationService.showNotification('Settings saved successfully', 'success');
             document.getElementById('user-settings-modal').style.display = 'none';
