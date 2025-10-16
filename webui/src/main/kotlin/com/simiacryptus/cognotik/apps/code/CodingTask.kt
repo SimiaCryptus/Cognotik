@@ -173,7 +173,7 @@ open class CodingTask<T : CodeRuntime>(
         responseAction(task, "Running...", formHandle(), formText) {
             execute(task, response, request)
         }
-    }.replace("<a class", """<a style="font-size: xxx-large;" class""")
+    }.replace("<a class", """<a style="font-size: large;" class""")
 
     protected open fun responseAction(
         task: SessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}

@@ -71,6 +71,20 @@
     transform 0.2s ease-in-out;
 }
 
+.message-content .play-button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
 .message-content .href-link:hover,
 .message-content .play-button:hover,
 .message-content .regen-button:hover,
@@ -80,6 +94,12 @@
     background-color: var(--theme-primary);
     color: var(--theme-bg);
     transform: translateY(-1px);
+
+}
+
+.message-content .play-button:hover {
+    background-color: #45a049;
+    opacity: 1;
 }
 
 .message-content .referenced-message {

@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -277,7 +278,7 @@ open class SessionTask(
     fun newSession(session: Session = Session.newGlobalID(), appname: String = session.toString()): SocketManager {
         val linkedManager = ui.createLinkedManager(session)
         SessionProxyServer.agents[session] = linkedManager
-        SessionProxyServer.appInfos[session] = AppInfoData(
+        ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = appname,
             inputCnt = 1,
             stickyInput = false,

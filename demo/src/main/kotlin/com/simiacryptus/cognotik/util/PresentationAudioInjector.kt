@@ -60,7 +60,7 @@ object PresentationAudioInjector {
         ).createSpeech(
             ModelSchema.SpeechRequest(
                 input = text,
-                model = AudioModels.TTS.modelName,
+                model = "tts-1",
                 voice = "shimmer",
                 speed = 1.0,
                 response_format = "mp3"

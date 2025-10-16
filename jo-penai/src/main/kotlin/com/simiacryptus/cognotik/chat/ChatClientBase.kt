@@ -115,9 +115,30 @@ abstract class ChatClientBase(
                 ),
                 logStreams
             )
-            innerPost(client, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
+            val response = innerPost(client, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
+            log(
+                level = Level.DEBUG,
+                msg = String.format(
+                    "POST %s\nID:%s\nResponse:\n\t%s",
+                    request.uri,
+                    requestID,
+                    response.lineSequence().map {
+                        when {
+                            it.isBlank() -> if (it.length < "\t".length) "\t" else it
+                            else -> "\t$it"
+                        }
+                    }.joinToString("\n")
+                ),
+                logStreams
+            )
+            response
         }
     } catch (e: Exception) {
+        log(
+            Level.ERROR,
+            "Error during POST request to ${request.uri}\nID:$requestID\nRequest Entity:\n${request.entity.formatEntityForLogging()}",
+            logStreams
+        )
         log.error("Failed to execute POST request to ${request.uri}", e)
         throw e
     }

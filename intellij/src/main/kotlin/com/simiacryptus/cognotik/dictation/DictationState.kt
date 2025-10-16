@@ -9,6 +9,9 @@ import com.simiacryptus.cognotik.audio.AudioPacket
 import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.EventDispatcher
 import javax.sound.sampled.AudioFormat
 
@@ -72,7 +75,11 @@ open class DictationState {
         channels = AppSettingsState.instance.channels
         selectedMicLine = AppSettingsState.instance.selectedMicLine
         talkTime = AppSettingsState.instance.talkTime
-        transcriptionModel = AudioModels.find(AppSettingsState.instance.transcriptionModel) ?: AudioModels.Whisper
+        transcriptionModel = findAudioModel(AppSettingsState.instance.transcriptionModel) ?: AudioModels(
+            "whisper-1",
+            AudioModels.AudioModelType.Transcription,
+            APIProvider.Groq
+        )
     }
 
     val onPacket: (AudioPacket) -> Unit = {
@@ -80,21 +87,21 @@ open class DictationState {
         iec61672Max = it.iec61672.coerceAtLeast(iec61672Max)
         iec61672Level = (((it.iec61672 / iec61672Max) * 100).toInt())
         rmsLevel = (((it.rms / rmsMax) * 100).toInt())
-        talkTime = DictationManager.discriminator.talkTime
+        talkTime = dictationManager.discriminator.talkTime
         configuration.notifyListeners()
     }
 
     fun resetState() {
         rmsMax = 0.0
         iec61672Max = 0.0
-        DictationManager.audioFormat = AudioFormat(
+        dictationManager.audioFormat = AudioFormat(
             /* sampleRate = */ sampleRate.toFloat(),
             /* sampleSizeInBits = */ sampleSize,
             /* channels = */ channels,
             /* signed = */ true,
             /* bigEndian = */ false
         )
-        DictationManager.transcriptionModel = transcriptionModel
+        dictationManager.transcriptionModel = transcriptionModel
     }
 
     fun setRecordingState(isRecording: Boolean) {
@@ -128,7 +135,7 @@ open class DictationState {
         if (value == selectedMicLine) return
         selectedMicLine = value
         AppSettingsState.instance.selectedMicLine = value
-        DictationManager.selectedMicLine = value
+        dictationManager.selectedMicLine = value
         configuration.notifyListeners()
     }
 
@@ -136,10 +143,17 @@ open class DictationState {
         if (model == transcriptionModel) return
         transcriptionModel = model
         AppSettingsState.instance.transcriptionModel = model.modelName
-        DictationManager.transcriptionModel = model
+        dictationManager.transcriptionModel = model
         configuration.notifyListeners()
     }
 }
+
+fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelName == model }
+
+fun audioModels(): List<AudioModels> =
+    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap {
+        it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.baseUrl) ?: listOf()
+    }
 
 private fun Project.currentEditor() = FileEditorManager
     .getInstance(this)

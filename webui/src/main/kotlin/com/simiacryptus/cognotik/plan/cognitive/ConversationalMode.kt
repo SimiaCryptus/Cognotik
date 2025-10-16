@@ -10,13 +10,19 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.lang.Thread.sleep
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Semaphore
 
 /**
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
@@ -27,10 +33,9 @@ open class ConversationalMode(
     override val session: Session,
     override val user: User?
 ) : CognitiveMode {
-    private val log = LoggerFactory.getLogger(ConversationalMode::class.java)
 
     private val messagesLock = Any()
-    private val messages = ConcurrentLinkedQueue<ModelSchema.ChatMessage>()
+    private val messages get() = messageMaps.computeIfAbsent(session) { ConcurrentLinkedQueue() }
 
     private val messageBuffer = ConcurrentLinkedQueue<String>()
 
@@ -40,47 +45,55 @@ open class ConversationalMode(
 
     override fun initialize() {
         val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
-        log.debug("ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}", RuntimeException())
+        log.debug(
+            "ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}",
+            RuntimeException()
+        )
         log.debug(
             "Task configurations: ${
                 orchestrationConfig.taskSettings.values.joinToString(", ") {
                     "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
                 }
-        }")
-        synchronized(messagesLock) {
-            messages.add(ModelSchema.ChatMessage(ModelSchema.Role.system, systemPrompt.toContentList()))
-        }
+            }")
+//        synchronized(messagesLock) {
+//            messages.add(ModelSchema.ChatMessage(ModelSchema.Role.system, systemPrompt.toContentList()))
+//        }
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
 
         synchronized(messagesLock) {
+            messageBuffer.add(userMessage)
             if (isProcessing) {
                 log.debug("Already processing a task, adding message to buffer: ${userMessage}")
-                messageBuffer.add(userMessage)
                 return
             }
             isProcessing = true
         }
 
-        synchronized(messagesLock) {
-            messages.add(ModelSchema.ChatMessage(ModelSchema.Role.user, userMessage.toContentList()))
-        }
-
         task.echo(renderMarkdown(userMessage))
-        Retryable(task) {
-            val subtask = ui.newTask(false)
-            ui.pool.submit {
-                execute(subtask, userMessage)
+        ui.pool.submit {
+            try {
+                while (!Thread.interrupted()) {
+                    sleep(100) // Brief pause to allow batching of messages
+                    val userMessage = messageBuffer.poll() ?: continue
+                    val task = ui.newTask(true)
+                    execute(task, userMessage)
+                }
+            } finally {
+                synchronized(messagesLock) {
+                    isProcessing = false
+                }
             }
-            subtask.placeholder
         }
     }
 
     private fun execute(task: SessionTask, userMessage: String) {
-
         try {
+            synchronized(messagesLock) {
+                messages.add(ModelSchema.ChatMessage(ModelSchema.Role.user, userMessage.toContentList()))
+            }
             val describer = TaskContextYamlDescriber(orchestrationConfig)
             val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
             val parsedActor = ParsedAgent(
@@ -94,7 +107,7 @@ open class ConversationalMode(
                     ).toMutableList()
                 ),
                 prompt = buildString {
-                    append("Given the following input, choose ONE task to execute. Select the most appropriate task type for the given input and provide all required details.\n")
+                    append(systemPrompt)
                     append("Available task types:\n")
                     append(orchestrationConfig.taskSettings.values.joinToString("\n\n") { config ->
                         val taskType = TaskType.valueOf(config.task_type ?: return@joinToString "")
@@ -131,7 +144,7 @@ open class ConversationalMode(
             val chosenTasks = answer.obj.tasks?.firstOrNull()
                 ?: throw IllegalStateException("No task was selected")
 
-            val result = StringBuilder()
+            val resultSemaphore = Semaphore(0)
 
             val tabs = TabbedDisplay(task)
             ui.newTask(false).apply {
@@ -147,64 +160,34 @@ open class ConversationalMode(
                         session = session,
                         dataStorage = ui.dataStorage!!,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: ui.dataStorage?.getSessionDir(
-                                user,
-                                session
-                            )?.toPath() ?: File(".").toPath()
+                            ?: ui.dataStorage.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     ),
                     messages = listOf(userMessage),
                     task = this,
-                    resultFn = {
-                        result.append(it)
+                    resultFn = { result ->
+                        ui.newTask(false).apply {
+                            tabs["Output"] = placeholder
+                            complete(result.renderMarkdown())
+                        }
+                        val assistantResponse = "Task executed: ${chosenTasks.task_type}\n${result}"
+                        synchronized(messagesLock) {
+                            messages.add(
+                                ModelSchema.ChatMessage(
+                                    ModelSchema.Role.assistant,
+                                    assistantResponse.toContentList()
+                                )
+                            )
+                        }
+                        resultSemaphore.release()
                     },
                     orchestrationConfig = orchestrationConfig,
                 )
             }
-            ui.newTask(false).apply {
-                tabs["Output"] = placeholder
-                complete(result.toString().renderMarkdown())
-            }
-
-            val assistantResponse = "Task executed: ${chosenTasks.task_type}\n${result}"
-            synchronized(messagesLock) {
-                messages.add(ModelSchema.ChatMessage(ModelSchema.Role.assistant, assistantResponse.toContentList()))
-            }
-
+            resultSemaphore.acquire()
             task.complete()
-
-            processBufferedMessages()
         } catch (e: Exception) {
             log.error("Error executing task", e)
             task.error(e)
-
-            synchronized(messagesLock) {
-                isProcessing = false
-            }
-        }
-    }
-
-    /**
-     * Process any messages that were buffered while a task was running
-     */
-    private fun processBufferedMessages() {
-        synchronized(messagesLock) {
-            if (messageBuffer.isNotEmpty()) {
-
-                val combinedMessage = messageBuffer.joinToString("\n\n")
-                log.debug("Processing buffered messages: ${messageBuffer.size} messages")
-
-                messageBuffer.clear()
-
-                isProcessing = false
-
-                val newTask = ui.newTask(false)
-                ui?.pool?.submit {
-                    handleUserMessage(combinedMessage, newTask)
-                }
-            } else {
-
-                isProcessing = false
-            }
         }
     }
 
@@ -237,5 +220,8 @@ open class ConversationalMode(
             session: Session,
             user: User?
         ) = ConversationalMode(ui, orchestrationConfig, session, user)
+
+        private val messageMaps = ConcurrentHashMap<Session, ConcurrentLinkedQueue<ModelSchema.ChatMessage>>()
+        private val log = LoggerFactory.getLogger(ConversationalMode::class.java)
     }
 }

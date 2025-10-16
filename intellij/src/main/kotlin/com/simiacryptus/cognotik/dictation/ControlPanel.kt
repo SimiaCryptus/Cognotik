@@ -19,6 +19,7 @@ import javax.swing.JProgressBar
 class ControlPanel(
     val project: Project,
     val settings: DictationState = DictationState,
+    val dictationManager : DictationManager = DictationWidgetFactory.dictationManager
 ) : JPanel(), AutoCloseable {
     companion object {
     }
@@ -29,15 +30,15 @@ class ControlPanel(
         border = JBUI.Borders.emptyRight(5)
 
         addItem("Default")
-        DictationManager.availableMicLines.forEach(::addItem)
+        dictationManager.availableMicLines.forEach(::addItem)
         (AppSettingsState.instance.selectedMicLine ?: settings.selectedMicLine)?.let {
             selectedItem = it
-            DictationManager.selectedMicLine = it
+            dictationManager.selectedMicLine = it
             settings.setSelectedMicLine(it)
         }
         addActionListener {
             settings.setSelectedMicLine(selectedItem as String)
-            DictationManager.selectedMicLine = selectedItem as String
+            dictationManager.selectedMicLine = selectedItem as String
             AppSettingsState.instance.selectedMicLine = selectedItem as String
         }
     }
@@ -108,7 +109,7 @@ class ControlPanel(
     }
     private val transcriptionModelComboBox = ComboBox<AudioModels>().apply {
         border = JBUI.Borders.emptyRight(5)
-        AudioModels.entries.filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
+        audioModels().filter { it.type == AudioModels.AudioModelType.Transcription }.forEach(::addItem)
         selectedItem = settings.transcriptionModel
         setRenderer { _, value, _, _, _ -> JBLabel(value?.modelName ?: "N/A") }
         addActionListener {
@@ -175,13 +176,13 @@ class ControlPanel(
             add(JButton("Train Quiet").apply {
                 addMouseListener(object : MouseAdapter() {
                     override fun mousePressed(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = false
+                        dictationManager.discriminator.isTraining = false
                         text = "Training..."
                     }
 
                     override fun mouseReleased(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = null
-                        DictationManager.discriminator.clearMemory()
+                        dictationManager.discriminator.isTraining = null
+                        dictationManager.discriminator.clearMemory()
                         text = "Train Quiet"
                     }
                 })
@@ -194,13 +195,13 @@ class ControlPanel(
             add(JButton("Train Talk").apply {
                 addMouseListener(object : MouseAdapter() {
                     override fun mousePressed(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = true
+                        dictationManager.discriminator.isTraining = true
                         text = "Training..."
                     }
 
                     override fun mouseReleased(e: MouseEvent?) {
-                        DictationManager.discriminator.isTraining = null
-                        DictationManager.discriminator.clearMemory()
+                        dictationManager.discriminator.isTraining = null
+                        dictationManager.discriminator.clearMemory()
                         text = "Train Talk"
                     }
                 })
@@ -212,7 +213,7 @@ class ControlPanel(
             })
             add(JButton("Reset").apply {
                 addActionListener {
-                    DictationManager.discriminator.reset()
+                    dictationManager.discriminator.reset()
                 }
             }, GridBagConstraints().apply {
                 anchor = GridBagConstraints.WEST

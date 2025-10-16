@@ -1,16 +1,14 @@
 package com.simiacryptus.cognotik.audio
 
-import com.simiacryptus.cognotik.OpenAIClient
-import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.TranscriptionClient
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.util.*
-import java.util.concurrent.Executors
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.swing.JOptionPane
 
-open class DictationManager {
-    companion object : DictationManager() {
+abstract class DictationManager {
+    companion object {
         private val log = LoggerFactory.getLogger(DictationManager::class.java)
     }
 
@@ -24,7 +22,7 @@ open class DictationManager {
 
     var selectedMicLine: String? = null
     var transcriptionProcessor: TranscriptionProcessor? = null
-    var transcriptionModel: AudioModels = AudioModels.Whisper
+    var transcriptionModel: AudioModels? = null
 
     var audioFormat: AudioFormat = AudioFormat(16000f, 16, 1, true, false)
         set(value) {
@@ -83,20 +81,13 @@ open class DictationManager {
             }
             processor = Thread {
                 transcriptionProcessor = TranscriptionProcessor(
-                    client = OpenAIClient(
-                        workPool = Executors.newCachedThreadPool(),
-                        key = TODO(),
-                        apiBase = TODO(),
-                        scheduledPool = TODO(),
-                    ),
+                    client = transcriptionClient(),
                     audioBuffer = processedBuffer,
-                    model = transcriptionModel,
+                    model = transcriptionModel!!,
                     continueFn = { isRecording },
                     prompt = "",
                     onTranscriptionUpdate = onTranscriptionUpdate
-                ).apply {
-                    run()
-                }
+                ).apply { run() }
             }.apply { start() }
         } catch (e: Exception) {
             JOptionPane.showMessageDialog(
@@ -108,6 +99,8 @@ open class DictationManager {
             stopRecording()
         }
     }
+
+    abstract fun transcriptionClient(): TranscriptionClient
 
     var onTranscriptionUpdate: (TranscriptionProcessor.TranscriptionResult) -> Unit = {
         log.info("Transcription: ${it.text}")

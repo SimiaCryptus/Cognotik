@@ -15,8 +15,8 @@ class DirectUrls : SeedMethodFactory {
                 SeedMethod.Companion.log.error("Direct URLs are missing for DirectUrls seed method")
                 return emptyList()
             }
-            SeedMethod.Companion.log.debug("Processing direct URLs: ${taskConfig.direct_urls}")
-            return taskConfig.direct_urls.split(",").map { it.trim() }.filter { it.isNotBlank() }
+            SeedMethod.Companion.log.debug("Processing direct URLs: ${taskConfig.direct_urls.joinToString(", ")}")
+            return taskConfig.direct_urls.map { it.trim() }.filter { it.isNotBlank() }
                 .filter { url ->
                     try {
                         URI.create(url)
