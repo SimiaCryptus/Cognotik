@@ -152,6 +152,6 @@ tasks.register<com.github.gradle.node.npm.task.NpxTask>("compileSass") {
     )
 }
 
-//tasks.named("processResources") {
-//    dependsOn("compileSass", "copyWebappBuild", "copyWebappStatic")
-//}
+tasks.named("processResources") {
+    dependsOn("compileSass", "copyWebappBuild", "copyWebappStatic")
+}

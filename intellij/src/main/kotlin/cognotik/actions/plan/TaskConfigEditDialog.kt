@@ -90,7 +90,15 @@ private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
     private fun com.intellij.ui.dsl.builder.Panel.createRunCodeFields(config: RunCodeTask.RunCodeTaskTypeConfig) {
         group("Code Execution Settings") {
             row("Code Runtime:") {
-                val runtimes = arrayOf("KotlinRuntime", "PythonRuntime", "JavaRuntime", "NodeJSRuntime")
+                val runtimes = arrayOf(
+                    "GroovyRuntime",
+                    "KotlinRuntime",
+                    "BashRuntime",
+                    "PowerShellRuntime",
+                    "CmdRuntime",
+                    "PythonRuntime",
+                    "NodeJSRuntime"
+                )
                 val combo = ComboBox(runtimes)
                 combo.selectedItem = config.codeRuntime?.name ?: "KotlinRuntime"
                 cell(combo)
