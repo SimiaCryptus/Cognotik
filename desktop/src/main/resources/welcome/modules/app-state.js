@@ -19,9 +19,9 @@ class AppState {
             const saved = this.localStorage.getItem('taskSettings');
             if (saved) {
                 const parsed = JSON.parse(saved);
-                // Ensure taskConfigs exists
-                if (!parsed.taskConfigs) {
-                    parsed.taskConfigs = {};
+                // Ensure taskSettings exists
+                if (!parsed.taskSettings) {
+                    parsed.taskSettings = {};
                 }
                 return parsed;
             }
@@ -43,7 +43,6 @@ class AppState {
             maxTasksPerIteration: 3,
             maxIterations: 100,
             taskSettings: {},
-            taskConfigs: {} // Store task-specific configurations
         };
     }
 
@@ -51,9 +50,9 @@ class AppState {
         if (!this.localStorage) return;
         
         const toSave = settings || this.taskSettings;
-        // Ensure taskConfigs exists
-        if (!toSave.taskConfigs) {
-            toSave.taskConfigs = {};
+        // Ensure taskSettings exists
+        if (!toSave.taskSettings) {
+            toSave.taskSettings = {};
         }
         this.localStorage.setItem('taskSettings', JSON.stringify(toSave));
         if (settings) {
@@ -70,62 +69,66 @@ class AppState {
         this.cognitiveMode = mode;
     }
 
-    // Task configuration management
+// Task configuration management
     addTaskConfig(taskType, config) {
-        if (!this.taskSettings.taskConfigs) {
-            this.taskSettings.taskConfigs = {};
-        }
-        if (!this.taskSettings.taskConfigs[taskType]) {
-            this.taskSettings.taskConfigs[taskType] = [];
+        if (!this.taskSettings.taskSettings) {
+            this.taskSettings.taskSettings = {};
         }
         
-        // Check if config with same name exists
-        const existingIndex = this.taskSettings.taskConfigs[taskType].findIndex(
-            c => c.name === config.name
-        );
+        // Use config name as key, store the config directly
+        const configKey = config.name;
         
-        if (existingIndex >= 0) {
-            // Update existing config
-            this.taskSettings.taskConfigs[taskType][existingIndex] = config;
-        } else {
-            // Add new config
-            this.taskSettings.taskConfigs[taskType].push(config);
-        }
+        // Store config with task_type included
+        this.taskSettings.taskSettings[configKey] = {
+            ...config,
+            task_type: taskType
+        };
         
         this.saveTaskSettings();
     }
 
     removeTaskConfig(taskType, configName) {
-        if (!this.taskSettings.taskConfigs || !this.taskSettings.taskConfigs[taskType]) {
+        if (!this.taskSettings.taskSettings || !this.taskSettings.taskSettings[taskType]) {
             return;
         }
         
-        this.taskSettings.taskConfigs[taskType] = this.taskSettings.taskConfigs[taskType].filter(
-            c => c.name !== configName
-        );
         
-        if (this.taskSettings.taskConfigs[taskType].length === 0) {
-            delete this.taskSettings.taskConfigs[taskType];
-        }
+        delete this.taskSettings.taskSettings[configName];
         
         this.saveTaskSettings();
     }
 
     getTaskConfigs(taskType) {
-        if (!this.taskSettings.taskConfigs || !this.taskSettings.taskConfigs[taskType]) {
-            return [];
+        if (!this.taskSettings.taskSettings || !this.taskSettings.taskSettings[taskType]) {
+            return {};
         }
-        return this.taskSettings.taskConfigs[taskType];
+        
+        // Filter configs by task_type
+        const configs = {};
+        for (const [configName, config] of Object.entries(this.taskSettings.taskSettings)) {
+            if (config.task_type === taskType) {
+                configs[configName] = config;
+            }
+        }
+        return configs;
     }
 
     getTaskConfig(taskType, configName) {
-        const configs = this.getTaskConfigs(taskType);
-        return configs.find(c => c.name === configName);
+        if (!this.taskSettings.taskSettings || !this.taskSettings.taskSettings[configName]) {
+            return null;
+        }
+        
+        const config = this.taskSettings.taskSettings[configName];
+        // Verify it matches the task type
+        if (config.task_type === taskType) {
+            return config;
+        }
+        return null;
     }
 
     hasTaskConfigs(taskType) {
         const configs = this.getTaskConfigs(taskType);
-        return configs.length > 0;
+        return Object.keys(configs).length > 0;
     }
 }
 

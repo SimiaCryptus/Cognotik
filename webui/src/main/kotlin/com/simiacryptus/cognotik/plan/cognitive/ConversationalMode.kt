@@ -34,6 +34,11 @@ open class ConversationalMode(
     override val user: User?
 ) : CognitiveMode {
 
+    init {
+        require(orchestrationConfig.defaultModel != null) { "Default model must be specified in orchestration config" }
+        require(orchestrationConfig.parsingModel != null) { "Parsing model must be specified in orchestration config" }
+    }
+
     private val messagesLock = Any()
     private val messages get() = messageMaps.computeIfAbsent(session) { ConcurrentLinkedQueue() }
 

@@ -343,7 +343,7 @@ class CrawlerAgentTask(
                     analysisResults
                 }
             try {
-                summaryTask.add(finalOutput.renderMarkdown())
+                summaryTask.add(finalOutput.renderMarkdown)
                 task.update()
             } catch (e: Exception) {
                 log.error("Failed to update task with final summary", e)

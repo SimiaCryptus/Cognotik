@@ -5,12 +5,14 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -47,13 +49,23 @@ abstract class UnifiedPlanApp(
     private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
-    override val inputCnt: Int
-      get() {
+    override val inputCnt: Int = 4
 
-        return 4
-      }
+    override fun appInfo(session: Session): Map<String, Any> {
+        val settings = getSettings(session, defaultUser, OrchestrationConfig::class.java)
+        return AppInfoData(
+            applicationName = applicationName,
+            inputCnt = when {
+                settings?.cognitiveMode == CognitiveModeStrategies.Chat -> 0
+                else -> 4
+            },
+            stickyInput = stickyInput,
+            loadImages = false,
+            showMenubar = showMenubar,
+        ).toMap()
+    }
 
-  @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST")
     override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig() as T
 
     abstract fun instance(model: ApiChatModel): ChatInterface
@@ -114,7 +126,7 @@ abstract class UnifiedPlanApp(
                 null
             }?.apply {
                 absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
-            } ?: OrchestrationConfig()
+            } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeStrategies.Chat).getCognitiveMode(
                 ui = ui,
