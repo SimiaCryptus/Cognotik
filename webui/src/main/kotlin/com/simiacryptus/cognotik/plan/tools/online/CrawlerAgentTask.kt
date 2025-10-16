@@ -38,6 +38,7 @@ class CrawlerAgentTask(
     class CrawlerTaskTypeConfig(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
+        @Description("Whitespace-separated list of allowed domains/URL prefixes to restrict crawling (optional)") val allowed_domains: String? = null,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = null,
         @Description("Maximum depth to crawl from seed pages") val max_depth: Int? = null,
         @Description("Maximum queue size to prevent memory issues") val max_queue_size: Int? = null,
@@ -173,7 +174,7 @@ class CrawlerAgentTask(
 
             val seedMethod = typeConfig.seed_method ?: SeedMethod.GoogleSearch
             log.info("Using seed method: $seedMethod")
-            val seedItems = try {
+val seedItems = try {
                 seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
             } catch (e: Exception) {
                 log.error("Failed to get seed items using method: $seedMethod", e)
@@ -187,6 +188,10 @@ class CrawlerAgentTask(
 
             val pageQueue = mutableListOf<LinkData>().apply {
                 seedItems.forEach { item ->
+                    if (item.link != null && isBlacklistedDomain(item.link)) {
+                        log.info("Skipping blacklisted seed URL: ${item.link}")
+                        return@forEach
+                    }
                     LinkData(
                         link = item.link,
                         title = item.title,
@@ -600,7 +605,7 @@ class CrawlerAgentTask(
                             this.appendLine(analysis.text)
                             this.appendLine()
 
-                            if (/*taskConfig?.follow_links ?:*/ typeConfig.follow_links == true) {
+                            if (typeConfig.follow_links == true) {
 
                                 var linkData = parsedPage.link_data
                                 val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/
@@ -611,20 +616,14 @@ class CrawlerAgentTask(
                                 } else {
                                     log.debug("Using ${linkData.size} structured links from analysis for '$url'")
                                 }
-                                val filteredLinks = linkData
+
+                                var addedCount = 0
+                                linkData
                                     .take(10) // Limit links per page to prevent explosion
                                     .filter { link ->
                                         VALID_URL_PATTERN.matcher(link.link!!).matches() &&
                                                 !isBlacklistedDomain(link.link) &&
                                                 (allowRevisit || pageQueue.none { it.link == link.link })
-                                    }
-
-                                var addedCount = 0
-                                linkData
-                                    .take(10)
-                                    .filter { link ->
-                                        VALID_URL_PATTERN.matcher(link.link ?: "").matches() &&
-                                                !isBlacklistedDomain(link.link!!)
                                     }
                                     .forEach { link ->
                                         val newLink = link.apply { depth = page.depth + 1 }
@@ -666,7 +665,7 @@ class CrawlerAgentTask(
         }
     }
 
-    private fun isBlacklistedDomain(url: String): Boolean {
+private fun isBlacklistedDomain(url: String): Boolean {
         val blacklistedDomains = setOf(
             "facebook.com", "twitter.com", "instagram.com", "linkedin.com",
             "youtube.com", "tiktok.com", "pinterest.com", "reddit.com",
@@ -674,12 +673,41 @@ class CrawlerAgentTask(
         )
         return try {
             val uri = URI.create(url)
+
+            // Check if URL is restricted by allowed_domains whitelist
+            val allowedDomains = typeConfig.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() }
+            if (!allowedDomains.isNullOrEmpty()) {
+                val isAllowed = allowedDomains.any { allowedDomainOrPrefix ->
+                    val normalizedAllowed = allowedDomainOrPrefix.lowercase().trim()
+                    when {
+                        // Check if it's a full URL prefix match
+                        normalizedAllowed.startsWith("http://") || normalizedAllowed.startsWith("https://") -> {
+                            url.lowercase().startsWith(normalizedAllowed)
+                        }
+                        // Check if it's a domain match (exact or subdomain)
+                        else -> {
+                            val domain = uri.host?.lowercase()
+                            if (domain == null) {
+                                log.warn("Could not extract domain from URL: $url")
+                                return true
+                            }
+                            domain == normalizedAllowed || domain.endsWith(".${normalizedAllowed}")
+                        }
+                    }
+                }
+                if (!isAllowed) {
+                    log.debug("URL not in allowed domains list: $url")
+                    return true
+                }
+            }
+
+            // Check blacklist
             val domain = uri.host?.lowercase()
             if (domain == null) {
                 log.warn("Could not extract domain from URL: $url")
                 return true
             }
-            blacklistedDomains.any { domain?.contains(it) == true }
+            blacklistedDomains.any { domain.contains(it) }
         } catch (e: Exception) {
             log.warn("Invalid URL format: $url", e)
             true // Blacklist invalid URLs

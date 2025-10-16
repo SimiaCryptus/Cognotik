@@ -198,6 +198,13 @@ class TaskConfigManager {
                         type: 'checkbox',
                         default: true,
                         tooltip: 'Generate a comprehensive summary of all results'
+                    },
+                    {
+                        id: 'allowed_domains',
+                        label: 'Allowed Domains',
+                        type: 'textarea',
+                        placeholder: 'Enter one domain per line (e.g., example.com)',
+                        tooltip: 'List of domains that the crawler is allowed to visit'
                     }
                 ]
             },
