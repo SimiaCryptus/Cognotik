@@ -59,7 +59,7 @@ class CrawlerAgentTask(
     class CrawlerTaskExecutionConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: List<String>? = null,
-        @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
+        @Description("The query considered when processing the content - this should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform the page into the desired summary") val content_queries: Any? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -79,7 +79,7 @@ class CrawlerAgentTask(
         CrawlerAgent - Search Google, fetch top results, and analyze content
         ** Specify the search query
         ** Or provide direct URLs to analyze
-        ** Specify the analysis goal or focus
+        ** Specify a detailed query/analysis prompt to guide content processing
         ** Results will be saved to .websearch directory for future reference
         ** Links found in analysis can be automatically followed for deeper research
       """.trimIndent()
@@ -172,9 +172,16 @@ class CrawlerAgentTask(
                 log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
             }
 
-            val seedMethod = typeConfig.seed_method ?: SeedMethod.GoogleSearch
+            val seedMethod = typeConfig.seed_method ?: when {
+                !executionConfig?.search_query.isNullOrBlank() -> SeedMethod.GoogleSearch
+                !executionConfig?.direct_urls.isNullOrEmpty() -> SeedMethod.DirectUrls
+                else -> {
+                    log.error("No seed method specified and no search query or direct URLs provided")
+                    return "Error: No seed method specified and no search query or direct URLs provided"
+                }
+            }
             log.info("Using seed method: $seedMethod")
-val seedItems = try {
+            val seedItems = try {
                 seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
             } catch (e: Exception) {
                 log.error("Failed to get seed items using method: $seedMethod", e)
@@ -506,7 +513,7 @@ val seedItems = try {
         return false
     }
 
-    private fun crawlPage(
+private fun crawlPage(
         processedCount: AtomicInteger,
         link: String,
         page: LinkData,
@@ -616,22 +623,64 @@ val seedItems = try {
                                 } else {
                                     log.debug("Using ${linkData.size} structured links from analysis for '$url'")
                                 }
+                                // Add extracted links section to UI
+                                if (linkData.isNotEmpty()) {
+                                    this.appendLine()
+                                    this.appendLine("### Extracted Links (${linkData.size} found)")
+                                    this.appendLine()
+                                }
+
 
                                 var addedCount = 0
+                                val skippedLinks = mutableListOf<Pair<LinkData, String>>()
+                                
                                 linkData
                                     .take(10) // Limit links per page to prevent explosion
                                     .filter { link ->
-                                        VALID_URL_PATTERN.matcher(link.link!!).matches() &&
-                                                !isBlacklistedDomain(link.link) &&
-                                                (allowRevisit || pageQueue.none { it.link == link.link })
+                                        val isValid = VALID_URL_PATTERN.matcher(link.link!!).matches()
+                                        val isNotBlacklisted = !isBlacklistedDomain(link.link)
+                                        val isNotDuplicate = allowRevisit || pageQueue.none { it.link == link.link }
+                                        
+                                        if (!isValid) {
+                                            skippedLinks.add(link to "Invalid URL format")
+                                        } else if (!isNotBlacklisted) {
+                                            skippedLinks.add(link to "Blacklisted domain")
+                                        } else if (!isNotDuplicate) {
+                                            skippedLinks.add(link to "Already in queue")
+                                        }
+                                        
+                                        isValid && isNotBlacklisted && isNotDuplicate
                                     }
                                     .forEach { link ->
                                         val newLink = link.apply { depth = page.depth + 1 }
                                         if (addToQueue(pageQueue, newLink, maxDepth, maxQueueSize)) {
                                             addedCount++
+                                            this.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.link})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
+                                        } else {
+                                            skippedLinks.add(link to "Queue limit reached or max depth exceeded")
                                         }
                                     }
+                                // Show skipped links
+                                if (skippedLinks.isNotEmpty()) {
+                                    this.appendLine()
+                                    this.appendLine("<details>")
+                                    this.appendLine("<summary>Skipped Links (${skippedLinks.size})</summary>")
+                                    this.appendLine()
+                                    skippedLinks.forEach { (link, reason) ->
+                                        this.appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.link})** - *${reason}*")
+                                    }
+                                    this.appendLine()
+                                    this.appendLine("</details>")
+                                    this.appendLine()
+                                }
+                                
                                 log.info("Added $addedCount new links to queue from '$url' (filtered from ${linkData.size} total)")
+                                // Add summary
+                                if (linkData.isNotEmpty()) {
+                                    this.appendLine()
+                                    this.appendLine("**Link Processing Summary:** ${addedCount} added to queue, ${skippedLinks.size} skipped")
+                                    this.appendLine()
+                                }
                             }
                         } catch (e: Exception) {
                             log.error("Error processing URL: $url", e)
@@ -665,7 +714,7 @@ val seedItems = try {
         }
     }
 
-private fun isBlacklistedDomain(url: String): Boolean {
+    private fun isBlacklistedDomain(url: String): Boolean {
         val blacklistedDomains = setOf(
             "facebook.com", "twitter.com", "instagram.com", "linkedin.com",
             "youtube.com", "tiktok.com", "pinterest.com", "reddit.com",
