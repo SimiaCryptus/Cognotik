@@ -176,6 +176,13 @@ class TaskConfigEditDialog(
                     .comment("Method used to fetch content from URLs")
                 configFields["fetch_method"] = combo
             }
+            row {
+                val respectRobotsCheckbox = JCheckBox("Respect robots.txt", config.respect_robots_txt ?: true)
+                respectRobotsCheckbox.toolTipText = "Follow robots.txt rules when crawling websites"
+                cell(respectRobotsCheckbox)
+                    .comment("Enable to respect robots.txt crawl rules and delays")
+                configFields["respect_robots_txt"] = respectRobotsCheckbox
+            }
             row("Max Pages Per Task:") {
                 val field = JBTextField(config.max_pages_per_task?.toString() ?: "30")
                 field.toolTipText = "Maximum number of pages to process (1-100)"
@@ -464,6 +471,7 @@ class TaskConfigEditDialog(
                         (configFields["fetch_method"] as? ComboBox<*>)?.selectedItem as? String
                             ?: "HttpClient"
                     ),
+                    respect_robots_txt = (configFields["respect_robots_txt"] as? JCheckBox)?.isSelected,
                     max_pages_per_task = (configFields["max_pages_per_task"] as? JBTextField)?.text?.toIntOrNull(),
                     concurrent_page_processing = (configFields["concurrent_page_processing"] as? JBTextField)?.text?.toIntOrNull(),
                     max_final_output_size = (configFields["max_final_output_size"] as? JBTextField)?.text?.toIntOrNull(),
